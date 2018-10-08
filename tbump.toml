@@ -1,0 +1,122 @@
+[version]
+current = "1.8.1-alpha12"
+regex = '''
+  (?P<major>\d+)
+  \.
+  (?P<minor>\d+)
+  \.
+  (?P<patch>\d+)
+  (
+    -
+    (?P<channel>alpha|beta|r)
+    (?P<release>\d+)
+  )?
+'''
+
+[git]
+message_template = "Bump to {new_version}"
+tag_template = "deploy/sdk/{new_version}"
+
+[[file]]
+src = "packages/client-browser/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/client-browser/package.json"
+search = '"@tanker/core": "{current_version}"'
+
+[[file]]
+src = "packages/client-browser/package.json"
+search = '"@tanker/datastore-dexie-browser": "{current_version}"'
+
+[[file]]
+src = "packages/client-node/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/client-node/package.json"
+search = '"@tanker/core": "{current_version}"'
+
+[[file]]
+src = "packages/client-node/package.json"
+search = '"@tanker/datastore-pouchdb-node": "{current_version}"'
+
+[[file]]
+src = "packages/client-node/package.json"
+search = '"@tanker/datastore-pouchdb-memory": "{current_version}"'
+
+[[file]]
+src = "packages/core/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/core/package.json"
+search = '"@tanker/crypto": "{current_version}"'
+
+[[file]]
+src = "packages/core/package.json"
+search = '"@tanker/datastore-base": "{current_version}"'
+
+[[file]]
+src = "packages/core/package.json"
+search = '"@tanker/datastore-pouchdb-memory": "{current_version}"'
+
+[[file]]
+src = "packages/core/src/version.js"
+search = "TANKER_SDK_VERSION = '{current_version}'"
+
+[[file]]
+src = "packages/crypto/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/base/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/base/package.json"
+search = '"@tanker/crypto": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/dexie-browser/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/dexie-browser/package.json"
+search = '"@tanker/crypto": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/pouchdb-base/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/pouchdb-base/package.json"
+search = '"@tanker/datastore-base": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/mongodb/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/mongodb/package.json"
+search = '"@tanker/datastore-base": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/pouchdb-memory/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/pouchdb-memory/package.json"
+search = '"@tanker/datastore-pouchdb-base": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/pouchdb-node/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/pouchdb-node/package.json"
+search = '"@tanker/datastore-pouchdb-base": "{current_version}"'
+
+[[file]]
+src = "packages/datastore/tests/package.json"
+search = '"@tanker/datastore-base": "{current_version}"'

@@ -1,0 +1,18 @@
+{
+  "name": "@tanker/datastore-pouchdb-node",
+  "version": "1.8.1-alpha12",
+  "license": "UNLICENSED",
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "dependencies": {
+    "@tanker/datastore-pouchdb-base": "1.8.1-alpha12",
+    "pouchdb-adapter-leveldb": "^6.4.3",
+    "pouchdb-core": "^6.4.3",
+    "pouchdb-find": "^6.4.3"
+  },
+  "devDependencies": {
+    "@tanker/datastore-tests": "0.0.1",
+    "tmp": "^0.0.33"
+  }
+}

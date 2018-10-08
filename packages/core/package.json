@@ -1,0 +1,31 @@
+{
+  "name": "@tanker/core",
+  "version": "1.8.1-alpha12",
+  "description": "Tanker Core SDK",
+  "author": "Tanker Team",
+  "license": "UNLICENSED",
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "scripts": {
+    "test": "cd ../..; yarn test:core"
+  },
+  "dependencies": {
+    "@babel/runtime-corejs2": "7.0.0",
+    "@tanker/crypto": "1.8.1-alpha12",
+    "@tanker/datastore-base": "1.8.1-alpha12",
+    "@tanker/datastore-pouchdb-memory": "1.8.1-alpha12",
+    "array-find": "^1.0.0",
+    "array.chunk": "^1.1.0",
+    "async-mutex": "^0.1.2",
+    "engine.io-client": "git+https://github.com/SuperTanker/engine.io-client.git#cfb6fa113fb5dc22e08777bd8fc6b6701f00ba67",
+    "lodash.uniqby": "^4.7.0",
+    "socket.io-client": "git+https://github.com/SuperTanker/socket.io-client.git#310afdafadb4cc97ca36c0b7b5c4bc39a1c859da",
+    "varint": "^5.0.0"
+  },
+  "devDependencies": {
+    "@tanker/chai": "0.0.1",
+    "tmp": "^0.0.33",
+    "uuid": "^3.2.1"
+  }
+}

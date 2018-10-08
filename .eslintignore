@@ -1,0 +1,7 @@
+node_modules
+packages/*/node_modules
+packages/*/public
+packages/*/coverage
+packages/*/build
+packages/**/dist
+packages/**/dist-standalone
