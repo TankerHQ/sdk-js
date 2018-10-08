@@ -1,0 +1,18 @@
+{
+  "name": "@tanker/crypto",
+  "version": "1.8.1-alpha16",
+  "description": "Cryptographic primitives used by the Tanker SDK",
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "cd ../..; yarn build:crypto",
+    "test": "cd ../..; yarn test:crypto",
+    "start:test": "cd ../..; yarn start:test-crypto"
+  },
+  "dependencies": {
+    "@babel/runtime-corejs2": "7.0.0",
+    "libsodium-wrappers": "^0.5.1"
+  }
+}

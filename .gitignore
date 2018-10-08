@@ -1,0 +1,16 @@
+.DS_Store
+
+build
+dist
+dist-standalone
+coverage
+node_modules
+report
+npm*.log
+yarn-*.log
+.nyc_output
+.sass-cache
+!.gitkeep
+__pycache__
+
+package-lock.json

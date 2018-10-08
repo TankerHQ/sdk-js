@@ -1,0 +1,18 @@
+{
+  "name": "@tanker/datastore-pouchdb-memory",
+  "version": "1.8.1-alpha16",
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "dependencies": {
+    "@tanker/datastore-pouchdb-base": "1.8.1-alpha16",
+    "pouchdb-adapter-leveldb": "^6.4.3",
+    "pouchdb-core": "^6.4.3",
+    "pouchdb-find": "^6.4.3",
+    "pouchdb-adapter-memory": "^6.4.3"
+  },
+  "devDependencies": {
+    "@tanker/datastore-tests": "0.0.1"
+  }
+}
