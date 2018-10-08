@@ -1,0 +1,13 @@
+{
+  "name": "@tanker/chai",
+  "version": "0.0.1",
+  "description": "Chai by Tanker",
+  "author": "Tanker Team",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "src/index.js",
+  "dependencies": {
+    "chai": "^4.1.0",
+    "chai-as-promised": "^7.1.1"
+  }
+}

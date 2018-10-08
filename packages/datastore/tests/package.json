@@ -1,0 +1,11 @@
+{
+  "name": "@tanker/datastore-tests",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "src/index.js",
+  "dependencies": {
+    "@tanker/chai": "0.0.1",
+    "@tanker/datastore-base": "1.8.1-alpha12"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@tanker/datastore-pouchdb-base",
+  "version": "1.8.1-alpha12",
+  "license": "UNLICENSED",
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "dependencies": {
+    "@tanker/datastore-base": "1.8.1-alpha12"
+  }
+}
