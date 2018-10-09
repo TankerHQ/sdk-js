@@ -1,44 +1,28 @@
 import argparse
-import contextlib
 import os
-import signal
 import subprocess
-import sys
 import time
 
 import path
 import psutil
 
+import ci
 import utils
 import pyback.client
-
-@contextlib.contextmanager
-def run_in_background(*cmd):
-    process = subprocess.Popen(cmd, start_new_session=True)
-    caught_error = None
-    try:
-        yield
-    except Exception as e:
-        caught_error = e
-    finally:
-        os.killpg(process.pid, signal.SIGTERM)
-    if caught_error:
-        raise caught_error
-
 
 
 def run_linters():
     for lang in ["js", "flow"]:
-        utils.run_yarn("lint:%s" % lang)
+        ci.run_yarn("lint:%s" % lang)
 
 
 def run_tests_in_node(env=None):
-    with run_in_background("docker", "run", "--publish", "27017:27017", "--rm", "mongo"):
+    with ci.run_in_background("docker", "run", "--publish", "27017:27017", "--rm", "mongo"):
         # Note: we expect mongo to be booted by the time the babel build is finished ...
         run_env = os.environ.copy()
         run_env["PROJECT_CONFIG"] = env
         run_env["TANKER_WEB_MONGODB_RUNNING"] = "true"
-        utils.run_yarn("coverage", env=run_env)
+        ci.run_yarn("coverage", env=run_env)
 
 
 def find_procs_by_name(name):
@@ -105,7 +89,7 @@ def delete_ie_state():
 
     Total: 511
     """
-    utils.run("RunDll32.exe", "InetCpl.cpl,ClearMyTracksByProcess", "511")
+    ci.run("RunDll32.exe", "InetCpl.cpl,ClearMyTracksByProcess", "511")
     time.sleep(5)
 
 
@@ -119,13 +103,13 @@ def run_tests_in_browser(*, env, runner):
     run_env["PROJECT_CONFIG"] = env
 
     if runner == "linux":
-        utils.run_yarn("karma", "--browsers", "Firefox,Chromium", env=run_env)
+        ci.run_yarn("karma", "--browsers", "Firefox,Chromium", env=run_env)
     elif runner == "macos":
-        utils.run("killall", "Safari", check=False)
+        ci.run("killall", "Safari", check=False)
         delete_safari_state()
         safari_awaker = subprocess.Popen(["bash", "ci/keep-safari-awake.sh"])
         try:
-            utils.run_yarn("karma", "--browsers", "Safari", env=run_env)
+            ci.run_yarn("karma", "--browsers", "Safari", env=run_env)
         finally:
             safari_awaker.kill()
     elif runner == "windows-edge":
@@ -137,9 +121,9 @@ def run_tests_in_browser(*, env, runner):
 
 
 def check(*, env, runner):
-    utils.install_deps()
+    ci.install_deps()
     if runner == "linux":
-        utils.run_yarn("build:all")
+        ci.run_yarn("build:all")
         run_linters()
         run_tests_in_node(env=env)
     run_tests_in_browser(runner=runner, env=env)

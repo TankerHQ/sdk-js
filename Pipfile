@@ -13,3 +13,6 @@ requests = "*"
 tbump = ">= 5.0.0"
 websockets = "*"
 psutil = "*"
+ci = {git = "ssh://git@10.100.0.1/Tanker/ci.git", editable = true, ref = "ed2e1d51c893cfc9c9253fe6717be262e6215007"}
+# for dev you can use the local repo
+#ci = {path = "../ci", editable = true}

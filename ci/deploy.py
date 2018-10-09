@@ -1,10 +1,10 @@
 import argparse
-import os
 
 import path
 import re
 import tbump.config
 
+import ci
 import utils
 
 
@@ -35,17 +35,10 @@ def version_from_git_tag(git_tag):
     return version
 
 
-def yarn_build(delivery, env):
-    yarn_env = os.environ.copy()
-    yarn_env["PROJECT_CONFIG"] = env.replace("-", "_")
-    utils.run_yarn("build:%s" % delivery, env=yarn_env)
-
-
 def publish_npm_package(package_name, version):
     package_path = get_package_path(package_name)
     npm_tag = version_to_npm_tag(version)
-
-    utils.run("npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path)
+    ci.run("npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path)
 
 
 def deploy_sdk(env, git_tag):
@@ -70,7 +63,7 @@ def deploy_sdk(env, git_tag):
     ]
 
     for config in configs:
-        yarn_build(config["build"], env)
+        ci.yarn_build(config["build"], env)
         for package_name in config["publish"]:
           publish_npm_package(package_name, version)
 
@@ -80,13 +73,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", required=True)
     version_group = parser.add_mutually_exclusive_group(required=True)
-    version_group.add_argument("--version")
     version_group.add_argument("--git-tag")
     args = parser.parse_args()
-    version = args.version
     git_tag = args.git_tag
     env = args.env
-    utils.install_deps()
+    ci.install_deps()
     deploy_sdk(env, git_tag)
 
 

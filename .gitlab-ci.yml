@@ -6,7 +6,7 @@ stages:
   - deploy
 
 before_script:
-  - python3 -m pipenv install
+  - python3 -m pipenv install --deploy
 
 check/linux:
   stage: check
