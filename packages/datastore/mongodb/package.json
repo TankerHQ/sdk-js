@@ -1,11 +1,11 @@
 {
   "name": "@tanker/datastore-mongodb",
-  "version": "1.8.1-alpha14",
+  "version": "1.8.1-alpha15",
   "license": "UNLICENSED",
   "main": "src/index.js",
   "module": "es.js",
   "dependencies": {
-    "@tanker/datastore-base": "1.8.1-alpha14",
+    "@tanker/datastore-base": "1.8.1-alpha15",
     "mongodb": "^3.1.4"
   },
   "devDependencies": {

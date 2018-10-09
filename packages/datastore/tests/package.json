@@ -6,6 +6,6 @@
   "main": "src/index.js",
   "dependencies": {
     "@tanker/chai": "0.0.1",
-    "@tanker/datastore-base": "1.8.1-alpha14"
+    "@tanker/datastore-base": "1.8.1-alpha15"
   }
 }
