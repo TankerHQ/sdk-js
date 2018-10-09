@@ -68,6 +68,4 @@ deploy/prod/sdk:
     - /\Adeploy\/sdk\/[0-9.]+(-(alpha|beta)[0-9]+)?\z/
   script:
     - python3 -m pipenv run python ci/deploy.py
-        --gcp-project-id ${GCP_PROJECT_ID}
         --env ${CI_ENVIRONMENT_NAME} --git-tag ${CI_COMMIT_TAG}
-        --delivery sdk
