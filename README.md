@@ -1,4 +1,5 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Build](https://img.shields.io/travis/SuperTanker/sdk-js.svg?branch=master)](https://travis-ci.org/SuperTanker/sdk-js)
 
 # Tanker JavaScript SDK
 
