@@ -15,7 +15,7 @@ regex = '''
 
 [git]
 message_template = "Bump to {new_version}"
-tag_template = "deploy/sdk/{new_version}"
+tag_template = "v{new_version}"
 
 [[file]]
 src = "packages/client-browser/package.json"
