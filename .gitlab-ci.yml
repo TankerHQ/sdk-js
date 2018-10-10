@@ -72,12 +72,23 @@ check/macos/nightly:
   tags:
     - linux
 
-deploy/prod/sdk:
+deploy/sdk:
   extends: .deploy
   environment:
     name: prod
   only:
-    - /\Adeploy\/sdk\/[0-9.]+(-(alpha|beta)[0-9]+)?\z/
+    - /\Av[0-9.]+(-(alpha|beta)[0-9]+)?\z/
   script:
     - python3 -m pipenv run python ci/deploy.py
         --env ${CI_ENVIRONMENT_NAME} --git-tag ${CI_COMMIT_TAG}
+
+
+mirror:
+  tags:
+    - linux
+  stage: deploy
+  only:
+    - /\Av[0-9.]+\z/   # public release tags only
+    - master
+  script:
+    - python3 -m pipenv run python ci/mirror.py --ref ${CI_COMMIT_REF_NAME}

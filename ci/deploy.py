@@ -25,7 +25,7 @@ def version_to_npm_tag(version):
 
 
 def version_from_git_tag(git_tag):
-    prefix = "deploy/sdk/"
+    prefix = "v"
     assert git_tag.startswith(prefix), "tag should start with %s" % prefix
     tbump_cfg = tbump.config.parse(path.Path("tbump.toml"))
     regex = tbump_cfg.version_regex
