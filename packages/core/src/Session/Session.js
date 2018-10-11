@@ -145,7 +145,7 @@ export class SessionOpener extends EventEmitter {
   _userData: UserData;
 
   unlocker: Unlocker
-  _openBlocked: PromiseWrapper<void>;
+  _unlockInProgress: PromiseWrapper<void>;
 
   constructor(userData: UserData, storage: Storage, trustchain: Trustchain, client: Client) {
     super();
@@ -162,6 +162,10 @@ export class SessionOpener extends EventEmitter {
     );
   }
 
+  get unlockRequired(): bool {
+    return !!this._unlockInProgress;
+  }
+
   static create = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
     const client = new Client(userData.trustchainId, clientOptions);
     client.open();
@@ -173,24 +177,31 @@ export class SessionOpener extends EventEmitter {
     return new SessionOpener(userData, storage, trustchain, client);
   }
 
+  _unlockExistingUser = async (allowedToUnlock: bool) => {
+    this._unlockInProgress = new PromiseWrapper();
+    try {
+      const publicSignatureKeySignature = tcrypto.sign(this._storage.keyStore.publicSignatureKey, this._storage.keyStore.privateSignatureKey);
+      await this._client.subscribeToCreation(this._storage.keyStore.publicSignatureKey, publicSignatureKeySignature, this._unlockInProgress.resolve);
+
+      if (this._userData.deviceType === DEVICE_TYPE.server_device) {
+        // $FlowIKnow that unlockKey is present in userData
+        await this.unlocker.unlockWithUnlockKey(this._userData.unlockKey);
+      } else if (!this._unlockInProgress.settled && !allowedToUnlock) {
+        throw new MissingEventHandler('unlockRequired');
+      } else {
+        this.emit('unlockRequired');
+      }
+      await this._unlockInProgress.promise;
+    } finally {
+      delete this._unlockInProgress;
+    }
+  }
+
   openSession = async (allowedToUnlock: bool): Promise<Session> => {
     if (!this._storage.hasLocalDevice()) {
       const userExists = await this._client.userExists(this._userData.trustchainId, this._userData.userId, this._storage.keyStore.publicSignatureKey);
       if (userExists) {
-        this._openBlocked = new PromiseWrapper();
-        const publicSignatureKeySignature = tcrypto.sign(this._storage.keyStore.publicSignatureKey, this._storage.keyStore.privateSignatureKey);
-        await this._client.subscribeToCreation(this._storage.keyStore.publicSignatureKey, publicSignatureKeySignature, this._openBlocked.resolve);
-
-        if (this._userData.deviceType === DEVICE_TYPE.server_device) {
-          // $FlowIKnow that unlockKey is present in userData
-          await this.unlocker.unlockWithUnlockKey(this._userData.unlockKey);
-        } else if (!this._openBlocked.settled && !allowedToUnlock) {
-          delete this._openBlocked;
-          throw new MissingEventHandler('unlockRequired');
-        } else {
-          this.emit('unlockRequired');
-        }
-        await this._openBlocked.promise;
+        await this._unlockExistingUser(allowedToUnlock);
       } else {
         const newUserBlock = generateNewUserBlock(this._storage.keyStore, this._userData);
         await this._client.sendBlock(newUserBlock);
@@ -219,8 +230,8 @@ export class SessionOpener extends EventEmitter {
     await this._client.close();
     await this._storage.close();
 
-    if (this._openBlocked) {
-      this._openBlocked.reject(new OperationCanceled('Open canceled while unlocking'));
+    if (this._unlockInProgress) {
+      this._unlockInProgress.reject(new OperationCanceled('Open canceled while unlocking'));
     }
   }
 }

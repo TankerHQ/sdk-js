@@ -136,7 +136,7 @@ export class Tanker extends EventEmitter {
   get status(): number {
     if (this._session) {
       return this.OPEN;
-    } else if (this._sessionOpener) {
+    } else if (this._sessionOpener && this._sessionOpener.unlockRequired) {
       return this.UNLOCK_REQUIRED;
     }
     return this.CLOSED;
@@ -177,11 +177,11 @@ export class Tanker extends EventEmitter {
         const validationCode = this.deviceValidationCode();
         this.emit('unlockRequired');
         this.emit('waitingForValidation', validationCode);
+        this.emit('statusChange', this.status);
       });
     } else {
       delete this._sessionOpener;
     }
-    this.emit('statusChange', this.status);
   }
 
   _setSession = (session: ?Session) => {
