@@ -143,7 +143,8 @@ def check(*, env, runner, nightly):
         run_linters()
         run_tests_in_node(env=env)
     run_tests_in_browser(env=env, runner=runner)
-    run_functional_tests(env=env, runner=runner, nightly=nightly)
+    if "windows" not in runner:
+        run_functional_tests(env=env, runner=runner, nightly=nightly)
 
 
 def main():
