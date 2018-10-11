@@ -2,6 +2,7 @@ import argparse
 
 from path import Path
 import re
+import tbump
 import tbump.config
 
 import ci
@@ -41,8 +42,11 @@ def publish_npm_package(package_name, version):
     ci.run("npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path)
 
 
+
 def deploy_sdk(env, git_tag):
     version = version_from_git_tag(git_tag)
+
+    tbump.bump_files(version)
 
     # Publish packages in order so that dependencies don't break during deploy
     configs = [
