@@ -1,12 +1,12 @@
 {
   "name": "@tanker/datastore-base",
-  "version": "1.8.1-alpha16",
+  "version": "0.0.1",
   "license": "Apache-2.0",
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
-    "@tanker/crypto": "1.8.1-alpha16"
+    "@tanker/crypto": "0.0.1"
   },
   "devDependencies": {
     "chai": "^4.1.0",
