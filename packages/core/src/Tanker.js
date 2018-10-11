@@ -11,7 +11,8 @@ import { InvalidSessionStatus, InvalidArgument } from './errors';
 import { type UnlockKey, type UnlockDeviceParams, type SetupUnlockParams } from './Unlock/unlock';
 
 import { extractUserData } from './Tokens/SessionTypes';
-import { Session, SessionOpener } from './Session/Session';
+import { Session } from './Session/Session';
+import { SessionOpener } from './Session/SessionOpener';
 
 const statusDefs = [
   /* 0 */ { name: 'CLOSED', description: 'tanker session is closed' },
