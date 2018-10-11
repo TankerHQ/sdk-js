@@ -1,6 +1,6 @@
 import argparse
 
-import path
+from path import Path
 import re
 import tbump.config
 
@@ -10,7 +10,7 @@ import utils
 
 def get_package_path(package_name):
     m = re.match(r"^@tanker/(datastore-)?(.*)$", package_name)
-    p = path.Path("packages")
+    p = Path("packages")
     if m[1]:
       p = p.joinpath("datastore")
     return p.joinpath(m[2]).joinpath("dist")
@@ -27,7 +27,7 @@ def version_to_npm_tag(version):
 def version_from_git_tag(git_tag):
     prefix = "v"
     assert git_tag.startswith(prefix), "tag should start with %s" % prefix
-    tbump_cfg = tbump.config.parse(path.Path("tbump.toml"))
+    tbump_cfg = tbump.config.parse(Path("tbump.toml"))
     regex = tbump_cfg.version_regex
     version = git_tag[len(prefix):]
     match = regex.match(version)
