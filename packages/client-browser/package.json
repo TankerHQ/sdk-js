@@ -1,12 +1,12 @@
 {
   "name": "@tanker/client-browser",
-  "version": "1.8.1-alpha16",
+  "version": "1.8.1-alpha17",
   "description": "Tanker client SDK for web browsers",
   "author": "Tanker Team",
   "license": "Apache-2.0",
   "main": "src/index.js",
   "dependencies": {
-    "@tanker/core": "1.8.1-alpha16",
-    "@tanker/datastore-dexie-browser": "1.8.1-alpha16"
+    "@tanker/core": "1.8.1-alpha17",
+    "@tanker/datastore-dexie-browser": "1.8.1-alpha17"
   }
 }

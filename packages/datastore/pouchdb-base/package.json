@@ -1,11 +1,11 @@
 {
   "name": "@tanker/datastore-pouchdb-base",
-  "version": "1.8.1-alpha16",
+  "version": "1.8.1-alpha17",
   "license": "Apache-2.0",
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
-    "@tanker/datastore-base": "1.8.1-alpha16"
+    "@tanker/datastore-base": "1.8.1-alpha17"
   }
 }

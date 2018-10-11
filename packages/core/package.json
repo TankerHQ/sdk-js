@@ -1,6 +1,6 @@
 {
   "name": "@tanker/core",
-  "version": "1.8.1-alpha16",
+  "version": "1.8.1-alpha17",
   "description": "Tanker Core SDK",
   "author": "Tanker Team",
   "license": "Apache-2.0",
@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@babel/runtime-corejs2": "7.0.0",
-    "@tanker/crypto": "1.8.1-alpha16",
-    "@tanker/datastore-base": "1.8.1-alpha16",
-    "@tanker/datastore-pouchdb-memory": "1.8.1-alpha16",
+    "@tanker/crypto": "1.8.1-alpha17",
+    "@tanker/datastore-base": "1.8.1-alpha17",
+    "@tanker/datastore-pouchdb-memory": "1.8.1-alpha17",
     "array-find": "^1.0.0",
     "array.chunk": "^1.1.0",
     "async-mutex": "^0.1.2",

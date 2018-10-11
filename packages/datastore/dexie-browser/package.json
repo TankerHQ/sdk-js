@@ -1,13 +1,13 @@
 {
   "name": "@tanker/datastore-dexie-browser",
-  "version": "1.8.1-alpha16",
+  "version": "1.8.1-alpha17",
   "license": "Apache-2.0",
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
     "dexie": "^2.0.4",
-    "@tanker/crypto": "1.8.1-alpha16"
+    "@tanker/crypto": "1.8.1-alpha17"
   },
   "devDependencies": {
     "@tanker/datastore-tests": "0.0.1"
