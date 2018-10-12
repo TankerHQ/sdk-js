@@ -91,4 +91,4 @@ mirror:
     - /\Av[0-9.]+\z/   # public release tags only
     - master
   script:
-    - python3 -m pipenv run python ci/mirror.py --ref ${CI_COMMIT_REF_NAME}
+    - python3 -m pipenv run python ci/mirror.py
