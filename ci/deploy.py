@@ -67,7 +67,7 @@ def deploy_sdk(env, git_tag):
     ]
 
     for config in configs:
-        ci.yarn_build(config["build"], env)
+        ci.yarn_build(delivery=config["build",] env=env)
         for package_name in config["publish"]:
           publish_npm_package(package_name, version)
 
