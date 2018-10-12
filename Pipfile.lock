@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "dbddc7e3ad666477c13d0df791b68e6b1e77921a5497b377a47b6f39a3e7549c"
+            "sha256": "526a9c67f4f06f4c088f2af907887340c02988eee96b456efe645fb40be8efeb"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -51,7 +51,7 @@
         "ci": {
             "editable": true,
             "git": "ssh://git@10.100.0.1/Tanker/ci.git",
-            "ref": "9f3d1907d620df6e3c6b963a9daf62660ff8581c"
+            "ref": "c33d1c2b7d86f404ee71c42d1285941919ab0fb2"
         },
         "colorama": {
             "hashes": [
@@ -62,9 +62,9 @@
         },
         "conan": {
             "hashes": [
-                "sha256:1f6eb0eca174f0c4a8ff165f114a8bd713258ae3474019610b2c916e9ec3674a"
+                "sha256:e783857d8c4573220e24bf01d195415bfe9c1d132d8cb753315c488b863e7e66"
             ],
-            "version": "==1.8.0"
+            "version": "==1.8.2"
         },
         "deprecation": {
             "hashes": [
@@ -268,11 +268,11 @@
         },
         "python-cli-ui": {
             "hashes": [
-                "sha256:97840df8c5c59326c85a2f60feb0ef10ecd402709634d2399e5a45ee034e24b1",
-                "sha256:9b395b10e7b5eb4698202b0f2d1ae97769b92d5e03f105fb6c935c07e7c38e1d"
+                "sha256:8177fcd959ce899208ff548519c37e3afd7574f2f273675682e1c7f67ad69e01",
+                "sha256:feccc56153c652e46aa7e27841a24985490e824ed253627efd3f96c3fd3b408e"
             ],
             "index": "pypi",
-            "version": "==0.7.1"
+            "version": "==0.7.2"
         },
         "python-gitlab": {
             "hashes": [
@@ -326,11 +326,11 @@
         },
         "tbump": {
             "hashes": [
-                "sha256:58486857bbd04ff319a0420a73a0605a3941cb885dba8c7c6dfca4f4e243ff7f",
-                "sha256:882c7c9dfb52041ab3ed5b0deda2070fdb6ee68d6771c12f94fae7fcb8e11d57"
+                "sha256:9ed0b8edf27fd3a08074fd26c2b2205c7d8049028fb8045761d96e4598dd1cf7",
+                "sha256:b799cc85332b9eef8e3d43e34974fb84149971dc43f36eafafb0b95bbeb8efca"
             ],
             "index": "pypi",
-            "version": "==5.0.0"
+            "version": "==5.0.1"
         },
         "toml": {
             "hashes": [

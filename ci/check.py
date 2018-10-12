@@ -125,7 +125,9 @@ def run_functional_tests(*, env, runner, nightly):
     workspace = Path("~/work").expanduser()
     repo = "sdk-tests"
     src = Path.abspath(Path(__file__)).parent
-    ci.prepare_sources(workspace=workspace, repos=["sdk-js", repo], src=src)
+    ci.prepare_sources(
+        workspace=workspace, repos=["sdk-js", repo], src=src, clean=False,
+        submodule=False)
     cwd = workspace / repo
     sdk_js = workspace / "sdk-js"
     ci.install_deps(cwd=sdk_js)

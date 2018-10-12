@@ -14,6 +14,6 @@ tbump = ">= 5.0.0"
 websockets = "*"
 psutil = "*"
 pipenv = "==2018.05.18"
-ci = {git = "ssh://git@10.100.0.1/Tanker/ci.git", editable = true, ref = "9f3d1907d620df6e3c6b963a9daf62660ff8581c"}
+ci = {git = "ssh://git@10.100.0.1/Tanker/ci.git", editable = true, ref = "c33d1c2b7d86f404ee71c42d1285941919ab0fb2"}
 # for dev you can use the local repo
 #ci = {editable = true, path = "./../ci"}
