@@ -1,2 +1,2 @@
 // @flow
-export const TANKER_SDK_VERSION = '1.8.1-alpha16';
+export const TANKER_SDK_VERSION = '0.0.1';

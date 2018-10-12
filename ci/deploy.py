@@ -1,7 +1,8 @@
 import argparse
 
-import path
+from path import Path
 import re
+import tbump
 import tbump.config
 
 import ci
@@ -10,7 +11,7 @@ import utils
 
 def get_package_path(package_name):
     m = re.match(r"^@tanker/(datastore-)?(.*)$", package_name)
-    p = path.Path("packages")
+    p = Path("packages")
     if m[1]:
       p = p.joinpath("datastore")
     return p.joinpath(m[2]).joinpath("dist")
@@ -27,7 +28,7 @@ def version_to_npm_tag(version):
 def version_from_git_tag(git_tag):
     prefix = "v"
     assert git_tag.startswith(prefix), "tag should start with %s" % prefix
-    tbump_cfg = tbump.config.parse(path.Path("tbump.toml"))
+    tbump_cfg = tbump.config.parse(Path("tbump.toml"))
     regex = tbump_cfg.version_regex
     version = git_tag[len(prefix):]
     match = regex.match(version)
@@ -41,8 +42,11 @@ def publish_npm_package(package_name, version):
     ci.run("npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path)
 
 
+
 def deploy_sdk(env, git_tag):
     version = version_from_git_tag(git_tag)
+
+    tbump.bump_files(version)
 
     # Publish packages in order so that dependencies don't break during deploy
     configs = [
@@ -63,7 +67,7 @@ def deploy_sdk(env, git_tag):
     ]
 
     for config in configs:
-        ci.yarn_build(config["build"], env)
+        ci.yarn_build(delivery=config["build"], env=env)
         for package_name in config["publish"]:
           publish_npm_package(package_name, version)
 
