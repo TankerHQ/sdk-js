@@ -337,6 +337,22 @@ describe('Tanker #open', () => {
           .to.be.rejectedWith(InvalidArgument);
       });
     });
+
+    describe('registerUnlock type check', () => {
+      it('should throw on on invalid password type', async () => {
+        await tanker.open(userId, userToken);
+        // $FlowIKnow
+        await expect(tanker.registerUnlock({ password: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
+        // $FlowIKnow
+        await expect(tanker.registerUnlock({ password: 12 })).to.be.rejectedWith(InvalidArgument);
+      });
+
+      it('should throw on on invalid email type', async () => {
+        await tanker.open(userId, userToken);
+        // $FlowIKnow
+        await expect(tanker.registerUnlock({ email: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
+      });
+    });
   });
 
   describe('with serverToken', () => {
