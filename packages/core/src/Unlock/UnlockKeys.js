@@ -49,6 +49,7 @@ export class UnlockKeys {
       privateSigKey: this._keyStore.privateSignatureKey
     });
     await this._client.updateUnlockKey(msg);
+    this._updateUnlockMethods(password, email);
   }
 
   async setupUnlock(password: ?string, email: ?string): Promise<void> {
@@ -64,6 +65,23 @@ export class UnlockKeys {
     });
     await this._client.sendBlock(block);
     await this._client.createUnlockKey(msg);
+    this._updateUnlockMethods(password, email);
+  }
+
+  _updateUnlockMethods(password: ?string, email: ?string): void {
+    if (password && !this._sessionData.unlockMethods.some((m) => m.type === 'password')) {
+      this._sessionData.unlockMethods.push({ type: 'password' });
+    }
+    if (email && !this._sessionData.unlockMethods.some((m) => m.type === 'email')) {
+      this._sessionData.unlockMethods.push({ type: 'email' });
+    }
+  }
+
+  async registerUnlock(password: ?string, email: ?string): Promise<void> {
+    if (this._sessionData.unlockMethods.length === 0) {
+      return this.setupUnlock(password, email);
+    } else
+      return this.updateUnlock(password, email);
   }
 
   acceptDevice = async (validationCode: b64string): Promise<void> => {

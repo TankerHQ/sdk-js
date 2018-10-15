@@ -11,7 +11,6 @@ import { createUserTokenFromSecret } from './TestSessionTokens';
 import { InvalidArgument, InvalidUserToken, InvalidSessionStatus } from '../errors';
 import { DEVICE_TYPE } from '../Unlock/unlock';
 
-
 describe('Tanker', () => {
   const trustchainKeyPair = tcrypto.makeSignKeyPair();
   const trustchainId = random(tcrypto.HASH_SIZE);
@@ -189,6 +188,20 @@ describe('Tanker', () => {
           // $FlowIKnow
           await expect(tanker.updateUnlock({ password: 'password', email: 'email', unlockKey: new Uint8Array(12) }))
             .to.be.rejectedWith(InvalidArgument);
+        });
+      });
+
+      describe('registerUnlock type check', () => {
+        it('should throw on on invalid password type', async () => {
+          // $FlowIKnow
+          await expect(tanker.registerUnlock({ password: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
+          // $FlowIKnow
+          await expect(tanker.registerUnlock({ password: 12 })).to.be.rejectedWith(InvalidArgument);
+        });
+
+        it('should throw on on invalid email type', async () => {
+          // $FlowIKnow
+          await expect(tanker.registerUnlock({ email: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
         });
       });
     });

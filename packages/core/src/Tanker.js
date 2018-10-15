@@ -304,13 +304,13 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('update unlock options', 'should at least use one option', { email, password, unlockKey });
     }
     if (email && typeof email !== 'string') {
-      throw new InvalidArgument('setup unlock options', 'email should be a string', email);
+      throw new InvalidArgument('update unlock options', 'email should be a string', email);
     }
     if (password && typeof password !== 'string') {
-      throw new InvalidArgument('setup unlock options', 'password should be a string', password);
+      throw new InvalidArgument('update unlock options', 'password should be a string', password);
     }
     if (unlockKey && typeof unlockKey !== 'string') {
-      throw new InvalidArgument('setup unlock options', 'unlock key should be a base64 string', unlockKey);
+      throw new InvalidArgument('update unlock options', 'unlock key should be a base64 string', unlockKey);
     }
     return this._session.unlockKeys.updateUnlock(password, email, unlockKey);
   }
@@ -327,6 +327,20 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('setup unlock options', 'password should be a string', password);
     }
     return this._session.unlockKeys.setupUnlock(password, email);
+  }
+
+  async registerUnlock({ password, email }: SetupUnlockParams): Promise<void> {
+    this.assert(this.OPEN, 'register an unlock method');
+    if (!password && !email) {
+      throw new InvalidArgument('register unlock options', 'should at least use one option', { email, password });
+    }
+    if (email && typeof email !== 'string') {
+      throw new InvalidArgument('register unlock options', 'email should be a string', email);
+    }
+    if (password && typeof password !== 'string') {
+      throw new InvalidArgument('register unlock options', 'password should be a string', password);
+    }
+    return this._session.unlockKeys.registerUnlock(password, email);
   }
 
   async unlockCurrentDevice(value: UnlockDeviceParams): Promise<void> {
