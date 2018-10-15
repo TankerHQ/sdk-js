@@ -116,12 +116,13 @@ export default class GroupStore {
     this._ds = null;
   }
 
-  async updateLastGroupBlock(args: { groupId: Uint8Array, currentLastGroupBlock: Uint8Array }) {
+  async updateLastGroupBlock(args: { groupId: Uint8Array, currentLastGroupBlock: Uint8Array, currentLastGroupIndex: number }) {
     const record = await this._findDbGroup(args.groupId);
     if (!record)
       throw new Error(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
 
     record.lastGroupBlock = utils.toBase64(args.currentLastGroupBlock);
+    record.index = args.currentLastGroupIndex;
     await this._ds.put(GROUPS_TABLE, record);
   }
 

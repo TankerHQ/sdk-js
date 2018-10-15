@@ -143,10 +143,12 @@ describe('GroupStore', () => {
     await groupStore.putExternal(group);
 
     const newBlockHash = makeBuffer('new hash', tcrypto.HASH_SIZE);
-    await groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash });
+    const newBlockIndex = 1337;
+    await groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex });
 
     const got = await groupStore.findExternal({ groupId: group.groupId });
     expect(got.lastGroupBlock).to.deep.equal(newBlockHash);
+    expect(got.index).to.deep.equal(newBlockIndex);
   });
 
   it('can update the last group block of a full group', async () => {
@@ -154,9 +156,11 @@ describe('GroupStore', () => {
     await groupStore.put(group);
 
     const newBlockHash = makeBuffer('new hash', tcrypto.HASH_SIZE);
-    await groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash });
+    const newBlockIndex = 1337;
+    await groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex });
 
     const got = await groupStore.findFull({ groupId: group.groupId });
     expect(got.lastGroupBlock).to.deep.equal(newBlockHash);
+    expect(got.index).to.deep.equal(newBlockIndex);
   });
 });

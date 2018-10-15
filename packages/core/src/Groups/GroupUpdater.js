@@ -67,7 +67,7 @@ export default class GroupUpdater {
     if (!previousGroup)
       throw new Error(`Assertion error: can't find group ${utils.toBase64(userGroupAddition.group_id)}`);
 
-    await this._groupStore.updateLastGroupBlock({ groupId: userGroupAddition.group_id, currentLastGroupBlock: entry.hash });
+    await this._groupStore.updateLastGroupBlock({ groupId: userGroupAddition.group_id, currentLastGroupBlock: entry.hash, currentLastGroupIndex: entry.index });
 
     const myKeys = findMyKeys(userGroupAddition.encrypted_group_private_encryption_keys_for_users, this._keystore);
     if (!myKeys)
