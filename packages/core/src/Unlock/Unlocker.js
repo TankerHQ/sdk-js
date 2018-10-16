@@ -3,7 +3,7 @@
 import { utils } from '@tanker/crypto';
 
 import { createUnlockKeyRequest, createDeviceFromUnlockKey, extractUnlockKey, type UnlockKey, } from './unlock';
-import { InvalidUnlockPassword, InvalidUnlockKey, InvalidUnlockVerificationCode } from '../errors';
+import { InvalidUnlockPassword, InvalidUnlockKey, InvalidUnlockVerificationCode, MaxVerificationAttemptsReached } from '../errors';
 
 import { Client } from '../Network/Client';
 import { type Block } from '../Blocks/Block';
@@ -41,6 +41,8 @@ export class Unlocker {
           }
         } else if (e.error.status === 404) {
           throw new InvalidUnlockKey(e);
+        } else if (e.error.status === 429) {
+          throw new MaxVerificationAttemptsReached(e);
         }
       }
       throw e;
