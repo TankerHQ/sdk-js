@@ -9,6 +9,7 @@ type ErrorNature = (
   'invalid_user_token' |
   'invalid_unlock_key' |
   'invalid_unlock_password' |
+  'max_verification_attempts_reached' |
   'invalid_session_status' |
   'invalid_argument' |
   'invalid_device_validation_code' |
@@ -101,6 +102,16 @@ export class InvalidUnlockVerificationCode extends TankerError {
 
   constructor(e: Error) {
     super('invalid_unlock_verification_code');
+
+    this.next = e;
+  }
+}
+
+export class MaxVerificationAttemptsReached extends TankerError {
+  next: Error;
+
+  constructor(e: Error) {
+    super('max_verification_attempts_reached');
 
     this.next = e;
   }
