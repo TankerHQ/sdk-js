@@ -33,7 +33,7 @@ import {
   NATURE_KIND,
 } from '../Blocks/payloads';
 
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
@@ -179,14 +179,14 @@ describe('payload test vectors', () => {
 
     const deviceCreation = {
       last_reset: new Uint8Array(32),
-      ephemeral_public_signature_key: makeBuffer('eph pub key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      user_id: makeBuffer('user id', tcrypto.HASH_SIZE),
-      delegation_signature: makeBuffer('delegation sig', tcrypto.SIGNATURE_SIZE),
-      public_signature_key: makeBuffer('public signature key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      public_encryption_key: makeBuffer('public enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      ephemeral_public_signature_key: makeUint8Array('eph pub key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      user_id: makeUint8Array('user id', tcrypto.HASH_SIZE),
+      delegation_signature: makeUint8Array('delegation sig', tcrypto.SIGNATURE_SIZE),
+      public_signature_key: makeUint8Array('public signature key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      public_encryption_key: makeUint8Array('public enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
       user_key_pair: {
-        public_encryption_key: makeBuffer('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeBuffer('user enc key', tcrypto.SEALED_KEY_SIZE),
+        public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       is_server_device: false,
@@ -226,9 +226,9 @@ describe('payload test vectors', () => {
 
   it('correctly deserializes a KeyPublishV2 test vector', async () => {
     const keyPublish = {
-      recipient: makeBuffer('recipient user', tcrypto.HASH_SIZE),
-      resourceId: makeBuffer('resource mac', tcrypto.MAC_SIZE),
-      key: makeBuffer('encrypted key...', tcrypto.SEALED_KEY_SIZE),
+      recipient: makeUint8Array('recipient user', tcrypto.HASH_SIZE),
+      resourceId: makeUint8Array('resource mac', tcrypto.MAC_SIZE),
+      key: makeUint8Array('encrypted key...', tcrypto.SEALED_KEY_SIZE),
     };
 
     const payload = new Uint8Array([
@@ -247,9 +247,9 @@ describe('payload test vectors', () => {
 
   it('correctly deserializes a KeyPublish to usert est vector', async () => {
     const keyPublish = {
-      recipient: makeBuffer('recipient group', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-      resourceId: makeBuffer('resource mac', tcrypto.MAC_SIZE),
-      key: makeBuffer('encrypted key...', tcrypto.SEALED_KEY_SIZE),
+      recipient: makeUint8Array('recipient group', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      resourceId: makeUint8Array('resource mac', tcrypto.MAC_SIZE),
+      key: makeUint8Array('encrypted key...', tcrypto.SEALED_KEY_SIZE),
     };
 
     const payload = new Uint8Array([
@@ -333,19 +333,19 @@ describe('payload test vectors', () => {
 
   it('correctly deserializes a UserGroupCreation test vector', async () => {
     const userGroupCreation = {
-      public_signature_key: makeBuffer('pub sig key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      public_encryption_key: makeBuffer('pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-      encrypted_group_private_signature_key: makeBuffer('encrypted priv sig key', tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE),
+      public_signature_key: makeUint8Array('pub sig key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      public_encryption_key: makeUint8Array('pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      encrypted_group_private_signature_key: makeUint8Array('encrypted priv sig key', tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE),
       encrypted_group_private_encryption_keys_for_users: [
         {
-          public_user_encryption_key: makeBuffer('pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeBuffer('encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          public_user_encryption_key: makeUint8Array('pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
         },
         {
-          public_user_encryption_key: makeBuffer('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeBuffer('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          public_user_encryption_key: makeUint8Array('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
         }],
-      self_signature: makeBuffer('self signature', tcrypto.SIGNATURE_SIZE),
+      self_signature: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 
     const payload = new Uint8Array([
@@ -413,18 +413,18 @@ describe('payload test vectors', () => {
 
   it('correctly deserializes a UserGroupAddition test vector', async () => {
     const userGroupAdd = {
-      group_id: makeBuffer('group id', tcrypto.HASH_SIZE),
-      previous_group_block: makeBuffer('prev group block', tcrypto.HASH_SIZE),
+      group_id: makeUint8Array('group id', tcrypto.HASH_SIZE),
+      previous_group_block: makeUint8Array('prev group block', tcrypto.HASH_SIZE),
       encrypted_group_private_encryption_keys_for_users: [
         {
-          public_user_encryption_key: makeBuffer('pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeBuffer('encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          public_user_encryption_key: makeUint8Array('pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
         },
         {
-          public_user_encryption_key: makeBuffer('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeBuffer('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          public_user_encryption_key: makeUint8Array('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
         }],
-      self_signature_with_current_key: makeBuffer('self signature', tcrypto.SIGNATURE_SIZE),
+      self_signature_with_current_key: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 
     const payload = new Uint8Array([
@@ -520,8 +520,8 @@ describe('payloads', () => {
       public_signature_key: signatureKeys.publicKey,
       public_encryption_key: encryptionKeys.publicKey,
       user_key_pair: {
-        public_encryption_key: makeBuffer('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeBuffer('user enc priv key', tcrypto.SEALED_KEY_SIZE),
+        public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc priv key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       is_server_device: false,
@@ -627,8 +627,8 @@ describe('payloads', () => {
       public_signature_key: signatureKeys.publicKey,
       public_encryption_key: encryptionKeys.publicKey,
       user_key_pair: {
-        public_encryption_key: makeBuffer('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeBuffer('user enc priv key', tcrypto.SEALED_KEY_SIZE),
+        public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc priv key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       is_server_device: false,

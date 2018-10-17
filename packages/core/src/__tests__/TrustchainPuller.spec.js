@@ -4,7 +4,7 @@ import { expect } from './chai';
 
 import TrustchainPuller from '../Trustchain/TrustchainPuller';
 
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 
 function makeMockClient() {
   return {
@@ -31,8 +31,9 @@ describe('TrustchainPuller', () => {
   beforeEach(() => {
     mockClient = makeMockClient();
     mockTrustchainStore = makeMockTrustchainStore();
+    const mockUserId = new Uint8Array(0);
     // $FlowExpectedError
-    tp = new TrustchainPuller(mockClient, new Uint8Array(0), mockTrustchainStore);
+    tp = new TrustchainPuller(mockClient, mockUserId, mockTrustchainStore);
   });
 
   describe('client events', () => {
@@ -96,17 +97,17 @@ describe('TrustchainPuller', () => {
     it('should execute catchUps serially, not concurrently', async () => {
       await Promise.all([
         tp.scheduleCatchUp(),
-        tp.scheduleCatchUp([makeBuffer('2', 1)]) // Using an extra user to force a second pull
+        tp.scheduleCatchUp([makeUint8Array('2', 1)]) // Using an extra user to force a second pull
       ]);
 
       expect(calls).to.be.equal(2);
     });
 
     it('should buffer extra users and pull them all', async () => {
-      const userId1 = makeBuffer('1', 1);
-      const userId2 = makeBuffer('2', 1);
-      const userId3 = makeBuffer('3', 1);
-      const userId4 = makeBuffer('4', 1);
+      const userId1 = makeUint8Array('1', 1);
+      const userId2 = makeUint8Array('2', 1);
+      const userId3 = makeUint8Array('3', 1);
+      const userId4 = makeUint8Array('4', 1);
 
       await Promise.all([
         tp.scheduleCatchUp(),

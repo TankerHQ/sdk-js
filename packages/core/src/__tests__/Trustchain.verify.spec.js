@@ -20,7 +20,7 @@ import {
   type UserGroupAdditionRecord, serializeUserGroupAddition,
 } from '../Blocks/payloads';
 import { DEVICE_TYPE } from '../Unlock/unlock';
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 
 type EntryBlockSignParam = {
   entry: UnverifiedEntry,
@@ -688,8 +688,8 @@ describe('TrustchainVerifier', () => {
       await builder.groupStore.putExternal({
         groupId: payload.public_signature_key,
         publicSignatureKey: payload.public_signature_key,
-        publicEncryptionKey: makeBuffer('wrong encryption key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encryptedPrivateSignatureKey: makeBuffer('priv sig', tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE),
+        publicEncryptionKey: makeUint8Array('wrong encryption key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        encryptedPrivateSignatureKey: makeUint8Array('priv sig', tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE),
         lastGroupBlock: group.entry.hash,
         index: group.entry.index,
       });

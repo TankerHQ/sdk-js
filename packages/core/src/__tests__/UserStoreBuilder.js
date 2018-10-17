@@ -8,7 +8,7 @@ import UserStore from '../Users/UserStore';
 import Generator, { makeGenerator } from './Generator';
 import { type UnverifiedEntry } from '../Blocks/entries';
 import { type VerifiedDeviceCreation } from '../UnverifiedStore/UserUnverifiedStore';
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 
 export async function makeMemoryDataStore(): Promise<DataStore<*>> {
   const schemas = mergeSchemas(UserStore.schemas);
@@ -38,7 +38,7 @@ export default class UserStoreBuilder {
   static async open() {
     const { generator } = await makeGenerator();
     const dataStore = await makeMemoryDataStore();
-    const userStore = await UserStore.open(dataStore, makeBuffer('userID', 32), ({}: any));
+    const userStore = await UserStore.open(dataStore, makeUint8Array('userID', 32), ({}: any));
 
 
     return new UserStoreBuilder(userStore, generator);

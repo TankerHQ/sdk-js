@@ -1,17 +1,17 @@
 // @flow
 
 import { tcrypto, utils } from '@tanker/crypto';
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 import { expect } from './chai';
 
 import { entryToDbEntry, dbEntryToEntry, type UnverifiedEntry } from '../Blocks/entries';
 import { NATURE } from '../Blocks/payloads';
 
 describe('entryToDbEntry', () => {
-  const author = makeBuffer('fake author', tcrypto.HASH_SIZE);
-  const hash = makeBuffer('fake hash', tcrypto.HASH_SIZE);
-  const signature = makeBuffer('fake signature', tcrypto.HASH_SIZE);
-  const key = makeBuffer('fake pub key', tcrypto.HASH_SIZE);
+  const author = makeUint8Array('fake author', tcrypto.HASH_SIZE);
+  const hash = makeUint8Array('fake hash', tcrypto.HASH_SIZE);
+  const signature = makeUint8Array('fake signature', tcrypto.HASH_SIZE);
+  const key = makeUint8Array('fake pub key', tcrypto.HASH_SIZE);
 
 
   const simpleEntry: UnverifiedEntry = {

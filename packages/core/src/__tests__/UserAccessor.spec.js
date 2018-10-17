@@ -6,7 +6,7 @@ import { expect } from './chai';
 import { makeUserStoreBuilder } from './UserStoreBuilder';
 import UserAccessor from '../Users/UserAccessor';
 import { RecipientsNotFound } from '../errors';
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 
 import Trustchain from '../Trustchain/Trustchain';
 
@@ -20,7 +20,7 @@ class StubTrustchain {
 
 async function makeTestUsers({ onUpdateUserStore } = {}) {
   const stubTrustchain = new StubTrustchain();
-  const me = makeBuffer('fake author', 32);
+  const me = makeUint8Array('fake author', 32);
 
   const { builder, generator, userStore } = await makeUserStoreBuilder();
   stubTrustchain._trustchainStore._trustchainId = generator.trustchainId; // eslint-disable-line no-underscore-dangle
