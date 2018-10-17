@@ -11,7 +11,7 @@ import { makeBuffer } from './utils';
 import Trustchain from '../Trustchain/Trustchain';
 
 class StubTrustchain {
-  forceSync = () => null;
+  sync = () => null;
   updateUserStore = () => null;
   _trustchainStore = {
     _trustchainId: null,
@@ -29,7 +29,7 @@ async function makeTestUsers({ onUpdateUserStore } = {}) {
     stubTrustchain.updateUserStore = onUpdateUserStore({ builder, generator, userStore });
 
   const stubs = {
-    forceSync: sinon.stub(stubTrustchain, 'forceSync'),
+    sync: sinon.stub(stubTrustchain, 'sync'),
     updateUserStore: sinon.stub(stubTrustchain, 'updateUserStore'),
   };
 
@@ -65,7 +65,7 @@ describe('Users', () => {
 
       await users.findUser({ hashedUserId: hashedBobId });
 
-      expect(stubs.forceSync.withArgs([hashedBobId]).calledOnce).to.be.true;
+      expect(stubs.sync.withArgs([hashedBobId]).calledOnce).to.be.true;
       expect(stubs.updateUserStore.withArgs([hashedBobId]).calledOnce).to.be.true;
     });
 
@@ -92,7 +92,7 @@ describe('Users', () => {
 
       await users.findUsers({ hashedUserIds: [merlin.entry.user_id, hashedBobId, hashedAliceId] });
 
-      expect(stubs.forceSync.withArgs([merlin.entry.user_id, hashedBobId, hashedAliceId]).calledOnce).to.be.true;
+      expect(stubs.sync.withArgs([merlin.entry.user_id, hashedBobId, hashedAliceId]).calledOnce).to.be.true;
       expect(stubs.updateUserStore.withArgs([merlin.entry.user_id, hashedBobId, hashedAliceId]).calledOnce).to.be.true;
     });
 

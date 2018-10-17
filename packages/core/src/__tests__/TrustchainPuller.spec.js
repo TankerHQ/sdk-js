@@ -4,6 +4,8 @@ import { expect } from './chai';
 
 import TrustchainPuller from '../Trustchain/TrustchainPuller';
 
+import { makeBuffer } from './utils';
+
 function makeMockClient() {
   return {
     _callbacks: { blockAvailable: [], started: [], invalid: [] },
@@ -30,7 +32,7 @@ describe('TrustchainPuller', () => {
     mockClient = makeMockClient();
     mockTrustchainStore = makeMockTrustchainStore();
     // $FlowExpectedError
-    tp = new TrustchainPuller(mockClient, mockTrustchainStore);
+    tp = new TrustchainPuller(mockClient, new Uint8Array(0), mockTrustchainStore);
   });
 
   describe('client events', () => {
@@ -53,23 +55,26 @@ describe('TrustchainPuller', () => {
   describe('catchUp scheduling and execution', () => {
     let calls;
     let running;
+    let extraUsersPulled;
 
     beforeEach(() => {
       calls = 0;
       running = false;
-
+      extraUsersPulled = [];
       // Mocking _catchUp for test purposes:
       //   - raise an exception if parallel runs detected
       //   - "run" for 100ms
       //   - counts the number of calls
-      tp._catchUp = () => { // eslint-disable-line no-underscore-dangle
+      tp._catchUp = (extraUsers: ?Array<Uint8Array>) => { // eslint-disable-line no-underscore-dangle
         if (running) {
           expect.fail(true, false, 'a catchUp should not run if a previous one is still running');
         }
 
+        if (extraUsers) {
+          extraUsersPulled.push(...extraUsers);
+        }
         calls += 1;
         running = true;
-
         return new Promise(resolve => setTimeout(() => {
           running = false;
           resolve();
@@ -77,27 +82,42 @@ describe('TrustchainPuller', () => {
       };
     });
 
-    it('should ignore a second catchUp if first one not started yet', async () => {
+    it('should merge catchUps if previous ones not started yet', async () => {
       await Promise.all([
-        tp.scheduleCatchUp([]),
-        tp.scheduleCatchUp([]) // should be ignored
+        tp.scheduleCatchUp(), // catchUp starts immediately
+        tp.scheduleCatchUp(), // catchUp queued
+        tp.scheduleCatchUp(), // catchUp merged with queued one
+        tp.scheduleCatchUp(), // catchUp merged with queued one
       ]);
 
-      expect(calls).to.be.equal(1);
+      expect(calls).to.be.equal(2);
     });
 
     it('should execute catchUps serially, not concurrently', async () => {
       await Promise.all([
-        tp.scheduleCatchUp([]),
-        // Trick to wait for the first catchUp to start, so the second
-        // one is scheduled
-        (async () => {
-          await new Promise(resolve => setTimeout(resolve, 0));
-          return tp.scheduleCatchUp([]);
-        })()
+        tp.scheduleCatchUp(),
+        tp.scheduleCatchUp([makeBuffer('2', 1)]) // Using an extra user to force a second pull
       ]);
 
       expect(calls).to.be.equal(2);
+    });
+
+    it('should buffer extra users and pull them all', async () => {
+      const userId1 = makeBuffer('1', 1);
+      const userId2 = makeBuffer('2', 1);
+      const userId3 = makeBuffer('3', 1);
+      const userId4 = makeBuffer('4', 1);
+
+      await Promise.all([
+        tp.scheduleCatchUp(),
+        tp.scheduleCatchUp([userId1]),
+        tp.scheduleCatchUp([userId2]),
+        tp.scheduleCatchUp([userId3]),
+        tp.scheduleCatchUp([userId4]),
+      ]);
+
+      expect(calls).to.be.equal(2);
+      expect(extraUsersPulled.length).to.equal(4);
     });
   });
 });
