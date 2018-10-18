@@ -4,7 +4,7 @@ import { tcrypto, createUserSecretBinary, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 
 import KeySafe from '../Session/KeySafe';
 import Keystore from '../Session/Keystore';
@@ -142,7 +142,7 @@ describe('Keystore', () => {
     beforeEach(async () => {
       const secret = createUserSecretBinary('trustchainid', 'user-id');
       keyStore = await Keystore.open(datastore, secret);
-      deviceId = makeBuffer('deviceID', 32);
+      deviceId = makeUint8Array('deviceID', 32);
     });
 
     it('saves our device ID', async () => {
@@ -182,7 +182,7 @@ describe('Keystore', () => {
           private_keys: [],
         };
 
-        await keyStore.processDeviceRevocationUserKeys(makeBuffer('otherdeviceID', 32), revocationUserKeys);
+        await keyStore.processDeviceRevocationUserKeys(makeUint8Array('otherdeviceID', 32), revocationUserKeys);
         expect(keyStore.userKeys).to.deep.equal([]);
 
         latestKeyPair = newKeyPair;

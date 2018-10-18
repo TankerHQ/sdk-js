@@ -155,7 +155,7 @@ export default class Encryptor implements EncryptorInterface {
     const resourceId = getResourceId(cipher);
     let key = await this._findResourceKey(resourceId);
     if (!key) {
-      await this._trustchain.forceSync([], []);
+      await this._trustchain.sync();
       key = await this._findResourceKey(resourceId);
     }
     if (!key) {

@@ -2,16 +2,16 @@
 import { tcrypto, utils, generichash, aead } from '@tanker/crypto';
 
 import { expect } from './chai';
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 
 import { getSignData, ghostDeviceToUnlockKey, createUnlockKeyMessage } from '../Unlock/unlock';
 
 describe('unlock', () => {
   it('can convert a ghost device to unlock key', async () => {
     const ghostDevice = {
-      deviceId: makeBuffer('devid', tcrypto.HASH_SIZE),
-      privateSignatureKey: makeBuffer('sigkey', tcrypto.SIGNATURE_PRIVATE_KEY_SIZE),
-      privateEncryptionKey: makeBuffer('enckey', tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
+      deviceId: makeUint8Array('devid', tcrypto.HASH_SIZE),
+      privateSignatureKey: makeUint8Array('sigkey', tcrypto.SIGNATURE_PRIVATE_KEY_SIZE),
+      privateEncryptionKey: makeUint8Array('enckey', tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
     };
 
     const unlockKey = await ghostDeviceToUnlockKey(ghostDevice);
@@ -19,13 +19,13 @@ describe('unlock', () => {
   });
 
   it('can generate an unlock key message', async () => {
-    const trustchainId = utils.toBase64(makeBuffer('trustchainid', tcrypto.HASH_SIZE));
+    const trustchainId = utils.toBase64(makeUint8Array('trustchainid', tcrypto.HASH_SIZE));
     const unlockKey = 'my unlock key';
     const email = 'john@doe.com';
     const password = 'pass';
-    const userSecret = makeBuffer('usersecret', tcrypto.SYMMETRIC_KEY_SIZE);
+    const userSecret = makeUint8Array('usersecret', tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const senderDeviceId = utils.toBase64(makeBuffer('my device id', tcrypto.HASH_SIZE));
+    const senderDeviceId = utils.toBase64(makeUint8Array('my device id', tcrypto.HASH_SIZE));
     const senderSignatureKeyPair = tcrypto.makeSignKeyPair();
 
     const unlockKeyMessage = await createUnlockKeyMessage({

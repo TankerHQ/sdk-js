@@ -94,6 +94,6 @@ export class Session {
 
     const revokeDeviceBlock = this.blockGenerator.revokeDevice(revocationRecord);
     await this._client.sendBlock(revokeDeviceBlock);
-    await this._trustchain.forceSync([], []);
+    await this._trustchain.sync();
   }
 }

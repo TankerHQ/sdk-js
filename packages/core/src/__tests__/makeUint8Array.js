@@ -1,8 +1,8 @@
 // @flow
 
-export function makeBuffer(data: string, size: number): Uint8Array {
+export default function makeUint8Array(data: string, size: number): Uint8Array {
   if (data.length > size)
-    throw new Error('makeBuffer of incorrect size');
+    throw new Error('makeUint8Array of incorrect size');
 
   const buf = new Uint8Array(size);
   for (let i = 0; i < data.length; i++) {

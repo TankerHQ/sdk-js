@@ -96,7 +96,7 @@ export default class GroupManager {
   }
 
   async _fetchGroups(groupIds: Array<Uint8Array>) {
-    await this._trustchain.forceSync([], groupIds);
+    await this._trustchain.sync([], groupIds);
     await this._trustchain.updateGroupStore(groupIds);
   }
 

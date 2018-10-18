@@ -5,7 +5,7 @@ import { tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
 import { generatorUserToUser } from './Generator';
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 import { concatArrays } from '../Blocks/Serialize';
 import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
 import { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
@@ -15,17 +15,17 @@ import { blockToEntry } from '../Trustchain/TrustchainStore';
 describe('BlockGenerator', () => {
   it('order stuff correctly for UserGroupCreation sign data', async () => {
     const record = {
-      public_signature_key: makeBuffer('pub sign key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      public_encryption_key: makeBuffer('pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-      encrypted_group_private_signature_key: makeBuffer('enc group priv stuff', tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE),
+      public_signature_key: makeUint8Array('pub sign key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      public_encryption_key: makeUint8Array('pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      encrypted_group_private_signature_key: makeUint8Array('enc group priv stuff', tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE),
       encrypted_group_private_encryption_keys_for_users: [
         {
-          public_user_encryption_key: makeBuffer('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeBuffer('enc group priv enc key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          public_user_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('enc group priv enc key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
         },
         {
-          public_user_encryption_key: makeBuffer('user pub enc key 2', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeBuffer('enc group priv enc key 2', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          public_user_encryption_key: makeUint8Array('user pub enc key 2', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('enc group priv enc key 2', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
         }],
       self_signature: new Uint8Array(0),
     };
@@ -79,16 +79,16 @@ describe('BlockGenerator', () => {
 
   it('order stuff correctly for UserGroupAddition sign data', async () => {
     const record = {
-      group_id: makeBuffer('group id', tcrypto.HASH_SIZE),
-      previous_group_block: makeBuffer('prev group block', tcrypto.HASH_SIZE),
+      group_id: makeUint8Array('group id', tcrypto.HASH_SIZE),
+      previous_group_block: makeUint8Array('prev group block', tcrypto.HASH_SIZE),
       encrypted_group_private_encryption_keys_for_users: [
         {
-          public_user_encryption_key: makeBuffer('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeBuffer('enc group priv enc key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          public_user_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('enc group priv enc key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
         },
         {
-          public_user_encryption_key: makeBuffer('user pub enc key 2', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeBuffer('enc group priv enc key 2', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          public_user_encryption_key: makeUint8Array('user pub enc key 2', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('enc group priv enc key 2', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
         }],
       self_signature_with_current_key: new Uint8Array(0),
     };
@@ -120,7 +120,7 @@ describe('BlockGenerator', () => {
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
     const groupEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
-    const previousGroupBlock = makeBuffer('prev block', tcrypto.HASH_SIZE);
+    const previousGroupBlock = makeUint8Array('prev block', tcrypto.HASH_SIZE);
 
     const block = blockGenerator.addToUserGroup(
       groupSignatureKeyPair.publicKey,

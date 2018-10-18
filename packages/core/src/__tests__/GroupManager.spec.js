@@ -9,7 +9,7 @@ import GroupManager from '../Groups/Manager';
 import { InvalidGroupSize } from '../errors';
 
 class StubTrustchain {
-  forceSync = () => null;
+  sync = () => null;
   updateGroupStore = () => null;
 }
 
@@ -22,7 +22,7 @@ async function makeTestUsers({ onUpdateGroupStore } = {}) {
     trustchainAPI.updateGroupStore = onUpdateGroupStore({ builder, generator, groupStore });
 
   const stubs = {
-    forceSync: sinon.stub(trustchainAPI, 'forceSync'),
+    sync: sinon.stub(trustchainAPI, 'sync'),
     updateGroupStore: sinon.stub(trustchainAPI, 'updateGroupStore'),
   };
 
@@ -58,7 +58,7 @@ describe('GroupManager', () => {
     const aliceGroup = await builder.newUserGroupCreation(alice.device, ['alice']);
     await groupMan.findGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
 
-    expect(stubs.forceSync.notCalled).to.be.true;
+    expect(stubs.sync.notCalled).to.be.true;
     expect(stubs.updateGroupStore.notCalled).to.be.true;
   });
 
@@ -68,7 +68,7 @@ describe('GroupManager', () => {
 
     await groupMan.findGroups([groupId]);
 
-    expect(stubs.forceSync.withArgs([], [groupId]).calledOnce).to.be.true;
+    expect(stubs.sync.withArgs([], [groupId]).calledOnce).to.be.true;
     expect(stubs.updateGroupStore.withArgs([groupId]).calledOnce).to.be.true;
   });
 

@@ -1,7 +1,6 @@
 // @flow
-import { Mutex } from 'async-mutex';
 import { utils } from '@tanker/crypto';
-import uniqBy from 'lodash.uniqby';
+import uniq from 'lodash.uniqby';
 
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
@@ -21,9 +20,8 @@ import {
 } from '../Blocks/payloads';
 
 export default class TrustchainPuller {
-  _catchUpScheduled: ?Promise<void> = null;
+  _catchUpInProgress: ?Promise<void> = null;
   _caughtUpOnce: PromiseWrapper<void>;
-  newBlockLock: Mutex = new Mutex();
   _trustchainStore: TrustchainStore;
   _trustchainVerifier: TrustchainVerifier;
   _unverifiedStore: UnverifiedStore;
@@ -32,7 +30,9 @@ export default class TrustchainPuller {
   events: Array<number>;
   _extraUsers: Array<Uint8Array>;
   _extraGroups: Array<Uint8Array>;
+  _donePromises: Array<PromiseWrapper<void>>;
   _userId: Uint8Array;
+  _closing: bool = false;
 
   constructor(client: Client, userId: Uint8Array, trustchainStore: TrustchainStore, unverifiedStore: UnverifiedStore, trustchainVerifier: TrustchainVerifier) {
     this._caughtUpOnce = new PromiseWrapper();
@@ -44,75 +44,77 @@ export default class TrustchainPuller {
     this._unverifiedStore = unverifiedStore;
     this.synchronizedClient = new SynchronizedEventEmitter(client);
     this.events = [
-      this.synchronizedClient.on('blockAvailable', () => this.scheduleCatchUp([])),
+      this.synchronizedClient.on('blockAvailable', () => this.scheduleCatchUp()),
     ];
 
     this._extraUsers = [];
     this._extraGroups = [];
+    this._donePromises = [];
   }
 
   async close() {
+    this._closing = true;
     const { events } = this;
     this.events = [];
     for (const id of events)
       await this.synchronizedClient.removeListener(id);
 
-    this._caughtUpOnce = new PromiseWrapper();
-    // $FlowIKnow
-    this._trustchainStore = null;
+    if (this._catchUpInProgress) {
+      await this._catchUpInProgress;
+    }
+
+    this._donePromises.forEach(d => d.resolve());
   }
 
   // It's safe to await this promise which never rejects
   succeededOnce = async (): Promise<void> => this._caughtUpOnce.promise;
 
-  // Enqueue a new catchUp
-  //
-  // catchUp are mutexed so that we avoid doing two catchUps at the same time.
-  // Without the lock, we can start a catchUp with index 10, then we receive a
-  // new block event and we start another catchUp with index 10. With the lock,
-  // the second catchUp will wait for the first to finish, so it will start with
-  // index 11.
-  //
-  // About what happens here: if this method is called, a catch up is scheduled,
-  // unless a catchup is already in the queue (this._catchUpScheduled != nil).
-  // We keep an _extraUsers array (and _extraGroups) where we store all the
-  // users that need to be explicitely pulled. When the catch up starts, we
-  // reset this list and we do our catch up.
-  //
-  // WARNING: we must be extra careful about suspension points here, we rely on
-  // the single-thread-ity of JS to be race-free. There must be no await in
-  // scheduleCatchUp, and no await before we finish dealing with the _extraUsers
-  // and _catchUpScheduled in the mutexed lambda. I have put that in non-async
-  // contexts to make sure you don't await there.
   scheduleCatchUp = (extraUsers?: Array<Uint8Array>, extraGroups?: Array<Uint8Array>): Promise<void> => {
+    if (this._closing) {
+      return Promise.resolve(undefined);
+    }
+
+    // enqueue requirements
     if (extraUsers)
       this._extraUsers = this._extraUsers.concat(extraUsers);
     if (extraGroups)
       this._extraGroups = this._extraGroups.concat(extraGroups);
 
-    if (!this._catchUpScheduled) {
-      this._catchUpScheduled = this.newBlockLock.runExclusive(() => {
-        const currentExtraUsers = uniqBy(this._extraUsers, x => utils.toBase64(x));
-        const currentExtraGroups = uniqBy(this._extraGroups, x => utils.toBase64(x));
+    // handle to warn me when my requirements are met
+    const done = new PromiseWrapper();
+    this._donePromises.push(done);
 
-        this._extraUsers = [];
-        this._extraGroups = [];
+    // no catch up, schedule one
+    if (!this._catchUpInProgress) {
+      const currentExtraUsers = uniq(this._extraUsers.map(utils.toBase64));
+      const currentExtraGroups = uniq(this._extraGroups.map(utils.toBase64));
+      const donePromises = this._donePromises;
 
-        this._catchUpScheduled = null;
-        return this._catchUp(currentExtraUsers, currentExtraGroups);
+      this._extraUsers = [];
+      this._extraGroups = [];
+      this._donePromises = [];
+
+      this._catchUpInProgress = this._catchUp(currentExtraUsers, currentExtraGroups).then(() => {
+        this._catchUpInProgress = null;
+
+        donePromises.forEach(d => d.resolve());
+
+        if (this._donePromises.length > 0) {
+          this.scheduleCatchUp();
+        }
       });
     }
 
-    return this._catchUpScheduled;
+    return done.promise;
   }
 
-  _catchUp = async (extraUsers?: Array<Uint8Array>, extraGroups?: Array<Uint8Array>): Promise<void> => {
+  _catchUp = async (extraUsers: Array<Uint8Array>, extraGroups: Array<Uint8Array>): Promise<void> => {
     try {
       const blocks = await this.client._send('get blocks 2', { // eslint-disable-line no-underscore-dangle
         index: this._trustchainStore.lastBlockIndex,
         trustchain_id: utils.toBase64(this.client.trustchainId),
-        extra_users: extraUsers ? extraUsers.map(utils.toBase64) : [],
-        extra_groups: extraGroups ? extraGroups.map(utils.toBase64) : []
+        extra_users: extraUsers,
+        extra_groups: extraGroups
       });
 
       const entries = blocks.map(b => blockToEntry(unserializeBlock(utils.fromBase64(b))));
@@ -120,7 +122,6 @@ export default class TrustchainPuller {
     } catch (e) {
       console.error('CatchUp failed: ', e);
     }
-
     if (!this._caughtUpOnce.settled) {
       this._caughtUpOnce.resolve();
     }

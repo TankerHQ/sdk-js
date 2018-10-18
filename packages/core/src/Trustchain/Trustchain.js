@@ -48,7 +48,7 @@ export default class Trustchain {
     return this._trustchainPuller.succeededOnce();
   }
 
-  async forceSync(userIds: Array<Uint8Array>, groupIds: Array<Uint8Array>): Promise<void> {
+  async sync(userIds?: Array<Uint8Array>, groupIds?: Array<Uint8Array>): Promise<void> {
     return this._trustchainPuller.scheduleCatchUp(userIds, groupIds);
   }
 

@@ -8,7 +8,7 @@ import GroupStore from '../Groups/GroupStore';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
-import { makeBuffer } from './utils';
+import makeUint8Array from './makeUint8Array';
 
 async function makeMemoryGroupStore(): Promise<GroupStore> {
   const schemas = mergeSchemas(GroupStore.schemas);
@@ -20,16 +20,16 @@ async function makeMemoryGroupStore(): Promise<GroupStore> {
 
 function makeFullGroup(): Group {
   return {
-    groupId: makeBuffer('group id', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    groupId: makeUint8Array('group id', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
     signatureKeyPair: {
-      publicKey: makeBuffer('pub sig key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      privateKey: makeBuffer('priv sig key', tcrypto.SIGNATURE_PRIVATE_KEY_SIZE),
+      publicKey: makeUint8Array('pub sig key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      privateKey: makeUint8Array('priv sig key', tcrypto.SIGNATURE_PRIVATE_KEY_SIZE),
     },
     encryptionKeyPair: {
-      publicKey: makeBuffer('pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-      privateKey: makeBuffer('priv enc key', tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
+      publicKey: makeUint8Array('pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      privateKey: makeUint8Array('priv enc key', tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
     },
-    lastGroupBlock: makeBuffer('last group block', tcrypto.HASH_SIZE),
+    lastGroupBlock: makeUint8Array('last group block', tcrypto.HASH_SIZE),
     index: 18,
   };
 }
@@ -142,7 +142,7 @@ describe('GroupStore', () => {
     const group = makeExternalGroup();
     await groupStore.putExternal(group);
 
-    const newBlockHash = makeBuffer('new hash', tcrypto.HASH_SIZE);
+    const newBlockHash = makeUint8Array('new hash', tcrypto.HASH_SIZE);
     const newBlockIndex = 1337;
     await groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex });
 
@@ -155,7 +155,7 @@ describe('GroupStore', () => {
     const group = makeFullGroup();
     await groupStore.put(group);
 
-    const newBlockHash = makeBuffer('new hash', tcrypto.HASH_SIZE);
+    const newBlockHash = makeUint8Array('new hash', tcrypto.HASH_SIZE);
     const newBlockIndex = 1337;
     await groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex });
 
