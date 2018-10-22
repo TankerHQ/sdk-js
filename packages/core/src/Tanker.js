@@ -298,18 +298,31 @@ export class Tanker extends EventEmitter {
     return this._session.unlockKeys.acceptDevice(validationCode);
   }
 
-  async updateUnlock({ password, email }: RegisterUnlockParams): Promise<void> {
-    return this.registerUnlock({ password, email });
+  async updateUnlock(params: RegisterUnlockParams): Promise<void> {
+    console.warn('The updateUnlock() method has been deprecated, please use registerUnlock() instead.');
+    return this.registerUnlock(params);
   }
 
-  async setupUnlock({ password, email }: RegisterUnlockParams): Promise<void> {
-    return this.registerUnlock({ password, email });
+  async setupUnlock(params: RegisterUnlockParams): Promise<void> {
+    console.warn('The setupUnlock() method has been deprecated, please use registerUnlock() instead.');
+    return this.registerUnlock(params);
   }
 
-  async registerUnlock({ password, email }: RegisterUnlockParams): Promise<void> {
+  async registerUnlock(params: RegisterUnlockParams): Promise<void> {
     this.assert(this.OPEN, 'register an unlock method');
-    if (!password && !email) {
-      throw new InvalidArgument('register unlock options', 'should at least use one option', { email, password });
+
+    if (typeof params !== 'object' || params === null) {
+      throw new InvalidArgument('register unlock options', 'should be an object', params);
+    }
+
+    if (Object.keys(params).some(k => k !== 'email' && k !== 'password')) {
+      throw new InvalidArgument('register unlock options', 'should only contain an email and/or a password', params);
+    }
+
+    const { password, email } = params;
+
+    if (!email && !password) {
+      throw new InvalidArgument('register unlock options', 'should at least contain an email or a password key', params);
     }
     if (email && typeof email !== 'string') {
       throw new InvalidArgument('register unlock options', 'email should be a string', email);
