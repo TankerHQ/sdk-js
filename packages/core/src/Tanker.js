@@ -8,7 +8,7 @@ import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as egetResourceId } from './Resource/ResourceManager';
 
 import { InvalidSessionStatus, InvalidArgument } from './errors';
-import { type UnlockKey, type UnlockDeviceParams, type SetupUnlockParams, DEVICE_TYPE } from './Unlock/unlock';
+import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEVICE_TYPE } from './Unlock/unlock';
 
 import { extractUserData } from './Tokens/SessionTypes';
 import { Session } from './Session/Session';
@@ -298,38 +298,15 @@ export class Tanker extends EventEmitter {
     return this._session.unlockKeys.acceptDevice(validationCode);
   }
 
-  async updateUnlock({ password, email, unlockKey }: {| ...SetupUnlockParams, unlockKey?: UnlockKey |}): Promise<void> {
-    this.assert(this.OPEN, 'update an unlock key');
-    if (!password && !email && !unlockKey) {
-      throw new InvalidArgument('update unlock options', 'should at least use one option', { email, password, unlockKey });
-    }
-    if (email && typeof email !== 'string') {
-      throw new InvalidArgument('update unlock options', 'email should be a string', email);
-    }
-    if (password && typeof password !== 'string') {
-      throw new InvalidArgument('update unlock options', 'password should be a string', password);
-    }
-    if (unlockKey && typeof unlockKey !== 'string') {
-      throw new InvalidArgument('update unlock options', 'unlock key should be a base64 string', unlockKey);
-    }
-    return this._session.unlockKeys.updateUnlock(password, email, unlockKey);
+  async updateUnlock({ password, email }: RegisterUnlockParams): Promise<void> {
+    return this.registerUnlock({ password, email });
   }
 
-  async setupUnlock({ password, email }: SetupUnlockParams): Promise<void> {
-    this.assert(this.OPEN, 'setup an unlock key');
-    if (!password && !email) {
-      throw new InvalidArgument('setup unlock options', 'should at least use one option', { email, password });
-    }
-    if (email && typeof email !== 'string') {
-      throw new InvalidArgument('setup unlock options', 'email should be a string', email);
-    }
-    if (password && typeof password !== 'string') {
-      throw new InvalidArgument('setup unlock options', 'password should be a string', password);
-    }
-    return this._session.unlockKeys.setupUnlock(password, email);
+  async setupUnlock({ password, email }: RegisterUnlockParams): Promise<void> {
+    return this.registerUnlock({ password, email });
   }
 
-  async registerUnlock({ password, email }: SetupUnlockParams): Promise<void> {
+  async registerUnlock({ password, email }: RegisterUnlockParams): Promise<void> {
     this.assert(this.OPEN, 'register an unlock method');
     if (!password && !email) {
       throw new InvalidArgument('register unlock options', 'should at least use one option', { email, password });

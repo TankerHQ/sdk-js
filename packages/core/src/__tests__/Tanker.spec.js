@@ -198,11 +198,6 @@ describe('Tanker', () => {
           // $FlowIKnow
           await expect(tanker.registerUnlock({ password: 12 })).to.be.rejectedWith(InvalidArgument);
         });
-
-        it('should throw on on invalid email type', async () => {
-          // $FlowIKnow
-          await expect(tanker.registerUnlock({ email: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
-        });
       });
     });
 

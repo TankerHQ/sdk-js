@@ -64,7 +64,7 @@ export type UnlockKeyMessage = {
   signature: Uint8Array,
 }
 
-export type SetupUnlockParams = {|
+export type RegisterUnlockParams = {|
   password?: string,
   email?: string,
 |}

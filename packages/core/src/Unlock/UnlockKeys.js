@@ -2,7 +2,7 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 
-import { generateUnlockKeyRegistration, createUnlockKeyMessage, createDeviceFromValidationCode, type UnlockKey, } from './unlock';
+import { generateUnlockKeyRegistration, createUnlockKeyMessage, createDeviceFromValidationCode, type UnlockKey, type UnlockKeyMessage } from './unlock';
 
 import { Client } from '../Network/Client';
 import KeyStore from '../Session/Keystore';
@@ -38,37 +38,17 @@ export class UnlockKeys {
     return reg.unlockKey;
   }
 
-  updateUnlock = async (password: ?string, email: ?string, unlockKey: ?string): Promise<void> => {
-    const msg = await createUnlockKeyMessage({
-      trustchainId: utils.toBase64(this._sessionData.trustchainId),
-      deviceId: utils.toBase64(this._sessionData.deviceId),
-      password,
-      email,
-      unlockKey,
-      userSecret: this._sessionData.userSecret,
-      privateSigKey: this._keyStore.privateSignatureKey
-    });
-    await this._client.updateUnlockKey(msg);
-    this._updateUnlockMethods(password, email);
-  }
+  _createUnlockKeyMessage = (password: ?string, email: ?string, unlockKey: ?string): Promise<UnlockKeyMessage> => createUnlockKeyMessage({
+    trustchainId: utils.toBase64(this._sessionData.trustchainId),
+    deviceId: utils.toBase64(this._sessionData.deviceId),
+    email,
+    password,
+    unlockKey,
+    userSecret: this._sessionData.userSecret,
+    privateSigKey: this._keyStore.privateSignatureKey
+  });
 
-  async setupUnlock(password: ?string, email: ?string): Promise<void> {
-    const { block, unlockKey } = this._generateUnlockKey();
-    const msg = await createUnlockKeyMessage({
-      trustchainId: utils.toBase64(this._sessionData.trustchainId),
-      deviceId: utils.toBase64(this._sessionData.deviceId),
-      email,
-      password,
-      unlockKey,
-      userSecret: this._sessionData.userSecret,
-      privateSigKey: this._keyStore.privateSignatureKey
-    });
-    await this._client.sendBlock(block);
-    await this._client.createUnlockKey(msg);
-    this._updateUnlockMethods(password, email);
-  }
-
-  _updateUnlockMethods(password: ?string, email: ?string): void {
+  _updateSessionData = (password: ?string, email: ?string): void => {
     if (password && !this._sessionData.unlockMethods.some((m) => m.type === 'password')) {
       this._sessionData.unlockMethods.push({ type: 'password' });
     }
@@ -77,11 +57,25 @@ export class UnlockKeys {
     }
   }
 
-  async registerUnlock(password: ?string, email: ?string): Promise<void> {
-    if (this._sessionData.unlockMethods.length === 0) {
-      return this.setupUnlock(password, email);
-    } else
-      return this.updateUnlock(password, email);
+  registerUnlock = async (password: ?string, email: ?string): Promise<void> => {
+    const isFirstRegister = this._sessionData.unlockMethods.length === 0;
+    let block = null;
+    let unlockKey = null;
+
+    if (isFirstRegister) {
+      ({ block, unlockKey } = this._generateUnlockKey());
+    }
+
+    const msg = await this._createUnlockKeyMessage(password, email, unlockKey);
+
+    if (block) {
+      await this._client.sendBlock(block);
+      await this._client.createUnlockKey(msg);
+    } else {
+      await this._client.updateUnlockKey(msg);
+    }
+
+    this._updateSessionData(password, email);
   }
 
   acceptDevice = async (validationCode: b64string): Promise<void> => {
