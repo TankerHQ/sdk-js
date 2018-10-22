@@ -329,13 +329,6 @@ describe('Tanker #open', () => {
         // $FlowIKnow
         await expect(tanker.updateUnlock({ email: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
       });
-
-      it('should throw on on invalid unlockKey type', async () => {
-        await tanker.open(userId, userToken);
-        // $FlowIKnow
-        await expect(tanker.updateUnlock({ password: 'password', email: 'email', unlockKey: new Uint8Array(12) }))
-          .to.be.rejectedWith(InvalidArgument);
-      });
     });
 
     describe('registerUnlock type check', () => {
