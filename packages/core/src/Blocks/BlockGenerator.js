@@ -6,19 +6,16 @@ import {
   serializeUserDeviceV1,
   serializeUserDeviceV3,
   serializeKeyPublish,
-  serializeKeyPublishToUser,
-  serializeKeyPublishToUserGroup,
   serializeDeviceRevocationV2,
   serializeUserGroupCreation,
   serializeUserGroupAddition,
   preferredNature,
   type UserDeviceRecord,
   type KeyPublishRecord,
-  type KeyPublishToUserRecord,
-  type KeyPublishToUserGroupRecord,
   type DeviceRevocationRecord,
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
+  type NatureKind,
   NATURE,
   NATURE_KIND,
 } from './payloads';
@@ -118,44 +115,17 @@ export class BlockGenerator {
     return deviceBlock;
   }
 
-  keyPublishToUser(pKey: KeyPublishToUserRecord): Block {
+  makeKeyPublishBlock(record: KeyPublishRecord, nature: NatureKind): Block {
     const pKeyBlock = signBlock(
       {
         index: 0,
         trustchain_id: this.trustchainId,
-        nature: preferredNature(NATURE_KIND.key_publish_to_user),
+        nature: preferredNature(nature),
         author: this.deviceId,
-        payload: serializeKeyPublishToUser(pKey)
+        payload: serializeKeyPublish(record)
       },
       this.privateSignatureKey
     );
-
-    return pKeyBlock;
-  }
-
-  keyPublishToUserGroup(pKey: KeyPublishToUserGroupRecord): Block {
-    const pKeyBlock = signBlock(
-      {
-        index: 0,
-        trustchain_id: this.trustchainId,
-        nature: preferredNature(NATURE_KIND.key_publish_to_user_group),
-        author: this.deviceId,
-        payload: serializeKeyPublishToUserGroup(pKey)
-      },
-      this.privateSignatureKey
-    );
-
-    return pKeyBlock;
-  }
-
-  keyPublish(pKey: KeyPublishRecord): Block {
-    const pKeyBlock = signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.key_publish_to_device),
-      author: this.deviceId,
-      payload: serializeKeyPublish(pKey)
-    }, this.privateSignatureKey);
 
     return pKeyBlock;
   }

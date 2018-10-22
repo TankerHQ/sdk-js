@@ -5,8 +5,7 @@ import { random, tcrypto, aead, utils } from '@tanker/crypto';
 import { expect } from './chai';
 
 import { errors } from '../index';
-import { makeChunkEncryptor, getChunkKeys } from '../Encryption/ChunkEncryptor';
-import type { EncryptorInterface } from '../Encryption/Encryptor';
+import { makeChunkEncryptor, getChunkKeys, type EncryptorInterface } from '../DataProtection/ChunkEncryptor';
 import { concatArrays } from '../Blocks/Serialize';
 
 class FakeEncryptor implements EncryptorInterface {

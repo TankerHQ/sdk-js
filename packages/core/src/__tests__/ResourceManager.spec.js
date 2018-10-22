@@ -88,7 +88,7 @@ describe('ResourceManager', () => {
 
       trustchain.findKeyPublish = (arg) => arg;
       // $FlowExpectedError
-      manager.processKeyPublish = (arg) => arg;
+      manager.extractAndSaveResourceKey = (arg) => arg;
 
       const id = new Uint8Array([0]);
 
@@ -110,13 +110,13 @@ describe('ResourceManager', () => {
       const { keyDecryptor, manager } = makeManager();
       keyDecryptor.deviceReady = () => false;
 
-      expect(await manager.processKeyPublish(keyPublishEntry)).to.be.null;
+      expect(await manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.null;
     });
 
     it('extracts and saves resource key', async () => {
       const { resourceStore, manager } = makeManager();
 
-      expect(await manager.processKeyPublish(keyPublishEntry)).to.be.equal(keyPublishEntry.key);
+      expect(await manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.equal(keyPublishEntry.key);
       expect(resourceStore.saveResourceKey.calledOnce).to.be.true;
     });
 
@@ -126,16 +126,16 @@ describe('ResourceManager', () => {
         throw new Error('ignore this error');
       };
 
-      await expect(manager.processKeyPublish(keyPublishEntry)).to.be.rejectedWith(Error);
+      await expect(manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.rejectedWith(Error);
     });
 
-    it('throws when key exctraction failed', async () => {
+    it('throws when key extraction failed', async () => {
       const { keyDecryptor, manager } = makeManager();
       keyDecryptor.keyFromKeyPublish = () => {
         throw new Error('ignore this error');
       };
 
-      await expect(manager.processKeyPublish(keyPublishEntry)).to.be.rejectedWith(Error);
+      await expect(manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.rejectedWith(Error);
     });
   });
 });

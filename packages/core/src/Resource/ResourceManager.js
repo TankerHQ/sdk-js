@@ -58,7 +58,7 @@ export class ResourceManager {
       return key;
     const keyPublishEntry = await this._trustchain.findKeyPublish(resourceId);
     if (keyPublishEntry) {
-      const processedKey = await this.processKeyPublish(keyPublishEntry);
+      const processedKey = await this.extractAndSaveResourceKey(keyPublishEntry);
       if (processedKey) {
         return processedKey;
       }
@@ -69,7 +69,7 @@ export class ResourceManager {
     throw new ResourceNotFound(resourceId);
   }
 
-  async processKeyPublish(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
+  async extractAndSaveResourceKey(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
     // ignore this block, our device doesn't exist yet so there's no way this resourceKey publish is for us
     if (!this._keyDecryptor.deviceReady())
       return null;

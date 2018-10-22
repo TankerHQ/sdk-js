@@ -9,18 +9,18 @@ import BlockGenerator from '../Blocks/BlockGenerator';
 import type { Device, User } from '../Users/UserStore';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
+import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 import { serializeTrustchainCreation,
   serializeUserDeviceV1,
   serializeUserDeviceV3,
   serializeKeyPublish,
-  serializeKeyPublishToUser,
-  serializeKeyPublishToUserGroup,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
   preferredNature,
   type UserDeviceRecord,
+  type KeyPublishRecord,
   NATURE,
   NATURE_KIND,
   type Nature } from '../Blocks/payloads';
@@ -36,6 +36,13 @@ export type GeneratorUser = {
   id: string,
   userKeys?: tcrypto.SodiumKeyPair,
   devices: Array<GeneratorDevice>,
+}
+export function serializeKeyPublishToDevice(keyPublish: KeyPublishRecord): Uint8Array {
+  return concatArrays(
+    keyPublish.recipient,
+    keyPublish.resourceId,
+    encodeArrayLength(keyPublish.key), keyPublish.key
+  );
 }
 
 export function generatorDeviceToDevice(u: GeneratorDevice): Device {
@@ -301,7 +308,7 @@ class Generator {
       trustchain_id: this.trustchainId,
       nature: NATURE.key_publish_to_device,
       author: args.fromDevice.id,
-      payload: serializeKeyPublish(share)
+      payload: serializeKeyPublishToDevice(share)
     }, args.fromDevice.signKeys.privateKey);
     this.pushedBlocks.push(block);
     const entry = blockToEntry(block);
@@ -344,7 +351,7 @@ class Generator {
       trustchain_id: this.trustchainId,
       nature: NATURE.key_publish_to_user,
       author: args.fromDevice.id,
-      payload: serializeKeyPublishToUser(share)
+      payload: serializeKeyPublish(share)
     }, args.fromDevice.signKeys.privateKey);
     this.pushedBlocks.push(block);
     const entry = blockToEntry(block);
@@ -384,7 +391,7 @@ class Generator {
       trustchain_id: this.trustchainId,
       nature: NATURE.key_publish_to_user_group,
       author: args.fromDevice.id,
-      payload: serializeKeyPublishToUserGroup(share)
+      payload: serializeKeyPublish(share)
     }, args.fromDevice.signKeys.privateKey);
     this.pushedBlocks.push(block);
     const entry = blockToEntry(block);

@@ -11,10 +11,10 @@ import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/UserStore';
 import { type ExternalGroup } from '../Groups/types';
-import { flat } from '../internalUtils';
 import { NATURE_KIND, type NatureKind } from '../Blocks/payloads';
-import { decryptVersion } from './decrypt';
+import { decryptData } from './decrypt';
 import { encryptData } from './encrypt';
+import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
 
 export type KeyResourceId = {
   key: Uint8Array,
@@ -60,19 +60,25 @@ export default class DataProtector {
     keys: Array<Uint8Array>,
     nature: NatureKind
   ): Array<Block> {
-    return flat(keys.map(publicEncryptionKey => keyResourceIds.map(({ key, resourceId }) => {
-      const sharedKey = tcrypto.sealEncrypt(
-        key,
-        publicEncryptionKey,
-      );
+    const blocks: Array<Block> = [];
+    for (const publicEncryptionKey of keys) {
+      for (const { key, resourceId } of keyResourceIds) {
+        const sharedKey = tcrypto.sealEncrypt(
+          key,
+          publicEncryptionKey,
+        );
 
-      const payload = {
-        recipient: publicEncryptionKey,
-        resourceId,
-        key: sharedKey,
-      };
-      return this._blockGenerator.makeKeyPublishBlock(payload, nature);
-    })));
+        const payload = {
+          recipient: publicEncryptionKey,
+          resourceId,
+          key: sharedKey,
+        };
+        const block = this._blockGenerator.makeKeyPublishBlock(payload, nature);
+
+        blocks.push(block);
+      }
+    }
+    return blocks;
   }
 
   async _publishKeys(
@@ -148,7 +154,7 @@ export default class DataProtector {
     const resourceId = getResourceId(protectedData);
     const key = await this._resourceManager.findKeyFromResourceId(resourceId, true);
     try {
-      return await decryptVersion(key, protectedData);
+      return await decryptData(key, protectedData);
     } catch (e) {
       throw new DecryptFailed(e, resourceId);
     }
@@ -174,5 +180,13 @@ export default class DataProtector {
     }));
 
     return this._shareResources(keys, shareWith, false);
+  }
+
+  async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
+    const encryptor: EncryptorInterface = {
+      encryptData: (data, options) => this.encryptAndShareData(data, options),
+      decryptData: (encryptedData) => this.decryptData(encryptedData)
+    };
+    return makeChunkEncryptor(encryptor, seal);
   }
 }
