@@ -1,6 +1,6 @@
 {
   "name": "@tanker/crypto",
-  "version": "0.0.1",
+  "version": "1.8.2-alpha2",
   "description": "Cryptographic primitives used by the Tanker SDK",
   "main": "src/index.js",
   "module": "es.js",

@@ -1,15 +1,15 @@
 {
   "name": "@tanker/client-node",
-  "version": "0.0.1",
+  "version": "1.8.2-alpha2",
   "description": "Tanker client SDK for Node.js command line applications",
   "author": "Tanker Team",
   "license": "Apache-2.0",
   "main": "src/index.js",
   "dependencies": {
-    "@tanker/core": "0.0.1",
-    "@tanker/datastore-pouchdb-node": "0.0.1"
+    "@tanker/core": "1.8.2-alpha2",
+    "@tanker/datastore-pouchdb-node": "1.8.2-alpha2"
   },
   "devDependencies": {
-    "@tanker/datastore-pouchdb-memory": "0.0.1"
+    "@tanker/datastore-pouchdb-memory": "1.8.2-alpha2"
   }
 }
