@@ -10,7 +10,7 @@ export type SharedKeyRecord = {
   symmetricKey: Uint8Array,
 }
 
-export default class SharedKeystore {
+export default class ResourceStore {
   _ds: DataStore<*>;
   _userSecret: Uint8Array;
 
@@ -88,6 +88,6 @@ export default class SharedKeystore {
   }
 
   static async open(ds: DataStore<*>, userSecret: Uint8Array): Promise<any> {
-    return new SharedKeystore(ds, userSecret);
+    return new ResourceStore(ds, userSecret);
   }
 }

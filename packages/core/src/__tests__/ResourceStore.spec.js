@@ -4,9 +4,9 @@ import { random, createUserSecretBinary, tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
 
-import SharedKeystore from '../Encryption/SharedKeys';
+import SharedKeystore from '../Resource/ResourceStore';
 
-describe('SharedKeystore', () => {
+describe('ResourceStore', () => {
   let dbName;
   let userSecret;
   let sharedKeystoreConfig;
