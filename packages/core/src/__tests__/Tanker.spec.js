@@ -7,7 +7,7 @@ import { tcrypto, utils, random, obfuscateUserId, createUserSecretB64, type b64s
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './dataStoreConfig';
-import { makeRootBlock } from './Helpers';
+import { warnings, makeRootBlock } from './Helpers';
 
 import { Tanker, TankerStatus, getResourceId } from '..';
 import { CHALLENGE_PREFIX } from '../Session/ClientAuthenticator';
@@ -595,6 +595,9 @@ describe('Tanker', () => {
   });
 
   describe('deprecated getResourceId() util', () => {
+    before(() => warnings.silence(/deprecated/));
+    after(() => warnings.restore());
+
     it('should throw when given an invalid type', async () => {
       const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'str'];
       // $FlowExpectedError

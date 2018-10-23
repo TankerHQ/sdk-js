@@ -3,6 +3,7 @@
 import { random, tcrypto, aead, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
+import { warnings } from './Helpers';
 
 import { errors } from '../index';
 import { makeChunkEncryptor, getChunkKeys, type EncryptorInterface } from '../DataProtection/ChunkEncryptor';
@@ -226,6 +227,9 @@ describe('ChunkEncryptor', () => {
     });
 
     describe('Deprecated methods in 1.6.0', () => {
+      before(() => warnings.silence(/deprecated/));
+      after(() => warnings.restore());
+
       it('should throw when callin encryptReplace() with the wrong types', async () => {
         // $FlowExpectedError
         await Promise.all(notNumberTypes.map(fail => expect(chunkEncryptor.encryptReplace(fail, '')).to.be.rejectedWith(errors.InvalidArgument)));
@@ -250,6 +254,9 @@ describe('ChunkEncryptor', () => {
   });
 
   describe('Compat of deprecated methods in 1.6.0', () => {
+    before(() => warnings.silence(/(deprecated|changed) in 1\.6\.0/));
+    after(() => warnings.restore());
+
     it('should be possible to call deprecated encryptAppend()', async () => {
       const data = [
         await chunkEncryptor.encryptAppend(clearText),
