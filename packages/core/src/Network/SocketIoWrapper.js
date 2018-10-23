@@ -42,8 +42,7 @@ export default class SocketIoWrapper {
   runningRequests: Array<Request> = [];
 
   constructor({ socket, url }: CreationParam) {
-    const ourTransports = (typeof WebSocket !== 'undefined') ? ['websocket', 'polling'] : ['polling', 'websocket'];
-    this.socket = socket || new Socket(url, { transports: ourTransports, autoConnect: false });
+    this.socket = socket || new Socket(url, { transports: ['websocket', 'polling'], autoConnect: false });
     this.socket.on('error', e => logSocketError(e, 'error'));
     this.socket.on('connect_error', e => logSocketError(e, 'connect_error'));
     this.socket.on('disconnect', this.abortRequests);
