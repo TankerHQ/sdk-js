@@ -44,7 +44,7 @@ export default class TrustchainVerifier {
     this._groupUpdater = groupUpdater;
   }
 
-  async _verifyTrustchainCreationEntry(entry: UnverifiedEntry): Promise<void> {
+  _verifyTrustchainCreation(entry: UnverifiedEntry) {
     if (!isTrustchainCreation(entry.nature))
       throw new InvalidBlockError('invalid_nature', 'invalid nature for trustchain creation', { entry });
 
@@ -58,18 +58,7 @@ export default class TrustchainVerifier {
       throw new InvalidBlockError('invalid_root_block', 'the root block does not correspond to this trustchain', { entry, trustchainId: this._trustchainId });
   }
 
-  // This is only called at user creation, when the device's author is the trustchain
-  async _verifyUserCreationEntry(entry: UnverifiedDeviceCreation, user: ?User): Promise<void> {
-    if (!user || user.devices.length === 0)
-      return;
-
-    // If we're already verified, then it's not an error
-    const entryDeviceId = utils.toBase64(entry.hash);
-    if (!user.devices.some(device => device.deviceId === entryDeviceId))
-      throw new InvalidBlockError('forbidden', 'the user already has a device, this can\'t be the first device', { entry });
-  }
-
-  async _verifyDeviceCreationEntry(entry: UnverifiedDeviceCreation, authorUser: ?User, authorDevice: ?Device, authorKey: Uint8Array, user: ?User): Promise<void> {
+  _verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser: ?User, authorDevice: ?Device, authorKey: Uint8Array, user: ?User) {
     if (!utils.isNullArray(entry.last_reset))
       throw new InvalidBlockError('invalid_last_reset', 'last_reset is not null', { entry });
 
@@ -101,104 +90,103 @@ export default class TrustchainVerifier {
         throw new InvalidBlockError('invalid_author_type', 'device type mismatch', { entry, authorDevice });
       }
     } else {
-      await this._verifyUserCreationEntry(entry, user);
+      if (!user || user.devices.length === 0)
+        return;
+
+      // If we're already verified, then it's not an error
+      const entryDeviceId = utils.toBase64(entry.hash);
+      if (!user.devices.some(device => device.deviceId === entryDeviceId))
+        throw new InvalidBlockError('forbidden', 'the user already has a device, this can\'t be the first device', { entry });
     }
   }
 
-  async _verifyKeyPublishToDeviceEntry(entry: UnverifiedKeyPublish, authorEntry: Device): Promise<void> {
+  async _verifyKeyPublishToDevice(entry: UnverifiedKeyPublish, author: Device): Promise<void> {
     const recipient = await this._storage.userStore.findDevice({ hashedDeviceId: entry.recipient });
     if (!recipient)
-      throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid device', { entry, authorEntry });
+      throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid device', { entry, author });
     const devToUser = await this._storage.userStore.findDeviceToUser({ hashedDeviceId: entry.recipient });
     if (!devToUser)
-      throw new InvalidBlockError('invalid_recipient', 'could not find recipient device-to-user', { entry, authorEntry, recipient });
+      throw new InvalidBlockError('invalid_recipient', 'could not find recipient device-to-user', { entry, author, recipient });
     const user = await this._storage.userStore.findUser({ hashedUserId: utils.fromBase64(devToUser.userId) });
     if (!user)
-      throw new InvalidBlockError('invalid_recipient', 'could not find recipient user', { entry, authorEntry, recipient });
+      throw new InvalidBlockError('invalid_recipient', 'could not find recipient user', { entry, author, recipient });
     for (const userKey of user.userPublicKeys)
       if (userKey.index < entry.index)
-        throw new InvalidBlockError('version_mismatch', 'cannot send a key publish V1 to a user V3', { entry, authorEntry, recipient });
+        throw new InvalidBlockError('version_mismatch', 'cannot send a key publish V1 to a user V3', { entry, author, recipient });
   }
 
-  async _verifyKeyPublishToUserEntry(entry: UnverifiedKeyPublish, authorEntry: Device): Promise<void> {
+  async _verifyKeyPublishToUser(entry: UnverifiedKeyPublish, author: Device) {
     const recipient = await this._storage.userStore.findUserByUserPublicKey({ hashedUserPublicKey: entry.recipient });
     if (!recipient)
-      throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid user', { entry, authorEntry });
+      throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid user', { entry, author });
 
     const indexUserKey = find(recipient.userPublicKeys, userPublicKey => utils.equalArray(userPublicKey.userPublicKey, entry.recipient));
 
     if (!indexUserKey || indexUserKey.index > entry.index)
-      throw new InvalidBlockError('invalid_user_public_key', 'user public key has been superseeded', { entry, authorEntry });
+      throw new InvalidBlockError('invalid_user_public_key', 'user public key has been superseeded', { entry, author });
 
     const futureUserKey = find(recipient.userPublicKeys, userPublicKey => userPublicKey.index > indexUserKey.index);
 
     if (futureUserKey && entry.index > futureUserKey.index)
-      throw new InvalidBlockError('invalid_user_public_key', 'user public key has been superseeded', { entry, authorEntry });
+      throw new InvalidBlockError('invalid_user_public_key', 'user public key has been superseeded', { entry, author });
   }
 
-  async _verifyKeyPublishToUserGroupEntry(entry: UnverifiedKeyPublish, authorEntry: Device): Promise<void> {
-    const thenGroup = await this._storage.groupStore.findExternal({ groupPublicEncryptionKey: entry.recipient });
-    if (!thenGroup)
-      throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid group', { entry, authorEntry });
-
-    const curGroup = await this._storage.groupStore.findExternal({ groupId: thenGroup.groupId });
-    if (curGroup.index > thenGroup.index && curGroup.index < entry.index)
-      throw new InvalidBlockError('invalid_user_group_public_key', 'group public key has been superseeded', { entry, authorEntry });
+  async _verifyKeyPublishToUserGroup(entry: UnverifiedKeyPublish, author: Device) {
+    const group = await this._storage.groupStore.findExternal({ groupPublicEncryptionKey: entry.recipient });
+    if (!group)
+      throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid group', { entry, author });
   }
 
-  async _verifyKeyPublishEntry(entry: UnverifiedKeyPublish, authorEntry: Device): Promise<void> {
-    if (!isKeyPublishToDevice(entry.nature) && !isKeyPublishToUser(entry.nature) && !isKeyPublishToUserGroup(entry.nature))
-      throw new InvalidBlockError('invalid_nature', 'invalid nature for key publish', { entry });
-
-    if (!tcrypto.verifySignature(entry.hash, entry.signature, authorEntry.devicePublicSignatureKey))
-      throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, authorEntry });
+  async _verifyKeyPublish(entry: UnverifiedKeyPublish, author: Device) {
+    if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
+      throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
 
     if (isKeyPublishToDevice(entry.nature)) {
-      return this._verifyKeyPublishToDeviceEntry(entry, authorEntry);
+      return this._verifyKeyPublishToDevice(entry, author);
     } else if (isKeyPublishToUser(entry.nature)) {
-      return this._verifyKeyPublishToUserEntry(entry, authorEntry);
+      return this._verifyKeyPublishToUser(entry, author);
     } else if (isKeyPublishToUserGroup(entry.nature)) {
-      return this._verifyKeyPublishToUserGroupEntry(entry, authorEntry);
+      return this._verifyKeyPublishToUserGroup(entry, author);
     }
   }
 
-  async _verifyUserGroupCreationEntry(entry: UnverifiedUserGroupEntry, authorEntry: Device, existingGroup: ?ExternalGroup): Promise<VerifiedUserGroupEntry> {
+  _verifyUserGroupCreation(entry: UnverifiedUserGroupEntry, author: Device, existingGroup: ?ExternalGroup): VerifiedUserGroupEntry {
     const currentPayload: UserGroupCreationRecord = (entry: any);
 
-    if (!tcrypto.verifySignature(entry.hash, entry.signature, authorEntry.devicePublicSignatureKey))
-      throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, authorEntry });
+    if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
+      throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
 
     if (existingGroup && !utils.equalArray(existingGroup.publicEncryptionKey, currentPayload.public_encryption_key)) {
-      throw new InvalidBlockError('group_already_exists', 'a group with the same public signature key already exists', { entry, authorEntry });
+      throw new InvalidBlockError('group_already_exists', 'a group with the same public signature key already exists', { entry, author });
     }
 
     const selfSigBuffer = getUserGroupCreationBlockSignData(currentPayload);
     if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature, currentPayload.public_signature_key))
-      throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, authorEntry });
+      throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
 
     return (entry: VerifiedUserGroupEntry);
   }
 
-  async _verifyUserGroupAdditionEntry(entry: UnverifiedUserGroupEntry, authorEntry: Device, currentGroup: ?ExternalGroup): Promise<VerifiedUserGroupEntry> {
+  _verifyUserGroupAddition(entry: UnverifiedUserGroupEntry, author: Device, currentGroup: ?ExternalGroup): VerifiedUserGroupEntry {
     const currentPayload: UserGroupAdditionRecord = (entry: any);
 
-    if (!tcrypto.verifySignature(entry.hash, entry.signature, authorEntry.devicePublicSignatureKey))
-      throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, authorEntry });
+    if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
+      throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
 
     if (!currentGroup)
-      throw new InvalidBlockError('invalid_group_id', 'cannot find group id', { entry, authorEntry });
+      throw new InvalidBlockError('invalid_group_id', 'cannot find group id', { entry, author });
 
     if (!utils.equalArray(currentPayload.previous_group_block, currentGroup.lastGroupBlock))
-      throw new InvalidBlockError('invalid_previous_group_block', 'previous group block does not match for this group id', { entry, authorEntry, currentGroup });
+      throw new InvalidBlockError('invalid_previous_group_block', 'previous group block does not match for this group id', { entry, author, currentGroup });
 
     const selfSigBuffer = getUserGroupAdditionBlockSignData(currentPayload);
     if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentGroup.publicSignatureKey))
-      throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, authorEntry });
+      throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
 
     return (entry: VerifiedUserGroupEntry);
   }
 
-  async _verifyDeviceRevocationEntry(entry: UnverifiedDeviceRevocation, authorUserId: b64string, authorKey: Uint8Array, targetUser: ?User): Promise<void> {
+  _verifyDeviceRevocation(entry: UnverifiedDeviceRevocation, authorUserId: b64string, authorKey: Uint8Array, targetUser: ?User) {
     if (!tcrypto.verifySignature(entry.hash, entry.signature, authorKey))
       throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, authorKey });
 
@@ -252,11 +240,11 @@ export default class TrustchainVerifier {
 
     const foundAuthors = await this._storage.userStore.findDevices({ hashedDeviceIds: entries.map((e) => e.author) });
     return entries.reduce((result, entry) => {
-      const authorEntry = foundAuthors.get(utils.toBase64(entry.author));
-      if (!authorEntry || authorEntry.revokedAt < entry.index)
+      const author = foundAuthors.get(utils.toBase64(entry.author));
+      if (!author || author.revokedAt < entry.index)
         return result;
 
-      result.set(utils.toBase64(entry.hash), authorEntry); // eslint-disable-line no-param-reassign, bogus-lints-in-reduce
+      result.set(utils.toBase64(entry.hash), author); // eslint-disable-line no-param-reassign, bogus-lints-in-reduce
       return result;
     }, new Map());
   }
@@ -266,15 +254,15 @@ export default class TrustchainVerifier {
     const keyPublishesAuthors = await this._unlockedGetVerifiedAuthorsByHash(unverifiedKeyPublishes);
     for (const unverifiedKeyPublish of unverifiedKeyPublishes) {
       try {
-        const authorEntry = keyPublishesAuthors.get(utils.toBase64(unverifiedKeyPublish.hash));
-        if (!authorEntry)
+        const author = keyPublishesAuthors.get(utils.toBase64(unverifiedKeyPublish.hash));
+        if (!author)
           throw new InvalidBlockError('author_not_found', 'author not found', { unverifiedKeyPublish });
 
         if (unverifiedKeyPublish.nature === NATURE.key_publish_to_user_group) {
           await this._unlockedProcessUserGroupWithPublicEncryptionKey(unverifiedKeyPublish.recipient);
         }
 
-        await this._verifyKeyPublishEntry(unverifiedKeyPublish, authorEntry);
+        await this._verifyKeyPublish(unverifiedKeyPublish, author);
       } catch (e) {
         if (!(e instanceof InvalidBlockError)) {
           throw e;
@@ -303,75 +291,75 @@ export default class TrustchainVerifier {
   // that way we are sure we avoid races
 
   // throws on unknown_author, throws on rootblockAuthor.
-  async _getUnverifiedAuthorEntry(entryAuthor: Uint8Array): Promise<Entry | UnverifiedEntry> {
+  async _getUnverifiedauthor(entryAuthor: Uint8Array): Promise<Entry | UnverifiedEntry> {
     const res = await this._storage.trustchainStore.findMaybeVerifiedEntryByHash(entryAuthor);
     if (!res)
       throw new InvalidBlockError('unknown_author', 'can\'t find block author', { entryAuthor });
     return res;
   }
 
-  async _assertIsPossibleDeviceAuthor(entry: UnverifiedEntry, authorEntry: UnverifiedEntry) {
+  async _assertIsPossibleDeviceAuthor(entry: UnverifiedEntry, author: UnverifiedEntry) {
     const entryUserId = entry.user_id;
-    const authorEntryUserId = authorEntry.user_id;
-    if (isTrustchainCreation(authorEntry.nature))
+    const authorUserId = author.user_id;
+    if (isTrustchainCreation(author.nature))
       return;
-    if (!entryUserId || !authorEntryUserId) {
+    if (!entryUserId || !authorUserId) {
       throw new InvalidBlockError('forbidden', 'All devices of a user must have a user_id', { entry });
     }
-    if (!utils.equalArray(entryUserId, authorEntryUserId)) {
+    if (!utils.equalArray(entryUserId, authorUserId)) {
       throw new InvalidBlockError('forbidden', 'All devices of a user must be authored by the same user', { entry });
     }
   }
 
   // throws on invalid or revoked authors, return { null, null } on rootBlock.
-  async _unlockedGetVerifiedAuthor(entry: UnverifiedEntry, { doMissingVerifications }: {doMissingVerifications: bool} = {}): Promise<{authorEntry: Entry, authorKey: Uint8Array}> {
-    let authorEntry = await this._getUnverifiedAuthorEntry(entry.author);
+  async _unlockedGetVerifiedAuthor(entry: UnverifiedEntry, { doMissingVerifications }: {doMissingVerifications: bool} = {}): Promise<{author: Entry, authorKey: Uint8Array}> {
+    let author = await this._getUnverifiedauthor(entry.author);
 
-    if (!isTrustchainCreation(authorEntry.nature) && !isDeviceCreation(authorEntry.nature))
-      throw new InvalidBlockError('invalid_author_nature', 'author of device_creation block of incorrect nature', { entry, authorEntry });
+    if (!isTrustchainCreation(author.nature) && !isDeviceCreation(author.nature))
+      throw new InvalidBlockError('invalid_author_nature', 'author of device_creation block of incorrect nature', { entry, author });
 
-    if (!authorEntry.payload_verified) {
+    if (!author.payload_verified) {
       // this test is only needed to have clearer messages
       if (isDeviceCreation(entry.nature) || isDeviceRevocation(entry.nature)) {
-        await this._assertIsPossibleDeviceAuthor(entry, authorEntry);
+        await this._assertIsPossibleDeviceAuthor(entry, author);
       }
 
       if (!doMissingVerifications) {
         throw new Error('Assertion error: author should have been verified first');
       }
-      if (!authorEntry.user_id)
+      if (!author.user_id)
         throw new Error('Assertion error: invalid author block without user_id');
-      await this._unlockedProcessUserById(authorEntry.user_id);
-      authorEntry = await this._storage.trustchainStore.getVerifiedEntryByHash(authorEntry.hash);
+      await this._unlockedProcessUserById(author.user_id);
+      author = await this._storage.trustchainStore.getVerifiedEntryByHash(author.hash);
     }
-    const authorKey = (authorEntry.payload_verified: Object).public_signature_key;
+    const authorKey = (author.payload_verified: Object).public_signature_key;
 
-    const isAuthorRevoked = ((authorEntry.payload_verified: Object): UserDeviceRecord).revoked < entry.index;
-    if (isDeviceCreation(authorEntry.nature) && isAuthorRevoked) {
-      throw new InvalidBlockError('revoked_author_error', 'author of block has been revoked', { entry, authorEntry });
+    const isAuthorRevoked = ((author.payload_verified: Object): UserDeviceRecord).revoked < entry.index;
+    if (isDeviceCreation(author.nature) && isAuthorRevoked) {
+      throw new InvalidBlockError('revoked_author_error', 'author of block has been revoked', { entry, author });
     }
 
     return {
-      authorEntry,
+      author,
       authorKey,
     };
   }
 
   async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
     if (utils.equalArray(entry.author, this._trustchainId)) {
-      const rootBlock: Object = await this._getUnverifiedAuthorEntry(entry.author);
+      const rootBlock: Object = await this._getUnverifiedauthor(entry.author);
       const authorKey = rootBlock.payload_verified.public_signature_key;
-      await this._verifyDeviceCreationEntry(entry, null, null, authorKey, user);
+      await this._verifyDeviceCreation(entry, null, null, authorKey, user);
     } else {
       if (!user)
         throw new InvalidBlockError('unknown_author', 'can\'t find block author\'s user', { entry });
-      const authorEntry = find(user.devices, d => utils.equalArray(utils.fromBase64(d.deviceId), entry.author));
-      if (!authorEntry)
+      const author = find(user.devices, d => utils.equalArray(utils.fromBase64(d.deviceId), entry.author));
+      if (!author)
         throw new InvalidBlockError('unknown_author', 'can\'t find block author\'s device', { entry });
-      if (authorEntry.revokedAt < entry.index)
+      if (author.revokedAt < entry.index)
         throw new InvalidBlockError('revoked_author_error', 'device creaton author is revoked', { entry });
-      const authorKey = authorEntry.devicePublicSignatureKey;
-      await this._verifyDeviceCreationEntry(entry, user, authorEntry, authorKey, user);
+      const authorKey = author.devicePublicSignatureKey;
+      await this._verifyDeviceCreation(entry, user, author, authorKey, user);
     }
 
     return entry;
@@ -388,11 +376,11 @@ export default class TrustchainVerifier {
     const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === authorDeviceId);
     const authorDevice = authorUser.devices[deviceIndex];
 
-    await this._verifyDeviceRevocationEntry(entry, authorUserId, authorDevice.devicePublicSignatureKey, targetUser);
+    await this._verifyDeviceRevocation(entry, authorUserId, authorDevice.devicePublicSignatureKey, targetUser);
     return entry;
   }
 
-  async _unlockedVerifySingleUserEntry(user: ?User, entry: UnverifiedDeviceCreation | UnverifiedDeviceRevocation): Promise<VerifiedDeviceCreation | VerifiedDeviceRevocation> {
+  async _unlockedVerifySingleUser(user: ?User, entry: UnverifiedDeviceCreation | UnverifiedDeviceRevocation): Promise<VerifiedDeviceCreation | VerifiedDeviceRevocation> {
     switch (natureKind(entry.nature)) {
       case NATURE_KIND.device_creation: {
         // $FlowIKnow The type is checked by the switch
@@ -410,7 +398,7 @@ export default class TrustchainVerifier {
   }
 
   async _unlockedVerifyAndApplySingleUserEntry(user: ?User, entry: UnverifiedDeviceCreation | UnverifiedDeviceRevocation): Promise<VerifiedDeviceCreation | VerifiedDeviceRevocation> {
-    const verifiedEntry = await this._unlockedVerifySingleUserEntry(user, entry);
+    const verifiedEntry = await this._unlockedVerifySingleUser(user, entry);
     await this._storage.userStore.applyEntry(verifiedEntry);
     await this._storage.unverifiedStore.removeVerifiedUserEntries([verifiedEntry]);
     return verifiedEntry;
@@ -480,60 +468,60 @@ export default class TrustchainVerifier {
     let user = maybeUser;
     const unverifiedEntries = await this._storage.unverifiedStore.findUnverifiedUserEntries([userId], beforeIndex);
     for (const entry of unverifiedEntries) {
-      const verifiedEntry = await this._unlockedVerifySingleUserEntry(user, entry);
+      const verifiedEntry = await this._unlockedVerifySingleUser(user, entry);
       user = await this._storage.userStore.applyEntry(verifiedEntry);
     }
     await this._storage.unverifiedStore.removeVerifiedUserEntries(unverifiedEntries);
     return user;
   }
 
-  async _unlockedVerifySingleUserGroupEntry(entry: UnverifiedUserGroupEntry, authorEntry: Device): Promise<VerifiedUserGroupEntry> {
+  async _unlockedVerifySingleUserGroup(entry: UnverifiedUserGroupEntry, author: Device): Promise<VerifiedUserGroupEntry> {
     switch (natureKind(entry.nature)) {
       case NATURE_KIND.user_group_creation: {
         const groupId = (entry: any).public_signature_key;
         const group = await this._storage.groupStore.findExternal({ groupId });
-        return this._verifyUserGroupCreationEntry(entry, authorEntry, group);
+        return this._verifyUserGroupCreation(entry, author, group);
       }
       case NATURE_KIND.user_group_addition: {
         const groupId = (entry: any).group_id;
         const group = await this._storage.groupStore.findExternal({ groupId });
-        return this._verifyUserGroupAdditionEntry(entry, authorEntry, group);
+        return this._verifyUserGroupAddition(entry, author, group);
       }
       default:
         throw new Error(`Assertion error: unexpected nature ${entry.nature}`);
     }
   }
 
-  async _unlockedProcessUserGroupEntries(unverifiedEntries: Array<UnverifiedUserGroupEntry>): Promise<void> {
+  async _unlockedProcessUserGroups(unverifiedEntries: Array<UnverifiedUserGroupEntry>) {
     const authors = await this._unlockedGetVerifiedAuthorsByHash(unverifiedEntries);
 
     for (const unverifiedUserGroupEntry of unverifiedEntries) {
-      const authorEntry = authors.get(utils.toBase64(unverifiedUserGroupEntry.hash));
-      if (!authorEntry)
+      const author = authors.get(utils.toBase64(unverifiedUserGroupEntry.hash));
+      if (!author)
         throw new InvalidBlockError('author_not_found', 'author not found', { unverifiedUserGroupEntry });
 
-      const verifiedEntry = await this._unlockedVerifySingleUserGroupEntry(unverifiedUserGroupEntry, authorEntry);
+      const verifiedEntry = await this._unlockedVerifySingleUserGroup(unverifiedUserGroupEntry, author);
       await this._groupUpdater.applyEntry(verifiedEntry);
       await this._storage.unverifiedStore.removeVerifiedUserGroupEntry(verifiedEntry);
     }
   }
 
-  async _unlockedProcessUserGroupWithPublicEncryptionKey(key: Uint8Array): Promise<void> {
+  async _unlockedProcessUserGroupWithPublicEncryptionKey(key: Uint8Array) {
     const unverifiedEntries = await this._storage.unverifiedStore.findUnverifiedUserGroupByPublicEncryptionKey(key);
     if (unverifiedEntries.length === 0)
       return;
-    return this._unlockedProcessUserGroupEntries(unverifiedEntries);
+    return this._unlockedProcessUserGroups(unverifiedEntries);
   }
-  async _unlockedProcessUserGroup(groupId: Uint8Array): Promise<void> {
+  async _unlockedProcessUserGroup(groupId: Uint8Array) {
     const unverifiedEntries = await this._storage.unverifiedStore.findUnverifiedUserGroup(groupId);
     if (unverifiedEntries.length === 0)
       return;
-    return this._unlockedProcessUserGroupEntries(unverifiedEntries);
+    return this._unlockedProcessUserGroups(unverifiedEntries);
   }
 
   async verifyTrustchainCreation(unverifiedEntry: UnverifiedEntry) {
     return this._verifyLock.runExclusive(async () => {
-      await this._verifyTrustchainCreationEntry(unverifiedEntry);
+      await this._verifyTrustchainCreation(unverifiedEntry);
       return this._storage.trustchainStore.setEntryVerified(unverifiedEntry);
     });
   }
@@ -564,7 +552,7 @@ export default class TrustchainVerifier {
         [currentDevicesToVerify, nextDevicesToVerify] = await this._takeOneDeviceOfEachUsers(nextDevicesToVerify);
         for (const entry of currentDevicesToVerify) {
           const user = await this._storage.userStore.findUser({ hashedUserId: entry.user_id });
-          verifiedDevices.push(await this._unlockedVerifySingleUserEntry(user, entry));
+          verifiedDevices.push(await this._unlockedVerifySingleUser(user, entry));
         }
         await this._storage.userStore.applyEntries(verifiedDevices);
         await this._storage.unverifiedStore.removeVerifiedUserEntries(verifiedDevices);

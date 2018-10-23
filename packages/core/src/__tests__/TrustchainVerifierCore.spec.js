@@ -4,7 +4,7 @@ import { tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import TrustchainBuilder, { makeTrustchainBuilder } from './TrustchainBuilder';
 import { type GeneratorUserResult } from './Generator';
-import { setKeyPublishAuthor, setRecipientKeyPublish } from './Trustchain.verify.spec';
+import { setKeyPublishAuthor, setRecipientKeyPublish } from './TrustchainVerifier.spec';
 import UserStore from '../Users/UserStore';
 import { NATURE } from '../Blocks/payloads';
 
