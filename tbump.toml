@@ -63,6 +63,10 @@ search = '"@tanker/errors": "{current_version}"'
 
 [[file]]
 src = "packages/core/package.json"
+search = '"@tanker/stream-base": "{current_version}"'
+
+[[file]]
+src = "packages/core/package.json"
 search = '"@tanker/datastore-pouchdb-memory": "{current_version}"'
 
 [[file]]
@@ -120,3 +124,15 @@ search = '"@tanker/datastore-base": "{current_version}"'
 [[file]]
 src = "packages/errors/package.json"
 search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/stream/base/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/stream/base/package.json"
+search = '"@tanker/errors": "{current_version}"'
+
+[[file]]
+src = "packages/stream/base/package.json"
+search = '"@tanker/crypto": "{current_version}"'
