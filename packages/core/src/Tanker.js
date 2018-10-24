@@ -5,14 +5,16 @@ import EventEmitter from 'events';
 
 import { type ClientOptions, type UnlockMethods } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
-import { getResourceId as egetResourceId, type EncryptionOptions } from './Encryption/Encryptor';
-import ChunkEncryptor, { makeChunkEncryptor } from './Encryption/ChunkEncryptor';
+import { getResourceId as egetResourceId } from './Resource/ResourceManager';
+
 import { InvalidSessionStatus, InvalidArgument } from './errors';
-import { type UnlockKey, type UnlockDeviceParams, type SetupUnlockParams } from './Unlock/unlock';
+import { type UnlockKey, type UnlockDeviceParams, type SetupUnlockParams, DEVICE_TYPE } from './Unlock/unlock';
 
 import { extractUserData } from './Tokens/SessionTypes';
 import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
+import { type EncryptionOptions, defaultEncryptionOptions } from './DataProtection/DataProtector';
+import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
 const statusDefs = [
   /* 0 */ { name: 'CLOSED', description: 'tanker session is closed' },
@@ -364,7 +366,13 @@ export class Tanker extends EventEmitter {
     if (!(plain instanceof Uint8Array))
       throw new InvalidArgument('plain', 'Uint8Array', plain);
 
-    return this._session.encryptor.encryptData(plain, options);
+    const opts = { ...defaultEncryptionOptions, shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...options };
+
+    if (opts.shareWithSelf === false && opts.shareWith.length === 0) {
+      throw new InvalidArgument('options.shareWith', 'shareWith must contain user ids when options.shareWithSelf === false', opts.shareWith);
+    }
+
+    return this._session.dataProtector.encryptAndShareData(plain, opts);
   }
 
   async encrypt(plain: string, options?: EncryptionOptions): Promise<Uint8Array> {
@@ -376,13 +384,13 @@ export class Tanker extends EventEmitter {
     return this.encryptData(utils.fromString(plain), options);
   }
 
-  async decryptData(cipher: Uint8Array): Promise<Uint8Array> {
+  async decryptData(encryptedData: Uint8Array): Promise<Uint8Array> {
     this.assert(this.OPEN, 'decrypt data');
 
-    if (!(cipher instanceof Uint8Array))
-      throw new InvalidArgument('cipher', 'Uint8Array', cipher);
+    if (!(encryptedData instanceof Uint8Array))
+      throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
-    return this._session.encryptor.decryptData(cipher);
+    return this._session.dataProtector.decryptData(encryptedData);
   }
 
   async decrypt(cipher: Uint8Array): Promise<string> {
@@ -398,7 +406,7 @@ export class Tanker extends EventEmitter {
     if (!(shareWith instanceof Array))
       throw new InvalidArgument('shareWith', 'Array<string>', shareWith);
 
-    return this._session.encryptor.share(resourceIds, shareWith);
+    return this._session.dataProtector.share(resourceIds, shareWith);
   }
 
   getResourceId(data: Uint8Array): b64string {
@@ -410,7 +418,7 @@ export class Tanker extends EventEmitter {
 
   async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
     this.assert(this.OPEN, 'make a chunk encryptor');
-    return makeChunkEncryptor(this._session.encryptor, seal);
+    return this._session.dataProtector.makeChunkEncryptor(seal);
   }
 
   async revokeDevice(deviceId: b64string): Promise<void> {

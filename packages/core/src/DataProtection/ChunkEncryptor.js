@@ -5,8 +5,8 @@ import arraychunks from 'array.chunk';
 import { tcrypto, aead, random, utils } from '@tanker/crypto';
 
 import { ChunkIndexOutOfRange, ChunkNotFound, DecryptFailed, InvalidArgument, InvalidSeal } from '../errors';
+import { type EncryptionOptions } from './DataProtector';
 import * as Serialize from '../Blocks/Serialize';
-import type { EncryptorInterface, EncryptionOptions } from './Encryptor';
 
 const currentSealVersion = 3;
 const firstSupportedVersion = 3;
@@ -16,6 +16,11 @@ export type NewChunk = {
   encryptedData: Uint8Array,
   index: number,
 };
+
+export interface EncryptorInterface {
+  encryptData(plain: Uint8Array, options?: EncryptionOptions): Promise<Uint8Array>;
+  decryptData(cipher: Uint8Array): Promise<Uint8Array>;
+}
 
 function makeNullArray(length: number): Array<null> {
   return Array.from({ length }, () => null);

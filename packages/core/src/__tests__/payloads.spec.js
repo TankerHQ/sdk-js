@@ -16,10 +16,7 @@ import {
   unserializeUserDeviceV3,
   serializeKeyPublish,
   unserializeKeyPublish,
-  serializeKeyPublishToUser,
-  unserializeKeyPublishToUser,
-  serializeKeyPublishToUserGroup,
-  unserializeKeyPublishToUserGroup,
+  unserializeKeyPublishToDevice,
   serializeDeviceRevocationV2,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
@@ -221,7 +218,7 @@ describe('payload test vectors', () => {
       keyPublish.key
     );
 
-    expect(unserializeKeyPublish(payload)).to.deep.equal(keyPublish);
+    expect(unserializeKeyPublishToDevice(payload)).to.deep.equal(keyPublish);
   });
 
   it('correctly deserializes a KeyPublishV2 test vector', async () => {
@@ -242,7 +239,7 @@ describe('payload test vectors', () => {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ]);
 
-    expect(unserializeKeyPublishToUser(payload)).to.deep.equal(keyPublish);
+    expect(unserializeKeyPublish(payload)).to.deep.equal(keyPublish);
   });
 
   it('correctly deserializes a KeyPublish to usert est vector', async () => {
@@ -263,7 +260,7 @@ describe('payload test vectors', () => {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ]);
 
-    expect(unserializeKeyPublishToUserGroup(payload)).to.deep.equal(keyPublish);
+    expect(unserializeKeyPublish(payload)).to.deep.equal(keyPublish);
   });
 
   it('correctly deserializes a DeviceRevocationV1 test vector', async () => {
@@ -531,16 +528,6 @@ describe('payloads', () => {
     expect(unserializeUserDeviceV3(serializeUserDeviceV3(userDevice))).to.deep.equal(userDevice);
   });
 
-  it('should serialize/unserialize a KeyPublish', async () => {
-    const keyPublish = {
-      resourceId: random(tcrypto.MAC_SIZE),
-      recipient: random(tcrypto.HASH_SIZE),
-      key: random(tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE)
-    };
-
-    expect(unserializeKeyPublish(serializeKeyPublish(keyPublish))).to.deep.equal(keyPublish);
-  });
-
   it('should serialize/unserialize a KeyPublishV2', async () => {
     const keyPublish = {
       resourceId: random(tcrypto.MAC_SIZE),
@@ -548,7 +535,7 @@ describe('payloads', () => {
       key: random(tcrypto.SEALED_KEY_SIZE),
     };
 
-    expect(unserializeKeyPublishToUser(serializeKeyPublishToUser(keyPublish))).to.deep.equal(keyPublish);
+    expect(unserializeKeyPublish(serializeKeyPublish(keyPublish))).to.deep.equal(keyPublish);
   });
 
   it('should serialize/unserialize a KeyPublish to User Group', async () => {
@@ -558,7 +545,7 @@ describe('payloads', () => {
       key: random(tcrypto.SEALED_KEY_SIZE),
     };
 
-    expect(unserializeKeyPublishToUserGroup(serializeKeyPublishToUserGroup(keyPublish))).to.deep.equal(keyPublish);
+    expect(unserializeKeyPublish(serializeKeyPublish(keyPublish))).to.deep.equal(keyPublish);
   });
 
   it('should serialize/unserialize a DeviceRevocation', async () => {
@@ -579,7 +566,7 @@ describe('payloads', () => {
     const keyPublish = {
       resourceId: random(tcrypto.MAC_SIZE),
       recipient: random(tcrypto.HASH_SIZE),
-      key: random(tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE)
+      key: random(tcrypto.SEALED_KEY_SIZE),
     };
 
     const signatureKeys = tcrypto.makeSignKeyPair();

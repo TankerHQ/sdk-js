@@ -3,8 +3,8 @@
 import { utils } from '@tanker/crypto';
 import { mergeSchemas, type DataStore } from '@tanker/datastore-base';
 
-import Keystore from '../Session/Keystore';
-import SharedKeystore from '../Encryption/SharedKeys';
+import KeyStore from '../Session/Keystore';
+import ResourceStore from '../Resource/ResourceStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import TrustchainStore from '../Trustchain/TrustchainStore';
@@ -20,8 +20,8 @@ export type DataStoreOptions = {
 export default class Storage {
   _options: DataStoreOptions;
   _datastore: DataStore<*>;
-  _keyStore: Keystore;
-  _sharedKeystore: SharedKeystore;
+  _keyStore: KeyStore;
+  _resourceStore: ResourceStore;
   _userStore: UserStore;
   _groupStore: GroupStore;
   _unverifiedStore: UnverifiedStore;
@@ -32,12 +32,12 @@ export default class Storage {
     this._options = options;
   }
 
-  get keyStore(): Keystore {
+  get keyStore(): KeyStore {
     return this._keyStore;
   }
 
-  get sharedKeystore(): SharedKeystore {
-    return this._sharedKeystore;
+  get resourceStore(): ResourceStore {
+    return this._resourceStore;
   }
 
   get userStore(): UserStore {
@@ -60,8 +60,8 @@ export default class Storage {
     const { adapter, prefix, dbPath, url } = this._options;
 
     const schemas = mergeSchemas(
-      Keystore.schemas,
-      SharedKeystore.schemas,
+      KeyStore.schemas,
+      ResourceStore.schemas,
       TrustchainStore.schemas,
       UserStore.schemas,
       GroupStore.schemas,
@@ -73,8 +73,8 @@ export default class Storage {
     this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
     this._schemas = schemas;
 
-    this._keyStore = await Keystore.open(this._datastore, userSecret);
-    this._sharedKeystore = await SharedKeystore.open(this._datastore, userSecret);
+    this._keyStore = await KeyStore.open(this._datastore, userSecret);
+    this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
     this._userStore = await UserStore.open(this._datastore, userId, this._keyStore);
     this._groupStore = await GroupStore.open(this._datastore);
     this._trustchainStore = await TrustchainStore.open(this._datastore);
@@ -100,7 +100,7 @@ export default class Storage {
     await this._trustchainStore.close();
     await this._groupStore.close();
     await this._userStore.close();
-    await this._sharedKeystore.close();
+    await this._resourceStore.close();
     await this._keyStore.close();
   }
 

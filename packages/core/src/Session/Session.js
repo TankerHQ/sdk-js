@@ -11,7 +11,9 @@ import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import Encryptor from '../Encryption/Encryptor';
+import { KeyDecryptor } from '../Resource/KeyDecryptor';
+import { ResourceManager } from '../Resource/ResourceManager';
+import DataProtector from '../DataProtection/DataProtector';
 
 export class Session {
   sessionData: SessionData;
@@ -23,8 +25,10 @@ export class Session {
   blockGenerator: BlockGenerator;
   userAccessor: UserAccessor;
   groupManager: GroupManager;
-  encryptor: Encryptor;
   unlockKeys: UnlockKeys;
+
+  resourceManager: ResourceManager;
+  dataProtector: DataProtector;
 
   constructor(sessionData: SessionData, storage: Storage, trustchain: Trustchain, client: Client) {
     this.storage = storage;
@@ -47,18 +51,29 @@ export class Session {
       this.blockGenerator,
       client,
     );
-    this.encryptor = new Encryptor(
-      this.sessionData,
-      this.storage,
-      this._client,
-      this._trustchain,
-      this.groupManager,
-      this.userAccessor,
-    );
     this.unlockKeys = new UnlockKeys(
       this.sessionData,
       this.storage.keyStore,
       this._client,
+    );
+
+    this.resourceManager = new ResourceManager(
+      this.storage.resourceStore,
+      this._trustchain,
+      new KeyDecryptor(
+        this.storage.keyStore,
+        this.userAccessor,
+        this.storage.groupStore
+      )
+    );
+
+    this.dataProtector = new DataProtector(
+      this.resourceManager,
+      this._client,
+      this.groupManager,
+      this.sessionData,
+      this.userAccessor,
+      this.blockGenerator
     );
   }
 

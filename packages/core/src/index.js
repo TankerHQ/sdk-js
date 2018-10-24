@@ -6,13 +6,13 @@ import { createUserSecretB64 as createUserSecret } from '@tanker/crypto';
 import { Tanker, TankerStatus, getResourceId } from './Tanker';
 import * as errors from './errors';
 import { fromBase64, toBase64, fromString, toString, getTankerVersion } from './utils';
-import ChunkEncryptor from './Encryption/ChunkEncryptor';
+import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
 // export
 export default Tanker;
 
 export type { b64string } from '@tanker/crypto';
-export type { EncryptionOptions, DecryptionOptions } from './Encryption/Encryptor';
+export type { EncryptionOptions } from './DataProtection/DataProtector';
 export type { TankerOptions } from './Tanker';
 
 export {

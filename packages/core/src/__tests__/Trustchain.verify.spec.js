@@ -7,13 +7,13 @@ import { InvalidBlockError } from '../errors';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { type Device } from '../Users/UserStore';
 import type { UnverifiedEntry } from '../Blocks/entries';
-import Generator, { type GeneratorUserResult, type GeneratorKeyResult, type GeneratorRevocationResult, type GeneratorUserGroupResult, type GeneratorUserGroupAdditionResult } from './Generator';
+import Generator, { type GeneratorUserResult, type GeneratorKeyResult, type GeneratorRevocationResult, type GeneratorUserGroupResult, type GeneratorUserGroupAdditionResult, serializeKeyPublishToDevice } from './Generator';
 import { signBlock, type Block } from '../Blocks/Block';
 import { blockToEntry } from '../Trustchain/TrustchainStore';
 import TrustchainBuilder, { makeTrustchainBuilder } from './TrustchainBuilder';
 import {
   type UserDeviceRecord, serializeUserDeviceV3, serializeDeviceRevocationV2,
-  type UserKeys, type UserKeyPair, serializeKeyPublish, serializeKeyPublishToUser, serializeKeyPublishToUserGroup,
+  type UserKeys, type UserKeyPair, serializeKeyPublish,
   type UserGroupCreationRecord, serializeUserGroupCreation,
   type DeviceRevocationRecord,
   NATURE, type Nature,
@@ -145,11 +145,11 @@ export function setRecipientKeyPublish(kp: GeneratorKeyResult, recipient: Uint8A
   };
   switch (nature) {
     case NATURE.key_publish_to_device:
-      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
+      return mergeKeyPublish(serializeKeyPublishToDevice, kp, payload, maybeBlockPrivateSignatureKey);
     case NATURE.key_publish_to_user:
-      return mergeKeyPublish(serializeKeyPublishToUser, kp, payload, maybeBlockPrivateSignatureKey);
+      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
     case NATURE.key_publish_to_user_group:
-      return mergeKeyPublish(serializeKeyPublishToUserGroup, kp, payload, maybeBlockPrivateSignatureKey);
+      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
     default:
       throw new Error('Invalid key publish nature');
   }

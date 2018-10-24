@@ -8,7 +8,8 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { expect } from './chai';
 
 import { InvalidEncryptionFormat } from '../errors';
-import { encryptData, decryptData } from '../Encryption/Encryptor';
+import { decryptData } from '../DataProtection/decrypt';
+import { encryptData } from '../DataProtection/encrypt';
 import { concatArrays } from '../Blocks/Serialize';
 
 describe('Encryptor', () => {
