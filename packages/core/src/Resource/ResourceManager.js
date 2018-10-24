@@ -2,7 +2,7 @@
 
 import varint from 'varint';
 
-import { tcrypto, random, aead, utils, type Key } from '@tanker/crypto';
+import { tcrypto, random, aead, type Key } from '@tanker/crypto';
 import { ResourceNotFound, InvalidEncryptionFormat } from '../errors';
 import Trustchain from '../Trustchain/Trustchain';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
@@ -74,18 +74,12 @@ export class ResourceManager {
     if (!this._keyDecryptor.deviceReady())
       return null;
 
-    try {
-      const resourceKey = await this._keyDecryptor.keyFromKeyPublish(keyPublishEntry);
-      if (resourceKey) {
-        await this.saveResourceKey(keyPublishEntry.resourceId, resourceKey);
-      }
-
-      return resourceKey;
-    } catch (err) {
-      const b64Mac = utils.toBase64(keyPublishEntry.resourceId);
-      console.error(`Cannot decrypt resource '${b64Mac}' resourceKey:`, err);
-      throw err;
+    const resourceKey = await this._keyDecryptor.keyFromKeyPublish(keyPublishEntry);
+    if (resourceKey) {
+      await this.saveResourceKey(keyPublishEntry.resourceId, resourceKey);
     }
+
+    return resourceKey;
   }
 
   async saveResourceKey(resourceId: Uint8Array, key: Uint8Array): Promise<void> {
