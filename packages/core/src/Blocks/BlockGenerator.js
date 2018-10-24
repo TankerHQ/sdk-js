@@ -57,24 +57,38 @@ export class BlockGenerator {
     this.deviceId = deviceId;
   }
 
-  addUser(user: UserDeviceRecord, delegationToken: DelegationToken): Block {
-    if (!utils.equalArray(delegationToken.user_id, user.user_id))
-      throw new InvalidDelegationToken(`delegation token for user ${utils.toBase64(delegationToken.user_id)}, but we are ${utils.toBase64(user.user_id)}`);
+  makeNewUserBlock(userId: Uint8Array, delegationToken: DelegationToken, publicSignatureKey: Uint8Array, publicEncryptionKey: Uint8Array): Block {
+    if (!utils.equalArray(delegationToken.user_id, userId))
+      throw new InvalidDelegationToken(`delegation token for user ${utils.toBase64(delegationToken.user_id)}, but we are ${utils.toBase64(userId)}`);
 
-    user.ephemeral_public_signature_key = delegationToken.ephemeral_public_signature_key; // eslint-disable-line no-param-reassign
-    user.delegation_signature = delegationToken.delegation_signature; // eslint-disable-line no-param-reassign
+    const userKeys = tcrypto.makeEncryptionKeyPair();
+    const encryptedUserKey = tcrypto.sealEncrypt(
+      userKeys.privateKey,
+      publicEncryptionKey,
+    );
+    const userDevice: UserDeviceRecord = {
+      ephemeral_public_signature_key: delegationToken.ephemeral_public_signature_key,
+      user_id: userId,
+      delegation_signature: delegationToken.delegation_signature,
+      public_signature_key: publicSignatureKey,
+      public_encryption_key: publicEncryptionKey,
+      last_reset: new Uint8Array(tcrypto.HASH_SIZE),
+      user_key_pair: {
+        public_encryption_key: userKeys.publicKey,
+        encrypted_private_encryption_key: encryptedUserKey,
+      },
+      is_ghost_device: false,
+      is_server_device: false,
+      revoked: Number.MAX_SAFE_INTEGER,
+    };
 
-    const rootBlockHash = this.trustchainId;
-
-    const userBlock = signBlock({
+    return signBlock({
       index: 0,
       trustchain_id: this.trustchainId,
       nature: preferredNature(NATURE_KIND.device_creation),
-      author: rootBlockHash,
-      payload: serializeUserDeviceV3(user)
+      author: this.trustchainId,
+      payload: serializeUserDeviceV3(userDevice)
     }, delegationToken.ephemeral_private_signature_key);
-
-    return userBlock;
   }
 
   addDevice(device: UserDeviceRecord): Block {
