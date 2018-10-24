@@ -194,28 +194,6 @@ export function createDeviceFromValidationCode({
     throw new InvalidDeviceValidationCode(e);
   }
 
-  const encryptedUserKey = tcrypto.sealEncrypt(
-    userKeys.privateKey,
-    utils.fromBase64(code.keyC),
-  );
-
-  const device: UserDeviceRecord = {
-    ephemeral_public_signature_key: new Uint8Array(0),
-    user_id: userId,
-    delegation_signature: new Uint8Array(0),
-    public_signature_key: utils.fromBase64(code.keyS),
-    public_encryption_key: utils.fromBase64(code.keyC),
-    last_reset: new Uint8Array(tcrypto.HASH_SIZE),
-    user_key_pair: {
-      public_encryption_key: userKeys.publicKey,
-      encrypted_private_encryption_key: encryptedUserKey,
-    },
-    is_ghost_device: false,
-    // device validation code is reserved to clients
-    is_server_device: false,
-    revoked: Number.MAX_SAFE_INTEGER,
-  };
-
   const blockGenerator = new BlockGenerator(
     trustchainId,
     deviceKeys.signaturePair.privateKey,
@@ -223,7 +201,14 @@ export function createDeviceFromValidationCode({
     utils.fromBase64(deviceKeys.deviceId)
   );
 
-  return blockGenerator.addDevice(device);
+  return blockGenerator.makeNewDeviceBlock(
+    userId,
+    userKeys,
+    utils.fromBase64(code.keyS),
+    utils.fromBase64(code.keyC),
+    false,
+    false
+  );
 }
 
 export function extractUnlockKey(unlockKey: b64string): GhostDevice {
@@ -285,24 +270,9 @@ function createDeviceFromUnlockKeyV3({
     ghostDeviceEncryptionKeyPair
   );
 
-  const reencryptedUserPrivateKey = tcrypto.sealEncrypt(
-    decryptedUserPrivateKey,
-    deviceKeys.encryptionPair.publicKey,
-  );
-  const device: UserDeviceRecord = {
-    ephemeral_public_signature_key: new Uint8Array(0),
-    user_id: userId,
-    delegation_signature: new Uint8Array(0),
-    public_signature_key: deviceKeys.signaturePair.publicKey,
-    public_encryption_key: deviceKeys.encryptionPair.publicKey,
-    last_reset: new Uint8Array(tcrypto.HASH_SIZE),
-    user_key_pair: {
-      public_encryption_key: encryptedUserKey.public_user_key,
-      encrypted_private_encryption_key: reencryptedUserPrivateKey,
-    },
-    is_ghost_device: false,
-    is_server_device: (deviceType === DEVICE_TYPE.server_device),
-    revoked: Number.MAX_SAFE_INTEGER,
+  const userKeys = {
+    publicKey: encryptedUserKey.public_user_key,
+    privateKey: decryptedUserPrivateKey
   };
 
   const blockGenerator = new BlockGenerator(
@@ -310,8 +280,14 @@ function createDeviceFromUnlockKeyV3({
     ghostDevice.privateSignatureKey,
     ghostDevice.deviceId
   );
-
-  return blockGenerator.addDevice(device);
+  return blockGenerator.makeNewDeviceBlock(
+    userId,
+    userKeys,
+    deviceKeys.signaturePair.publicKey,
+    deviceKeys.encryptionPair.publicKey,
+    false,
+    (deviceType === DEVICE_TYPE.server_device)
+  );
 }
 
 export function generateUnlockKeyRegistration({
@@ -324,34 +300,20 @@ export function generateUnlockKeyRegistration({
   const ghostEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
   const ghostSignatureKeyPair = tcrypto.makeSignKeyPair();
 
-  const encryptedUserKey = tcrypto.sealEncrypt(
-    userKeys.privateKey,
-    ghostEncryptionKeyPair.publicKey,
-  );
-
-  const ghostDevice: UserDeviceRecord = {
-    ephemeral_public_signature_key: new Uint8Array(0),
-    user_id: userId,
-    delegation_signature: new Uint8Array(0),
-    public_signature_key: ghostSignatureKeyPair.publicKey,
-    public_encryption_key: ghostEncryptionKeyPair.publicKey,
-    last_reset: new Uint8Array(tcrypto.HASH_SIZE),
-    user_key_pair: {
-      public_encryption_key: userKeys.publicKey,
-      encrypted_private_encryption_key: encryptedUserKey,
-    },
-    is_ghost_device: true,
-    is_server_device: (deviceType === DEVICE_TYPE.server_device),
-    revoked: Number.MAX_SAFE_INTEGER,
-  };
-
   const blockGenerator = new BlockGenerator(
     trustchainId,
     authorDevice.privateSignatureKey,
     authorDevice.id,
   );
 
-  const newDeviceBlock = blockGenerator.addDevice(ghostDevice);
+  const newDeviceBlock = blockGenerator.makeNewDeviceBlock(
+    userId,
+    userKeys,
+    ghostSignatureKeyPair.publicKey,
+    ghostEncryptionKeyPair.publicKey,
+    true,
+    (deviceType === DEVICE_TYPE.server_device)
+  );
 
   const ghostDeviceId = hashBlock(newDeviceBlock);
 

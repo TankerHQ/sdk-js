@@ -57,19 +57,26 @@ export class BlockGenerator {
     this.deviceId = deviceId;
   }
 
-  makeNewUserBlock(userId: Uint8Array, delegationToken: DelegationToken, publicSignatureKey: Uint8Array, publicEncryptionKey: Uint8Array): Block {
-    if (!utils.equalArray(delegationToken.user_id, userId))
-      throw new InvalidDelegationToken(`delegation token for user ${utils.toBase64(delegationToken.user_id)}, but we are ${utils.toBase64(userId)}`);
-
-    const userKeys = tcrypto.makeEncryptionKeyPair();
+  _makeDeviceBlock(
+    userId: Uint8Array,
+    author: Uint8Array,
+    ephemeralKey: Uint8Array,
+    delegationSignature: Uint8Array,
+    publicSignatureKey: Uint8Array,
+    publicEncryptionKey: Uint8Array,
+    blockSignatureKey: Uint8Array,
+    userKeys: tcrypto.SodiumKeyPair,
+    isGhost: bool,
+    isServer: bool
+  ): Block {
     const encryptedUserKey = tcrypto.sealEncrypt(
       userKeys.privateKey,
       publicEncryptionKey,
     );
     const userDevice: UserDeviceRecord = {
-      ephemeral_public_signature_key: delegationToken.ephemeral_public_signature_key,
+      ephemeral_public_signature_key: ephemeralKey,
       user_id: userId,
-      delegation_signature: delegationToken.delegation_signature,
+      delegation_signature: delegationSignature,
       public_signature_key: publicSignatureKey,
       public_encryption_key: publicEncryptionKey,
       last_reset: new Uint8Array(tcrypto.HASH_SIZE),
@@ -77,8 +84,8 @@ export class BlockGenerator {
         public_encryption_key: userKeys.publicKey,
         encrypted_private_encryption_key: encryptedUserKey,
       },
-      is_ghost_device: false,
-      is_server_device: false,
+      is_ghost_device: isGhost,
+      is_server_device: isServer,
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
@@ -86,28 +93,53 @@ export class BlockGenerator {
       index: 0,
       trustchain_id: this.trustchainId,
       nature: preferredNature(NATURE_KIND.device_creation),
-      author: this.trustchainId,
+      author,
       payload: serializeUserDeviceV3(userDevice)
-    }, delegationToken.ephemeral_private_signature_key);
+    }, blockSignatureKey);
   }
 
-  addDevice(device: UserDeviceRecord): Block {
+  makeNewUserBlock(userId: Uint8Array, delegationToken: DelegationToken, publicSignatureKey: Uint8Array, publicEncryptionKey: Uint8Array) {
+    if (!utils.equalArray(delegationToken.user_id, userId))
+      throw new InvalidDelegationToken(`delegation token for user ${utils.toBase64(delegationToken.user_id)}, but we are ${utils.toBase64(userId)}`);
+    const userKeys = tcrypto.makeEncryptionKeyPair();
+
+    return this._makeDeviceBlock(
+      userId,
+      this.trustchainId,
+      delegationToken.ephemeral_public_signature_key,
+      delegationToken.delegation_signature,
+      publicSignatureKey,
+      publicEncryptionKey,
+      delegationToken.ephemeral_private_signature_key,
+      userKeys,
+      false,
+      false
+    );
+  }
+
+  makeNewDeviceBlock(
+    userId: Uint8Array,
+    userKeys: tcrypto.SodiumKeyPair,
+    publicSignatureKey: Uint8Array,
+    publicEncryptionKey: Uint8Array,
+    isGhost: bool,
+    isServer: bool
+  ): Block {
     const ephemeralKeys = tcrypto.makeSignKeyPair();
-    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, device.user_id);
-    /* eslint-disable no-param-reassign */
-    device.ephemeral_public_signature_key = ephemeralKeys.publicKey;
-    device.delegation_signature = tcrypto.sign(delegationBuffer, this.privateSignatureKey);
-    device.last_reset = new Uint8Array(tcrypto.HASH_SIZE);
+    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, userId);
 
-    const deviceBlock = signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.device_creation),
-      author: this.deviceId,
-      payload: serializeUserDeviceV3(device)
-    }, ephemeralKeys.privateKey);
-
-    return deviceBlock;
+    return this._makeDeviceBlock(
+      userId,
+      this.deviceId,
+      ephemeralKeys.publicKey,
+      tcrypto.sign(delegationBuffer, this.privateSignatureKey),
+      publicSignatureKey,
+      publicEncryptionKey,
+      ephemeralKeys.privateKey,
+      userKeys,
+      isGhost,
+      isServer
+    );
   }
 
   addDeviceV1(device: UserDeviceRecord): Block {
