@@ -106,6 +106,8 @@ describe('ResourceManager', () => {
       recipient: new Uint8Array([0])
     };
 
+    const internalError = new Error('Error thrown on purpose in unit tests');
+
     it('returns null if storage is not ready', async () => {
       const { keyDecryptor, manager } = makeManager();
       keyDecryptor.deviceReady = () => false;
@@ -122,20 +124,16 @@ describe('ResourceManager', () => {
 
     it('throws when saving resource failed', async () => {
       const { resourceStore, manager } = makeManager();
-      resourceStore.saveResourceKey = () => {
-        throw new Error('ignore this error');
-      };
+      resourceStore.saveResourceKey = () => { throw internalError; };
 
-      await expect(manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.rejectedWith(Error);
+      await expect(manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.rejected;
     });
 
     it('throws when key extraction failed', async () => {
       const { keyDecryptor, manager } = makeManager();
-      keyDecryptor.keyFromKeyPublish = () => {
-        throw new Error('ignore this error');
-      };
+      keyDecryptor.keyFromKeyPublish = () => { throw internalError; };
 
-      await expect(manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.rejectedWith(Error);
+      await expect(manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.rejected;
     });
   });
 });

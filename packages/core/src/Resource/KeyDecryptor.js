@@ -50,15 +50,22 @@ export class KeyDecryptor {
   async keyFromKeyPublish(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
     let resourceKey: Promise<?Key>;
 
-    if (isKeyPublishToDevice(keyPublishEntry.nature)) {
-      resourceKey = this.decryptResourceKeyPublishedToDevice(keyPublishEntry);
-    } else if (isKeyPublishToUser(keyPublishEntry.nature)) {
-      resourceKey = this.decryptResourceKeyPublishedToUser(keyPublishEntry);
-    } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
-      resourceKey = this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
-    } else {
-      resourceKey = Promise.resolve(null);
+    try {
+      if (isKeyPublishToDevice(keyPublishEntry.nature)) {
+        resourceKey = this.decryptResourceKeyPublishedToDevice(keyPublishEntry);
+      } else if (isKeyPublishToUser(keyPublishEntry.nature)) {
+        resourceKey = this.decryptResourceKeyPublishedToUser(keyPublishEntry);
+      } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
+        resourceKey = this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
+      } else {
+        resourceKey = Promise.resolve(null);
+      }
+    } catch (err) {
+      const b64resourceId = utils.toBase64(keyPublishEntry.resourceId);
+      console.error(`Cannot decrypt key of resource "${b64resourceId}":`, err);
+      throw err;
     }
+
     return resourceKey;
   }
 
