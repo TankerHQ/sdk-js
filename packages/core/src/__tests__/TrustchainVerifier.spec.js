@@ -405,7 +405,7 @@ describe('TrustchainVerifier', () => {
 
     it('should accept a correct key publish to device', async () => {
       const keyPublish = await generator.newKeyPublishToDevice({ toDevice: userV1.device, fromDevice: author.device });
-      const verifPromise = builder.trustchainVerifier._verifyKeyPublish(keyPublish.unverifiedKeyPublish, verifiedAuthorDevice);
+      const verifPromise = builder.trustchainVerifier._verifyKeyPublish(keyPublish.unverifiedKeyPublish, verifiedAuthorDevice, userV1.user);
       await expect(verifPromise).to.be.fulfilled;
     });
 
@@ -416,8 +416,10 @@ describe('TrustchainVerifier', () => {
       });
       keyPublish.entry.signature[0] += 1;
 
-      const verifPromise = builder.trustchainVerifier._verifyKeyPublish(keyPublish.unverifiedKeyPublish, verifiedAuthorDevice);
-      await assertFailsWithNature(verifPromise, 'invalid_signature');
+      const verif = async () => {
+        builder.trustchainVerifier._verifyKeyPublish(keyPublish.unverifiedKeyPublish, verifiedAuthorDevice);
+      };
+      await assertFailsWithNature(verif(), 'invalid_signature');
     });
 
     it('should reject a key publish to device with a null recipient', async () => {
@@ -425,23 +427,19 @@ describe('TrustchainVerifier', () => {
       const newRecipient = new Uint8Array(tcrypto.HASH_SIZE);
       const newKp = setRecipientKeyPublish(kp, newRecipient, NATURE.key_publish_to_device);
 
-      const verifPromise = builder.trustchainVerifier._verifyKeyPublish(newKp.unverifiedKeyPublish, verifiedAuthorDevice);
-      await assertFailsWithNature(verifPromise, 'invalid_recipient');
+      const verif = async () => {
+        builder.trustchainVerifier._verifyKeyPublish(newKp.unverifiedKeyPublish, verifiedAuthorDevice);
+      };
+
+      await assertFailsWithNature(verif(), 'invalid_recipient');
     });
 
     it('should reject a key publish to device if the recipient has a user key', async () => {
       const keyPublish = await generator.newKeyPublishToDevice({ toDevice: userV3.device, fromDevice: author.device });
-      const verifPromise = builder.trustchainVerifier._verifyKeyPublish(keyPublish.unverifiedKeyPublish, verifiedAuthorDevice);
-      await assertFailsWithNature(verifPromise, 'version_mismatch');
-    });
-
-    it('should reject a key publish to device if the recipient is the hash of a device revocation', async () => {
-      const revoc = await generator.newDeviceRevocationV2(userV1.device, { id: userV1.device.id });
-
-      const keyPublish = await generator.newKeyPublishToDevice({ toDevice: userV1.device, fromDevice: author.device });
-      const newKp = setRecipientKeyPublish(keyPublish, revoc.entry.hash, NATURE.key_publish_to_device);
-      const verifPromise = builder.trustchainVerifier._verifyKeyPublish(newKp.unverifiedKeyPublish, verifiedAuthorDevice);
-      await assertFailsWithNature(verifPromise, 'invalid_recipient');
+      const verif = async () => {
+        builder.trustchainVerifier._verifyKeyPublish(keyPublish.unverifiedKeyPublish, verifiedAuthorDevice, userV3.user);
+      };
+      await assertFailsWithNature(verif(), 'version_mismatch');
     });
 
     it('should reject a key publish to user with a recipient that has a superseeded user public key', async () => {
@@ -450,8 +448,10 @@ describe('TrustchainVerifier', () => {
       keyPublish.unverifiedKeyPublish.index = revoc.entry.index + 1;
 
       await builder.trustchainVerifier._throwingVerifyDeviceRevocation(revoc.unverifiedDeviceRevocation);
-      const verifPromise = builder.trustchainVerifier._verifyKeyPublish(keyPublish.unverifiedKeyPublish, verifiedAuthorDevice);
-      await assertFailsWithNature(verifPromise, 'invalid_user_public_key');
+      const verif = async () => {
+        builder.trustchainVerifier._verifyKeyPublish(keyPublish.unverifiedKeyPublish, verifiedAuthorDevice);
+      };
+      await assertFailsWithNature(verif(), 'invalid_user_public_key');
     });
   });
 

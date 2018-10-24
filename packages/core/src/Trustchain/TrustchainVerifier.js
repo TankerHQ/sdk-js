@@ -249,34 +249,37 @@ export default class TrustchainVerifier {
     }, new Map());
   }
 
-  async _unlockedVerifyKeyPublishes(unverifiedKeyPublishes: Array<UnverifiedKeyPublish>): Promise<Array<VerifiedKeyPublish>> {
+  async _unlockedVerifyKeyPublishes(keyPublishes: Array<UnverifiedKeyPublish>): Promise<Array<VerifiedKeyPublish>> {
     const verifiedKeyPublishes = [];
-    const keyPublishesAuthors = await this._unlockedGetVerifiedAuthorsByHash(unverifiedKeyPublishes);
-    for (const unverifiedKeyPublish of unverifiedKeyPublishes) {
+    const keyPublishesAuthors = await this._unlockedGetVerifiedAuthorsByHash(keyPublishes);
+    for (const keyPublish of keyPublishes) {
       try {
-        const author = keyPublishesAuthors.get(utils.toBase64(unverifiedKeyPublish.hash));
+        const author = keyPublishesAuthors.get(utils.toBase64(keyPublish.hash));
         if (!author)
-          throw new InvalidBlockError('author_not_found', 'author not found', { unverifiedKeyPublish });
+          throw new InvalidBlockError('author_not_found', 'author not found', { keyPublish });
 
-        if (unverifiedKeyPublish.nature === NATURE.key_publish_to_user_group) {
-          await this._unlockedProcessUserGroupWithPublicEncryptionKey(unverifiedKeyPublish.recipient);
+        if (keyPublish.nature === NATURE.key_publish_to_user_group) {
+          await this._unlockedProcessUserGroupWithPublicEncryptionKey(keyPublish.recipient);
         }
 
-        await this._verifyKeyPublish(unverifiedKeyPublish, author);
+        let verifiedKeyPublish;
+        if (isKeyPublishToDevice(keyPublish.nature)) {
+          const recipient = await this._storage.userStore.findUser({ hashedDeviceId: keyPublish.recipient });
+          verifiedKeyPublish = this._verifyKeyPublish(keyPublish, author, recipient);
+        } else if (isKeyPublishToUser(keyPublish.nature)) {
+          const recipient = await this._storage.userStore.findUserByUserPublicKey({ hashedUserPublicKey: keyPublish.recipient });
+          verifiedKeyPublish = this._verifyKeyPublish(keyPublish, author, recipient);
+        } else {
+          const recipient = await this._storage.groupStore.findExternal({ groupPublicEncryptionKey: keyPublish.recipient });
+          verifiedKeyPublish = this._verifyKeyPublish(keyPublish, author, null, recipient);
+        }
+        verifiedKeyPublishes.push(verifiedKeyPublish);
       } catch (e) {
         if (!(e instanceof InvalidBlockError)) {
           throw e;
         }
         continue;
       }
-
-      verifiedKeyPublishes.push({
-        resourceId: unverifiedKeyPublish.resourceId,
-        key: unverifiedKeyPublish.key,
-        recipient: unverifiedKeyPublish.recipient,
-        author: unverifiedKeyPublish.author,
-        nature: unverifiedKeyPublish.nature,
-      });
     }
     return verifiedKeyPublishes;
   }
