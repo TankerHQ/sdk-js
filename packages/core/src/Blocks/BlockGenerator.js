@@ -12,8 +12,6 @@ import {
   preferredNature,
   type UserDeviceRecord,
   type UserKeys,
-  type KeyPublishRecord,
-  type KeyPublishToUserGroupRecord,
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
   type NatureKind,
@@ -208,44 +206,28 @@ export class BlockGenerator {
     return deviceBlock;
   }
 
-  makeKeyPublishBlock(record: KeyPublishRecord, nature: NatureKind): Block {
+  makeKeyPublishBlock(publicEncryptionKey: Uint8Array, resourceKey: Uint8Array, resourceId: Uint8Array, nature: NatureKind): Block {
+    const sharedKey = tcrypto.sealEncrypt(
+      resourceKey,
+      publicEncryptionKey,
+    );
+
+    const payload = {
+      recipient: publicEncryptionKey,
+      resourceId,
+      key: sharedKey,
+    };
+
     const pKeyBlock = signBlock(
       {
         index: 0,
         trustchain_id: this.trustchainId,
         nature: preferredNature(nature),
         author: this.deviceId,
-        payload: serializeKeyPublish(record)
+        payload: serializeKeyPublish(payload)
       },
       this.privateSignatureKey
     );
-
-    return pKeyBlock;
-  }
-
-  keyPublishToUserGroup(pKey: KeyPublishToUserGroupRecord): Block {
-    const pKeyBlock = signBlock(
-      {
-        index: 0,
-        trustchain_id: this.trustchainId,
-        nature: preferredNature(NATURE_KIND.key_publish_to_user_group),
-        author: this.deviceId,
-        payload: serializeKeyPublish(pKey)
-      },
-      this.privateSignatureKey
-    );
-
-    return pKeyBlock;
-  }
-
-  keyPublish(pKey: KeyPublishRecord): Block {
-    const pKeyBlock = signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.key_publish_to_device),
-      author: this.deviceId,
-      payload: serializeKeyPublish(pKey)
-    }, this.privateSignatureKey);
 
     return pKeyBlock;
   }
