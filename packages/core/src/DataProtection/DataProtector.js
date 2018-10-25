@@ -21,13 +21,15 @@ export type KeyResourceId = {
   resourceId: Uint8Array,
 };
 
+export type ShareWithArg = Array<string> | { users?: Array<string>, groups?: Array<string> };
+
 export type EncryptionOptions = {
   shareWithSelf?: bool,
-  shareWith?: Array<string>,
+  shareWith?: ShareWithArg,
 };
 
 export const defaultEncryptionOptions: EncryptionOptions = {
-  shareWith: [],
+  shareWith: {},
 };
 
 export default class DataProtector {
@@ -111,6 +113,8 @@ export default class DataProtector {
     const maybeGroupIds = shareWith.map(utils.fromBase64).filter(id => id.length === tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
     const groups = await this._groupManager.findGroups(maybeGroupIds);
+    if (groups.length > 0)
+      console.warn('Calling encrypt or share with a mixed list of users and groups is deprecated, use { users: ["alice"], groups: ["admins"] } instead');
     const groupIds = groups.map(group => group.groupId);
 
     const userIds = [];
@@ -148,8 +152,15 @@ export default class DataProtector {
     return userIds;
   }
 
-  async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWith: Array<string>, shareWithSelf: bool): Promise<void> {
-    const { users, groups } = await this._separateGroupsFromUsers(shareWith, shareWithSelf);
+  async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWith: ShareWithArg, shareWithSelf: bool): Promise<void> {
+    let users;
+    let groups;
+    if (shareWith instanceof Array)
+      ({ users, groups } = await this._separateGroupsFromUsers(shareWith, shareWithSelf));
+    else {
+      users = await this._userAccessor.getUsers({ userIds: this._handleShareToSelf(shareWith.users || [], shareWithSelf) });
+      groups = await this._groupManager.findGroups((shareWith.groups || []).map(g => utils.fromBase64(g)));
+    }
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;
@@ -178,7 +189,7 @@ export default class DataProtector {
     return encryptedData;
   }
 
-  async share(resourceIds: Array<b64string>, shareWith: Array<string>): Promise<void> {
+  async share(resourceIds: Array<b64string>, shareWith: ShareWithArg): Promise<void> {
     // nothing to return, just wait for the promises to finish
     const keys = await Promise.all(resourceIds.map(async (b64ResourceId) => {
       const resourceId = utils.fromBase64(b64ResourceId);
