@@ -1,6 +1,5 @@
 // @flow
 
-import { utils } from '@tanker/crypto';
 import Trustchain from '../Trustchain/Trustchain';
 import UserAccessor from '../Users/UserAccessor';
 import Storage from './Storage';
@@ -98,16 +97,7 @@ export class Session {
     if (!user)
       throw new Error('Cannot find the current user in the users');
 
-    const publicEncryptionKeys = user.devices
-      .filter(device => device.revokedAt === Number.MAX_SAFE_INTEGER && device.deviceId !== revokedDeviceId);
-
-    const userKeys = await this.storage.keyStore.rotateUserKeys(publicEncryptionKeys);
-    const revocationRecord = {
-      device_id: utils.fromBase64(revokedDeviceId),
-      user_keys: userKeys
-    };
-
-    const revokeDeviceBlock = this.blockGenerator.revokeDevice(revocationRecord);
+    const revokeDeviceBlock = this.blockGenerator.makeDeviceRevocationBlock(user, this.storage.keyStore.currentUserKey, revokedDeviceId);
     await this._client.sendBlock(revokeDeviceBlock);
     await this._trustchain.sync();
   }

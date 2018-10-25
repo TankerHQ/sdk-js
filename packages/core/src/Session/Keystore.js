@@ -7,7 +7,6 @@ import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { InvalidUserToken } from '../errors';
 import KeySafe, { type DeviceKeys } from './KeySafe';
-import { type Device } from '../Users/UserStore';
 import { type UserKeys, type UserKeyPair } from '../Blocks/payloads';
 import { findIndex } from '../utils';
 
@@ -167,34 +166,6 @@ export default class Keystore extends EventEmitter {
       value: safe,
     });
     this._userKeys = userKeys;
-  }
-
-  rotateUserKeys = async (devices: Array<Device>): Promise<UserKeys> => {
-    const { currentUserKey } = this;
-    const newUserKeyPair = tcrypto.makeEncryptionKeyPair();
-
-    const encryptedPreviousUserKey = tcrypto.sealEncrypt(
-      currentUserKey.privateKey,
-      newUserKeyPair.publicKey,
-    );
-
-    const encryptedUserKeyForDevices = devices.map(device => {
-      const encryptedUserKey = tcrypto.sealEncrypt(
-        newUserKeyPair.privateKey,
-        device.devicePublicEncryptionKey,
-      );
-      return {
-        recipient: utils.fromBase64(device.deviceId),
-        key: encryptedUserKey,
-      };
-    });
-
-    return {
-      public_encryption_key: newUserKeyPair.publicKey,
-      previous_public_encryption_key: currentUserKey.publicKey,
-      encrypted_previous_encryption_key: encryptedPreviousUserKey,
-      private_keys: encryptedUserKeyForDevices,
-    };
   }
 
   async processDeviceCreationUserKeyPair(deviceId: Uint8Array, devicePublicKey: Uint8Array, userKeyPair: ?UserKeyPair): Promise<void> {
