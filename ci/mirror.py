@@ -12,7 +12,7 @@ def main():
     else:
         ci.run("git", "fetch", "--force", "origin", "%s:%s" % (ref,ref))
 
-    github_url = "git@github.com:supertanker/sdk-js"
+    github_url = "git@github.com:TankerHQ/sdk-js"
     ci.run("git", "push", github_url, "%s:%s" % (ref,ref))
 
 

@@ -1,5 +1,5 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Build](https://img.shields.io/travis/SuperTanker/sdk-js/master.svg)](https://travis-ci.org/SuperTanker/sdk-js)
+[![Build](https://img.shields.io/travis/TankerHQ/sdk-js/master.svg)](https://travis-ci.org/TankerHQ/sdk-js)
 
 # Tanker JavaScript SDK
 
@@ -43,7 +43,7 @@ yarn -v
 
 Clone this repository:
 ```bash
-git clone https://github.com/SuperTanker/sdk-js.git
+git clone https://github.com/TankerHQ/sdk-js.git
 ```
 
 Install dependencies:
