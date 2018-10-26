@@ -6,4 +6,5 @@ install:
   - yarn
 
 script:
-  - yarn test
+  - yarn build:all
+  - yarn coverage
