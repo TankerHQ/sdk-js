@@ -11,7 +11,7 @@ import { type ExternalGroup } from '../Groups/types';
 import { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type UnverifiedUserGroupEntry, type VerifiedUserGroupEntry } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 
 import {
   type UserDeviceRecord,
@@ -150,7 +150,7 @@ export default class TrustchainVerifier {
     }
   }
 
-  _verifyUserGroupCreation(entry: UnverifiedUserGroupEntry, author: Device, existingGroup: ?ExternalGroup): VerifiedUserGroupEntry {
+  _verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Device, existingGroup: ?ExternalGroup): VerifiedUserGroup {
     const currentPayload: UserGroupCreationRecord = (entry: any);
 
     if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
@@ -164,10 +164,10 @@ export default class TrustchainVerifier {
     if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature, currentPayload.public_signature_key))
       throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
 
-    return (entry: VerifiedUserGroupEntry);
+    return (entry: VerifiedUserGroup);
   }
 
-  _verifyUserGroupAddition(entry: UnverifiedUserGroupEntry, author: Device, currentGroup: ?ExternalGroup): VerifiedUserGroupEntry {
+  _verifyUserGroupAddition(entry: UnverifiedUserGroup, author: Device, currentGroup: ?ExternalGroup): VerifiedUserGroup {
     const currentPayload: UserGroupAdditionRecord = (entry: any);
 
     if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
@@ -183,7 +183,7 @@ export default class TrustchainVerifier {
     if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentGroup.publicSignatureKey))
       throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
 
-    return (entry: VerifiedUserGroupEntry);
+    return (entry: VerifiedUserGroup);
   }
 
   _verifyDeviceRevocation(entry: UnverifiedDeviceRevocation, authorUserId: b64string, authorKey: Uint8Array, targetUser: ?User) {
@@ -478,7 +478,7 @@ export default class TrustchainVerifier {
     return user;
   }
 
-  async _unlockedVerifySingleUserGroup(entry: UnverifiedUserGroupEntry, author: Device): Promise<VerifiedUserGroupEntry> {
+  async _unlockedVerifySingleUserGroup(entry: UnverifiedUserGroup, author: Device): Promise<VerifiedUserGroup> {
     switch (natureKind(entry.nature)) {
       case NATURE_KIND.user_group_creation: {
         const groupId = (entry: any).public_signature_key;
@@ -495,15 +495,15 @@ export default class TrustchainVerifier {
     }
   }
 
-  async _unlockedProcessUserGroups(unverifiedEntries: Array<UnverifiedUserGroupEntry>) {
+  async _unlockedProcessUserGroups(unverifiedEntries: Array<UnverifiedUserGroup>) {
     const authors = await this._unlockedGetVerifiedAuthorsByHash(unverifiedEntries);
 
-    for (const unverifiedUserGroupEntry of unverifiedEntries) {
-      const author = authors.get(utils.toBase64(unverifiedUserGroupEntry.hash));
+    for (const UnverifiedUserGroup of unverifiedEntries) {
+      const author = authors.get(utils.toBase64(UnverifiedUserGroup.hash));
       if (!author)
-        throw new InvalidBlockError('author_not_found', 'author not found', { unverifiedUserGroupEntry });
+        throw new InvalidBlockError('author_not_found', 'author not found', { UnverifiedUserGroup });
 
-      const verifiedEntry = await this._unlockedVerifySingleUserGroup(unverifiedUserGroupEntry, author);
+      const verifiedEntry = await this._unlockedVerifySingleUserGroup(UnverifiedUserGroup, author);
       await this._groupUpdater.applyEntry(verifiedEntry);
       await this._storage.unverifiedStore.removeVerifiedUserGroupEntry(verifiedEntry);
     }
