@@ -17,8 +17,6 @@ import {
 
 import { InvalidBlockError } from '../errors';
 
-export const rootEntryAuthor = new Uint8Array(32);
-
 export type DbEntry = {|
   index: number,
   nature: Nature,
