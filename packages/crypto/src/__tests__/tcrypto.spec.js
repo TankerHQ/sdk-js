@@ -54,4 +54,27 @@ describe('tcrypto', () => {
 
     await expect(decryptedText).to.deep.equal(text);
   });
+
+  it('should be able to derive a key', async () => {
+    const key = fromString('12345678123456781234567812345678');
+
+    const subKeyOne = tcrypto.deriveKey(key, 1);
+    const subKeyOneBis = tcrypto.deriveKey(key, 1);
+    const subKeyTwo = tcrypto.deriveKey(key, 2);
+
+    await expect(subKeyOne).to.deep.equal(subKeyOneBis);
+    await expect(subKeyOne).not.to.deep.equal(subKeyTwo);
+  });
+
+  it('should encrypt and decrypt with derivated key', async () => {
+    const key = fromString('12345678123456781234567812345678');
+    const text = fromString('plop');
+
+    const subKey = tcrypto.deriveKey(key, 1);
+
+    const cipher = await encryptAEADv2(subKey, text);
+    const decryptedText = await decryptAEADv2(subKey, cipher);
+
+    await expect(decryptedText).to.deep.equal(text);
+  });
 });
