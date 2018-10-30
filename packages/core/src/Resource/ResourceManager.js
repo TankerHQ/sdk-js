@@ -11,8 +11,6 @@ import ResourceStore from './ResourceStore';
 
 export const currentVersion = 2;
 
-export const currentStreamVersion = 1;
-
 export type Resource = {
   key: Uint8Array,
   resourceId: Uint8Array,
@@ -20,10 +18,9 @@ export type Resource = {
   version: number
 }
 
-export type StreamResource = {
+export type ResourceIdKeyPair = {
   key: Uint8Array,
-  resourceId: Uint8Array,
-  version: number
+  resourceId: Uint8Array
 }
 
 export function getResourceId(serializedData: Uint8Array): Uint8Array {
@@ -60,11 +57,11 @@ export class ResourceManager {
     return { key, resourceId, encryptedData: buffer, version: currentVersion };
   }
 
-  static makeStreamResource(): StreamResource {
+  static makeStreamResource(): ResourceIdKeyPair {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = generichash(key, tcrypto.MAC_SIZE);
 
-    return { key, resourceId, version: currentStreamVersion };
+    return { key, resourceId };
   }
 
   async findKeyFromResourceId(resourceId: Uint8Array, retry?: bool): Promise<Key> {
