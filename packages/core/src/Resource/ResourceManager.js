@@ -2,20 +2,26 @@
 
 import varint from 'varint';
 
-import { tcrypto, random, aead, type Key } from '@tanker/crypto';
+import { tcrypto, random, aead, generichash, type Key } from '@tanker/crypto';
 import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument } from '../errors';
 import Trustchain from '../Trustchain/Trustchain';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { KeyDecryptor } from './KeyDecryptor';
 import ResourceStore from './ResourceStore';
 
-export const currentVersion = 3;
+export const currentSimpleVersion = 3;
+export const currentStreamVersion = 4;
 
 export type Resource = {
   key: Uint8Array,
   resourceId: Uint8Array,
   encryptedData: Uint8Array,
   version: number
+}
+
+export type ResourceIdKeyPair = {
+  key: Uint8Array,
+  resourceId: Uint8Array
 }
 
 const extractResourceId = (ciphertext: Uint8Array): Uint8Array => aead.extractMac(ciphertext);
@@ -71,11 +77,18 @@ export class ResourceManager {
     this._keyDecryptor = keyDecryptor;
   }
 
-  static async makeResource(plain: Uint8Array): Promise<Resource> {
+  static async makeSimpleResource(plain: Uint8Array): Promise<Resource> {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const buffer = await aead.encryptAEADv3(key, plain);
     const resourceId = extractResourceId(buffer);
-    return { key, resourceId, encryptedData: buffer, version: currentVersion };
+    return { key, resourceId, encryptedData: buffer, version: currentSimpleVersion };
+  }
+
+  static makeStreamResource(): ResourceIdKeyPair {
+    const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const resourceId = generichash(key, tcrypto.MAC_SIZE);
+
+    return { key, resourceId, version: currentStreamVersion };
   }
 
   async findKeyFromResourceId(resourceId: Uint8Array, retry?: bool): Promise<Key> {
