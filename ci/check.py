@@ -131,11 +131,11 @@ def run_functional_tests(*, env, runner, nightly):
     cwd = workspace / repo
     sdk_js = workspace / "sdk-js"
     ci.install_deps(cwd=sdk_js)
-    ci.run(sys.executable, "-m", "pipenv", "install", "--deploy", cwd=cwd)
+    ci.dmenv_install(cwd=cwd)
     args = ["--runner", runner]
     if nightly:
         args.append("--nightly")
-    ci.run(sys.executable, "-m", "pipenv", "run", "python", "ci/check.py", *args, cwd=cwd)
+    ci.dmenv_run("python", "ci/check.py", *args, cwd=cwd)
 
 
 def check(*, env, runner, nightly):
