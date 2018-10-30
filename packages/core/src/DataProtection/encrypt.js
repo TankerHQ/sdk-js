@@ -12,7 +12,7 @@ export type EncryptionResult = {
 };
 
 export async function encryptData(plain: Uint8Array): Promise<EncryptionResult> {
-  const { key, resourceId, encryptedData, version } = await ResourceManager.makeResource(plain);
+  const { key, resourceId, encryptedData, version } = await ResourceManager.makeSimpleResource(plain);
   const encodedVersion = varint.encode(version);
   return { key, resourceId, encryptedData: concatArrays(encodedVersion, encryptedData) };
 }
