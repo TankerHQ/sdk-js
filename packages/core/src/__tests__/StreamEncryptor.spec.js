@@ -28,10 +28,19 @@ describe('Stream Encryptor', () => {
     buffer = [];
   });
 
+  it('can give its associated resourceId', () => {
+    const key = utils.fromString('12345678123456781234567812345678');
+    const resourceId = new Uint8Array(tcrypto.MAC_SIZE);
+
+    const stream = new StreamEncryptor(resourceId, key, callbacks);
+
+    expect(stream.resourceId()).to.be.equal(utils.toBase64(resourceId));
+  });
+
   it('derives its key and push metas before encryption', async () => {
     const key = utils.fromString('12345678123456781234567812345678');
     const resourceId = new Uint8Array(tcrypto.MAC_SIZE);
-    const msg = utils.fromString('plop');
+    const msg = utils.fromString('message');
 
     const stream = new StreamEncryptor(resourceId, key, callbacks);
 
