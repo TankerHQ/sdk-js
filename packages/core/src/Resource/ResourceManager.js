@@ -2,7 +2,7 @@
 
 import varint from 'varint';
 
-import { tcrypto, random, aead, type Key } from '@tanker/crypto';
+import { tcrypto, random, aead, generichash, type Key } from '@tanker/crypto';
 import { ResourceNotFound, InvalidEncryptionFormat } from '../errors';
 import Trustchain from '../Trustchain/Trustchain';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
@@ -11,10 +11,18 @@ import ResourceStore from './ResourceStore';
 
 export const currentVersion = 2;
 
+export const currentStreamVersion = 1;
+
 export type Resource = {
   key: Uint8Array,
   resourceId: Uint8Array,
   encryptedData: Uint8Array,
+  version: number
+}
+
+export type StreamResource = {
+  key: Uint8Array,
+  resourceId: Uint8Array,
   version: number
 }
 
@@ -50,6 +58,13 @@ export class ResourceManager {
     const buffer = await aead.encryptAEADv2(key, plain);
     const resourceId = aead.extractResourceId(buffer);
     return { key, resourceId, encryptedData: buffer, version: currentVersion };
+  }
+
+  static makeStreamResource(): StreamResource {
+    const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const resourceId = generichash(key, tcrypto.MAC_SIZE);
+
+    return { key, resourceId, version: currentStreamVersion };
   }
 
   async findKeyFromResourceId(resourceId: Uint8Array, retry?: bool): Promise<Key> {

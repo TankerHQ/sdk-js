@@ -174,12 +174,9 @@ export default class DataProtector {
   }
 
   async makeStreamEncryptor(parameters: StreamEncryptorParameters): Promise<StreamEncryptor> {
-    // temp dummy values
-    // should gen key and get ressourId using tcrypto
-    const resourceId = new Uint8Array([0]);
-    const key = new Uint8Array([0]);
+    const streamResource = ResourceManager.makeStreamResource();
 
-    return makeStreamEncryptor(resourceId, key, parameters);
+    return makeStreamEncryptor(streamResource, parameters);
   }
 
   async makeStreamDecryptor(parameters: StreamDecryptorParameters): Promise<StreamDecryptor> {
