@@ -13,7 +13,7 @@ import { type UnlockKey, type UnlockDeviceParams, type SetupUnlockParams, DEVICE
 import { extractUserData } from './Tokens/SessionTypes';
 import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
-import { type EncryptionOptions, defaultEncryptionOptions } from './DataProtection/DataProtector';
+import { type EncryptionOptions, type ShareWithArg, defaultEncryptionOptions } from './DataProtection/DataProtector';
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
 const statusDefs = [
@@ -368,8 +368,12 @@ export class Tanker extends EventEmitter {
 
     const opts = { ...defaultEncryptionOptions, shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...options };
 
-    if (opts.shareWithSelf === false && opts.shareWith.length === 0) {
-      throw new InvalidArgument('options.shareWith', 'shareWith must contain user ids when options.shareWithSelf === false', opts.shareWith);
+    if (opts.shareWithSelf === false &&
+      ((opts.shareWith instanceof Array && opts.shareWith.length === 0) ||
+        (!(opts.shareWith instanceof Array) &&
+          (!opts.shareWith.users || opts.shareWith.users.length === 0) &&
+          (!opts.shareWith.groups || opts.shareWith.groups.length === 0)))) {
+      throw new InvalidArgument('options.shareWith', 'shareWith must contain user ids or group ids when options.shareWithSelf === false', opts.shareWith);
     }
 
     return this._session.dataProtector.encryptAndShareData(plain, opts);
@@ -397,13 +401,13 @@ export class Tanker extends EventEmitter {
     return utils.toString(await this.decryptData(cipher));
   }
 
-  async share(resourceIds: Array<b64string>, shareWith: Array<string>): Promise<void> {
+  async share(resourceIds: Array<b64string>, shareWith: ShareWithArg): Promise<void> {
     this.assert(this.OPEN, 'share');
 
     if (!(resourceIds instanceof Array))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    if (!(shareWith instanceof Array))
+    if (!(shareWith instanceof Array) && typeof shareWith !== 'object')
       throw new InvalidArgument('shareWith', 'Array<string>', shareWith);
 
     return this._session.dataProtector.share(resourceIds, shareWith);
