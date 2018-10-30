@@ -3,14 +3,16 @@
 import varint from 'varint';
 
 import { utils, aead, tcrypto, type b64string } from '@tanker/crypto';
-import { type StreamResource } from '../Resource/ResourceManager';
+import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
+import { type ShareWithArg } from './DataProtector';
 
 export type StreamEncryptorParameters = {
   onData: (Uint8Array) => Promise<void> | void,
   onEnd: () => Promise<void> | void,
   blockSize?: number,
-  shareWith?: Array<string>
+  shareWith?: ShareWithArg,
+  shareWithSelf?: bool
 }
 
 export const streamEncryptorVersion = 1;
@@ -24,7 +26,7 @@ export default class StreamEncryptor {
   _resourceId: Uint8Array;
   _key: Uint8Array;
   _index = 0;
-  _meta: ?Uint8Array;
+  _formatHeader: ?Uint8Array;
 
   constructor(resourceId: Uint8Array, key: Uint8Array, parameters: StreamEncryptorParameters) {
     this._onData = parameters.onData;
@@ -36,7 +38,7 @@ export default class StreamEncryptor {
     this._key = key;
     this._resourceId = resourceId;
 
-    this._meta = concatArrays(varint.encode(streamEncryptorVersion), resourceId);
+    this._formatHeader = concatArrays(varint.encode(streamEncryptorVersion), resourceId);
   }
 
   resourceId(): b64string {
@@ -44,9 +46,9 @@ export default class StreamEncryptor {
   }
 
   async write(clearData: Uint8Array): Promise<void> {
-    if (this._meta) {
-      await this._onData(this._meta);
-      this._meta = undefined;
+    if (this._formatHeader) {
+      await this._onData(this._formatHeader);
+      this._formatHeader = null;
     }
     const key = tcrypto.deriveKey(this._key, this._index);
     this._index += 1;
@@ -58,6 +60,6 @@ export default class StreamEncryptor {
   }
 }
 
-export function makeStreamEncryptor(streamResource: StreamResource, parameters: StreamEncryptorParameters): StreamEncryptor {
+export function makeStreamEncryptor(streamResource: ResourceIdKeyPair, parameters: StreamEncryptorParameters): StreamEncryptor {
   return new StreamEncryptor(streamResource.resourceId, streamResource.key, parameters);
 }
