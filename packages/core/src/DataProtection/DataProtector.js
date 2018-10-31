@@ -187,6 +187,9 @@ export default class DataProtector {
   }
 
   async makeStreamDecryptor(parameters: StreamDecryptorParameters): Promise<StreamDecryptor> {
-    return makeStreamDecryptor(parameters);
+    const resourceIdKeyMapper = {
+      findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId, true)
+    };
+    return makeStreamDecryptor(resourceIdKeyMapper, parameters);
   }
 }
