@@ -5,13 +5,13 @@ import varint from 'varint';
 import { utils, aead, tcrypto, type b64string } from '@tanker/crypto';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
-import { type ShareWithArg } from './DataProtector';
+import { type ShareWithOptions } from './ShareWithOptions';
 
 export type StreamEncryptorParameters = {
   onData: (Uint8Array) => Promise<void> | void,
   onEnd: () => Promise<void> | void,
   blockSize?: number,
-  shareWith?: ShareWithArg,
+  shareWith?: ShareWithOptions,
   shareWithSelf?: bool
 }
 
