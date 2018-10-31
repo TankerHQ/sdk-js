@@ -173,9 +173,13 @@ export default class DataProtector {
     return makeChunkEncryptor({ encryptor, seal, defaultShareWithSelf: (this._localUser.deviceType === DEVICE_TYPE.client_device) });
   }
 
-  async makeEncryptorStream(): Promise<EncryptorStream> {
+  async makeEncryptorStream(options: EncryptionOptions): Promise<EncryptorStream> {
     const streamResource = ResourceManager.makeStreamResource();
-    return new EncryptorStream(streamResource.resourceId, streamResource.key);
+    const encryptorStream = new EncryptorStream(streamResource.resourceId, streamResource.key);
+
+    await this._shareResources([streamResource], options, options.shareWithSelf || false);
+
+    return encryptorStream;
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
