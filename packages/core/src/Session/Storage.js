@@ -76,7 +76,7 @@ export default class Storage {
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
     this._userStore = await UserStore.open(this._datastore, userId, this._keyStore);
-    this._groupStore = await GroupStore.open(this._datastore);
+    this._groupStore = await GroupStore.open(this._datastore, userSecret);
     this._trustchainStore = await TrustchainStore.open(this._datastore);
     this._unverifiedStore = await UnverifiedStore.open(this._datastore);
 

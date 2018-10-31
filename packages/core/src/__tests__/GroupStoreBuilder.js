@@ -1,6 +1,7 @@
 // @flow
 
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
+import { createUserSecretBinary } from '@tanker/crypto';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
 
@@ -36,7 +37,8 @@ export default class GroupStoreBuilder {
   static async open() {
     const { generator } = await makeGenerator();
     const dataStore = await makeMemoryDataStore();
-    const groupStore = await GroupStore.open(dataStore);
+    const userSecret = createUserSecretBinary('trustchainid', 'userId');
+    const groupStore = await GroupStore.open(dataStore, userSecret);
 
     return new GroupStoreBuilder(groupStore, generator);
   }

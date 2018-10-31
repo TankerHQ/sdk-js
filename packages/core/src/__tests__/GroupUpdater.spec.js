@@ -1,6 +1,7 @@
 // @flow
 
 import { mergeSchemas } from '@tanker/datastore-base';
+import { createUserSecretBinary } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { type UserGroupAdditionRecord, type UserGroupCreationRecord } from '../Blocks/payloads';
@@ -14,7 +15,8 @@ async function makeMemoryGroupStore(): Promise<GroupStore> {
 
   const baseConfig = { ...dataStoreConfig, schemas };
   const config = { ...baseConfig, dbName: `group-store-test-${makePrefix()}` };
-  return GroupStore.open(await openDataStore(config));
+  const userSecret = createUserSecretBinary('trustchainid', 'userId');
+  return GroupStore.open(await openDataStore(config), userSecret);
 }
 
 describe('GroupUpdater', () => {
