@@ -201,14 +201,14 @@ export function createDeviceFromValidationCode({
     utils.fromBase64(deviceKeys.deviceId)
   );
 
-  return blockGenerator.makeNewDeviceBlock(
+  return blockGenerator.makeNewDeviceBlock({
     userId,
     userKeys,
-    utils.fromBase64(code.keyS),
-    utils.fromBase64(code.keyC),
-    false,
-    false
-  );
+    publicSignatureKey: utils.fromBase64(code.keyS),
+    publicEncryptionKey: utils.fromBase64(code.keyC),
+    isGhost: false,
+    isServer: false
+  });
 }
 
 export function extractUnlockKey(unlockKey: b64string): GhostDevice {
@@ -280,14 +280,14 @@ function createDeviceFromUnlockKeyV3({
     ghostDevice.privateSignatureKey,
     ghostDevice.deviceId
   );
-  return blockGenerator.makeNewDeviceBlock(
+  return blockGenerator.makeNewDeviceBlock({
     userId,
     userKeys,
-    deviceKeys.signaturePair.publicKey,
-    deviceKeys.encryptionPair.publicKey,
-    false,
-    (deviceType === DEVICE_TYPE.server_device)
-  );
+    publicSignatureKey: deviceKeys.signaturePair.publicKey,
+    publicEncryptionKey: deviceKeys.encryptionPair.publicKey,
+    isGhost: false,
+    isServer: (deviceType === DEVICE_TYPE.server_device)
+  });
 }
 
 export function generateUnlockKeyRegistration({
@@ -306,14 +306,14 @@ export function generateUnlockKeyRegistration({
     authorDevice.id,
   );
 
-  const newDeviceBlock = blockGenerator.makeNewDeviceBlock(
+  const newDeviceBlock = blockGenerator.makeNewDeviceBlock({
     userId,
     userKeys,
-    ghostSignatureKeyPair.publicKey,
-    ghostEncryptionKeyPair.publicKey,
-    true,
-    (deviceType === DEVICE_TYPE.server_device)
-  );
+    publicSignatureKey: ghostSignatureKeyPair.publicKey,
+    publicEncryptionKey: ghostEncryptionKeyPair.publicKey,
+    isGhost: true,
+    isServer: (deviceType === DEVICE_TYPE.server_device)
+  });
 
   const ghostDeviceId = hashBlock(newDeviceBlock);
 

@@ -119,12 +119,12 @@ class TestGenerator {
     );
 
     this._trustchainIndex += 1;
-    const newUserBlock = blockGenerator.makeNewUserBlock(
+    const newUserBlock = blockGenerator.makeNewUserBlock({
       userId,
-      createDelegationToken(userId, this._trustchainKeys.privateKey),
-      signatureKeyPair.publicKey,
-      encryptionKeyPair.publicKey
-    );
+      delegationToken: createDelegationToken(userId, this._trustchainKeys.privateKey),
+      publicSignatureKey: signatureKeyPair.publicKey,
+      publicEncryptionKey: encryptionKeyPair.publicKey
+    });
     newUserBlock.index = this._trustchainIndex;
 
     const entry = blockToEntry(newUserBlock);
@@ -172,14 +172,14 @@ class TestGenerator {
     );
 
     this._trustchainIndex += 1;
-    const block = blockGenerator.makeNewDeviceBlock(
-      parentDevice.testUser.id,
-      parentDevice.testUser.userKeys,
-      signatureKeyPair.publicKey,
-      encryptionKeyPair.publicKey,
-      false,
+    const block = blockGenerator.makeNewDeviceBlock({
+      userId: parentDevice.testUser.id,
+      userKeys: parentDevice.testUser.userKeys,
+      publicSignatureKey: signatureKeyPair.publicKey,
+      publicEncryptionKey: encryptionKeyPair.publicKey,
+      isGhost: false,
       isServer,
-    );
+    });
     block.index = this._trustchainIndex;
 
     const entry = blockToEntry(block);

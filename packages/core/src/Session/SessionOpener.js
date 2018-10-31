@@ -64,12 +64,12 @@ export class SessionOpener extends EventEmitter {
   }
 
   _createNewUser = async () => {
-    const newUserBlock = this._blockGenerator.makeNewUserBlock(
-      this._userData.userId,
-      this._userData.delegationToken,
-      this._storage.keyStore.publicSignatureKey,
-      this._storage.keyStore.publicEncryptionKey
-    );
+    const newUserBlock = this._blockGenerator.makeNewUserBlock({
+      userId: this._userData.userId,
+      delegationToken: this._userData.delegationToken,
+      publicSignatureKey: this._storage.keyStore.publicSignatureKey,
+      publicEncryptionKey: this._storage.keyStore.publicEncryptionKey
+    });
     await this._client.sendBlock(newUserBlock);
   }
 

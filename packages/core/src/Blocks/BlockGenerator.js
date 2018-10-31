@@ -41,6 +41,38 @@ export function getUserGroupAdditionBlockSignData(record: UserGroupAdditionRecor
   );
 }
 
+
+type MakeDeviceParams = {
+  userId: Uint8Array,
+  userKeys: tcrypto.SodiumKeyPair,
+  author: Uint8Array,
+  ephemeralKey: Uint8Array,
+  delegationSignature: Uint8Array,
+  publicSignatureKey: Uint8Array,
+  publicEncryptionKey: Uint8Array,
+  blockSignatureKey: Uint8Array,
+  isGhost: bool,
+  isServer: bool
+};
+
+type NewUserParams = {
+  userId: Uint8Array,
+  delegationToken: DelegationToken,
+  publicSignatureKey: Uint8Array,
+  publicEncryptionKey: Uint8Array
+};
+
+
+type NewDeviceParams = {
+    userId: Uint8Array,
+    userKeys: tcrypto.SodiumKeyPair,
+    publicSignatureKey: Uint8Array,
+    publicEncryptionKey: Uint8Array,
+    isGhost: bool,
+    isServer: bool
+};
+
+
 export class BlockGenerator {
   trustchainId: Uint8Array;
   privateSignatureKey: Key;
@@ -56,35 +88,24 @@ export class BlockGenerator {
     this.deviceId = deviceId;
   }
 
-  _makeDeviceBlock(
-    userId: Uint8Array,
-    author: Uint8Array,
-    ephemeralKey: Uint8Array,
-    delegationSignature: Uint8Array,
-    publicSignatureKey: Uint8Array,
-    publicEncryptionKey: Uint8Array,
-    blockSignatureKey: Uint8Array,
-    userKeys: tcrypto.SodiumKeyPair,
-    isGhost: bool,
-    isServer: bool
-  ): Block {
+  _makeDeviceBlock(args: MakeDeviceParams): Block {
     const encryptedUserKey = tcrypto.sealEncrypt(
-      userKeys.privateKey,
-      publicEncryptionKey,
+      args.userKeys.privateKey,
+      args.publicEncryptionKey,
     );
     const userDevice: UserDeviceRecord = {
-      ephemeral_public_signature_key: ephemeralKey,
-      user_id: userId,
-      delegation_signature: delegationSignature,
-      public_signature_key: publicSignatureKey,
-      public_encryption_key: publicEncryptionKey,
+      ephemeral_public_signature_key: args.ephemeralKey,
+      user_id: args.userId,
+      delegation_signature: args.delegationSignature,
+      public_signature_key: args.publicSignatureKey,
+      public_encryption_key: args.publicEncryptionKey,
       last_reset: new Uint8Array(tcrypto.HASH_SIZE),
       user_key_pair: {
-        public_encryption_key: userKeys.publicKey,
+        public_encryption_key: args.userKeys.publicKey,
         encrypted_private_encryption_key: encryptedUserKey,
       },
-      is_ghost_device: isGhost,
-      is_server_device: isServer,
+      is_ghost_device: args.isGhost,
+      is_server_device: args.isServer,
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
@@ -92,53 +113,37 @@ export class BlockGenerator {
       index: 0,
       trustchain_id: this.trustchainId,
       nature: preferredNature(NATURE_KIND.device_creation),
-      author,
+      author: args.author,
       payload: serializeUserDeviceV3(userDevice)
-    }, blockSignatureKey);
+    }, args.blockSignatureKey);
   }
 
-  makeNewUserBlock(userId: Uint8Array, delegationToken: DelegationToken, publicSignatureKey: Uint8Array, publicEncryptionKey: Uint8Array) {
-    if (!utils.equalArray(delegationToken.user_id, userId))
-      throw new InvalidDelegationToken(`delegation token for user ${utils.toBase64(delegationToken.user_id)}, but we are ${utils.toBase64(userId)}`);
+  makeNewUserBlock(args: NewUserParams) {
+    if (!utils.equalArray(args.delegationToken.user_id, args.userId))
+      throw new InvalidDelegationToken(`delegation token for user ${utils.toBase64(args.delegationToken.user_id)}, but we are ${utils.toBase64(args.userId)}`);
     const userKeys = tcrypto.makeEncryptionKeyPair();
 
-    return this._makeDeviceBlock(
-      userId,
-      this.trustchainId,
-      delegationToken.ephemeral_public_signature_key,
-      delegationToken.delegation_signature,
-      publicSignatureKey,
-      publicEncryptionKey,
-      delegationToken.ephemeral_private_signature_key,
+    return this._makeDeviceBlock({
+      ...args,
+      author: this.trustchainId,
+      ephemeralKey: args.delegationToken.ephemeral_public_signature_key,
+      delegationSignature: args.delegationToken.delegation_signature,
+      blockSignatureKey: args.delegationToken.ephemeral_private_signature_key,
       userKeys,
-      false,
-      false
-    );
+      isGhost: false,
+      isServer: false });
   }
 
-  makeNewDeviceBlock(
-    userId: Uint8Array,
-    userKeys: tcrypto.SodiumKeyPair,
-    publicSignatureKey: Uint8Array,
-    publicEncryptionKey: Uint8Array,
-    isGhost: bool,
-    isServer: bool
-  ): Block {
+  makeNewDeviceBlock(args: NewDeviceParams): Block {
     const ephemeralKeys = tcrypto.makeSignKeyPair();
-    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, userId);
+    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, args.userId);
 
-    return this._makeDeviceBlock(
-      userId,
-      this.deviceId,
-      ephemeralKeys.publicKey,
-      tcrypto.sign(delegationBuffer, this.privateSignatureKey),
-      publicSignatureKey,
-      publicEncryptionKey,
-      ephemeralKeys.privateKey,
-      userKeys,
-      isGhost,
-      isServer
-    );
+    return this._makeDeviceBlock({ ...args,
+      author: this.deviceId,
+      ephemeralKey: ephemeralKeys.publicKey,
+      delegationSignature: tcrypto.sign(delegationBuffer, this.privateSignatureKey),
+      blockSignatureKey: ephemeralKeys.privateKey,
+    });
   }
 
   _rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKeyPair): UserKeys => {
