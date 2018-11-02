@@ -54,6 +54,8 @@ export default class GroupManager {
     );
     await this._client.sendBlock(userGroupCreationBlock);
 
+    await this._trustchain.sync();
+
     return utils.toBase64(groupSignatureKeyPair.publicKey);
   }
 
@@ -89,6 +91,8 @@ export default class GroupManager {
       else
         throw e;
     }
+
+    await this._trustchain.sync();
   }
 
   async hasGroup(groupId: Uint8Array) {
