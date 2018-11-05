@@ -128,7 +128,7 @@ export default class DataProtector {
     const userIds = [];
     for (const id of users) {
       // skip self
-      if (id === this._sessionData.userId) {
+      if (id === this._sessionData.clearUserId) {
         pushSelfUserId = true;
         continue;
       }
