@@ -2,7 +2,7 @@
 
 import varint from 'varint';
 
-import { aead, tcrypto, type Key } from '@tanker/crypto';
+import { aead, utils, tcrypto, type Key } from '@tanker/crypto';
 import { InvalidEncryptionFormat } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { defaultBlockSize } from './StreamEncryptor';
@@ -22,8 +22,10 @@ export default class StreamDecryptor {
   _onData: (Uint8Array) => Promise<void> | void;
   _onEnd: () => Promise<void> | void;
   _blockSize: number = defaultBlockSize;
+
   _resourceIdKeyPair: ?ResourceIdKeyPair;
   _index = 0;
+  _outputBuffer: Uint8Array = new Uint8Array(0);
 
   async _findAndRemoveKeyFromData(encryptedData: Uint8Array) {
     const version = varint.decode(encryptedData);
@@ -53,6 +55,18 @@ export default class StreamDecryptor {
     }
   }
 
+  async _handleBufferedOutput() {
+    let offset = 0;
+    let remaining = this._outputBuffer.length;
+    while (remaining >= this._blockSize) {
+      await this._onData(this._outputBuffer.subarray(offset, offset + this._blockSize));
+      offset += this._blockSize;
+      remaining -= this._blockSize;
+    }
+
+    this._outputBuffer = this._outputBuffer.subarray(offset);
+  }
+
   async write(encryptedData: Uint8Array): Promise<void> {
     let data = encryptedData;
     if (!this._resourceIdKeyPair) {
@@ -66,10 +80,16 @@ export default class StreamDecryptor {
 
     const subKey = tcrypto.deriveKey(this._resourceIdKeyPair.key, this._index);
     this._index += 1;
-    return this._onData(await aead.decryptAEADv2(subKey, data));
+    this._outputBuffer = utils.concatArrays(this._outputBuffer, await aead.decryptAEADv2(subKey, data));
+
+    return this._handleBufferedOutput();
   }
 
   async close(): Promise<void> {
+    if (this._outputBuffer.length > 0) {
+      this._onData(this._outputBuffer);
+    }
+
     return this._onEnd();
   }
 }
