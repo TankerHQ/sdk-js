@@ -65,18 +65,7 @@ export default class DataProtector {
     const blocks: Array<Block> = [];
     for (const publicEncryptionKey of keys) {
       for (const { key, resourceId } of keyResourceIds) {
-        const sharedKey = tcrypto.sealEncrypt(
-          key,
-          publicEncryptionKey,
-        );
-
-        const payload = {
-          recipient: publicEncryptionKey,
-          resourceId,
-          key: sharedKey,
-        };
-        const block = this._blockGenerator.makeKeyPublishBlock(payload, nature);
-
+        const block = this._blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
         blocks.push(block);
       }
     }

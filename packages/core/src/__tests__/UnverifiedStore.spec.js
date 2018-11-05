@@ -8,7 +8,7 @@ import { NATURE, type UserGroupAdditionRecord, type UserGroupCreationRecord, typ
 import { makeTrustchainBuilder } from './TrustchainBuilder';
 
 import { type UnverifiedDeviceCreation, type UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type UnverifiedUserGroupEntry, type VerifiedUserGroupEntry } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 
 describe('UnverifiedStore', () => {
   describe('key publishes', () => {
@@ -152,8 +152,8 @@ describe('UnverifiedStore', () => {
     let store: any;
     let groupId;
     let groupKey;
-    let creationEntry: UnverifiedUserGroupEntry;
-    let additionEntry: UnverifiedUserGroupEntry;
+    let creationEntry: UnverifiedUserGroup;
+    let additionEntry: UnverifiedUserGroup;
 
     beforeEach(async () => {
       const builder = await makeTrustchainBuilder();
@@ -221,7 +221,7 @@ describe('UnverifiedStore', () => {
     });
 
     it('deletes a verified user group creation', async () => {
-      await store.removeVerifiedUserGroupEntry((creationEntry: VerifiedUserGroupEntry));
+      await store.removeVerifiedUserGroupEntry((creationEntry: VerifiedUserGroup));
       const result = (await store.findUnverifiedUserGroup(groupId)).map(r => {
         const res = r;
         delete res._rev; //eslint-disable-line no-underscore-dangle
@@ -231,7 +231,7 @@ describe('UnverifiedStore', () => {
     });
 
     it('deletes a verified user group addition', async () => {
-      await store.removeVerifiedUserGroupEntry((additionEntry: VerifiedUserGroupEntry));
+      await store.removeVerifiedUserGroupEntry((additionEntry: VerifiedUserGroup));
       const result = (await store.findUnverifiedUserGroup(groupId)).map(r => {
         const res = r;
         delete res._rev; //eslint-disable-line no-underscore-dangle

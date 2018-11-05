@@ -1,15 +1,92 @@
 // @flow
+/* eslint-disable no-underscore-dangle */
 
 import { tcrypto } from '@tanker/crypto';
+
 import { expect } from './chai';
+import { InvalidBlockError } from '../errors';
+import type { UnverifiedEntry } from '../Blocks/entries';
+import { type GeneratorKeyResult, type GeneratorUserResult } from './Generator';
+import { signBlock, type Block } from '../Blocks/Block';
+import { blockToEntry } from '../Trustchain/TrustchainStore';
 import TrustchainBuilder, { makeTrustchainBuilder } from './TrustchainBuilder';
-import { type GeneratorUserResult } from './Generator';
-import { setKeyPublishAuthor, setRecipientKeyPublish } from './Trustchain.verify.spec';
 import UserStore from '../Users/UserStore';
-import { NATURE } from '../Blocks/payloads';
+import {
+  serializeKeyPublish,
+  NATURE, type Nature,
+} from '../Blocks/payloads';
 
 
-describe('TrustchainVerifierCore', () => {
+type EntryBlockSignParam = {
+  entry: UnverifiedEntry,
+  block: Block,
+  blockPrivateSignatureKey: Uint8Array,
+};
+
+async function assertFailsWithNature(promise: Promise<*>, nature: string): Promise<void> {
+  await expect(promise)
+    .to.be.rejectedWith(InvalidBlockError)
+    .and.eventually.have.property('nature', nature);
+}
+
+function mergeBlock<T: EntryBlockSignParam>(user: T, block: Object, maybeBlockPrivateSignatureKey = null): T {
+  const blockPrivateSignatureKey = maybeBlockPrivateSignatureKey || user.blockPrivateSignatureKey;
+  const newBlock = { ...user.block, ...block };
+  const entry = blockToEntry(signBlock(newBlock, blockPrivateSignatureKey));
+  return { ...user, block: newBlock, entry };
+}
+
+function mergeKeyPublish(serializeFunction: Function, kp: GeneratorKeyResult, payload: Object, maybeBlockPrivateSignatureKey = null): GeneratorKeyResult {
+  const alteredPayload = { ...(kp.entry.payload_unverified: any), ...(payload: any) };
+  const serializedPayload = serializeFunction(alteredPayload);
+  const merged = mergeBlock(kp, { payload: serializedPayload }, maybeBlockPrivateSignatureKey);
+  merged.unverifiedKeyPublish = {
+    ...(merged.entry: any),
+    ...merged.entry.payload_unverified,
+  };
+  return merged;
+}
+
+function setKeyPublishAuthor(keyPublish: GeneratorKeyResult, author: Uint8Array, maybeBlockPrivateSignatureKey: ?Uint8Array): GeneratorKeyResult {
+  const merged = mergeBlock(keyPublish, { author }, maybeBlockPrivateSignatureKey);
+  return {
+    ...merged,
+    unverifiedKeyPublish: {
+      ...merged.entry,
+      ...merged.entry.payload_unverified,
+    },
+  };
+}
+
+function setRecipientKeyPublish(kp: GeneratorKeyResult, recipient: Uint8Array, nature: Nature, maybeBlockPrivateSignatureKey: ?Uint8Array): GeneratorKeyResult {
+  const payload = {
+    recipient,
+  };
+  switch (nature) {
+    case NATURE.key_publish_to_device:
+      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
+    case NATURE.key_publish_to_user:
+      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
+    case NATURE.key_publish_to_user_group:
+      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
+    default:
+      throw new Error('Invalid key publish nature');
+  }
+}
+
+describe('TrustchainVerifier', () => {
+  describe('block validation', () => {
+    it('should reject a block with an unknown author', async () => {
+      const builder = await makeTrustchainBuilder();
+      const { generator } = builder;
+      await generator.newUserCreationV3('alice');
+      const alice = await generator.newDeviceCreationV3({ userId: 'alice', parentIndex: 0 });
+      await builder.unverifiedStore.addUnverifiedUserEntries([blockToEntry(alice.block)]);
+      await assertFailsWithNature(builder.trustchainVerifier._throwingVerifyDeviceCreation(alice.unverifiedDeviceCreation), 'unknown_author');
+    });
+  });
+
+
   describe('verifyRootBlock', () => {
     it('marks the block as verified', async () => {
       const { generator, trustchainStore, trustchainVerifier } = await makeTrustchainBuilder();
@@ -124,4 +201,3 @@ describe('TrustchainVerifierCore', () => {
     });
   });
 });
-

@@ -41,6 +41,7 @@ export type UserPublicKeyToUser = {
 
 export type FindUserParameters = {|
   hashedUserId?: Uint8Array,
+  hashedDeviceId?: Uint8Array
 |}
 
 export type FindUsersParameters = {|
@@ -309,7 +310,7 @@ export default class UserStore {
   }
 
   async findUser(args: FindUserParameters): Promise<?User> {
-    const { hashedUserId } = args;
+    const { hashedUserId, hashedDeviceId } = args;
     if (Object.keys(args).length !== 1)
       throw new Error(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
@@ -318,6 +319,12 @@ export default class UserStore {
         selector: { userId: utils.toBase64(hashedUserId) },
       });
       return record;
+    } else if (hashedDeviceId) {
+      const deviceToUser = await this.findDeviceToUser({ hashedDeviceId });
+      if (!deviceToUser)
+        return null;
+      const { userId } = deviceToUser;
+      return this.findUser({ hashedUserId: utils.fromBase64(userId) });
     } else {
       throw new Error('Find: invalid argument');
     }

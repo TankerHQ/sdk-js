@@ -14,12 +14,12 @@ import {
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';
 
-export type UnverifiedUserGroupEntry = {
+export type UnverifiedUserGroup = {
   ...VerificationFields,
   ...UserGroupRecord,
 };
 
-export type VerifiedUserGroupEntry = UnverifiedUserGroupEntry
+export type VerifiedUserGroup = UnverifiedUserGroup
 
 export default class UserGroupsUnverifiedStore {
   _ds: DataStore<*>;
@@ -82,7 +82,7 @@ export default class UserGroupsUnverifiedStore {
     }
   }
 
-  async _findUnverifiedUserGroup(groupId: b64string): Promise<Array<UnverifiedUserGroupEntry>> {
+  async _findUnverifiedUserGroup(groupId: b64string): Promise<Array<UnverifiedUserGroup>> {
     const entries = await this._ds.find(UNVERIFIED_GROUPS_TABLE, {
       selector: {
         group_id: groupId,
@@ -93,11 +93,11 @@ export default class UserGroupsUnverifiedStore {
     return entries.map(dbEntryToEntry);
   }
 
-  async findUnverifiedUserGroup(groupId: Uint8Array): Promise<Array<UnverifiedUserGroupEntry>> {
+  async findUnverifiedUserGroup(groupId: Uint8Array): Promise<Array<UnverifiedUserGroup>> {
     return this._findUnverifiedUserGroup(utils.toBase64(groupId));
   }
 
-  async findUnverifiedUserGroupByPublicEncryptionKey(publicEncryptionKey: Uint8Array): Promise<Array<UnverifiedUserGroupEntry>> {
+  async findUnverifiedUserGroupByPublicEncryptionKey(publicEncryptionKey: Uint8Array): Promise<Array<UnverifiedUserGroup>> {
     try {
       const res = await this._ds.get(ENCRYPTION_KEY_GROUP_ID_TABLE, utils.toBase64(publicEncryptionKey));
       return this._findUnverifiedUserGroup(res.group_id);
@@ -109,7 +109,7 @@ export default class UserGroupsUnverifiedStore {
     }
   }
 
-  async removeVerifiedUserGroupEntry(userGroupEntry: VerifiedUserGroupEntry): Promise<void> {
+  async removeVerifiedUserGroupEntry(userGroupEntry: VerifiedUserGroup): Promise<void> {
     const cast: any = userGroupEntry;
 
     if (userGroupEntry.nature === NATURE.user_group_creation) {

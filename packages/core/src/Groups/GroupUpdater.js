@@ -4,7 +4,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import GroupStore from './GroupStore';
 import Keystore from '../Session/Keystore';
 
-import { type VerifiedUserGroupEntry } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 import { NATURE, type GroupEncryptedKey, type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
 
 function findMyKeys(groupKeys: Array<GroupEncryptedKey>, keystore: Keystore): ?Object {
@@ -28,7 +28,7 @@ export default class GroupUpdater {
     this._keystore = keystore;
   }
 
-  _applyUserGroupCreation = async (entry: VerifiedUserGroupEntry) => {
+  _applyUserGroupCreation = async (entry: VerifiedUserGroup) => {
     const userGroupCreation: UserGroupCreationRecord = (entry: any);
 
     const myKeys = findMyKeys(userGroupCreation.encrypted_group_private_encryption_keys_for_users, this._keystore);
@@ -60,7 +60,7 @@ export default class GroupUpdater {
     }
   }
 
-  _applyUserGroupAddition = async (entry: VerifiedUserGroupEntry) => {
+  _applyUserGroupAddition = async (entry: VerifiedUserGroup) => {
     const userGroupAddition: UserGroupAdditionRecord = (entry: any);
 
     const previousGroup = await this._groupStore.findExternal({ groupId: userGroupAddition.group_id });
@@ -94,7 +94,7 @@ export default class GroupUpdater {
     });
   }
 
-  applyEntry = async (entry: VerifiedUserGroupEntry) => {
+  applyEntry = async (entry: VerifiedUserGroup) => {
     if (entry.nature === NATURE.user_group_creation)
       await this._applyUserGroupCreation(entry);
     else if (entry.nature === NATURE.user_group_addition)

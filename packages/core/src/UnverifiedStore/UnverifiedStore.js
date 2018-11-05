@@ -6,7 +6,7 @@ import { NATURE_KIND, type Nature, natureKind } from '../Blocks/payloads';
 
 import KeyPublishUnverifiedStore, { type UnverifiedKeyPublish } from './KeyPublishUnverifiedStore';
 import UserUnverifiedStore, { type UnverifiedDeviceCreation, type VerifiedDeviceCreation, type UnverifiedDeviceRevocation, type VerifiedDeviceRevocation } from './UserUnverifiedStore';
-import UserGroupsUnverifiedStore, { type UnverifiedUserGroupEntry, type VerifiedUserGroupEntry } from './UserGroupsUnverifiedStore';
+import UserGroupsUnverifiedStore, { type UnverifiedUserGroup, type VerifiedUserGroup } from './UserGroupsUnverifiedStore';
 
 const schemasTables = [
   ...KeyPublishUnverifiedStore.tables,
@@ -104,15 +104,15 @@ export default class UnverifiedStore {
     return this.userGroupsUnverifiedStore.addUnverifiedUserGroupEntries(entries);
   }
 
-  async findUnverifiedUserGroup(groupId: Uint8Array): Promise<Array<UnverifiedUserGroupEntry>> {
+  async findUnverifiedUserGroup(groupId: Uint8Array): Promise<Array<UnverifiedUserGroup>> {
     return this.userGroupsUnverifiedStore.findUnverifiedUserGroup(groupId);
   }
 
-  async findUnverifiedUserGroupByPublicEncryptionKey(pubEncKey: Uint8Array): Promise<Array<UnverifiedUserGroupEntry>> {
+  async findUnverifiedUserGroupByPublicEncryptionKey(pubEncKey: Uint8Array): Promise<Array<UnverifiedUserGroup>> {
     return this.userGroupsUnverifiedStore.findUnverifiedUserGroupByPublicEncryptionKey(pubEncKey);
   }
 
-  async removeVerifiedUserGroupEntry(userGroup: VerifiedUserGroupEntry): Promise<void> {
+  async removeVerifiedUserGroupEntry(userGroup: VerifiedUserGroup): Promise<void> {
     return this.userGroupsUnverifiedStore.removeVerifiedUserGroupEntry(userGroup);
   }
 }
