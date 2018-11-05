@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+name = "pypi"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+unidecode = "*"
+python-cli-ui = "*"
+"path.py" = "*"
+requests = ">= 2.20"
+tbump = "==5.0.1"
+websockets = "*"
+psutil = "*"
+pipenv = "==2018.05.18"
+ci = {git = "ssh://git@10.100.0.1/Tanker/ci.git", editable = true, ref = "c33d1c2b7d86f404ee71c42d1285941919ab0fb2"}
+# for dev you can use the local repo
+#ci = {editable = true, path = "./../ci"}
