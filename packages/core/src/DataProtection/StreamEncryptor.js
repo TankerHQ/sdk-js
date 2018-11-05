@@ -7,11 +7,10 @@ import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
 import { type ShareWithOptions } from './ShareWithOptions';
 
-export type StreamEncryptorParameters = {
+export type StreamEncryptorParameters = ShareWithOptions & {
   onData: (Uint8Array) => Promise<void> | void,
   onEnd: () => Promise<void> | void,
   blockSize?: number,
-  shareWith?: ShareWithOptions,
   shareWithSelf?: bool
 }
 
