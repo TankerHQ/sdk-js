@@ -15,6 +15,10 @@ import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
+import { assertStreamParameters } from './DataProtection/assertStreamParameters';
+import StreamEncryptor, { type StreamEncryptorParameters } from './DataProtection/StreamEncryptor';
+import StreamDecryptor, { type StreamDecryptorParameters } from './DataProtection/StreamDecryptor';
+
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
 const statusDefs = [
@@ -455,6 +459,30 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('groupId', 'string', groupId);
 
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
+  }
+
+  async makeStreamEncryptor(parameters: StreamEncryptorParameters): Promise<StreamEncryptor> {
+    this.assert(this.OPEN, 'make a stream encryptor');
+
+    assertStreamParameters(parameters);
+
+    if (!validateShareWithOptions(parameters))
+      throw new InvalidArgument('parameters', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', parameters);
+
+    const param = { shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...parameters };
+
+    if (param.shareWithSelf === false && isShareWithOptionsEmpty(param))
+      throw new InvalidArgument('parameters.shareWith*', 'parameters.shareWithUser or parameters.shareWithGroups must contain recipients when parameters.shareWithSelf === false', param);
+
+    return this._session.dataProtector.makeStreamEncryptor(param);
+  }
+
+  async makeStreamDecryptor(parameters: StreamDecryptorParameters): Promise<StreamDecryptor> {
+    this.assert(this.OPEN, 'make a stream decryptor');
+
+    assertStreamParameters(parameters);
+
+    return this._session.dataProtector.makeStreamDecryptor(parameters);
   }
 }
 
