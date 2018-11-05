@@ -29,6 +29,16 @@ describe('Encryptor Stream', () => {
     buffer = [];
   });
 
+  it('can give its associated resourceId', async () => {
+    const stream = new EncryptorStream(resourceId, key);
+    const sync = watchStream(stream);
+
+    expect(stream.resourceId()).to.be.equal(utils.toBase64(resourceId));
+
+    stream.end();
+    await sync.promise;
+  });
+
   it('derives its key and push header before encryption', async () => {
     const msg = utils.fromString('message');
     const stream = new EncryptorStream(resourceId, key);
