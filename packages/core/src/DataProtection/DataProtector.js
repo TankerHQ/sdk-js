@@ -115,7 +115,7 @@ export default class DataProtector {
       userIds.push(id);
     }
 
-    const users = await this._userAccessor.getUsers({ userIds: this._handleShareToSelf(userIds, shareWithSelf) });
+    const users = await this._userAccessor.getUsers({ userIds: this._handleShareWithSelf(userIds, shareWithSelf) });
 
     return {
       users,
@@ -123,18 +123,18 @@ export default class DataProtector {
     };
   }
 
-  _handleShareToSelf(users: Array<string>, shareWithSelf: bool): Array<string> {
-    let doWeReallyShareToSelf = shareWithSelf;
+  _handleShareWithSelf(users: Array<string>, shareWithSelf: bool): Array<string> {
+    let pushSelfUserId = shareWithSelf;
     const userIds = [];
     for (const id of users) {
       // skip self
       if (id === this._sessionData.userId) {
-        doWeReallyShareToSelf = true;
+        pushSelfUserId = true;
         continue;
       }
       userIds.push(id);
     }
-    if (doWeReallyShareToSelf) {
+    if (pushSelfUserId) {
       userIds.push(this._sessionData.clearUserId);
     }
 
@@ -144,10 +144,10 @@ export default class DataProtector {
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWith: ShareWithArg, shareWithSelf: bool): Promise<void> {
     let users;
     let groups;
-    if (shareWith instanceof Array)
+    if (shareWith instanceof Array) {
       ({ users, groups } = await this._separateGroupsFromUsers(shareWith, shareWithSelf));
-    else {
-      users = await this._userAccessor.getUsers({ userIds: this._handleShareToSelf(shareWith.users || [], shareWithSelf) });
+    } else {
+      users = await this._userAccessor.getUsers({ userIds: this._handleShareWithSelf(shareWith.users || [], shareWithSelf) });
       groups = await this._groupManager.findGroups((shareWith.groups || []).map(g => utils.fromBase64(g)));
     }
 
