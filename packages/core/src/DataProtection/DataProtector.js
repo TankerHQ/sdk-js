@@ -173,15 +173,10 @@ export default class DataProtector {
   }
 
   async makeStreamEncryptor(parameters: StreamEncryptorParameters): Promise<StreamEncryptor> {
-    const param = {
-      ...defaultEncryptionOptions,
-      ...parameters
-    };
-
     const streamResource = ResourceManager.makeStreamResource();
     const streamEncryptor = makeStreamEncryptor(streamResource, parameters);
 
-    this._shareResources([{ resourceId: streamResource.resourceId, key: streamResource.key }], param.shareWith, param.shareWithSelf);
+    this._shareResources([{ resourceId: streamResource.resourceId, key: streamResource.key }], parameters, parameters.shareWithSelf || false);
 
     return streamEncryptor;
   }
