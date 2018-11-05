@@ -2,7 +2,7 @@
 
 import varint from 'varint';
 
-import { tcrypto, aead } from '@tanker/crypto';
+import { utils, tcrypto, aead, type b64string } from '@tanker/crypto';
 import { Transform } from '@tanker/stream-base';
 
 import { currentStreamVersion, type ResourceIdKeyPair } from '../Resource/ResourceManager';
@@ -44,6 +44,10 @@ export default class EncryptorStream extends Transform {
   _writeHeader() {
     const header = concatArrays(varint.encode(currentStreamVersion), this._state.resourceIdKeyPair.resourceId);
     this.push(header);
+  }
+
+  resourceId(): b64string {
+    return utils.toBase64(this._state.resourceIdKeyPair.resourceId);
   }
 
   async _transform(clearData: Uint8Array, encoding: ?string, done: Function) {
