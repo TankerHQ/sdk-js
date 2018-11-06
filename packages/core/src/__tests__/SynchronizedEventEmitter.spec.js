@@ -12,7 +12,7 @@ function myYield() {
   return new Promise((res) => setTimeout(res, 0));
 }
 
-describe('#SynchronizedEventEmitter', () => {
+describe('SynchronizedEventEmitter', () => {
   let eventEmitter;
   let sEventEmitter;
 
