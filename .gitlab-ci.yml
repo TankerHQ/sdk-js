@@ -93,4 +93,4 @@ mirror:
   except:
     - schedules
   script:
-    - dmenvt run python ci/mirror.py
+    - dmenv run python ci/mirror.py
