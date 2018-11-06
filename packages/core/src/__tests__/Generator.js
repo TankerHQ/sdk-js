@@ -459,7 +459,7 @@ class Generator {
     const encryptedPrivateKeys =
       remainingDevices.map(d => ({
         recipient: d.id,
-        key: tcrypto.sealEncrypt(newUserKey.publicKey, d.encryptionKeys.publicKey),
+        key: tcrypto.sealEncrypt(newUserKey.privateKey, d.encryptionKeys.publicKey),
       }));
 
     let encryptedPreviousEncryptionKey = tcrypto.sealEncrypt(userKeys.privateKey, newUserKey.publicKey);
