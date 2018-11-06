@@ -428,6 +428,43 @@ describe('Tanker', () => {
       });
     });
 
+    describe('shareWith', () => {
+      const notShareWithValues = [
+        undefined, null, 0,
+        'noArrayAroundMe',
+        { groups: 'noArrayAroundMe' },
+        { groups: [new Uint8Array(32)] },
+        { users: 'noArrayAroundMe' },
+        { users: [undefined] },
+        { users: ['userId'], unexpectedKey: 'value' },
+        [{ users: ['userId'] }] // unexpected extra outer array
+      ];
+      const numberOfTests = notShareWithValues.length;
+
+      beforeEach(async () => {
+        await tanker.open(userId, userToken);
+      });
+
+      it('encrypt() should throw when given an invalid shareWith', async () => {
+        for (let i = 0; i < numberOfTests; i++) {
+          const v = notShareWithValues[i];
+          // $FlowExpectedError
+          await expect(tanker.encrypt('test', { shareWith: v }), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
+      });
+
+      it('share() should throw when given an invalid shareWith', async () => {
+        const encrypted = await tanker.encrypt('test');
+        const resourceId = tanker.getResourceId(encrypted);
+
+        for (let i = 0; i < numberOfTests; i++) {
+          const v = notShareWithValues[i];
+          // $FlowExpectedError
+          await expect(tanker.share([resourceId], v), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
+      });
+    });
+
     describe('socket.io connection', () => {
       const testSessionOpens = () => it('should authenticate with the server', async () => {
         const authenticateDevice = sinon.spy();

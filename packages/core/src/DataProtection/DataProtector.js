@@ -13,6 +13,7 @@ import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/payloads';
 import { decryptData } from './decrypt';
 import { encryptData } from './encrypt';
+import { type ShareWithOptions } from './ShareWithOptions';
 import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
 
 export type KeyResourceId = {
@@ -20,11 +21,9 @@ export type KeyResourceId = {
   resourceId: Uint8Array,
 };
 
-export type ShareWithArg = Array<string> | { users?: Array<string>, groups?: Array<string> };
-
 export type EncryptionOptions = {
   shareWithSelf?: bool,
-  shareWith?: ShareWithArg,
+  shareWith?: ShareWithOptions,
 };
 
 export const defaultEncryptionOptions: EncryptionOptions = {
@@ -126,7 +125,7 @@ export default class DataProtector {
     return ids;
   }
 
-  async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWith: ShareWithArg, shareWithSelf: bool): Promise<void> {
+  async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWith: ShareWithOptions, shareWithSelf: bool): Promise<void> {
     let groups;
     let users;
 
@@ -167,7 +166,7 @@ export default class DataProtector {
     return encryptedData;
   }
 
-  async share(resourceIds: Array<b64string>, shareWith: ShareWithArg): Promise<void> {
+  async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions): Promise<void> {
     // nothing to return, just wait for the promises to finish
     const keys = await Promise.all(resourceIds.map(async (b64ResourceId) => {
       const resourceId = utils.fromBase64(b64ResourceId);
