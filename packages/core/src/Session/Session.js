@@ -93,7 +93,7 @@ export class Session {
   }
 
   async revokeDevice(revokedDeviceId: string): Promise<void> {
-    const user = await this.userAccessor.findUser({ hashedUserId: this.sessionData.userId });
+    const user = await this.userAccessor.findUser({ userId: this.sessionData.userId });
     if (!user)
       throw new Error('Cannot find the current user in the users');
 

@@ -83,7 +83,7 @@ describe('UserStore', () => {
       const alice = await generator.newUserCreationV1('alice');
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
-      const user = await userStore.findUser({ hashedUserId: alice.entry.user_id });
+      const user = await userStore.findUser({ userId: alice.entry.user_id });
 
       expectHasOnlyDevices(user, [alice]);
       expectHasNoUserKey(user);
@@ -94,7 +94,7 @@ describe('UserStore', () => {
       const alice = await generator.newUserCreationV3('alice');
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
-      const user = await userStore.findUser({ hashedUserId: alice.entry.user_id });
+      const user = await userStore.findUser({ userId: alice.entry.user_id });
 
       expectHasOnlyDevices(user, [alice]);
       expectHasUserKey(user, alice, alice.entry.index);
@@ -109,7 +109,7 @@ describe('UserStore', () => {
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
       await userStore.applyEntry(forgeVerifiedEntry(alice1.entry));
       await userStore.applyEntry(forgeVerifiedEntry(alice2.entry));
-      const user = await userStore.findUser({ hashedUserId: alice.entry.user_id });
+      const user = await userStore.findUser({ userId: alice.entry.user_id });
 
       expectHasOnlyDevices(user, [alice, alice1, alice2]);
       expectHasNoUserKey(user);
@@ -124,7 +124,7 @@ describe('UserStore', () => {
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
       await userStore.applyEntry(forgeVerifiedEntry(alice1.entry));
       await userStore.applyEntry(forgeVerifiedEntry(alice2.entry));
-      const user = await userStore.findUser({ hashedUserId: alice.entry.user_id });
+      const user = await userStore.findUser({ userId: alice.entry.user_id });
 
       expectHasOnlyDevices(user, [alice, alice1, alice2]);
       expectHasUserKey(user, alice2, alice.entry.index);
@@ -139,7 +139,7 @@ describe('UserStore', () => {
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
       await userStore.applyEntry(forgeVerifiedEntry(revocation.entry));
-      const user = await userStore.findUser({ hashedUserId: alice.entry.user_id });
+      const user = await userStore.findUser({ userId: alice.entry.user_id });
 
       expectHasOnlyDevices(user, [alice]);
       expectHasNoUserKey(user);
@@ -154,7 +154,7 @@ describe('UserStore', () => {
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
       await userStore.applyEntry(forgeVerifiedEntry(revocation.entry));
-      const { userPublicKeys: userKeys } = await userStore.findUser({ hashedUserId: alice.entry.user_id });
+      const { userPublicKeys: userKeys } = await userStore.findUser({ userId: alice.entry.user_id });
 
       expect(userKeys.length).to.equal(2);
       expect(userKeys[0]).to.deep.equal({ index: alice.entry.index, userPublicKey: aliceFirstKey });
@@ -168,7 +168,7 @@ describe('UserStore', () => {
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
       await userStore.applyEntry(forgeVerifiedEntry(revocation.entry));
-      const user = await userStore.findUser({ hashedUserId: alice.entry.user_id });
+      const user = await userStore.findUser({ userId: alice.entry.user_id });
 
       expectHasOnlyDevices(user, [alice]);
       expectHasUserKey(user, revocation, revocation.entry.index);
@@ -186,7 +186,7 @@ describe('UserStore', () => {
       await userStore.applyEntry(forgeVerifiedEntry(alice1.entry));
       await userStore.applyEntry(forgeVerifiedEntry(alice2.entry));
       await userStore.applyEntry(forgeVerifiedEntry(revocation.entry));
-      const user = await userStore.findUser({ hashedUserId: alice.entry.user_id });
+      const user = await userStore.findUser({ userId: alice.entry.user_id });
 
       expectHasOnlyDevices(user, [alice, alice1, alice2]);
       expectHasNoUserKey(user);
@@ -202,7 +202,7 @@ describe('UserStore', () => {
       const alice = await generator.newUserCreationV1('alice');
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
-      const deviceToUser = await userStore.findDeviceToUser({ hashedDeviceId: alice.entry.hash });
+      const deviceToUser = await userStore._findDeviceToUser({ deviceId: alice.entry.hash }); // eslint-disable-line no-underscore-dangle
 
       expect(utils.equalArray(utils.fromBase64(deviceToUser.userId), alice.entry.user_id)).to.be.true;
     });
@@ -212,7 +212,7 @@ describe('UserStore', () => {
       const alice = await generator.newUserCreationV3('alice');
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
-      const deviceToUser = await userStore.findDeviceToUser({ hashedDeviceId: alice.entry.hash });
+      const deviceToUser = await userStore._findDeviceToUser({ deviceId: alice.entry.hash }); // eslint-disable-line no-underscore-dangle
 
       expect(utils.equalArray(utils.fromBase64(deviceToUser.userId), alice.entry.user_id)).to.be.true;
     });
@@ -222,7 +222,7 @@ describe('UserStore', () => {
       const alice = await generator.newUserCreationV1('alice');
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
-      const device = await userStore.findDevice({ hashedDeviceId: alice.entry.hash });
+      const device = await userStore.findDevice({ deviceId: alice.entry.hash });
 
       expect(utils.equalArray(utils.fromBase64(device.deviceId), alice.entry.hash)).to.be.true;
       expect(device.revokedAt).equal(Number.MAX_SAFE_INTEGER);
@@ -233,7 +233,7 @@ describe('UserStore', () => {
       const alice = await generator.newUserCreationV3('alice');
 
       await userStore.applyEntry(forgeVerifiedEntry(alice.entry));
-      const device = await userStore.findDevice({ hashedDeviceId: alice.entry.hash });
+      const device = await userStore.findDevice({ deviceId: alice.entry.hash });
 
       expect(utils.equalArray(utils.fromBase64(device.deviceId), alice.entry.hash)).to.be.true;
       expect(device.revokedAt).equal(Number.MAX_SAFE_INTEGER);
@@ -248,7 +248,7 @@ describe('UserStore', () => {
       const payload = ((alice.entry.payload_unverified: any): UserDeviceRecord);
       if (!payload.user_key_pair)
         throw new Error('payload should have a user key pair here');
-      const user = await userStore.findUserByUserPublicKey({ hashedUserPublicKey: payload.user_key_pair.public_encryption_key });
+      const user = await userStore.findUser({ userPublicKey: payload.user_key_pair.public_encryption_key });
 
       expectHasOnlyDevices(user, [alice]);
       expectHasUserKey(user, alice, alice.entry.index);
@@ -265,7 +265,7 @@ describe('UserStore', () => {
       if (!payload.user_keys)
         throw new Error('payload should have a user key pair here');
 
-      const user = await userStore.findUserByUserPublicKey({ hashedUserPublicKey: payload.user_keys.public_encryption_key });
+      const user = await userStore.findUser({ userPublicKey: payload.user_keys.public_encryption_key });
 
       expectHasOnlyDevices(user, [alice]);
       expect(user.userPublicKeys.length).to.equal(2);
@@ -282,7 +282,7 @@ describe('UserStore', () => {
       const payload = ((alice.entry.payload_unverified: any): UserDeviceRecord);
       if (!payload.user_key_pair)
         throw new Error('payload should have a user key pair here');
-      const user = await userStore.findUserByUserPublicKey({ hashedUserPublicKey: payload.user_key_pair.public_encryption_key });
+      const user = await userStore.findUser({ userPublicKey: payload.user_key_pair.public_encryption_key });
 
       expectHasOnlyDevices(user, [alice]);
       expect(user.userPublicKeys.length).to.equal(2);

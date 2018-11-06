@@ -37,21 +37,24 @@ export default class UserAccessor {
   }
 
   async findUser(args: FindUserParameters): Promise<?User> {
-    const { hashedUserId } = args;
-    if (!hashedUserId)
-      throw new Error('invalid hashedUserId');
+    const { userId } = args;
+    if (!(userId instanceof Uint8Array))
+      throw new InvalidArgument('userId', 'Uint8Array', userId);
 
-    await this._fetchUsers([hashedUserId]);
+    await this._fetchUsers([userId]);
     const user = await this._userStore.findUser(args);
     return user;
   }
 
-  async findUserDevices({ hashedUserId }: FindUserParameters): Promise<Array<UserDevice>> {
-    if (!hashedUserId)
-      throw new InvalidArgument('hashedUserId', 'Uint8Array', hashedUserId);
-    const user = await this.findUser({ hashedUserId });
+  async findUserDevices(args: FindUserParameters): Promise<Array<UserDevice>> {
+    const { userId } = args;
+    if (!(userId instanceof Uint8Array))
+      throw new InvalidArgument('userId', 'Uint8Array', userId);
+
+    const user = await this.findUser({ userId });
     if (!user)
-      throw new Error(`no such user ${utils.toString(hashedUserId)}`);
+      throw new Error(`No such user ${utils.toString(userId)}`);
+
     return user.devices.map(device => ({
       id: device.deviceId,
       isGhostDevice: device.isGhostDevice,
@@ -62,7 +65,7 @@ export default class UserAccessor {
   async findUsers(args: FindUsersParameters): Promise<Array<User>> {
     const { hashedUserIds } = args;
     if (!hashedUserIds)
-      throw new Error('invalid hashedUserIds');
+      throw new Error('Expected hashedUserIds parameter, but was missing');
 
     await this._fetchUsers(hashedUserIds);
 

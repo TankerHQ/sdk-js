@@ -29,7 +29,7 @@ export type User = {
   devices: Array<Device>, //encryption
 };
 
-export type DeviceToUser = {
+type DeviceToUser = {
   deviceId: b64string,
   userId: b64string,
 };
@@ -40,8 +40,9 @@ export type UserPublicKeyToUser = {
 }
 
 export type FindUserParameters = {|
-  hashedUserId?: Uint8Array,
-  hashedDeviceId?: Uint8Array
+  userId?: Uint8Array,
+  deviceId?: Uint8Array,
+  userPublicKey?: Uint8Array
 |}
 
 export type FindUsersParameters = {|
@@ -49,15 +50,11 @@ export type FindUsersParameters = {|
 |}
 
 export type FindDeviceParameters = {|
-  hashedDeviceId?: Uint8Array,
+  deviceId?: Uint8Array,
 |}
 
 export type FindDevicesParameters = {|
   hashedDeviceIds?: Array<Uint8Array>,
-|}
-
-export type FindUserPublicKeyParameters = {|
-  hashedUserPublicKey?: Uint8Array,
 |}
 
 export function getLastUserPublicKey(user: User): ?Uint8Array {
@@ -209,7 +206,7 @@ export default class UserStore {
   async _prepareDeviceCreation(record: VerifiedDeviceCreation) {
     const b64Id = utils.toBase64(record.user_id);
 
-    const existing = await this.findUser({ hashedUserId: record.user_id });
+    const existing = await this.findUser({ userId: record.user_id });
 
     let oldDevices = [];
     let userPublicKeys = record.user_key_pair ? [{ userPublicKey: record.user_key_pair.public_encryption_key, index: record.index }] : [];
@@ -271,7 +268,7 @@ export default class UserStore {
 
     const b64DevId = utils.toBase64(record.device_id);
 
-    const existing = await this.findUser({ hashedUserId: record.user_id });
+    const existing = await this.findUser({ userId: record.user_id });
     if (!existing)
       throw new Error('User not found!');
 
@@ -300,7 +297,7 @@ export default class UserStore {
   }
 
   async hasDevice(userId: Uint8Array, deviceId: Uint8Array) {
-    const user = await this.findUser({ hashedUserId: userId });
+    const user = await this.findUser({ userId });
     if (!user)
       throw new Error('hasDevice: User not found!');
 
@@ -310,24 +307,36 @@ export default class UserStore {
   }
 
   async findUser(args: FindUserParameters): Promise<?User> {
-    const { hashedUserId, hashedDeviceId } = args;
+    const { userId, deviceId, userPublicKey } = args;
     if (Object.keys(args).length !== 1)
       throw new Error(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
-    if (hashedUserId) {
+    if (userId) {
       const record = await this._ds.first(TABLE1, {
-        selector: { userId: utils.toBase64(hashedUserId) },
+        selector: { userId: utils.toBase64(userId) },
       });
       return record;
-    } else if (hashedDeviceId) {
-      const deviceToUser = await this.findDeviceToUser({ hashedDeviceId });
+    }
+
+    if (deviceId) {
+      const deviceToUser = await this._findDeviceToUser({ deviceId });
       if (!deviceToUser)
         return null;
-      const { userId } = deviceToUser;
-      return this.findUser({ hashedUserId: utils.fromBase64(userId) });
-    } else {
-      throw new Error('Find: invalid argument');
+      const deviceUserId = deviceToUser.userId;
+      return this.findUser({ userId: utils.fromBase64(deviceUserId) });
     }
+
+    if (userPublicKey) {
+      const publicKeyToUser = await this._ds.first(TABLE3, {
+        selector: { userPublicKey: utils.toBase64(userPublicKey) },
+      });
+      if (!publicKeyToUser)
+        return null;
+      const keyUserId = publicKeyToUser.userId;
+      return this.findUser({ userId: utils.fromBase64(keyUserId) });
+    }
+
+    throw new Error('Find: invalid argument');
   }
 
   async findUsers(args: FindUsersParameters): Promise<Array<User>> {
@@ -346,14 +355,14 @@ export default class UserStore {
     });
   }
 
-  findDeviceToUser = async (args: FindDeviceParameters): Promise<?DeviceToUser> => {
-    const { hashedDeviceId } = args;
+  _findDeviceToUser = async (args: FindDeviceParameters): Promise<?DeviceToUser> => {
+    const { deviceId } = args;
     if (Object.keys(args).length !== 1)
       throw new Error(`findUserDeviceToUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
-    if (hashedDeviceId) {
+    if (deviceId) {
       const record = await this._ds.first(TABLE2, {
-        selector: { deviceId: utils.toBase64(hashedDeviceId) },
+        selector: { deviceId: utils.toBase64(deviceId) },
       });
       return record;
     } else {
@@ -361,7 +370,7 @@ export default class UserStore {
     }
   }
 
-  findDevicesToUsers = async (args: FindDevicesParameters): Promise<Array<DeviceToUser>> => {
+  _findDevicesToUsers = async (args: FindDevicesParameters): Promise<Array<DeviceToUser>> => {
     const { hashedDeviceIds } = args;
     if (Object.keys(args).length !== 1)
       throw new Error(`findDevicesToUsers: expected exactly one argument, got ${Object.keys(args).length}`);
@@ -378,11 +387,11 @@ export default class UserStore {
   }
 
   findDevice = async (args: FindDeviceParameters): Promise<?Device> => {
-    const deviceToUser = await this.findDeviceToUser(args);
+    const deviceToUser = await this._findDeviceToUser(args);
     if (!deviceToUser)
       return null;
     const { deviceId, userId } = deviceToUser;
-    const user = await this.findUser({ hashedUserId: utils.fromBase64(userId) });
+    const user = await this.findUser({ userId: utils.fromBase64(userId) });
     if (!user)
       throw new Error('Find: no such userId'); // not supposed to be trigerred (here for flow)
     const deviceIndex = findIndex(user.devices, (d) => d.deviceId === deviceId);
@@ -392,7 +401,7 @@ export default class UserStore {
   }
 
   findDevices = async (args: FindDevicesParameters): Promise<Map<b64string, Device>> => {
-    const devicesToUsers = await this.findDevicesToUsers(args);
+    const devicesToUsers = await this._findDevicesToUsers(args);
     const users = await this.findUsers({ hashedUserIds: devicesToUsers.map((e) => utils.fromBase64(e.userId)) });
     const devicesToUsersMap = users.reduce((map, user) => {
       for (const device of user.devices)
@@ -412,21 +421,5 @@ export default class UserStore {
       return map;
     }, new Map());
     return devices;
-  }
-
-  findUserByUserPublicKey = async (args: FindUserPublicKeyParameters): Promise<?User> => {
-    const { hashedUserPublicKey } = args;
-    if (Object.keys(args).length !== 1)
-      throw new Error(`findUserByUserPublicKey: expected exactly one argument, got ${Object.keys(args).length}`);
-
-    if (!hashedUserPublicKey)
-      throw new Error('Find: invalid argument');
-
-    const record = await this._ds.first(TABLE3, {
-      selector: { userPublicKey: utils.toBase64(hashedUserPublicKey) },
-    });
-    if (!record)
-      return;
-    return this.findUser({ hashedUserId: utils.fromBase64(record.userId) });
   }
 }
