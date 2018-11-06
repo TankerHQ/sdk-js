@@ -3,7 +3,7 @@ rem its own clone during CI
 cd C:\Web
 git fetch
 git reset --hard origin/master
-pipenv install
+dmenv install
 set PYTHONPATH=.
-pipenv run python ci\pyback\server.py
+dmenv run python ci\pyback\server.py
 pause

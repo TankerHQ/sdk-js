@@ -3,14 +3,14 @@ stages:
   - deploy
 
 before_script:
-  - python3 -m pipenv install --deploy
+  - dmenv install
 
 check/linux:
   stage: check
   except:
     - schedules
   script:
-    - xvfb-run python3 -m pipenv run python ci/check.py --runner linux
+    - xvfb-run dmenv run -- python ci/check.py --runner linux
   tags:
     - linux
 
@@ -19,7 +19,7 @@ check/macos:
   except:
     - schedules
   script:
-    - python3 -m pipenv run python ci/check.py --runner macos
+    - dmenv run -- python ci/check.py --runner macos
   tags:
     - macos
 
@@ -32,27 +32,27 @@ check/macos:
 check/windows/edge:
   extends: .check/windows
   script:
-    - python3 -m pipenv run python ci/check.py --runner windows-edge
+    - dmenv run -- python ci/check.py --runner windows-edge
 
 check/windows/ie:
   extends: .check/windows
   only:
     - schedules
   script:
-    - python3 -m pipenv run python ci/check.py --runner windows-ie
+    - dmenv run -- python ci/check.py --runner windows-ie
 
 check/windows/ie/manual:
   extends: .check/windows
   when: manual
   script:
-    - python3 -m pipenv run python ci/check.py --runner windows-ie
+    - dmenv run -- python ci/check.py --runner windows-ie
 
 check/linux/nightly:
   stage: check
   only:
     - schedules
   script:
-    - xvfb-run python3 -m pipenv run python ci/check.py --runner linux --nightly
+    - xvfb-run dmenv run -- python ci/check.py --runner linux --nightly
   tags:
     - linux
 
@@ -61,7 +61,7 @@ check/macos/nightly:
   only:
     - schedules
   script:
-    - python3 -m pipenv run python ci/check.py --runner macos --nightly
+    - dmenv run -- python ci/check.py --runner macos --nightly
   tags:
     - macos
 
@@ -79,7 +79,7 @@ deploy/sdk:
   only:
     - /\Av[0-9.]+(-(alpha|beta)[0-9]+)?\z/
   script:
-    - python3 -m pipenv run python ci/deploy.py
+    - dmenv run -- python ci/deploy.py
         --env ${CI_ENVIRONMENT_NAME} --git-tag ${CI_COMMIT_TAG}
 
 
@@ -93,4 +93,4 @@ mirror:
   except:
     - schedules
   script:
-    - python3 -m pipenv run python ci/mirror.py
+    - dmenvt run python ci/mirror.py
