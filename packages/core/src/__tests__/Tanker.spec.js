@@ -524,9 +524,9 @@ describe('Tanker', () => {
         { trustchainId: 'ok', dataStore: {} },
         // wrong adapter type
         { trustchainId: 'ok', dataStore: { adapter: 'not a function' } },
-      ].forEach(invalidOptions => {
+      ].forEach((invalidOptions, i) => {
         // $FlowExpectedError
-        expect(() => { new Tanker(invalidOptions); }).to.throw(/options/); // eslint-disable-line no-new
+        expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
       });
 
       expect(() => new Tanker({ trustchainId: 'ok', dataStore: { ...dataStoreConfig, prefix: makePrefix() } })).not.to.throw;
@@ -589,8 +589,10 @@ describe('Tanker', () => {
 
     it('should throw when getResourceId() is given an invalid argument', async () => {
       const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'str'];
-      // $FlowExpectedError
-      notUint8ArrayTypes.forEach(fail => expect(() => tanker.getResourceId(fail)).to.throw(InvalidArgument));
+      notUint8ArrayTypes.forEach((v, i) => {
+        // $FlowExpectedError
+        expect(() => tanker.getResourceId(v), `bad resource #${i}`).to.throw(InvalidArgument);
+      });
     });
   });
 
@@ -600,8 +602,10 @@ describe('Tanker', () => {
 
     it('should throw when given an invalid type', async () => {
       const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'str'];
-      // $FlowExpectedError
-      notUint8ArrayTypes.forEach(fail => expect(() => getResourceId(fail)).to.throw(InvalidArgument));
+      notUint8ArrayTypes.forEach((v, i) => {
+        // $FlowExpectedError
+        expect(() => getResourceId(v), `bad resource #${i}`).to.throw(InvalidArgument);
+      });
     });
   });
 });

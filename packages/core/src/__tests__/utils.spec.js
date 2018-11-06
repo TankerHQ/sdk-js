@@ -27,12 +27,12 @@ describe('utils', () => {
 
     it('should throw when toBase64 is given an invalid type', async () => {
       // $FlowExpectedError
-      notUint8ArrayTypes.forEach(fail => expect(() => toBase64(fail)).to.throw(errors.InvalidArgument));
+      notUint8ArrayTypes.forEach((v, i) => expect(() => toBase64(v), `#${i}`).to.throw(errors.InvalidArgument));
     });
 
     it('should throw when fromBase64 is given an invalid type', async () => {
       // $FlowExpectedError
-      notStringTypes.forEach(fail => expect(() => fromBase64(fail)).to.throw(errors.InvalidArgument));
+      notStringTypes.forEach((v, i) => expect(() => fromBase64(v), `#${i}`).to.throw(errors.InvalidArgument));
     });
   });
 
@@ -54,12 +54,12 @@ describe('utils', () => {
 
     it('should throw when toString is given an invalid type', () => {
       // $FlowExpectedError
-      notUint8ArrayTypes.forEach(fail => expect(() => toString(fail)).to.throw(errors.InvalidArgument));
+      notUint8ArrayTypes.forEach((v, i) => expect(() => toString(v), `#${i}`).to.throw(errors.InvalidArgument));
     });
 
     it('should throw when fromString is given an invalid type', async () => {
       // $FlowExpectedError
-      notStringTypes.forEach(fail => expect(() => fromString(fail)).to.throw(errors.InvalidArgument));
+      notStringTypes.forEach((v, i) => expect(() => fromString(v), `#${i}`).to.throw(errors.InvalidArgument));
     });
   });
 
