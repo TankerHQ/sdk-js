@@ -1,5 +1,4 @@
 // @flow
-
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
@@ -98,24 +97,17 @@ export default class DataProtector {
     await this._client.sendKeyPublishBlocks(blocks);
   }
 
-  async _separateGroupsFromUsers(shareWith: Array<string>, shareWithSelf: bool): Object {
+  async _separateGroupsFromUsers(shareWith: Array<string>): Object {
     const maybeGroupIds = shareWith.map(utils.fromBase64).filter(id => id.length === tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
     const groups = await this._groupManager.findGroups(maybeGroupIds);
+    const b64groupIds = groups.map(group => utils.toBase64(group.groupId));
+
     if (groups.length > 0)
       console.warn('Calling encrypt or share with a mixed list of users and groups is deprecated, use { users: ["alice"], groups: ["admins"] } instead');
-    const groupIds = groups.map(group => group.groupId);
 
-    const userIds = [];
-    for (const id of shareWith) {
-      const rawId = utils.fromBase64(id);
-      // skip groups
-      if (groupIds.some(g => utils.equalArray(g, rawId)))
-        continue;
-      userIds.push(id);
-    }
-
-    const users = await this._userAccessor.getUsers({ userIds: this._handleShareWithSelf(userIds, shareWithSelf) });
+    const userIds = shareWith.filter(id => b64groupIds.indexOf(id) === -1);
+    const users = await this._userAccessor.getUsers({ userIds });
 
     return {
       users,
@@ -123,32 +115,29 @@ export default class DataProtector {
     };
   }
 
-  _handleShareWithSelf(users: Array<string>, shareWithSelf: bool): Array<string> {
-    let pushSelfUserId = shareWithSelf;
-    const userIds = [];
-    for (const id of users) {
-      // skip self
-      if (id === this._sessionData.clearUserId) {
-        pushSelfUserId = true;
-        continue;
+  _handleShareWithSelf = (ids: Array<string>, shareWithSelf: bool): Array<string> => {
+    if (shareWithSelf) {
+      const selfUserId = this._sessionData.clearUserId;
+      if (ids.indexOf(selfUserId) === -1) {
+        return ids.concat([selfUserId]);
       }
-      userIds.push(id);
-    }
-    if (pushSelfUserId) {
-      userIds.push(this._sessionData.clearUserId);
     }
 
-    return userIds;
+    return ids;
   }
 
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWith: ShareWithArg, shareWithSelf: bool): Promise<void> {
-    let users;
     let groups;
+    let users;
+
     if (shareWith instanceof Array) {
-      ({ users, groups } = await this._separateGroupsFromUsers(shareWith, shareWithSelf));
+      const mixedIds = this._handleShareWithSelf(shareWith, shareWithSelf);
+      ({ groups, users } = await this._separateGroupsFromUsers(mixedIds));
     } else {
-      users = await this._userAccessor.getUsers({ userIds: this._handleShareWithSelf(shareWith.users || [], shareWithSelf) });
-      groups = await this._groupManager.findGroups((shareWith.groups || []).map(g => utils.fromBase64(g)));
+      const groupIds = (shareWith.groups || []).map(g => utils.fromBase64(g));
+      const userIds = this._handleShareWithSelf(shareWith.users || [], shareWithSelf);
+      groups = await this._groupManager.findGroups(groupIds);
+      users = await this._userAccessor.getUsers({ userIds });
     }
 
     if (shareWithSelf) {
