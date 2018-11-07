@@ -43,6 +43,7 @@
     "babel-eslint": "8.2.3",
     "babel-loader": "8.0.2",
     "babel-plugin-istanbul": "5.0.1",
+    "chai-exclude": "^1.0.10",
     "clean-webpack-plugin": "^0.1.19",
     "eslint": "^4.19.1",
     "eslint-config-airbnb": "^16.1.0",
