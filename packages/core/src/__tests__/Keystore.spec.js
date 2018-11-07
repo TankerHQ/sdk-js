@@ -3,7 +3,7 @@
 import { tcrypto, createUserSecretBinary, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import makeUint8Array from './makeUint8Array';
 
 import KeySafe from '../Session/KeySafe';

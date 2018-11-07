@@ -6,7 +6,7 @@ import find from 'array-find';
 import { tcrypto, utils, random, obfuscateUserId, createUserSecretB64, type b64string } from '@tanker/crypto';
 
 import { expect } from './chai';
-import dataStoreConfig, { makePrefix } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix } from './TestDataStore';
 import { warnings, makeRootBlock } from './Helpers';
 
 import { Tanker, TankerStatus, getResourceId } from '..';

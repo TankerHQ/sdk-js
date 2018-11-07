@@ -7,7 +7,7 @@ import { expect } from './chai';
 import GroupStore from '../Groups/GroupStore';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
-import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import makeUint8Array from './makeUint8Array';
 
 async function makeMemoryGroupStore(): Promise<GroupStore> {

@@ -2,7 +2,7 @@
 
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
 
-import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import GroupStore from '../Groups/GroupStore';
 import Generator, { makeGenerator, type GeneratorDevice, type GeneratorUserGroupResult } from './Generator';

@@ -2,7 +2,7 @@
 import { tcrypto, createUserSecretBinary, obfuscateUserId, utils } from '@tanker/crypto';
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
 
-import dataStoreConfig, { makePrefix } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix } from './TestDataStore';
 import Generator, { type GeneratorUserResult, type GeneratorRevocationResult, type GeneratorKeyResult, type GeneratorUserGroupResult, type GeneratorUserGroupAdditionResult, type GeneratorDevice, type GeneratorUser } from './Generator';
 import TrustchainStore from '../Trustchain/TrustchainStore';
 import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
