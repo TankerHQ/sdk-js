@@ -5,10 +5,9 @@ import { tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { InvalidBlockError } from '../errors';
-import type { UnverifiedEntry } from '../Blocks/entries';
+import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import { type GeneratorKeyResult, type GeneratorUserResult } from './Generator';
 import { signBlock, type Block } from '../Blocks/Block';
-import { blockToEntry } from '../Trustchain/TrustchainStore';
 import TrustchainBuilder, { makeTrustchainBuilder } from './TrustchainBuilder';
 import UserStore from '../Users/UserStore';
 import {
@@ -83,21 +82,6 @@ describe('TrustchainVerifier', () => {
       const alice = await generator.newDeviceCreationV3({ userId: 'alice', parentIndex: 0 });
       await builder.unverifiedStore.addUnverifiedUserEntries([blockToEntry(alice.block)]);
       await assertFailsWithNature(builder.trustchainVerifier._throwingVerifyDeviceCreation(alice.unverifiedDeviceCreation), 'unknown_author');
-    });
-  });
-
-
-  describe('verifyRootBlock', () => {
-    it('marks the block as verified', async () => {
-      const { generator, trustchainStore, trustchainVerifier } = await makeTrustchainBuilder();
-      const rootEntry = generator.root.entry;
-      await trustchainStore.addTrustchainCreation(rootEntry);
-      // const entry = await trustchainStore.getMaybeVerifiedEntryByHash(rootEntry.hash);
-
-      await trustchainVerifier.verifyTrustchainCreation(rootEntry);
-
-      const isVerified = await trustchainStore.isVerified(rootEntry.hash);
-      expect(isVerified).to.be.true;
     });
   });
 

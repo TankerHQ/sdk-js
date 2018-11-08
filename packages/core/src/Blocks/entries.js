@@ -4,7 +4,14 @@ import { utils } from '@tanker/crypto';
 import {
   type Nature,
   type Record,
+  unserializePayload,
 } from './payloads';
+
+
+import {
+  type Block,
+  hashBlock,
+} from '../Blocks/Block';
 
 
 export type VerificationFields = {|
@@ -80,4 +87,24 @@ export function dbEntryToEntry(dbEntry: any): any {
     }
   });
   return result;
+}
+
+export function blockToEntry(block: Block): UnverifiedEntry { /* eslint-disable camelcase */
+  const payload_unverified = unserializePayload(block);
+  // $FlowFixMe flow is right, Record may or may not contain any of these fields
+  const { user_id, public_signature_key } = payload_unverified;
+  const { index, author, nature, signature } = block;
+
+  const typeSafeNature: Nature = (nature: any);
+
+  return {
+    payload_unverified,
+    index,
+    nature: typeSafeNature,
+    author,
+    public_signature_key,
+    user_id,
+    signature,
+    hash: hashBlock(block),
+  };
 }

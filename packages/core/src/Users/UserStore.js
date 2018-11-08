@@ -120,6 +120,21 @@ export default class UserStore {
         indexes: [['userPublicKey']],
       }]
     },
+    {
+      version: 5,
+      tables: [{
+        name: TABLE1,
+        indexes: [['userId']],
+      },
+      {
+        name: TABLE2,
+        indexes: [['deviceId']],
+      },
+      {
+        name: TABLE3,
+        indexes: [['userPublicKey']],
+      }]
+    },
   ];
 
   constructor(ds: DataStore<*>, userId: Uint8Array, keyStore: KeyStore) {

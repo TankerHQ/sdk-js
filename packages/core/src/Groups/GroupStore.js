@@ -140,6 +140,13 @@ export default class GroupStore {
         indexes: [['publicEncryptionKey']],
       }]
     },
+    {
+      version: 5,
+      tables: [{
+        name: GROUPS_TABLE,
+        indexes: [['publicEncryptionKey']],
+      }]
+    },
   ];
 
   constructor(ds: DataStore<*>, userSecret: Uint8Array) {

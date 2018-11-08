@@ -26,13 +26,13 @@ async function makeMemoryDataStore() {
 describe('TrustchainStore', () => {
   const TABLE_METADATA = 'trustchain_metadata';
   const LAST_BLOCK_INDEX_KEY = 'lastBlockIndex';
+  const TRUSTCHAIN_PUBLIC_KEY = 'trustchainPublicKey';
 
   it('sets up a default lastBlockIndex to 0 for empty trustchain', async () => {
     const { dataStore } = await makeMemoryDataStore();
 
     const t = await TrustchainStore.open(dataStore);
     expect(t.lastBlockIndex).to.equal(0);
-    await t.close();
   });
 
   it('retrieves a previously stored lastBlockIndex', async () => {
@@ -42,7 +42,22 @@ describe('TrustchainStore', () => {
 
     const t = await TrustchainStore.open(dataStore);
     expect(t.lastBlockIndex).to.equal(42);
-    await t.close();
+  });
+
+  it('throws if trustchainPublicKey is called before being set', async () => {
+    const { dataStore } = await makeMemoryDataStore();
+
+    const t = await TrustchainStore.open(dataStore);
+    expect(() => t.trustchainPublicKey).to.throw;
+  });
+
+  it('retrieves a previously stored trustchainPublicKey', async () => {
+    const { dataStore } = await makeMemoryDataStore();
+    const fakeKey = [0, 0, 0, 0];
+    await dataStore.put(TABLE_METADATA, { _id: TRUSTCHAIN_PUBLIC_KEY, trustchainPublicKey: fakeKey });
+
+    const t = await TrustchainStore.open(dataStore);
+    expect(t.trustchainPublicKey).to.deep.equal(fakeKey);
   });
 
   it('sets and persists the given last block index if greater than current one', async () => {
@@ -54,8 +69,6 @@ describe('TrustchainStore', () => {
 
     await t.updateLastBlockIndex(3); // nope, 3 is not greater than 5
     expect(t.lastBlockIndex).to.equal(5);
-
-    await t.close();
 
     // verify that the value is persisted in the dataStore
     const dataStore2 = await openDataStore(config);

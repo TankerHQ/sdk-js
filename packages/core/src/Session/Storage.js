@@ -97,7 +97,6 @@ export default class Storage {
 
   async _closeSubStores() {
     await this._unverifiedStore.close();
-    await this._trustchainStore.close();
     await this._groupStore.close();
     await this._userStore.close();
     await this._resourceStore.close();

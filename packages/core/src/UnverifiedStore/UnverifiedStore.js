@@ -36,6 +36,10 @@ export default class UnverifiedStore {
     {
       version: 4,
       tables: schemasTables,
+    },
+    {
+      version: 5,
+      tables: schemasTables,
     }
   ];
 

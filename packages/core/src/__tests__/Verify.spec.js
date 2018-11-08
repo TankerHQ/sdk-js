@@ -15,13 +15,13 @@ import {
   verifyUserGroupAddition
 } from '../Trustchain/Verify';
 
-import { type UnverifiedEntry } from '../Blocks/entries';
 import { type User } from '../Users/UserStore';
 import { type ExternalGroup } from '../Groups/types';
 
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import { NATURE } from '../Blocks/payloads';
 
@@ -41,7 +41,7 @@ describe('BlockVerification', () => {
   });
 
   describe('Trustchain creation', () => {
-    let unverifiedTrustchainCreation: UnverifiedEntry;
+    let unverifiedTrustchainCreation: UnverifiedTrustchainCreation;
     let trustchainId: Uint8Array;
     beforeEach(() => {
       const testTrustchainCreation = testGenerator.makeTrustchainCreation();

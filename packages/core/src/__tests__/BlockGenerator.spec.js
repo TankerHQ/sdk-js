@@ -4,11 +4,10 @@ import { tcrypto, random } from '@tanker/crypto';
 
 import { expect } from './chai';
 import makeUint8Array from './makeUint8Array';
+import { blockToEntry } from '../Blocks/entries';
 import { concatArrays } from '../Blocks/Serialize';
 import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
 import BlockGenerator, { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
-
-import { blockToEntry } from '../Trustchain/TrustchainStore';
 
 describe('BlockGenerator', () => {
   const userKeys = tcrypto.makeEncryptionKeyPair();

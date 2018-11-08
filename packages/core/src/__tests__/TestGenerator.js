@@ -2,19 +2,19 @@
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
 
-import { blockToEntry } from '../Trustchain/TrustchainStore';
-import type { UnverifiedEntry } from '../Blocks/entries';
+import { blockToEntry } from '../Blocks/entries';
 import { getLastUserPublicKey, type User, type Device } from '../Users/UserStore';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import { hashBlock, signBlock, type Block } from '../Blocks/Block';
 import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
 
-import { rootEntryAuthor } from '../Trustchain/Verify';
+import { rootBlockAuthor } from '../Trustchain/Verify';
 
 import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/payloads';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
@@ -42,7 +42,7 @@ export type TestUser = {
 }
 
 export type TestTrustchainCreation = {
-  unverifiedTrustchainCreation: UnverifiedEntry,
+  unverifiedTrustchainCreation: UnverifiedTrustchainCreation,
   block: Block,
   trustchainId: Uint8Array;
   trustchainKeys: tcrypto.SodiumKeyPair,
@@ -102,14 +102,17 @@ class TestGenerator {
       index: this._trustchainIndex,
       trustchain_id: new Uint8Array(0),
       nature: preferredNature(NATURE_KIND.trustchain_creation),
-      author: rootEntryAuthor,
+      author: rootBlockAuthor,
       payload: this._trustchainKeys.publicKey,
       signature: new Uint8Array(tcrypto.SIGNATURE_SIZE)
     };
+
     rootBlock.trustchain_id = hashBlock(rootBlock);
+    const unverifiedTrustchainCreation: UnverifiedTrustchainCreation = { ...rootBlock, hash: rootBlock.trustchain_id, public_signature_key: this._trustchainKeys.publicKey };
+
     this._trustchainId = rootBlock.trustchain_id;
     return {
-      unverifiedTrustchainCreation: blockToEntry(rootBlock),
+      unverifiedTrustchainCreation,
       block: rootBlock,
       trustchainId: rootBlock.trustchain_id,
       trustchainKeys: this._trustchainKeys

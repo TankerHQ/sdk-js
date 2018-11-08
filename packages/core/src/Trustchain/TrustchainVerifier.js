@@ -3,13 +3,13 @@ import { Mutex } from 'async-mutex';
 import find from 'array-find';
 import { utils, type b64string } from '@tanker/crypto';
 import { InvalidBlockError } from '../errors';
-import type { Entry, UnverifiedEntry } from '../Blocks/entries';
 import { findIndex, compareSameSizeUint8Arrays } from '../utils';
 import { type User, type Device } from '../Users/UserStore';
 import GroupUpdater from '../Groups/GroupUpdater';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import {
   type UserDeviceRecord,
@@ -174,8 +174,7 @@ export default class TrustchainVerifier {
 
   async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
     if (utils.equalArray(entry.author, this._trustchainId)) {
-      const rootBlock: Object = await this._getUnverifiedauthor(entry.author);
-      const authorKey = rootBlock.payload_verified.public_signature_key;
+      const authorKey = this._storage.trustchainStore.trustchainPublicKey;
       verifyDeviceCreation(entry, null, null, authorKey, user);
     } else {
       if (!user)
@@ -338,10 +337,10 @@ export default class TrustchainVerifier {
     return this._unlockedProcessUserGroups(unverifiedEntries);
   }
 
-  async verifyTrustchainCreation(unverifiedEntry: UnverifiedEntry) {
+  async verifyTrustchainCreation(unverifiedTrustchainCreation: UnverifiedTrustchainCreation) {
     return this._verifyLock.runExclusive(async () => {
-      verifyTrustchainCreation(unverifiedEntry, this._trustchainId);
-      return this._storage.trustchainStore.setEntryVerified(unverifiedEntry);
+      verifyTrustchainCreation(unverifiedTrustchainCreation, this._trustchainId);
+      return this._storage.trustchainStore.setTrustchainPublicKey(unverifiedTrustchainCreation.public_signature_key);
     });
   }
 

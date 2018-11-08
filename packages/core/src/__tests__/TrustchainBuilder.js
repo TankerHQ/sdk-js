@@ -70,8 +70,7 @@ export default class TrustchainBuilder {
     // add the root entry to the trustchain
     if (!skipRootBlock) {
       const rootEntry = this.generator.root.entry;
-      await this.trustchainStore.addTrustchainCreation(rootEntry);
-      await this.trustchainVerifier.verifyTrustchainCreation(rootEntry);
+      await this.trustchainStore.setTrustchainPublicKey((rootEntry.payload_unverified: any).public_signature_key);
     }
   }
 

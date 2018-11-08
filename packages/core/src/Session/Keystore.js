@@ -23,6 +23,7 @@ export default class Keystore extends EventEmitter {
     { version: 2, tables: [{ name: TABLE, persistent: true }] },
     { version: 3, tables: [{ name: TABLE, persistent: true }] },
     { version: 4, tables: [{ name: TABLE, persistent: true }] },
+    { version: 5, tables: [{ name: TABLE, persistent: true }] },
     // {
     //   version: 5,
     //   tables: [{
