@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, createUserSecretBinary } from '@tanker/crypto';
 import { mergeSchemas } from '@tanker/datastore-base';
 
 import { expect } from './chai';
@@ -12,10 +12,11 @@ import makeUint8Array from './makeUint8Array';
 
 async function makeMemoryGroupStore(): Promise<GroupStore> {
   const schemas = mergeSchemas(GroupStore.schemas);
+  const userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
 
   const baseConfig = { ...dataStoreConfig, schemas };
   const config = { ...baseConfig, dbName: `group-store-test-${makePrefix()}` };
-  return GroupStore.open(await openDataStore(config));
+  return GroupStore.open(await openDataStore(config), userSecret);
 }
 
 function makeFullGroup(): Group {
@@ -59,10 +60,9 @@ describe('GroupStore', () => {
 
   it('can add a full group', async () => {
     const group = makeFullGroup();
-    await groupStore.put(group);
+    await expect(groupStore.put(group)).to.be.fulfilled;
 
-    const got = await groupStore.findFull({ groupId: group.groupId });
-    expect(got).to.deep.equal(group);
+    await expect(groupStore.findFull({ groupId: group.groupId })).to.eventually.deep.equal(group);
   });
 
   it('can add a full group and get an external group', async () => {
@@ -157,7 +157,7 @@ describe('GroupStore', () => {
 
     const newBlockHash = makeUint8Array('new hash', tcrypto.HASH_SIZE);
     const newBlockIndex = 1337;
-    await groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex });
+    await expect(groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex })).to.be.fulfilled;
 
     const got = await groupStore.findFull({ groupId: group.groupId });
     expect(got.lastGroupBlock).to.deep.equal(newBlockHash);

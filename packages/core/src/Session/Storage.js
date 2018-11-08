@@ -76,7 +76,7 @@ export default class Storage {
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
     this._userStore = await UserStore.open(this._datastore, userId, this._keyStore);
-    this._groupStore = await GroupStore.open(this._datastore);
+    this._groupStore = await GroupStore.open(this._datastore, userSecret);
     this._trustchainStore = await TrustchainStore.open(this._datastore);
     this._unverifiedStore = await UnverifiedStore.open(this._datastore);
 
@@ -106,12 +106,15 @@ export default class Storage {
 
 
   async _clearStaleCaches(): Promise<void> {
-    // Migration: The UserStore is missing important info, including signature keys
     // TODO: storage version & current version
     const USER_STORE = 'users';
+    const GROUP_STORE = 'groups';
+    // Migration: The UserStore is missing important info, including signature keys
     const anyUser = await this._datastore.first(USER_STORE);
-    if (anyUser && anyUser.devices[0].devicePublicSignatureKey === undefined) {
-      console.warn('Trustchain migration 5');
+    // Migration: The GroupStore needs to encrypt private group keys.
+    const anyGroup = await this._datastore.first(GROUP_STORE);
+    if ((anyUser && anyUser.devices[0].devicePublicSignatureKey === undefined) || (anyGroup && anyGroup.encryptedPrivateKeys === undefined)) {
+      console.warn('Trustchain migration');
       await this.cleanupCaches();
     }
   }
