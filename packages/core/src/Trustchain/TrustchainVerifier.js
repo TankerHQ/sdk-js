@@ -53,7 +53,7 @@ export default class TrustchainVerifier {
     for (const unverifiedEntry of unverifiedEntries) {
       try {
         // TODO: Use patent-pending Single Query Multiple Data (SQMD) technology
-        let user = await this._storage.userStore.findUser({ hashedUserId: unverifiedEntry.user_id });
+        let user = await this._storage.userStore.findUser({ userId: unverifiedEntry.user_id });
         user = await this._unlockedProcessUser(unverifiedEntry.user_id, user, unverifiedEntry.index);
         await this._unlockedVerifyAndApplySingleUserEntry(user, unverifiedEntry);
       } catch (e) {
@@ -88,10 +88,10 @@ export default class TrustchainVerifier {
 
         let verifiedKeyPublish;
         if (isKeyPublishToDevice(keyPublish.nature)) {
-          const recipient = await this._storage.userStore.findUser({ hashedDeviceId: keyPublish.recipient });
+          const recipient = await this._storage.userStore.findUser({ deviceId: keyPublish.recipient });
           verifiedKeyPublish = verifyKeyPublish(keyPublish, author, recipient);
         } else if (isKeyPublishToUser(keyPublish.nature)) {
-          const recipient = await this._storage.userStore.findUserByUserPublicKey({ hashedUserPublicKey: keyPublish.recipient });
+          const recipient = await this._storage.userStore.findUser({ userPublicKey: keyPublish.recipient });
           verifiedKeyPublish = verifyKeyPublish(keyPublish, author, recipient);
         } else {
           const recipient = await this._storage.groupStore.findExternal({ groupPublicEncryptionKey: keyPublish.recipient });
@@ -189,17 +189,13 @@ export default class TrustchainVerifier {
   }
 
   async _unlockedVerifySingleUserDeviceRevocation(targetUser: ?User, entry: UnverifiedDeviceRevocation): Promise<VerifiedDeviceRevocation> {
-    const authorDeviceToUser = await this._storage.userStore.findDeviceToUser({ hashedDeviceId: entry.author });
-    if (!authorDeviceToUser)
-      throw new InvalidBlockError('unknown_author', 'can\'t find block author', { entry });
-    const { deviceId: authorDeviceId, userId: authorUserId } = authorDeviceToUser;
-    const authorUser = await this._storage.userStore.findUser({ hashedUserId: utils.fromBase64(authorUserId) });
+    const authorUser = await this._storage.userStore.findUser({ deviceId: entry.author });
     if (!authorUser)
       throw new Error('Assertion error: User has a device in userstore, but findUser failed!'); // Mostly just for flow. Should Never Happen™
-    const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === authorDeviceId);
+    const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(entry.author));
     const authorDevice = authorUser.devices[deviceIndex];
 
-    verifyDeviceRevocation(entry, authorUserId, authorDevice.devicePublicSignatureKey, targetUser);
+    verifyDeviceRevocation(entry, authorUser.userId, authorDevice.devicePublicSignatureKey, targetUser);
     return entry;
   }
 
@@ -237,18 +233,18 @@ export default class TrustchainVerifier {
   }
 
   async verifyOwnDeviceCreation(entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
-    const user = await this._storage.userStore.findUser({ hashedUserId: entry.user_id }); // TODO: We should know our own user ID instead of doing a query for it ...
+    const user = await this._storage.userStore.findUser({ userId: entry.user_id });
     return this._unlockedVerifyAndApplySingleDeviceCreation(user, entry);
   }
 
   async verifyOwnDeviceRevocation(entry: UnverifiedDeviceRevocation): Promise<VerifiedDeviceRevocation> {
-    const user = await this._storage.userStore.findUser({ hashedUserId: entry.user_id }); // TODO: We should know our own user ID instead of doing a query for it ...
+    const user = await this._storage.userStore.findUser({ userId: entry.user_id });
     return this._unlockedVerifyAndApplySingleDeviceRevocation(user, entry);
   }
 
   async _throwingVerifyDeviceRevocation(entry: UnverifiedDeviceRevocation): Promise<VerifiedDeviceRevocation> {
     return this._verifyLock.runExclusive(async () => {
-      let user = await this._storage.userStore.findUser({ hashedUserId: entry.user_id });
+      let user = await this._storage.userStore.findUser({ userId: entry.user_id });
       user = await this._unlockedProcessUser(entry.user_id, user, entry.index);
       return this._unlockedVerifyAndApplySingleUserEntry(user, entry);
     });
@@ -256,7 +252,7 @@ export default class TrustchainVerifier {
 
   async _throwingVerifyDeviceCreation(entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
     return this._verifyLock.runExclusive(async () => {
-      let user = await this._storage.userStore.findUser({ hashedUserId: entry.user_id });
+      let user = await this._storage.userStore.findUser({ userId: entry.user_id });
       user = await this._unlockedProcessUser(entry.user_id, user, entry.index);
       return this._unlockedVerifyAndApplySingleUserEntry(user, entry);
     });
@@ -283,7 +279,7 @@ export default class TrustchainVerifier {
   }
 
   async _unlockedProcessUserById(userId: Uint8Array, beforeIndex?: number): Promise<?User> {
-    const user = await this._storage.userStore.findUser({ hashedUserId: userId });
+    const user = await this._storage.userStore.findUser({ userId });
     return this._unlockedProcessUser(userId, user, beforeIndex);
   }
 
@@ -374,7 +370,7 @@ export default class TrustchainVerifier {
         const verifiedDevices = [];
         [currentDevicesToVerify, nextDevicesToVerify] = await this._takeOneDeviceOfEachUsers(nextDevicesToVerify);
         for (const entry of currentDevicesToVerify) {
-          const user = await this._storage.userStore.findUser({ hashedUserId: entry.user_id });
+          const user = await this._storage.userStore.findUser({ userId: entry.user_id });
           verifiedDevices.push(await this._unlockedVerifySingleUser(user, entry));
         }
         await this._storage.userStore.applyEntries(verifiedDevices);

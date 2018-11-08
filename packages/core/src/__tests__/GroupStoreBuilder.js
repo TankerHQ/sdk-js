@@ -3,7 +3,7 @@
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
 import { createUserSecretBinary } from '@tanker/crypto';
 
-import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import GroupStore from '../Groups/GroupStore';
 import Generator, { makeGenerator, type GeneratorDevice, type GeneratorUserGroupResult } from './Generator';

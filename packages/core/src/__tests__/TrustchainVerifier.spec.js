@@ -121,15 +121,15 @@ describe('TrustchainVerifier', () => {
 
       // We verified 4, so all previous devices should be verified too (but no more)
 
-      expect(await userStore.findDevice({ hashedDeviceId: alice0.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: alice1.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: alice2.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: alice3.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: alice4.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: alice5.entry.hash })).to.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: alice6.entry.hash })).to.be.null;
+      expect(await userStore.findDevice({ deviceId: alice0.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: alice1.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: alice2.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: alice3.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: alice4.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: alice5.entry.hash })).to.be.null;
+      expect(await userStore.findDevice({ deviceId: alice6.entry.hash })).to.be.null;
 
-      expect(await userStore.findDevice({ hashedDeviceId: bob.entry.hash })).to.be.null;
+      expect(await userStore.findDevice({ deviceId: bob.entry.hash })).to.be.null;
     });
   });
 
@@ -157,9 +157,9 @@ describe('TrustchainVerifier', () => {
       const keyPublish2 = await builder.addKeyPublishToUser({ from: author2, to: user });
       const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish, keyPublish2.unverifiedKeyPublish]);
       expect(result.length).to.equal(2);
-      expect(await userStore.findDevice({ hashedDeviceId: author.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: authorDevice.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: author2.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: author2.entry.hash })).to.not.be.null;
     });
 
     it('fails to verify keypublishes with bad authors', async () => {
@@ -169,9 +169,9 @@ describe('TrustchainVerifier', () => {
 
       const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish, alteredKP2.unverifiedKeyPublish]);
       expect(result.length).to.equal(1);
-      expect(await userStore.findDevice({ hashedDeviceId: author.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: authorDevice.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: author2.entry.hash })).to.be.null;
+      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: author2.entry.hash })).to.be.null;
     });
 
     it('verified group block', async () => {
@@ -181,9 +181,9 @@ describe('TrustchainVerifier', () => {
 
       const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublishToGroup.unverifiedKeyPublish]);
       expect(result.length).to.equal(1);
-      expect(await userStore.findDevice({ hashedDeviceId: author.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: authorDevice.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ hashedDeviceId: author2.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: author2.entry.hash })).to.not.be.null;
 
       const groupId = (group.entry.payload_unverified: any).public_signature_key;
       const verifiedGroup = await builder.groupStore.findExternal({ groupId });

@@ -7,7 +7,7 @@ import { expect } from './chai';
 import { type UserGroupAdditionRecord, type UserGroupCreationRecord } from '../Blocks/payloads';
 import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
-import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
 
 async function makeMemoryGroupStore(): Promise<GroupStore> {

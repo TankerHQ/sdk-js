@@ -16,7 +16,7 @@ import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
 
 import { rootEntryAuthor } from '../Trustchain/Verify';
 
-import { NATURE_KIND, preferredNature } from '../Blocks/payloads';
+import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/payloads';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
 import { type DelegationToken } from '../Session/delegation';
 
@@ -25,12 +25,19 @@ export type TestDevice = {
   id: Uint8Array,
   signKeys: tcrypto.SodiumKeyPair,
   encryptionKeys: tcrypto.SodiumKeyPair,
+  createdAt: number;
   revokedAt: number;
+}
+
+type TestUserKeys = {
+  index: number,
+  publicKey: Uint8Array,
+  privateKey: Uint8Array,
 }
 
 export type TestUser = {
   id: Uint8Array,
-  userKeys: tcrypto.SodiumKeyPair,
+  userKeys: Array<TestUserKeys>,
   devices: Array<TestDevice>,
 }
 
@@ -43,6 +50,7 @@ export type TestTrustchainCreation = {
 
 export type TestDeviceCreation = {
   unverifiedDeviceCreation: UnverifiedDeviceCreation,
+  unverifiedDeviceCreationV1: UnverifiedDeviceCreation,
   block: Block,
   testUser: TestUser,
   testDevice: TestDevice,
@@ -108,6 +116,10 @@ class TestGenerator {
     };
   }
 
+  skipIndex = () => {
+    this._trustchainIndex += 1;
+  }
+
   makeUserCreation = (userId: Uint8Array): TestDeviceCreation => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
@@ -140,20 +152,23 @@ class TestGenerator {
       id: unverifiedDeviceCreation.hash,
       signKeys: signatureKeyPair,
       encryptionKeys: encryptionKeyPair,
+      createdAt: entry.index,
       revokedAt: Number.MAX_SAFE_INTEGER
     };
 
     const testUser = {
       id: userId,
-      userKeys: {
+      userKeys: [{
         publicKey: userKeyPair.public_encryption_key,
-        privateKey: privateUserKey
-      },
+        privateKey: privateUserKey,
+        index: entry.index
+      }],
       devices: [testDevice]
     };
 
     return {
       unverifiedDeviceCreation,
+      unverifiedDeviceCreationV1: this._deviceCreationV1(unverifiedDeviceCreation),
       block: newUserBlock,
       testUser,
       testDevice,
@@ -174,7 +189,7 @@ class TestGenerator {
     this._trustchainIndex += 1;
     const block = blockGenerator.makeNewDeviceBlock({
       userId: parentDevice.testUser.id,
-      userKeys: parentDevice.testUser.userKeys,
+      userKeys: parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1],
       publicSignatureKey: signatureKeyPair.publicKey,
       publicEncryptionKey: encryptionKeyPair.publicKey,
       isGhost: false,
@@ -189,6 +204,7 @@ class TestGenerator {
       id: unverifiedDeviceCreation.hash,
       signKeys: signatureKeyPair,
       encryptionKeys: encryptionKeyPair,
+      createdAt: entry.index,
       revokedAt: Number.MAX_SAFE_INTEGER
     };
     const testUser = Object.assign({}, parentDevice.testUser);
@@ -196,6 +212,7 @@ class TestGenerator {
 
     return {
       unverifiedDeviceCreation,
+      unverifiedDeviceCreationV1: this._deviceCreationV1(unverifiedDeviceCreation),
       block,
       testUser,
       testDevice,
@@ -211,18 +228,40 @@ class TestGenerator {
     );
 
     this._trustchainIndex += 1;
-    const block = blockGenerator.makeDeviceRevocationBlock(parentDevice.user, parentDevice.testUser.userKeys, utils.toBase64(deviceIdToRevoke));
+    const block = blockGenerator.makeDeviceRevocationBlock(parentDevice.user, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], utils.toBase64(deviceIdToRevoke));
     block.index = this._trustchainIndex;
 
     const entry = blockToEntry(block);
-    const unverifiedDeviceRevocation: UnverifiedDeviceRevocation = { ...entry, ...entry.payload_unverified };
+    const unverifiedDeviceRevocation: UnverifiedDeviceRevocation = { ...entry, ...entry.payload_unverified, user_id: parentDevice.testUser.id };
 
-    const testUser = Object.assign({}, parentDevice.testUser);
-    const device = testUser.devices.find((d) => utils.equalArray(d.id, deviceIdToRevoke));
-    if (!device) {
-      throw new Error('flow check');
+    const testUser = { ...parentDevice.testUser,
+      devices: parentDevice.testUser.devices.map(d => {
+        if (utils.equalArray(d.id, deviceIdToRevoke)) {
+          return { ...d, revokedAt: entry.index };
+        }
+        return { ...d };
+      }),
+      userKeys: [...parentDevice.testUser.userKeys]
+    };
+
+    // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
+    const keyForParentDevice = unverifiedDeviceRevocation.user_keys.private_keys.find(key => utils.equalArray(key.recipient, parentDevice.testDevice.encryptionKeys.publicKey));
+
+    if (keyForParentDevice) {
+      testUser.userKeys.push({
+        // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
+        publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
+        privateKey: tcrypto.sealDecrypt(keyForParentDevice.key, parentDevice.testDevice.encryptionKeys),
+        index: entry.index
+      });
+    } else {
+      testUser.userKeys.push({
+        // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
+        publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
+        privateKey: random(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
+        index: entry.index
+      });
     }
-    device.revokedAt = this._trustchainIndex;
 
     return {
       unverifiedDeviceRevocation,
@@ -397,16 +436,23 @@ class TestGenerator {
     devicePublicSignatureKey: testDevice.signKeys.publicKey,
     isGhostDevice: false,
     isServerDevice: false,
-    createdAt: 0,
+    createdAt: testDevice.createdAt,
     revokedAt: testDevice.revokedAt,
   })
 
   _testUserToUser(user: TestUser): User {
     return {
       userId: utils.toBase64(user.id),
-      userPublicKeys: user.userKeys ? [{ index: 1, userPublicKey: user.userKeys.publicKey }] : [],
+      userPublicKeys: user.userKeys ? user.userKeys.map(key => ({ index: key.index, userPublicKey: key.publicKey })) : [],
       devices: user.devices.map(this._testDeviceToDevice),
     };
+  }
+
+  _deviceCreationV1(deviceCreation: UnverifiedDeviceCreation): UnverifiedDeviceCreation {
+    const deviceCreationV1 = Object.assign({}, deviceCreation);
+    deviceCreationV1.nature = NATURE.device_creation_v1;
+    deviceCreationV1.user_key_pair = null;
+    return deviceCreationV1;
   }
 }
 export default TestGenerator;

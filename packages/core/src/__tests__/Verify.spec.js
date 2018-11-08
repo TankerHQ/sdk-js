@@ -323,6 +323,7 @@ describe('BlockVerification', () => {
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
+      testGenerator.skipIndex(); // used for faking a revocation
       const keyPublish = testGenerator.makeKeyPublishToUser(userCreation, user);
       unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
     });

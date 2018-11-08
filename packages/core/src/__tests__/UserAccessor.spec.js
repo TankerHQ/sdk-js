@@ -54,7 +54,7 @@ describe('Users', () => {
     it('returns a user', async () => {
       const { users, builder } = await makeTestUsers();
       const alice = await builder.newUserCreationV3('alice');
-      const user = await users.findUser({ hashedUserId: alice.entry.user_id });
+      const user = await users.findUser({ userId: alice.entry.user_id });
 
       expect(user && user.userId).to.equal(utils.toBase64(alice.entry.user_id));
     });
@@ -63,7 +63,7 @@ describe('Users', () => {
       const { users, stubs } = await makeTestUsers();
       const hashedBobId = new Uint8Array(32);
 
-      await users.findUser({ hashedUserId: hashedBobId });
+      await users.findUser({ userId: hashedBobId });
 
       expect(stubs.sync.withArgs([hashedBobId]).calledOnce).to.be.true;
       expect(stubs.updateUserStore.withArgs([hashedBobId]).calledOnce).to.be.true;
@@ -77,7 +77,7 @@ describe('Users', () => {
         await builder.newUserCreationV3('bob');
       });
 
-      const user = await users.findUser({ hashedUserId: hashedBobId });
+      const user = await users.findUser({ userId: hashedBobId });
 
       expect(user && user.userId).to.equal(utils.toBase64(hashedBobId));
     });

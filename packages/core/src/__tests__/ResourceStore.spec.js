@@ -2,7 +2,7 @@
 import { random, createUserSecretBinary, tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
-import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import SharedKeystore from '../Resource/ResourceStore';
 

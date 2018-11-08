@@ -351,13 +351,13 @@ export class Tanker extends EventEmitter {
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
     this.assert(this.OPEN, 'get the device list');
-    const allDevices = await this._session.userAccessor.findUserDevices({ hashedUserId: this._session.sessionData.userId });
+    const allDevices = await this._session.userAccessor.findUserDevices({ userId: this._session.sessionData.userId });
     return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
   }
 
   async isUnlockAlreadySetUp(): Promise<bool> {
     this.assert(this.OPEN, 'is unlock already setup');
-    const devices = await this._session.userAccessor.findUserDevices({ hashedUserId: this._session.sessionData.userId });
+    const devices = await this._session.userAccessor.findUserDevices({ userId: this._session.sessionData.userId });
     return devices.some(device => device.isGhostDevice === true && device.isRevoked === false);
   }
 

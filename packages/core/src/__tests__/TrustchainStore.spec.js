@@ -3,7 +3,7 @@
 import { mergeSchemas } from '@tanker/datastore-base';
 
 import { expect } from './chai';
-import dataStoreConfig, { makePrefix, openDataStore } from './dataStoreConfig';
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import Keystore from '../Session/Keystore';
 import UserStore from '../Users/UserStore';
