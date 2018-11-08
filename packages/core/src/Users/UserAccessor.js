@@ -93,7 +93,7 @@ export default class UserAccessor {
   }
 
   async getDevicePublicEncryptionKey(deviceId: Uint8Array): Promise<?Uint8Array> {
-    const device = await this._userStore.findDevice({ hashedDeviceId: deviceId });
+    const device = await this._userStore.findDevice({ deviceId });
     if (device)
       return device.devicePublicEncryptionKey;
 
