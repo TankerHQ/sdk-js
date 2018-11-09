@@ -125,19 +125,8 @@ def run_tests_in_browser(*, env, runner):
 
 
 def run_functional_tests(*, env, runner, nightly):
-    workspace = Path("~/work").expanduser()
-    repo = "sdk-tests"
-    ci.git.prepare_sources(
-        workspace=workspace, repos=["sdk-js", repo], clean=False,
-        submodule=False)
-    cwd = workspace / repo
-    sdk_js = workspace / "sdk-js"
-    ci.js.yarn_install_deps(cwd=sdk_js)
-    ci.dmenv.install(cwd=cwd)
-    args = ["--runner", runner]
-    if nightly:
-        args.append("--nightly")
-    ci.dmenv.run("python", "ci/check.py", *args, cwd=cwd)
+    src = Path.abspath(Path(__file__)).parent
+    ci.js.run_sdk_js_functional_tests(env=env, runner=runner, nightly=nightly, src=src)
 
 
 def check(*, env, runner, nightly):
