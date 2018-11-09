@@ -8,13 +8,16 @@ from path import Path
 import psutil
 
 import ci
+import ci.dmenv
+import ci.git
+import ci.js
 import utils
 import pyback.client
 
 
 def run_linters():
     for lang in ["js", "flow"]:
-        ci.run_yarn("lint:%s" % lang)
+        ci.js.run_yarn("lint:%s" % lang)
 
 
 def run_tests_in_node(env=None):
@@ -23,7 +26,7 @@ def run_tests_in_node(env=None):
         run_env = os.environ.copy()
         run_env["PROJECT_CONFIG"] = env
         run_env["TANKER_WEB_MONGODB_RUNNING"] = "true"
-        ci.run_yarn("coverage", env=run_env)
+        ci.js.run_yarn("coverage", env=run_env)
 
 
 def find_procs_by_name(name):
@@ -104,13 +107,13 @@ def run_tests_in_browser(*, env, runner):
     run_env["PROJECT_CONFIG"] = env
 
     if runner == "linux":
-        ci.run_yarn("karma", "--browsers", "Firefox,Chromium", env=run_env)
+        ci.js.run_yarn("karma", "--browsers", "Firefox,Chromium", env=run_env)
     elif runner == "macos":
         ci.run("killall", "Safari", check=False)
         delete_safari_state()
         safari_awaker = subprocess.Popen(["bash", "ci/keep-safari-awake.sh"])
         try:
-            ci.run_yarn("karma", "--browsers", "Safari", env=run_env)
+            ci.js.run_yarn("karma", "--browsers", "Safari", env=run_env)
         finally:
             safari_awaker.kill()
     elif runner == "windows-edge":
@@ -124,24 +127,23 @@ def run_tests_in_browser(*, env, runner):
 def run_functional_tests(*, env, runner, nightly):
     workspace = Path("~/work").expanduser()
     repo = "sdk-tests"
-    src = Path.abspath(Path(__file__)).parent
-    ci.prepare_sources(
-        workspace=workspace, repos=["sdk-js", repo], src=src, clean=False,
+    ci.git.prepare_sources(
+        workspace=workspace, repos=["sdk-js", repo], clean=False,
         submodule=False)
     cwd = workspace / repo
     sdk_js = workspace / "sdk-js"
-    ci.install_deps(cwd=sdk_js)
-    ci.dmenv_install(cwd=cwd)
+    ci.js.yarn_install_deps(cwd=sdk_js)
+    ci.dmenv.install(cwd=cwd)
     args = ["--runner", runner]
     if nightly:
         args.append("--nightly")
-    ci.dmenv_run("python", "ci/check.py", *args, cwd=cwd)
+    ci.dmenv.run("python", "ci/check.py", *args, cwd=cwd)
 
 
 def check(*, env, runner, nightly):
-    ci.install_deps()
+    ci.js.yarn_install_deps()
     if runner == "linux":
-        ci.run_yarn("build:all")
+        ci.js.run_yarn("build:all")
         run_linters()
         run_tests_in_node(env=env)
     run_tests_in_browser(env=env, runner=runner)
