@@ -32,7 +32,8 @@ export default class UserAccessor {
 
   async _fetchUsers(userIds: Array<Uint8Array>) {
     const userIdsWithoutMe = userIds.filter(u => !utils.equalArray(u, this._userId));
-    await this._trustchain.sync(userIdsWithoutMe, []);
+    if (userIdsWithoutMe.length !== 0)
+      await this._trustchain.sync(userIdsWithoutMe, []);
     await this._trustchain.updateUserStore(userIdsWithoutMe);
   }
 
