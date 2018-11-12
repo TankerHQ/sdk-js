@@ -2,10 +2,10 @@
 
 import varint from 'varint';
 
-import { aead, utils, tcrypto, type Key } from '@tanker/crypto';
+import { aead, tcrypto, type Key } from '@tanker/crypto';
 import { InvalidEncryptionFormat } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
-import { defaultBlockSize } from './StreamEncryptor';
+import { Uint8BufferStream, defaultBlockSize } from '../Uint8Stream';
 
 export type StreamDecryptorParameters = {
   onData: (Uint8Array) => Promise<void> | void,
@@ -25,7 +25,7 @@ export default class StreamDecryptor {
 
   _resourceIdKeyPair: ?ResourceIdKeyPair;
   _index = 0;
-  _outputBuffer: Uint8Array = new Uint8Array(0);
+  _outputStream: Uint8BufferStream;
 
   async _findAndRemoveKeyFromData(encryptedData: Uint8Array) {
     const version = varint.decode(encryptedData);
@@ -53,18 +53,14 @@ export default class StreamDecryptor {
     if (parameters.blockSize) {
       this._blockSize = parameters.blockSize;
     }
-  }
 
-  async _handleBufferedOutput() {
-    let offset = 0;
-    let remaining = this._outputBuffer.length;
-    while (remaining >= this._blockSize) {
-      await this._onData(this._outputBuffer.subarray(offset, offset + this._blockSize));
-      offset += this._blockSize;
-      remaining -= this._blockSize;
-    }
-
-    this._outputBuffer = this._outputBuffer.subarray(offset);
+    this._outputStream = new Uint8BufferStream(this._blockSize);
+    this._outputStream.on('readable', () => {
+      const data = this._outputStream.read();
+      if (data) {
+        this._onData(new Uint8Array(data, 0, data.length));
+      }
+    });
   }
 
   async write(encryptedData: Uint8Array): Promise<void> {
@@ -80,15 +76,13 @@ export default class StreamDecryptor {
 
     const subKey = tcrypto.deriveKey(this._resourceIdKeyPair.key, this._index);
     this._index += 1;
-    this._outputBuffer = utils.concatArrays(this._outputBuffer, await aead.decryptAEADv2(subKey, data));
+    const clearData = await aead.decryptAEADv2(subKey, data);
 
-    return this._handleBufferedOutput();
+    this._outputStream.write(clearData);
   }
 
   async close(): Promise<void> {
-    if (this._outputBuffer.length > 0) {
-      this._onData(this._outputBuffer);
-    }
+    this._outputStream.end();
 
     return this._onEnd();
   }
