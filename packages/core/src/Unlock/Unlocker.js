@@ -3,7 +3,7 @@
 import { utils } from '@tanker/crypto';
 
 import { createUnlockKeyRequest, createDeviceFromUnlockKey, extractUnlockKey, type UnlockKey, } from './unlock';
-import { InvalidUnlockPassword, InvalidUnlockKey, InvalidUnlockVerificationCode } from '../errors';
+import { InvalidUnlockPassword, InvalidUnlockKey, InvalidUnlockVerificationCode, MaxVerificationAttemptsReached, ServerError } from '../errors';
 
 import { Client } from '../Network/Client';
 import { type Block } from '../Blocks/Block';
@@ -32,15 +32,17 @@ export class Unlocker {
 
       return answer.getUnlockKey(this._userData.userSecret);
     } catch (e) {
-      if (e.error && e.error.status) {
-        if (e.error.status === 401) {
+      if (e instanceof ServerError) {
+        if (e.error.code === 'authentication_failed') {
           if (password) {
             throw new InvalidUnlockPassword(e);
           } else {
             throw new InvalidUnlockVerificationCode(e);
           }
-        } else if (e.error.status === 404) {
+        } else if (e.error.code === 'user_unlock_key_not_found') {
           throw new InvalidUnlockKey(e);
+        } else if (e.error.code === 'max_attempts_reached') {
+          throw new MaxVerificationAttemptsReached(e);
         }
       }
       throw e;

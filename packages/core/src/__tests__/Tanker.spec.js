@@ -11,7 +11,6 @@ import { createUserTokenFromSecret } from './TestSessionTokens';
 import { InvalidArgument, InvalidUserToken, InvalidSessionStatus } from '../errors';
 import { DEVICE_TYPE } from '../Unlock/unlock';
 
-
 describe('Tanker', () => {
   const trustchainKeyPair = tcrypto.makeSignKeyPair();
   const trustchainId = random(tcrypto.HASH_SIZE);
@@ -156,39 +155,42 @@ describe('Tanker', () => {
     // "open" a session
     tanker._session = ({ sessionData: { deviceType: DEVICE_TYPE.client_device } }: any); // eslint-disable-line no-underscore-dangle
 
+    describe('unlock method registration', () => {
+      const badArgs = [
+        undefined,
+        null,
+        'valid@email.com',
+        [],
+        {},
+        { email: null, password: false },
+        { email: ['valid@email.com'] },
+        { email: 'valid@email.com', not_a_valid_key: 'test' },
+        { password: 12 },
+        { password: new Uint8Array(12) },
+        { email: 12, password: 'valid_password' },
+        { email: 'valid@email.com', password: () => 'fun is not a password' },
+      ];
 
-    describe('unlock', () => {
-      describe('setupUnlock type check', () => {
-        it('should throw on on invalid password type', async () => {
+      it('should throw if invalid argument given', async () => {
+        for (let i = 0; i < badArgs.length; i++) {
+          const arg = badArgs[i];
           // $FlowIKnow
-          await expect(tanker.setupUnlock({ password: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
-          // $FlowIKnow
-          await expect(tanker.setupUnlock({ password: 12 })).to.be.rejectedWith(InvalidArgument);
-        });
-
-        it('should throw on on invalid email type', async () => {
-          // $FlowIKnow
-          await expect(tanker.setupUnlock({ email: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
-        });
+          await expect(tanker.registerUnlock(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
+        }
       });
 
-      describe('updateUnlock type check', () => {
-        it('should throw on on invalid password type', async () => {
-          // $FlowIKnow
-          await expect(tanker.updateUnlock({ password: 12 })).to.be.rejectedWith(InvalidArgument);
-          // $FlowIKnow
-          await expect(tanker.updateUnlock({ password: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
-        });
+      describe('deprecated methods', () => {
+        before(() => warnings.silence(/deprecated/));
+        after(() => warnings.restore());
 
-        it('should throw on on invalid email type', async () => {
-          // $FlowIKnow
-          await expect(tanker.updateUnlock({ email: new Uint8Array(12) })).to.be.rejectedWith(InvalidArgument);
-        });
-
-        it('should throw on on invalid unlockKey type', async () => {
-          // $FlowIKnow
-          await expect(tanker.updateUnlock({ password: 'password', email: 'email', unlockKey: new Uint8Array(12) }))
-            .to.be.rejectedWith(InvalidArgument);
+        it('should throw if invalid argument given to deprecated methods', async () => {
+          for (let i = 0; i < badArgs.length; i++) {
+            const arg = badArgs[i];
+            // $FlowIKnow
+            await expect(tanker.setupUnlock(arg), `setup test n°${i}`).to.be.rejectedWith(InvalidArgument);
+            // $FlowIKnow
+            await expect(tanker.updateUnlock(arg), `update test n°${i}`).to.be.rejectedWith(InvalidArgument);
+          }
         });
       });
     });
