@@ -68,18 +68,22 @@ describe('Encryptor Stream', () => {
     const stream = new EncryptorStream(resourceId, key, msg.length);
     const sync = watchStream(stream);
 
+    stream.write(msg.subarray(0, 5));
+    stream.write(msg.subarray(5));
     stream.write(msg);
-    stream.write(msg);
+    stream.write(msg.subarray(1));
 
     stream.end();
 
     await expect(sync.promise).to.be.fulfilled;
 
-    expect(buffer.length).to.be.equal(3);
+    expect(buffer.length).to.be.equal(4);
     const emsg1 = buffer[1];
     const emsg2 = buffer[2];
+    const emsg3 = buffer[3];
 
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 0), emsg1)).to.deep.equal(msg);
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 1), emsg2)).to.deep.equal(msg);
+    expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 2), emsg3)).to.deep.equal(msg.subarray(1));
   });
 });
