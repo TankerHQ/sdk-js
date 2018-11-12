@@ -5,7 +5,8 @@ import sinon from 'sinon';
 import { utils, tcrypto, aead } from '@tanker/crypto';
 
 import { expect } from './chai';
-import StreamEncryptor, { defaultBlockSize } from '../DataProtection/StreamEncryptor';
+import StreamEncryptor from '../DataProtection/StreamEncryptor';
+import { defaultBlockSize } from '../Uint8Stream';
 
 describe('Stream Encryptor', () => {
   let buffer: Array<Uint8Array> = [];
