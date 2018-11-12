@@ -6,8 +6,8 @@ import varint from 'varint';
 import { utils, aead, tcrypto, type Key } from '@tanker/crypto';
 import { expect } from './chai';
 import StreamDecryptor from '../DataProtection/StreamDecryptor';
-import { defaultBlockSize } from '../DataProtection/StreamEncryptor';
 import { concatArrays } from '../Blocks/Serialize';
+import { defaultBlockSize } from '../Uint8Stream';
 
 async function encryptMsg(key, index, str) {
   const msg = utils.fromString(str);
@@ -23,13 +23,6 @@ function setKey(stream: StreamDecryptor, key: Key) {
     key,
     resourceId: new Uint8Array(tcrypto.MAC_SIZE)
   };
-}
-
-async function flush(stream: StreamDecryptor) {
-  // eslint-disable-next-line no-underscore-dangle
-  await stream._onData(stream._outputBuffer);
-  // eslint-disable-next-line no-underscore-dangle, no-param-reassign
-  stream._outputBuffer = new Uint8Array(0);
 }
 
 describe('Stream Decryptor', () => {
@@ -60,22 +53,24 @@ describe('Stream Decryptor', () => {
       findKey: () => Promise.resolve(key)
     };
 
-    const msg1 = await encryptMsg(key, 0, 'first message');
-    const msg2 = await encryptMsg(key, 1, 'second message');
+    const msg1 = await encryptMsg(key, 0, '1st message');
+    const msg2 = await encryptMsg(key, 1, '2nd message');
 
     const stream = new StreamDecryptor(mapper, callbacks);
 
     setKey(stream, key);
 
     await expect(stream.write(msg1.encrypted)).to.not.be.rejectedWith();
-    await flush(stream);
     await expect(stream.write(msg2.encrypted)).to.not.be.rejectedWith();
     await stream.close();
 
     expect(callbacks.onEnd.calledOnce).to.be.true;
 
-    expect(buffer[0]).to.deep.equal(msg1.clear);
-    expect(buffer[1]).to.deep.equal(msg2.clear);
+    const size = buffer[0].length / 2;
+    const res1 = buffer[0].subarray(0, size);
+    const res2 = buffer[0].subarray(size);
+    expect(res1).to.deep.equal(msg1.clear);
+    expect(res2).to.deep.equal(msg2.clear);
   });
 
   it('can extract resourceId from format header v1', async () => {
