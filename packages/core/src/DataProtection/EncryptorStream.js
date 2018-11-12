@@ -3,7 +3,7 @@
 import varint from 'varint';
 
 import { utils, tcrypto, aead, type b64string } from '@tanker/crypto';
-import { Transform } from '@tanker/stream-base';
+import { ResizerStream, Transform } from '@tanker/stream-base';
 
 import { currentStreamVersion, type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
@@ -17,11 +17,11 @@ export default class EncryptorStream extends Transform {
     index: number
   }
 
+  _resizerStream: ResizerStream;
+  _encryptorStream: Transform;
+
   constructor(resourceId: Uint8Array, key: Uint8Array, encryptionSize: number = defaultEncryptionSize) {
-    super({
-      writableHighWaterMark: encryptionSize,
-      readableHighWaterMark: encryptionSize + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD,
-    });
+    super({ objectMode: true });
 
     this._encryptionSize = encryptionSize;
     this._state = {
@@ -32,7 +32,36 @@ export default class EncryptorStream extends Transform {
       index: 0
     };
 
+    this._configureStreams();
+
     this._writeHeader();
+  }
+
+  _configureStreams() {
+    this._resizerStream = new ResizerStream(this._encryptionSize);
+
+    const derive = this._deriveKey.bind(this);
+    this._encryptorStream = new Transform({
+      writableHighWaterMark: this._encryptionSize,
+      readableHighWaterMark: this._encryptionSize + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD,
+      transform: async function transform(clearData, encoding, done) {
+        const subKey = derive();
+        try {
+          const eData = await aead.encryptAEADv2(subKey, clearData);
+          this.push(eData);
+        } catch (err) {
+          return done(err);
+        }
+        done();
+      }
+    });
+
+    const forwardData = (data) => this.push(data);
+    this._encryptorStream.on('data', forwardData);
+    const forwardError = (error) => this.emit('error', error);
+    [this._resizerStream, this._encryptorStream].forEach((stream) => stream.on('error', forwardError));
+
+    this._resizerStream.pipe(this._encryptorStream);
   }
 
   _deriveKey() {
@@ -43,23 +72,19 @@ export default class EncryptorStream extends Transform {
 
   _writeHeader() {
     const header = concatArrays(varint.encode(currentStreamVersion), this._state.resourceIdKeyPair.resourceId);
-    this.push(header);
+    this._encryptorStream.push(header);
   }
 
   resourceId(): b64string {
     return utils.toBase64(this._state.resourceIdKeyPair.resourceId);
   }
 
-  async _transform(clearData: Uint8Array, encoding: ?string, done: Function) {
-    const subKey = this._deriveKey();
+  _transform(clearData: Uint8Array, encoding: ?string, done: Function) {
+    this._resizerStream.write(clearData, encoding, done);
+  }
 
-    try {
-      const eData = await aead.encryptAEADv2(subKey, clearData);
-      this.push(eData);
-    } catch (err) {
-      return done(err);
-    }
-
-    done();
+  _flush(done: Function) {
+    this._encryptorStream.on('end', done);
+    this._resizerStream.end();
   }
 }
