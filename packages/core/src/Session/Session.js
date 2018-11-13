@@ -5,7 +5,7 @@ import UserAccessor from '../Users/UserAccessor';
 import Storage from './Storage';
 import { UnlockKeys } from '../Unlock/UnlockKeys';
 
-import { type SessionData } from '../Tokens/SessionTypes';
+import { type LocalUser } from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';
@@ -15,7 +15,7 @@ import { ResourceManager } from '../Resource/ResourceManager';
 import DataProtector from '../DataProtection/DataProtector';
 
 export class Session {
-  sessionData: SessionData;
+  localUser: LocalUser;
 
   storage: Storage;
   _trustchain: Trustchain;
@@ -29,21 +29,21 @@ export class Session {
   resourceManager: ResourceManager;
   dataProtector: DataProtector;
 
-  constructor(sessionData: SessionData, storage: Storage, trustchain: Trustchain, client: Client) {
+  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client) {
     this.storage = storage;
     this._trustchain = trustchain;
-    this.sessionData = sessionData;
+    this.localUser = localUser;
     this._client = client;
 
     this.blockGenerator = new BlockGenerator(
-      sessionData.trustchainId,
+      localUser.trustchainId,
       storage.keyStore.privateSignatureKey,
-      sessionData.deviceId,
+      localUser.deviceId,
     );
 
-    this.userAccessor = new UserAccessor(storage.userStore, trustchain, sessionData.trustchainId, sessionData.userId);
+    this.userAccessor = new UserAccessor(storage.userStore, trustchain, localUser.trustchainId, localUser.userId);
     this.groupManager = new GroupManager(
-      sessionData.trustchainId,
+      localUser.trustchainId,
       trustchain,
       storage.groupStore,
       this.userAccessor,
@@ -51,7 +51,7 @@ export class Session {
       client,
     );
     this.unlockKeys = new UnlockKeys(
-      this.sessionData,
+      this.localUser,
       this.storage.keyStore,
       this._client,
     );
@@ -70,14 +70,14 @@ export class Session {
       this.resourceManager,
       this._client,
       this.groupManager,
-      this.sessionData,
+      this.localUser,
       this.userAccessor,
       this.blockGenerator
     );
   }
 
   get userId(): Uint8Array {
-    return this.sessionData.userId;
+    return this.localUser.userId;
   }
 
   close = async () => {
@@ -93,7 +93,7 @@ export class Session {
   }
 
   async revokeDevice(revokedDeviceId: string): Promise<void> {
-    const user = await this.userAccessor.findUser({ userId: this.sessionData.userId });
+    const user = await this.userAccessor.findUser({ userId: this.localUser.userId });
     if (!user)
       throw new Error('Cannot find the current user in the users');
 

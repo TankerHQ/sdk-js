@@ -5,7 +5,7 @@ import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
-import { type SessionData } from '../Tokens/SessionTypes';
+import { type LocalUser } from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
@@ -27,7 +27,7 @@ export default class DataProtector {
   _client: Client;
 
   _groupManager: GroupManager;
-  _sessionData: SessionData;
+  _localUser: LocalUser;
   _userAccessor: UserAccessor;
   _blockGenerator: BlockGenerator;
 
@@ -35,14 +35,14 @@ export default class DataProtector {
     resourceManager: ResourceManager,
     client: Client,
     groupManager: GroupManager,
-    sessionData: SessionData,
+    localUser: LocalUser,
     userAccessor: UserAccessor,
     blockGenerator: BlockGenerator
   ) {
     this._resourceManager = resourceManager;
     this._client = client;
     this._groupManager = groupManager;
-    this._sessionData = sessionData;
+    this._localUser = localUser;
     this._userAccessor = userAccessor;
     this._blockGenerator = blockGenerator;
   }
@@ -104,7 +104,7 @@ export default class DataProtector {
 
   _handleShareWithSelf = (ids: Array<string>, shareWithSelf: bool): Array<string> => {
     if (shareWithSelf) {
-      const selfUserId = this._sessionData.clearUserId;
+      const selfUserId = this._localUser.clearUserId;
       if (ids.indexOf(selfUserId) === -1) {
         return ids.concat([selfUserId]);
       }

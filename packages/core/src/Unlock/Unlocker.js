@@ -8,7 +8,7 @@ import { InvalidUnlockPassword, InvalidUnlockKey, InvalidUnlockVerificationCode,
 import { Client } from '../Network/Client';
 import { type Block } from '../Blocks/Block';
 import KeyStore from '../Session/Keystore';
-import { type UserData } from '../Tokens/SessionTypes';
+import { type UserData } from '../Tokens/UserData';
 
 export class Unlocker {
   _userData: UserData;

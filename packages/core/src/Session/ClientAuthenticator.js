@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
-import { type UserData } from '../Tokens/SessionTypes';
+import { type UserData } from '../Tokens/UserData';
 import { type AuthDeviceParams } from '../Network/Client';
 
 export const CHALLENGE_PREFIX = '\u{0001F512} Auth Challenge. 1234567890.';

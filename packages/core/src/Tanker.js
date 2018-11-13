@@ -10,7 +10,7 @@ import { getResourceId as egetResourceId } from './Resource/ResourceManager';
 import { InvalidSessionStatus, InvalidArgument } from './errors';
 import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEVICE_TYPE } from './Unlock/unlock';
 
-import { extractUserData } from './Tokens/SessionTypes';
+import { extractUserData } from './Tokens/UserData';
 import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
@@ -272,7 +272,7 @@ export class Tanker extends EventEmitter {
 
   get registeredUnlockMethods(): UnlockMethods {
     this.assert(this.OPEN, 'has registered unlock methods');
-    return this._session.sessionData.unlockMethods;
+    return this._session.localUser.unlockMethods;
   }
 
   hasRegisteredUnlockMethods(): bool {
@@ -355,13 +355,13 @@ export class Tanker extends EventEmitter {
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
     this.assert(this.OPEN, 'get the device list');
-    const allDevices = await this._session.userAccessor.findUserDevices({ userId: this._session.sessionData.userId });
+    const allDevices = await this._session.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
     return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
   }
 
   async isUnlockAlreadySetUp(): Promise<bool> {
     this.assert(this.OPEN, 'is unlock already setup');
-    const devices = await this._session.userAccessor.findUserDevices({ userId: this._session.sessionData.userId });
+    const devices = await this._session.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
     return devices.some(device => device.isGhostDevice === true && device.isRevoked === false);
   }
 
@@ -374,7 +374,7 @@ export class Tanker extends EventEmitter {
     if (!validateEncryptionOptions(options))
       throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
 
-    const opts = { shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...options };
+    const opts = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
 
     if (opts.shareWithSelf === false && isShareWithOptionsEmpty(opts))
       throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);

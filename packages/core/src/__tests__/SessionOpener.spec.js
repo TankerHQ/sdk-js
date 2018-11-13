@@ -7,7 +7,7 @@ import { tcrypto, random } from '@tanker/crypto';
 
 import { expect } from './chai';
 
-import { extractUserData } from '../Tokens/SessionTypes';
+import { extractUserData } from '../Tokens/UserData';
 import { createUserToken, createServerToken } from './TestSessionTokens';
 
 import { SessionOpener } from '../Session/SessionOpener';
