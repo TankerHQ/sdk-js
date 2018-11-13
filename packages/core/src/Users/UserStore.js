@@ -32,9 +32,9 @@ export type FindDevicesParameters = {|
   hashedDeviceIds?: Array<Uint8Array>,
 |}
 
-const TABLE1 = 'users';
-const TABLE2 = 'devices_to_user';
-const TABLE3 = 'user_public_key_to_user';
+const USERS_TABLE = 'users';
+const DEVICES_USER_TABLE = 'devices_to_user';
+const USER_KEY_TABLE = 'user_public_key_to_user';
 
 export default class UserStore {
   _ds: DataStore<*>;
@@ -47,60 +47,60 @@ export default class UserStore {
     {
       version: 2,
       tables: [{
-        name: TABLE1,
+        name: USERS_TABLE,
         indexes: [['userId']],
       },
       {
-        name: TABLE2,
+        name: DEVICES_USER_TABLE,
         indexes: [['deviceId']],
       },
       {
-        name: TABLE3,
+        name: USER_KEY_TABLE,
         indexes: [['userPublicKey']],
       }]
     },
     {
       version: 3,
       tables: [{
-        name: TABLE1,
+        name: USERS_TABLE,
         indexes: [['userId']],
       },
       {
-        name: TABLE2,
+        name: DEVICES_USER_TABLE,
         indexes: [['deviceId']],
       },
       {
-        name: TABLE3,
+        name: USER_KEY_TABLE,
         indexes: [['userPublicKey']],
       }]
     },
     {
       version: 4,
       tables: [{
-        name: TABLE1,
+        name: USERS_TABLE,
         indexes: [['userId']],
       },
       {
-        name: TABLE2,
+        name: DEVICES_USER_TABLE,
         indexes: [['deviceId']],
       },
       {
-        name: TABLE3,
+        name: USER_KEY_TABLE,
         indexes: [['userPublicKey']],
       }]
     },
     {
       version: 5,
       tables: [{
-        name: TABLE1,
+        name: USERS_TABLE,
         indexes: [['userId']],
       },
       {
-        name: TABLE2,
+        name: DEVICES_USER_TABLE,
         indexes: [['deviceId']],
       },
       {
-        name: TABLE3,
+        name: USER_KEY_TABLE,
         indexes: [['userPublicKey']],
       }]
     },
@@ -131,9 +131,9 @@ export default class UserStore {
   // all entries are verified
   async applyEntries(entries: Array<VerifiedDeviceCreation | VerifiedDeviceRevocation>): Promise<Array<User>> {
     const toBeStored = {
-      [TABLE1]: [],
-      [TABLE2]: [],
-      [TABLE3]: [],
+      [USERS_TABLE]: [],
+      [DEVICES_USER_TABLE]: [],
+      [USER_KEY_TABLE]: [],
     };
     const updatedUsers: Array<User> = [];
     for (const entry of entries) {
@@ -151,19 +151,19 @@ export default class UserStore {
         }
       }
 
-      if (storeableEntry[TABLE1]) {
-        toBeStored[TABLE1].push(storeableEntry[TABLE1]);
-        updatedUsers.push(storeableEntry[TABLE1]);
+      if (storeableEntry[USERS_TABLE]) {
+        toBeStored[USERS_TABLE].push(storeableEntry[USERS_TABLE]);
+        updatedUsers.push(storeableEntry[USERS_TABLE]);
       }
-      if (storeableEntry[TABLE2])
-        toBeStored[TABLE2].push(storeableEntry[TABLE2]);
-      if (storeableEntry[TABLE3])
-        toBeStored[TABLE3].push(storeableEntry[TABLE3]);
+      if (storeableEntry[DEVICES_USER_TABLE])
+        toBeStored[DEVICES_USER_TABLE].push(storeableEntry[DEVICES_USER_TABLE]);
+      if (storeableEntry[USER_KEY_TABLE])
+        toBeStored[USER_KEY_TABLE].push(storeableEntry[USER_KEY_TABLE]);
     }
 
-    await this._ds.bulkPut(TABLE1, toBeStored[TABLE1]);
-    await this._ds.bulkPut(TABLE2, toBeStored[TABLE2]);
-    await this._ds.bulkPut(TABLE3, toBeStored[TABLE3]);
+    await this._ds.bulkPut(USERS_TABLE, toBeStored[USERS_TABLE]);
+    await this._ds.bulkPut(DEVICES_USER_TABLE, toBeStored[DEVICES_USER_TABLE]);
+    await this._ds.bulkPut(USER_KEY_TABLE, toBeStored[USER_KEY_TABLE]);
     return updatedUsers;
   }
 
@@ -200,8 +200,8 @@ export default class UserStore {
     };
 
     const storeableEntry: Object = {
-      [TABLE1]: updatedUser,
-      [TABLE2]: deviceToUser,
+      [USERS_TABLE]: updatedUser,
+      [DEVICES_USER_TABLE]: deviceToUser,
     };
 
     if (deviceCreation.user_key_pair) {
@@ -211,7 +211,7 @@ export default class UserStore {
         userPublicKey,
         userId: b64Id,
       };
-      storeableEntry[TABLE3] = userPublicKeyToUser;
+      storeableEntry[USER_KEY_TABLE] = userPublicKeyToUser;
     }
     return storeableEntry;
   }
@@ -228,7 +228,7 @@ export default class UserStore {
     const { updatedUser, userPublicKey } = applyDeviceRevocationToUser(deviceRevocation, user);
 
     const storeableEntry: Object = {
-      [TABLE1]: updatedUser,
+      [USERS_TABLE]: updatedUser,
     };
     if (userPublicKey) {
       const b64UserPublicKey = utils.toBase64(userPublicKey);
@@ -237,7 +237,7 @@ export default class UserStore {
         userPublicKey: b64UserPublicKey,
         userId: user.userId,
       };
-      storeableEntry[TABLE3] = userPublicKeyToUser;
+      storeableEntry[USER_KEY_TABLE] = userPublicKeyToUser;
     }
     return storeableEntry;
   }
@@ -258,7 +258,7 @@ export default class UserStore {
       throw new Error(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (userId) {
-      const record = await this._ds.first(TABLE1, {
+      const record = await this._ds.first(USERS_TABLE, {
         selector: { userId: utils.toBase64(userId) },
       });
       return record;
@@ -273,7 +273,7 @@ export default class UserStore {
     }
 
     if (userPublicKey) {
-      const publicKeyToUser = await this._ds.first(TABLE3, {
+      const publicKeyToUser = await this._ds.first(USER_KEY_TABLE, {
         selector: { userPublicKey: utils.toBase64(userPublicKey) },
       });
       if (!publicKeyToUser)
@@ -294,7 +294,7 @@ export default class UserStore {
       throw new Error('Find: invalid argument');
 
     const b64HashedUserIds = hashedUserIds.map(id => utils.toBase64(id));
-    return this._ds.find(TABLE1, {
+    return this._ds.find(USERS_TABLE, {
       selector: {
         userId: { $in: b64HashedUserIds },
       },
@@ -307,7 +307,7 @@ export default class UserStore {
       throw new Error(`findUserDeviceToUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (deviceId) {
-      const record = await this._ds.first(TABLE2, {
+      const record = await this._ds.first(DEVICES_USER_TABLE, {
         selector: { deviceId: utils.toBase64(deviceId) },
       });
       return record;
@@ -322,7 +322,7 @@ export default class UserStore {
       throw new Error(`findDevicesToUsers: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (hashedDeviceIds) {
-      return this._ds.find(TABLE2, {
+      return this._ds.find(DEVICES_USER_TABLE, {
         selector: {
           deviceId: { $in: hashedDeviceIds.map(utils.toBase64) }
         }
