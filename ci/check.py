@@ -124,11 +124,6 @@ def run_tests_in_browser(*, env, runner):
         pyback.client.run_client("yarn karma --browsers IE", os.getcwd(), run_env)
 
 
-def run_functional_tests(*, env, runner, nightly):
-    src = Path.abspath(Path(__file__)).parent
-    ci.js.run_sdk_js_functional_tests(env=env, runner=runner, nightly=nightly, src=src)
-
-
 def check(*, env, runner, nightly):
     ci.js.yarn_install_deps()
     if runner == "linux":
@@ -137,7 +132,7 @@ def check(*, env, runner, nightly):
         run_tests_in_node(env=env)
     run_tests_in_browser(env=env, runner=runner)
     if "windows" not in runner:
-        run_functional_tests(env=env, runner=runner, nightly=nightly)
+        ci.js.run_sdk_js_functional_tests(env=env, runner=runner, nightly=nightly)
 
 
 def main():
