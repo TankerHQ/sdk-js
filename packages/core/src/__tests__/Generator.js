@@ -5,7 +5,7 @@ import { tcrypto, random, utils, obfuscateUserId } from '@tanker/crypto';
 import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import { DEVICE_TYPE, type DeviceType } from '../Unlock/unlock';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import type { Device, User } from '../Users/UserStore';
+import type { Device, User } from '../Users/User';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';

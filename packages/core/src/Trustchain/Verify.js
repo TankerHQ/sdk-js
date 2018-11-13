@@ -4,7 +4,7 @@ import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidBlockError } from '../errors';
 import { findIndex } from '../utils';
-import { getLastUserPublicKey, type User, type Device } from '../Users/UserStore';
+import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';

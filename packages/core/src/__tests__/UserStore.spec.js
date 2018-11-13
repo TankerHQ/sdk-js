@@ -2,7 +2,8 @@
 import { random, tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
-import UserStore, { type User } from '../Users/UserStore';
+import UserStore from '../Users/UserStore';
+import { type User } from '../Users/User';
 
 import { NATURE } from '../Blocks/payloads';
 

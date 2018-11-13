@@ -8,7 +8,7 @@ import { Client } from '../Network/Client';
 import { type SessionData } from '../Tokens/SessionTypes';
 import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
-import { type User, getLastUserPublicKey } from '../Users/UserStore';
+import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/payloads';
 import { decryptData } from './decrypt';

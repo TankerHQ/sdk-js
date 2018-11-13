@@ -3,41 +3,16 @@
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 
+import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 import { NATURE, natureToString, NATURE_KIND, natureKind } from '../Blocks/payloads';
 import KeyStore from '../Session/Keystore';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 
-export type IndexUserKey = {|
-  userPublicKey: Uint8Array,
-  index: number,
-|};
-
-export type Device = {
-  deviceId: b64string,
-  devicePublicEncryptionKey: Uint8Array,
-  devicePublicSignatureKey: Uint8Array,
-  isGhostDevice: bool,
-  isServerDevice: bool,
-  createdAt: number,
-  revokedAt: number,
-};
-
-export type User = {
-  userId: b64string,
-  userPublicKeys: Array<IndexUserKey>,
-  devices: Array<Device>, //encryption
-};
-
 type DeviceToUser = {
   deviceId: b64string,
   userId: b64string,
 };
-
-export type UserPublicKeyToUser = {
-  userPublicKey: b64string,
-  userId: b64string,
-}
 
 export type FindUserParameters = {|
   userId?: Uint8Array,
@@ -56,12 +31,6 @@ export type FindDeviceParameters = {|
 export type FindDevicesParameters = {|
   hashedDeviceIds?: Array<Uint8Array>,
 |}
-
-export function getLastUserPublicKey(user: User): ?Uint8Array {
-  if (user.userPublicKeys.length === 0)
-    return;
-  return user.userPublicKeys.slice(-1)[0].userPublicKey;
-}
 
 const TABLE1 = 'users';
 const TABLE2 = 'devices_to_user';
@@ -218,39 +187,10 @@ export default class UserStore {
     }
   }
 
-  async _prepareDeviceCreation(record: VerifiedDeviceCreation) {
-    const b64Id = utils.toBase64(record.user_id);
-
-    const existing = await this.findUser({ userId: record.user_id });
-
-    let oldDevices = [];
-    let userPublicKeys = record.user_key_pair ? [{ userPublicKey: record.user_key_pair.public_encryption_key, index: record.index }] : [];
-    if (existing) {
-      oldDevices = existing.devices;
-      userPublicKeys = existing.userPublicKeys; // eslint-disable-line prefer-destructuring
-    }
-    const newDevice: Device = {
-      deviceId: utils.toBase64(record.hash),
-      devicePublicEncryptionKey: record.public_encryption_key,
-      devicePublicSignatureKey: record.public_signature_key,
-      createdAt: record.index,
-      isGhostDevice: record.is_ghost_device,
-      isServerDevice: record.is_server_device,
-      revokedAt: Number.MAX_SAFE_INTEGER,
-    };
-
-    for (const existingDev of oldDevices) {
-      if (existingDev.deviceId === newDevice.deviceId)
-        console.warn('Assertion error: Adding an already existing device.');
-    }
-
-    const user = {
-      _id: b64Id,
-      userId: b64Id,
-      userPublicKeys,
-      devices: [...oldDevices, newDevice],
-    };
-
+  async _prepareDeviceCreation(deviceCreation: VerifiedDeviceCreation) {
+    const b64Id = utils.toBase64(deviceCreation.user_id);
+    const existing = await this.findUser({ userId: deviceCreation.user_id });
+    const { updatedUser, newDevice } = applyDeviceCreationToUser(deviceCreation, existing);
     const deviceToUser = {
       _id: newDevice.deviceId,
       deviceId: newDevice.deviceId,
@@ -260,12 +200,12 @@ export default class UserStore {
     };
 
     const storeableEntry: Object = {
-      [TABLE1]: user,
+      [TABLE1]: updatedUser,
       [TABLE2]: deviceToUser,
     };
 
-    if (record.user_key_pair) {
-      const userPublicKey = utils.toBase64(record.user_key_pair.public_encryption_key);
+    if (deviceCreation.user_key_pair) {
+      const userPublicKey = utils.toBase64(deviceCreation.user_key_pair.public_encryption_key);
       const userPublicKeyToUser = {
         _id: userPublicKey,
         userPublicKey,
@@ -276,35 +216,26 @@ export default class UserStore {
     return storeableEntry;
   }
 
-  async _prepareDeviceRevocation(record: VerifiedDeviceRevocation) {
-    if (!record.user_id) {
+  async _prepareDeviceRevocation(deviceRevocation: VerifiedDeviceRevocation) {
+    if (!deviceRevocation.user_id) {
       throw new Error('Missing user_id in the record');
     }
 
-    const b64DevId = utils.toBase64(record.device_id);
-
-    const existing = await this.findUser({ userId: record.user_id });
-    if (!existing)
+    const user = await this.findUser({ userId: deviceRevocation.user_id });
+    if (!user)
       throw new Error('User not found!');
 
-    const deviceIndex = findIndex(existing.devices, (d) => d.deviceId === b64DevId);
-    if (deviceIndex === -1)
-      throw new Error('Device not found!');
-    existing.devices[deviceIndex].revokedAt = record.index;
+    const { updatedUser, userPublicKey } = applyDeviceRevocationToUser(deviceRevocation, user);
 
     const storeableEntry: Object = {
-      [TABLE1]: existing,
+      [TABLE1]: updatedUser,
     };
-    if (record.nature !== NATURE.device_revocation_v1) {
-      if (!record.user_keys)
-        throw new Error('Somehow we have a DR2 without a new user key?');
-      const userPublicKey = record.user_keys.public_encryption_key;
-      existing.userPublicKeys.push({ userPublicKey, index: record.index });
+    if (userPublicKey) {
       const b64UserPublicKey = utils.toBase64(userPublicKey);
       const userPublicKeyToUser = {
         _id: b64UserPublicKey,
         userPublicKey: b64UserPublicKey,
-        userId: existing.userId,
+        userId: user.userId,
       };
       storeableEntry[TABLE3] = userPublicKeyToUser;
     }

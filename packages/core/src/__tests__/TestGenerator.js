@@ -3,7 +3,7 @@ import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
 
 import { blockToEntry } from '../Blocks/entries';
-import { getLastUserPublicKey, type User, type Device } from '../Users/UserStore';
+import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';

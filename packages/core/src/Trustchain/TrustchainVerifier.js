@@ -4,7 +4,7 @@ import find from 'array-find';
 import { utils, type b64string } from '@tanker/crypto';
 import { InvalidBlockError } from '../errors';
 import { findIndex, compareSameSizeUint8Arrays } from '../utils';
-import { type User, type Device } from '../Users/UserStore';
+import { type User, type Device } from '../Users/User';
 import GroupUpdater from '../Groups/GroupUpdater';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';

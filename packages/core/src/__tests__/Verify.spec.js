@@ -15,7 +15,7 @@ import {
   verifyUserGroupAddition
 } from '../Trustchain/Verify';
 
-import { type User } from '../Users/UserStore';
+import { type User } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
