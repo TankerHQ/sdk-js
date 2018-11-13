@@ -16,6 +16,7 @@ import BlockGenerator from '../Blocks/BlockGenerator';
 
 import { MissingEventHandler, OperationCanceled } from '../errors';
 import { Session } from './Session';
+import { LocalUser } from './LocalUser';
 
 export class SessionOpener extends EventEmitter {
   _storage: Storage;
@@ -112,12 +113,8 @@ export class SessionOpener extends EventEmitter {
 
       throw new OperationCanceled('this device was revoked');
     }
-
-    const { deviceId } = this._storage.keyStore;
-    if (!deviceId)
-      throw new Error('assertion error: still no device id at end of open');
-
-    return new Session({ ...this._userData, deviceId, unlockMethods }, this._storage, this._trustchain, this._client);
+    const localUser = new LocalUser(this._userData, unlockMethods, this._storage.keyStore);
+    return new Session(localUser, this._storage, this._trustchain, this._client);
   };
 
   cancel = async () => {

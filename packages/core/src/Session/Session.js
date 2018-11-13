@@ -34,7 +34,6 @@ export class Session {
     this._trustchain = trustchain;
     this.localUser = localUser;
     this._client = client;
-
     this.blockGenerator = new BlockGenerator(
       localUser.trustchainId,
       storage.keyStore.privateSignatureKey,

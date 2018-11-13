@@ -23,12 +23,16 @@ class MockStorage {
   constructor() {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
+    const userKeyPair = tcrypto.makeEncryptionKeyPair();
     this.keyStore = {
       publicSignatureKey: signatureKeyPair.publicKey,
       privateSignatureKey: signatureKeyPair.privateKey,
       publicEncryptionKey: encryptionKeyPair.publicKey,
+      signatureKeyPair,
+      encryptionKeyPair,
       wasRevoked: false,
       deviceId: random(tcrypto.HASH_SIZE),
+      userKeys: [userKeyPair]
     };
   }
   hasLocalDevice = () => true;
