@@ -1,5 +1,5 @@
 // @flow
-
+import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
 
 import { blockToEntry } from '../Trustchain/TrustchainStore';
@@ -245,7 +245,7 @@ class TestGenerator {
     };
 
     // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
-    const keyForParentDevice = unverifiedDeviceRevocation.user_keys.private_keys.find(key => utils.equalArray(key.recipient, parentDevice.testDevice.encryptionKeys.publicKey));
+    const keyForParentDevice = find(unverifiedDeviceRevocation.user_keys.private_keys, key => utils.equalArray(key.recipient, parentDevice.testDevice.encryptionKeys.publicKey));
 
     if (keyForParentDevice) {
       testUser.userKeys.push({
@@ -456,4 +456,3 @@ class TestGenerator {
   }
 }
 export default TestGenerator;
-
