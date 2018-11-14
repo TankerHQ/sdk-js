@@ -1,15 +1,23 @@
 // @flow
 
-import { tcrypto, utils, type Key } from '@tanker/crypto';
+import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
 import { type UnlockMethods } from '../Network/Client';
 import { type DeviceType } from '../Unlock/unlock';
 import KeyStore from './Keystore';
+import BlockGenerator from '../Blocks/BlockGenerator';
 import { type UserData } from '../Tokens/UserData';
 
-export class LocalUser {
+export type DeviceKeys = {|
+  deviceId: ?b64string,
+  signaturePair: tcrypto.SodiumKeyPair,
+  encryptionPair: tcrypto.SodiumKeyPair,
+|}
+
+export default class LocalUser {
   _userData: UserData;
   _deviceId: Uint8Array;
   _unlockMethods: UnlockMethods;
+  _blockGenerator: BlockGenerator
 
   _deviceSignatureKeyPair: tcrypto.SodiumKeyPair;
   _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
@@ -28,6 +36,12 @@ export class LocalUser {
     if (!keyStore.deviceId)
       throw new Error('No device id for this user');
     this._deviceId = keyStore.deviceId;
+
+    this._blockGenerator = new BlockGenerator(
+      this.trustchainId,
+      this.privateSignatureKey,
+      this.deviceId,
+    );
   }
 
   setUserKeys = (keyStore: KeyStore) => {
@@ -38,26 +52,25 @@ export class LocalUser {
     }
   }
 
+  get blockGenerator(): BlockGenerator {
+    return this._blockGenerator;
+  }
+
   get publicSignatureKey(): Key {
     return this._deviceSignatureKeyPair.publicKey;
   }
-
   get privateSignatureKey(): Key {
     return this._deviceSignatureKeyPair.privateKey;
   }
-
   get publicEncryptionKey(): Key {
     return this._deviceEncryptionKeyPair.publicKey;
   }
-
   get privateEncryptionKey(): Key {
     return this._deviceEncryptionKeyPair.privateKey;
   }
-
   get currentUserKey(): tcrypto.SodiumKeyPair {
     return this._currentUserKey;
   }
-
   get deviceId(): Uint8Array {
     return this._deviceId;
   }
@@ -76,8 +89,16 @@ export class LocalUser {
   get clearUserId(): string {
     return this._userData.clearUserId;
   }
-
   get unlockMethods(): UnlockMethods {
     return this._unlockMethods;
   }
+
+  findUserKey(userPublicKey: Uint8Array): ?tcrypto.SodiumKeyPair {
+    return this._userKeys[utils.toBase64(userPublicKey)];
+  }
+  deviceKeys = (): DeviceKeys => ({
+    signaturePair: this._deviceSignatureKeyPair,
+    encryptionPair: this._deviceEncryptionKeyPair,
+    deviceId: utils.toBase64(this._deviceId)
+  });
 }

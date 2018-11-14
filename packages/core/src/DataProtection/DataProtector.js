@@ -2,10 +2,9 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
-import BlockGenerator from '../Blocks/BlockGenerator';
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
-import { type LocalUser } from '../Session/LocalUser';
+import LocalUser from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
@@ -29,7 +28,6 @@ export default class DataProtector {
   _groupManager: GroupManager;
   _localUser: LocalUser;
   _userAccessor: UserAccessor;
-  _blockGenerator: BlockGenerator;
 
   constructor(
     resourceManager: ResourceManager,
@@ -37,14 +35,12 @@ export default class DataProtector {
     groupManager: GroupManager,
     localUser: LocalUser,
     userAccessor: UserAccessor,
-    blockGenerator: BlockGenerator
   ) {
     this._resourceManager = resourceManager;
     this._client = client;
     this._groupManager = groupManager;
     this._localUser = localUser;
     this._userAccessor = userAccessor;
-    this._blockGenerator = blockGenerator;
   }
 
   _makeKeyPublishBlocks(
@@ -55,7 +51,7 @@ export default class DataProtector {
     const blocks: Array<Block> = [];
     for (const publicEncryptionKey of keys) {
       for (const { key, resourceId } of keyResourceIds) {
-        const block = this._blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
+        const block = this._localUser.blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
         blocks.push(block);
       }
     }

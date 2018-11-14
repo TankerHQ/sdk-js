@@ -16,7 +16,7 @@ import BlockGenerator from '../Blocks/BlockGenerator';
 
 import { MissingEventHandler, OperationCanceled } from '../errors';
 import { Session } from './Session';
-import { LocalUser } from './LocalUser';
+import LocalUser from './LocalUser';
 
 export class SessionOpener extends EventEmitter {
   _storage: Storage;

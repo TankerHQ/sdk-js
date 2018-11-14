@@ -5,17 +5,14 @@ import { utils, type b64string } from '@tanker/crypto';
 import { generateUnlockKeyRegistration, createUnlockKeyMessage, createDeviceFromValidationCode, type UnlockKey, type UnlockKeyMessage } from './unlock';
 
 import { Client } from '../Network/Client';
-import KeyStore from '../Session/Keystore';
-import { type LocalUser } from '../Session/LocalUser';
+import LocalUser from '../Session/LocalUser';
 
 
 export class UnlockKeys {
   _localUser: LocalUser;
-  _keyStore: KeyStore;
   _client: Client;
 
-  constructor(localUser: LocalUser, keystore: KeyStore, client: Client) {
-    this._keyStore = keystore;
+  constructor(localUser: LocalUser, client: Client) {
     this._localUser = localUser;
     this._client = client;
   }
@@ -23,12 +20,12 @@ export class UnlockKeys {
   _generateUnlockKey = () => generateUnlockKeyRegistration({
     trustchainId: this._localUser.trustchainId,
     userId: this._localUser.userId,
-    userKeys: this._keyStore.currentUserKey,
+    userKeys: this._localUser.currentUserKey,
     deviceType: this._localUser.deviceType,
     authorDevice: {
       id: this._localUser.deviceId,
-      privateSignatureKey: this._keyStore.privateSignatureKey,
-      privateEncryptionKey: this._keyStore.privateEncryptionKey,
+      privateSignatureKey: this._localUser.privateSignatureKey,
+      privateEncryptionKey: this._localUser.privateEncryptionKey,
     }
   });
 
@@ -45,7 +42,7 @@ export class UnlockKeys {
     password,
     unlockKey,
     userSecret: this._localUser.userSecret,
-    privateSigKey: this._keyStore.privateSignatureKey
+    privateSigKey: this._localUser.privateSignatureKey
   });
 
   _updateLocalUser = (password: ?string, email: ?string): void => {
@@ -82,8 +79,8 @@ export class UnlockKeys {
     const block = createDeviceFromValidationCode({
       trustchainId: this._localUser.trustchainId,
       userId: this._localUser.userId,
-      deviceKeys: this._keyStore.deviceKeys,
-      userKeys: this._keyStore.userKeys.slice(-1)[0],
+      deviceKeys: this._localUser.deviceKeys(),
+      userKeys: this._localUser.currentUserKey,
       validationCode
     });
     await this._client.sendBlock(block);

@@ -5,11 +5,10 @@ import UserAccessor from '../Users/UserAccessor';
 import Storage from './Storage';
 import { UnlockKeys } from '../Unlock/UnlockKeys';
 
-import { type LocalUser } from '../Session/LocalUser';
+import LocalUser from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';
-import BlockGenerator from '../Blocks/BlockGenerator';
 import { KeyDecryptor } from '../Resource/KeyDecryptor';
 import { ResourceManager } from '../Resource/ResourceManager';
 import DataProtector from '../DataProtection/DataProtector';
@@ -21,7 +20,6 @@ export class Session {
   _trustchain: Trustchain;
   _client: Client;
 
-  blockGenerator: BlockGenerator;
   userAccessor: UserAccessor;
   groupManager: GroupManager;
   unlockKeys: UnlockKeys;
@@ -34,24 +32,18 @@ export class Session {
     this._trustchain = trustchain;
     this.localUser = localUser;
     this._client = client;
-    this.blockGenerator = new BlockGenerator(
-      localUser.trustchainId,
-      storage.keyStore.privateSignatureKey,
-      localUser.deviceId,
-    );
 
     this.userAccessor = new UserAccessor(storage.userStore, trustchain, localUser.trustchainId, localUser.userId);
     this.groupManager = new GroupManager(
-      localUser.trustchainId,
+      localUser,
       trustchain,
       storage.groupStore,
       this.userAccessor,
-      this.blockGenerator,
       client,
     );
+
     this.unlockKeys = new UnlockKeys(
       this.localUser,
-      this.storage.keyStore,
       this._client,
     );
 
@@ -59,7 +51,7 @@ export class Session {
       this.storage.resourceStore,
       this._trustchain,
       new KeyDecryptor(
-        this.storage.keyStore,
+        this.localUser,
         this.userAccessor,
         this.storage.groupStore
       )
@@ -71,7 +63,6 @@ export class Session {
       this.groupManager,
       this.localUser,
       this.userAccessor,
-      this.blockGenerator
     );
   }
 
@@ -96,7 +87,7 @@ export class Session {
     if (!user)
       throw new Error('Cannot find the current user in the users');
 
-    const revokeDeviceBlock = this.blockGenerator.makeDeviceRevocationBlock(user, this.storage.keyStore.currentUserKey, revokedDeviceId);
+    const revokeDeviceBlock = this.localUser.blockGenerator.makeDeviceRevocationBlock(user, this.storage.keyStore.currentUserKey, revokedDeviceId);
     await this._client.sendBlock(revokeDeviceBlock);
     await this._trustchain.sync();
   }

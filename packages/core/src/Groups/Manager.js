@@ -3,7 +3,7 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 
 import UserAccessor from '../Users/UserAccessor';
-import BlockGenerator from '../Blocks/BlockGenerator';
+import LocalUser from '../Session/LocalUser';
 import { Client } from '../Network/Client';
 import GroupStore from '../Groups/GroupStore';
 import { type ExternalGroup } from '../Groups/types';
@@ -13,26 +13,23 @@ import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
 const MAX_GROUP_SIZE = 1000;
 
 export default class GroupManager {
-  _trustchainId: Uint8Array;
+  _localUser: LocalUser
   _trustchain: Trustchain;
   _groupStore: GroupStore;
   _userAccessor: UserAccessor;
-  _blockGenerator: BlockGenerator;
   _client: Client;
 
   constructor(
-    trustchainId: Uint8Array,
+    localUser: LocalUser,
     trustchain: Trustchain,
     groupStore: GroupStore,
     userAccessor: UserAccessor,
-    blockGenerator: BlockGenerator,
     client: Client
   ) {
-    this._trustchainId = trustchainId;
+    this._localUser = localUser;
     this._trustchain = trustchain;
     this._groupStore = groupStore;
     this._userAccessor = userAccessor;
-    this._blockGenerator = blockGenerator;
     this._client = client;
   }
 
@@ -47,7 +44,7 @@ export default class GroupManager {
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
     // no need to keep the keys, we will get them when we receive the group block
-    const userGroupCreationBlock = this._blockGenerator.createUserGroup(
+    const userGroupCreationBlock = this._localUser.blockGenerator.createUserGroup(
       groupSignatureKeyPair,
       tcrypto.makeEncryptionKeyPair(),
       fullUsers
@@ -76,7 +73,7 @@ export default class GroupManager {
     }
 
     // no need to keep the keys, we will get them when we receive the group block
-    const userGroupCreationBlock = this._blockGenerator.addToUserGroup(
+    const userGroupCreationBlock = this._localUser.blockGenerator.addToUserGroup(
       internalGroupId,
       existingGroup.signatureKeyPair.privateKey,
       existingGroup.lastGroupBlock,
