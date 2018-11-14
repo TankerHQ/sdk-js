@@ -231,6 +231,9 @@ describe('Tanker', () => {
       ];
       const numberOfTests = notShareWithValues.length;
 
+      before(() => warnings.silence(/deprecated/));
+      after(() => warnings.restore());
+
       it('encrypt() should throw when given an invalid shareWith', async () => {
         for (let i = 0; i < numberOfTests; i++) {
           const v = notShareWithValues[i];
