@@ -60,7 +60,8 @@ describe('Decryptor Stream', () => {
 
     setKey(stream, key);
 
-    stream.write(msg1.encrypted);
+    stream.write(msg1.encrypted.subarray(0, 5));
+    stream.write(msg1.encrypted.subarray(5));
     stream.write(msg2.encrypted);
     stream.end();
 

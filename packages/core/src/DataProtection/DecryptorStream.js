@@ -3,7 +3,7 @@
 import varint from 'varint';
 
 import { aead, tcrypto } from '@tanker/crypto';
-import { Transform } from '@tanker/stream-base';
+import { ResizerStream, Transform } from '@tanker/stream-base';
 
 import { InvalidEncryptionFormat, NotEnoughData, DecryptFailed } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
@@ -19,11 +19,11 @@ export default class DecryptorStream extends Transform {
     index: number
   };
 
+  _resizerStream: ResizerStream;
+  _decryptionStream: Transform;
+
   constructor(mapper: ResourceIdKeyMapper, decryptionSize: number = defaultDecryptionSize) {
-    super({
-      writableHighWaterMark: decryptionSize,
-      readableHighWaterMark: decryptionSize - tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD,
-    });
+    super({ objectMode: true });
 
     this._mapper = mapper;
     this._decryptionSize = decryptionSize;
@@ -31,6 +31,39 @@ export default class DecryptorStream extends Transform {
       resourceIdKeyPair: null,
       index: 0
     };
+
+    this._configureStreams();
+  }
+
+  _configureStreams() {
+    this._resizerStream = new ResizerStream(this._decryptionSize);
+
+    const derive = this._deriveKey.bind(this);
+    // $FlowIKnow _resourceKeyPair is always defined during write
+    const resourceId = () => this._state.resourceIdKeyPair.resourceId;
+    this._decryptionStream = new Transform({
+      writableHighWaterMark: this._decryptionSize,
+      readableHighWaterMark: this._decryptionSize - tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD,
+
+      transform: async function transform(chunk, encoding, done) {
+        let clearData;
+        const subKey = derive();
+        try {
+          clearData = await aead.decryptAEADv2(subKey, chunk);
+        } catch (error) {
+          return done(new DecryptFailed(error, resourceId()));
+        }
+        this.push(clearData);
+        done();
+      }
+    });
+
+    const forwardData = (data) => this.push(data);
+    this._decryptionStream.on('data', forwardData);
+    const forwardError = (error) => this.emit('error', error);
+    [this._resizerStream, this._decryptionStream].forEach((stream) => stream.on('error', forwardError));
+
+    this._resizerStream.pipe(this._decryptionStream);
   }
 
   _deriveKey() {
@@ -80,7 +113,6 @@ export default class DecryptorStream extends Transform {
 
   async _transform(encryptedData: Uint8Array, encoding: ?string, done: Function) {
     let data = encryptedData;
-
     if (!this._state.resourceIdKeyPair) {
       try {
         const { header, remaining } = await this._extractHeader(encryptedData);
@@ -95,15 +127,11 @@ export default class DecryptorStream extends Transform {
       return done();
     }
 
-    let clearData;
-    const subKey = this._deriveKey();
-    try {
-      clearData = await aead.decryptAEADv2(subKey, data);
-    } catch (error) {
-      // $FlowIKnow _resourceKeyPair is always defined during write
-      return done(new DecryptFailed(error, this._state.resourceIdKeyPair.resourceId));
-    }
-    this.push(clearData);
-    done();
+    this._resizerStream.write(data, done);
+  }
+
+  _flush(done: Function) {
+    this._decryptionStream.on('end', done);
+    this._resizerStream.end();
   }
 }
