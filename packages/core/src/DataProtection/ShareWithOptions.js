@@ -5,8 +5,10 @@ export const validateShareWithOptions = (value: any): bool => {
   if (typeof value !== 'object' || value === null)
     return false;
 
-  if (value instanceof Array)
+  if (value instanceof Array) {
+    console.warn('The shareWith option as an array of user and group ids is deprecated, use { users: [], groups: [] } format instead');
     return value.every(el => typeof el === 'string');
+  }
 
   const keys = Object.keys(value);
 

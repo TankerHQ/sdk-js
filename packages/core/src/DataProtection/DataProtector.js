@@ -101,10 +101,6 @@ export default class DataProtector {
 
     const groups = await this._groupManager.findGroups(maybeGroupIds);
     const b64groupIds = groups.map(group => utils.toBase64(group.groupId));
-
-    if (groups.length > 0)
-      console.warn('Calling encrypt or share with a mixed list of users and groups is deprecated, use { users: ["alice"], groups: ["admins"] } instead');
-
     const userIds = shareWith.filter(id => b64groupIds.indexOf(id) === -1);
     const users = await this._userAccessor.getUsers({ userIds });
 
