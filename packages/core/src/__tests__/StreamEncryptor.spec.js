@@ -42,6 +42,21 @@ describe('Stream Encryptor', () => {
     buffer = [];
   });
 
+  it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
+    const stream = new StreamEncryptor(resourceId, key, streamParameters);
+
+    // $FlowExpectedError
+    await expect(stream.write(undefined)).to.be.rejectedWith(InvalidArgument);
+    // $FlowExpectedError
+    await expect(stream.write(10)).to.be.rejectedWith(InvalidArgument);
+    // $FlowExpectedError
+    await expect(stream.write(null)).to.be.rejectedWith(InvalidArgument);
+    // $FlowExpectedError
+    await expect(stream.write('fail')).to.be.rejectedWith(InvalidArgument);
+    // $FlowExpectedError
+    await expect(stream.write({})).to.be.rejectedWith(InvalidArgument);
+  });
+
   it('can give its associated resourceId', () => {
     const stream = new StreamEncryptor(resourceId, key, streamParameters);
 
