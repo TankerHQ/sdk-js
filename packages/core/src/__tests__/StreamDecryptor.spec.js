@@ -57,6 +57,21 @@ describe('Stream Decryptor', () => {
     buffer = [];
   });
 
+  it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
+    const stream = new StreamDecryptor(mapper, streamConfig);
+
+    // $FlowExpectedError
+    await expect(stream.write(undefined)).to.be.rejectedWith(InvalidArgument);
+    // $FlowExpectedError
+    await expect(stream.write(10)).to.be.rejectedWith(InvalidArgument);
+    // $FlowExpectedError
+    await expect(stream.write(null)).to.be.rejectedWith(InvalidArgument);
+    // $FlowExpectedError
+    await expect(stream.write('fail')).to.be.rejectedWith(InvalidArgument);
+    // $FlowExpectedError
+    await expect(stream.write({})).to.be.rejectedWith(InvalidArgument);
+  });
+
   it('derives its key and decrypt block of fixed size', async () => {
     const msg1 = await encryptMsg(key, 0, '1st message');
     const msg2 = await encryptMsg(key, 1, '2nd message');
