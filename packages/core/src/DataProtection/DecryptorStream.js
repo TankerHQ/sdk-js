@@ -5,7 +5,7 @@ import varint from 'varint';
 import { aead, tcrypto } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
-import { InvalidEncryptionFormat, NotEnoughData, DecryptFailed } from '../errors';
+import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, DecryptFailed } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { defaultOutputSize, defaultDecryptionSize, type ResourceIdKeyMapper } from './StreamConfigs';
 
@@ -112,6 +112,9 @@ export default class DecryptorStream extends Transform {
   }
 
   async _transform(encryptedData: Uint8Array, encoding: ?string, done: Function) {
+    if (!(encryptedData instanceof Uint8Array))
+      return done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
+
     let data = encryptedData;
     if (!this._state.resourceIdKeyPair) {
       try {

@@ -7,7 +7,7 @@ import { utils, aead, tcrypto, type Key } from '@tanker/crypto';
 import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
 import { concatArrays } from '../Blocks/Serialize';
-import { NotEnoughData, InvalidEncryptionFormat, DecryptFailed } from '../errors';
+import { InvalidArgument, NotEnoughData, InvalidEncryptionFormat, DecryptFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 
 async function encryptMsg(key, index, str) {
@@ -108,6 +108,15 @@ describe('Decryptor Stream', () => {
       ref.push(header);
       ref.push(msg1.encrypted);
       ref.push(msg2.encrypted);
+    });
+
+    it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
+      const stream = new DecryptorStream(mapper);
+      const sync = watchStream(stream);
+
+      stream.write('fail');
+
+      await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
     it('throws DecryptFailed when data is corrupted', async () => {
