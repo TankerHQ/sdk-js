@@ -4,6 +4,7 @@ import { utils, tcrypto, aead } from '@tanker/crypto';
 
 import { expect } from './chai';
 import EncryptorStream from '../DataProtection/EncryptorStream';
+import { InvalidArgument } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 
 describe('Encryptor Stream', () => {
@@ -27,6 +28,16 @@ describe('Encryptor Stream', () => {
 
   beforeEach(() => {
     buffer = [];
+  });
+
+  it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
+    const stream = new EncryptorStream(resourceId, key);
+    const sync = watchStream(stream);
+
+    stream.write('fail');
+    stream.end();
+
+    await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
   });
 
   it('can give its associated resourceId', async () => {

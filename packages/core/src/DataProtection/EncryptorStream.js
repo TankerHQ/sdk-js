@@ -7,6 +7,7 @@ import { ResizerStream, Transform } from '@tanker/stream-base';
 
 import { currentStreamVersion, type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
+import { InvalidArgument } from '../errors';
 import { defaultEncryptionSize } from './StreamConfigs';
 
 export default class EncryptorStream extends Transform {
@@ -80,7 +81,11 @@ export default class EncryptorStream extends Transform {
   }
 
   _transform(clearData: Uint8Array, encoding: ?string, done: Function) {
-    this._resizerStream.write(clearData, encoding, done);
+    if (!(clearData instanceof Uint8Array)) {
+      done(new InvalidArgument('clearData', 'Uint8Array', clearData));
+    } else {
+      this._resizerStream.write(clearData, encoding, done);
+    }
   }
 
   _flush(done: Function) {
