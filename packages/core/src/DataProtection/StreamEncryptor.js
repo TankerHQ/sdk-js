@@ -6,63 +6,89 @@ import { Transform } from 'readable-stream';
 import { utils, aead, tcrypto, type b64string } from '@tanker/crypto';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
-import { type ShareWithOptions } from './ShareWithOptions';
-import { Uint8BufferStream, defaultBlockSize } from '../Uint8Stream';
-
-export type StreamEncryptorParameters = ShareWithOptions & {
-  onData: (Uint8Array) => Promise<void> | void,
-  onEnd: () => Promise<void> | void,
-  blockSize?: number,
-  shareWithSelf?: bool
-}
-
-export const streamEncryptorVersion = 1;
+import { Uint8Stream } from '../Uint8Stream';
+import PromiseWrapper from '../PromiseWrapper';
+import { InvalidArgument } from '../errors';
+import { streamEncryptorVersion, defaultOutputSize, defaultEncryptionSize, configureInputStream, configureOutputStream, type StreamEncryptorParameters } from './StreamConfigs';
 
 export default class StreamEncryptor {
   _onData: (Uint8Array) => Promise<void> | void;
   _onEnd: () => Promise<void> | void;
-  _blockSize: number = defaultBlockSize;
+  _onError = (err) => {
+    throw err;
+  };
+  _outputSize: number = defaultOutputSize;
+  _encryptionSize: number;
 
   _resourceId: Uint8Array;
   _key: Uint8Array;
-
   _index = 0;
-  _outputStream: Uint8BufferStream;
-  _encryptionStream: Transform;
 
-  constructor(resourceId: Uint8Array, key: Uint8Array, parameters: StreamEncryptorParameters) {
+  _waitingPromises: Array<PromiseWrapper<void>> = [];
+  _endPromise: PromiseWrapper<void> = new PromiseWrapper();
+
+  _inputStream: Uint8Stream;
+  _encryptionStream: Transform;
+  _outputStream: Uint8Stream;
+
+  constructor(resourceId: Uint8Array, key: Uint8Array, parameters: StreamEncryptorParameters, encryptionSize: number = defaultEncryptionSize) {
     this._onData = parameters.onData;
     this._onEnd = parameters.onEnd;
+    this._encryptionSize = encryptionSize;
     if (parameters.blockSize) {
-      this._blockSize = parameters.blockSize;
+      this._outputSize = parameters.blockSize;
     }
 
     this._key = key;
     this._resourceId = resourceId;
 
-    this._outputStream = new Uint8BufferStream(this._blockSize);
-    this._outputStream.on('readable', () => {
-      const data = this._outputStream.read();
-      if (data)
-        this._onData(new Uint8Array(data, 0, data.length));
+    this._inputStream = configureInputStream(this._encryptionSize, {
+      onDrain: () => {
+        for (const promise of this._waitingPromises) {
+          promise.resolve();
+        }
+        this._waitingPromises = [];
+      },
+      onError: this._onError,
+    });
+    this._configureEncryptionStream();
+    this._outputStream = configureOutputStream(this._outputSize, {
+      onData: this._onData,
+      onEnd: this._endPromise.resolve,
+      onError: this._onError
     });
 
-    const that = this;
+    this._inputStream.pipe(this._encryptionStream).pipe(this._outputStream);
+
+    this._writeHeader();
+  }
+
+  _configureEncryptionStream() {
+    const deriveKey = this._deriveKey.bind(this);
     this._encryptionStream = new Transform({
+      writableHighWaterMark: this._encryptionSize,
+      readableHighWaterMark: this._outputSize,
+
       async transform(clearData, encoding, callback) {
-        // eslint-disable-next-line no-underscore-dangle
-        const subKey = tcrypto.deriveKey(that._key, that._index);
-        // eslint-disable-next-line no-underscore-dangle
-        that._index += 1;
+        const subKey = deriveKey();
         const eData = await aead.encryptAEADv2(subKey, clearData);
         this.push(eData);
         callback();
       }
     });
-    this._encryptionStream.pipe(this._outputStream);
 
-    const formatHeader = concatArrays(varint.encode(streamEncryptorVersion), resourceId);
-    this._outputStream.write(formatHeader);
+    this._encryptionStream.on('error', this._onError);
+  }
+
+  _writeHeader() {
+    const header = concatArrays(varint.encode(streamEncryptorVersion), this._resourceId);
+    this._outputStream.write(header);
+  }
+
+  _deriveKey() {
+    const subKey = tcrypto.deriveKey(this._key, this._index);
+    this._index += 1;
+    return subKey;
   }
 
   resourceId(): b64string {
@@ -70,13 +96,16 @@ export default class StreamEncryptor {
   }
 
   async write(clearData: Uint8Array): Promise<void> {
-    this._encryptionStream.write(clearData);
+    if (!this._inputStream.write(clearData)) {
+      const promiseWrapper = new PromiseWrapper();
+      this._waitingPromises.push(promiseWrapper);
+      return promiseWrapper.promise;
+    }
   }
 
   async close(): Promise<void> {
-    this._encryptionStream.end();
-    this._outputStream.end();
-
+    this._inputStream.end();
+    await this._endPromise.promise;
     return this._onEnd();
   }
 }
