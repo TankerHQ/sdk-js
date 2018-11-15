@@ -248,8 +248,7 @@ class TestGenerator {
     };
 
     // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
-    const keyForParentDevice = find(unverifiedDeviceRevocation.user_keys.private_keys, key => utils.equalArray(key.recipient, parentDevice.testDevice.encryptionKeys.publicKey));
-
+    const keyForParentDevice = find(unverifiedDeviceRevocation.user_keys.private_keys, key => utils.equalArray(key.recipient, parentDevice.testDevice.id));
     if (keyForParentDevice) {
       testUser.userKeys.push({
         // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
