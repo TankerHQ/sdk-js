@@ -1,0 +1,110 @@
+// @flow
+
+import { tcrypto, random } from '@tanker/crypto';
+
+import { extractUserData } from '../Tokens/UserData';
+import { createUserToken } from './TestSessionTokens';
+
+import { expect } from './chai';
+import { type UserKeys } from '../Blocks/payloads';
+
+import LocalUser from '../Session/LocalUser';
+import TestGenerator from './TestGenerator';
+
+class FakeKeyStore {
+  signatureKeyPair: tcrypto.SodiumKeyPair;
+  encryptionKeyPair: tcrypto.SodiumKeyPair;
+  userKeys: Array<tcrypto.SodiumKeyPair>;
+  encryptedUserKeys: Array<UserKeys>;
+  deviceId: Uint8Array;
+
+  constructor(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair) {
+    this.signatureKeyPair = signatureKeyPair;
+    this.encryptionKeyPair = encryptionKeyPair;
+    this.userKeys = [];
+    this.encryptedUserKeys = [];
+  }
+
+  setDeviceId = (deviceId: Uint8Array) => { this.deviceId = deviceId; }
+  addUserKey = (userKey: tcrypto.SodiumKeyPair) => { this.userKeys.push(userKey); }
+  takeEncryptedUserKeys = () => this.encryptedUserKeys
+  addEncryptedUserKey = (keys: UserKeys) => { this.encryptedUserKeys.push(keys); };
+  prependUserKey = (userKey: tcrypto.SodiumKeyPair) => this.userKeys.push(userKey);
+}
+
+describe('Local User', () => {
+  const trustchainId = random(tcrypto.HASH_SIZE);
+  const trustchainKeyPair = tcrypto.makeSignKeyPair();
+  const userIdString = 'clear user id';
+  const userToken = createUserToken(trustchainId, userIdString, trustchainKeyPair.privateKey);
+  const userData = extractUserData(trustchainId, userIdString, userToken);
+
+  let localUser;
+  let deviceCreation1;
+  let deviceCreation2;
+  let keyStore;
+  let testGenerator;
+
+  beforeEach(async () => {
+    testGenerator = new TestGenerator();
+    testGenerator.makeTrustchainCreation();
+    deviceCreation1 = testGenerator.makeUserCreation(userData.userId);
+    deviceCreation2 = testGenerator.makeDeviceCreation(deviceCreation1);
+    keyStore = new FakeKeyStore(deviceCreation2.testDevice.signKeys, deviceCreation2.testDevice.encryptionKeys);
+    localUser = new LocalUser(userData, (keyStore: any));
+  });
+
+  it('doesnt save our device ID if the key is for another device', async () => {
+    await localUser.applyDeviceCreation(deviceCreation1.unverifiedDeviceCreation);
+    expect(keyStore.deviceId).to.be.undefined;
+  });
+
+  it('throws if asked for deviceID when its not set', async () => {
+    expect(() => localUser.deviceId).to.throw;
+  });
+
+  it('saves our device ID', async () => {
+    await localUser.applyDeviceCreation(deviceCreation2.unverifiedDeviceCreation);
+    expect(keyStore.deviceId).to.deep.equal(deviceCreation2.unverifiedDeviceCreation.hash);
+  });
+
+  it('decrypts and adds user keys', async () => {
+    await localUser.applyDeviceCreation(deviceCreation2.unverifiedDeviceCreation);
+    expect([deviceCreation2.testUser.userKeys[0]]).excluding('index').to.deep.equal(keyStore.userKeys);
+  });
+
+  describe('with revocation before own creation', () => {
+    let deviceRevocation;
+    beforeEach(() => {
+      const deviceCreation3 = testGenerator.makeDeviceCreation(deviceCreation1);
+      deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation1, deviceCreation3.testDevice.id);
+      deviceCreation2 = testGenerator.makeDeviceCreation({ ...deviceCreation1, testUser: deviceRevocation.testUser });
+      keyStore = new FakeKeyStore(deviceCreation2.testDevice.signKeys, deviceCreation2.testDevice.encryptionKeys);
+      localUser = new LocalUser(userData, (keyStore: any));
+    });
+
+    it('stores encrypted user keys', async () => {
+      await localUser.applyDeviceRevocation(deviceRevocation.unverifiedDeviceRevocation);
+      expect(keyStore.userKeys).to.deep.equal([]);
+      expect(keyStore.encryptedUserKeys.length).to.equal(1);
+    });
+
+    it('restores encrypted user keys', async () => {
+      await localUser.applyDeviceRevocation(deviceRevocation.unverifiedDeviceRevocation);
+      await localUser.applyDeviceCreation(deviceCreation2.unverifiedDeviceCreation);
+      expect([deviceRevocation.testUser.userKeys[1], deviceRevocation.testUser.userKeys[0]]).excluding('index').to.deep.equal(keyStore.userKeys);
+      expect(deviceRevocation.testUser.userKeys[1]).excluding('index').to.deep.equal(localUser.currentUserKey);
+    });
+  });
+
+  describe('with revocation after own creation', () => {
+    it('decrypts new user keys', async () => {
+      await localUser.applyDeviceCreation(deviceCreation2.unverifiedDeviceCreation);
+      const deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation2, deviceCreation1.testDevice.id);
+
+      await localUser.applyDeviceRevocation(deviceRevocation.unverifiedDeviceRevocation);
+      expect(deviceRevocation.testUser.userKeys).excluding('index').to.deep.equal(keyStore.userKeys);
+      expect(deviceRevocation.testUser.userKeys[1]).excluding('index').to.deep.equal(localUser.currentUserKey);
+    });
+  });
+});

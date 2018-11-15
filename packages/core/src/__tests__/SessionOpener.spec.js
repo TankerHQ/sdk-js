@@ -20,6 +20,8 @@ import Storage from '../Session/Storage';
 
 class MockStorage {
   keyStore;
+  userStore;
+
   constructor() {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
@@ -33,6 +35,9 @@ class MockStorage {
       wasRevoked: false,
       deviceId: random(tcrypto.HASH_SIZE),
       userKeys: [userKeyPair]
+    };
+    this.userStore = {
+      setLocalUser: () => {},
     };
   }
   hasLocalDevice = () => true;

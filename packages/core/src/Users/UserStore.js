@@ -6,7 +6,7 @@ import { type DataStore } from '@tanker/datastore-base';
 import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 import { NATURE, natureToString, NATURE_KIND, natureKind } from '../Blocks/payloads';
-import KeyStore from '../Session/Keystore';
+import LocalUser from '../Session/LocalUser';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 
 type DeviceToUser = {
@@ -38,8 +38,7 @@ const USER_KEY_TABLE = 'user_public_key_to_user';
 
 export default class UserStore {
   _ds: DataStore<*>;
-  _userId: Uint8Array;
-  _keyStore: KeyStore;
+  _localUser: LocalUser;
 
   static schemas = [
     // this store didn't exist in schema version 1
@@ -106,22 +105,14 @@ export default class UserStore {
     },
   ];
 
-  constructor(ds: DataStore<*>, userId: Uint8Array, keyStore: KeyStore) {
+  constructor(ds: DataStore<*>) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
-    this._userId = userId;
-    this._keyStore = keyStore;
   }
 
-  static async open(ds: DataStore<*>, userId: Uint8Array, keyStore: KeyStore): Promise<UserStore> {
-    return new UserStore(ds, userId, keyStore);
+  setLocalUser = (localUser: LocalUser) => {
+    this._localUser = localUser;
   }
-
-  async close(): Promise<void> {
-    // $FlowIKnow
-    this._ds = null;
-  }
-
   // all entries are verified
   async applyEntry(entry: VerifiedDeviceCreation | VerifiedDeviceRevocation): Promise<User> {
     const updatedUsers = await this.applyEntries([entry]);
@@ -139,15 +130,15 @@ export default class UserStore {
     for (const entry of entries) {
       const storeableEntry = await this._prepareEntry(entry);
 
-      if (utils.equalArray(entry.user_id, this._userId)) {
+      if (utils.equalArray(entry.user_id, this._localUser.userId)) {
         if (natureKind(entry.nature) === NATURE_KIND.device_creation) {
         // $FlowIKnow Type is checked by the switch
           const deviceEntry: VerifiedDeviceCreation = entry;
-          await this._keyStore.processDeviceCreationUserKeyPair(deviceEntry.hash, deviceEntry.public_encryption_key, deviceEntry.user_key_pair);
+          await this._localUser.applyDeviceCreation(deviceEntry);
         } else if (entry.user_keys) {
         // $FlowIKnow Type is checked by the switch
           const deviceEntry: VerifiedDeviceRevocation = entry;
-          await this._keyStore.processDeviceRevocationUserKeys(deviceEntry.device_id, deviceEntry.user_keys);
+          await this._localUser.applyDeviceRevocation(deviceEntry);
         }
       }
 

@@ -190,7 +190,7 @@ export class Tanker extends EventEmitter {
 
   _setSession = (session: ?Session) => {
     if (session) {
-      session.storage.keyStore.on('device_revoked', this._nuke);
+      session.localUser.on('device_revoked', this._nuke);
       this._session = session;
       delete this._sessionOpener;
     } else {

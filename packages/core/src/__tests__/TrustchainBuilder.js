@@ -1,6 +1,10 @@
 // @flow
-import { tcrypto, createUserSecretBinary, obfuscateUserId, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
+
+import { extractUserData } from '../Tokens/UserData';
+import { createUserToken } from './TestSessionTokens';
+import LocalUser from '../Session/LocalUser';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 import Generator, { type GeneratorUserResult, type GeneratorRevocationResult, type GeneratorKeyResult, type GeneratorUserGroupResult, type GeneratorUserGroupAdditionResult, type GeneratorDevice, type GeneratorUser } from './Generator';
@@ -49,11 +53,13 @@ export default class TrustchainBuilder {
 
     const { trustchainId } = this.generator;
 
-    const userId = obfuscateUserId(trustchainId, 'let try this for now');
-    const userSecret = createUserSecretBinary(utils.toBase64(trustchainId), 'let try this for now');
+    const userIdString = 'let try this for now';
+    const userToken = createUserToken(trustchainId, userIdString, this.trustchainKeyPair.privateKey);
+    const userData = extractUserData(trustchainId, userIdString, userToken);
 
     const storage = new Storage(this.dataStoreConfig);
-    await storage.open(userId, userSecret);
+    await storage.open(userData.userId, userData.userSecret);
+    storage.userStore.setLocalUser(new LocalUser(userData, storage.keyStore));
 
     this.dataStore = storage._datastore; // eslint-disable-line no-underscore-dangle
     this.keyStore = storage.keyStore;

@@ -7,30 +7,27 @@ import { InvalidUnlockPassword, InvalidUnlockKey, InvalidUnlockVerificationCode,
 
 import { Client } from '../Network/Client';
 import { type Block } from '../Blocks/Block';
-import KeyStore from '../Session/Keystore';
-import { type UserData } from '../Tokens/UserData';
+import LocalUser from '../Session/LocalUser';
 
 export class Unlocker {
-  _userData: UserData;
-  _keyStore: KeyStore;
+  _localUser: LocalUser;
   _client: Client;
 
-  constructor(userData: UserData, keystore: KeyStore, client: Client) {
-    this._keyStore = keystore;
-    this._userData = userData;
+  constructor(localUser: LocalUser, client: Client) {
+    this._localUser = localUser;
     this._client = client;
   }
 
   async _fetchUnlockKey(password: ?string, verificationCode: ?string): Promise<UnlockKey> {
     try {
       const answer = await this._client.fetchUnlockKey(createUnlockKeyRequest({
-        trustchainId: this._userData.trustchainId,
-        userId: this._userData.userId,
+        trustchainId: this._localUser.trustchainId,
+        userId: this._localUser.userId,
         password,
         verificationCode,
       }));
 
-      return answer.getUnlockKey(this._userData.userSecret);
+      return answer.getUnlockKey(this._localUser.userSecret);
     } catch (e) {
       if (e instanceof ServerError) {
         if (e.error.code === 'authentication_failed') {
@@ -52,16 +49,16 @@ export class Unlocker {
   _createDeviceWithUnlockKey = async (unlockKey: UnlockKey): Promise<Block> => {
     const ghostDevice = extractUnlockKey(unlockKey);
     const encryptedUserKey = await this._client.getLastUserKey(
-      this._userData.trustchainId,
+      this._localUser.trustchainId,
       utils.toBase64(ghostDevice.deviceId),
     );
     return createDeviceFromUnlockKey({
-      trustchainId: this._userData.trustchainId,
-      userId: this._userData.userId,
-      deviceKeys: this._keyStore.deviceKeys,
+      trustchainId: this._localUser.trustchainId,
+      userId: this._localUser.userId,
+      deviceKeys: this._localUser.deviceKeys(),
       ghostDevice,
       encryptedUserKey,
-      deviceType: this._userData.deviceType,
+      deviceType: this._localUser.deviceType,
     });
   }
 
@@ -76,8 +73,9 @@ export class Unlocker {
   }
 
   deviceValidationCode = () => {
-    const identity = this._keyStore.getIdentity();
-    identity.userId = utils.toBase64(this._userData.userId);
-    return utils.toB64Json(identity);
+    const keyS = utils.toBase64(this._localUser.publicSignatureKey);
+    const keyC = utils.toBase64(this._localUser.publicEncryptionKey);
+    const userId = utils.toBase64(this._localUser.userId);
+    return utils.toB64Json({ keyS, keyC, userId });
   }
 }
