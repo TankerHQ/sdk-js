@@ -96,6 +96,9 @@ export default class StreamEncryptor {
   }
 
   async write(clearData: Uint8Array): Promise<void> {
+    if (!(clearData instanceof Uint8Array))
+      throw new InvalidArgument('clearData', 'Uint8Array', clearData);
+
     if (!this._inputStream.write(clearData)) {
       const promiseWrapper = new PromiseWrapper();
       this._waitingPromises.push(promiseWrapper);
