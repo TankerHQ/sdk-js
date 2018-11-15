@@ -125,6 +125,9 @@ export default class StreamDecryptor {
   }
 
   async write(encryptedData: Uint8Array): Promise<void> {
+    if (!(encryptedData instanceof Uint8Array))
+      throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
+
     let data = encryptedData;
     if (!this._resourceIdKeyPair) {
       const { header, remaining } = await this._extractHeader(encryptedData);
