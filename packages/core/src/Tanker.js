@@ -13,8 +13,8 @@ import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEV
 import { extractUserData } from './Tokens/SessionTypes';
 import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
-import { type EncryptionOptions, defaultEncryptionOptions } from './DataProtection/DataProtector';
-import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
+import { type EncryptionOptions, isEncryptionOptionsEmpty, validateEncryptOptions } from './DataProtection/DataProtector';
+import { type ShareWithOptions, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
 const statusDefs = [
@@ -371,13 +371,13 @@ export class Tanker extends EventEmitter {
     if (!(plain instanceof Uint8Array))
       throw new InvalidArgument('plain', 'Uint8Array', plain);
 
-    const opts = { ...defaultEncryptionOptions, shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...options };
+    if (!validateEncryptOptions(options))
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
 
-    if (!validateShareWithOptions(opts.shareWith))
-      throw new InvalidArgument('shareWith', '{ users: Array<string>, groups: Array<string> }', opts.shareWith);
+    const opts = { shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...options };
 
-    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(opts.shareWith))
-      throw new InvalidArgument('options.shareWith', 'shareWith must contain user ids or group ids when options.shareWithSelf === false', opts.shareWith);
+    if (isEncryptionOptionsEmpty(opts))
+      throw new InvalidArgument('options.shareWith*', 'shareWithUsers or shareWithGroups must contains recipients when options.shareWithSelf === false', opts);
 
     return this._session.dataProtector.encryptAndShareData(plain, opts);
   }
@@ -411,7 +411,7 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
     if (!validateShareWithOptions(shareWith))
-      throw new InvalidArgument('shareWith', '{ users: Array<string>, groups: Array<string> }', shareWith);
+      throw new InvalidArgument('shareWith', '{ shareWithUsers: Array<string>, shareWithGroups: Array<string> }', shareWith);
 
     return this._session.dataProtector.share(resourceIds, shareWith);
   }

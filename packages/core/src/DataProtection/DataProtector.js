@@ -23,11 +23,48 @@ export type KeyResourceId = {
 
 export type EncryptionOptions = {
   shareWithSelf?: bool,
-  shareWith?: ShareWithOptions,
+  shareWith?: Array<string>,
+  shareWithUsers?: Array<string>,
+  shareWithGroups?: Array<string>,
 };
 
-export const defaultEncryptionOptions: EncryptionOptions = {
-  shareWith: {},
+export const validateEncryptOptions = (value: any): bool => {
+  if (!value)
+    return true;
+
+  if (typeof value !== 'object')
+    return false;
+
+  if (value.shareWith && (value.shareWithUsers || value.shareWithGroups))
+    return false;
+
+  if (value.shareWith) {
+    console.warn('The shareWith option is deprecated, use { shareWithUsers: [], shareWithGroups: [] } format instead');
+    return value.shareWith.every(el => typeof el === 'string');
+  }
+
+  if (value.shareWithUsers &&
+    (!(value.shareWithUsers instanceof Array) ||
+      value.shareWithUsers.some(el => typeof el !== 'string')))
+    return false;
+  if (value.shareWithGroups &&
+    (!(value.shareWithGroups instanceof Array) ||
+      value.shareWithGroups.some(el => typeof el !== 'string')))
+    return false;
+
+  return true;
+};
+
+export const isEncryptionOptionsEmpty = (opts: EncryptionOptions) => {
+  if (opts.shareWithSelf)
+    return false;
+  if (opts.shareWith)
+    return opts.shareWith.length === 0;
+  if (opts.shareWithGroups && opts.shareWithGroups.length > 0)
+    return false;
+  if (opts.shareWithUsers && opts.shareWithUsers.length > 0)
+    return false;
+  return true;
 };
 
 export default class DataProtector {
@@ -121,16 +158,16 @@ export default class DataProtector {
     return ids;
   }
 
-  async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWith: ShareWithOptions, shareWithSelf: bool): Promise<void> {
+  async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWithOptions: ShareWithOptions, shareWithSelf: bool): Promise<void> {
     let groups;
     let users;
 
-    if (shareWith instanceof Array) {
-      const mixedIds = this._handleShareWithSelf(shareWith, shareWithSelf);
+    if (shareWithOptions instanceof Array) {
+      const mixedIds = this._handleShareWithSelf(shareWithOptions, shareWithSelf);
       ({ groups, users } = await this._separateGroupsFromUsers(mixedIds));
     } else {
-      const groupIds = (shareWith.groups || []).map(g => utils.fromBase64(g));
-      const userIds = this._handleShareWithSelf(shareWith.users || [], shareWithSelf);
+      const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
+      const userIds = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
       groups = await this._groupManager.findGroups(groupIds);
       users = await this._userAccessor.getUsers({ userIds });
     }
@@ -156,9 +193,9 @@ export default class DataProtector {
   async encryptAndShareData(data: Uint8Array, options?: EncryptionOptions): Promise<Uint8Array> {
     const { key, resourceId, encryptedData } = await encryptData(data);
 
-    const opts = { ...defaultEncryptionOptions, ...options };
+    const opts = options || {};
 
-    await this._shareResources([{ resourceId, key }], opts.shareWith, opts.shareWithSelf);
+    await this._shareResources([{ resourceId, key }], opts.shareWith || opts, opts.shareWithSelf || false);
     return encryptedData;
   }
 
