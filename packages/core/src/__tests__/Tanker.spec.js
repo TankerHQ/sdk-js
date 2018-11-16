@@ -220,6 +220,8 @@ describe('Tanker', () => {
 
     describe('shareWith', () => {
       const notShareWithValues = [
+        null,
+        0,
         'noArrayAroundMe',
         { shareWith: ['bob'], shareWithGroups: ['admin group'] },
         { shareWithGroups: 'noArrayAroundMe' },
@@ -241,8 +243,6 @@ describe('Tanker', () => {
 
       it('share() should throw when given an invalid shareWith', async () => {
         notShareWithValues.push(undefined);
-        notShareWithValues.push(null);
-        notShareWithValues.push(0);
         notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
         notShareWithValues.push({ shareWithUsers: ['userId'], unexpectedKey: 'value' });
         const resourceId = random(tcrypto.MAC_SIZE);

@@ -13,7 +13,7 @@ import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/payloads';
 import { decryptData } from './decrypt';
 import { encryptData } from './encrypt';
-import { type ShareWithOptions } from './ShareWithOptions';
+import { type ShareWithOptions, validateShareWithOptions } from './ShareWithOptions';
 import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
 
 export type KeyResourceId = {
@@ -21,50 +21,25 @@ export type KeyResourceId = {
   resourceId: Uint8Array,
 };
 
-export type EncryptionOptions = {
-  shareWithSelf?: bool,
-  shareWith?: Array<string>,
-  shareWithUsers?: Array<string>,
-  shareWithGroups?: Array<string>,
-};
+export type EncryptionOptions = ShareWithOptions & { shareWithSelf?: bool };
 
-export const validateEncryptOptions = (value: any): bool => {
-  if (!value)
+export const validateEncryptionOptions = (value: any): bool => {
+  if (typeof value === 'undefined')
     return true;
 
-  if (typeof value !== 'object')
-    return false;
-
-  if (value.shareWith && (value.shareWithUsers || value.shareWithGroups))
+  if (typeof value !== 'object' || value === null)
     return false;
 
   if (value.shareWith) {
     console.warn('The shareWith option is deprecated, use { shareWithUsers: [], shareWithGroups: [] } format instead');
-    return value.shareWith.every(el => typeof el === 'string');
+    if (value.shareWithUsers || value.shareWithGroups) {
+      return false;
+    }
   }
 
-  if (value.shareWithUsers &&
-    (!(value.shareWithUsers instanceof Array) ||
-      value.shareWithUsers.some(el => typeof el !== 'string')))
-    return false;
-  if (value.shareWithGroups &&
-    (!(value.shareWithGroups instanceof Array) ||
-      value.shareWithGroups.some(el => typeof el !== 'string')))
-    return false;
+  const { shareWithSelf, ...shareWithOptions } = value;
 
-  return true;
-};
-
-export const isEncryptionOptionsEmpty = (opts: EncryptionOptions) => {
-  if (opts.shareWithSelf)
-    return false;
-  if (opts.shareWith)
-    return opts.shareWith.length === 0;
-  if (opts.shareWithGroups && opts.shareWithGroups.length > 0)
-    return false;
-  if (opts.shareWithUsers && opts.shareWithUsers.length > 0)
-    return false;
-  return true;
+  return validateShareWithOptions(shareWithOptions);
 };
 
 export default class DataProtector {
@@ -162,8 +137,9 @@ export default class DataProtector {
     let groups;
     let users;
 
-    if (shareWithOptions instanceof Array) {
-      const mixedIds = this._handleShareWithSelf(shareWithOptions, shareWithSelf);
+    // deprecated format:
+    if (shareWithOptions.shareWith) {
+      const mixedIds = this._handleShareWithSelf(shareWithOptions.shareWith, shareWithSelf);
       ({ groups, users } = await this._separateGroupsFromUsers(mixedIds));
     } else {
       const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
@@ -190,12 +166,10 @@ export default class DataProtector {
     }
   }
 
-  async encryptAndShareData(data: Uint8Array, options?: EncryptionOptions): Promise<Uint8Array> {
+  async encryptAndShareData(data: Uint8Array, options: EncryptionOptions = {}): Promise<Uint8Array> {
     const { key, resourceId, encryptedData } = await encryptData(data);
 
-    const opts = options || {};
-
-    await this._shareResources([{ resourceId, key }], opts.shareWith || opts, opts.shareWithSelf || false);
+    await this._shareResources([{ resourceId, key }], options, options.shareWithSelf || false);
     return encryptedData;
   }
 
