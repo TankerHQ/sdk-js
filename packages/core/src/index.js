@@ -12,7 +12,7 @@ import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 export default Tanker;
 
 export type { b64string } from '@tanker/crypto';
-export type { EncryptionOptions } from './DataProtection/DataProtector';
+export type { EncryptionOptions } from './DataProtection/EncryptionOptions';
 export type { TankerOptions } from './Tanker';
 
 export {

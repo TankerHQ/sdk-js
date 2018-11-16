@@ -13,7 +13,7 @@ import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEV
 import { extractUserData } from './Tokens/SessionTypes';
 import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
-import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/DataProtector';
+import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 

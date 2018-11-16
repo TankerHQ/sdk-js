@@ -13,33 +13,13 @@ import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/payloads';
 import { decryptData } from './decrypt';
 import { encryptData } from './encrypt';
-import { type ShareWithOptions, validateShareWithOptions } from './ShareWithOptions';
+import { type EncryptionOptions } from './EncryptionOptions';
+import { type ShareWithOptions } from './ShareWithOptions';
 import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
 
 export type KeyResourceId = {
   key: Uint8Array,
   resourceId: Uint8Array,
-};
-
-export type EncryptionOptions = ShareWithOptions & { shareWithSelf?: bool };
-
-export const validateEncryptionOptions = (value: any): bool => {
-  if (typeof value === 'undefined')
-    return true;
-
-  if (typeof value !== 'object' || value === null)
-    return false;
-
-  if (value.shareWith) {
-    console.warn('The shareWith option is deprecated, use { shareWithUsers: [], shareWithGroups: [] } format instead');
-    if (value.shareWithUsers || value.shareWithGroups) {
-      return false;
-    }
-  }
-
-  const { shareWithSelf, ...shareWithOptions } = value;
-
-  return validateShareWithOptions(shareWithOptions);
 };
 
 export default class DataProtector {

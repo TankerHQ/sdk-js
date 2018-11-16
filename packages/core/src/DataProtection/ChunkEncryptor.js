@@ -5,7 +5,7 @@ import arraychunks from 'array.chunk';
 import { tcrypto, aead, random, utils } from '@tanker/crypto';
 
 import { ChunkIndexOutOfRange, ChunkNotFound, DecryptFailed, InvalidArgument, InvalidSeal } from '../errors';
-import { type EncryptionOptions } from './DataProtector';
+import { type EncryptionOptions } from './EncryptionOptions';
 import * as Serialize from '../Blocks/Serialize';
 
 const currentSealVersion = 3;
