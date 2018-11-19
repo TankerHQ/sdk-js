@@ -177,7 +177,7 @@ export default class DataProtector {
     const streamResource = ResourceManager.makeStreamResource();
     const streamEncryptor = makeStreamEncryptor(streamResource, parameters);
 
-    this._shareResources([{ resourceId: streamResource.resourceId, key: streamResource.key }], parameters.shareOptions || {}, parameters.shareWithSelf || false);
+    await this._shareResources([{ resourceId: streamResource.resourceId, key: streamResource.key }], parameters.shareOptions || {}, parameters.shareWithSelf || false);
 
     return streamEncryptor;
   }
