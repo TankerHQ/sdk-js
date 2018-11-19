@@ -9,7 +9,7 @@ import ci.mail
 
 def check(*, runner: str, nightly: bool) -> None:
     if nightly:
-        with ci.notify_failure("sdk-test"):
+        with ci.mail.notify_failure("sdk-js"):
             ci.js.check_sdk(cwd=Path.getcwd(), env="dev", runner=runner, nightly=True)
     else:
         ci.js.check_sdk(cwd=Path.getcwd(), env="dev", runner=runner, nightly=False)
