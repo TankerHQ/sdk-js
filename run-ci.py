@@ -8,11 +8,22 @@ import ci.mail
 
 
 def check(*, runner: str, nightly: bool) -> None:
+    env = "dev"
+    ci.js.yarn_install_deps()
+    if runner == "linux":
+        ci.js.run_linters(cwd=Path.getcwd())
+        ci.js.run_tests_in_node(cwd=Path.getcwd(), env=env)
+
+    ci.js.run_tests_in_browser(cwd=Path.getcwd(), env=env, runner=runner)
+
+    if "windows" in runner:
+        return
+
     if nightly:
         with ci.mail.notify_failure("sdk-js"):
-            ci.js.check_sdk(cwd=Path.getcwd(), env="dev", runner=runner, nightly=True)
+            ci.js.run_sdk_functional_tests(env=env, runner=runner, ten_times=True)
     else:
-        ci.js.check_sdk(cwd=Path.getcwd(), env="dev", runner=runner, nightly=False)
+        ci.js.run_sdk_functional_tests(env=env, runner=runner, ten_times=False)
 
 
 def main() -> None:
