@@ -4,6 +4,15 @@ import sys
 from path import Path
 
 import ci.js
+import ci.mail
+
+
+def check(*, runner: str, nightly: bool) -> None:
+    if nightly:
+        with ci.notify_failure("sdk-test"):
+            ci.js.check_sdk(cwd=Path.getcwd(), env="dev", runner=runner, nightly=True)
+    else:
+        ci.js.check_sdk(cwd=Path.getcwd(), env="dev", runner=runner, nightly=False)
 
 
 def main() -> None:
@@ -24,7 +33,7 @@ def main() -> None:
     if args.command == "check":
         runner = args.runner
         nightly = args.nightly
-        ci.js.check_sdk(cwd=Path.getcwd(), env="dev", runner=runner, nightly=nightly)
+        check(runner=runner, nightly=nightly)
     elif args.command == "deploy":
         env = args.env
         git_tag = args.git_tag
