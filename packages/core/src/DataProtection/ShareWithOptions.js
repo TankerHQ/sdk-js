@@ -1,22 +1,19 @@
 // @flow
-export type ShareWithOptions = Array<string> | { users?: Array<string>, groups?: Array<string> };
+export type ShareWithOptions = { shareWith?: Array<string>, shareWithUsers?: Array<string>, shareWithGroups?: Array<string> };
 
 export const validateShareWithOptions = (value: any): bool => {
   if (typeof value !== 'object' || value === null)
     return false;
 
-  if (value instanceof Array) {
-    console.warn('The shareWith option as an array of user and group ids is deprecated, use { users: [], groups: [] } format instead');
-    return value.every(el => typeof el === 'string');
-  }
-
   const keys = Object.keys(value);
 
   for (const key of keys) {
-    if (key === 'groups' || key === 'users') {
+    if (key === 'shareWith' || key === 'shareWithGroups' || key === 'shareWithUsers') {
       if (!(value[key] instanceof Array))
         return false;
       if (value[key].some(el => typeof el !== 'string'))
+        return false;
+      if (key === 'shareWith' && keys.length > 1)
         return false;
     } else {
       // unexpected key
@@ -27,12 +24,12 @@ export const validateShareWithOptions = (value: any): bool => {
   return true;
 };
 
-export const isShareWithOptionsEmpty = (shareWith: ShareWithOptions) => {
-  if (shareWith instanceof Array)
-    return shareWith.length === 0;
-  if (shareWith.groups && shareWith.groups.length > 0)
+export const isShareWithOptionsEmpty = (opts: ShareWithOptions) => {
+  if (opts.shareWith)
+    return opts.shareWith.length === 0;
+  if (opts.shareWithGroups && opts.shareWithGroups.length > 0)
     return false;
-  if (shareWith.users && shareWith.users.length > 0)
+  if (opts.shareWithUsers && opts.shareWithUsers.length > 0)
     return false;
   return true;
 };

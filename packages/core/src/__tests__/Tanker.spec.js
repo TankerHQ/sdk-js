@@ -220,32 +220,34 @@ describe('Tanker', () => {
 
     describe('shareWith', () => {
       const notShareWithValues = [
-        undefined, null, 0,
+        null,
+        0,
         'noArrayAroundMe',
-        { groups: 'noArrayAroundMe' },
-        { groups: [new Uint8Array(32)] },
-        { users: 'noArrayAroundMe' },
-        { users: [undefined] },
-        { users: ['userId'], unexpectedKey: 'value' },
-        [{ users: ['userId'] }] // unexpected extra outer array
+        { shareWith: ['bob'], shareWithGroups: ['admin group'] },
+        { shareWithGroups: 'noArrayAroundMe' },
+        { shareWithGroups: [new Uint8Array(32)] },
+        { shareWithUsers: 'noArrayAroundMe' },
+        { shareWithUsers: [undefined] },
       ];
-      const numberOfTests = notShareWithValues.length;
 
       before(() => warnings.silence(/deprecated/));
       after(() => warnings.restore());
 
       it('encrypt() should throw when given an invalid shareWith', async () => {
-        for (let i = 0; i < numberOfTests; i++) {
+        for (let i = 0; i < notShareWithValues.length; i++) {
           const v = notShareWithValues[i];
           // $FlowExpectedError
-          await expect(tanker.encrypt('test', { shareWith: v }), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);
+          await expect(tanker.encrypt('test', v), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
 
       it('share() should throw when given an invalid shareWith', async () => {
+        notShareWithValues.push(undefined);
+        notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
+        notShareWithValues.push({ shareWithUsers: ['userId'], unexpectedKey: 'value' });
         const resourceId = random(tcrypto.MAC_SIZE);
 
-        for (let i = 0; i < numberOfTests; i++) {
+        for (let i = 0; i < notShareWithValues.length; i++) {
           const v = notShareWithValues[i];
           // $FlowExpectedError
           await expect(tanker.share([resourceId], v), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);

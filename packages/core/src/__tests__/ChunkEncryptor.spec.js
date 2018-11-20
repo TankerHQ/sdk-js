@@ -226,6 +226,29 @@ describe('ChunkEncryptor', () => {
       await Promise.all(notStringOrUint8ArrayTypes.map(fail => expect(chunkEncryptor.decryptData(new Uint8Array(0), fail)).to.be.rejectedWith(errors.InvalidArgument)));
     });
 
+    it('should throw when calling seal() with an invalid shareWith', async () => {
+      warnings.silence(/deprecated/);
+
+      const notShareWithValues = [
+        null,
+        0,
+        'noArrayAroundMe',
+        { shareWith: ['bob'], shareWithGroups: ['admin group'] },
+        { shareWithGroups: 'noArrayAroundMe' },
+        { shareWithGroups: [new Uint8Array(32)] },
+        { shareWithUsers: 'noArrayAroundMe' },
+        { shareWithUsers: [undefined] },
+      ];
+
+      for (let i = 0; i < notShareWithValues.length; i++) {
+        const v = notShareWithValues[i];
+        // $FlowExpectedError
+        await expect(chunkEncryptor.seal(v), `bad shareWith #${i}`).to.be.rejectedWith(errors.InvalidArgument);
+      }
+
+      warnings.restore();
+    });
+
     describe('Deprecated methods in 1.6.0', () => {
       before(() => warnings.silence(/deprecated/));
       after(() => warnings.restore());

@@ -13,7 +13,7 @@ import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEV
 import { extractUserData } from './Tokens/SessionTypes';
 import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
-import { type EncryptionOptions, defaultEncryptionOptions } from './DataProtection/DataProtector';
+import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
@@ -371,13 +371,13 @@ export class Tanker extends EventEmitter {
     if (!(plain instanceof Uint8Array))
       throw new InvalidArgument('plain', 'Uint8Array', plain);
 
-    const opts = { ...defaultEncryptionOptions, shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...options };
+    if (!validateEncryptionOptions(options))
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
 
-    if (!validateShareWithOptions(opts.shareWith))
-      throw new InvalidArgument('shareWith', '{ users: Array<string>, groups: Array<string> }', opts.shareWith);
+    const opts = { shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...options };
 
-    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(opts.shareWith))
-      throw new InvalidArgument('options.shareWith', 'shareWith must contain user ids or group ids when options.shareWithSelf === false', opts.shareWith);
+    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(opts))
+      throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);
 
     return this._session.dataProtector.encryptAndShareData(plain, opts);
   }
@@ -404,16 +404,25 @@ export class Tanker extends EventEmitter {
     return utils.toString(await this.decryptData(cipher));
   }
 
-  async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions): Promise<void> {
+  async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions | Array<string>): Promise<void> {
     this.assert(this.OPEN, 'share');
 
     if (!(resourceIds instanceof Array))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    if (!validateShareWithOptions(shareWith))
-      throw new InvalidArgument('shareWith', '{ users: Array<string>, groups: Array<string> }', shareWith);
+    let shareWithOptions;
 
-    return this._session.dataProtector.share(resourceIds, shareWith);
+    if (shareWith instanceof Array) {
+      console.warn('The shareWith option as an array is deprecated, use { shareWithUsers: [], shareWithGroups: [] } format instead');
+      shareWithOptions = { shareWith };
+    } else {
+      shareWithOptions = shareWith;
+    }
+
+    if (!validateShareWithOptions(shareWithOptions))
+      throw new InvalidArgument('shareWith', '{ shareWithUsers: Array<string>, shareWithGroups: Array<string> }', shareWith);
+
+    return this._session.dataProtector.share(resourceIds, shareWithOptions);
   }
 
   getResourceId(data: Uint8Array): b64string {

@@ -5,7 +5,7 @@ import arraychunks from 'array.chunk';
 import { tcrypto, aead, random, utils } from '@tanker/crypto';
 
 import { ChunkIndexOutOfRange, ChunkNotFound, DecryptFailed, InvalidArgument, InvalidSeal } from '../errors';
-import { type EncryptionOptions } from './DataProtector';
+import { type EncryptionOptions, validateEncryptionOptions } from './EncryptionOptions';
 import * as Serialize from '../Blocks/Serialize';
 
 const currentSealVersion = 3;
@@ -264,6 +264,9 @@ export default class ChunkEncryptor {
   }
 
   async seal(options?: EncryptionOptions): Promise<Uint8Array> {
+    if (!validateEncryptionOptions(options))
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
+
     const seal = Seal.build(this.chunkKeys);
     const serializedSeal = seal.serialize();
     const encryptedData = await this.encryptor.encryptData(serializedSeal, options);
