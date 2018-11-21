@@ -2,7 +2,8 @@
 import { random, tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
-import UserStore, { type User } from '../Users/UserStore';
+import UserStore from '../Users/UserStore';
+import { type User } from '../Users/User';
 
 import { NATURE } from '../Blocks/payloads';
 
@@ -13,9 +14,11 @@ import TestGenerator, { type TestDeviceCreation } from './TestGenerator';
 
 async function makeUserStore(userId: Uint8Array): Promise<UserStore> {
   const dataStore = await makeMemoryDataStore(UserStore.schemas, 'user-store-test');
-
-  return UserStore.open(dataStore, userId, ({ processDeviceCreationUserKeyPair: () => {} }: any));
+  const userStore = new UserStore(dataStore);
+  userStore.setLocalUser(({ userId, applyDeviceCreation: () => {} }: any));
+  return userStore;
 }
+
 
 describe('UserStore', () => {
   const testGenerator = new TestGenerator();

@@ -6,7 +6,6 @@ import { isServerToken, extractFromServerToken, type ServerToken } from './Serve
 import { DEVICE_TYPE, type DeviceType } from '../Unlock/unlock';
 import { InvalidUserToken } from '../errors';
 import { type DelegationToken } from '../Session/delegation';
-import { type UnlockMethods } from '../Network/Client';
 
 export type UserData = {
   trustchainId: Uint8Array,
@@ -16,16 +15,6 @@ export type UserData = {
   delegationToken: DelegationToken,
   deviceType: DeviceType,
   unlockKey: ?string
-}
-
-export type SessionData = {
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-  userSecret: Uint8Array,
-  clearUserId: string,
-  deviceId: Uint8Array,
-  deviceType: DeviceType,
-  unlockMethods: UnlockMethods,
 }
 
 export function extractUserData(trustchainId: Uint8Array, clearUserId: string, sessionTokenB64: b64string): UserData {

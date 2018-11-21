@@ -3,15 +3,14 @@
 import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidBlockError } from '../errors';
-import type { UnverifiedEntry } from '../Blocks/entries';
 import { findIndex } from '../utils';
-import { getLastUserPublicKey, type User, type Device } from '../Users/UserStore';
+import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-
+import { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import {
   type UserGroupCreationRecord,
@@ -23,20 +22,20 @@ import {
   isKeyPublishToUserGroup,
 } from '../Blocks/payloads';
 
-export const rootEntryAuthor = new Uint8Array(32);
+export const rootBlockAuthor = new Uint8Array(32);
 
-export function verifyTrustchainCreation(entry: UnverifiedEntry, trustchainId: Uint8Array) {
-  if (!isTrustchainCreation(entry.nature))
-    throw new InvalidBlockError('invalid_nature', 'invalid nature for trustchain creation', { entry });
+export function verifyTrustchainCreation(trustchainCreation: UnverifiedTrustchainCreation, trustchainId: Uint8Array) {
+  if (!isTrustchainCreation(trustchainCreation.nature))
+    throw new InvalidBlockError('invalid_nature', 'invalid nature for trustchain creation', { trustchainCreation });
 
-  if (!utils.equalArray(entry.author, rootEntryAuthor))
-    throw new InvalidBlockError('invalid_author_for_trustchain_creation', 'author of trustchain_creation must be 0', { entry });
+  if (!utils.equalArray(trustchainCreation.author, rootBlockAuthor))
+    throw new InvalidBlockError('invalid_author_for_trustchain_creation', 'author of trustchain_creation must be 0', { trustchainCreation });
 
-  if (!utils.isNullArray(entry.signature))
-    throw new InvalidBlockError('invalid_signature', 'signature must be 0', { entry });
+  if (!utils.isNullArray(trustchainCreation.signature))
+    throw new InvalidBlockError('invalid_signature', 'signature must be 0', { trustchainCreation });
 
-  if (!utils.equalArray(entry.hash, trustchainId))
-    throw new InvalidBlockError('invalid_root_block', 'the root block does not correspond to this trustchain', { entry, trustchainId });
+  if (!utils.equalArray(trustchainCreation.hash, trustchainId))
+    throw new InvalidBlockError('invalid_root_block', 'the root block does not correspond to this trustchain', { trustchainCreation, trustchainId });
 }
 
 export function verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser: ?User, authorDevice: ?Device, authorKey: Uint8Array, user: ?User) {

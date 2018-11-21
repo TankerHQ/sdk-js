@@ -4,37 +4,37 @@ import { tcrypto, utils, type Key } from '@tanker/crypto';
 
 import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup } from '../Blocks/payloads';
 import GroupStore from '../Groups/GroupStore';
-import Keystore from '../Session/Keystore';
+import LocalUser from '../Session/LocalUser';
 import UserAccessor from '../Users/UserAccessor';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 
 export class KeyDecryptor {
-  _keystore: Keystore;
+  _localUser: LocalUser;
   _userAccessor: UserAccessor;
   _groupStore: GroupStore;
 
   constructor(
-    keystore: Keystore,
+    localUser: LocalUser,
     userAccessor: UserAccessor,
     groupStore: GroupStore
   ) {
-    this._keystore = keystore;
+    this._localUser = localUser;
     this._userAccessor = userAccessor;
     this._groupStore = groupStore;
   }
 
   async decryptResourceKeyPublishedToDevice(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
-    if (!this._keystore.deviceId || !utils.equalArray(keyPublishEntry.recipient, this._keystore.deviceId)) {
+    if (!this._localUser.deviceId || !utils.equalArray(keyPublishEntry.recipient, this._localUser.deviceId)) {
       return null;
     }
     const authorKey = await this._userAccessor.getDevicePublicEncryptionKey(keyPublishEntry.author);
     if (!authorKey)
       throw new Error('Assertion error: Key publish is verified, but can\'t find author\'s key!');
-    return tcrypto.asymDecrypt(keyPublishEntry.key, authorKey, this._keystore.privateEncryptionKey);
+    return tcrypto.asymDecrypt(keyPublishEntry.key, authorKey, this._localUser.privateEncryptionKey);
   }
 
   async decryptResourceKeyPublishedToUser(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
-    const userKey = this._keystore.findUserKey(keyPublishEntry.recipient);
+    const userKey = this._localUser.findUserKey(keyPublishEntry.recipient);
     if (!userKey)
       return null;
     return tcrypto.sealDecrypt(keyPublishEntry.key, userKey);
@@ -70,6 +70,6 @@ export class KeyDecryptor {
   }
 
   deviceReady(): bool {
-    return !!this._keystore.deviceId;
+    return !!this._localUser.deviceId;
   }
 }

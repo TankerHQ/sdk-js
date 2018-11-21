@@ -6,7 +6,7 @@ import { tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from './chai';
 import Generator from './Generator';
 
-import { blockToEntry } from '../Trustchain/TrustchainStore';
+import { blockToEntry } from '../Blocks/entries';
 import { isKeyPublishToDevice, isDeviceCreation, isDeviceRevocation, type UserDeviceRecord, unserializePayload, NATURE, isTrustchainCreation } from '../Blocks/payloads';
 
 let generator;

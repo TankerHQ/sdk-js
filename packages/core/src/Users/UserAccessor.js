@@ -2,7 +2,8 @@
 
 import { utils, obfuscateUserId } from '@tanker/crypto';
 
-import UserStore, { type User, type FindUserParameters, type FindUsersParameters } from '../Users/UserStore';
+import UserStore, { type FindUserParameters, type FindUsersParameters } from '../Users/UserStore';
+import { type User } from './User';
 import Trustchain from '../Trustchain/Trustchain';
 import { InvalidArgument, RecipientsNotFound } from '../errors';
 
@@ -93,7 +94,7 @@ export default class UserAccessor {
   }
 
   async getDevicePublicEncryptionKey(deviceId: Uint8Array): Promise<?Uint8Array> {
-    const device = await this._userStore.findDevice({ hashedDeviceId: deviceId });
+    const device = await this._userStore.findDevice({ deviceId });
     if (device)
       return device.devicePublicEncryptionKey;
 

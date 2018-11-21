@@ -153,7 +153,7 @@ describe('Tanker', () => {
       dataStore: { ...dataStoreConfig, prefix: makePrefix() },
     });
     // "open" a session
-    tanker._session = ({ sessionData: { deviceType: DEVICE_TYPE.client_device } }: any); // eslint-disable-line no-underscore-dangle
+    tanker._session = ({ localUser: { deviceType: DEVICE_TYPE.client_device } }: any); // eslint-disable-line no-underscore-dangle
 
     describe('unlock method registration', () => {
       const badArgs = [

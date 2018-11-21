@@ -2,13 +2,12 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
-import BlockGenerator from '../Blocks/BlockGenerator';
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
-import { type SessionData } from '../Tokens/SessionTypes';
+import LocalUser from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
-import { type User, getLastUserPublicKey } from '../Users/UserStore';
+import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/payloads';
 import { decryptData } from './decrypt';
@@ -27,24 +26,21 @@ export default class DataProtector {
   _client: Client;
 
   _groupManager: GroupManager;
-  _sessionData: SessionData;
+  _localUser: LocalUser;
   _userAccessor: UserAccessor;
-  _blockGenerator: BlockGenerator;
 
   constructor(
     resourceManager: ResourceManager,
     client: Client,
     groupManager: GroupManager,
-    sessionData: SessionData,
+    localUser: LocalUser,
     userAccessor: UserAccessor,
-    blockGenerator: BlockGenerator
   ) {
     this._resourceManager = resourceManager;
     this._client = client;
     this._groupManager = groupManager;
-    this._sessionData = sessionData;
+    this._localUser = localUser;
     this._userAccessor = userAccessor;
-    this._blockGenerator = blockGenerator;
   }
 
   _makeKeyPublishBlocks(
@@ -55,7 +51,7 @@ export default class DataProtector {
     const blocks: Array<Block> = [];
     for (const publicEncryptionKey of keys) {
       for (const { key, resourceId } of keyResourceIds) {
-        const block = this._blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
+        const block = this._localUser.blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
         blocks.push(block);
       }
     }
@@ -104,7 +100,7 @@ export default class DataProtector {
 
   _handleShareWithSelf = (ids: Array<string>, shareWithSelf: bool): Array<string> => {
     if (shareWithSelf) {
-      const selfUserId = this._sessionData.clearUserId;
+      const selfUserId = this._localUser.clearUserId;
       if (ids.indexOf(selfUserId) === -1) {
         return ids.concat([selfUserId]);
       }

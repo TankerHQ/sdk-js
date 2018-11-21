@@ -20,7 +20,7 @@ import {
 } from './payloads';
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/delegation';
-import { getLastUserPublicKey, type User, type Device } from '../Users/UserStore';
+import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { InvalidDelegationToken } from '../errors';
 import { concatArrays } from '../Blocks/Serialize';
 

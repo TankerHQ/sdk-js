@@ -5,30 +5,27 @@ import { utils, type b64string } from '@tanker/crypto';
 import { generateUnlockKeyRegistration, createUnlockKeyMessage, createDeviceFromValidationCode, type UnlockKey, type UnlockKeyMessage } from './unlock';
 
 import { Client } from '../Network/Client';
-import KeyStore from '../Session/Keystore';
-import { type SessionData } from '../Tokens/SessionTypes';
+import LocalUser from '../Session/LocalUser';
 
 
 export class UnlockKeys {
-  _sessionData: SessionData;
-  _keyStore: KeyStore;
+  _localUser: LocalUser;
   _client: Client;
 
-  constructor(sessionData: SessionData, keystore: KeyStore, client: Client) {
-    this._keyStore = keystore;
-    this._sessionData = sessionData;
+  constructor(localUser: LocalUser, client: Client) {
+    this._localUser = localUser;
     this._client = client;
   }
 
   _generateUnlockKey = () => generateUnlockKeyRegistration({
-    trustchainId: this._sessionData.trustchainId,
-    userId: this._sessionData.userId,
-    userKeys: this._keyStore.currentUserKey,
-    deviceType: this._sessionData.deviceType,
+    trustchainId: this._localUser.trustchainId,
+    userId: this._localUser.userId,
+    userKeys: this._localUser.currentUserKey,
+    deviceType: this._localUser.deviceType,
     authorDevice: {
-      id: this._sessionData.deviceId,
-      privateSignatureKey: this._keyStore.privateSignatureKey,
-      privateEncryptionKey: this._keyStore.privateEncryptionKey,
+      id: this._localUser.deviceId,
+      privateSignatureKey: this._localUser.privateSignatureKey,
+      privateEncryptionKey: this._localUser.privateEncryptionKey,
     }
   });
 
@@ -39,26 +36,26 @@ export class UnlockKeys {
   }
 
   _createUnlockKeyMessage = (password: ?string, email: ?string, unlockKey: ?string): Promise<UnlockKeyMessage> => createUnlockKeyMessage({
-    trustchainId: utils.toBase64(this._sessionData.trustchainId),
-    deviceId: utils.toBase64(this._sessionData.deviceId),
+    trustchainId: utils.toBase64(this._localUser.trustchainId),
+    deviceId: utils.toBase64(this._localUser.deviceId),
     email,
     password,
     unlockKey,
-    userSecret: this._sessionData.userSecret,
-    privateSigKey: this._keyStore.privateSignatureKey
+    userSecret: this._localUser.userSecret,
+    privateSigKey: this._localUser.privateSignatureKey
   });
 
-  _updateSessionData = (password: ?string, email: ?string): void => {
-    if (password && !this._sessionData.unlockMethods.some((m) => m.type === 'password')) {
-      this._sessionData.unlockMethods.push({ type: 'password' });
+  _updateLocalUser = (password: ?string, email: ?string): void => {
+    if (password && !this._localUser.unlockMethods.some((m) => m.type === 'password')) {
+      this._localUser.unlockMethods.push({ type: 'password' });
     }
-    if (email && !this._sessionData.unlockMethods.some((m) => m.type === 'email')) {
-      this._sessionData.unlockMethods.push({ type: 'email' });
+    if (email && !this._localUser.unlockMethods.some((m) => m.type === 'email')) {
+      this._localUser.unlockMethods.push({ type: 'email' });
     }
   }
 
   registerUnlock = async (password: ?string, email: ?string): Promise<void> => {
-    const isFirstRegister = this._sessionData.unlockMethods.length === 0;
+    const isFirstRegister = this._localUser.unlockMethods.length === 0;
     let block = null;
     let unlockKey = null;
 
@@ -75,15 +72,15 @@ export class UnlockKeys {
       await this._client.updateUnlockKey(msg);
     }
 
-    this._updateSessionData(password, email);
+    this._updateLocalUser(password, email);
   }
 
   acceptDevice = async (validationCode: b64string): Promise<void> => {
     const block = createDeviceFromValidationCode({
-      trustchainId: this._sessionData.trustchainId,
-      userId: this._sessionData.userId,
-      deviceKeys: this._keyStore.deviceKeys,
-      userKeys: this._keyStore.userKeys.slice(-1)[0],
+      trustchainId: this._localUser.trustchainId,
+      userId: this._localUser.userId,
+      deviceKeys: this._localUser.deviceKeys(),
+      userKeys: this._localUser.currentUserKey,
       validationCode
     });
     await this._client.sendBlock(block);

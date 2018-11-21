@@ -3,41 +3,16 @@
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 
+import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 import { NATURE, natureToString, NATURE_KIND, natureKind } from '../Blocks/payloads';
-import KeyStore from '../Session/Keystore';
+import LocalUser from '../Session/LocalUser';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-
-export type IndexUserKey = {|
-  userPublicKey: Uint8Array,
-  index: number,
-|};
-
-export type Device = {
-  deviceId: b64string,
-  devicePublicEncryptionKey: Uint8Array,
-  devicePublicSignatureKey: Uint8Array,
-  isGhostDevice: bool,
-  isServerDevice: bool,
-  createdAt: number,
-  revokedAt: number,
-};
-
-export type User = {
-  userId: b64string,
-  userPublicKeys: Array<IndexUserKey>,
-  devices: Array<Device>, //encryption
-};
 
 type DeviceToUser = {
   deviceId: b64string,
   userId: b64string,
 };
-
-export type UserPublicKeyToUser = {
-  userPublicKey: b64string,
-  userId: b64string,
-}
 
 export type FindUserParameters = {|
   userId?: Uint8Array,
@@ -57,20 +32,13 @@ export type FindDevicesParameters = {|
   hashedDeviceIds?: Array<Uint8Array>,
 |}
 
-export function getLastUserPublicKey(user: User): ?Uint8Array {
-  if (user.userPublicKeys.length === 0)
-    return;
-  return user.userPublicKeys.slice(-1)[0].userPublicKey;
-}
-
-const TABLE1 = 'users';
-const TABLE2 = 'devices_to_user';
-const TABLE3 = 'user_public_key_to_user';
+const USERS_TABLE = 'users';
+const DEVICES_USER_TABLE = 'devices_to_user';
+const USER_KEY_TABLE = 'user_public_key_to_user';
 
 export default class UserStore {
   _ds: DataStore<*>;
-  _userId: Uint8Array;
-  _keyStore: KeyStore;
+  _localUser: LocalUser;
 
   static schemas = [
     // this store didn't exist in schema version 1
@@ -78,66 +46,73 @@ export default class UserStore {
     {
       version: 2,
       tables: [{
-        name: TABLE1,
+        name: USERS_TABLE,
         indexes: [['userId']],
       },
       {
-        name: TABLE2,
+        name: DEVICES_USER_TABLE,
         indexes: [['deviceId']],
       },
       {
-        name: TABLE3,
+        name: USER_KEY_TABLE,
         indexes: [['userPublicKey']],
       }]
     },
     {
       version: 3,
       tables: [{
-        name: TABLE1,
+        name: USERS_TABLE,
         indexes: [['userId']],
       },
       {
-        name: TABLE2,
+        name: DEVICES_USER_TABLE,
         indexes: [['deviceId']],
       },
       {
-        name: TABLE3,
+        name: USER_KEY_TABLE,
         indexes: [['userPublicKey']],
       }]
     },
     {
       version: 4,
       tables: [{
-        name: TABLE1,
+        name: USERS_TABLE,
         indexes: [['userId']],
       },
       {
-        name: TABLE2,
+        name: DEVICES_USER_TABLE,
         indexes: [['deviceId']],
       },
       {
-        name: TABLE3,
+        name: USER_KEY_TABLE,
+        indexes: [['userPublicKey']],
+      }]
+    },
+    {
+      version: 5,
+      tables: [{
+        name: USERS_TABLE,
+        indexes: [['userId']],
+      },
+      {
+        name: DEVICES_USER_TABLE,
+        indexes: [['deviceId']],
+      },
+      {
+        name: USER_KEY_TABLE,
         indexes: [['userPublicKey']],
       }]
     },
   ];
 
-  constructor(ds: DataStore<*>, userId: Uint8Array, keyStore: KeyStore) {
+  constructor(ds: DataStore<*>) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
-    this._userId = userId;
-    this._keyStore = keyStore;
   }
 
-  static async open(ds: DataStore<*>, userId: Uint8Array, keyStore: KeyStore): Promise<UserStore> {
-    return new UserStore(ds, userId, keyStore);
+  setLocalUser = (localUser: LocalUser) => {
+    this._localUser = localUser;
   }
-
-  async close(): Promise<void> {
-    // $FlowIKnow
-    this._ds = null;
-  }
-
   // all entries are verified
   async applyEntry(entry: VerifiedDeviceCreation | VerifiedDeviceRevocation): Promise<User> {
     const updatedUsers = await this.applyEntries([entry]);
@@ -147,39 +122,39 @@ export default class UserStore {
   // all entries are verified
   async applyEntries(entries: Array<VerifiedDeviceCreation | VerifiedDeviceRevocation>): Promise<Array<User>> {
     const toBeStored = {
-      [TABLE1]: [],
-      [TABLE2]: [],
-      [TABLE3]: [],
+      [USERS_TABLE]: [],
+      [DEVICES_USER_TABLE]: [],
+      [USER_KEY_TABLE]: [],
     };
     const updatedUsers: Array<User> = [];
     for (const entry of entries) {
       const storeableEntry = await this._prepareEntry(entry);
 
-      if (utils.equalArray(entry.user_id, this._userId)) {
+      if (utils.equalArray(entry.user_id, this._localUser.userId)) {
         if (natureKind(entry.nature) === NATURE_KIND.device_creation) {
         // $FlowIKnow Type is checked by the switch
           const deviceEntry: VerifiedDeviceCreation = entry;
-          await this._keyStore.processDeviceCreationUserKeyPair(deviceEntry.hash, deviceEntry.public_encryption_key, deviceEntry.user_key_pair);
+          await this._localUser.applyDeviceCreation(deviceEntry);
         } else if (entry.user_keys) {
         // $FlowIKnow Type is checked by the switch
           const deviceEntry: VerifiedDeviceRevocation = entry;
-          await this._keyStore.processDeviceRevocationUserKeys(deviceEntry.device_id, deviceEntry.user_keys);
+          await this._localUser.applyDeviceRevocation(deviceEntry);
         }
       }
 
-      if (storeableEntry[TABLE1]) {
-        toBeStored[TABLE1].push(storeableEntry[TABLE1]);
-        updatedUsers.push(storeableEntry[TABLE1]);
+      if (storeableEntry[USERS_TABLE]) {
+        toBeStored[USERS_TABLE].push(storeableEntry[USERS_TABLE]);
+        updatedUsers.push(storeableEntry[USERS_TABLE]);
       }
-      if (storeableEntry[TABLE2])
-        toBeStored[TABLE2].push(storeableEntry[TABLE2]);
-      if (storeableEntry[TABLE3])
-        toBeStored[TABLE3].push(storeableEntry[TABLE3]);
+      if (storeableEntry[DEVICES_USER_TABLE])
+        toBeStored[DEVICES_USER_TABLE].push(storeableEntry[DEVICES_USER_TABLE]);
+      if (storeableEntry[USER_KEY_TABLE])
+        toBeStored[USER_KEY_TABLE].push(storeableEntry[USER_KEY_TABLE]);
     }
 
-    await this._ds.bulkPut(TABLE1, toBeStored[TABLE1]);
-    await this._ds.bulkPut(TABLE2, toBeStored[TABLE2]);
-    await this._ds.bulkPut(TABLE3, toBeStored[TABLE3]);
+    await this._ds.bulkPut(USERS_TABLE, toBeStored[USERS_TABLE]);
+    await this._ds.bulkPut(DEVICES_USER_TABLE, toBeStored[DEVICES_USER_TABLE]);
+    await this._ds.bulkPut(USER_KEY_TABLE, toBeStored[USER_KEY_TABLE]);
     return updatedUsers;
   }
 
@@ -203,39 +178,10 @@ export default class UserStore {
     }
   }
 
-  async _prepareDeviceCreation(record: VerifiedDeviceCreation) {
-    const b64Id = utils.toBase64(record.user_id);
-
-    const existing = await this.findUser({ userId: record.user_id });
-
-    let oldDevices = [];
-    let userPublicKeys = record.user_key_pair ? [{ userPublicKey: record.user_key_pair.public_encryption_key, index: record.index }] : [];
-    if (existing) {
-      oldDevices = existing.devices;
-      userPublicKeys = existing.userPublicKeys; // eslint-disable-line prefer-destructuring
-    }
-    const newDevice: Device = {
-      deviceId: utils.toBase64(record.hash),
-      devicePublicEncryptionKey: record.public_encryption_key,
-      devicePublicSignatureKey: record.public_signature_key,
-      createdAt: record.index,
-      isGhostDevice: record.is_ghost_device,
-      isServerDevice: record.is_server_device,
-      revokedAt: Number.MAX_SAFE_INTEGER,
-    };
-
-    for (const existingDev of oldDevices) {
-      if (existingDev.deviceId === newDevice.deviceId)
-        console.warn('Assertion error: Adding an already existing device.');
-    }
-
-    const user = {
-      _id: b64Id,
-      userId: b64Id,
-      userPublicKeys,
-      devices: [...oldDevices, newDevice],
-    };
-
+  async _prepareDeviceCreation(deviceCreation: VerifiedDeviceCreation) {
+    const b64Id = utils.toBase64(deviceCreation.user_id);
+    const existing = await this.findUser({ userId: deviceCreation.user_id });
+    const { updatedUser, newDevice } = applyDeviceCreationToUser(deviceCreation, existing);
     const deviceToUser = {
       _id: newDevice.deviceId,
       deviceId: newDevice.deviceId,
@@ -245,53 +191,44 @@ export default class UserStore {
     };
 
     const storeableEntry: Object = {
-      [TABLE1]: user,
-      [TABLE2]: deviceToUser,
+      [USERS_TABLE]: updatedUser,
+      [DEVICES_USER_TABLE]: deviceToUser,
     };
 
-    if (record.user_key_pair) {
-      const userPublicKey = utils.toBase64(record.user_key_pair.public_encryption_key);
+    if (deviceCreation.user_key_pair) {
+      const userPublicKey = utils.toBase64(deviceCreation.user_key_pair.public_encryption_key);
       const userPublicKeyToUser = {
         _id: userPublicKey,
         userPublicKey,
         userId: b64Id,
       };
-      storeableEntry[TABLE3] = userPublicKeyToUser;
+      storeableEntry[USER_KEY_TABLE] = userPublicKeyToUser;
     }
     return storeableEntry;
   }
 
-  async _prepareDeviceRevocation(record: VerifiedDeviceRevocation) {
-    if (!record.user_id) {
+  async _prepareDeviceRevocation(deviceRevocation: VerifiedDeviceRevocation) {
+    if (!deviceRevocation.user_id) {
       throw new Error('Missing user_id in the record');
     }
 
-    const b64DevId = utils.toBase64(record.device_id);
-
-    const existing = await this.findUser({ userId: record.user_id });
-    if (!existing)
+    const user = await this.findUser({ userId: deviceRevocation.user_id });
+    if (!user)
       throw new Error('User not found!');
 
-    const deviceIndex = findIndex(existing.devices, (d) => d.deviceId === b64DevId);
-    if (deviceIndex === -1)
-      throw new Error('Device not found!');
-    existing.devices[deviceIndex].revokedAt = record.index;
+    const { updatedUser, userPublicKey } = applyDeviceRevocationToUser(deviceRevocation, user);
 
     const storeableEntry: Object = {
-      [TABLE1]: existing,
+      [USERS_TABLE]: updatedUser,
     };
-    if (record.nature !== NATURE.device_revocation_v1) {
-      if (!record.user_keys)
-        throw new Error('Somehow we have a DR2 without a new user key?');
-      const userPublicKey = record.user_keys.public_encryption_key;
-      existing.userPublicKeys.push({ userPublicKey, index: record.index });
+    if (userPublicKey) {
       const b64UserPublicKey = utils.toBase64(userPublicKey);
       const userPublicKeyToUser = {
         _id: b64UserPublicKey,
         userPublicKey: b64UserPublicKey,
-        userId: existing.userId,
+        userId: user.userId,
       };
-      storeableEntry[TABLE3] = userPublicKeyToUser;
+      storeableEntry[USER_KEY_TABLE] = userPublicKeyToUser;
     }
     return storeableEntry;
   }
@@ -312,7 +249,7 @@ export default class UserStore {
       throw new Error(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (userId) {
-      const record = await this._ds.first(TABLE1, {
+      const record = await this._ds.first(USERS_TABLE, {
         selector: { userId: utils.toBase64(userId) },
       });
       return record;
@@ -327,7 +264,7 @@ export default class UserStore {
     }
 
     if (userPublicKey) {
-      const publicKeyToUser = await this._ds.first(TABLE3, {
+      const publicKeyToUser = await this._ds.first(USER_KEY_TABLE, {
         selector: { userPublicKey: utils.toBase64(userPublicKey) },
       });
       if (!publicKeyToUser)
@@ -348,7 +285,7 @@ export default class UserStore {
       throw new Error('Find: invalid argument');
 
     const b64HashedUserIds = hashedUserIds.map(id => utils.toBase64(id));
-    return this._ds.find(TABLE1, {
+    return this._ds.find(USERS_TABLE, {
       selector: {
         userId: { $in: b64HashedUserIds },
       },
@@ -361,7 +298,7 @@ export default class UserStore {
       throw new Error(`findUserDeviceToUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (deviceId) {
-      const record = await this._ds.first(TABLE2, {
+      const record = await this._ds.first(DEVICES_USER_TABLE, {
         selector: { deviceId: utils.toBase64(deviceId) },
       });
       return record;
@@ -376,7 +313,7 @@ export default class UserStore {
       throw new Error(`findDevicesToUsers: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (hashedDeviceIds) {
-      return this._ds.find(TABLE2, {
+      return this._ds.find(DEVICES_USER_TABLE, {
         selector: {
           deviceId: { $in: hashedDeviceIds.map(utils.toBase64) }
         }

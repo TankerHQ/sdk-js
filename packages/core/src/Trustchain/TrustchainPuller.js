@@ -4,12 +4,12 @@ import uniq from 'lodash.uniqby';
 
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
-import TrustchainStore, { blockToEntry } from '../Trustchain/TrustchainStore';
+import TrustchainStore, { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
-import { type UnverifiedEntry } from '../Blocks/entries';
-
+import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import TrustchainVerifier from './TrustchainVerifier';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
+
 
 import {
   isKeyPublish,
@@ -18,6 +18,7 @@ import {
   unserializeBlock,
   NATURE_KIND,
 } from '../Blocks/payloads';
+
 
 export default class TrustchainPuller {
   _catchUpInProgress: ?Promise<void> = null;
@@ -156,9 +157,9 @@ export default class TrustchainPuller {
     }
 
     if (trustchainCreationEntry) {
-      await this._trustchainStore.addTrustchainCreation(trustchainCreationEntry);
+      const trustchainCreation: UnverifiedTrustchainCreation = { ...trustchainCreationEntry, ...trustchainCreationEntry.payload_unverified };
       // force trustchain creation verification (to avoid corner cases)
-      await this._trustchainVerifier.verifyTrustchainCreation(trustchainCreationEntry);
+      await this._trustchainVerifier.verifyTrustchainCreation(trustchainCreation);
     }
 
     const newUserEntries = await this._unverifiedStore.addUnverifiedUserEntries(userEntries);

@@ -7,7 +7,7 @@ import { tcrypto, random } from '@tanker/crypto';
 
 import { expect } from './chai';
 
-import { extractUserData } from '../Tokens/SessionTypes';
+import { extractUserData } from '../Tokens/UserData';
 import { createUserToken, createServerToken } from './TestSessionTokens';
 
 import { SessionOpener } from '../Session/SessionOpener';
@@ -20,15 +20,24 @@ import Storage from '../Session/Storage';
 
 class MockStorage {
   keyStore;
+  userStore;
+
   constructor() {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
+    const userKeyPair = tcrypto.makeEncryptionKeyPair();
     this.keyStore = {
       publicSignatureKey: signatureKeyPair.publicKey,
       privateSignatureKey: signatureKeyPair.privateKey,
       publicEncryptionKey: encryptionKeyPair.publicKey,
+      signatureKeyPair,
+      encryptionKeyPair,
       wasRevoked: false,
       deviceId: random(tcrypto.HASH_SIZE),
+      userKeys: [userKeyPair]
+    };
+    this.userStore = {
+      setLocalUser: () => {},
     };
   }
   hasLocalDevice = () => true;
