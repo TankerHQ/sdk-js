@@ -7,32 +7,30 @@ import { aead, tcrypto } from '@tanker/crypto';
 import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { Uint8Stream } from '../Uint8Stream';
-import { defaultOutputSize, defaultEncryptionSize, encryptionSizeOverhead, configureInputStream, configureOutputStream, type ResourceIdKeyMapper, type StreamDecryptorParameters } from './StreamConfigs';
+import { defaultOutputSize, defaultDecryptionSize, configureInputStream, configureOutputStream, type ResourceIdKeyMapper, type StreamDecryptorParameters } from './StreamConfigs';
 import PromiseWrapper from '../PromiseWrapper';
 
 export default class StreamDecryptor {
   _mapper: ResourceIdKeyMapper;
-  _onData: (Uint8Array) => Promise<void> | void;
   _onEnd: () => Promise<void> | void;
-  _onError = (error) => {
-    throw error;
-  }
   _outputSize: number = defaultOutputSize;
   _decryptionSize: number;
 
   _resourceIdKeyPair: ?ResourceIdKeyPair;
   _index = 0;
-  _waitingPromises: Array<PromiseWrapper<void>> = [];
+  _waitingPromise: PromiseWrapper<void> = new PromiseWrapper();
   _endPromise: PromiseWrapper<void> = new PromiseWrapper();
 
   _inputStream: Uint8Stream;
   _decryptionStream: Transform;
   _outputStream: Uint8Stream;
 
-  constructor(mapper: ResourceIdKeyMapper, parameters: StreamDecryptorParameters, decryptionSize: number = defaultEncryptionSize + encryptionSizeOverhead) {
+  constructor(mapper: ResourceIdKeyMapper, parameters: StreamDecryptorParameters, decryptionSize: number = defaultDecryptionSize) {
     this._mapper = mapper;
-    this._onData = parameters.onData;
     this._onEnd = parameters.onEnd;
+    const onError = (error) => {
+      throw error;
+    };
     this._decryptionSize = decryptionSize;
     if (parameters.blockSize) {
       this._outputSize = parameters.blockSize;
@@ -40,25 +38,24 @@ export default class StreamDecryptor {
 
     this._inputStream = configureInputStream(this._decryptionSize, {
       onDrain: () => {
-        for (const promise of this._waitingPromises) {
-          promise.resolve();
-        }
-        this._waitingPromises = [];
+        const promise = this._waitingPromise;
+        this._waitingPromise = new PromiseWrapper();
+        promise.resolve();
       },
-      onError: this._onError
+      onError
     });
-    this._configureEncryptionStream();
+    this._configureDecryptionStream(onError);
     this._outputStream = configureOutputStream(this._outputSize, {
-      onData: this._onData,
+      onData: parameters.onData,
       onEnd: this._endPromise.resolve,
-      onError: this._onError
+      onError
     });
 
     this._inputStream.pipe(this._decryptionStream).pipe(this._outputStream);
   }
 
 
-  _configureEncryptionStream() {
+  _configureDecryptionStream(onError: Function) {
     const deriveKey = this._deriveKey.bind(this);
     this._decryptionStream = new Transform({
       writableHighWaterMark: this._decryptionSize,
@@ -76,7 +73,7 @@ export default class StreamDecryptor {
       }
     });
 
-    this._decryptionStream.on('error', this._onError);
+    this._decryptionStream.on('error', onError);
   }
 
   _deriveKey() {
@@ -140,9 +137,7 @@ export default class StreamDecryptor {
     }
 
     if (!this._inputStream.write(data)) {
-      const promiseWrapper = new PromiseWrapper();
-      this._waitingPromises.push(promiseWrapper);
-      return promiseWrapper.promise;
+      return this._waitingPromise.promise;
     }
   }
 
