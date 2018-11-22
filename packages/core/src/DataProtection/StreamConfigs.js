@@ -1,14 +1,12 @@
 // @flow
 
-import { type Key } from '@tanker/crypto';
+import { type Key, tcrypto } from '@tanker/crypto';
 import { type ShareWithOptions } from './ShareWithOptions';
 import { Uint8Stream } from '../Uint8Stream';
 
-export const defaultEncryptionSize = Number('10e5');
+export const defaultEncryptionSize = 1024 * 1024;
 export const defaultOutputSize = defaultEncryptionSize;
-
-// TODO: mv this const to tcrypto
-export const encryptionSizeOverhead = 40;
+export const defaultDecryptionSize = defaultEncryptionSize + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
 
 export const streamEncryptorVersion = 1;
 
