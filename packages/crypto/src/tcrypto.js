@@ -15,6 +15,7 @@ export const ENCRYPTION_PRIVATE_KEY_SIZE = 32;
 
 export const SIGNATURE_SIZE = 64;
 export const MAC_SIZE = 16;
+export const SYMMETRIC_ENCRYPTION_OVERHEAD = XCHACHA_IV_SIZE + MAC_SIZE;
 export const HASH_SIZE = 32;
 export const SEALED_KEY_SIZE = 80;
 export const SEALED_ENCRYPTION_PRIVATE_KEY_SIZE = 80;
