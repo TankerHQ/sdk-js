@@ -15,6 +15,9 @@ import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
+import EncryptorStream from './DataProtection/EncryptorStream';
+import DecryptorStream from './DataProtection/DecryptorStream';
+
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 import { TANKER_SDK_VERSION as version } from './version';
 
@@ -466,6 +469,26 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('groupId', 'string', groupId);
 
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
+  }
+
+  async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
+    this.assert(this.OPEN, 'make a stream encryptor');
+
+    if (!validateEncryptionOptions(options))
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
+
+    const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
+
+    if (param.shareWithSelf === false && isShareWithOptionsEmpty(param))
+      throw new InvalidArgument('parameters.shareOptions.shareWith*', 'parameters.shareWithUser or parameters.shareWithGroups must contain recipients when parameters.shareWithSelf === false', param);
+
+    return this._session.dataProtector.makeEncryptorStream(param);
+  }
+
+  async makeDecryptorStream(): Promise<DecryptorStream> {
+    this.assert(this.OPEN, 'make a stream decryptor');
+
+    return this._session.dataProtector.makeDecryptorStream();
   }
 }
 
