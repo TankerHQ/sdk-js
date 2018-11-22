@@ -1,14 +1,17 @@
 // @flow
 
 import { utils } from '@tanker/crypto';
-import { mergeSchemas, type DataStore } from '@tanker/datastore-base';
+import { errors as dbErrors, mergeSchemas, type DataStore } from '@tanker/datastore-base';
 
 import KeyStore from '../Session/Keystore';
 import ResourceStore from '../Resource/ResourceStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
-import TrustchainStore from '../Trustchain/TrustchainStore';
+import TrustchainStore, { TABLE_METADATA } from '../Trustchain/TrustchainStore';
 import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+
+const STORAGE_VERSION_KEY = 'storageVersion';
+const CURRENT_STORAGE_VERSION = 1;
 
 export type DataStoreOptions = {
   adapter: Function,
@@ -80,7 +83,7 @@ export default class Storage {
     this._trustchainStore = await TrustchainStore.open(this._datastore);
     this._unverifiedStore = await UnverifiedStore.open(this._datastore);
 
-    await this._clearStaleCaches();
+    await this._checkVersion();
   }
 
   async close() {
@@ -102,18 +105,21 @@ export default class Storage {
     await this._keyStore.close();
   }
 
-
-  async _clearStaleCaches(): Promise<void> {
-    // TODO: storage version & current version
-    const USER_STORE = 'users';
-    const GROUP_STORE = 'groups';
-    // Migration: The UserStore is missing important info, including signature keys
-    const anyUser = await this._datastore.first(USER_STORE);
-    // Migration: The GroupStore needs to encrypt private group keys.
-    const anyGroup = await this._datastore.first(GROUP_STORE);
-    if ((anyUser && anyUser.devices[0].devicePublicSignatureKey === undefined) || (anyGroup && anyGroup.encryptedPrivateKeys === undefined)) {
-      console.warn('Trustchain migration');
+  async _checkVersion(): Promise<void> {
+    let currentVersion;
+    try {
+      const record = await this._datastore.get(TABLE_METADATA, STORAGE_VERSION_KEY);
+      currentVersion = record.storageVersion;
+    } catch (e) {
+      if (!(e instanceof dbErrors.RecordNotFound)) {
+        throw e;
+      }
+    }
+    if (currentVersion && currentVersion < CURRENT_STORAGE_VERSION) {
       await this.cleanupCaches();
+    }
+    if (!currentVersion || currentVersion < CURRENT_STORAGE_VERSION) {
+      await this._datastore.put(TABLE_METADATA, { _id: STORAGE_VERSION_KEY, storageVersion: CURRENT_STORAGE_VERSION });
     }
   }
 
