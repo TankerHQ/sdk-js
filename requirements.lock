@@ -1,5 +1,5 @@
 # Generated with dmenv 0.4.2, python 3.6.7, on Linux
--e git+ssh://git@10.100.0.1/Tanker/ci@a49a9a09dc74abc8d59b1552268d5ac5696382a6#egg=ci
+-e git+ssh://git@10.100.0.1/Tanker/ci@b83a8e44fbd2e2d7b23b24bbb1a2a80fde4fc878#egg=ci
 attrs==18.2.0
 colorama==0.3.9
 importlib-metadata==0.6
