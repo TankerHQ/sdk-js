@@ -8,8 +8,9 @@ export type UnverifiedTrustchainCreation = {
   public_signature_key: Uint8Array,
 }
 
+export const TABLE_METADATA = 'trustchain_metadata';
+
 const TABLE = 'trustchain';
-const TABLE_METADATA = 'trustchain_metadata';
 const LAST_BLOCK_INDEX_KEY = 'lastBlockIndex';
 const TRUSTCHAIN_PUBLIC_KEY = 'trustchainPublicKey';
 
