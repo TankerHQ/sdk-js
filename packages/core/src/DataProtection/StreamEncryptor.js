@@ -12,11 +12,7 @@ import { InvalidArgument } from '../errors';
 import { streamEncryptorVersion, defaultOutputSize, defaultEncryptionSize, configureInputStream, configureOutputStream, type StreamEncryptorParameters } from './StreamConfigs';
 
 export default class StreamEncryptor {
-  _onData: (Uint8Array) => Promise<void> | void;
   _onEnd: () => Promise<void> | void;
-  _onError = (err) => {
-    throw err;
-  };
   _outputSize: number = defaultOutputSize;
   _encryptionSize: number;
 
@@ -24,7 +20,7 @@ export default class StreamEncryptor {
   _key: Uint8Array;
   _index = 0;
 
-  _waitingPromises: Array<PromiseWrapper<void>> = [];
+  _waitingPromise: PromiseWrapper<void> = new PromiseWrapper();
   _endPromise: PromiseWrapper<void> = new PromiseWrapper();
 
   _inputStream: Uint8Stream;
@@ -32,8 +28,10 @@ export default class StreamEncryptor {
   _outputStream: Uint8Stream;
 
   constructor(resourceId: Uint8Array, key: Uint8Array, parameters: StreamEncryptorParameters, encryptionSize: number = defaultEncryptionSize) {
-    this._onData = parameters.onData;
     this._onEnd = parameters.onEnd;
+    const onError = (error) => {
+      throw error;
+    };
     this._encryptionSize = encryptionSize;
     if (parameters.blockSize) {
       this._outputSize = parameters.blockSize;
@@ -44,18 +42,17 @@ export default class StreamEncryptor {
 
     this._inputStream = configureInputStream(this._encryptionSize, {
       onDrain: () => {
-        for (const promise of this._waitingPromises) {
-          promise.resolve();
-        }
-        this._waitingPromises = [];
+        const promise = this._waitingPromise;
+        this._waitingPromise = new PromiseWrapper();
+        promise.resolve();
       },
-      onError: this._onError,
+      onError
     });
-    this._configureEncryptionStream();
+    this._configureEncryptionStream(onError);
     this._outputStream = configureOutputStream(this._outputSize, {
-      onData: this._onData,
+      onData: parameters.onData,
       onEnd: this._endPromise.resolve,
-      onError: this._onError
+      onError
     });
 
     this._inputStream.pipe(this._encryptionStream).pipe(this._outputStream);
@@ -63,7 +60,7 @@ export default class StreamEncryptor {
     this._writeHeader();
   }
 
-  _configureEncryptionStream() {
+  _configureEncryptionStream(onError: Function) {
     const deriveKey = this._deriveKey.bind(this);
     this._encryptionStream = new Transform({
       writableHighWaterMark: this._encryptionSize,
@@ -77,7 +74,7 @@ export default class StreamEncryptor {
       }
     });
 
-    this._encryptionStream.on('error', this._onError);
+    this._encryptionStream.on('error', onError);
   }
 
   _writeHeader() {
@@ -100,9 +97,7 @@ export default class StreamEncryptor {
       throw new InvalidArgument('clearData', 'Uint8Array', clearData);
 
     if (!this._inputStream.write(clearData)) {
-      const promiseWrapper = new PromiseWrapper();
-      this._waitingPromises.push(promiseWrapper);
-      return promiseWrapper.promise;
+      return this._waitingPromise.promise;
     }
   }
 
