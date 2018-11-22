@@ -268,3 +268,13 @@ export class UpgradeRequiredError extends Error {
     this.message = message;
   }
 }
+
+export class NotEnoughData extends Error {
+  message: string;
+
+  constructor(message: string) {
+    super(`Not enough data available: ${message}`);
+    this.name = 'NotEnoughData';
+    this.message = message;
+  }
+}
