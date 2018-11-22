@@ -481,7 +481,7 @@ export class Tanker extends EventEmitter {
     if (!validateShareWithOptions(parameters.shareOptions))
       throw new InvalidArgument('parameters.shareOptions', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', parameters.shareOptions || {});
 
-    const param = { shareWithSelf: (this._session.sessionData.deviceType === DEVICE_TYPE.client_device), ...parameters };
+    const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...parameters };
 
     if (param.shareWithSelf === false && isShareWithOptionsEmpty(param))
       throw new InvalidArgument('parameters.shareOptions.shareWith*', 'parameters.shareWithUser or parameters.shareWithGroups must contain recipients when parameters.shareWithSelf === false', param);
