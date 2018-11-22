@@ -6,7 +6,7 @@ import { utils, tcrypto, aead } from '@tanker/crypto';
 
 import { expect } from './chai';
 import StreamEncryptor from '../DataProtection/StreamEncryptor';
-import { defaultOutputSize, encryptionSizeOverhead } from '../DataProtection/StreamConfigs';
+import { defaultOutputSize } from '../DataProtection/StreamConfigs';
 import { InvalidArgument } from '../errors';
 
 describe('Stream Encryptor', () => {
@@ -95,7 +95,7 @@ describe('Stream Encryptor', () => {
     await stream.close();
 
     let offset = tcrypto.MAC_SIZE + 1;
-    const eLength = msg.length + encryptionSizeOverhead;
+    const eLength = msg.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
     const emsg1 = buffer[0].subarray(offset, offset + eLength);
     offset += eLength;
     const emsg2 = buffer[0].subarray(offset, offset + eLength);
