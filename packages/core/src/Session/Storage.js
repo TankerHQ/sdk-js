@@ -115,10 +115,8 @@ export default class Storage {
         throw e;
       }
     }
-    if (currentVersion && currentVersion < CURRENT_STORAGE_VERSION) {
-      await this.cleanupCaches();
-    }
     if (!currentVersion || currentVersion < CURRENT_STORAGE_VERSION) {
+      await this.cleanupCaches();
       await this._datastore.put(TABLE_METADATA, { _id: STORAGE_VERSION_KEY, storageVersion: CURRENT_STORAGE_VERSION });
     }
   }
@@ -127,7 +125,6 @@ export default class Storage {
     const currentSchema = this._schemas[this._schemas.length - 1];
     const cacheTables = currentSchema.tables.filter(t => !t.persistent).map(t => t.name);
     for (const table of cacheTables) {
-      console.warn(`Data migration: cleaning table ${table}`);
       await this._datastore.clear(table);
     }
     await this._keyStore.clearCache();
