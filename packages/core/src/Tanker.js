@@ -467,8 +467,8 @@ export class Tanker extends EventEmitter {
 
     assertStreamParameters(parameters);
 
-    if (!validateShareWithOptions(parameters.shareOptions))
-      throw new InvalidArgument('parameters.shareOptions', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', parameters.shareOptions || {});
+    if (!validateEncryptionOptions(parameters.shareOptions))
+      throw new InvalidArgument('parameters.shareOptions', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', parameters.shareOptions);
 
     const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...parameters };
 

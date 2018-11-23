@@ -4,7 +4,7 @@ import varint from 'varint';
 import { Transform } from 'readable-stream';
 
 import { aead, tcrypto } from '@tanker/crypto';
-import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
+import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, BrokenStream, DecryptFailed, StreamAlreadyClosed } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { Uint8Stream } from '../Uint8Stream';
 import { defaultOutputSize, defaultDecryptionSize, configureInputStream, configureOutputStream, type ResourceIdKeyMapper, type StreamDecryptorParameters } from './StreamConfigs';
@@ -18,8 +18,10 @@ export default class StreamDecryptor {
 
   _resourceIdKeyPair: ?ResourceIdKeyPair;
   _index = 0;
-  _waitingPromise: PromiseWrapper<void> = new PromiseWrapper();
-  _endPromise: PromiseWrapper<void> = new PromiseWrapper();
+  _waitingPromise: ?PromiseWrapper<void>;
+  _endPromise: ?PromiseWrapper<void>;
+  _error: ?Error;
+  _closed: bool = false;
 
   _inputStream: Uint8Stream;
   _decryptionStream: Transform;
@@ -29,7 +31,21 @@ export default class StreamDecryptor {
     this._mapper = mapper;
     this._onEnd = parameters.onEnd;
     const onError = (error) => {
-      throw error;
+      this._error = error;
+      try {
+        if (parameters.onError) {
+          parameters.onError(error);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (this._waitingPromise) {
+          this._waitingPromise.reject(new BrokenStream(error));
+        }
+        if (this._endPromise) {
+          this._endPromise.reject(new BrokenStream(error));
+        }
+      }
     };
     this._decryptionSize = decryptionSize;
     if (parameters.blockSize) {
@@ -38,16 +54,24 @@ export default class StreamDecryptor {
 
     this._inputStream = configureInputStream(this._decryptionSize, {
       onDrain: () => {
-        const promise = this._waitingPromise;
-        this._waitingPromise = new PromiseWrapper();
-        promise.resolve();
+        if (this._waitingPromise) {
+          const promise = this._waitingPromise;
+          delete this._waitingPromise;
+          promise.resolve();
+        }
       },
       onError
     });
     this._configureDecryptionStream(onError);
     this._outputStream = configureOutputStream(this._outputSize, {
       onData: parameters.onData,
-      onEnd: this._endPromise.resolve,
+      onEnd: () => {
+        if (this._endPromise) {
+          this._endPromise.resolve();
+        } else {
+          throw new Error('Stream is closing without endPromise');
+        }
+      },
       onError
     });
 
@@ -57,18 +81,24 @@ export default class StreamDecryptor {
 
   _configureDecryptionStream(onError: Function) {
     const deriveKey = this._deriveKey.bind(this);
+    const resourceId = (() =>
+      // $FlowIKnow _resourceKeyPair is always defined during write
+      this._resourceIdKeyPair.resourceId
+    );
     this._decryptionStream = new Transform({
       writableHighWaterMark: this._decryptionSize,
       readableHighWaterMark: this._outputSize,
 
-      async transform(chunk, encoding, callback) {
+      transform: async function transform(chunk, encoding, callback) {
+        let clearData;
+        const subKey = deriveKey();
         try {
-          const subKey = deriveKey();
-          const clearData = await aead.decryptAEADv2(subKey, chunk);
-          this.push(clearData);
-        } catch (err) {
-          return callback(err);
+          clearData = await aead.decryptAEADv2(subKey, chunk);
+        } catch (error) {
+          return callback(new DecryptFailed(error, resourceId()));
         }
+
+        this.push(clearData);
         callback();
       }
     });
@@ -125,6 +155,13 @@ export default class StreamDecryptor {
     if (!(encryptedData instanceof Uint8Array))
       throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
+    if (this._error) {
+      throw new BrokenStream(this._error);
+    }
+    if (this._closed) {
+      throw new StreamAlreadyClosed();
+    }
+
     let data = encryptedData;
     if (!this._resourceIdKeyPair) {
       const { header, remaining } = await this._extractHeader(encryptedData);
@@ -137,14 +174,26 @@ export default class StreamDecryptor {
     }
 
     if (!this._inputStream.write(data)) {
+      if (!this._waitingPromise) {
+        this._waitingPromise = new PromiseWrapper();
+      }
       return this._waitingPromise.promise;
     }
   }
 
   async close(): Promise<void> {
-    this._inputStream.end();
-    await this._endPromise.promise;
+    if (this._error) {
+      throw new BrokenStream(this._error);
+    }
+    if (this._closed) {
+      throw new StreamAlreadyClosed();
+    }
 
+    this._closed = true;
+    this._endPromise = new PromiseWrapper();
+    this._inputStream.end();
+    // $FlowIKnow got assigne two ligne upper
+    await this._endPromise.promise;
     return this._onEnd();
   }
 }
