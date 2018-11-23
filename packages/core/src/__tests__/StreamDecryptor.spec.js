@@ -8,7 +8,8 @@ import { expect } from './chai';
 import StreamDecryptor from '../DataProtection/StreamDecryptor';
 import { concatArrays } from '../Blocks/Serialize';
 import { defaultOutputSize } from '../DataProtection/StreamConfigs';
-import { InvalidArgument } from '../errors';
+import { InvalidArgument, StreamAlreadyClosed, DecryptFailed, BrokenStream, NotEnoughData, InvalidEncryptionFormat } from '../errors';
+import PromiseWrapper from '../PromiseWrapper';
 
 async function encryptMsg(key, index, str) {
   const msg = utils.fromString(str);
@@ -55,21 +56,6 @@ describe('Stream Decryptor', () => {
     streamConfig.onEnd.resetHistory();
     streamConfig.blockSize = defaultOutputSize;
     buffer = [];
-  });
-
-  it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
-    const stream = new StreamDecryptor(mapper, streamConfig);
-
-    // $FlowExpectedError
-    await expect(stream.write(undefined)).to.be.rejectedWith(InvalidArgument);
-    // $FlowExpectedError
-    await expect(stream.write(10)).to.be.rejectedWith(InvalidArgument);
-    // $FlowExpectedError
-    await expect(stream.write(null)).to.be.rejectedWith(InvalidArgument);
-    // $FlowExpectedError
-    await expect(stream.write('fail')).to.be.rejectedWith(InvalidArgument);
-    // $FlowExpectedError
-    await expect(stream.write({})).to.be.rejectedWith(InvalidArgument);
   });
 
   it('derives its key and decrypt block of fixed size', async () => {
@@ -132,5 +118,136 @@ describe('Stream Decryptor', () => {
     decryptedRessource = utils.concatArrays(decryptedRessource, buffer[buffer.length - 1]);
 
     expect(decryptedRessource).to.deep.equal(msg.clear);
+  });
+
+  describe('Errors', () => {
+    let ref;
+
+    beforeEach(async () => {
+      ref = [];
+      const msg1 = await encryptMsg(key, 0, '1st message');
+      const msg2 = await encryptMsg(key, 1, '2nd message');
+      const resourceId = utils.fromString('1234567812345678');
+      const header = concatArrays(varint.encode(1), resourceId);
+
+      ref.push(header);
+      ref.push(msg1.encrypted);
+      ref.push(msg2.encrypted);
+    });
+
+    it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
+      const stream = new StreamDecryptor(mapper, streamConfig);
+
+      // $FlowExpectedError
+      await expect(stream.write(undefined)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(stream.write(10)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(stream.write(null)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(stream.write('fail')).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(stream.write({})).to.be.rejectedWith(InvalidArgument);
+    });
+
+    it('throws StreamAlreadyClosed when a second close is called', async () => {
+      const stream = new StreamDecryptor(mapper, streamConfig);
+
+      const promise = stream.close();
+
+      await expect(stream.close()).to.be.rejectedWith(StreamAlreadyClosed);
+      await expect(promise).to.be.fulfilled;
+    });
+
+    it('throws StreamAlreadyClosed when write is called after close', async () => {
+      const stream = new StreamDecryptor(mapper, streamConfig);
+
+      const promise = stream.close();
+
+      await expect(stream.write(new Uint8Array(10))).to.be.rejectedWith(StreamAlreadyClosed);
+      await expect(promise).to.be.fulfilled;
+    });
+
+    it('throws DecryptFailed when data is corrupted', async () => {
+      const sync = new PromiseWrapper();
+      let resultError;
+      const decryptor = new StreamDecryptor(mapper, {
+        onData: () => { },
+        onEnd: () => { },
+        onError: (err) => {
+          resultError = err;
+          sync.resolve();
+        }
+      }, ref[1].length);
+
+      ref[1][0] += 1;
+      await decryptor.write(ref[0]); // header
+      await expect(decryptor.write(ref[1])).to.be.rejectedWith(BrokenStream); // corrupted chunk
+      await expect(decryptor.close()).to.be.rejectedWith(BrokenStream);
+      await sync.promise;
+      expect(resultError).to.be.an.instanceof(DecryptFailed);
+    });
+
+    it('throws NotEnoughData when the header is not fully given during first write', async () => {
+      const decryptor = new StreamDecryptor(mapper, {
+        onData: () => { },
+        onEnd: () => { }
+      }, ref[1].length);
+
+      const incompleteHeader = ref[0].subarray(0, 1);
+      await expect(decryptor.write(incompleteHeader)).to.be.rejectedWith(NotEnoughData);
+    });
+
+    it('throws InvalidEncryptionFormat when the header is corrupted', async () => {
+      const decryptor = new StreamDecryptor(mapper, {
+        onData: () => { },
+        onEnd: () => { }
+      }, ref[1].length);
+
+      await expect(decryptor.write(ref[1])).to.be.rejectedWith(InvalidEncryptionFormat);
+    });
+
+    it('throws DecryptFailed when data is written in wrong order', async () => {
+      const sync = new PromiseWrapper();
+      let resultError;
+      const decryptor = new StreamDecryptor(mapper, {
+        onData: () => { },
+        onEnd: () => { },
+        onError: (err) => {
+          resultError = err;
+          sync.resolve();
+        }
+      }, ref[1].length);
+
+      await decryptor.write(ref[0]);
+      await expect(decryptor.write(ref[2])).to.be.rejectedWith(BrokenStream);
+
+      await expect(decryptor.close()).to.be.rejectedWith(BrokenStream);
+      await sync.promise;
+      expect(resultError).to.be.an.instanceof(DecryptFailed);
+    });
+
+    it('forwards \'onData\' errors to \'onError\'', async () => {
+      const error = new Error('error thrown by onData');
+      const sync = new PromiseWrapper();
+      let resultError;
+
+      const decryptor = new StreamDecryptor(mapper, {
+        onData: () => { throw error; },
+        onEnd: () => { },
+        onError: (err) => {
+          resultError = err;
+          sync.resolve();
+        },
+        outputSize: 1
+      }, ref[1].length);
+
+      await decryptor.write(ref[0]);
+      await expect(decryptor.write(ref[1])).to.be.rejectedWith(BrokenStream);
+      await expect(decryptor.close()).to.be.rejectedWith(BrokenStream);
+
+      await sync.promise;
+      await expect(resultError).to.equal(error);
+    });
   });
 });
