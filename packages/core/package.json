@@ -19,6 +19,7 @@
     "async-mutex": "^0.1.2",
     "engine.io-client": "git+https://github.com/TankerHQ/engine.io-client.git#cfb6fa113fb5dc22e08777bd8fc6b6701f00ba67",
     "lodash.uniqby": "^4.7.0",
+    "readable-stream": "^3.0.6",
     "socket.io-client": "git+https://github.com/TankerHQ/socket.io-client.git#d09a5b73b6075b88b6722575bc5e24e9f7d4eb1d",
     "varint": "^5.0.0"
   },
