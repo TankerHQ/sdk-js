@@ -13,6 +13,7 @@ export const streamEncryptorVersion = 1;
 export type StreamEncryptorParameters = {
   onData: (Uint8Array) => Promise<void> | void,
   onEnd: () => Promise<void> | void,
+  onError?: (Error) => Promise<void> | void,
   blockSize?: number,
   shareOptions?: ShareWithOptions,
   shareWithSelf?: bool
@@ -21,6 +22,7 @@ export type StreamEncryptorParameters = {
 export type StreamDecryptorParameters = {
   onData: (Uint8Array) => Promise<void> | void,
   onEnd: () => Promise<void> | void,
+  onError?: (Error) => Promise<void> | void,
   blockSize?: number,
 }
 
