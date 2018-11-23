@@ -18,6 +18,10 @@ setup(
         "websockets==6.0",
     ],
     extras_require={
-        "dev": []
+        "dev": [
+            "tankersdk==1.8.0.post1",
+            "pytest",
+            "ruamel.yaml",
+            ]
     },
 )

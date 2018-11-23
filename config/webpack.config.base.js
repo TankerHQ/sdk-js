@@ -31,6 +31,14 @@ const getBabelLoaders = (env) => {
         /node_modules(\\|\/).*(\\|\/)es(\\|\/)/,
         // ws lib is es6 (it assumes the users will run it in nodejs directly)
         /node_modules(\\|\/)ws/,
+        // supports-color is es6
+        /node_modules(\\|\/)supports-color/,
+        // they use es6 classes and probably more
+        /node_modules(\\|\/)express-recaptcha/,
+        // they use arrow functions and probably more
+        /node_modules(\\|\/)query-string/,
+        // they use Promise
+        /node_modules(\\|\/)react-file-reader-input/,
       ],
     },
     {
@@ -70,7 +78,12 @@ const makeBaseConfig = ({ mode, target }) => {
 
     module: {
       rules: [
-        ...getBabelLoaders({ prod: mode === 'production', target })
+        ...getBabelLoaders({ prod: mode === 'production', target }),
+        {
+          test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
+          loader: 'url-loader',
+          options: { limit: 25000 },
+        },
       ],
     },
 
@@ -81,7 +94,8 @@ const makeBaseConfig = ({ mode, target }) => {
       new webpack.DefinePlugin({
         'process.env': {
           NODE_ENV: JSON.stringify(mode),
-          PROJECT_CONFIG: JSON.stringify(process.env.PROJECT_CONFIG),
+          TANKER_TOKEN: JSON.stringify(process.env.TANKER_TOKEN),
+          TANKER_URL: JSON.stringify(process.env.TANKER_URL),
         },
         __DEVELOPMENT__: mode === 'development',
         __PRODUCTION__: mode === 'production',
