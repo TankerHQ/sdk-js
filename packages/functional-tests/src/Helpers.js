@@ -12,15 +12,7 @@ import { tcrypto, utils, createUserSecretB64, obfuscateUserId, type b64string } 
 const tankerUrl = process.env.TANKER_URL || '';
 const idToken = process.env.TANKER_TOKEN || '';
 
-if (!tankerUrl)
-  throw new Error('No URL provided');
-
-if (!idToken)
-  throw new Error('No token provided');
-
-console.log('Using Trustchain server:', tankerUrl); // eslint-disable-line no-console
-
-export { tankerUrl };
+export { tankerUrl, idToken };
 
 const socket = new Socket(tankerUrl, { transports: ['websocket', 'polling'] });
 
