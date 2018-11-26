@@ -1,5 +1,5 @@
 # Generated with dmenv 0.5.0, python 3.6.7, on Linux
--e git+ssh://git@10.100.0.1/Tanker/ci@31a44356da9a9126290a9f9619e16d415451792c#egg=ci
+-e git+ssh://git@10.100.0.1/Tanker/ci@3af79e75be6c3514e3f5530fa38e7aaa1bb7fcd1#egg=ci
 aiofiles==0.4.0
 async-generator==1.10
 atomicwrites==1.2.1
