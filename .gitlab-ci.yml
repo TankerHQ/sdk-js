@@ -11,6 +11,11 @@ check/linux:
     - schedules
   script:
     - xvfb-run dmenv run -- python run-ci.py check --runner linux
+    - mv coverage/lcov-report lcov-report
+  artifacts:
+    paths:
+      - lcov-report/
+    expire_in: 7 days
   tags:
     - linux
 
@@ -94,3 +99,20 @@ mirror:
     - schedules
   script:
     - dmenv run python run-ci.py mirror
+
+pages:
+  stage: deploy
+  only:
+    - master
+  except:
+    - schedules
+  dependencies:
+    - check/linux
+  script:
+    - mv lcov-report/ public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 7 days
+  tags:
+    - linux
