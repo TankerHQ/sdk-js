@@ -47,8 +47,8 @@ export default class StreamEncryptor {
       }
     };
     this._encryptionSize = encryptionSize;
-    if (parameters.blockSize) {
-      this._outputSize = parameters.blockSize;
+    if (parameters.outputSize) {
+      this._outputSize = parameters.outputSize;
     }
 
     this._key = key;
