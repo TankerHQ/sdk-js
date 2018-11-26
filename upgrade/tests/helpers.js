@@ -8,10 +8,11 @@ const old = parseInt(process.env.OLD_SDK || '0', 10);
 
 
 let TankerModule;
+
 if (old) {
   TankerModule = require('@tanker/client-node'); // eslint-disable-line global-require
 } else {
-  TankerModule = require('../../../sdk-js/packages/client-node'); // eslint-disable-line global-require
+  TankerModule = require('../../packages/client-node'); // eslint-disable-line global-require
 }
 
 const { Tanker, fromBase64, toBase64 } = TankerModule;
@@ -27,6 +28,7 @@ function makeTanker(prefix = 'default') {
   const tanker = new Tanker({
     trustchainId: context.trustchain_id,
     url: context.trustchain_url,
+    // $FlowIKnow Adapter not needed for upgrade tests
     dataStore: {
       dbPath,
     },
