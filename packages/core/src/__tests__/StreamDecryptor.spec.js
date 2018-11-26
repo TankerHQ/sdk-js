@@ -45,7 +45,7 @@ describe('Stream Decryptor', () => {
         buffer.push(data);
       },
       onEnd: sinon.spy(),
-      blockSize: defaultOutputSize
+      outputSize: defaultOutputSize
     };
 
     sinon.spy(streamConfig, 'onData');
@@ -54,11 +54,11 @@ describe('Stream Decryptor', () => {
   afterEach(() => {
     streamConfig.onData.resetHistory();
     streamConfig.onEnd.resetHistory();
-    streamConfig.blockSize = defaultOutputSize;
+    streamConfig.outputSize = defaultOutputSize;
     buffer = [];
   });
 
-  it('derives its key and decrypt block of fixed size', async () => {
+  it('derives its key and decrypt chunk of fixed size', async () => {
     const msg1 = await encryptMsg(key, 0, '1st message');
     const msg2 = await encryptMsg(key, 1, '2nd message');
     const encryptedMsgLength = msg1.encrypted.length;
@@ -99,9 +99,9 @@ describe('Stream Decryptor', () => {
     spy.restore();
   });
 
-  it('forwards blocks of specified size to onData', async () => {
+  it('forwards chunks of specified size to onData', async () => {
     const msg = await encryptMsg(key, 0, 'message');
-    streamConfig.blockSize = 5;
+    streamConfig.outputSize = 5;
 
     let decryptedRessource = new Uint8Array(0);
     const stream = new StreamDecryptor(mapper, streamConfig);
