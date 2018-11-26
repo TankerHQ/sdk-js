@@ -5,7 +5,7 @@ import uuid from 'uuid';
 import { utils } from '@tanker/crypto';
 import { Tanker as TankerCore } from '@tanker/core';
 
-import { TrustchainHelper, tankerUrl } from './Helpers';
+import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
 
 import generateChunkEncryptor from './chunkEncryptor';
 import generateEncryptTests from './encrypt';
@@ -31,6 +31,13 @@ export function makePrefix(length: number = 12) {
 }
 
 export function generateFunctionalTests(name: string, Tanker: any => TankerCore, dbPath?: string) {
+  if (!tankerUrl || !idToken) {
+    // Those functional tests create a trustchain automatically and require a TANKER_TOKEN to run
+    // They also require a TANKER_URL to know to which trustchain server they should talk to
+    console.log('skipping functional tests'); // eslint-disable-line no-console
+    return;
+  }
+
   const makeTanker = trustchainId => (
     new Tanker({
       trustchainId,
