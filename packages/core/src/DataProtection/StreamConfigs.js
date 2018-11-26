@@ -14,7 +14,7 @@ export type StreamEncryptorParameters = {
   onData: (Uint8Array) => Promise<void> | void,
   onEnd: () => Promise<void> | void,
   onError?: (Error) => Promise<void> | void,
-  blockSize?: number,
+  outputSize?: number,
   shareOptions?: ShareWithOptions,
   shareWithSelf?: bool
 }
@@ -23,7 +23,7 @@ export type StreamDecryptorParameters = {
   onData: (Uint8Array) => Promise<void> | void,
   onEnd: () => Promise<void> | void,
   onError?: (Error) => Promise<void> | void,
-  blockSize?: number,
+  outputSize?: number,
 }
 
 export type ResourceIdKeyMapper = {
