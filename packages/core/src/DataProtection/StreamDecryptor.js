@@ -48,8 +48,8 @@ export default class StreamDecryptor {
       }
     };
     this._decryptionSize = decryptionSize;
-    if (parameters.blockSize) {
-      this._outputSize = parameters.blockSize;
+    if (parameters.outputSize) {
+      this._outputSize = parameters.outputSize;
     }
 
     this._inputStream = configureInputStream(this._decryptionSize, {
