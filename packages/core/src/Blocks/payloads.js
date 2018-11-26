@@ -187,64 +187,6 @@ export function isUserGroup(nature: Nature): bool {
   natureKind(nature) === NATURE_KIND.user_group_addition;
 }
 
-export function natureToString(val: number): string {
-  switch (val) {
-    case NATURE.trustchain_creation: return 'trustchain_creation';
-    case NATURE.device_creation_v1: return 'device_creation_v1';
-    case NATURE.key_publish_to_device: return 'key_publish_to_device';
-    case NATURE.device_revocation_v1: return 'device_revocation_v1';
-    case NATURE.device_creation_v2: return 'device_creation_v2';
-    case NATURE.device_creation_v3: return 'device_creation_v3';
-    case NATURE.key_publish_to_user: return 'key_publish_to_user';
-    case NATURE.device_revocation_v2: return 'device_revocation_v2';
-    case NATURE.user_group_creation: return 'user_group_creation';
-    case NATURE.key_publish_to_user_group: return 'key_publish_to_user_group';
-    case NATURE.user_group_addition: return 'user_group_addition';
-    default: throw new Error(`invalid nature: ${val}`);
-  }
-}
-
-export function naturesFromKind(kind: NatureKind): Array<Nature> {
-  switch (kind) {
-    case NATURE_KIND.trustchain_creation:
-      return [
-        NATURE.trustchain_creation,
-      ];
-    case NATURE_KIND.key_publish_to_device:
-      return [
-        NATURE.key_publish_to_device,
-      ];
-    case NATURE_KIND.key_publish_to_user:
-      return [
-        NATURE.key_publish_to_user,
-      ];
-    case NATURE_KIND.key_publish_to_user_group:
-      return [
-        NATURE.key_publish_to_user_group,
-      ];
-    case NATURE_KIND.device_revocation:
-      return [
-        NATURE.device_revocation_v1,
-        NATURE.device_revocation_v2,
-      ];
-    case NATURE_KIND.device_creation:
-      return [
-        NATURE.device_creation_v1,
-        NATURE.device_creation_v2,
-        NATURE.device_creation_v3,
-      ];
-    case NATURE_KIND.user_group_creation:
-      return [
-        NATURE.user_group_creation,
-      ];
-    case NATURE_KIND.user_group_addition:
-      return [
-        NATURE.user_group_addition,
-      ];
-    default: throw new Error(`invalid kind: ${kind}`);
-  }
-}
-
 export function serializeBlock(block: Block): Uint8Array {
   if (block.author.length !== hashSize)
     throw new Error('Assertion error: invalid block author size');

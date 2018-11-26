@@ -52,6 +52,9 @@ export class Unlocker {
       this._localUser.trustchainId,
       utils.toBase64(ghostDevice.deviceId),
     );
+    if (!encryptedUserKey)
+      throw new Error('Assersion error: no user key');
+
     return createDeviceFromUnlockKey({
       trustchainId: this._localUser.trustchainId,
       userId: this._localUser.userId,

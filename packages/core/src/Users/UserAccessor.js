@@ -27,10 +27,6 @@ export default class UserAccessor {
     this._userId = userId;
   }
 
-  async hasDevice(userId: Uint8Array, deviceId: Uint8Array) {
-    return this._userStore.hasDevice(userId, deviceId);
-  }
-
   async _fetchUsers(userIds: Array<Uint8Array>) {
     const userIdsWithoutMe = userIds.filter(u => !utils.equalArray(u, this._userId));
     if (userIdsWithoutMe.length !== 0)

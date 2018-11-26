@@ -1,7 +1,17 @@
 // @flow
+import sodium from 'libsodium-wrappers';
+
 import { expect } from './chai';
 import { generichash } from '../hash';
-import { fromHex, fromString } from '../utils';
+import { fromString } from '../utils';
+
+
+function fromHex(str: string): Uint8Array {
+  if (typeof str !== 'string')
+    throw new TypeError('"str" is not a string');
+
+  return sodium.from_hex(str);
+}
 
 describe('hash', () => {
   it('should not have trivial collisions', async () => {

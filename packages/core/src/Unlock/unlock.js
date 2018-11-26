@@ -2,7 +2,6 @@
 
 import { aead, tcrypto, generichash, utils, type b64string, type safeb64string, type Key } from '@tanker/crypto';
 import { InvalidDeviceValidationCode, InvalidUnlockKey } from '../errors';
-import { type UserDeviceRecord } from '../Blocks/payloads';
 import { type Block, hashBlock } from '../Blocks/Block';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { EncryptedUserKey } from '../Network/Client';
@@ -40,10 +39,6 @@ export class UnlockKeyAnswer {
 
   constructor(encUnlockKey: Uint8Array) {
     this._encryptedUnlockKey = encUnlockKey;
-  }
-
-  get encryptedUnlockKey(): Uint8Array {
-    return this._encryptedUnlockKey;
   }
 
   async getUnlockKey(userSecret: Key): Promise<UnlockKey> {
@@ -233,15 +228,6 @@ type CreateDevUnlockArgV3 = {
   deviceType: DeviceType,
 }
 
-type CreateDevUnlockArg = {
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-  deviceKeys: DeviceKeys,
-  ghostDevice: GhostDevice,
-  encryptedUserKey: ?EncryptedUserKey,
-  deviceType?: DeviceType,
-}
-
 type AuthorDevice = {
   id: Uint8Array,
   privateSignatureKey: Key,
@@ -255,7 +241,7 @@ type GenerateUnlockKeyRegistrationArg = {
   authorDevice: AuthorDevice,
 };
 
-function createDeviceFromUnlockKeyV3({
+export function createDeviceFromUnlockKey({
   trustchainId,
   userId,
   deviceKeys,
@@ -327,41 +313,4 @@ export function generateUnlockKeyRegistration({
     unlockKey,
     block: newDeviceBlock,
   };
-}
-
-function createDeviceFromUnlockKeyV1({
-  trustchainId,
-  userId,
-  deviceKeys,
-  ghostDevice,
-}: CreateDevUnlockArg): Block {
-  const device: UserDeviceRecord = {
-    ephemeral_public_signature_key: new Uint8Array(0),
-    user_id: userId,
-    delegation_signature: new Uint8Array(0),
-    public_signature_key: deviceKeys.signaturePair.publicKey,
-    public_encryption_key: deviceKeys.encryptionPair.publicKey,
-    last_reset: new Uint8Array(tcrypto.HASH_SIZE),
-    user_key_pair: null,
-    is_ghost_device: false,
-    // v1 cannot create servers
-    is_server_device: false,
-    revoked: Number.MAX_SAFE_INTEGER,
-  };
-
-  const blockGenerator = new BlockGenerator(
-    trustchainId,
-    ghostDevice.privateSignatureKey,
-    ghostDevice.deviceId
-  );
-
-  return blockGenerator.addDeviceV1(device);
-}
-
-export function createDeviceFromUnlockKey(args: CreateDevUnlockArg): Block {
-  if (args.encryptedUserKey)
-    // $FlowIssue encryptedUserKey is *not* null
-    return createDeviceFromUnlockKeyV3(args);
-  else
-    return createDeviceFromUnlockKeyV1(args);
 }

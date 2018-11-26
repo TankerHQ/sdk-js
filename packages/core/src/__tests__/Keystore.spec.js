@@ -50,7 +50,7 @@ describe('Keystore', () => {
     const generatedKey = keystore1.privateEncryptionKey;
     const keystore2 = await Keystore.open(datastore, secret);
     const savedKey = keystore2.privateEncryptionKey;
-    expect(utils.equalConstTime(generatedKey, savedKey)).to.be.true;
+    expect(generatedKey).to.deep.equal(savedKey);
   });
 
   it('can set the device ID', async () => {

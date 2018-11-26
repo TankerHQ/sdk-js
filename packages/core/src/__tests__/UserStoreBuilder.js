@@ -18,7 +18,7 @@ export async function makeMemoryDataStore(): Promise<DataStore<*>> {
   return openDataStore(config);
 }
 
-export function forgeVerifiedEntry(entry: UnverifiedEntry): VerifiedDeviceCreation {
+function forgeVerifiedEntry(entry: UnverifiedEntry): VerifiedDeviceCreation {
   const anyEntry: VerifiedDeviceCreation = {
     ...entry,
     ...entry.payload_unverified,
@@ -41,13 +41,6 @@ export default class UserStoreBuilder {
     const userStore = new UserStore(dataStore);
     userStore.setLocalUser(({ userId: makeUint8Array('userID', 32), applyDeviceCreation: () => {} }: any));
     return new UserStoreBuilder(userStore, generator);
-  }
-
-  async newUserCreationV1(userId: string) {
-    const result = await this.generator.newUserCreationV1(userId);
-    await this.userStore.applyEntry(forgeVerifiedEntry(result.entry));
-
-    return result;
   }
 
   async newUserCreationV3(userId: string) {

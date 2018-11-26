@@ -92,10 +92,6 @@ export default class GroupManager {
     await this._trustchain.sync();
   }
 
-  async hasGroup(groupId: Uint8Array) {
-    return this._groupStore.findExternal({ groupId });
-  }
-
   async _fetchGroups(groupIds: Array<Uint8Array>) {
     await this._trustchain.sync([], groupIds);
     await this._trustchain.updateGroupStore(groupIds);

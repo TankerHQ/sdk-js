@@ -7,7 +7,6 @@ import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import GroupStore from '../Groups/GroupStore';
 import Generator, { makeGenerator, type GeneratorDevice, type GeneratorUserGroupResult } from './Generator';
-import { type Entry, type UnverifiedEntry } from '../Blocks/entries';
 
 export async function makeMemoryDataStore(): Promise<DataStore<*>> {
   const schemas = mergeSchemas(GroupStore.schemas);
@@ -15,14 +14,6 @@ export async function makeMemoryDataStore(): Promise<DataStore<*>> {
   const baseConfig = { ...dataStoreConfig, schemas };
   const config = { ...baseConfig, dbName: `group-store-test-${makePrefix()}` };
   return openDataStore(config);
-}
-
-export function forgeVerifiedEntry(entry: UnverifiedEntry): Entry {
-  const anyEntry: Object = { ...entry };
-  anyEntry.payload_verified = anyEntry.payload_unverified;
-  delete anyEntry.payload_unverified;
-  const verifiedEntry: Entry = anyEntry;
-  return verifiedEntry;
 }
 
 export default class GroupStoreBuilder {

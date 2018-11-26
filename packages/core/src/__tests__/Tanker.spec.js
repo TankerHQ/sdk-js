@@ -4,7 +4,7 @@ import { tcrypto, utils, random, obfuscateUserId } from '@tanker/crypto';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
-import { warnings } from './Helpers';
+import { warnings } from './WarningsRemover';
 
 import { Tanker, TankerStatus, getResourceId } from '..';
 import { createUserTokenFromSecret } from './TestSessionTokens';

@@ -157,13 +157,6 @@ export default class TrustchainVerifier {
     await this._storage.unverifiedStore.removeVerifiedUserEntries([verifiedEntry]);
     return verifiedEntry;
   }
-  async _throwingVerifyDeviceRevocation(entry: UnverifiedDeviceRevocation): Promise<VerifiedDeviceRevocation> {
-    return this._verifyLock.runExclusive(async () => {
-      let user = await this._storage.userStore.findUser({ userId: entry.user_id });
-      user = await this._unlockedProcessUser(entry.user_id, user, entry.index);
-      return this._unlockedVerifyAndApplySingleUserEntry(user, entry);
-    });
-  }
 
   async _throwingVerifyDeviceCreation(entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
     return this._verifyLock.runExclusive(async () => {
@@ -181,21 +174,6 @@ export default class TrustchainVerifier {
         throw e;
       return null;
     }
-  }
-
-  async verifyDeviceRevocation(entry: UnverifiedDeviceRevocation): Promise<?VerifiedDeviceRevocation> {
-    try {
-      return await this._throwingVerifyDeviceRevocation(entry);
-    } catch (e) {
-      if (!(e instanceof InvalidBlockError))
-        throw e;
-      return null;
-    }
-  }
-
-  async _unlockedProcessUserById(userId: Uint8Array, beforeIndex?: number): Promise<?User> {
-    const user = await this._storage.userStore.findUser({ userId });
-    return this._unlockedProcessUser(userId, user, beforeIndex);
   }
 
   async _unlockedProcessUser(userId: Uint8Array, maybeUser: ?User, beforeIndex?: number): Promise<?User> {
