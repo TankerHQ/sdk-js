@@ -27,7 +27,7 @@ describe('Stream Encryptor', () => {
         buffer.push(data);
       },
       onEnd: sinon.spy(),
-      blockSize: defaultOutputSize
+      outputSize: defaultOutputSize
     };
 
     sinon.spy(streamParameters, 'onData');
@@ -39,7 +39,7 @@ describe('Stream Encryptor', () => {
   afterEach(() => {
     streamParameters.onData.resetHistory();
     streamParameters.onEnd.resetHistory();
-    streamParameters.blockSize = defaultOutputSize;
+    streamParameters.outputSize = defaultOutputSize;
     buffer = [];
   });
 
@@ -119,7 +119,7 @@ describe('Stream Encryptor', () => {
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 0), eMsg)).to.deep.equal(msg);
   });
 
-  it('encrypts block of fixed size', async () => {
+  it('encrypts chunk of fixed size', async () => {
     const msg = utils.fromString('message');
 
     const stream = new StreamEncryptor(resourceId, key, streamParameters, msg.length);
@@ -143,9 +143,9 @@ describe('Stream Encryptor', () => {
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 2), emsg3)).to.deep.equal(msg.subarray(1));
   });
 
-  it('forwards blocks of specified size to onData', async () => {
+  it('forwards chunks of specified size to onData', async () => {
     const msg = utils.fromString('message');
-    streamParameters.blockSize = smallOutputSize;
+    streamParameters.outputSize = smallOutputSize;
 
     let encryptedResource = new Uint8Array(0);
     const stream = new StreamEncryptor(resourceId, key, streamParameters);
@@ -162,8 +162,8 @@ describe('Stream Encryptor', () => {
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 0), encryptedResource.subarray(tcrypto.MAC_SIZE + 1))).to.deep.equal(msg);
   });
 
-  it('forwards blocks of specified size to onData even when no data is written', async () => {
-    streamParameters.blockSize = 1;
+  it('forwards chunks of specified size to onData even when no data is written', async () => {
+    streamParameters.outputSize = 1;
 
     let encryptedResource = new Uint8Array(0);
     const stream = new StreamEncryptor(resourceId, key, streamParameters);
