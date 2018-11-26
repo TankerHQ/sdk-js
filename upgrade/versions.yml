@@ -1,0 +1,23 @@
+- version: 1.9.0
+  tests:
+    - encrypt.js
+    - group.js
+    - unlock.js
+- version: 1.8.1
+  tests:
+    - encrypt_18.js
+    - group_18.js
+    - unlock_18.js
+- version: 1.8.0
+  tests:
+    - encrypt_18.js
+    - group_18.js
+    - unlock_18.js
+- version: 1.7.1
+  tests:
+    - encrypt_18.js
+    - unlock_18.js
+- version: 1.7.0
+  tests:
+    - encrypt_18.js
+    - unlock_18.js

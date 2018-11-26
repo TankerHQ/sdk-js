@@ -1,0 +1,10 @@
+{
+  "name": "@tanker/functional-tests",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "src/index.js",
+  "dependencies": {
+    "array-find": "^1.0.0"
+  }
+}

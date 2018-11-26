@@ -13,8 +13,8 @@
 
 ## Overview
 
-[The Tanker SDK](https://tanker.io) provides an easy-to-use SDK allowing you to protect your users' 
-data. 
+[The Tanker SDK](https://tanker.io) provides an easy-to-use SDK allowing you to protect your users'
+data.
 
 The Tanker SDK consists of the following packages, which are distributed on npm:
 
@@ -32,7 +32,7 @@ If you want to build the Tanker SDK yourself, follow these steps:
 
 ### Prerequisites
 
-Install [Yarn](https://yarnpkg.com/en/docs/install) version 1.0 or greater.  
+Install [Yarn](https://yarnpkg.com/en/docs/install) version 1.0 or greater.
 
 Use this command to check the Yarn version installed on your system:
 ```bash
@@ -53,7 +53,7 @@ cd sdk-js && yarn
 
 ### Test and lint
 
-Our codebase is using the following ES6 features: async/await, import/export, and classes with flow for type-checking and with eslint for linting.  
+Our codebase is using the following ES6 features: async/await, import/export, and classes with flow for type-checking and with eslint for linting.
 
 To check that the code is correct and launch the tests, use:
 
@@ -63,9 +63,9 @@ yarn proof
 
 ## Contributing
 
-We welcome feedback, bug reports and bug fixes in the form of pull requests.   
+We welcome feedback, bug reports and bug fixes in the form of pull requests.
 
-Please make sure that your changes pass the linters and that all the tests pass on your local machine.  
+Please make sure that your changes pass the linters and that all the tests pass on your local machine.
 
 Most non-trivial changes should include some extra tests.
 

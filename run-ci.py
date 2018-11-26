@@ -11,19 +11,17 @@ def check(*, runner: str, nightly: bool) -> None:
     env = "dev"
     ci.js.yarn_install_deps()
     if runner == "linux":
-        ci.js.run_linters(cwd=Path.getcwd())
-        ci.js.run_tests_in_node(cwd=Path.getcwd(), env=env)
-
-    ci.js.run_tests_in_browser(cwd=Path.getcwd(), env=env, runner=runner)
-
-    if "windows" in runner:
-        return
+        ci.js.run_linters()
+        ci.js.run_tests_in_node(env=env)
 
     if nightly:
         with ci.mail.notify_failure("sdk-js"):
-            ci.js.run_sdk_functional_tests(env=env, runner=runner, ten_times=True)
+            ci.js.run_tests_in_browser_ten_times(env=env, runner=runner)
+        if runner == "linux":
+            with ci.mail.notify_failure("upgrade tests"):
+                ci.js.run_sdk_upgrade_tests(env=env)
     else:
-        ci.js.run_sdk_functional_tests(env=env, runner=runner, ten_times=False)
+        ci.js.run_tests_in_browser(env=env, runner=runner)
 
 
 def main() -> None:
