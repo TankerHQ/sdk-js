@@ -23,14 +23,18 @@ describe('Stream Encryptor', () => {
     buffer = [];
     smallOutputSize = 5;
     streamParameters = {
-      onData: (data) => {
+      onData: async (data) => {
         buffer.push(data);
+        await Promise.resolve();
       },
-      onEnd: sinon.spy(),
+      onEnd: async () => {
+        await Promise.resolve();
+      },
       outputSize: defaultOutputSize
     };
 
     sinon.spy(streamParameters, 'onData');
+    sinon.spy(streamParameters, 'onEnd');
 
     key = utils.fromString('12345678123456781234567812345678');
     resourceId = new Uint8Array(tcrypto.MAC_SIZE);
