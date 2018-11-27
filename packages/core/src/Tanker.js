@@ -15,10 +15,9 @@ import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
-import { assertStreamParameters } from './DataProtection/assertStreamParameters';
 import StreamEncryptor from './DataProtection/StreamEncryptor';
 import StreamDecryptor from './DataProtection/StreamDecryptor';
-import { type StreamEncryptorParameters, type StreamDecryptorParameters } from './DataProtection/StreamConfigs';
+import { assertStreamParameters, type StreamEncryptorParameters, type StreamDecryptorParameters } from './DataProtection/StreamConfigs';
 
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
