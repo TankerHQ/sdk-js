@@ -41,14 +41,18 @@ describe('Stream Decryptor', () => {
     };
 
     streamConfig = {
-      onData: (data) => {
+      onData: async (data) => {
         buffer.push(data);
+        await Promise.resolve();
       },
-      onEnd: sinon.spy(),
+      onEnd: async () => {
+        await Promise.resolve();
+      },
       outputSize: defaultOutputSize
     };
 
     sinon.spy(streamConfig, 'onData');
+    sinon.spy(streamConfig, 'onEnd');
   });
 
   afterEach(() => {
