@@ -90,7 +90,8 @@
       "packages/**/*.spec.node.js",
       "packages/**/*.spec.web.js",
       "packages/functional-tests",
-      "packages/**/src/__tests__"
+      "packages/**/src/__tests__",
+      "packages/**/tests"
     ],
     "sourceMap": false,
     "instrument": false
