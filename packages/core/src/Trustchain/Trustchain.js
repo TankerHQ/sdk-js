@@ -10,10 +10,6 @@ import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { VerifiedDeviceCreation } from '../UnverifiedStore/UserUnverifiedStore';
 
-import {
-  NATURE,
-} from '../Blocks/payloads';
-
 export default class Trustchain {
   _trustchainStore: TrustchainStore;
   _trustchainPuller: TrustchainPuller;
@@ -69,10 +65,5 @@ export default class Trustchain {
       return null;
     const verifiedEntries = await this._trustchainVerifier.verifyKeyPublishes([unverifiedKP]);
     return verifiedEntries.length ? verifiedEntries[0] : null;
-  }
-
-  async getAllKeyPublishesToDevice(): Promise<Array<VerifiedKeyPublish>> {
-    const entries = await this._unverifiedStore.findByNature(NATURE.key_publish_to_device);
-    return this._trustchainVerifier.verifyKeyPublishes(entries);
   }
 }

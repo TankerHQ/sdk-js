@@ -53,20 +53,6 @@ export function fromSafeBase64(str: safeb64string): Uint8Array {
   return fromBase64(str.replace(/[-_]/g, base64FromUrlsafeReplacer));
 }
 
-export function toHex(bytes: Uint8Array): string {
-  if (!(bytes instanceof Uint8Array))
-    throw new TypeError('"bytes" is not a Uint8Array');
-
-  return sodium.to_hex(bytes);
-}
-
-export function fromHex(str: string): Uint8Array {
-  if (typeof str !== 'string')
-    throw new TypeError('"str" is not a string');
-
-  return sodium.from_hex(str);
-}
-
 export function toString(bytes: Uint8Array): string {
   if (!(bytes instanceof Uint8Array))
     throw new TypeError('"bytes" is not a Uint8Array');
@@ -114,20 +100,6 @@ export function equalArray(b1: Uint8Array, b2: Uint8Array): bool {
 
 export function isNullArray(a: Uint8Array): bool {
   return equalArray(a, new Uint8Array(a.length));
-}
-
-
-export function equalConstTime(b1: Uint8Array, b2: Uint8Array): bool {
-  assertArrayTypes(b1, b2);
-
-  if (b1.length !== b2.length)
-    return false;
-
-  let res = 0;
-  for (let i = 0; i < b1.length; i++)
-    res |= b1[i] ^ b2[i]; // eslint-disable-line
-
-  return res === 0;
 }
 
 export function memzero(bytes: Uint8Array) {

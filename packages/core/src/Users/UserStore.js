@@ -5,7 +5,7 @@ import { type DataStore } from '@tanker/datastore-base';
 
 import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
-import { NATURE, natureToString, NATURE_KIND, natureKind } from '../Blocks/payloads';
+import { NATURE, NATURE_KIND, natureKind } from '../Blocks/payloads';
 import LocalUser from '../Session/LocalUser';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 
@@ -174,7 +174,7 @@ export default class UserStore {
         return this._prepareDeviceRevocation(revocationEntry);
       }
       default:
-        throw new Error(`Invalid nature: ${natureToString(entry.nature)}`);
+        throw new Error(`Invalid nature: ${entry.nature}`);
     }
   }
 
@@ -231,16 +231,6 @@ export default class UserStore {
       storeableEntry[USER_KEY_TABLE] = userPublicKeyToUser;
     }
     return storeableEntry;
-  }
-
-  async hasDevice(userId: Uint8Array, deviceId: Uint8Array) {
-    const user = await this.findUser({ userId });
-    if (!user)
-      throw new Error('hasDevice: User not found!');
-
-    const b64DeviceId = utils.toBase64(deviceId);
-    const index = findIndex(user.devices, (d) => d.deviceId === b64DeviceId);
-    return index !== -1;
   }
 
   async findUser(args: FindUserParameters): Promise<?User> {

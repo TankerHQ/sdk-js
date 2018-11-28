@@ -66,10 +66,6 @@ export class Session {
     );
   }
 
-  get userId(): Uint8Array {
-    return this.localUser.userId;
-  }
-
   close = async () => {
     await this._trustchain.close();
     await this._client.close();

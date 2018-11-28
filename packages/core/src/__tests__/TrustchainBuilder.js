@@ -7,12 +7,11 @@ import { createUserToken } from './TestSessionTokens';
 import LocalUser from '../Session/LocalUser';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
-import Generator, { type GeneratorUserResult, type GeneratorRevocationResult, type GeneratorKeyResult, type GeneratorUserGroupResult, type GeneratorUserGroupAdditionResult, type GeneratorDevice, type GeneratorUser } from './Generator';
+import Generator, { type GeneratorUserResult, type GeneratorKeyResult, type GeneratorUserGroupResult, type GeneratorUserGroupAdditionResult, type GeneratorDevice, type GeneratorUser } from './Generator';
 import TrustchainStore from '../Trustchain/TrustchainStore';
 import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
 import { type DeviceType } from '../Unlock/unlock';
-import BlockGenerator from '../Blocks/BlockGenerator';
 
 import Storage from '../Session/Storage';
 import KeySafe from '../Session/KeySafe';
@@ -80,21 +79,8 @@ export default class TrustchainBuilder {
     }
   }
 
-  async addUserV1(userName: string): Promise<GeneratorUserResult> {
-    const result = await this.generator.newUserCreationV1(userName);
-    await this.unverifiedStore.addUnverifiedUserEntries([result.entry]);
-    return result;
-  }
-
   async addUserV3(userName: string, deviceType?: DeviceType): Promise<GeneratorUserResult> {
     const result = await this.generator.newUserCreationV3(userName, { deviceType });
-    await this.unverifiedStore.addUnverifiedUserEntries([result.entry]);
-    return result;
-  }
-
-  async addDeviceV1(args: { id: string, parentIndex?: number }): Promise<GeneratorUserResult> {
-    const { id, parentIndex } = args;
-    const result = await this.generator.newDeviceCreationV1({ userId: id, parentIndex: parentIndex || 0 });
     await this.unverifiedStore.addUnverifiedUserEntries([result.entry]);
     return result;
   }
@@ -128,18 +114,6 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async addDeviceRevocationV1(from: GeneratorUserResult, to: GeneratorUserResult): Promise<GeneratorRevocationResult> {
-    const result = await this.generator.newDeviceRevocationV1(from.device, { id: to.device.id });
-    await this.unverifiedStore.addUnverifiedUserEntries([result.entry]);
-    return result;
-  }
-
-  async addDeviceRevocationV2(from: GeneratorUserResult, to: GeneratorUserResult): Promise<GeneratorRevocationResult> {
-    const result = await this.generator.newDeviceRevocationV2(from.device, { id: to.device.id });
-    await this.unverifiedStore.addUnverifiedUserEntries([result.entry]);
-    return result;
-  }
-
   async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>): Promise<GeneratorUserGroupResult> {
     const result = await this.generator.newUserGroupCreation(from.device, members);
     await this.unverifiedStore.addUnverifiedUserGroups([result.entry]);
@@ -150,14 +124,6 @@ export default class TrustchainBuilder {
     const result = await this.generator.newUserGroupAddition(from.device, group, members);
     await this.unverifiedStore.addUnverifiedUserGroups([result.entry]);
     return result;
-  }
-
-  userId(userName: string): Uint8Array {
-    return this.generator.userId(userName);
-  }
-
-  userIds(userNames: Array<string>): Array<Uint8Array> {
-    return this.generator.userIds(userNames);
   }
 
   async getKeystoreOfDevice(user: GeneratorUser, device: GeneratorDevice): Promise<Keystore> {
@@ -175,14 +141,6 @@ export default class TrustchainBuilder {
     if (user.userKeys)
       keystore._userKeys[utils.toBase64(user.userKeys.publicKey)] = user.userKeys; // eslint-disable-line no-underscore-dangle
     return keystore;
-  }
-
-  async getBlockGeneratorOfDevice(device: GeneratorDevice): Promise<BlockGenerator> {
-    return new BlockGenerator(
-      this.generator.trustchainId,
-      device.signKeys.privateKey,
-      device.id
-    );
   }
 }
 

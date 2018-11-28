@@ -551,10 +551,6 @@ class Generator {
   userId(userName: string): Uint8Array {
     return obfuscateUserId(this.trustchainId, userName);
   }
-
-  userIds(userNames: Array<string>): Array<Uint8Array> {
-    return userNames.map(userName => obfuscateUserId(this.trustchainId, userName));
-  }
 }
 
 export async function makeGenerator() {

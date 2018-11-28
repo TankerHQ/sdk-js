@@ -7,38 +7,6 @@ export type ParseResult<T> = {
   newOffset: number,
 };
 
-export function setUint32(v: number, buf: Uint8Array, offset: number = 0): number {
-  const chunkView = new DataView(buf.buffer, offset, 4);
-  chunkView.setUint32(0, v, true);
-
-  return offset + 4;
-}
-
-export function getUint32(buf: Uint8Array, offset: number = 0): ParseResult<number> {
-  const view = new DataView(buf.buffer, offset, 4);
-
-  return { value: view.getUint32(0, true), newOffset: offset + 4 };
-}
-
-export function setArray(src: Uint8Array, dest: Uint8Array, offset: number): number {
-  let pos = offset;
-  varint.encode(src.length, dest, pos);
-  pos += varint.encode.bytes;
-  dest.set(src, pos);
-  pos += src.length;
-  return pos;
-}
-
-export function setVarint(src: number, dest: Uint8Array, offset: number): number {
-  varint.encode(src, dest, offset);
-  return offset + varint.encode.bytes;
-}
-
-export function getVarint(src: Uint8Array, offset: number): ParseResult<number> {
-  const value = varint.decode(src, offset);
-  return { value, newOffset: offset + varint.decode.bytes };
-}
-
 export function getArray(src: Uint8Array, offset: number, name: string = 'value'): Object {
   let pos = offset;
   const len = varint.decode(src, pos);
@@ -118,11 +86,4 @@ export function encodeArrayLength(array: Uint8Array | Array<number>): Uint8Array
 
 export function encodeListLength(array: Array<any>): Uint8Array {
   return new Uint8Array(varint.encode(array.length));
-}
-
-export function serializeArrays(...arrays: Array<Uint8Array>): Uint8Array {
-  return concatArrays(...arrays.reduce(
-    (acc, elem) => [...acc, encodeArrayLength(elem), elem],
-    []
-  ));
 }

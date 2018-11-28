@@ -151,11 +151,6 @@ export class Tanker extends EventEmitter {
     return def ? def.name : `invalid status: ${this.status}`;
   }
 
-  get statusDescription(): string {
-    const def = statusDefs[this.status];
-    return def ? def.description : `invalid status: ${this.status}`;
-  }
-
   addListener(eventName: string, listener: any): any {
     return this.on(eventName, listener);
   }
@@ -218,10 +213,6 @@ export class Tanker extends EventEmitter {
       const message = `Expected status ${name} but got ${this.statusName} trying to ${to}.`;
       throw new InvalidSessionStatus(this.status, message);
     }
-  }
-
-  isOpen(): bool {
-    return this.status === this.OPEN;
   }
 
   async open(userIdString: string, sessionTokenB64: b64string, oldDelegationToken: *): Promise<number> {

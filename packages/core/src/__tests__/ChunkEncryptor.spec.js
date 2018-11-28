@@ -3,7 +3,7 @@
 import { random, tcrypto, aead, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-import { warnings } from './Helpers';
+import { warnings } from './WarningsRemover';
 
 import { errors } from '../index';
 import { makeChunkEncryptor, getChunkKeys, type EncryptorInterface } from '../DataProtection/ChunkEncryptor';

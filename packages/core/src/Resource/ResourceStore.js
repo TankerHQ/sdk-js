@@ -38,17 +38,6 @@ export default class ResourceStore {
     Object.defineProperty(this, '_userSecret', { value: userSecret }); // + not writable
   }
 
-  async getAllDecrypted(): Promise<Array<SharedKeyRecord>> {
-    const records = await this._ds.getAll(TABLE);
-
-    return Promise.all(records.map(async record => {
-      const resourceId = utils.fromBase64(record._id); // eslint-disable-line no-underscore-dangle
-      const encryptedKey = utils.fromBase64(record.b64EncryptedKey);
-      const symmetricKey = await aead.decryptAEADv1(this._userSecret, encryptedKey, resourceId);
-      return { resourceId, symmetricKey };
-    }));
-  }
-
   async saveResourceKey(resourceId: Uint8Array, key: Key): Promise<void> {
     // prevent db corruption by using the resourceId as additional data
     const encryptedKey = await aead.encryptAEADv1(this._userSecret, key, resourceId);
