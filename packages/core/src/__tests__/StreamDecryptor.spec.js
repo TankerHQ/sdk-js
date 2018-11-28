@@ -8,7 +8,7 @@ import { expect } from './chai';
 import StreamDecryptor from '../DataProtection/StreamDecryptor';
 import { concatArrays } from '../Blocks/Serialize';
 import { defaultOutputSize } from '../DataProtection/StreamConfigs';
-import { InvalidArgument, StreamAlreadyClosed, DecryptFailed, BrokenStream, NotEnoughData, InvalidEncryptionFormat } from '../errors';
+import { InvalidArgument, DecryptFailed, NotEnoughData, InvalidEncryptionFormat } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 
 async function encryptMsg(key, index, str) {
@@ -21,7 +21,7 @@ async function encryptMsg(key, index, str) {
 
 function setKey(stream: StreamDecryptor, key: Key) {
   // eslint-disable-next-line no-underscore-dangle, no-param-reassign
-  stream._resourceIdKeyPair = {
+  stream._state.resourceIdKeyPair = {
     key,
     resourceId: new Uint8Array(tcrypto.MAC_SIZE)
   };
@@ -154,24 +154,6 @@ describe('Stream Decryptor', () => {
       await expect(stream.write({})).to.be.rejectedWith(InvalidArgument);
     });
 
-    it('throws StreamAlreadyClosed when a second close is called', async () => {
-      const stream = new StreamDecryptor(mapper, streamConfig);
-
-      const promise = stream.close();
-
-      await expect(stream.close()).to.be.rejectedWith(StreamAlreadyClosed);
-      await expect(promise).to.be.fulfilled;
-    });
-
-    it('throws StreamAlreadyClosed when write is called after close', async () => {
-      const stream = new StreamDecryptor(mapper, streamConfig);
-
-      const promise = stream.close();
-
-      await expect(stream.write(new Uint8Array(10))).to.be.rejectedWith(StreamAlreadyClosed);
-      await expect(promise).to.be.fulfilled;
-    });
-
     it('throws DecryptFailed when data is corrupted', async () => {
       const sync = new PromiseWrapper();
       let resultError;
@@ -186,8 +168,7 @@ describe('Stream Decryptor', () => {
 
       ref[1][0] += 1;
       await decryptor.write(ref[0]); // header
-      await expect(decryptor.write(ref[1])).to.be.rejectedWith(BrokenStream); // corrupted chunk
-      await expect(decryptor.close()).to.be.rejectedWith(BrokenStream);
+      await decryptor.write(ref[1]); // corrupted chunk
       await sync.promise;
       expect(resultError).to.be.an.instanceof(DecryptFailed);
     });
@@ -224,34 +205,10 @@ describe('Stream Decryptor', () => {
       }, ref[1].length);
 
       await decryptor.write(ref[0]);
-      await expect(decryptor.write(ref[2])).to.be.rejectedWith(BrokenStream);
+      await decryptor.write(ref[2]);
 
-      await expect(decryptor.close()).to.be.rejectedWith(BrokenStream);
       await sync.promise;
       expect(resultError).to.be.an.instanceof(DecryptFailed);
-    });
-
-    it('forwards \'onData\' errors to \'onError\'', async () => {
-      const error = new Error('error thrown by onData');
-      const sync = new PromiseWrapper();
-      let resultError;
-
-      const decryptor = new StreamDecryptor(mapper, {
-        onData: () => { throw error; },
-        onEnd: () => { },
-        onError: (err) => {
-          resultError = err;
-          sync.resolve();
-        },
-        outputSize: 1
-      }, ref[1].length);
-
-      await decryptor.write(ref[0]);
-      await expect(decryptor.write(ref[1])).to.be.rejectedWith(BrokenStream);
-      await expect(decryptor.close()).to.be.rejectedWith(BrokenStream);
-
-      await sync.promise;
-      await expect(resultError).to.equal(error);
     });
   });
 });
