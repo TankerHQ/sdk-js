@@ -7,8 +7,7 @@ import { utils, tcrypto, aead } from '@tanker/crypto';
 import { expect } from './chai';
 import StreamEncryptor from '../DataProtection/StreamEncryptor';
 import { defaultOutputSize } from '../DataProtection/StreamConfigs';
-import { InvalidArgument, StreamAlreadyClosed, BrokenStream } from '../errors';
-import PromiseWrapper from '../PromiseWrapper';
+import { InvalidArgument } from '../errors';
 
 describe('Stream Encryptor', () => {
   let buffer: Array<Uint8Array>;
@@ -60,41 +59,6 @@ describe('Stream Encryptor', () => {
     await expect(stream.write('fail')).to.be.rejectedWith(InvalidArgument);
     // $FlowExpectedError
     await expect(stream.write({})).to.be.rejectedWith(InvalidArgument);
-  });
-
-  it('throws StreamAlreadyClosed when a second close is called', async () => {
-    const stream = new StreamEncryptor(resourceId, key, streamParameters);
-
-    await expect(stream.close()).to.be.fulfilled;
-    await expect(stream.close()).to.be.rejectedWith(StreamAlreadyClosed);
-  });
-
-  it('throws StreamAlreadyClosed when write is called after close', async () => {
-    const stream = new StreamEncryptor(resourceId, key, streamParameters);
-
-    await expect(stream.close()).to.be.fulfilled;
-    await expect(stream.write(new Uint8Array(10))).to.be.rejectedWith(StreamAlreadyClosed);
-  });
-
-  it('forwards \'onData\' errors to \'onError\'', async () => {
-    const error = new Error('an error');
-    const sync = new PromiseWrapper();
-    let resultError;
-
-    const encryptor = new StreamEncryptor(resourceId, key, {
-      onData: () => { throw error; },
-      onEnd: () => { },
-      onError: async (err) => {
-        resultError = err;
-        sync.resolve();
-      }
-    });
-
-    await encryptor.write(new Uint8Array(40));
-    await expect(encryptor.close()).to.be.rejectedWith(BrokenStream);
-
-    await sync.promise;
-    await expect(resultError).to.equal(error);
   });
 
   it('can give its associated resourceId', () => {

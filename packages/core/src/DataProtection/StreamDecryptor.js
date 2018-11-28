@@ -4,94 +4,56 @@ import varint from 'varint';
 import { Transform } from 'readable-stream';
 
 import { aead, tcrypto } from '@tanker/crypto';
-import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, BrokenStream, DecryptFailed, StreamAlreadyClosed } from '../errors';
+import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, DecryptFailed } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
-import { Uint8Stream } from '../Uint8Stream';
-import { defaultOutputSize, defaultDecryptionSize, configureInputStream, configureOutputStream, type ResourceIdKeyMapper, type StreamDecryptorParameters } from './StreamConfigs';
-import PromiseWrapper from '../PromiseWrapper';
+import { defaultOutputSize, defaultDecryptionSize, type ResourceIdKeyMapper, type StreamDecryptorParameters } from './StreamConfigs';
+import BufferedTransformStream from './BufferedTransformStream';
 
 export default class StreamDecryptor {
   _mapper: ResourceIdKeyMapper;
-  _onEnd: () => Promise<void> | void;
   _outputSize: number = defaultOutputSize;
   _decryptionSize: number;
 
-  _resourceIdKeyPair: ?ResourceIdKeyPair;
-  _index = 0;
-  _waitingPromise: ?PromiseWrapper<void>;
-  _endPromise: ?PromiseWrapper<void>;
-  _error: ?Error;
-  _closed: bool = false;
+  _state: {
+    resourceIdKeyPair: ?ResourceIdKeyPair,
+    index: number
+  };
 
-  _inputStream: Uint8Stream;
-  _decryptionStream: Transform;
-  _outputStream: Uint8Stream;
+  _stream: BufferedTransformStream;
 
   constructor(mapper: ResourceIdKeyMapper, parameters: StreamDecryptorParameters, decryptionSize: number = defaultDecryptionSize) {
     this._mapper = mapper;
-    this._onEnd = parameters.onEnd;
-    const onError = (error) => {
-      this._error = error;
-      try {
-        if (parameters.onError) {
-          parameters.onError(error);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        if (this._waitingPromise) {
-          this._waitingPromise.reject(new BrokenStream(error));
-        }
-        if (this._endPromise) {
-          this._endPromise.reject(new BrokenStream(error));
-        }
-      }
-    };
     this._decryptionSize = decryptionSize;
     if (parameters.outputSize) {
       this._outputSize = parameters.outputSize;
     }
 
-    this._inputStream = configureInputStream(this._decryptionSize, {
-      onDrain: () => {
-        if (this._waitingPromise) {
-          const promise = this._waitingPromise;
-          delete this._waitingPromise;
-          promise.resolve();
-        }
-      },
-      onError
-    });
-    this._configureDecryptionStream(onError);
-    this._outputStream = configureOutputStream(this._outputSize, {
-      onData: parameters.onData,
-      onEnd: () => {
-        if (this._endPromise) {
-          this._endPromise.resolve();
-        } else {
-          throw new Error('Stream is closing without endPromise');
-        }
-      },
-      onError
-    });
+    this._state = {
+      resourceIdKeyPair: null,
+      index: 0
+    };
+    const { onData, onEnd, onError } = parameters;
+    const processingStream = this._makeDecryptionStream();
 
-    this._inputStream.pipe(this._decryptionStream).pipe(this._outputStream);
+    this._stream = new BufferedTransformStream(
+      processingStream,
+      { onData, onEnd, onError },
+      { inputSize: this._decryptionSize, outputSize: this._outputSize }
+    );
   }
 
 
-  _configureDecryptionStream(onError: Function) {
-    const deriveKey = this._deriveKey.bind(this);
-    const resourceId = (() =>
-      // $FlowIKnow _resourceKeyPair is always defined during write
-      this._resourceIdKeyPair.resourceId
-    );
-    this._decryptionStream = new Transform({
+  _makeDecryptionStream() {
+    const derive = this._deriveKey.bind(this);
+    // $FlowIKnow _resourceKeyPair is always defined during write
+    const resourceId = () => this._state.resourceIdKeyPair.resourceId;
+    return new Transform({
       writableHighWaterMark: this._decryptionSize,
       readableHighWaterMark: this._outputSize,
 
       transform: async function transform(chunk, encoding, callback) {
         let clearData;
-        const subKey = deriveKey();
+        const subKey = derive();
         try {
           clearData = await aead.decryptAEADv2(subKey, chunk);
         } catch (error) {
@@ -102,14 +64,12 @@ export default class StreamDecryptor {
         callback();
       }
     });
-
-    this._decryptionStream.on('error', onError);
   }
 
   _deriveKey() {
     // $FlowIKnow _resourceKeyPair is always defined during write
-    const subKey = tcrypto.deriveKey(this._resourceIdKeyPair.key, this._index);
-    this._index += 1;
+    const subKey = tcrypto.deriveKey(this._state.resourceIdKeyPair.key, this._state.index);
+    this._state.index += 1;
     return subKey;
   }
 
@@ -155,17 +115,12 @@ export default class StreamDecryptor {
     if (!(encryptedData instanceof Uint8Array))
       throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
-    if (this._error) {
-      throw new BrokenStream(this._error);
-    }
-    if (this._closed) {
-      throw new StreamAlreadyClosed();
-    }
+    this._stream.integrityCheck();
 
     let data = encryptedData;
-    if (!this._resourceIdKeyPair) {
+    if (!this._state.resourceIdKeyPair) {
       const { header, remaining } = await this._extractHeader(encryptedData);
-      this._resourceIdKeyPair = header;
+      this._state.resourceIdKeyPair = header;
       data = remaining;
     }
 
@@ -173,28 +128,11 @@ export default class StreamDecryptor {
       return;
     }
 
-    if (!this._inputStream.write(data)) {
-      if (!this._waitingPromise) {
-        this._waitingPromise = new PromiseWrapper();
-      }
-      return this._waitingPromise.promise;
-    }
+    return this._stream.write(data);
   }
 
-  async close(): Promise<void> {
-    if (this._error) {
-      throw new BrokenStream(this._error);
-    }
-    if (this._closed) {
-      throw new StreamAlreadyClosed();
-    }
-
-    this._closed = true;
-    this._endPromise = new PromiseWrapper();
-    this._inputStream.end();
-    // $FlowIKnow got assigne two ligne upper
-    await this._endPromise.promise;
-    return this._onEnd();
+  close(): Promise<void> {
+    return this._stream.close();
   }
 }
 
