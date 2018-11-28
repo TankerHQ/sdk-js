@@ -15,10 +15,9 @@ import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
-import { assertStreamParameters } from './DataProtection/assertStreamParameters';
 import StreamEncryptor from './DataProtection/StreamEncryptor';
 import StreamDecryptor from './DataProtection/StreamDecryptor';
-import { type StreamEncryptorParameters, type StreamDecryptorParameters } from './DataProtection/StreamConfigs';
+import { assertStreamParameters, type StreamEncryptorParameters, type StreamDecryptorParameters } from './DataProtection/StreamConfigs';
 
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
@@ -476,8 +475,8 @@ export class Tanker extends EventEmitter {
 
     assertStreamParameters(parameters);
 
-    if (!validateShareWithOptions(parameters.shareOptions))
-      throw new InvalidArgument('parameters.shareOptions', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', parameters.shareOptions || {});
+    if (!validateEncryptionOptions(parameters.shareOptions))
+      throw new InvalidArgument('parameters.shareOptions', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', parameters.shareOptions);
 
     const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...parameters };
 
