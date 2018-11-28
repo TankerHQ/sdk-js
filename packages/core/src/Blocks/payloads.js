@@ -260,28 +260,6 @@ function serializeUserKeys(userKeys: UserKeys): Uint8Array {
   );
 }
 
-export function serializeUserDeviceV1(userDevice: UserDeviceRecord): Uint8Array {
-  if (!utils.equalArray(userDevice.last_reset, new Uint8Array(tcrypto.HASH_SIZE)))
-    throw new Error('Assertion error: user device last reset must be null');
-  if (userDevice.ephemeral_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device ephemeral public signature key size');
-  if (userDevice.user_id.length !== tcrypto.HASH_SIZE)
-    throw new Error('Assertion error: invalid user device user id size');
-  if (userDevice.delegation_signature.length !== tcrypto.SIGNATURE_SIZE)
-    throw new Error('Assertion error: invalid user device delegation signature size');
-  if (userDevice.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device public signature key size');
-  if (userDevice.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device public encryption key size');
-
-  return concatArrays(
-    userDevice.ephemeral_public_signature_key,
-    userDevice.user_id,
-    userDevice.delegation_signature,
-    userDevice.public_signature_key,
-    userDevice.public_encryption_key,
-  );
-}
 
 export function serializeUserDeviceV3(userDevice: UserDeviceRecord): Uint8Array {
   if (!utils.equalArray(userDevice.last_reset, new Uint8Array(tcrypto.HASH_SIZE)))

@@ -3,7 +3,6 @@
 import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
 
 import {
-  serializeUserDeviceV1,
   serializeUserDeviceV3,
   serializeKeyPublish,
   serializeDeviceRevocationV2,
@@ -15,7 +14,6 @@ import {
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
   type NatureKind,
-  NATURE,
   NATURE_KIND,
 } from './payloads';
 import { signBlock, type Block } from './Block';
@@ -190,25 +188,6 @@ export class BlockGenerator {
       author: this.deviceId,
       payload: serializeDeviceRevocationV2(revocationRecord)
     }, this.privateSignatureKey);
-  }
-
-  addDeviceV1(device: UserDeviceRecord): Block {
-    const ephemeralKeys = tcrypto.makeSignKeyPair();
-    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, device.user_id);
-    /* eslint-disable no-param-reassign */
-    device.ephemeral_public_signature_key = ephemeralKeys.publicKey;
-    device.delegation_signature = tcrypto.sign(delegationBuffer, this.privateSignatureKey);
-    device.last_reset = new Uint8Array(tcrypto.HASH_SIZE);
-
-    const deviceBlock = signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: NATURE.device_creation_v1,
-      author: this.deviceId,
-      payload: serializeUserDeviceV1(device)
-    }, ephemeralKeys.privateKey);
-
-    return deviceBlock;
   }
 
   makeKeyPublishBlock(publicEncryptionKey: Uint8Array, resourceKey: Uint8Array, resourceId: Uint8Array, nature: NatureKind): Block {

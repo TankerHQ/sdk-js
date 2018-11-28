@@ -12,7 +12,6 @@ import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 import { serializeTrustchainCreation,
-  serializeUserDeviceV1,
   serializeUserDeviceV3,
   serializeKeyPublish,
   serializeDeviceRevocationV1,
@@ -36,6 +35,17 @@ export type GeneratorUser = {
   userKeys?: tcrypto.SodiumKeyPair,
   devices: Array<GeneratorDevice>,
 }
+
+export function serializeUserDeviceV1(userDevice: UserDeviceRecord): Uint8Array {
+  return concatArrays(
+    userDevice.ephemeral_public_signature_key,
+    userDevice.user_id,
+    userDevice.delegation_signature,
+    userDevice.public_signature_key,
+    userDevice.public_encryption_key,
+  );
+}
+
 export function serializeKeyPublishToDevice(keyPublish: KeyPublishRecord): Uint8Array {
   return concatArrays(
     keyPublish.recipient,
