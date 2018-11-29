@@ -5,6 +5,9 @@
   "license": "UNLICENSED",
   "main": "src/index.js",
   "dependencies": {
-    "array-find": "^1.0.0"
+    "array-find": "^1.0.0",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "uuid": "^3.3.2"
   }
 }
