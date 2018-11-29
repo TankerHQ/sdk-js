@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import { makeGroupStoreBuilder } from './GroupStoreBuilder';
-import GroupManager from '../Groups/Manager';
+import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
 import { InvalidGroupSize } from '../errors';
 
 class StubTrustchain {
@@ -95,7 +95,13 @@ describe('GroupManager', () => {
 
   it('throws when creating a group with 1001 members', async () => {
     const { groupMan } = await makeTestUsers();
-    const users = Array.from({ length: 1001 }, () => 'bob');
+    const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
     await expect(groupMan.createGroup(users)).to.be.rejectedWith(InvalidGroupSize);
+  });
+
+  it('throws when updating a group with 1001 members', async () => {
+    const { groupMan } = await makeTestUsers();
+    const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
+    await expect(groupMan.updateGroupMembers('fakeid', users)).to.be.rejectedWith(InvalidGroupSize);
   });
 });

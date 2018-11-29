@@ -10,7 +10,7 @@ import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
 import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
 
-const MAX_GROUP_SIZE = 1000;
+export const MAX_GROUP_SIZE = 1000;
 
 export default class GroupManager {
   _localUser: LocalUser
