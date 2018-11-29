@@ -3,7 +3,7 @@
 import { tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
-import { NATURE, type UserGroupAdditionRecord, type UserGroupCreationRecord, type UserDeviceRecord, type DeviceRevocationRecord } from '../Blocks/payloads';
+import { type UserGroupAdditionRecord, type UserGroupCreationRecord, type UserDeviceRecord, type DeviceRevocationRecord } from '../Blocks/payloads';
 
 import { makeTrustchainBuilder } from './TrustchainBuilder';
 
@@ -33,22 +33,6 @@ describe('UnverifiedStore', () => {
       const decryptedKey = tcrypto.sealDecrypt(actual.key, alice.user.userKeys);
 
       expect(actual.resourceId).to.deep.equal(resourceId);
-      expect(decryptedKey).to.deep.equal(symmetricKey);
-    });
-
-    it('finds a key publish by nature', async () => {
-      const builder = await makeTrustchainBuilder();
-      const { unverifiedStore } = builder;
-      const alice = await builder.addUserV3('alice');
-
-      const { resourceId, symmetricKey } = await builder.addKeyPublishToDevice({ from: alice, to: alice });
-      await builder.addKeyPublishToUser({ from: alice, to: alice });
-
-      const actual = await unverifiedStore.findByNature(NATURE.key_publish_to_device);
-      const decryptedKey = tcrypto.asymDecrypt(actual[0].key, alice.device.encryptionKeys.publicKey, alice.device.encryptionKeys.privateKey);
-
-      expect(actual.length).to.equal(1);
-      expect(actual[0].resourceId).to.deep.equal(resourceId);
       expect(decryptedKey).to.deep.equal(symmetricKey);
     });
   });

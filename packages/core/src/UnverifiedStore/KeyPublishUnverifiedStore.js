@@ -65,13 +65,4 @@ export default class KeyPublishUnverifiedStore {
     });
     return entry ? dbEntryToEntry(entry) : null;
   }
-
-  async findByNature(nature: number): Promise<Array<UnverifiedKeyPublish>> {
-    const entries = await this._ds.find(KeyPublishUnverifiedStore.tables[TABLE_BLOCKS].name, {
-      selector: {
-        nature,
-      }
-    });
-    return entries.map(dbEntryToEntry);
-  }
 }

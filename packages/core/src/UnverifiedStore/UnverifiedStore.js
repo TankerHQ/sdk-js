@@ -2,7 +2,6 @@
 import { type DataStore } from '@tanker/datastore-base';
 
 import type { UnverifiedEntry } from '../Blocks/entries';
-import { NATURE_KIND, type Nature, natureKind } from '../Blocks/payloads';
 
 import KeyPublishUnverifiedStore, { type UnverifiedKeyPublish } from './KeyPublishUnverifiedStore';
 import UserUnverifiedStore, { type UnverifiedDeviceCreation, type VerifiedDeviceCreation, type UnverifiedDeviceRevocation, type VerifiedDeviceRevocation } from './UserUnverifiedStore';
@@ -55,18 +54,6 @@ export default class UnverifiedStore {
     await this.keyPublishUnverifiedStore.close();
     await this.userUnverifiedStore.close();
     await this.userGroupsUnverifiedStore.close();
-  }
-
-  async findByNature(nature: Nature): Promise<Array<Object>> {
-    switch (natureKind(nature)) {
-      case NATURE_KIND.key_publish_to_device:
-      case NATURE_KIND.key_publish_to_user:
-      case NATURE_KIND.key_publish_to_user_group:
-        return this.keyPublishUnverifiedStore.findByNature(nature);
-
-      default:
-        throw new Error('Assertion error: blocks of this nature not stored in UnverifiedStore');
-    }
   }
 
   async addUnverifiedKeyPublishes(entries: Array<UnverifiedEntry>): Promise<Array<UnverifiedKeyPublish>> {
