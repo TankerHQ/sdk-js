@@ -53,6 +53,7 @@
     "eslint-plugin-import": "^2.11.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-mocha-no-only": "^0.0.6",
+    "eslint-plugin-react": "^7.4.0",
     "flow": "^0.2.3",
     "flow-bin": "0.79.1",
     "fs-extra": "^7.0.0",
@@ -75,6 +76,7 @@
     "rollup-plugin-local-resolve": "1.0.7",
     "rollup-plugin-uglify": "^3.0.0",
     "sinon": "^4.5.0",
+    "turbocolor": "^2.6.1",
     "webpack": "4.6.0",
     "webpack-cli": "^2.0.14"
   },
@@ -95,9 +97,5 @@
     ],
     "sourceMap": false,
     "instrument": false
-  },
-  "dependencies": {
-    "eslint-plugin-react": "^7.4.0",
-    "turbocolor": "^2.6.1"
   }
 }
