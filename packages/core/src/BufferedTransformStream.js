@@ -2,9 +2,9 @@
 
 import { Transform } from 'readable-stream';
 
-import { Uint8Stream } from '../Uint8Stream';
-import PromiseWrapper from '../PromiseWrapper';
-import { BrokenStream, StreamAlreadyClosed } from '../errors';
+import { Uint8Stream } from './Uint8Stream';
+import PromiseWrapper from './PromiseWrapper';
+import { BrokenStream, StreamAlreadyClosed } from './errors';
 
 type Sizes = {
   inputSize: number,
@@ -69,10 +69,10 @@ export default class BufferedTransformStream {
         console.error(e);
       } finally {
         if (this._waitingPromise) {
-          this._waitingPromise.reject(new BrokenStream(error));
+          this._waitingPromise.reject(new BrokenStream(this._error));
         }
         if (this._endPromise) {
-          this._endPromise.reject(new BrokenStream(error));
+          this._endPromise.reject(new BrokenStream(this._error));
         }
       }
     };
