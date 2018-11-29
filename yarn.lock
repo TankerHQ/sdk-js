@@ -2336,14 +2336,14 @@ chai-as-promised@^7.1.1:
   dependencies:
     check-error "^1.0.2"
 
-chai-exclude@^1.0.10:
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/chai-exclude/-/chai-exclude-1.0.10.tgz#7a91a92ce305a4ed39eba7376fdb4069525e4c89"
-  integrity sha512-0ydcWiIgpqhXUVRXlJrkl11EDX8BNSBjLXwom+DcNArsXzi89lOHQjKjfBG5WZTH/vKVGK867Bn3boq5A3y5+g==
+chai-exclude@^1.0.12:
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/chai-exclude/-/chai-exclude-1.0.12.tgz#46fd69dc904ba06319f2d3f5b5060cfe179e2093"
+  integrity sha512-7xJgaLhigf51U+s7k23vOLnXk4w/rIffmlnUu/ueYJg21sLyrTqCn3BxvOjbGNGYgXTQNFwjFX3lUnbcai0oCA==
   dependencies:
     fclone "^1.0.11"
 
-chai@^4.1.0:
+chai@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/chai/-/chai-4.2.0.tgz#760aa72cf20e3795e84b12877ce0e83737aa29e5"
   integrity sha512-XQU3bhBukrOsQCuwZndwGcCVQHyZi53fQ6Ys1Fym7E4olpIqqZZhhoFJoaKVvV17lWQoXYwgWN2nF5crA8J2jw==
