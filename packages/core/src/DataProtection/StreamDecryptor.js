@@ -6,8 +6,8 @@ import { Transform } from 'readable-stream';
 import { aead, tcrypto } from '@tanker/crypto';
 import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, DecryptFailed } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
+import BufferedTransformStream from '../BufferedTransformStream';
 import { defaultOutputSize, defaultDecryptionSize, type ResourceIdKeyMapper, type StreamDecryptorParameters } from './StreamConfigs';
-import BufferedTransformStream from './BufferedTransformStream';
 
 export default class StreamDecryptor {
   _mapper: ResourceIdKeyMapper;

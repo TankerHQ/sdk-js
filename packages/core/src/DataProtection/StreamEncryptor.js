@@ -7,8 +7,8 @@ import { utils, tcrypto, aead, type b64string } from '@tanker/crypto';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument } from '../errors';
+import BufferedTransformStream from '../BufferedTransformStream';
 import { streamEncryptorVersion, defaultOutputSize, defaultEncryptionSize, type StreamEncryptorParameters } from './StreamConfigs';
-import BufferedTransformStream from './BufferedTransformStream';
 
 export default class StreamEncryptor {
   _outputSize: number = defaultOutputSize;
