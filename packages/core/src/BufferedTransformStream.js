@@ -69,10 +69,10 @@ export default class BufferedTransformStream {
         console.error(e);
       } finally {
         if (this._waitingPromise) {
-          this._waitingPromise.reject(new BrokenStream(this._error));
+          this._waitingPromise.resolve();
         }
         if (this._endPromise) {
-          this._endPromise.reject(new BrokenStream(this._error));
+          this._endPromise.resolve();
         }
       }
     };
@@ -140,6 +140,10 @@ export default class BufferedTransformStream {
     this.inputStream.end();
     // $FlowIKnow got assigne two ligne upper
     await this._endPromise.promise;
+
+    if (this._error)
+      throw new BrokenStream(this._error);
+
     return this.onEnd();
   }
 }
