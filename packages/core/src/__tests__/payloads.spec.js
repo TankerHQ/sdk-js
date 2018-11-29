@@ -25,9 +25,9 @@ import {
   unserializeUserGroupAddition,
   serializeBlock,
   unserializeBlock,
-  preferredNature,
-  NATURE_KIND,
 } from '../Blocks/payloads';
+
+import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 
 import { serializeUserDeviceV1 } from './Generator';
 

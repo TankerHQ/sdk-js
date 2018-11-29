@@ -5,7 +5,7 @@ import makeUint8Array from './makeUint8Array';
 import { expect } from './chai';
 
 import { entryToDbEntry, dbEntryToEntry, type UnverifiedEntry } from '../Blocks/entries';
-import { NATURE } from '../Blocks/payloads';
+import { NATURE } from '../Blocks/Nature';
 
 describe('entryToDbEntry', () => {
   const author = makeUint8Array('fake author', tcrypto.HASH_SIZE);

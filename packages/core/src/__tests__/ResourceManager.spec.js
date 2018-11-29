@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { expect } from './chai';
 import { ResourceNotFound } from '../errors';
 import { ResourceManager } from '../Resource/ResourceManager';
-import { preferredNature, NATURE_KIND } from '../Blocks/payloads';
+import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 
 class TrustchainStub {
   sync = sinon.spy();

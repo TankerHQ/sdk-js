@@ -2,7 +2,7 @@
 
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 
-import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup } from '../Blocks/payloads';
+import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup } from '../Blocks/Nature';
 import GroupStore from '../Groups/GroupStore';
 import LocalUser from '../Session/LocalUser';
 import UserAccessor from '../Users/UserAccessor';

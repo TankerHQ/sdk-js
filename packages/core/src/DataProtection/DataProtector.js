@@ -9,7 +9,7 @@ import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
-import { NATURE_KIND, type NatureKind } from '../Blocks/payloads';
+import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { decryptData } from './decrypt';
 import { encryptData } from './encrypt';
 import { type EncryptionOptions } from './EncryptionOptions';

@@ -5,11 +5,12 @@ import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { entryToDbEntry, dbEntryToEntry, type Entry, type UnverifiedEntry, type VerificationFields } from '../Blocks/entries';
 import {
-  NATURE,
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
   type UserGroupRecord,
 } from '../Blocks/payloads';
+
+import { NATURE } from '../Blocks/Nature';
 
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';

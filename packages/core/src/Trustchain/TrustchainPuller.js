@@ -12,13 +12,8 @@ import TrustchainVerifier from './TrustchainVerifier';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 
 
-import {
-  isKeyPublish,
-  isUserGroup,
-  natureKind,
-  unserializeBlock,
-  NATURE_KIND,
-} from '../Blocks/payloads';
+import { isKeyPublish, isUserGroup, natureKind, NATURE_KIND } from '../Blocks/Nature';
+import { unserializeBlock } from '../Blocks/payloads';
 
 
 export default class TrustchainPuller {

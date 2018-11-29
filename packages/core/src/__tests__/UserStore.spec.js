@@ -5,7 +5,7 @@ import { expect } from './chai';
 import UserStore from '../Users/UserStore';
 import { type User } from '../Users/User';
 
-import { NATURE } from '../Blocks/payloads';
+import { NATURE } from '../Blocks/Nature';
 
 import { type VerifiedDeviceCreation } from '../UnverifiedStore/UserUnverifiedStore';
 

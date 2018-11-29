@@ -15,12 +15,15 @@ import { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore
 import {
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
+} from '../Blocks/payloads';
+
+import {
   NATURE,
   isTrustchainCreation,
   isKeyPublishToDevice,
   isKeyPublishToUser,
   isKeyPublishToUserGroup,
-} from '../Blocks/payloads';
+} from '../Blocks/Nature';
 
 export const rootBlockAuthor = new Uint8Array(32);
 

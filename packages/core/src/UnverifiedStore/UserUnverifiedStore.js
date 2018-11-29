@@ -3,13 +3,8 @@
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 import { entryToDbEntry, dbEntryToEntry, type Entry, type UnverifiedEntry, type VerificationFields } from '../Blocks/entries';
-import {
-  natureKind,
-  NATURE_KIND,
-  type Nature,
-  type UserDeviceRecord,
-  type DeviceRevocationRecord,
-} from '../Blocks/payloads';
+import { type UserDeviceRecord, type DeviceRevocationRecord } from '../Blocks/payloads';
+import { natureKind, NATURE_KIND, type Nature } from '../Blocks/Nature';
 
 const TABLE_USER_BLOCKS = 0; // Contains both user devices & revocations
 const TABLE_DEVICE_TO_USER = 1; // Maps deviceId to userId, for revocation targets

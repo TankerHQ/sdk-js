@@ -10,10 +10,8 @@ import { type GeneratorKeyResult, type GeneratorUserResult } from './Generator';
 import { signBlock, type Block } from '../Blocks/Block';
 import TrustchainBuilder, { makeTrustchainBuilder } from './TrustchainBuilder';
 import UserStore from '../Users/UserStore';
-import {
-  serializeKeyPublish,
-  NATURE, type Nature,
-} from '../Blocks/payloads';
+import { serializeKeyPublish } from '../Blocks/payloads';
+import { NATURE, type Nature } from '../Blocks/Nature';
 
 
 type EntryBlockSignParam = {

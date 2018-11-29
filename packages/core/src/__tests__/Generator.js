@@ -16,12 +16,10 @@ import { serializeTrustchainCreation,
   serializeKeyPublish,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
-  preferredNature,
   type UserDeviceRecord,
-  type KeyPublishRecord,
-  NATURE,
-  NATURE_KIND,
-  type Nature } from '../Blocks/payloads';
+  type KeyPublishRecord } from '../Blocks/payloads';
+
+import { preferredNature, NATURE, NATURE_KIND, type Nature } from '../Blocks/Nature';
 
 
 export type GeneratorDevice = {

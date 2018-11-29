@@ -8,14 +8,13 @@ import {
   serializeDeviceRevocationV2,
   serializeUserGroupCreation,
   serializeUserGroupAddition,
-  preferredNature,
   type UserDeviceRecord,
   type UserKeys,
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
-  type NatureKind,
-  NATURE_KIND,
 } from './payloads';
+import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
+
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';

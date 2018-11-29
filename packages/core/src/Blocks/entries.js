@@ -2,11 +2,11 @@
 
 import { utils } from '@tanker/crypto';
 import {
-  type Nature,
   type Record,
   unserializePayload,
 } from './payloads';
 
+import { type Nature } from './Nature';
 
 import {
   type Block,
