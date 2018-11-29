@@ -3,7 +3,7 @@
 import { utils } from '@tanker/crypto';
 import { errors as dbErrors, mergeSchemas, type DataStore } from '@tanker/datastore-base';
 
-import KeyStore from '../Session/Keystore';
+import KeyStore from './Keystore';
 import ResourceStore from '../Resource/ResourceStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';

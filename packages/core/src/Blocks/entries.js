@@ -1,6 +1,6 @@
 // @flow
-
 import { utils } from '@tanker/crypto';
+
 import {
   type Record,
   unserializePayload,
@@ -16,7 +16,7 @@ import {
 } from './payloads';
 
 import { type Nature, NATURE } from './Nature';
-import { type Block, hashBlock } from '../Blocks/Block';
+import { type Block, hashBlock } from './Block';
 
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { type UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
@@ -205,4 +205,3 @@ export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): Unv
     user_id: userId
   };
 }
-

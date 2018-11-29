@@ -144,8 +144,7 @@ function testAeadDecrypt(name, aeadFunc, testVector, testVectorWithAssociatedDat
 
     it('Should decrypt if associated data is gud', async () => {
       const gudAssociatedData = new Uint8Array(MAC_SIZE);
-      const promise =
-          aeadFunc(goodKey, testVectorWithAssociatedData, gudAssociatedData);
+      const promise = aeadFunc(goodKey, testVectorWithAssociatedData, gudAssociatedData);
       await expect(promise).to.be.fulfilled;
     });
   });

@@ -2,7 +2,7 @@
 
 import { utils, obfuscateUserId } from '@tanker/crypto';
 
-import UserStore, { type FindUserParameters, type FindUsersParameters } from '../Users/UserStore';
+import UserStore, { type FindUserParameters, type FindUsersParameters } from './UserStore';
 import { type User } from './User';
 import Trustchain from '../Trustchain/Trustchain';
 import { InvalidArgument, RecipientsNotFound } from '../errors';

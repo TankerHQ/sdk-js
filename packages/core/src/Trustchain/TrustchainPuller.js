@@ -4,8 +4,7 @@ import uniq from 'lodash.uniqby';
 
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
-
-import TrustchainStore, { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
+import TrustchainStore, { type UnverifiedTrustchainCreation } from './TrustchainStore';
 import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
 
 import { blockToEntry, keyPublishFromBlock, userGroupEntryFromBlock, deviceCreationFromBlock, deviceRevocationFromBlock } from '../Blocks/entries';

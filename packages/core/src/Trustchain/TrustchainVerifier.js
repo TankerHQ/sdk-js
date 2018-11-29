@@ -9,7 +9,7 @@ import GroupUpdater from '../Groups/GroupUpdater';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
+import { type UnverifiedTrustchainCreation } from './TrustchainStore';
 
 import {
   NATURE,

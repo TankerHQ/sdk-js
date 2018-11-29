@@ -19,7 +19,7 @@ import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { InvalidDelegationToken } from '../errors';
-import { concatArrays } from '../Blocks/Serialize';
+import { concatArrays } from './Serialize';
 
 export function getUserGroupCreationBlockSignData(record: UserGroupCreationRecord): Uint8Array {
   return concatArrays(

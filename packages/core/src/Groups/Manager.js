@@ -5,8 +5,8 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
 import { Client } from '../Network/Client';
-import GroupStore from '../Groups/GroupStore';
-import { type ExternalGroup } from '../Groups/types';
+import GroupStore from './GroupStore';
+import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
 import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
 
