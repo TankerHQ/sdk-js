@@ -96,21 +96,21 @@ export default class TrustchainBuilder {
     const { symmetricKey, to, from, resourceId } = args;
 
     const result = await this.generator.newKeyPublishToDevice({ symmetricKey, toDevice: to.device, fromDevice: from.device, resourceId });
-    await this.unverifiedStore.addUnverifiedKeyPublishes([result.entry]);
+    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
     return result;
   }
 
   async addKeyPublishToUser(args: {from: GeneratorUserResult, to: GeneratorUserResult, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
     const { symmetricKey, to, from, resourceId } = args;
     const result = await this.generator.newKeyPublishToUser({ symmetricKey, toUser: to.user, fromDevice: from.device, resourceId });
-    await this.unverifiedStore.addUnverifiedKeyPublishes([result.entry]);
+    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
     return result;
   }
 
   async addKeyPublishToUserGroup(args: {from: GeneratorUserResult, to: GeneratorUserGroupResult, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
     const { symmetricKey, to, from, resourceId } = args;
     const result = await this.generator.newKeyPublishToUserGroup({ symmetricKey, toGroup: to, fromDevice: from.device, resourceId });
-    await this.unverifiedStore.addUnverifiedKeyPublishes([result.entry]);
+    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
     return result;
   }
 

@@ -161,13 +161,7 @@ export function verifyKeyPublish(keyPublish: UnverifiedKeyPublish, author: Devic
     verifyKeyPublishToUserGroup(keyPublish, author, recipientGroup);
   }
 
-  return {
-    resourceId: keyPublish.resourceId,
-    key: keyPublish.key,
-    recipient: keyPublish.recipient,
-    author: keyPublish.author,
-    nature: keyPublish.nature,
-  };
+  return keyPublish;
 }
 
 export function verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Device, existingGroup: ?ExternalGroup): VerifiedUserGroup {

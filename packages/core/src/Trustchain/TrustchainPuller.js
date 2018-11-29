@@ -6,6 +6,7 @@ import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
 import TrustchainStore, { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import TrustchainVerifier from './TrustchainVerifier';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
@@ -142,7 +143,8 @@ export default class TrustchainPuller {
       }
 
       if (isKeyPublish(unverifiedEntry.nature)) {
-        keyPublishes.push(unverifiedEntry);
+        const keyPublish: UnverifiedKeyPublish = { ...unverifiedEntry, ...unverifiedEntry.payload_unverified };
+        keyPublishes.push(keyPublish);
       } else if (isUserGroup(unverifiedEntry.nature)) {
         userGroups.push(unverifiedEntry);
       } else if (natureKind(unverifiedEntry.nature) === NATURE_KIND.device_creation) {

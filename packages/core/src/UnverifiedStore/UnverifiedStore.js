@@ -56,7 +56,7 @@ export default class UnverifiedStore {
     await this.userGroupsUnverifiedStore.close();
   }
 
-  async addUnverifiedKeyPublishes(entries: Array<UnverifiedEntry>): Promise<Array<UnverifiedKeyPublish>> {
+  async addUnverifiedKeyPublishes(entries: Array<UnverifiedKeyPublish>) {
     return this.keyPublishUnverifiedStore.addUnverifiedKeyPublishes(entries);
   }
 

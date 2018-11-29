@@ -63,7 +63,7 @@ function internalEntryToDbEntry(entry: any): any {
   return result;
 }
 
-export function entryToDbEntry(entry: UnverifiedEntry, id: any): any {
+export function entryToDbEntry(entry: any, id: any): any {
   const result = internalEntryToDbEntry(entry);
   result._id = id; // eslint-disable-line no-underscore-dangle
   return result;

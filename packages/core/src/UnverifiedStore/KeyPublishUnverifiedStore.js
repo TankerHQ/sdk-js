@@ -2,11 +2,8 @@
 import { utils } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 
-import { entryToDbEntry, dbEntryToEntry, type Entry, type UnverifiedEntry, type VerificationFields } from '../Blocks/entries';
-import {
-  type Nature,
-  type KeyPublishRecord,
-} from '../Blocks/payloads';
+import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
+import { type Nature, type KeyPublishRecord } from '../Blocks/payloads';
 
 const TABLE_BLOCKS = 0; // Table that stores our unverified blocks
 
@@ -43,18 +40,15 @@ export default class KeyPublishUnverifiedStore {
     this._ds = null;
   }
 
-  async addUnverifiedKeyPublishes(entries: Array<UnverifiedEntry>): Promise<Array<UnverifiedKeyPublish>> {
+  async addUnverifiedKeyPublishes(entries: Array<UnverifiedKeyPublish>) {
     if (entries.length === 0)
-      return [];
+      return;
     const mapEntry = new Map();
     for (const entry of entries) {
-      const payload = ((entry.payload_unverified: any): KeyPublishRecord);
-      const dbEntry = entryToDbEntry(entry, utils.toBase64(payload.resourceId));
+      const dbEntry = entryToDbEntry(entry, utils.toBase64(entry.resourceId));
       mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
     }
-    const entryList = (([...mapEntry.values()]: any): Array<Entry>);
-    await this._ds.bulkAdd(KeyPublishUnverifiedStore.tables[TABLE_BLOCKS].name, entryList);
-    return entryList.map(dbEntryToEntry);
+    return this._ds.bulkAdd(KeyPublishUnverifiedStore.tables[TABLE_BLOCKS].name, [...mapEntry.values()]);
   }
 
   async findUnverifiedKeyPublish(resourceId: Uint8Array): Promise<?UnverifiedKeyPublish> {
