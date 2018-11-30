@@ -87,7 +87,6 @@ deploy/sdk:
     - dmenv run -- python run-ci.py deploy
         --env ${CI_ENVIRONMENT_NAME} --git-tag ${CI_COMMIT_TAG}
 
-
 mirror:
   tags:
     - linux
@@ -114,5 +113,13 @@ pages:
     paths:
       - public
     expire_in: 7 days
+  tags:
+    - linux
+
+check/upgrade:
+  stage: check
+  when: manual
+  script:
+    - xvfb-run dmenv run -- python run-ci.py check --runner linux --upgrade
   tags:
     - linux
