@@ -8,6 +8,7 @@ import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
 import type { TestArgs } from './TestArgs';
 
 import generateChunkEncryptor from './chunkEncryptor';
+import generateStreamEncryptor from './encryptorStream';
 import generateEncryptTests from './encrypt';
 import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';
@@ -63,6 +64,7 @@ export function generateFunctionalTests(
     });
 
     generateChunkEncryptor(args);
+    generateStreamEncryptor(args);
     generateEncryptTests(args);
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
