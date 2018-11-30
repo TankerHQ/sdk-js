@@ -15,12 +15,15 @@ import { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore
 import {
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
+} from '../Blocks/payloads';
+
+import {
   NATURE,
   isTrustchainCreation,
   isKeyPublishToDevice,
   isKeyPublishToUser,
   isKeyPublishToUserGroup,
-} from '../Blocks/payloads';
+} from '../Blocks/Nature';
 
 export const rootBlockAuthor = new Uint8Array(32);
 
@@ -161,13 +164,7 @@ export function verifyKeyPublish(keyPublish: UnverifiedKeyPublish, author: Devic
     verifyKeyPublishToUserGroup(keyPublish, author, recipientGroup);
   }
 
-  return {
-    resourceId: keyPublish.resourceId,
-    key: keyPublish.key,
-    recipient: keyPublish.recipient,
-    author: keyPublish.author,
-    nature: keyPublish.nature,
-  };
+  return keyPublish;
 }
 
 export function verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Device, existingGroup: ?ExternalGroup): VerifiedUserGroup {

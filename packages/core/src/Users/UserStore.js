@@ -5,7 +5,7 @@ import { type DataStore } from '@tanker/datastore-base';
 
 import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
-import { NATURE, NATURE_KIND, natureKind } from '../Blocks/payloads';
+import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
 import LocalUser from '../Session/LocalUser';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 

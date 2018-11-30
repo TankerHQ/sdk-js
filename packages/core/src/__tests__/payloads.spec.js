@@ -9,7 +9,6 @@ import { concatArrays, encodeListLength } from '../Blocks/Serialize';
 import {
   serializeTrustchainCreation,
   unserializeTrustchainCreation,
-  serializeUserDeviceV1,
   serializeUserDeviceV3,
   unserializeUserDeviceV1,
   unserializeUserDeviceV2,
@@ -26,9 +25,11 @@ import {
   unserializeUserGroupAddition,
   serializeBlock,
   unserializeBlock,
-  preferredNature,
-  NATURE_KIND,
 } from '../Blocks/payloads';
+
+import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
+
+import { serializeUserDeviceV1 } from './Generator';
 
 import makeUint8Array from './makeUint8Array';
 
@@ -580,26 +581,6 @@ describe('payloads', () => {
     const signedBlock = signBlock(block, signatureKeys.privateKey);
 
     expect(unserializeBlock(serializeBlock(signedBlock))).to.deep.equal(signedBlock);
-  });
-
-  it('should throw if the last reset is not null when serializing a new userDeviceV1', async () => {
-    const ephemeralKeys = tcrypto.makeSignKeyPair();
-    const signatureKeys = tcrypto.makeSignKeyPair();
-    const encryptionKeys = tcrypto.makeEncryptionKeyPair();
-    const userDevice = {
-      last_reset: new Uint8Array(Array.from({ length: tcrypto.HASH_SIZE }, () => 1)),
-      ephemeral_public_signature_key: ephemeralKeys.publicKey,
-      user_id: utils.fromString('12341234123412341234123412341234'),
-      delegation_signature: utils.fromString('1234123412341234123412341234123412341234123412341234123412341234'),
-      public_signature_key: signatureKeys.publicKey,
-      public_encryption_key: encryptionKeys.publicKey,
-      user_key_pair: null,
-      is_ghost_device: false,
-      is_server_device: false,
-      revoked: Number.MAX_SAFE_INTEGER,
-    };
-
-    expect(() => serializeUserDeviceV1(userDevice)).to.throw('Assertion error: user device last reset must be null');
   });
 
   it('should throw if the last reset is not null when serializing a new userDeviceV3', async () => {

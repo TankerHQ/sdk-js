@@ -1,11 +1,12 @@
 // @flow
 import varint from 'varint';
 import { generichash, tcrypto, utils, type Key } from '@tanker/crypto';
+import { type Nature } from './Nature';
 
 export type BlockNoSignature = {
   trustchain_id: Uint8Array,
   index: number,
-  nature: number,
+  nature: Nature,
   payload: Uint8Array,
   author: Uint8Array,
 };
@@ -13,7 +14,7 @@ export type BlockNoSignature = {
 export type Block = {|
   trustchain_id: Uint8Array,
   index: number,
-  nature: number,
+  nature: Nature,
   payload: Uint8Array,
   author: Uint8Array,
   signature: Uint8Array,

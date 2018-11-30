@@ -5,7 +5,7 @@ import { tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import { toBase64 } from '../index';
 import { KeyDecryptor } from '../Resource/KeyDecryptor';
-import { preferredNature, NATURE_KIND } from '../Blocks/payloads';
+import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 
 const refDeviceId = new Uint8Array([0, 0, 7]);
 

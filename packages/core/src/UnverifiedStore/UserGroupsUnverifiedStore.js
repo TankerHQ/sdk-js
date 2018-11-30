@@ -3,22 +3,25 @@
 import { utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import { entryToDbEntry, dbEntryToEntry, type Entry, type UnverifiedEntry, type VerificationFields } from '../Blocks/entries';
-import {
-  NATURE,
-  type UserGroupCreationRecord,
-  type UserGroupAdditionRecord,
-  type UserGroupRecord,
-} from '../Blocks/payloads';
+import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
+import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
+import { NATURE } from '../Blocks/Nature';
 
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';
 
-export type UnverifiedUserGroup = {
+export type UnverifiedUserGroupCreation = {
   ...VerificationFields,
-  ...UserGroupRecord,
+  ...UserGroupCreationRecord,
+  group_id: Uint8Array
 };
 
+export type UnverifiedUserGroupAddition = {
+  ...VerificationFields,
+  ...UserGroupAdditionRecord,
+};
+
+export type UnverifiedUserGroup = UnverifiedUserGroupCreation | UnverifiedUserGroupAddition
 export type VerifiedUserGroup = UnverifiedUserGroup
 
 export default class UserGroupsUnverifiedStore {
@@ -45,40 +48,37 @@ export default class UserGroupsUnverifiedStore {
     this._ds = null;
   }
 
-  async addUnverifiedUserGroupEntries(entries: Array<UnverifiedEntry>): Promise<void> {
+  async addUnverifiedUserGroupEntries(entries: Array<UnverifiedUserGroup>): Promise<void> {
     if (entries.length === 0)
       return;
     const mapEntry = new Map();
     const mapEncKeys = new Map();
     for (const entry of entries) {
       if (entry.nature === NATURE.user_group_creation) {
-        const payload = ((entry.payload_unverified: any): UserGroupCreationRecord);
-        const groupId = payload.public_signature_key;
-        const b64GroupId = utils.toBase64(groupId);
+        const groupCreation: UnverifiedUserGroupCreation = (entry: any);
+        const b64GroupId = utils.toBase64(entry.group_id);
 
-        const dbEntry = entryToDbEntry({ ...entry, group_id: groupId }, b64GroupId);
+        const dbEntry = entryToDbEntry(entry, b64GroupId);
         delete dbEntry.group_public_encryption_key;
         mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
 
         const dbGroupKey = {
-          _id: utils.toBase64(payload.public_encryption_key),
+          _id: utils.toBase64(groupCreation.public_encryption_key),
           group_id: b64GroupId,
         };
         mapEncKeys.set(dbGroupKey._id, dbGroupKey); // eslint-disable-line no-underscore-dangle
       } else if (entry.nature === NATURE.user_group_addition) {
-        const payload = ((entry.payload_unverified: any): UserGroupAdditionRecord);
-        const dbEntry = entryToDbEntry(entry, utils.toBase64(payload.previous_group_block));
+        const groupAddition: UnverifiedUserGroupAddition = (entry: any);
+        const dbEntry = entryToDbEntry(entry, utils.toBase64(groupAddition.previous_group_block));
         mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
       } else {
         throw new Error('Assertion failure: entry is not a group entry');
       }
     }
-    const entryList = (([...mapEntry.values()]: any): Array<Entry>);
-    await this._ds.bulkAdd(UNVERIFIED_GROUPS_TABLE, entryList);
+    await this._ds.bulkAdd(UNVERIFIED_GROUPS_TABLE, [...mapEntry.values()]);
 
     if (mapEncKeys.size > 0) {
-      const keysList = (([...mapEncKeys.values()]: any): Array<Object>);
-      await this._ds.bulkPut(ENCRYPTION_KEY_GROUP_ID_TABLE, keysList);
+      await this._ds.bulkPut(ENCRYPTION_KEY_GROUP_ID_TABLE, [...mapEncKeys.values()]);
     }
   }
 

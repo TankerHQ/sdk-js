@@ -1,243 +1,157 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 
 import { expect } from './chai';
-import { NATURE, type UserGroupAdditionRecord, type UserGroupCreationRecord, type UserDeviceRecord, type DeviceRevocationRecord } from '../Blocks/payloads';
+import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
+import TestGenerator from './TestGenerator';
 
-import { makeTrustchainBuilder } from './TrustchainBuilder';
-
-import { type UnverifiedDeviceCreation, type UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+async function initUnverifiedStore(): Promise<UnverifiedStore> {
+  const { schemas } = UnverifiedStore;
+  const dbName = `unverified-store-test-${makePrefix()}`;
+  const datastore = await openDataStore({ ...dataStoreConfig, dbName, schemas });
+  return UnverifiedStore.open(datastore);
+}
 
 describe('UnverifiedStore', () => {
+  let unverifiedStore;
+  const testGenerator = new TestGenerator();
+  testGenerator.makeTrustchainCreation();
+
+  before(async () => {
+    unverifiedStore = await initUnverifiedStore();
+  });
+
   describe('key publishes', () => {
+    let keyPublish;
+
+    before(async () => {
+      const userId = random(tcrypto.HASH_SIZE);
+      const userCreation = testGenerator.makeUserCreation(userId);
+      keyPublish = testGenerator.makeKeyPublishToUser(userCreation, userCreation.user);
+
+      await unverifiedStore.addUnverifiedKeyPublishes([keyPublish.unverifiedKeyPublish]);
+    });
+
     it('returns null when fetching a missing key publish', async () => {
-      const { unverifiedStore } = await makeTrustchainBuilder();
-      const actual = await unverifiedStore.findUnverifiedKeyPublish(new Uint8Array(0));
-      expect(actual).to.equal(null);
+      const result = await unverifiedStore.findUnverifiedKeyPublish(new Uint8Array(0));
+      expect(result).to.equal(null);
     });
 
     it('finds an unverified key publish', async () => {
-      const builder = await makeTrustchainBuilder();
-      const { unverifiedStore } = builder;
-      const alice = await builder.addUserV3('alice');
-
-      const { resourceId, symmetricKey } = await builder.addKeyPublishToUser({ from: alice, to: alice });
-
-      const actual = await unverifiedStore.findUnverifiedKeyPublish(resourceId);
-      if (!actual)
-        throw new Error('Failed to find key publish (flow hint)');
-      if (!alice.user.userKeys)
-        throw new Error('Cannot happen, someone should tell flow.');
-      const decryptedKey = tcrypto.sealDecrypt(actual.key, alice.user.userKeys);
-
-      expect(actual.resourceId).to.deep.equal(resourceId);
-      expect(decryptedKey).to.deep.equal(symmetricKey);
-    });
-
-    it('finds a key publish by nature', async () => {
-      const builder = await makeTrustchainBuilder();
-      const { unverifiedStore } = builder;
-      const alice = await builder.addUserV3('alice');
-
-      const { resourceId, symmetricKey } = await builder.addKeyPublishToDevice({ from: alice, to: alice });
-      await builder.addKeyPublishToUser({ from: alice, to: alice });
-
-      const actual = await unverifiedStore.findByNature(NATURE.key_publish_to_device);
-      const decryptedKey = tcrypto.asymDecrypt(actual[0].key, alice.device.encryptionKeys.publicKey, alice.device.encryptionKeys.privateKey);
-
-      expect(actual.length).to.equal(1);
-      expect(actual[0].resourceId).to.deep.equal(resourceId);
-      expect(decryptedKey).to.deep.equal(symmetricKey);
+      const result = await unverifiedStore.findUnverifiedKeyPublish(keyPublish.resourceId);
+      expect(result).excluding('_rev', '_idx').to.deep.equal(keyPublish.unverifiedKeyPublish);
     });
   });
 
   describe('user devices & revocations', () => {
-    let store: any;
-    let deviceId;
+    let userCreation;
+    let deviceCreation;
+    let deviceRevocation;
     let userId;
-    let deviceEntry: UnverifiedDeviceCreation;
-    let revocationEntry: UnverifiedDeviceRevocation;
 
-    beforeEach(async () => {
-      const builder = await makeTrustchainBuilder();
-      const { generator, unverifiedStore } = builder;
-      store = unverifiedStore;
-      await generator.newUserCreationV3('alice');
+    before(async () => {
+      userId = random(tcrypto.HASH_SIZE);
+      userCreation = testGenerator.makeUserCreation(userId);
+      deviceCreation = testGenerator.makeDeviceCreation(userCreation);
+      deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation, deviceCreation.testDevice.id);
 
-      const aliceDev = await generator.newDeviceCreationV3({ userId: 'alice', parentIndex: 0 });
-      const revocation = await generator.newDeviceRevocationV2(aliceDev.device, aliceDev.device);
-      await unverifiedStore.addUnverifiedUserEntries([aliceDev.entry, revocation.entry]);
-
-      const otherDevice = await generator.newUserCreationV3('bob');
-      const otherRevocation = await generator.newDeviceRevocationV2(otherDevice.device, otherDevice.device);
-      await unverifiedStore.addUnverifiedUserEntries([otherDevice.entry, otherRevocation.entry]);
-
-      const creationPayload: UserDeviceRecord = (aliceDev.entry.payload_unverified: any);
-      deviceEntry = {
-        index: aliceDev.entry.index,
-        nature: aliceDev.entry.nature,
-        author: aliceDev.entry.author,
-        hash: aliceDev.entry.hash,
-        signature: aliceDev.entry.signature,
-        ...creationPayload,
-      };
-
-      const revocationPayload: DeviceRevocationRecord = (revocation.entry.payload_unverified: any);
-      revocationEntry = {
-        index: revocation.entry.index,
-        nature: revocation.entry.nature,
-        author: revocation.entry.author,
-        hash: revocation.entry.hash,
-        signature: revocation.entry.signature,
-        ...revocationPayload,
-        user_id: creationPayload.user_id,
-      };
-
-      deviceId = deviceEntry.hash;
-      userId = deviceEntry.user_id;
+      await unverifiedStore.addUnverifiedUserEntries([userCreation.unverifiedDeviceCreation, deviceCreation.unverifiedDeviceCreation, deviceRevocation.unverifiedDeviceRevocation]);
     });
 
     it('returns an empty array when fetching a missing user device', async () => {
-      const result = await store.findUnverifiedDevicesByHash([new Uint8Array(0)]);
+      const result = await unverifiedStore.findUnverifiedDevicesByHash([new Uint8Array(0)]);
       expect(result).to.deep.equal([]);
     });
 
     it('finds an unverified user device', async () => {
-      const result = (await store.findUnverifiedDevicesByHash([deviceId])).map(r => {
-        const res = r;
-        delete res._rev; //eslint-disable-line no-underscore-dangle
-        return res;
-      });
-      expect(result).to.deep.equal([deviceEntry]);
+      const result = await unverifiedStore.findUnverifiedDevicesByHash([deviceCreation.testDevice.id]);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal([deviceCreation.unverifiedDeviceCreation]);
     });
 
     it('finds an unverified device revocation by hash', async () => {
-      const result = await store.findUnverifiedDeviceRevocationByHash(revocationEntry.hash);
-      delete result._rev; //eslint-disable-line no-underscore-dangle
-      expect(result).to.deep.equal(revocationEntry);
+      const result = await unverifiedStore.findUnverifiedDeviceRevocationByHash(deviceRevocation.unverifiedDeviceRevocation.hash);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal(deviceRevocation.unverifiedDeviceRevocation);
     });
 
     it('finds all entries for a user', async () => {
-      const result = (await store.findUnverifiedUserEntries([userId])).map(r => {
-        const res = r;
-        delete res._rev; //eslint-disable-line no-underscore-dangle
-        return res;
-      });
-      expect(result).to.deep.equal([deviceEntry, revocationEntry]);
+      const result = await unverifiedStore.findUnverifiedUserEntries([userId]);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal([userCreation.unverifiedDeviceCreation, deviceCreation.unverifiedDeviceCreation, deviceRevocation.unverifiedDeviceRevocation]);
     });
 
     it('finds user entries before index', async () => {
-      const result = (await store.findUnverifiedUserEntries([userId], revocationEntry.index)).map(r => {
-        const res = r;
-        delete res._rev; //eslint-disable-line no-underscore-dangle
-        return res;
-      });
-      expect(result).to.deep.equal([deviceEntry]);
+      const result = await unverifiedStore.findUnverifiedUserEntries([userId], deviceRevocation.block.index);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal([userCreation.unverifiedDeviceCreation, deviceCreation.unverifiedDeviceCreation]);
     });
 
     it('can remove an entry (and not find it again)', async () => {
-      await store.removeVerifiedUserEntries([deviceEntry]);
-      const result = (await store.findUnverifiedUserEntries([userId])).map(r => {
-        const res = r;
-        delete res._rev; //eslint-disable-line no-underscore-dangle
-        return res;
-      });
-      expect(result).to.deep.equal([revocationEntry]);
+      await unverifiedStore.removeVerifiedUserEntries([deviceCreation.unverifiedDeviceCreation, deviceRevocation.unverifiedDeviceRevocation]);
+      const result = await unverifiedStore.findUnverifiedUserEntries([userId]);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal([userCreation.unverifiedDeviceCreation]);
+    });
+
+    it('can find the userId associated with any device', async () => {
+      let result = await unverifiedStore.getUserIdFromDeviceId(userCreation.testDevice.id);
+      expect(result).to.deep.equal(userCreation.testUser.id);
+      result = await unverifiedStore.getUserIdFromDeviceId(deviceCreation.testDevice.id);
+      expect(result).to.deep.equal(userCreation.testUser.id);
+    });
+
+    it('returns null if requesting unknown device', async () => {
+      const result = await unverifiedStore.getUserIdFromDeviceId(new Uint8Array(0));
+      expect(result).to.be.null;
     });
   });
 
   describe('user groups ', () => {
-    let store: any;
-    let groupId;
-    let groupKey;
-    let creationEntry: UnverifiedUserGroup;
-    let additionEntry: UnverifiedUserGroup;
+    let userGroupCreation;
+    let userGroupAddition;
 
     beforeEach(async () => {
-      const builder = await makeTrustchainBuilder();
-      const { generator, unverifiedStore } = builder;
-      store = unverifiedStore;
-      const alice = await builder.addUserV3('alice');
+      testGenerator.makeTrustchainCreation();
+      const userId = random(tcrypto.HASH_SIZE);
+      const userCreation = testGenerator.makeUserCreation(userId);
+      userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user]);
 
-      const group = await generator.newUserGroupCreation(alice.device, ['alice']);
-      await unverifiedStore.addUnverifiedUserGroups([group.entry]);
+      // Second user
+      const userId2 = random(tcrypto.HASH_SIZE);
+      const userCreation2 = testGenerator.makeUserCreation(userId2);
+      userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroupCreation, [userCreation2.user]);
 
-      const addition = await generator.newUserGroupAddition(alice.device, group, ['alice']);
-      await unverifiedStore.addUnverifiedUserGroups([addition.entry]);
-
-      const creationPayload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
-      creationEntry = {
-        index: group.entry.index,
-        nature: group.entry.nature,
-        author: group.entry.author,
-        hash: group.entry.hash,
-        signature: group.entry.signature,
-        ...creationPayload,
-        group_id: creationPayload.public_signature_key
-      };
-
-      const additionPayload: UserGroupAdditionRecord = (addition.entry.payload_unverified: any);
-      additionEntry = {
-        index: addition.entry.index,
-        nature: addition.entry.nature,
-        author: addition.entry.author,
-        hash: addition.entry.hash,
-        signature: addition.entry.signature,
-        ...additionPayload
-      };
-
-      groupId = creationPayload.public_signature_key;
-      groupKey = creationPayload.public_encryption_key;
+      await unverifiedStore.addUnverifiedUserGroups([userGroupCreation.unverifiedUserGroup, userGroupAddition.unverifiedUserGroup]);
     });
 
     it('returns empty array when fetching a missing user group', async () => {
-      const result = await store.findUnverifiedUserGroup(new Uint8Array(0));
+      const result = await unverifiedStore.findUnverifiedUserGroup(new Uint8Array(0));
       expect(result).to.deep.equal([]);
     });
 
     it('returns empty array when fetching a missing user group', async () => {
-      const result = await store.findUnverifiedUserGroupByPublicEncryptionKey(new Uint8Array(0));
+      const result = await unverifiedStore.findUnverifiedUserGroupByPublicEncryptionKey(new Uint8Array(0));
       expect(result).to.deep.equal([]);
     });
 
     it('finds an unverified user group ', async () => {
-      const result = (await store.findUnverifiedUserGroup(groupId)).map(r => {
-        const res = r;
-        delete res._rev; //eslint-disable-line no-underscore-dangle
-        return res;
-      });
-      expect(result).to.deep.equal([creationEntry, additionEntry]);
+      const result = await unverifiedStore.findUnverifiedUserGroup(userGroupCreation.externalGroup.groupId);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal([userGroupCreation.unverifiedUserGroup, userGroupAddition.unverifiedUserGroup]);
     });
 
     it('finds an unverified user group by encryption key', async () => {
-      const result = (await store.findUnverifiedUserGroupByPublicEncryptionKey(groupKey)).map(r => {
-        const res = r;
-        delete res._rev; //eslint-disable-line no-underscore-dangle
-        return res;
-      });
-      expect(result).to.deep.equal([creationEntry, additionEntry]);
+      const result = await unverifiedStore.findUnverifiedUserGroupByPublicEncryptionKey(userGroupCreation.externalGroup.publicEncryptionKey);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal([userGroupCreation.unverifiedUserGroup, userGroupAddition.unverifiedUserGroup]);
     });
 
     it('deletes a verified user group creation', async () => {
-      await store.removeVerifiedUserGroupEntry((creationEntry: VerifiedUserGroup));
-      const result = (await store.findUnverifiedUserGroup(groupId)).map(r => {
-        const res = r;
-        delete res._rev; //eslint-disable-line no-underscore-dangle
-        return res;
-      });
-      expect(result).to.deep.equal([additionEntry]);
+      await unverifiedStore.removeVerifiedUserGroupEntry(userGroupCreation.unverifiedUserGroup);
+      const result = await unverifiedStore.findUnverifiedUserGroup(userGroupCreation.externalGroup.groupId);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal([userGroupAddition.unverifiedUserGroup]);
     });
 
     it('deletes a verified user group addition', async () => {
-      await store.removeVerifiedUserGroupEntry((additionEntry: VerifiedUserGroup));
-      const result = (await store.findUnverifiedUserGroup(groupId)).map(r => {
-        const res = r;
-        delete res._rev; //eslint-disable-line no-underscore-dangle
-        return res;
-      });
-      expect(result).to.deep.equal([creationEntry]);
+      await unverifiedStore.removeVerifiedUserGroupEntry((userGroupAddition.unverifiedUserGroup));
+      const result = await unverifiedStore.findUnverifiedUserGroup(userGroupCreation.externalGroup.groupId);
+      expect(result).excluding(['_rev', '_id']).to.deep.equal([userGroupCreation.unverifiedUserGroup]);
     });
   });
 });

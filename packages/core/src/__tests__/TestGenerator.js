@@ -2,7 +2,7 @@
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
 
-import { blockToEntry } from '../Blocks/entries';
+import { deviceCreationFromBlock, deviceRevocationFromBlock, keyPublishFromBlock, userGroupEntryFromBlock } from '../Blocks/entries';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
@@ -16,7 +16,7 @@ import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
 
 import { rootBlockAuthor } from '../Trustchain/Verify';
 
-import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/payloads';
+import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
 import { type DelegationToken } from '../Session/delegation';
 
@@ -67,6 +67,7 @@ export type TestDeviceRevocation = {
 export type TestKeyPublish = {
   unverifiedKeyPublish: UnverifiedKeyPublish,
   block: Block,
+  resourceId: Uint8Array
 };
 
 export type TestUserGroup = {
@@ -142,8 +143,7 @@ class TestGenerator {
     });
     newUserBlock.index = this._trustchainIndex;
 
-    const entry = blockToEntry(newUserBlock);
-    const unverifiedDeviceCreation: UnverifiedDeviceCreation = { ...entry, ...entry.payload_unverified };
+    const unverifiedDeviceCreation = deviceCreationFromBlock(newUserBlock);
 
     const userKeyPair = unverifiedDeviceCreation.user_key_pair;
     if (!userKeyPair) {
@@ -155,7 +155,7 @@ class TestGenerator {
       id: unverifiedDeviceCreation.hash,
       signKeys: signatureKeyPair,
       encryptionKeys: encryptionKeyPair,
-      createdAt: entry.index,
+      createdAt: unverifiedDeviceCreation.index,
       revokedAt: Number.MAX_SAFE_INTEGER
     };
 
@@ -164,7 +164,7 @@ class TestGenerator {
       userKeys: [{
         publicKey: userKeyPair.public_encryption_key,
         privateKey: privateUserKey,
-        index: entry.index
+        index: unverifiedDeviceCreation.index
       }],
       devices: [testDevice]
     };
@@ -200,14 +200,13 @@ class TestGenerator {
     });
     block.index = this._trustchainIndex;
 
-    const entry = blockToEntry(block);
-    const unverifiedDeviceCreation: UnverifiedDeviceCreation = { ...entry, ...entry.payload_unverified };
+    const unverifiedDeviceCreation = deviceCreationFromBlock(block);
 
     const testDevice: TestDevice = {
       id: unverifiedDeviceCreation.hash,
       signKeys: signatureKeyPair,
       encryptionKeys: encryptionKeyPair,
-      createdAt: entry.index,
+      createdAt: unverifiedDeviceCreation.index,
       revokedAt: Number.MAX_SAFE_INTEGER
     };
     const testUser = Object.assign({}, parentDevice.testUser);
@@ -234,13 +233,12 @@ class TestGenerator {
     const block = blockGenerator.makeDeviceRevocationBlock(parentDevice.user, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], utils.toBase64(deviceIdToRevoke));
     block.index = this._trustchainIndex;
 
-    const entry = blockToEntry(block);
-    const unverifiedDeviceRevocation: UnverifiedDeviceRevocation = { ...entry, ...entry.payload_unverified, user_id: parentDevice.testUser.id };
+    const unverifiedDeviceRevocation = deviceRevocationFromBlock(block, parentDevice.testUser.id);
 
     const testUser = { ...parentDevice.testUser,
       devices: parentDevice.testUser.devices.map(d => {
         if (utils.equalArray(d.id, deviceIdToRevoke)) {
-          return { ...d, revokedAt: entry.index };
+          return { ...d, revokedAt: unverifiedDeviceRevocation.index };
         }
         return { ...d };
       }),
@@ -254,14 +252,14 @@ class TestGenerator {
         // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
         publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
         privateKey: tcrypto.sealDecrypt(keyForParentDevice.key, parentDevice.testDevice.encryptionKeys),
-        index: entry.index
+        index: unverifiedDeviceRevocation.index
       });
     } else {
       testUser.userKeys.push({
         // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
         publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
         privateKey: random(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
-        index: entry.index
+        index: unverifiedDeviceRevocation.index
       });
     }
 
@@ -273,9 +271,8 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToDeviceBlock(parentDevice: TestDeviceCreation, recipient: Device): Block {
+  makeKeyPublishToDeviceBlock(parentDevice: TestDeviceCreation, recipient: Device, resourceId: Uint8Array): Block {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const resourceId = random(tcrypto.MAC_SIZE);
     const sharedKey = tcrypto.asymEncrypt(
       resourceKey,
       recipient.devicePublicEncryptionKey,
@@ -295,15 +292,16 @@ class TestGenerator {
   }
 
   makeKeyPublishToDevice = (parentDevice: TestDeviceCreation, recipient: Device): TestKeyPublish => {
+    const resourceId = random(tcrypto.MAC_SIZE);
     this._trustchainIndex += 1;
-    const block = this.makeKeyPublishToDeviceBlock(parentDevice, recipient);
+    const block = this.makeKeyPublishToDeviceBlock(parentDevice, recipient, resourceId);
     block.index = this._trustchainIndex;
 
-    const entry = blockToEntry(block);
-    const unverifiedKeyPublish: UnverifiedKeyPublish = { ...entry, ...entry.payload_unverified };
+    const unverifiedKeyPublish = keyPublishFromBlock(block);
     return {
       unverifiedKeyPublish,
       block,
+      resourceId
     };
   }
 
@@ -324,12 +322,11 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishBlock(lastUserKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user);
     block.index = this._trustchainIndex;
 
-    const entry = blockToEntry(block);
-    const unverifiedKeyPublish: UnverifiedKeyPublish = { ...entry, ...entry.payload_unverified };
-
+    const unverifiedKeyPublish = keyPublishFromBlock(block);
     return {
       unverifiedKeyPublish,
       block,
+      resourceId
     };
   }
 
@@ -346,12 +343,11 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishBlock(recipient.publicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
     block.index = this._trustchainIndex;
 
-    const entry = blockToEntry(block);
-    const unverifiedKeyPublish: UnverifiedKeyPublish = { ...entry, ...entry.payload_unverified };
-
+    const unverifiedKeyPublish = keyPublishFromBlock(block);
     return {
       unverifiedKeyPublish,
       block,
+      resourceId
     };
   }
 
@@ -368,24 +364,21 @@ class TestGenerator {
     const block = blockGenerator.createUserGroup(signatureKeyPair, encryptionKeyPair, members);
     block.index = this._trustchainIndex;
 
-    const entry = blockToEntry(block);
-    // $FlowIKnow: this works
-    const unverifiedUserGroup: UnverifiedUserGroup = { ...entry, ...entry.payload_unverified };
-
+    const unverifiedUserGroup = userGroupEntryFromBlock(block);
     const group = {
       groupId: signatureKeyPair.publicKey,
       signatureKeyPair,
       encryptionKeyPair,
-      lastGroupBlock: entry.hash,
-      index: entry.index,
+      lastGroupBlock: unverifiedUserGroup.hash,
+      index: unverifiedUserGroup.index,
     };
     const externalGroup = {
       groupId: signatureKeyPair.publicKey,
       publicSignatureKey: signatureKeyPair.publicKey,
       publicEncryptionKey: encryptionKeyPair.publicKey,
-      lastGroupBlock: entry.hash,
+      lastGroupBlock: unverifiedUserGroup.hash,
       encryptedPrivateSignatureKey: null,
-      index: entry.index,
+      index: unverifiedUserGroup.index,
     };
     return {
       unverifiedUserGroup,
@@ -411,17 +404,15 @@ class TestGenerator {
     );
     block.index = this._trustchainIndex;
 
-    const entry = blockToEntry(block);
-    // $FlowIKnow: this works
-    const unverifiedUserGroup: UnverifiedUserGroup = { ...entry, ...entry.payload_unverified };
+    const unverifiedUserGroup = userGroupEntryFromBlock(block);
 
     const group: Group = (Object.assign({}, previousGroup.group): any);
-    group.lastGroupBlock = entry.hash;
-    group.index = entry.index;
+    group.lastGroupBlock = unverifiedUserGroup.hash;
+    group.index = unverifiedUserGroup.index;
 
     const externalGroup: ExternalGroup = (Object.assign({}, previousGroup.externalGroup): any);
-    externalGroup.lastGroupBlock = entry.hash;
-    externalGroup.index = entry.index;
+    externalGroup.lastGroupBlock = unverifiedUserGroup.hash;
+    externalGroup.index = unverifiedUserGroup.index;
 
     return {
       unverifiedUserGroup,

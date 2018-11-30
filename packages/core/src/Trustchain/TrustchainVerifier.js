@@ -17,7 +17,7 @@ import {
   natureKind,
   isKeyPublishToDevice,
   isKeyPublishToUser,
-} from '../Blocks/payloads';
+} from '../Blocks/Nature';
 
 import Storage from '../Session/Storage';
 

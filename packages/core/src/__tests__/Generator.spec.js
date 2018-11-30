@@ -7,7 +7,8 @@ import { expect } from './chai';
 import Generator from './Generator';
 
 import { blockToEntry } from '../Blocks/entries';
-import { isKeyPublishToDevice, isDeviceCreation, isDeviceRevocation, type UserDeviceRecord, unserializePayload, NATURE, isTrustchainCreation } from '../Blocks/payloads';
+import { type UserDeviceRecord, unserializePayload } from '../Blocks/payloads';
+import { isKeyPublishToDevice, isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
 
 let generator;
 

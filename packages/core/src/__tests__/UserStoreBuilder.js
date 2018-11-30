@@ -6,9 +6,9 @@ import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import UserStore from '../Users/UserStore';
 import Generator, { makeGenerator } from './Generator';
-import { type UnverifiedEntry } from '../Blocks/entries';
-import { type VerifiedDeviceCreation } from '../UnverifiedStore/UserUnverifiedStore';
 import makeUint8Array from './makeUint8Array';
+
+import { deviceCreationFromBlock } from '../Blocks/entries';
 
 export async function makeMemoryDataStore(): Promise<DataStore<*>> {
   const schemas = mergeSchemas(UserStore.schemas);
@@ -16,14 +16,6 @@ export async function makeMemoryDataStore(): Promise<DataStore<*>> {
   const baseConfig = { ...dataStoreConfig, schemas };
   const config = { ...baseConfig, dbName: `user-store-test-${makePrefix()}` };
   return openDataStore(config);
-}
-
-function forgeVerifiedEntry(entry: UnverifiedEntry): VerifiedDeviceCreation {
-  const anyEntry: VerifiedDeviceCreation = {
-    ...entry,
-    ...entry.payload_unverified,
-  };
-  return anyEntry;
 }
 
 export default class UserStoreBuilder {
@@ -45,7 +37,7 @@ export default class UserStoreBuilder {
 
   async newUserCreationV3(userId: string) {
     const result = await this.generator.newUserCreationV3(userId);
-    await this.userStore.applyEntry(forgeVerifiedEntry(result.entry));
+    await this.userStore.applyEntry(deviceCreationFromBlock(result.block));
 
     return result;
   }

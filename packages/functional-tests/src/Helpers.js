@@ -4,7 +4,9 @@ import Socket from 'socket.io-client';
 
 import { Tanker } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
-import { NATURE_KIND, preferredNature, serializeBlock } from '@tanker/core/src/Blocks/payloads';
+import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
+import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
+
 // $FlowIKnow
 import { createUserTokenFromSecret } from '@tanker/core/src/__tests__/TestSessionTokens';
 import { tcrypto, utils, createUserSecretB64, obfuscateUserId, type b64string } from '@tanker/crypto';

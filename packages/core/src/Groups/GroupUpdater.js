@@ -5,7 +5,8 @@ import GroupStore from './GroupStore';
 import Keystore from '../Session/Keystore';
 
 import { type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import { NATURE, type GroupEncryptedKey, type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
+import { type GroupEncryptedKey, type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
+import { NATURE } from '../Blocks/Nature';
 
 function findMyKeys(groupKeys: Array<GroupEncryptedKey>, keystore: Keystore): ?Object {
   for (const gek of groupKeys) {

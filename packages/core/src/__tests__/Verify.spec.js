@@ -23,7 +23,7 @@ import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifi
 import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
-import { NATURE } from '../Blocks/payloads';
+import { NATURE } from '../Blocks/Nature';
 
 import TestGenerator from './TestGenerator';
 
