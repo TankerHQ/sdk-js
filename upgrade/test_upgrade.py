@@ -33,9 +33,20 @@ def test_version(version, tests, trustchain_context):
     ci.js.yarn_from_template(working_dir=test_folder, version=version)
     env = os.environ.copy()
     env["TRUSTCHAIN_CONTEXT"] = trustchain_context
+    timeout = 60
     for test in tests:
         env["OLD_SDK"] = "1"
-        ci.js.run_yarn("run", "babel-node", "--require", "babel.conf.js", test, cwd=test_folder, env=env)
+        ci.js.run_yarn(
+            "run", "babel-node", "--require", "babel.conf.js", test,
+            cwd=test_folder,
+            env=env,
+            timeout=timeout,
+            )
     for test in tests:
         env["OLD_SDK"] = "0"
-        ci.js.run_yarn("run", "babel-node", "--require", "babel.conf.js", test, cwd=test_folder, env=env)
+        ci.js.run_yarn(
+            "run", "babel-node", "--require", "babel.conf.js", test,
+            cwd=test_folder,
+            env=env,
+            timeout=timeout,
+            )
