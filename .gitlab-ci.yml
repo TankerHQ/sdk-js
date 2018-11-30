@@ -58,6 +58,7 @@ check/linux/nightly:
     - schedules
   script:
     - xvfb-run dmenv run -- python run-ci.py check --runner linux --nightly
+    - xvfb-run dmenv run -- python run-ci.py upgrade
   tags:
     - linux
 
@@ -119,7 +120,18 @@ pages:
 check/upgrade:
   stage: check
   when: manual
+  except:
+    - master
   script:
-    - xvfb-run dmenv run -- python run-ci.py check --runner linux --upgrade
+    - xvfb-run dmenv run -- python run-ci.py upgrade
+  tags:
+    - linux
+
+check/upgrade/master:
+  stage: check
+  only:
+    - master
+  script:
+    - xvfb-run dmenv run -- python run-ci.py upgrade
   tags:
     - linux
