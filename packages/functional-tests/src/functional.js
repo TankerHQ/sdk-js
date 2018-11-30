@@ -8,6 +8,7 @@ import { Tanker as TankerCore } from '@tanker/core';
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
 
 import generateChunkEncryptor from './chunkEncryptor';
+import generateStreamEncryptor from './streamEncryptor';
 import generateEncryptTests from './encrypt';
 import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';
@@ -67,6 +68,7 @@ export function generateFunctionalTests(name: string, Tanker: any => TankerCore,
     });
 
     generateChunkEncryptor(args);
+    generateStreamEncryptor(args);
     generateEncryptTests(args);
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
