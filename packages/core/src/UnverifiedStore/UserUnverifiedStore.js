@@ -2,9 +2,9 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
-import { entryToDbEntry, dbEntryToEntry, type Entry, type VerificationFields } from '../Blocks/entries';
+import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
 import { type UserDeviceRecord, type DeviceRevocationRecord } from '../Blocks/payloads';
-import { natureKind, NATURE_KIND, type Nature } from '../Blocks/Nature';
+import { type Nature, isDeviceCreation } from '../Blocks/Nature';
 
 const TABLE_USER_BLOCKS = 0; // Contains both user devices & revocations
 const TABLE_DEVICE_TO_USER = 1; // Maps deviceId to userId, for revocation targets
@@ -58,63 +58,14 @@ export default class UserUnverifiedStore {
     this._ds = null;
   }
 
-  async _storeNewDeviceIdToUserIds(deviceIdToUserId: Map<b64string, b64string>) {
-    const entryList = [];
-    for (const [deviceId, userId] of deviceIdToUserId) {
-      entryList.push({
-        _id: deviceId,
-        device_id: deviceId,
-        user_id: userId,
-      });
-    }
-    await this._ds.bulkAdd(UserUnverifiedStore.tables[TABLE_DEVICE_TO_USER].name, entryList);
-  }
-
-  async _prepareRevokeUserIds(entries: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>): Promise<Map<b64string, b64string>> {
-    // Extract and store the new deviceId => userId mappings
-    const deviceIdToUserId = new Map();
-    for (const entry of entries) {
-      if (natureKind(entry.nature) !== NATURE_KIND.device_creation)
-        continue;
-      deviceIdToUserId.set(utils.toBase64(entry.hash), utils.toBase64(entry.user_id));
-    }
-
-    const targetDevicesToQuery: Array<b64string> = [];
-    for (const entry of entries) {
-      if (natureKind(entry.nature) !== NATURE_KIND.device_revocation)
-        continue;
-      const deviceRevocation: UnverifiedDeviceRevocation = (entry: any);
-      const deviceId = utils.toBase64(deviceRevocation.device_id);
-      if (deviceIdToUserId.get(deviceId))
-        continue;
-      targetDevicesToQuery.push(deviceId);
-    }
-
-    await this._storeNewDeviceIdToUserIds(deviceIdToUserId);
-
-    // Fetch the mappings revocations need (if any)
-    if (targetDevicesToQuery.length > 0) {
-      const deviceEntries = await this._ds.find(UserUnverifiedStore.tables[TABLE_DEVICE_TO_USER].name, {
-        selector: {
-          device_id: { $in: targetDevicesToQuery },
-        }
-      });
-      for (const deviceEntry of deviceEntries)
-        deviceIdToUserId.set(deviceEntry.device_id, deviceEntry.user_id);
-    }
-
-    return deviceIdToUserId;
-  }
-
-  async fetchLastIndexes(userIds: Iterator<b64string>): Promise<Map<b64string, ?Object>> {
-    const lastIndexes = new Map();
+  async _fetchLastIndexes(userIds: Array<b64string>): Promise<Map<b64string, number>> {
     const indexEntries = await this._ds.find(UserUnverifiedStore.tables[TABLE_LAST_INDEXES].name, {
       selector: {
-        user_id: { $in: [...userIds] },
+        user_id: { $in: userIds },
       }
     });
-    for (const entry of indexEntries)
-      lastIndexes.set(entry.user_id, entry);
+    const lastIndexes = new Map();
+    indexEntries.forEach(indexEntry => lastIndexes.set(indexEntry.user_id, indexEntry.index));
     return lastIndexes;
   }
 
@@ -122,36 +73,38 @@ export default class UserUnverifiedStore {
     if (entries.length === 0)
       return;
 
-    const deviceIdToUserId = await this._prepareRevokeUserIds(entries);
-    const mapEntry = new Map();
-    const lastIndexes = await this.fetchLastIndexes(deviceIdToUserId.values());
+    const lastIndexes = await this._fetchLastIndexes(entries.map(e => utils.toBase64(e.user_id)));
 
     const newUserEntries = [];
+    const deviceIdToUserId = [];
+    const newIndexes = new Map();
 
-    for (const entry of entries) {
-      const dbEntry = entryToDbEntry(entry, utils.toBase64(entry.hash));
-      const userId = dbEntry.user_id || deviceIdToUserId.get(dbEntry.device_id);
-      if (!userId)
-        throw new Error('Assertion error: Received garbage user entries that don\'t map to any user ID!');
-      const lastIdx = lastIndexes.get(userId);
-      if (lastIdx && lastIdx.index >= entry.index)
-        continue;
+    entries.forEach(entry => {
+      const lastIdx = lastIndexes.get(utils.toBase64(entry.user_id));
+      if (lastIdx && lastIdx >= entry.index)
+        return;
 
-      if (natureKind(entry.nature) === NATURE_KIND.device_revocation)
-        dbEntry.user_id = userId;
+      const b64UserId = utils.toBase64(entry.user_id);
 
-      newUserEntries.push(dbEntryToEntry(dbEntry));
-      mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
-      lastIndexes.set(dbEntry.user_id, {
-        _id: userId,
-        user_id: userId,
+      if (isDeviceCreation(entry.nature)) {
+        const b64DeviceId = utils.toBase64(entry.hash);
+        deviceIdToUserId.push({
+          _id: b64DeviceId,
+          device_id: b64DeviceId,
+          user_id: b64UserId,
+        });
+      }
+      newIndexes.set(b64UserId, {
+        _id: b64UserId,
+        user_id: b64UserId,
         index: entry.index,
       });
-    }
-    const blockEntryList = (([...mapEntry.values()]: any): Array<Entry>);
-    const idxEntryList = (([...lastIndexes.values()]: any): Array<Entry>);
-    await this._ds.bulkAdd(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, blockEntryList);
-    await this._ds.bulkPut(UserUnverifiedStore.tables[TABLE_LAST_INDEXES].name, idxEntryList);
+      newUserEntries.push(entryToDbEntry(entry, utils.toBase64(entry.hash)));
+    });
+
+    await this._ds.bulkAdd(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, newUserEntries);
+    await this._ds.bulkAdd(UserUnverifiedStore.tables[TABLE_DEVICE_TO_USER].name, deviceIdToUserId);
+    await this._ds.bulkPut(UserUnverifiedStore.tables[TABLE_LAST_INDEXES].name, [...newIndexes.values()]);
   }
 
   async findUnverifiedDevicesByHash(deviceIds: Array<Uint8Array>): Promise<Array<UnverifiedDeviceCreation>> {
