@@ -4,16 +4,18 @@ import uniq from 'lodash.uniqby';
 
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
+
 import TrustchainStore, { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
-import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
-import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
+
+import { blockToEntry, keyPublishFromBlock, userGroupEntryFromBlock, deviceCreationFromBlock, deviceRevocationFromBlock } from '../Blocks/entries';
 import TrustchainVerifier from './TrustchainVerifier';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 
 
-import { isKeyPublish, isUserGroup, natureKind, NATURE_KIND } from '../Blocks/Nature';
+import { isKeyPublish, isUserGroup, isDeviceCreation, isDeviceRevocation, isTrustchainCreation } from '../Blocks/Nature';
 import { unserializeBlock } from '../Blocks/payloads';
+import { type Block } from '../Blocks/Block';
 
 
 export default class TrustchainPuller {
@@ -30,6 +32,9 @@ export default class TrustchainPuller {
   _donePromises: Array<PromiseWrapper<void>>;
   _userId: Uint8Array;
   _closing: bool = false;
+
+  _deviceIdToUserId = new Map();
+
 
   constructor(client: Client, userId: Uint8Array, trustchainStore: TrustchainStore, unverifiedStore: UnverifiedStore, trustchainVerifier: TrustchainVerifier) {
     this._caughtUpOnce = new PromiseWrapper();
@@ -113,9 +118,7 @@ export default class TrustchainPuller {
         extra_users: extraUsers,
         extra_groups: extraGroups
       });
-
-      const entries = blocks.map(b => blockToEntry(unserializeBlock(utils.fromBase64(b))));
-      await this._processNewEntries(entries);
+      await this._processNewBlocks(blocks);
     } catch (e) {
       console.error('CatchUp failed: ', e);
     }
@@ -124,30 +127,41 @@ export default class TrustchainPuller {
     }
   }
 
-  _processNewEntries = async (entries: Array<UnverifiedEntry>) => {
+  _processNewBlocks = async (b64Blocks: Array<string>) => {
     const keyPublishes = [];
     const userEntries = [];
     const userGroups = [];
     let trustchainCreationEntry = null;
     let maxBlockIndex = 0;
 
+    let mustUpdateOurselves = false;
+
     // Separate our entries for each store
-    for (const unverifiedEntry of entries) {
-      if (unverifiedEntry.index > maxBlockIndex) {
-        maxBlockIndex = unverifiedEntry.index;
+    for (const b64Block of b64Blocks) {
+      const block = unserializeBlock(utils.fromBase64(b64Block));
+      if (block.index > maxBlockIndex) {
+        maxBlockIndex = block.index;
       }
 
-      if (isKeyPublish(unverifiedEntry.nature)) {
-        const keyPublish: UnverifiedKeyPublish = { ...unverifiedEntry, ...unverifiedEntry.payload_unverified };
-        keyPublishes.push(keyPublish);
-      } else if (isUserGroup(unverifiedEntry.nature)) {
-        userGroups.push(unverifiedEntry);
-      } else if (natureKind(unverifiedEntry.nature) === NATURE_KIND.device_creation) {
-        userEntries.push(unverifiedEntry);
-      } else if (natureKind(unverifiedEntry.nature) === NATURE_KIND.device_revocation) {
-        userEntries.push(unverifiedEntry);
-      } else if (natureKind(unverifiedEntry.nature) === NATURE_KIND.trustchain_creation) {
-        trustchainCreationEntry = unverifiedEntry;
+      if (isKeyPublish(block.nature)) {
+        keyPublishes.push(keyPublishFromBlock(block));
+      } else if (isUserGroup(block.nature)) {
+        userGroups.push(userGroupEntryFromBlock(block));
+      } else if (isDeviceCreation(block.nature)) {
+        const userEntry = deviceCreationFromBlock(block);
+        userEntries.push(userEntry);
+        if (utils.equalArray(this._userId, userEntry.user_id)) {
+          mustUpdateOurselves = true;
+        }
+        this._deviceIdToUserId.set(utils.toBase64(userEntry.hash), utils.toBase64(userEntry.user_id));
+      } else if (isDeviceRevocation(block.nature)) {
+        const userEntry = await this._deviceRevocationFromBlock(block);
+        userEntries.push(userEntry);
+        if (utils.equalArray(this._userId, userEntry.user_id)) {
+          mustUpdateOurselves = true;
+        }
+      } else if (isTrustchainCreation(block.nature)) {
+        trustchainCreationEntry = blockToEntry(block);
       } else {
         throw new Error('Assertion error: Unexpected nature in trustchain puller callback');
       }
@@ -159,22 +173,26 @@ export default class TrustchainPuller {
       await this._trustchainVerifier.verifyTrustchainCreation(trustchainCreation);
     }
 
-    const newUserEntries = await this._unverifiedStore.addUnverifiedUserEntries(userEntries);
+    await this._unverifiedStore.addUnverifiedUserEntries(userEntries);
     await this._unverifiedStore.addUnverifiedKeyPublishes(keyPublishes);
     await this._unverifiedStore.addUnverifiedUserGroups(userGroups);
     await this._trustchainStore.updateLastBlockIndex(maxBlockIndex);
 
-    let mustUpdateOurselves = false;
-    for (const newUserEntry of newUserEntries) {
-      if (!newUserEntry.user_id) {
-        throw new Error('Assertion error: entry should have a user_id');
-      }
-      if (utils.equalArray(this._userId, newUserEntry.user_id)) {
-        mustUpdateOurselves = true;
-      }
-    }
     if (mustUpdateOurselves) {
       await this._trustchainVerifier.updateUserStore([this._userId]);
     }
   };
+
+  _deviceRevocationFromBlock = async (block: Block) => {
+    const userIdString = this._deviceIdToUserId.get(utils.toBase64(block.author));
+    let userId: Uint8Array;
+    if (!userIdString)
+      userId = await this._unverifiedStore.getUserIdFromDeviceId(block.author);
+    else
+      userId = utils.fromBase64(userIdString);
+    if (!userId) {
+      throw new Error('Assertion error: Unknown user for device revocation');
+    }
+    return deviceRevocationFromBlock(block, userId);
+  }
 }

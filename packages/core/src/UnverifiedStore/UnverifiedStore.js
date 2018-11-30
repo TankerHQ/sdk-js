@@ -1,8 +1,6 @@
 // @flow
 import { type DataStore } from '@tanker/datastore-base';
 
-import type { UnverifiedEntry } from '../Blocks/entries';
-
 import KeyPublishUnverifiedStore, { type UnverifiedKeyPublish } from './KeyPublishUnverifiedStore';
 import UserUnverifiedStore, { type UnverifiedDeviceCreation, type VerifiedDeviceCreation, type UnverifiedDeviceRevocation, type VerifiedDeviceRevocation } from './UserUnverifiedStore';
 import UserGroupsUnverifiedStore, { type UnverifiedUserGroup, type VerifiedUserGroup } from './UserGroupsUnverifiedStore';
@@ -64,7 +62,7 @@ export default class UnverifiedStore {
     return this.keyPublishUnverifiedStore.findUnverifiedKeyPublish(resourceId);
   }
 
-  async addUnverifiedUserEntries(entries: Array<UnverifiedEntry>): Promise<Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>> {
+  async addUnverifiedUserEntries(entries: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>): Promise<void> {
     return this.userUnverifiedStore.addUnverifiedUserEntries(entries);
   }
 
@@ -91,7 +89,7 @@ export default class UnverifiedStore {
     return this.userUnverifiedStore.removeVerifiedUserEntries(entries);
   }
 
-  async addUnverifiedUserGroups(entries: Array<UnverifiedEntry>): Promise<void> {
+  async addUnverifiedUserGroups(entries: Array<UnverifiedUserGroup>): Promise<void> {
     return this.userGroupsUnverifiedStore.addUnverifiedUserGroupEntries(entries);
   }
 
@@ -105,5 +103,9 @@ export default class UnverifiedStore {
 
   async removeVerifiedUserGroupEntry(userGroup: VerifiedUserGroup): Promise<void> {
     return this.userGroupsUnverifiedStore.removeVerifiedUserGroupEntry(userGroup);
+  }
+
+  async getUserIdFromDeviceId(deviceId: Uint8Array) {
+    return this.userUnverifiedStore.getUserIdFromDeviceId(deviceId);
   }
 }

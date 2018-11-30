@@ -5,7 +5,7 @@ import { tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { InvalidBlockError } from '../errors';
-import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
+import { type UnverifiedEntry, blockToEntry, deviceCreationFromBlock } from '../Blocks/entries';
 import { type GeneratorKeyResult, type GeneratorUserResult } from './Generator';
 import { signBlock, type Block } from '../Blocks/Block';
 import TrustchainBuilder, { makeTrustchainBuilder } from './TrustchainBuilder';
@@ -78,7 +78,7 @@ describe('TrustchainVerifier', () => {
       const { generator } = builder;
       await generator.newUserCreationV3('alice');
       const alice = await generator.newDeviceCreationV3({ userId: 'alice', parentIndex: 0 });
-      await builder.unverifiedStore.addUnverifiedUserEntries([blockToEntry(alice.block)]);
+      await builder.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(alice.block)]);
       await assertFailsWithNature(builder.trustchainVerifier._throwingVerifyDeviceCreation(alice.unverifiedDeviceCreation), 'unknown_author');
     });
   });

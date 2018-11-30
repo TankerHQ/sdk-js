@@ -4,14 +4,23 @@ import { utils } from '@tanker/crypto';
 import {
   type Record,
   unserializePayload,
+  unserializeKeyPublish,
+  unserializeKeyPublishToDevice,
+  unserializeUserDeviceV1,
+  unserializeUserDeviceV2,
+  unserializeUserDeviceV3,
+  unserializeDeviceRevocationV1,
+  unserializeDeviceRevocationV2,
+  unserializeUserGroupCreation,
+  unserializeUserGroupAddition,
 } from './payloads';
 
-import { type Nature } from './Nature';
+import { type Nature, NATURE } from './Nature';
+import { type Block, hashBlock } from '../Blocks/Block';
 
-import {
-  type Block,
-  hashBlock,
-} from '../Blocks/Block';
+import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
+import { type UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedDeviceCreation, type UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 
 
 export type VerificationFields = {|
@@ -89,22 +98,111 @@ export function dbEntryToEntry(dbEntry: any): any {
   return result;
 }
 
-export function blockToEntry(block: Block): UnverifiedEntry { /* eslint-disable camelcase */
-  const payload_unverified = unserializePayload(block);
-  // $FlowFixMe flow is right, Record may or may not contain any of these fields
-  const { user_id, public_signature_key } = payload_unverified;
+function verificationFieldsFromBlock(block: Block): VerificationFields {
   const { index, author, nature, signature } = block;
-
   const typeSafeNature: Nature = (nature: any);
 
   return {
-    payload_unverified,
     index,
     nature: typeSafeNature,
     author,
-    public_signature_key,
-    user_id,
     signature,
     hash: hashBlock(block),
   };
 }
+
+export function blockToEntry(block: Block): UnverifiedEntry { /* eslint-disable camelcase */
+  const verificationFields = verificationFieldsFromBlock(block);
+  const payload_unverified = unserializePayload(block);
+  // $FlowFixMe flow is right, Record may or may not contain any of these fields
+  const { user_id, public_signature_key } = payload_unverified;
+
+  return {
+    ...verificationFields,
+    payload_unverified,
+    public_signature_key,
+    user_id,
+  };
+}
+
+export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
+  const verificationFields = verificationFieldsFromBlock(block);
+  let keyPublishAction;
+  switch (block.nature) {
+    case NATURE.key_publish_to_device:
+      keyPublishAction = unserializeKeyPublishToDevice(block.payload);
+      break;
+    case NATURE.key_publish_to_user:
+    case NATURE.key_publish_to_user_group:
+      keyPublishAction = unserializeKeyPublish(block.payload);
+      break;
+    default: throw new Error('Assertion error: wrong type for deviceCreationFromBlock');
+  }
+  return {
+    ...verificationFields,
+    ...keyPublishAction
+  };
+}
+
+export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
+  const verificationFields = verificationFieldsFromBlock(block);
+  if (block.nature === NATURE.user_group_creation) {
+    const userGroupAction = unserializeUserGroupCreation(block.payload);
+    return {
+      ...verificationFields,
+      ...userGroupAction,
+      group_id: userGroupAction.public_signature_key
+    };
+  } else if (block.nature === NATURE.user_group_addition) {
+    const userGroupAction = unserializeUserGroupAddition(block.payload);
+    return {
+      ...verificationFields,
+      ...userGroupAction,
+    };
+  } else {
+    throw new Error('Assertion error: wrong type for userGroupEntryFromBlock');
+  }
+}
+
+export function deviceCreationFromBlock(block: Block): UnverifiedDeviceCreation {
+  const verificationFields = verificationFieldsFromBlock(block);
+  let userEntry;
+
+  switch (block.nature) {
+    case NATURE.device_creation_v1:
+      userEntry = unserializeUserDeviceV1(block.payload);
+      break;
+    case NATURE.device_creation_v2:
+      userEntry = unserializeUserDeviceV2(block.payload);
+      break;
+    case NATURE.device_creation_v3:
+      userEntry = unserializeUserDeviceV3(block.payload);
+      break;
+    default: throw new Error('Assertion error: wrong type for deviceCreationFromBlock');
+  }
+  return {
+    ...verificationFields,
+    ...userEntry,
+  };
+}
+
+export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): UnverifiedDeviceRevocation {
+  const verificationFields = verificationFieldsFromBlock(block);
+  let userEntry;
+
+  switch (block.nature) {
+    case NATURE.device_revocation_v1:
+      userEntry = unserializeDeviceRevocationV1(block.payload);
+      break;
+    case NATURE.device_revocation_v2:
+      userEntry = unserializeDeviceRevocationV2(block.payload);
+      break;
+    default: throw new Error('Assertion error: wrong type for deviceRevocationFromBlock');
+  }
+  return {
+    ...verificationFields,
+    ...userEntry,
+    user_id: userId
+  };
+}
+

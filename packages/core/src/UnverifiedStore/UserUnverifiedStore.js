@@ -2,7 +2,7 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
-import { entryToDbEntry, dbEntryToEntry, type Entry, type UnverifiedEntry, type VerificationFields } from '../Blocks/entries';
+import { entryToDbEntry, dbEntryToEntry, type Entry, type VerificationFields } from '../Blocks/entries';
 import { type UserDeviceRecord, type DeviceRevocationRecord } from '../Blocks/payloads';
 import { natureKind, NATURE_KIND, type Nature } from '../Blocks/Nature';
 
@@ -25,16 +25,10 @@ export type VerifiedDeviceCreation = {
 export type UnverifiedDeviceRevocation = {
   ...VerificationFields,
   ...DeviceRevocationRecord,
-  user_id: Uint8Array,
+  user_id: Uint8Array
 };
 
-export type VerifiedDeviceRevocation = {
-  ...DeviceRevocationRecord,
-  hash: Uint8Array,
-  user_id: Uint8Array,
-  nature: Nature,
-  index: number,
-};
+export type VerifiedDeviceRevocation = UnverifiedDeviceRevocation;
 
 export default class UserUnverifiedStore {
   _ds: DataStore<*>;
@@ -76,22 +70,21 @@ export default class UserUnverifiedStore {
     await this._ds.bulkAdd(UserUnverifiedStore.tables[TABLE_DEVICE_TO_USER].name, entryList);
   }
 
-  async prepareRevokeUserIds(entries: Array<UnverifiedEntry>): Promise<Map<b64string, b64string>> {
+  async _prepareRevokeUserIds(entries: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>): Promise<Map<b64string, b64string>> {
     // Extract and store the new deviceId => userId mappings
     const deviceIdToUserId = new Map();
     for (const entry of entries) {
       if (natureKind(entry.nature) !== NATURE_KIND.device_creation)
         continue;
-      const payload = ((entry.payload_unverified: any): UserDeviceRecord);
-      deviceIdToUserId.set(utils.toBase64(entry.hash), utils.toBase64(payload.user_id));
+      deviceIdToUserId.set(utils.toBase64(entry.hash), utils.toBase64(entry.user_id));
     }
 
     const targetDevicesToQuery: Array<b64string> = [];
     for (const entry of entries) {
       if (natureKind(entry.nature) !== NATURE_KIND.device_revocation)
         continue;
-      const payload = ((entry.payload_unverified: any): DeviceRevocationRecord);
-      const deviceId = utils.toBase64(payload.device_id);
+      const deviceRevocation: UnverifiedDeviceRevocation = (entry: any);
+      const deviceId = utils.toBase64(deviceRevocation.device_id);
       if (deviceIdToUserId.get(deviceId))
         continue;
       targetDevicesToQuery.push(deviceId);
@@ -125,11 +118,11 @@ export default class UserUnverifiedStore {
     return lastIndexes;
   }
 
-  async addUnverifiedUserEntries(entries: Array<UnverifiedEntry>): Promise<Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>> {
+  async addUnverifiedUserEntries(entries: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>) {
     if (entries.length === 0)
-      return [];
+      return;
 
-    const deviceIdToUserId = await this.prepareRevokeUserIds(entries);
+    const deviceIdToUserId = await this._prepareRevokeUserIds(entries);
     const mapEntry = new Map();
     const lastIndexes = await this.fetchLastIndexes(deviceIdToUserId.values());
 
@@ -159,8 +152,6 @@ export default class UserUnverifiedStore {
     const idxEntryList = (([...lastIndexes.values()]: any): Array<Entry>);
     await this._ds.bulkAdd(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, blockEntryList);
     await this._ds.bulkPut(UserUnverifiedStore.tables[TABLE_LAST_INDEXES].name, idxEntryList);
-
-    return newUserEntries;
   }
 
   async findUnverifiedDevicesByHash(deviceIds: Array<Uint8Array>): Promise<Array<UnverifiedDeviceCreation>> {
@@ -198,5 +189,17 @@ export default class UserUnverifiedStore {
     for (const entry of entries) {
       await this._ds.delete(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, utils.toBase64(entry.hash));
     }
+  }
+
+  async getUserIdFromDeviceId(deviceId: Uint8Array): Promise<?Uint8Array> {
+    const deviceToUser = await this._ds.first(UserUnverifiedStore.tables[TABLE_DEVICE_TO_USER].name, {
+      selector: {
+        device_id: { $eq: utils.toBase64(deviceId) },
+      }
+    });
+    if (deviceToUser) {
+      return utils.fromBase64(deviceToUser.user_id);
+    }
+    return null;
   }
 }
