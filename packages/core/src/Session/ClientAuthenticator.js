@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
-import LocalUser from '../Session/LocalUser';
+import LocalUser from './LocalUser';
 import { type AuthDeviceParams } from '../Network/Client';
 
 export const CHALLENGE_PREFIX = '\u{0001F512} Auth Challenge. 1234567890.';

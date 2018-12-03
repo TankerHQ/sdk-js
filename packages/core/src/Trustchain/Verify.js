@@ -10,7 +10,7 @@ import { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } 
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import { type UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
+import { type UnverifiedTrustchainCreation } from './TrustchainStore';
 
 import {
   type UserGroupCreationRecord,
@@ -80,7 +80,7 @@ export function verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser
     if (!user || user.devices.length === 0)
       return;
 
-      // If we're already verified, then it's not an error
+    // If we're already verified, then it's not an error
     const entryDeviceId = utils.toBase64(entry.hash);
     if (!user.devices.some(device => device.deviceId === entryDeviceId))
       throw new InvalidBlockError('forbidden', 'the user already has a device, this can\'t be the first device', { entry });

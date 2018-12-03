@@ -461,13 +461,11 @@ class Generator {
         privateKey: new Uint8Array(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
       };
 
-    const remainingDevices =
-      this.users[userId].devices.filter(d => !utils.equalArray(d.id, to.id));
-    const encryptedPrivateKeys =
-      remainingDevices.map(d => ({
-        recipient: d.id,
-        key: tcrypto.sealEncrypt(newUserKey.privateKey, d.encryptionKeys.publicKey),
-      }));
+    const remainingDevices = this.users[userId].devices.filter(d => !utils.equalArray(d.id, to.id));
+    const encryptedPrivateKeys = remainingDevices.map(d => ({
+      recipient: d.id,
+      key: tcrypto.sealEncrypt(newUserKey.privateKey, d.encryptionKeys.publicKey),
+    }));
 
     let encryptedPreviousEncryptionKey = tcrypto.sealEncrypt(userKeys.privateKey, newUserKey.publicKey);
     if (!this.users[userId].userKeys)

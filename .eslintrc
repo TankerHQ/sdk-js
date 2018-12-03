@@ -52,6 +52,8 @@ rules:
   no-await-in-loop: 0
   no-restricted-syntax: 0
   object-curly-newline: 0
+  lines-between-class-members: 0
+  nonblock-statement-body-position: 0
 
 plugins:
     - chai-expect

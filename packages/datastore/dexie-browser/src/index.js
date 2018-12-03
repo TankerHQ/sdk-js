@@ -461,8 +461,9 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
     // In Dexie, orderBy() uses backend sorting and needs an index,
     // whereas sortBy() is done in memory on the result array.
     if (
-      q instanceof this._db.Table &&
-      (index === sortKey || (!index && this.isIndexed(table, sortKey)))
+      q instanceof this._db.Table && (
+        index === sortKey || (!index && this.isIndexed(table, sortKey))
+      )
     ) {
       q = q.orderBy(sortKey); // Collection (Dexie)
     } else {

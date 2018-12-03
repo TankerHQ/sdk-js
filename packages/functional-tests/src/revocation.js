@@ -54,8 +54,7 @@ const generateRevocationTests = (args: TestArgs) => {
     });
 
     it('fires a revoked event on the revoked device only', async () => {
-      const timeoutPromise = (timeout) =>
-        new Promise(resolve => setTimeout(resolve, timeout));
+      const timeoutPromise = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
 
       const testPromise = Promise.all([
         expectRevokedEvent({ to_be_received: true, on: args.bobPhone }),

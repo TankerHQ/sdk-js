@@ -87,12 +87,12 @@ export function isKeyPublishToUserGroup(nature: Nature): bool {
 }
 
 export function isKeyPublish(nature: Nature): bool {
-  return isKeyPublishToDevice(nature) ||
-  isKeyPublishToUser(nature) ||
-  isKeyPublishToUserGroup(nature);
+  return isKeyPublishToDevice(nature)
+  || isKeyPublishToUser(nature)
+  || isKeyPublishToUserGroup(nature);
 }
 
 export function isUserGroup(nature: Nature): bool {
-  return natureKind(nature) === NATURE_KIND.user_group_creation ||
-  natureKind(nature) === NATURE_KIND.user_group_addition;
+  return natureKind(nature) === NATURE_KIND.user_group_creation
+  || natureKind(nature) === NATURE_KIND.user_group_addition;
 }

@@ -5,7 +5,7 @@ import UserAccessor from '../Users/UserAccessor';
 import Storage from './Storage';
 import { UnlockKeys } from '../Unlock/UnlockKeys';
 
-import LocalUser from '../Session/LocalUser';
+import LocalUser from './LocalUser';
 import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';

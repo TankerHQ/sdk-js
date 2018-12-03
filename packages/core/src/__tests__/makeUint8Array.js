@@ -10,4 +10,3 @@ export default function makeUint8Array(data: string, size: number): Uint8Array {
   }
   return buf;
 }
-

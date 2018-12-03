@@ -16,7 +16,7 @@ import { Client, type ClientOptions } from '../Network/Client';
 import { MissingEventHandler, OperationCanceled } from '../errors';
 import { Session } from './Session';
 import LocalUser from './LocalUser';
-import { type DelegationToken } from '../Session/delegation';
+import { type DelegationToken } from './delegation';
 
 export class SessionOpener extends EventEmitter {
   _storage: Storage;
