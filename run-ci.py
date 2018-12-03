@@ -22,6 +22,7 @@ def check(*, runner: str, nightly: bool) -> None:
 
 
 def upgrade(*, env: str) -> None:
+    ci.js.yarn_install_deps()
     with ci.mail.notify_failure("upgrade tests"):
         ci.js.run_sdk_upgrade_tests(env=env)
 
