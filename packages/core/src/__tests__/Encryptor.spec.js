@@ -1,7 +1,6 @@
 // @flow
 
 import varint from 'varint';
-import sodium from 'libsodium-wrappers';
 
 import { tcrypto, utils } from '@tanker/crypto';
 
@@ -33,20 +32,6 @@ describe('Encryptor', () => {
 
     const extractedMac = encryptedData.subarray(-tcrypto.MAC_SIZE);
     expect(resourceId).to.deep.equal(extractedMac);
-  });
-
-  it('should give a correctly encrypted buffer', async () => {
-    const clearData = utils.fromString('this is very secret');
-
-    const { key, encryptedData } = await encryptData(clearData);
-
-    const version = varint.decode(encryptedData);
-    const iv = encryptedData.subarray(1, tcrypto.XCHACHA_IV_SIZE + 1);
-    const rawCiphertext = encryptedData.subarray(1 + tcrypto.XCHACHA_IV_SIZE);
-    const decryptedData = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, rawCiphertext, null, iv, key);
-
-    expect(version).to.equal(2);
-    expect(decryptedData).to.deep.equal(clearData);
   });
 
   it('should encrypt/decrypt a buffer', async () => {
