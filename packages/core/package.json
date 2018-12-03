@@ -14,7 +14,6 @@
     "@babel/runtime-corejs2": "7.0.0",
     "@tanker/crypto": "0.0.1",
     "@tanker/datastore-base": "0.0.1",
-    "@tanker/datastore-pouchdb-memory": "0.0.1",
     "array-find": "^1.0.0",
     "array.chunk": "^1.1.0",
     "async-mutex": "^0.1.2",
@@ -24,6 +23,7 @@
     "varint": "^5.0.0"
   },
   "devDependencies": {
+    "@tanker/datastore-pouchdb-memory": "0.0.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-exclude": "^1.0.12",
