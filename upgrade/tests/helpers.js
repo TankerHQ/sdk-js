@@ -65,19 +65,8 @@ class User {
     }
   }
 
-  async create18() {
-    await this.open();
-    if (!await this._tanker.isUnlockAlreadySetUp()) {
-      await this._tanker.setupUnlock({ password });
-    }
-  }
-
   async close() {
     await this._tanker.close();
-  }
-
-  async encrypt18(message: string, ids: Array<string>) {
-    return toBase64(await this._tanker.encrypt(message, { shareWith: ids }));
   }
 
   async encrypt(message: string, userIds: Array<string>, groupIds: Array<string>) {
