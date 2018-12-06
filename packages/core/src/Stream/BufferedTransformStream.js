@@ -2,7 +2,7 @@
 
 import { Transform } from 'readable-stream';
 
-import { Uint8Stream } from './Uint8Stream';
+import ResizerStream from './ResizerStream';
 import PromiseWrapper from '../PromiseWrapper';
 import { BrokenStream, StreamAlreadyClosed } from '../errors';
 
@@ -18,7 +18,7 @@ type Callbacks = {
 }
 
 function configureInputStream(inputSize: number, callback: { onDrain: Function, onError: Function }) {
-  const inputStream = new Uint8Stream(inputSize);
+  const inputStream = new ResizerStream(inputSize);
 
   inputStream.on('drain', callback.onDrain);
   inputStream.on('error', callback.onError);
@@ -26,7 +26,7 @@ function configureInputStream(inputSize: number, callback: { onDrain: Function, 
 }
 
 function configureOutputStream(outputSize: number, callback: { onData: Function, onEnd: Function, onError: Function }) {
-  const outputStream = new Uint8Stream(outputSize);
+  const outputStream = new ResizerStream(outputSize);
 
   outputStream.on('data', async (data) => {
     outputStream.pause();
@@ -54,9 +54,9 @@ export default class BufferedTransformStream {
   _error: ?Error;
   _closed: bool = false;
 
-  inputStream: Uint8Stream;
+  inputStream: ResizerStream;
   transformStream: Transform;
-  outputStream: Uint8Stream;
+  outputStream: ResizerStream;
 
   constructor(transform: Transform, callbacks: Callbacks, sizes: Sizes) {
     this.onEnd = callbacks.onEnd;
