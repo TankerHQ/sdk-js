@@ -6,7 +6,7 @@ import { Transform } from 'readable-stream';
 import { expect } from './chai';
 import { StreamAlreadyClosed, BrokenStream } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
-import BufferedTransformStream from '../BufferedTransformStream';
+import BufferedTransformStream from '../Stream/BufferedTransformStream';
 
 
 describe('BufferedTransformStream', () => {

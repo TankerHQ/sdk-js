@@ -2,7 +2,7 @@
 
 import { utils } from '@tanker/crypto';
 import { expect } from './chai';
-import Uint8Buffer from '../Uint8Buffer';
+import Uint8Buffer from '../Stream/Uint8Buffer';
 import { NotEnoughData } from '../errors';
 
 describe('Uint8Buffer', () => {
