@@ -5,9 +5,9 @@ import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 
-import { Uint8Stream } from '../Stream/Uint8Stream';
+import ResizerStream from '../Stream/ResizerStream';
 
-describe('Uint8Stream', () => {
+describe('ResizerStream', () => {
   let buffer: Array<Uint8Array>;
 
   let callback;
@@ -27,7 +27,7 @@ describe('Uint8Stream', () => {
 
   [1, 10].forEach((size) => {
     it(`can split in blocks of size: ${size}`, async () => {
-      const stream = new Uint8Stream(size);
+      const stream = new ResizerStream(size);
       stream.on('data', callback);
 
       const data = new Uint8Array(30);
@@ -43,7 +43,7 @@ describe('Uint8Stream', () => {
   });
 
   it('stores data, if outputSize is not reached, until end is called', async () => {
-    const stream = new Uint8Stream(40);
+    const stream = new ResizerStream(40);
     stream.on('data', callback);
 
     const data1 = new Uint8Array(10);
@@ -61,7 +61,7 @@ describe('Uint8Stream', () => {
   });
 
   it('stores data until outputSize is reached', async () => {
-    const stream = new Uint8Stream(20);
+    const stream = new ResizerStream(20);
     stream.on('data', callback);
 
     const data1 = new Uint8Array(10);
@@ -78,7 +78,7 @@ describe('Uint8Stream', () => {
   });
 
   it('returns data in written order', () => {
-    const stream = new Uint8Stream(20);
+    const stream = new ResizerStream(20);
     stream.on('data', callback);
 
     const data = utils.fromString('0123456789');
