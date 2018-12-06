@@ -1,6 +1,6 @@
 // @flow
 
-import { NotEnoughData } from './errors';
+import { NotEnoughData } from '../errors';
 
 export default class Uint8Buffer {
   _arrays: Array<Uint8Array> = [];

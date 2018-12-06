@@ -5,7 +5,7 @@ import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 
-import { Uint8Stream } from '../Uint8Stream';
+import { Uint8Stream } from '../Stream/Uint8Stream';
 
 describe('Uint8Stream', () => {
   let buffer: Array<Uint8Array>;

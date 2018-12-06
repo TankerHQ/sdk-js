@@ -3,8 +3,8 @@
 import { Transform } from 'readable-stream';
 
 import { Uint8Stream } from './Uint8Stream';
-import PromiseWrapper from './PromiseWrapper';
-import { BrokenStream, StreamAlreadyClosed } from './errors';
+import PromiseWrapper from '../PromiseWrapper';
+import { BrokenStream, StreamAlreadyClosed } from '../errors';
 
 type Sizes = {
   inputSize: number,
