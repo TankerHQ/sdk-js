@@ -13,6 +13,18 @@ const generateStreamEncryptorTests = (args: TestArgs) => {
     let aliceToken;
     let bobToken;
 
+    const watchStream = (stream) => {
+      const sync = {};
+      sync.promise = new Promise((resolve, reject) => {
+        sync.resolve = resolve;
+        sync.reject = reject;
+      });
+
+      stream.on('error', sync.reject);
+      stream.on('end', sync.resolve);
+      return sync;
+    };
+
     beforeEach(async () => {
       aliceId = uuid.v4();
       bobId = uuid.v4();
@@ -33,52 +45,43 @@ const generateStreamEncryptorTests = (args: TestArgs) => {
     describe('Sharing', () => {
       it('shares a streamed resource', async () => {
         const letterContents = 'Secret message';
-        let encryptedData = new Uint8Array(0);
         let decryptedData = '';
-        const onEnd = () => { };
 
-        const encryptor = await args.aliceLaptop.makeStreamEncryptor({
-          onData: (data) => { encryptedData = data; },
-          onEnd,
-          shareOptions: {
-            shareWithUsers: [bobId]
-          }
+        const encryptor = await args.aliceLaptop.makeStreamEncryptor({ shareWithUsers: [bobId] });
+        const decryptor = await args.bobLaptop.makeStreamDecryptor();
+        const sync = watchStream(decryptor);
+        decryptor.on('data', (data) => {
+          decryptedData = `${decryptedData}${utils.toString(data)}`;
         });
-        await encryptor.write(utils.fromString(letterContents));
-        await encryptor.close();
 
-        const decryptor = await args.bobLaptop.makeStreamDecryptor({
-          onData: (data) => { decryptedData = utils.toString(data); },
-          onEnd
-        });
-        await decryptor.write(encryptedData);
-        await decryptor.close();
+        encryptor.pipe(decryptor);
 
+        encryptor.write(utils.fromString(letterContents));
+        encryptor.end();
+
+        await expect(sync.promise).to.be.fulfilled;
         expect(decryptedData).to.equal(letterContents);
       });
 
       it('can postpone share', async () => {
         const letterContents = 'Secret message';
-        let encryptedData = new Uint8Array(0);
         let decryptedData = '';
-        const onEnd = () => { };
 
-        const encryptor = await args.aliceLaptop.makeStreamEncryptor({
-          onData: (data) => { encryptedData = data; },
-          onEnd
+        const encryptor = await args.aliceLaptop.makeStreamEncryptor();
+        const decryptor = await args.bobLaptop.makeStreamDecryptor();
+        const sync = watchStream(decryptor);
+        decryptor.on('data', (data) => {
+          decryptedData = `${decryptedData}${utils.toString(data)}`;
         });
-        await encryptor.write(utils.fromString(letterContents));
-        await encryptor.close();
+
+        encryptor.write(utils.fromString(letterContents));
+        encryptor.end();
 
         const resourceId = encryptor.resourceId();
         await args.aliceLaptop.share([resourceId], { shareWithUsers: [bobId] });
 
-        const decryptor = await args.bobLaptop.makeStreamDecryptor({
-          onData: (data) => { decryptedData = utils.toString(data); },
-          onEnd
-        });
-        await decryptor.write(encryptedData);
-        await decryptor.close();
+        encryptor.pipe(decryptor);
+        await expect(sync.promise).to.be.fulfilled;
 
         expect(decryptedData).to.equal(letterContents);
       });
@@ -87,26 +90,23 @@ const generateStreamEncryptorTests = (args: TestArgs) => {
     describe('Encryption/Decryption', () => {
       it('can encrypt/decrypt a resource in multiple \'write\'', async () => {
         const letterContents = ['Harder', 'Better', 'Faster', 'Stronger'];
-        const encryptedData = [];
         let decryptedData = '';
-        const onEnd = () => { };
 
-        const encryptor = await args.aliceLaptop.makeStreamEncryptor({
-          onData: (data) => { encryptedData.push(data); },
-          onEnd,
-        });
+        const encryptor = await args.aliceLaptop.makeStreamEncryptor();
+
         for (const word of letterContents)
-          await encryptor.write(utils.fromString(word));
-        await encryptor.close();
+          encryptor.write(utils.fromString(word));
+        encryptor.end();
 
-        const decryptor = await args.aliceLaptop.makeStreamDecryptor({
-          onData: (data) => { decryptedData = `${decryptedData}${utils.toString(data)}`; },
-          onEnd
+        const decryptor = await args.aliceLaptop.makeStreamDecryptor();
+        const sync = watchStream(decryptor);
+        decryptor.on('data', (data) => {
+          decryptedData = `${decryptedData}${utils.toString(data)}`;
         });
-        for (const eData of encryptedData)
-          await decryptor.write(eData);
-        await decryptor.close();
 
+        encryptor.pipe(decryptor);
+
+        await expect(sync.promise).to.be.fulfilled;
         expect(decryptedData).to.equal(letterContents.join(''));
       });
 
@@ -116,24 +116,18 @@ const generateStreamEncryptorTests = (args: TestArgs) => {
         clearData.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 1000);
         clearData.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 9000000);
 
-        const encryptedData = [];
         const decryptedData = [];
-        const onEnd = () => { };
 
-        const encryptor = await args.aliceLaptop.makeStreamEncryptor({
-          onData: (data) => { encryptedData.push(data); },
-          onEnd,
-        });
-        await encryptor.write(clearData);
-        await encryptor.close();
+        const encryptor = await args.aliceLaptop.makeStreamEncryptor();
+        encryptor.write(clearData);
+        encryptor.end();
 
-        const decryptor = await args.aliceLaptop.makeStreamDecryptor({
-          onData: (data) => { decryptedData.push(data); },
-          onEnd
-        });
-        for (const eData of encryptedData)
-          await decryptor.write(eData);
-        await decryptor.close();
+        const decryptor = await args.aliceLaptop.makeStreamDecryptor();
+        const sync = watchStream(decryptor);
+        decryptor.on('data', (data) => decryptedData.push(data));
+
+        encryptor.pipe(decryptor);
+        await expect(sync.promise).to.be.fulfilled;
 
         let offset = 0;
         for (const cData of decryptedData) {
@@ -144,35 +138,23 @@ const generateStreamEncryptorTests = (args: TestArgs) => {
     });
 
     describe('Error Handling', () => {
-      it('cannot makeStreamEncryptor and makeStreamDecryptor when session is closed', async () => {
+      it('cannot makeStreamEncryptor and makeStreamDecryptor when session is endd', async () => {
         await args.aliceLaptop.close();
-        await expect(args.aliceLaptop.makeStreamEncryptor({
-          onData: () => {},
-          onEnd: () => {},
-        })).to.be.rejectedWith(errors.InvalidSessionStatus);
+        await expect(args.aliceLaptop.makeStreamEncryptor()).to.be.rejectedWith(errors.InvalidSessionStatus);
 
-        await expect(args.aliceLaptop.makeStreamDecryptor({
-          onData: () => {},
-          onEnd: () => {}
-        })).to.be.rejectedWith(errors.InvalidSessionStatus);
+        await expect(args.aliceLaptop.makeStreamDecryptor()).to.be.rejectedWith(errors.InvalidSessionStatus);
       });
 
       it('throws ResourceNotFound when resource was not shared to user', async () => {
-        const encryptedData = [];
-        const onEnd = () => { };
+        const encryptor = await args.aliceLaptop.makeStreamEncryptor();
+        encryptor.end();
 
-        const encryptor = await args.aliceLaptop.makeStreamEncryptor({
-          onData: (data) => { encryptedData.push(data); },
-          onEnd,
-        });
-        await encryptor.close();
+        const decryptor = await args.bobLaptop.makeStreamDecryptor();
+        const sync = watchStream(decryptor);
 
-        const decryptor = await args.bobLaptop.makeStreamDecryptor({
-          onData: () => { },
-          onEnd: () => { }
-        });
+        encryptor.pipe(decryptor);
 
-        await expect(decryptor.write(encryptedData[0])).to.be.rejectedWith(errors.ResourceNotFound);
+        await expect(sync.promise).to.be.rejectedWith(errors.ResourceNotFound);
       });
     });
   });

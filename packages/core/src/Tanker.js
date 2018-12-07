@@ -17,7 +17,6 @@ import { type EncryptionOptions, validateEncryptionOptions } from './DataProtect
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import StreamEncryptor from './DataProtection/StreamEncryptor';
 import StreamDecryptor from './DataProtection/StreamDecryptor';
-import { assertStreamParameters, type StreamEncryptorParameters, type StreamDecryptorParameters } from './DataProtection/StreamConfigs';
 
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 import { TANKER_SDK_VERSION as version } from './version';
@@ -472,15 +471,13 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async makeStreamEncryptor(parameters: StreamEncryptorParameters): Promise<StreamEncryptor> {
+  async makeStreamEncryptor(options?: EncryptionOptions): Promise<StreamEncryptor> {
     this.assert(this.OPEN, 'make a stream encryptor');
 
-    assertStreamParameters(parameters);
+    if (!validateEncryptionOptions(options))
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
 
-    if (!validateEncryptionOptions(parameters.shareOptions))
-      throw new InvalidArgument('parameters.shareOptions', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', parameters.shareOptions);
-
-    const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...parameters };
+    const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
 
     if (param.shareWithSelf === false && isShareWithOptionsEmpty(param))
       throw new InvalidArgument('parameters.shareOptions.shareWith*', 'parameters.shareWithUser or parameters.shareWithGroups must contain recipients when parameters.shareWithSelf === false', param);
@@ -488,12 +485,10 @@ export class Tanker extends EventEmitter {
     return this._session.dataProtector.makeStreamEncryptor(param);
   }
 
-  async makeStreamDecryptor(parameters: StreamDecryptorParameters): Promise<StreamDecryptor> {
+  async makeStreamDecryptor(): Promise<StreamDecryptor> {
     this.assert(this.OPEN, 'make a stream decryptor');
 
-    assertStreamParameters(parameters);
-
-    return this._session.dataProtector.makeStreamDecryptor(parameters);
+    return this._session.dataProtector.makeStreamDecryptor();
   }
 }
 
