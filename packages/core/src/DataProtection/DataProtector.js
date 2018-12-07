@@ -16,9 +16,8 @@ import { encryptData } from './encrypt';
 import { type EncryptionOptions } from './EncryptionOptions';
 import { type ShareWithOptions } from './ShareWithOptions';
 import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
-import StreamEncryptor, { makeStreamEncryptor } from './StreamEncryptor';
-import StreamDecryptor, { makeStreamDecryptor } from './StreamDecryptor';
-import { type StreamEncryptorParameters, type StreamDecryptorParameters } from './StreamConfigs';
+import StreamEncryptor from './StreamEncryptor';
+import StreamDecryptor from './StreamDecryptor';
 
 export type KeyResourceId = {
   key: Uint8Array,
@@ -174,19 +173,19 @@ export default class DataProtector {
     return makeChunkEncryptor({ encryptor, seal, defaultShareWithSelf: (this._localUser.deviceType === DEVICE_TYPE.client_device) });
   }
 
-  async makeStreamEncryptor(parameters: StreamEncryptorParameters): Promise<StreamEncryptor> {
+  async makeStreamEncryptor(options: EncryptionOptions): Promise<StreamEncryptor> {
     const streamResource = ResourceManager.makeStreamResource();
-    const streamEncryptor = makeStreamEncryptor(streamResource, parameters);
+    const streamEncryptor = new StreamEncryptor(streamResource.resourceId, streamResource.key);
 
-    await this._shareResources([{ resourceId: streamResource.resourceId, key: streamResource.key }], parameters.shareOptions || {}, parameters.shareWithSelf || false);
+    await this._shareResources([streamResource], options, options.shareWithSelf || false);
 
     return streamEncryptor;
   }
 
-  async makeStreamDecryptor(parameters: StreamDecryptorParameters): Promise<StreamDecryptor> {
+  async makeStreamDecryptor(): Promise<StreamDecryptor> {
     const resourceIdKeyMapper = {
       findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId, true)
     };
-    return makeStreamDecryptor(resourceIdKeyMapper, parameters);
+    return new StreamDecryptor(resourceIdKeyMapper);
   }
 }
