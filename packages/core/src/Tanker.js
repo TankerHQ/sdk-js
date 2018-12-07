@@ -45,8 +45,7 @@ type TankerDefaultOptions = {|
 
 export type TankerOptions = {|
   ...TankerDefaultOptions,
-  trustchainId: b64string,
-  sdkType: string
+  trustchainId: b64string
 |};
 
 export function getResourceId(data: Uint8Array): b64string {
@@ -120,6 +119,7 @@ export class Tanker extends EventEmitter {
       sdkInfo: {
         version,
         type: options.sdkType,
+        trustchainId: options.trustchainId
       }
     };
     if (options.socket) { clientOptions.socket = options.socket; }

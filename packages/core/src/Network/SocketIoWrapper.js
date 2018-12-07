@@ -33,7 +33,8 @@ function logSocketError(err: any, eventName?: string): void {
 
 export type SdkInfo = {
   version: string,
-  type: string
+  type: string,
+  trustchainId: string
 };
 
 type CreationParam = {

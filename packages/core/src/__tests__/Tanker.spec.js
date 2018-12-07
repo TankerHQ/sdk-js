@@ -45,7 +45,7 @@ describe('Tanker', () => {
 
     it('class should have configurable defaults', () => {
       const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
-      const TankerA = Tanker.defaults({ trustchainId: 'trustchainA', url: 'http://default.io', dataStore });
+      const TankerA = Tanker.defaults({ trustchainId: 'trustchainA', url: 'http://default.io', dataStore, sdkType: 'test' });
       // $FlowExpectedError
       let tankerA = new TankerA({});
 
@@ -72,7 +72,7 @@ describe('Tanker', () => {
     it('class should have chainable defaults', () => {
       const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
       const TankerB = Tanker.defaults({ trustchainId: 'trustchainA', url: 'http://default.io' })
-                            .defaults({ trustchainId: 'trustchainB', dataStore }); // eslint-disable-line indent
+                            .defaults({ trustchainId: 'trustchainB', dataStore, sdkType: 'test' }); // eslint-disable-line indent
       // $FlowExpectedError
       const tankerB = new TankerB({});
       expect(tankerB.options.url).to.equal('http://default.io');
