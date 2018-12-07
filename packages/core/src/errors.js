@@ -25,9 +25,7 @@ type ErrorNature = (
   'recipients_not_found' |
   'user_not_found' |
   'invalid_group_size' |
-  'operation_canceled' |
-  'broken_stream' |
-  'stream_already_closed'
+  'operation_canceled'
 );
 
 export class TankerError extends Error {
@@ -245,27 +243,6 @@ export class RecipientsNotFound extends TankerError {
 export class InvalidGroupSize extends TankerError {
   constructor(msg: string) {
     super('invalid_group_size', msg);
-  }
-}
-
-export class BrokenStream extends TankerError {
-  error: Error;
-
-  constructor(error: Error) {
-    let msg = '';
-    if (error.message) {
-      msg = `: ${error.message}`;
-    }
-
-    super('broken_stream', `an error broke the stream${msg}`);
-
-    this.error = error;
-  }
-}
-
-export class StreamAlreadyClosed extends TankerError {
-  constructor() {
-    super('stream_already_closed', 'close has already been called on this stream');
   }
 }
 
