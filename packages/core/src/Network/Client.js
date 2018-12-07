@@ -7,7 +7,7 @@ import { utils, type b64string, type Key } from '@tanker/crypto';
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 import { ServerError, AuthenticationError } from '../errors';
-import SocketIoWrapper from './SocketIoWrapper';
+import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 import { UnlockKeyAnswer, type UnlockKeyMessage, type UnlockClaims, type UnlockKeyRequest } from '../Unlock/unlock';
 
 export type AuthDeviceParams = {
@@ -30,6 +30,7 @@ const defaultApiAddress = 'https://api.tanker.io';
 export type ClientOptions = {
   socket?: Socket,
   url?: string,
+  sdkInfo: SdkInfo,
 }
 
 /**

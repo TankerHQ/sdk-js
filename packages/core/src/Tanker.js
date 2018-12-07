@@ -16,6 +16,7 @@ import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
+import { TANKER_SDK_VERSION as version } from './version';
 
 const statusDefs = [
   /* 0 */ { name: 'CLOSED', description: 'tanker session is closed' },
@@ -39,11 +40,12 @@ type TankerDefaultOptions = {|
   socket?: any,
   url?: string,
   dataStore?: { adapter: Function, prefix?: string, dbPath?: string, url?: string },
+  sdkType?: string,
 |};
 
 export type TankerOptions = {|
   ...TankerDefaultOptions,
-  trustchainId: b64string,
+  trustchainId: b64string
 |};
 
 export function getResourceId(data: Uint8Array): b64string {
@@ -107,10 +109,19 @@ export class Tanker extends EventEmitter {
       // $FlowFixMe
       throw new InvalidArgument('options.dataStore.adapter', 'function', options.dataStore.adapter);
     }
+    if (typeof options.sdkType !== 'string') {
+      throw new InvalidArgument('options.sdkType', 'string', options.sdkType);
+    }
 
     this._options = options;
 
-    const clientOptions: ClientOptions = {};
+    const clientOptions: ClientOptions = {
+      sdkInfo: {
+        version,
+        type: options.sdkType,
+        trustchainId: options.trustchainId
+      }
+    };
     if (options.socket) { clientOptions.socket = options.socket; }
     if (options.url) { clientOptions.url = options.url; }
     this._clientOptions = clientOptions;

@@ -28,6 +28,7 @@ function makeTanker(prefix = 'default') {
   const tanker = new Tanker({
     trustchainId: context.trustchain_id,
     url: context.trustchain_url,
+    sdkType: 'test',
     // $FlowIKnow Adapter not needed for upgrade tests
     dataStore: {
       dbPath,

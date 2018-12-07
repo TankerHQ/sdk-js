@@ -40,12 +40,12 @@ describe('Tanker', () => {
         expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
       });
 
-      expect(() => new Tanker({ trustchainId: 'ok', dataStore: { ...dataStoreConfig, prefix: makePrefix() } })).not.to.throw;
+      expect(() => new Tanker({ trustchainId: 'ok', dataStore: { ...dataStoreConfig, prefix: makePrefix() }, sdkType: 'test' })).not.to.throw;
     });
 
     it('class should have configurable defaults', () => {
       const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
-      const TankerA = Tanker.defaults({ trustchainId: 'trustchainA', url: 'http://default.io', dataStore });
+      const TankerA = Tanker.defaults({ trustchainId: 'trustchainA', url: 'http://default.io', dataStore, sdkType: 'test' });
       // $FlowExpectedError
       let tankerA = new TankerA({});
 
@@ -58,12 +58,12 @@ describe('Tanker', () => {
       expect(tankerA.options.url).to.equal('http://default.io');
 
       // check defaults overriden by new options
-      tankerA = new TankerA({ trustchainId: 'other', url: 'http://modified.io' });
+      tankerA = new TankerA({ trustchainId: 'other', url: 'http://modified.io', sdkType: 'test' });
       expect(tankerA.options.trustchainId).to.equal('other');
       expect(tankerA.options.url).to.equal('http://modified.io');
 
       // check no defaults from TankerA applied if using Tanker constructor
-      const tanker = new Tanker({ trustchainId: 'another', dataStore });
+      const tanker = new Tanker({ trustchainId: 'another', dataStore, sdkType: 'test' });
       expect(tanker.options.trustchainId).to.equal('another');
       expect(tanker.options.url).to.not.equal('http://default.io');
       expect(tanker.options.url).to.not.equal('http://modified.io');
@@ -72,7 +72,7 @@ describe('Tanker', () => {
     it('class should have chainable defaults', () => {
       const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
       const TankerB = Tanker.defaults({ trustchainId: 'trustchainA', url: 'http://default.io' })
-                            .defaults({ trustchainId: 'trustchainB', dataStore }); // eslint-disable-line indent
+                            .defaults({ trustchainId: 'trustchainB', dataStore, sdkType: 'test' }); // eslint-disable-line indent
       // $FlowExpectedError
       const tankerB = new TankerB({});
       expect(tankerB.options.url).to.equal('http://default.io');
@@ -82,7 +82,7 @@ describe('Tanker', () => {
     it('instance should have numeric status constants matching TankerStatus', () => {
       const statuses = ['CLOSED', 'CLOSING', 'UNLOCK_REQUIRED', 'OPEN', 'OPENING', 'USER_CREATION'];
       const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
-      const tanker = new Tanker({ trustchainId: 'nevermind', dataStore });
+      const tanker = new Tanker({ trustchainId: 'nevermind', dataStore, sdkType: 'test' });
 
       for (const status of statuses) {
         // $FlowIKnow
@@ -101,6 +101,7 @@ describe('Tanker', () => {
         trustchainId: utils.toBase64(trustchainId),
         socket: ({}: any),
         dataStore: { ...dataStoreConfig, prefix: makePrefix() },
+        sdkType: 'test'
       });
     });
 
@@ -151,6 +152,7 @@ describe('Tanker', () => {
       trustchainId: utils.toBase64(trustchainId),
       socket: {},
       dataStore: { ...dataStoreConfig, prefix: makePrefix() },
+      sdkType: 'test'
     });
     // "open" a session
     tanker._session = ({ localUser: { deviceType: DEVICE_TYPE.client_device } }: any); // eslint-disable-line no-underscore-dangle
