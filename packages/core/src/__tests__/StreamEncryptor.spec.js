@@ -1,147 +1,100 @@
 // @flow
 
-import sinon from 'sinon';
-
 import { utils, tcrypto, aead } from '@tanker/crypto';
 
 import { expect } from './chai';
 import StreamEncryptor from '../DataProtection/StreamEncryptor';
-import { defaultOutputSize } from '../DataProtection/StreamConfigs';
 import { InvalidArgument } from '../errors';
+import PromiseWrapper from '../PromiseWrapper';
 
 describe('Stream Encryptor', () => {
   let buffer: Array<Uint8Array>;
-  let smallOutputSize;
-
-  let streamParameters;
 
   let key;
   let resourceId;
 
+  const watchStream = (stream) => {
+    const sync = new PromiseWrapper();
+    stream.on('data', (data) => buffer.push(data));
+    stream.on('error', (err) => sync.reject(err));
+    stream.on('end', () => sync.resolve());
+    return sync;
+  };
+
   before(() => {
-    buffer = [];
-    smallOutputSize = 5;
-    streamParameters = {
-      onData: async (data) => {
-        buffer.push(data);
-        await Promise.resolve();
-      },
-      onEnd: async () => {
-        await Promise.resolve();
-      },
-      outputSize: defaultOutputSize
-    };
-
-    sinon.spy(streamParameters, 'onData');
-    sinon.spy(streamParameters, 'onEnd');
-
     key = utils.fromString('12345678123456781234567812345678');
     resourceId = new Uint8Array(tcrypto.MAC_SIZE);
   });
 
-  afterEach(() => {
-    streamParameters.onData.resetHistory();
-    streamParameters.onEnd.resetHistory();
-    streamParameters.outputSize = defaultOutputSize;
+  beforeEach(() => {
     buffer = [];
   });
 
   it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
-    const stream = new StreamEncryptor(resourceId, key, streamParameters);
+    const stream = new StreamEncryptor(resourceId, key);
+    const sync = watchStream(stream);
 
-    // $FlowExpectedError
-    await expect(stream.write(undefined)).to.be.rejectedWith(InvalidArgument);
-    // $FlowExpectedError
-    await expect(stream.write(10)).to.be.rejectedWith(InvalidArgument);
-    // $FlowExpectedError
-    await expect(stream.write(null)).to.be.rejectedWith(InvalidArgument);
-    // $FlowExpectedError
-    await expect(stream.write('fail')).to.be.rejectedWith(InvalidArgument);
-    // $FlowExpectedError
-    await expect(stream.write({})).to.be.rejectedWith(InvalidArgument);
+    stream.write('fail');
+    stream.end();
+
+    await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
   });
 
-  it('can give its associated resourceId', () => {
-    const stream = new StreamEncryptor(resourceId, key, streamParameters);
+  it('can give its associated resourceId', async () => {
+    const stream = new StreamEncryptor(resourceId, key);
+    const sync = watchStream(stream);
 
     expect(stream.resourceId()).to.be.equal(utils.toBase64(resourceId));
+
+    stream.end();
+    await sync.promise;
   });
 
   it('derives its key and push header before encryption', async () => {
     const msg = utils.fromString('message');
-    const stream = new StreamEncryptor(resourceId, key, streamParameters);
+    const stream = new StreamEncryptor(resourceId, key);
+    const sync = watchStream(stream);
 
-    await expect(stream.write(msg)).to.be.fulfilled;
-    expect(streamParameters.onEnd.notCalled).to.be.true;
-    await stream.close();
+    stream.write(msg);
 
-    const header = buffer[0].subarray(0, tcrypto.MAC_SIZE + 1);
-    const eMsg = buffer[0].subarray(tcrypto.MAC_SIZE + 1);
+    expect(sync.settled).to.be.false;
+
+    stream.end();
+
+    await expect(sync.promise).to.be.fulfilled;
+
+    expect(buffer.length).to.be.equal(2);
+    const header = buffer[0];
+    const eMsg = buffer[1];
 
     expect(header.subarray(1)).to.deep.equal(resourceId);
 
-    expect(streamParameters.onData.calledWith(msg)).to.be.false;
-    expect(streamParameters.onEnd.calledOnce).to.be.true;
-
-    await expect(aead.decryptAEADv2(key, eMsg)).to.not.be.fulfilled;
+    await expect(aead.decryptAEADv2(key, eMsg)).to.be.rejected;
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 0), eMsg)).to.deep.equal(msg);
   });
 
   it('encrypts chunk of fixed size', async () => {
     const msg = utils.fromString('message');
 
-    const stream = new StreamEncryptor(resourceId, key, streamParameters, msg.length);
-    await expect(stream.write(msg.subarray(0, 5))).to.be.fulfilled;
-    await expect(stream.write(msg.subarray(5))).to.be.fulfilled;
-    await expect(stream.write(msg)).to.be.fulfilled;
-    await expect(stream.write(msg.subarray(1))).to.be.fulfilled;
+    const stream = new StreamEncryptor(resourceId, key, msg.length);
+    const sync = watchStream(stream);
 
-    await stream.close();
+    stream.write(msg.subarray(0, 5));
+    stream.write(msg.subarray(5));
+    stream.write(msg);
+    stream.write(msg.subarray(1));
 
-    let offset = tcrypto.MAC_SIZE + 1;
-    const eLength = msg.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
-    const emsg1 = buffer[0].subarray(offset, offset + eLength);
-    offset += eLength;
-    const emsg2 = buffer[0].subarray(offset, offset + eLength);
-    offset += eLength;
-    const emsg3 = buffer[0].subarray(offset, offset + eLength);
+    stream.end();
+
+    await expect(sync.promise).to.be.fulfilled;
+
+    expect(buffer.length).to.be.equal(4);
+    const emsg1 = buffer[1];
+    const emsg2 = buffer[2];
+    const emsg3 = buffer[3];
 
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 0), emsg1)).to.deep.equal(msg);
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 1), emsg2)).to.deep.equal(msg);
     expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 2), emsg3)).to.deep.equal(msg.subarray(1));
-  });
-
-  it('forwards chunks of specified size to onData', async () => {
-    const msg = utils.fromString('message');
-    streamParameters.outputSize = smallOutputSize;
-
-    let encryptedResource = new Uint8Array(0);
-    const stream = new StreamEncryptor(resourceId, key, streamParameters);
-
-    await expect(stream.write(msg)).to.be.fulfilled;
-    await stream.close();
-
-    for (let i = 0; i < buffer.length - 1; i++) {
-      expect(buffer[i].length).to.be.equal(smallOutputSize);
-      encryptedResource = utils.concatArrays(encryptedResource, buffer[i]);
-    }
-    encryptedResource = utils.concatArrays(encryptedResource, buffer[buffer.length - 1]);
-
-    expect(await aead.decryptAEADv2(tcrypto.deriveKey(key, 0), encryptedResource.subarray(tcrypto.MAC_SIZE + 1))).to.deep.equal(msg);
-  });
-
-  it('forwards chunks of specified size to onData even when no data is written', async () => {
-    streamParameters.outputSize = 1;
-
-    let encryptedResource = new Uint8Array(0);
-    const stream = new StreamEncryptor(resourceId, key, streamParameters);
-    await stream.close();
-
-    for (let i = 0; i < buffer.length; i++) {
-      expect(buffer[i].length).to.be.equal(1);
-      encryptedResource = utils.concatArrays(encryptedResource, buffer[i]);
-    }
-
-    expect(encryptedResource.subarray(1)).to.deep.equal(resourceId);
   });
 });

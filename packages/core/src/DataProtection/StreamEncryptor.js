@@ -7,11 +7,10 @@ import { utils, tcrypto, aead, type b64string } from '@tanker/crypto';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument } from '../errors';
-import BufferedTransformStream from '../Stream/BufferedTransformStream';
-import { streamEncryptorVersion, defaultOutputSize, defaultEncryptionSize, type StreamEncryptorParameters } from './StreamConfigs';
+import ResizerStream from '../Stream/ResizerStream';
+import { streamEncryptorVersion, defaultEncryptionSize } from './StreamConfigs';
 
-export default class StreamEncryptor {
-  _outputSize: number = defaultOutputSize;
+export default class StreamEncryptor extends Transform {
   _encryptionSize: number;
 
   _state: {
@@ -19,14 +18,13 @@ export default class StreamEncryptor {
     index: number
   }
 
-  _stream: BufferedTransformStream;
+  _resizerStream: ResizerStream;
+  _encryptorStream: Transform;
 
-  constructor(resourceId: Uint8Array, key: Uint8Array, parameters: StreamEncryptorParameters, encryptionSize: number = defaultEncryptionSize) {
+  constructor(resourceId: Uint8Array, key: Uint8Array, encryptionSize: number = defaultEncryptionSize) {
+    super({ objectMode: true });
+
     this._encryptionSize = encryptionSize;
-    if (parameters.outputSize) {
-      this._outputSize = parameters.outputSize;
-    }
-
     this._state = {
       resourceIdKeyPair: {
         key,
@@ -35,31 +33,36 @@ export default class StreamEncryptor {
       index: 0
     };
 
-    const { onData, onEnd, onError } = parameters;
-    const processingStream = this._makeEncryptionStream();
-
-    this._stream = new BufferedTransformStream(
-      processingStream,
-      { onData, onEnd, onError },
-      { inputSize: this._encryptionSize, outputSize: this._outputSize }
-    );
+    this._configureStreams();
 
     this._writeHeader();
   }
 
-  _makeEncryptionStream() {
-    const derive = this._deriveKey.bind(this);
-    return new Transform({
-      writableHighWaterMark: this._encryptionSize,
-      readableHighWaterMark: this._outputSize,
+  _configureStreams() {
+    this._resizerStream = new ResizerStream(this._encryptionSize);
 
-      transform: async function transform(clearData, encoding, callback) {
+    const derive = this._deriveKey.bind(this);
+    this._encryptorStream = new Transform({
+      writableHighWaterMark: this._encryptionSize,
+      readableHighWaterMark: this._encryptionSize + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD,
+      transform: async function transform(clearData, encoding, done) {
         const subKey = derive();
-        const eData = await aead.encryptAEADv2(subKey, clearData);
-        this.push(eData);
-        callback();
+        try {
+          const eData = await aead.encryptAEADv2(subKey, clearData);
+          this.push(eData);
+        } catch (err) {
+          return done(err);
+        }
+        done();
       }
     });
+
+    const forwardData = (data) => this.push(data);
+    this._encryptorStream.on('data', forwardData);
+    const forwardError = (error) => this.emit('error', error);
+    [this._resizerStream, this._encryptorStream].forEach((stream) => stream.on('error', forwardError));
+
+    this._resizerStream.pipe(this._encryptorStream);
   }
 
   _deriveKey() {
@@ -70,25 +73,23 @@ export default class StreamEncryptor {
 
   _writeHeader() {
     const header = concatArrays(varint.encode(streamEncryptorVersion), this._state.resourceIdKeyPair.resourceId);
-    this._stream.output(header);
+    this._encryptorStream.push(header);
   }
 
   resourceId(): b64string {
     return utils.toBase64(this._state.resourceIdKeyPair.resourceId);
   }
 
-  async write(clearData: Uint8Array): Promise<void> {
-    if (!(clearData instanceof Uint8Array))
-      throw new InvalidArgument('clearData', 'Uint8Array', clearData);
-
-    return this._stream.write(clearData);
+  _transform(clearData, encoding, done) {
+    if (!(clearData instanceof Uint8Array)) {
+      done(new InvalidArgument('clearData', 'Uint8Array', clearData));
+    } else {
+      this._resizerStream.write(clearData, encoding, done);
+    }
   }
 
-  async close(): Promise<void> {
-    return this._stream.close();
+  _flush(done) {
+    this._encryptorStream.on('end', done);
+    this._resizerStream.end();
   }
-}
-
-export function makeStreamEncryptor(streamResource: ResourceIdKeyPair, parameters: StreamEncryptorParameters): StreamEncryptor {
-  return new StreamEncryptor(streamResource.resourceId, streamResource.key, parameters);
 }
