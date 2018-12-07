@@ -31,9 +31,15 @@ function logSocketError(err: any, eventName?: string): void {
  *     for the running callbacks to complete before returning.
  */
 
+export type SdkInfo = {
+  version: string,
+  type: string
+};
 
 type CreationParam = {
-  socket?: Socket, url: string
+  socket?: Socket,
+  url: string,
+  sdkInfo: SdkInfo,
 };
 
 export default class SocketIoWrapper {
@@ -41,8 +47,8 @@ export default class SocketIoWrapper {
   synchronizedSocket: SynchronizedEventEmitter;
   runningRequests: Array<Request> = [];
 
-  constructor({ socket, url }: CreationParam) {
-    this.socket = socket || new Socket(url, { transports: ['websocket', 'polling'], autoConnect: false });
+  constructor({ socket, url, sdkInfo }: CreationParam) {
+    this.socket = socket || new Socket(url, { transports: ['websocket', 'polling'], autoConnect: false, query: sdkInfo });
     this.socket.on('error', e => logSocketError(e, 'error'));
     this.socket.on('connect_error', e => logSocketError(e, 'connect_error'));
     this.socket.on('disconnect', this.abortRequests);
