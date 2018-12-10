@@ -1,6 +1,7 @@
 // @flow
 import { InvalidArgument } from '@tanker/errors';
 import { BaseMergerStream } from '@tanker/stream-base';
+import FilePonyfill from '@tanker/file-ponyfill';
 
 const defaultMime = 'application/octet-stream';
 
@@ -12,7 +13,7 @@ const converters = Object.freeze({
   ),
   Uint8Array: (uint8array) => uint8array,
   Blob: (uint8array, { mime }) => new Blob([uint8array], { type: mime || defaultMime }),
-  File: (uint8array, { mime, name, lastModified }) => new File(
+  File: (uint8array, { mime, name, lastModified }) => new FilePonyfill(
     [uint8array],
     name || '',
     { type: mime || defaultMime, lastModified: lastModified || Date.now() }

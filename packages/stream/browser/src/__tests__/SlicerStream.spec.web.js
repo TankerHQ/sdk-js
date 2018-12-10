@@ -1,6 +1,7 @@
 // @flow
 import { utils } from '@tanker/crypto';
 import { safePrintType } from '@tanker/errors';
+import FilePonyfill from '@tanker/file-ponyfill';
 
 import { expect } from './chai';
 import SlicerStream from '../SlicerStream';
@@ -13,7 +14,7 @@ describe('SlicerStream (web)', () => {
     { source: bytes },
     { source: bytes.buffer },
     { source: new Blob([bytes]) },
-    { source: new File([bytes], 'file.txt') },
+    { source: new FilePonyfill([bytes], 'file.txt') },
   ].forEach(options => {
     const { source } = options;
     const classname = safePrintType(source);
