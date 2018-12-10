@@ -3,11 +3,11 @@
 import { utils, tcrypto, aead } from '@tanker/crypto';
 
 import { expect } from './chai';
-import StreamEncryptor from '../DataProtection/StreamEncryptor';
+import EncryptorStream from '../DataProtection/EncryptorStream';
 import { InvalidArgument } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 
-describe('Stream Encryptor', () => {
+describe('Encryptor Stream', () => {
   let buffer: Array<Uint8Array>;
 
   let key;
@@ -31,7 +31,7 @@ describe('Stream Encryptor', () => {
   });
 
   it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
-    const stream = new StreamEncryptor(resourceId, key);
+    const stream = new EncryptorStream(resourceId, key);
     const sync = watchStream(stream);
 
     stream.write('fail');
@@ -41,7 +41,7 @@ describe('Stream Encryptor', () => {
   });
 
   it('can give its associated resourceId', async () => {
-    const stream = new StreamEncryptor(resourceId, key);
+    const stream = new EncryptorStream(resourceId, key);
     const sync = watchStream(stream);
 
     expect(stream.resourceId()).to.be.equal(utils.toBase64(resourceId));
@@ -52,7 +52,7 @@ describe('Stream Encryptor', () => {
 
   it('derives its key and push header before encryption', async () => {
     const msg = utils.fromString('message');
-    const stream = new StreamEncryptor(resourceId, key);
+    const stream = new EncryptorStream(resourceId, key);
     const sync = watchStream(stream);
 
     stream.write(msg);
@@ -76,7 +76,7 @@ describe('Stream Encryptor', () => {
   it('encrypts chunk of fixed size', async () => {
     const msg = utils.fromString('message');
 
-    const stream = new StreamEncryptor(resourceId, key, msg.length);
+    const stream = new EncryptorStream(resourceId, key, msg.length);
     const sync = watchStream(stream);
 
     stream.write(msg.subarray(0, 5));
