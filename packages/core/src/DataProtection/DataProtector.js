@@ -15,7 +15,7 @@ import { encryptData } from './encrypt';
 import { type EncryptionOptions } from './EncryptionOptions';
 import { type ShareWithOptions } from './ShareWithOptions';
 import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
-import StreamEncryptor from './StreamEncryptor';
+import EncryptorStream from './EncryptorStream';
 import StreamDecryptor from './StreamDecryptor';
 
 export type KeyResourceId = {
@@ -172,13 +172,13 @@ export default class DataProtector {
     return makeChunkEncryptor(encryptor, seal);
   }
 
-  async makeStreamEncryptor(options: EncryptionOptions): Promise<StreamEncryptor> {
+  async makeEncryptorStream(options: EncryptionOptions): Promise<EncryptorStream> {
     const streamResource = ResourceManager.makeStreamResource();
-    const streamEncryptor = new StreamEncryptor(streamResource.resourceId, streamResource.key);
+    const encryptorStream = new EncryptorStream(streamResource.resourceId, streamResource.key);
 
     await this._shareResources([streamResource], options, options.shareWithSelf || false);
 
-    return streamEncryptor;
+    return encryptorStream;
   }
 
   async makeStreamDecryptor(): Promise<StreamDecryptor> {

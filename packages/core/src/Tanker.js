@@ -15,7 +15,7 @@ import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
-import StreamEncryptor from './DataProtection/StreamEncryptor';
+import EncryptorStream from './DataProtection/EncryptorStream';
 import StreamDecryptor from './DataProtection/StreamDecryptor';
 
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
@@ -460,7 +460,7 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async makeStreamEncryptor(options?: EncryptionOptions): Promise<StreamEncryptor> {
+  async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
     this.assert(this.OPEN, 'make a stream encryptor');
 
     if (!validateEncryptionOptions(options))
@@ -471,7 +471,7 @@ export class Tanker extends EventEmitter {
     if (param.shareWithSelf === false && isShareWithOptionsEmpty(param))
       throw new InvalidArgument('parameters.shareOptions.shareWith*', 'parameters.shareWithUser or parameters.shareWithGroups must contain recipients when parameters.shareWithSelf === false', param);
 
-    return this._session.dataProtector.makeStreamEncryptor(param);
+    return this._session.dataProtector.makeEncryptorStream(param);
   }
 
   async makeStreamDecryptor(): Promise<StreamDecryptor> {

@@ -8,9 +8,9 @@ import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument } from '../errors';
 import ResizerStream from '../Stream/ResizerStream';
-import { streamEncryptorVersion, defaultEncryptionSize } from './StreamConfigs';
+import { encryptorStreamVersion, defaultEncryptionSize } from './StreamConfigs';
 
-export default class StreamEncryptor extends Transform {
+export default class EncryptorStream extends Transform {
   _encryptionSize: number;
 
   _state: {
@@ -72,7 +72,7 @@ export default class StreamEncryptor extends Transform {
   }
 
   _writeHeader() {
-    const header = concatArrays(varint.encode(streamEncryptorVersion), this._state.resourceIdKeyPair.resourceId);
+    const header = concatArrays(varint.encode(encryptorStreamVersion), this._state.resourceIdKeyPair.resourceId);
     this._encryptorStream.push(header);
   }
 
