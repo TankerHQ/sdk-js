@@ -16,7 +16,7 @@ import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import EncryptorStream from './DataProtection/EncryptorStream';
-import StreamDecryptor from './DataProtection/StreamDecryptor';
+import DecryptorStream from './DataProtection/DecryptorStream';
 
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
@@ -474,10 +474,10 @@ export class Tanker extends EventEmitter {
     return this._session.dataProtector.makeEncryptorStream(param);
   }
 
-  async makeStreamDecryptor(): Promise<StreamDecryptor> {
+  async makeDecryptorStream(): Promise<DecryptorStream> {
     this.assert(this.OPEN, 'make a stream decryptor');
 
-    return this._session.dataProtector.makeStreamDecryptor();
+    return this._session.dataProtector.makeDecryptorStream();
   }
 }
 
