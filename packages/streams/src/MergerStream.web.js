@@ -1,4 +1,5 @@
 // @flow
+import FilePolyfill from './File.polyfill.web';
 import ResizerStream from './ResizerStream';
 import Uint8Buffer from './Uint8Buffer';
 
@@ -42,7 +43,7 @@ export default class MergerStream extends ResizerStream {
           this.push(new Blob([uint8array], { type: this._mime }));
           break;
         case 'File':
-          this.push(new File([uint8array], this._filename, { type: this._mime }));
+          this.push(new FilePolyfill([uint8array], this._filename, { type: this._mime }));
           break;
         default:
           throw new Error('Assertion error: invalid _type in MergerStream');

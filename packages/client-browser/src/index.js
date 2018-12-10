@@ -19,6 +19,7 @@ export const Tanker = TankerCore.defaults({
 export default Tanker;
 
 export {
+  File,
   MergerStreamWeb as MergerStream,
   ResizerStream,
   SlicerStream,

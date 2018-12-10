@@ -1,4 +1,5 @@
 // @flow
+export { default as File } from './File.polyfill.web';
 export { default as MergerStreamNode } from './MergerStream.node';
 export { default as MergerStreamWeb } from './MergerStream.web';
 export { default as ResizerStream } from './ResizerStream';
