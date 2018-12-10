@@ -1,7 +1,7 @@
 // @flow
 
-// WARNING: don't import the File polyfill here! We want to test against the real
-//          File constructor, for both real and polyfilled files to be accepted.
+// WARNING: don't import the File ponyfill here! We want to test against the real
+//          File constructor, for both real and ponyfilled files to be accepted.
 import { InvalidArgument } from '@tanker/errors';
 import { Readable } from '@tanker/stream-base';
 
