@@ -9,7 +9,7 @@ import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import ResizerStream from '../Stream/ResizerStream';
 import { defaultOutputSize, defaultDecryptionSize, type ResourceIdKeyMapper } from './StreamConfigs';
 
-export default class StreamDecryptor extends Transform {
+export default class DecryptorStream extends Transform {
   _mapper: ResourceIdKeyMapper;
   _outputSize: number = defaultOutputSize;
   _decryptionSize: number;
@@ -78,7 +78,7 @@ export default class StreamDecryptor extends Transform {
       case 1:
         return tcrypto.MAC_SIZE;
       default:
-        throw new InvalidEncryptionFormat(`unhandled format version in StreamDecryptor: '${version}'`);
+        throw new InvalidEncryptionFormat(`unhandled format version in DecryptorStream: '${version}'`);
     }
   }
 
@@ -90,7 +90,7 @@ export default class StreamDecryptor extends Transform {
           resourceId: binaryData
         };
       default:
-        throw new InvalidEncryptionFormat(`unhandled format version in StreamDecryptor: '${version}'`);
+        throw new InvalidEncryptionFormat(`unhandled format version in DecryptorStream: '${version}'`);
     }
   }
 
@@ -137,8 +137,4 @@ export default class StreamDecryptor extends Transform {
     this._decryptionStream.on('end', done);
     this._resizerStream.end();
   }
-}
-
-export function makeStreamDecryptor(mapper: ResourceIdKeyMapper): StreamDecryptor {
-  return new StreamDecryptor(mapper);
 }

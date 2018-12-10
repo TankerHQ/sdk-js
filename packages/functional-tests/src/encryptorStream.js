@@ -48,7 +48,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         let decryptedData = '';
 
         const encryptor = await args.aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobId] });
-        const decryptor = await args.bobLaptop.makeStreamDecryptor();
+        const decryptor = await args.bobLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => {
           decryptedData = `${decryptedData}${utils.toString(data)}`;
@@ -68,7 +68,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         let decryptedData = '';
 
         const encryptor = await args.aliceLaptop.makeEncryptorStream();
-        const decryptor = await args.bobLaptop.makeStreamDecryptor();
+        const decryptor = await args.bobLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => {
           decryptedData = `${decryptedData}${utils.toString(data)}`;
@@ -98,7 +98,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
           encryptor.write(utils.fromString(word));
         encryptor.end();
 
-        const decryptor = await args.aliceLaptop.makeStreamDecryptor();
+        const decryptor = await args.aliceLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => {
           decryptedData = `${decryptedData}${utils.toString(data)}`;
@@ -122,7 +122,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         encryptor.write(clearData);
         encryptor.end();
 
-        const decryptor = await args.aliceLaptop.makeStreamDecryptor();
+        const decryptor = await args.aliceLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => decryptedData.push(data));
 
@@ -138,18 +138,18 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
     });
 
     describe('Error Handling', () => {
-      it('cannot makeEncryptorStream and makeStreamDecryptor when session is endd', async () => {
+      it('cannot makeEncryptorStream and makeDecryptorStream when session is endd', async () => {
         await args.aliceLaptop.close();
         await expect(args.aliceLaptop.makeEncryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
 
-        await expect(args.aliceLaptop.makeStreamDecryptor()).to.be.rejectedWith(errors.InvalidSessionStatus);
+        await expect(args.aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
       });
 
       it('throws ResourceNotFound when resource was not shared to user', async () => {
         const encryptor = await args.aliceLaptop.makeEncryptorStream();
         encryptor.end();
 
-        const decryptor = await args.bobLaptop.makeStreamDecryptor();
+        const decryptor = await args.bobLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
 
         encryptor.pipe(decryptor);

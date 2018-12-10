@@ -5,7 +5,7 @@ import varint from 'varint';
 
 import { utils, aead, tcrypto, type Key } from '@tanker/crypto';
 import { expect } from './chai';
-import StreamDecryptor from '../DataProtection/StreamDecryptor';
+import DecryptorStream from '../DataProtection/DecryptorStream';
 import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument, NotEnoughData, InvalidEncryptionFormat, DecryptFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
@@ -18,7 +18,7 @@ async function encryptMsg(key, index, str) {
   };
 }
 
-function setKey(stream: StreamDecryptor, key: Key) {
+function setKey(stream: DecryptorStream, key: Key) {
   // eslint-disable-next-line no-underscore-dangle, no-param-reassign
   stream._state.resourceIdKeyPair = {
     key,
@@ -26,7 +26,7 @@ function setKey(stream: StreamDecryptor, key: Key) {
   };
 }
 
-describe('Stream Decryptor', () => {
+describe('Decryptor Stream', () => {
   let buffer: Array<Uint8Array>;
   let key;
   let mapper;
@@ -55,7 +55,7 @@ describe('Stream Decryptor', () => {
     const msg2 = await encryptMsg(key, 1, '2nd message');
     const encryptedMsgLength = msg1.encrypted.length;
 
-    const stream = new StreamDecryptor(mapper, encryptedMsgLength);
+    const stream = new DecryptorStream(mapper, encryptedMsgLength);
     const sync = watchStream(stream);
 
     setKey(stream, key);
@@ -81,7 +81,7 @@ describe('Stream Decryptor', () => {
     const msg = await encryptMsg(key, 0, 'message');
 
     const encryptedMsgLength = msg.encrypted.length;
-    const stream = new StreamDecryptor(mapper, encryptedMsgLength);
+    const stream = new DecryptorStream(mapper, encryptedMsgLength);
     const sync = watchStream(stream);
 
     stream.write(concatArrays(formatHeader, msg.encrypted));
@@ -111,7 +111,7 @@ describe('Stream Decryptor', () => {
     });
 
     it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
-      const stream = new StreamDecryptor(mapper);
+      const stream = new DecryptorStream(mapper);
       const sync = watchStream(stream);
 
       stream.write('fail');
@@ -120,7 +120,7 @@ describe('Stream Decryptor', () => {
     });
 
     it('throws DecryptFailed when data is corrupted', async () => {
-      const stream = new StreamDecryptor(mapper, ref[1].length);
+      const stream = new DecryptorStream(mapper, ref[1].length);
       const sync = watchStream(stream);
 
       ref[1][0] += 1;
@@ -131,7 +131,7 @@ describe('Stream Decryptor', () => {
     });
 
     it('throws NotEnoughData when the header is not fully given during first write', async () => {
-      const stream = new StreamDecryptor(mapper, ref[1].length);
+      const stream = new DecryptorStream(mapper, ref[1].length);
       const sync = watchStream(stream);
 
       const incompleteHeader = ref[0].subarray(0, 1);
@@ -140,7 +140,7 @@ describe('Stream Decryptor', () => {
     });
 
     it('throws InvalidEncryptionFormat when the header is corrupted', async () => {
-      const stream = new StreamDecryptor(mapper, ref[1].length);
+      const stream = new DecryptorStream(mapper, ref[1].length);
       const sync = watchStream(stream);
       ref[0][0] += 1;
 
@@ -149,7 +149,7 @@ describe('Stream Decryptor', () => {
     });
 
     it('throws DecryptFailed when data is written in wrong order', async () => {
-      const stream = new StreamDecryptor(mapper, ref[1].length);
+      const stream = new DecryptorStream(mapper, ref[1].length);
       const sync = watchStream(stream);
 
       stream.write(ref[0]);
