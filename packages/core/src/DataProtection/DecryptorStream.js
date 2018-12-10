@@ -4,9 +4,10 @@ import varint from 'varint';
 import { Transform } from 'readable-stream';
 
 import { aead, tcrypto } from '@tanker/crypto';
+import { ResizerStream } from '@tanker/streams';
+
 import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, DecryptFailed } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
-import ResizerStream from '../Stream/ResizerStream';
 import { defaultOutputSize, defaultDecryptionSize, type ResourceIdKeyMapper } from './StreamConfigs';
 
 export default class DecryptorStream extends Transform {

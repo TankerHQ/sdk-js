@@ -1,28 +1,19 @@
 // @flow
-
-import sinon from 'sinon';
 import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-
-import ResizerStream from '../Stream/ResizerStream';
+import ResizerStream from '../ResizerStream';
 
 describe('ResizerStream', () => {
   let buffer: Array<Uint8Array>;
-
   let callback;
-  let spy;
 
   before(() => {
-    callback = (data) => {
-      buffer.push(data);
-    };
-    spy = sinon.spy(callback);
+    callback = (data) => buffer.push(data);
   });
 
   beforeEach(() => {
     buffer = [];
-    spy.resetHistory();
   });
 
   [1, 10].forEach((size) => {

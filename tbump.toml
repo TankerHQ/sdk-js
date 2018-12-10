@@ -62,6 +62,10 @@ src = "packages/core/package.json"
 search = '"@tanker/datastore-pouchdb-memory": "{current_version}"'
 
 [[file]]
+src = "packages/core/package.json"
+search = '"@tanker/streams": "{current_version}"'
+
+[[file]]
 src = "packages/core/src/version.js"
 search = "TANKER_SDK_VERSION = '{current_version}'"
 

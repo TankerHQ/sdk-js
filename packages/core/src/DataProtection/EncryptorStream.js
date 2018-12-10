@@ -4,10 +4,11 @@ import varint from 'varint';
 import { Transform } from 'readable-stream';
 
 import { utils, tcrypto, aead, type b64string } from '@tanker/crypto';
+import { ResizerStream } from '@tanker/streams';
+
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument } from '../errors';
-import ResizerStream from '../Stream/ResizerStream';
 import { encryptorStreamVersion, defaultEncryptionSize } from './StreamConfigs';
 
 export default class EncryptorStream extends Transform {

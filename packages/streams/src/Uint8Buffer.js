@@ -1,7 +1,4 @@
 // @flow
-
-import { NotEnoughData } from '../errors';
-
 export default class Uint8Buffer {
   _arrays: Array<Uint8Array> = [];
   _byteSize: number = 0;
@@ -19,7 +16,7 @@ export default class Uint8Buffer {
 
   consume(expectedSize: number): Uint8Array {
     if (expectedSize > this._byteSize) {
-      throw new NotEnoughData(`expected ${expectedSize} but had ${this._byteSize}`);
+      throw new Error(`NotEnoughData: expected ${expectedSize} but had ${this._byteSize}`);
     }
 
     const result = new Uint8Array(expectedSize);
