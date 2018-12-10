@@ -120,3 +120,7 @@ search = '"@tanker/datastore-pouchdb-base": "{current_version}"'
 [[file]]
 src = "packages/datastore/tests/package.json"
 search = '"@tanker/datastore-base": "{current_version}"'
+
+[[file]]
+src = "packages/streams/package.json"
+search = '"@tanker/crypto": "{current_version}"'
