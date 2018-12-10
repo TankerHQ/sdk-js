@@ -1,5 +1,4 @@
 // @flow
-
 import { Transform } from 'readable-stream';
 
 import Uint8Buffer from './Uint8Buffer';
