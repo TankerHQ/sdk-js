@@ -2,6 +2,7 @@
 import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
+import FilePolyfill from '../File.polyfill.web';
 import SlicerStream from '../SlicerStream.web';
 
 describe('SlicerStream (web)', () => {
@@ -12,7 +13,7 @@ describe('SlicerStream (web)', () => {
     { source: bytes },
     { source: bytes.buffer },
     { source: new Blob([bytes]) },
-    { source: new File([bytes], 'file.txt') },
+    { source: new FilePolyfill([bytes], 'file.txt') },
   ].forEach(options => {
     const { source } = options;
 
