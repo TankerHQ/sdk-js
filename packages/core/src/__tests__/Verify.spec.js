@@ -340,13 +340,6 @@ describe('BlockVerification', () => {
         'invalid_signature'
       );
     });
-    it('should reject a key publish to user with a recipient that has a superseeded user public key', () => {
-      user.userPublicKeys.push({ index: unverifiedKeyPublish.index - 1, userPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE) });
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, null),
-        'invalid_user_public_key'
-      );
-    });
     it('should reject a keyPublish to user with no recipient', () => {
       assertFailWithNature(
         () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null),

@@ -138,9 +138,6 @@ function verifyKeyPublishToUser(entry: UnverifiedKeyPublish, author: Device, rec
 
   const indexUserKey = find(recipient.userPublicKeys, userPublicKey => utils.equalArray(userPublicKey.userPublicKey, entry.recipient));
 
-  if (!indexUserKey || indexUserKey.index > entry.index)
-    throw new InvalidBlockError('invalid_user_public_key', 'user public key has been superseeded', { entry, author });
-
   const futureUserKey = find(recipient.userPublicKeys, userPublicKey => userPublicKey.index > indexUserKey.index);
 
   if (futureUserKey && entry.index > futureUserKey.index)
