@@ -17,3 +17,8 @@ export const Tanker = TankerCore.defaults({
 });
 
 export default Tanker;
+
+export {
+  MergerStreamNode as MergerStream,
+  ResizerStream
+} from '@tanker/streams';
