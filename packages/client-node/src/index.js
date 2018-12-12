@@ -12,7 +12,8 @@ export { errors, getTankerVersion, TankerStatus, createUserSecret, fromBase64, f
 export type { b64string } from '@tanker/core';
 
 export const Tanker = TankerCore.defaults({
-  dataStore: { adapter: PouchDB }
+  dataStore: { adapter: PouchDB },
+  sdkType: 'client-node'
 });
 
 export default Tanker;

@@ -12,7 +12,8 @@ export { errors, getTankerVersion, TankerStatus, createUserSecret, fromBase64, f
 export type { b64string } from '@tanker/core';
 
 export const Tanker = TankerCore.defaults({
-  dataStore: { adapter: Dexie }
+  dataStore: { adapter: Dexie },
+  sdkType: 'client-browser'
 });
 
 export default Tanker;
