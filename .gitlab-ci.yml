@@ -5,39 +5,6 @@ stages:
 before_script:
   - dmenv install
 
-check/macos:
-  stage: check
-  except:
-    - schedules
-  script:
-    - dmenv run -- python run-ci.py check --runner macos
-  tags:
-    - macos
-
-.check/windows:
-  stage: check
-  tags:
-    - windows
-  allow_failure: true
-
-check/windows/edge:
-  extends: .check/windows
-  script:
-    - dmenv run -- python run-ci.py check --runner windows-edge
-
-check/windows/ie:
-  extends: .check/windows
-  only:
-    - schedules
-  script:
-    - dmenv run -- python run-ci.py check --runner windows-ie
-
-check/windows/ie/manual:
-  extends: .check/windows
-  when: manual
-  script:
-    - dmenv run -- python run-ci.py check --runner windows-ie
-
 check/linux/nightly:
   stage: check
   only:
