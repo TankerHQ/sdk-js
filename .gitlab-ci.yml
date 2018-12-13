@@ -5,15 +5,6 @@ stages:
 before_script:
   - dmenv install
 
-check/linux:
-  stage: check
-  except:
-    - schedules
-  script:
-    - xvfb-run dmenv run -- python run-ci.py check --runner linux
-  tags:
-    - linux
-
 check/macos:
   stage: check
   except:
