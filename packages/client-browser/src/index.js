@@ -21,6 +21,8 @@ export default Tanker;
 export {
   File,
   MergerStreamWeb as MergerStream,
+  ReadableStream,
   ResizerStream,
   SlicerStream,
+  WritableStream,
 } from '@tanker/streams';
