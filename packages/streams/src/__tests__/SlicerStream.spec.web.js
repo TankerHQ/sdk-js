@@ -5,6 +5,18 @@ import { expect } from './chai';
 import FilePolyfill from '../File.polyfill.web';
 import SlicerStream from '../SlicerStream.web';
 
+// Because IE11 does not implement Function.prototype.name
+const getConstructorName = (() => {
+  const regExp = /^.*(?:function|class) +([^( ]+).*$/;
+
+  return (constructor: Function) => {
+    if (typeof constructor.name === 'string')
+      return constructor.name;
+
+    return constructor.toString().trim().split('\n')[0].replace(regExp, '$1');
+  };
+})();
+
 describe('SlicerStream (web)', () => {
   const bytes: Uint8Array = utils.fromString('0123456789abcdef'); // 16 bytes
   const outputSize = 4;
@@ -16,8 +28,9 @@ describe('SlicerStream (web)', () => {
     { source: new FilePolyfill([bytes], 'file.txt') },
   ].forEach(options => {
     const { source } = options;
+    const classname = getConstructorName(source.constructor);
 
-    it(`can slice a ${source.constructor.name}`, async () => {
+    it(`can slice a ${classname}`, async () => {
       const stream = new SlicerStream({ ...options, outputSize });
 
       const output: Array<Uint8Array> = [];
