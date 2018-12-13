@@ -20,5 +20,7 @@ export default Tanker;
 
 export {
   MergerStreamNode as MergerStream,
-  ResizerStream
+  ReadableStream,
+  ResizerStream,
+  WritableStream,
 } from '@tanker/streams';
