@@ -11,6 +11,7 @@ import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/UserStore';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/payloads';
+import { DEVICE_TYPE } from '../Unlock/unlock';
 import { decryptData } from './decrypt';
 import { encryptData } from './encrypt';
 import { type EncryptionOptions } from './EncryptionOptions';
@@ -171,6 +172,6 @@ export default class DataProtector {
       encryptData: (data, options) => this.encryptAndShareData(data, options),
       decryptData: (encryptedData) => this.decryptData(encryptedData)
     };
-    return makeChunkEncryptor(encryptor, seal);
+    return makeChunkEncryptor(encryptor, seal, (this._sessionData.deviceType === DEVICE_TYPE.client_device));
   }
 }
