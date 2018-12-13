@@ -6,6 +6,7 @@ import { tcrypto, aead, random, utils } from '@tanker/crypto';
 
 import { ChunkIndexOutOfRange, ChunkNotFound, DecryptFailed, InvalidArgument, InvalidSeal } from '../errors';
 import { type EncryptionOptions, validateEncryptionOptions } from './EncryptionOptions';
+import { isShareWithOptionsEmpty } from './ShareWithOptions';
 import * as Serialize from '../Blocks/Serialize';
 
 const currentSealVersion = 3;
@@ -164,10 +165,12 @@ export function getChunkKeys(seal: Uint8Array): Array<?Uint8Array> {
 export default class ChunkEncryptor {
   encryptor: EncryptorInterface;
   chunkKeys: Array<?Uint8Array>;
+  defaultShareWithSelf: bool;
 
-  constructor(encryptor: EncryptorInterface, chunkKeys: Array<?Uint8Array>) {
+  constructor(encryptor: EncryptorInterface, chunkKeys: Array<?Uint8Array>, defaultShareWithSelf: bool) {
     Object.defineProperty(this, 'encryptor', { value: encryptor });
     this.chunkKeys = chunkKeys;
+    this.defaultShareWithSelf = defaultShareWithSelf;
   }
 
   get length(): number {
@@ -267,9 +270,14 @@ export default class ChunkEncryptor {
     if (!validateEncryptionOptions(options))
       throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
 
+    const opts = { shareWithSelf: this.defaultShareWithSelf, ...options };
+
+    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(opts))
+      throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);
+
     const seal = Seal.build(this.chunkKeys);
     const serializedSeal = seal.serialize();
-    const encryptedData = await this.encryptor.encryptData(serializedSeal, options);
+    const encryptedData = await this.encryptor.encryptData(serializedSeal, opts);
     return encryptedData;
   }
 
@@ -367,7 +375,7 @@ export default class ChunkEncryptor {
   // END OF DEPRECATED SINCE 1.6.0 SECTION
 }
 
-export async function makeChunkEncryptor(encryptor: EncryptorInterface, seal?: Uint8Array): Promise<ChunkEncryptor> {
+export async function makeChunkEncryptor(encryptor: EncryptorInterface, seal?: Uint8Array, defaultShareWithSelf: bool): Promise<ChunkEncryptor> {
   let chunkKeys: Array<?Uint8Array> = [];
 
   if (seal) {
@@ -375,5 +383,5 @@ export async function makeChunkEncryptor(encryptor: EncryptorInterface, seal?: U
     chunkKeys = getChunkKeys(clearSeal);
   }
 
-  return new ChunkEncryptor(encryptor, chunkKeys);
+  return new ChunkEncryptor(encryptor, chunkKeys, defaultShareWithSelf);
 }
