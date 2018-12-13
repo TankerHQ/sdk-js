@@ -36,7 +36,7 @@ let clearText;
 describe('ChunkEncryptor', () => {
   beforeEach(async () => {
     fakeEncryptor = new FakeEncryptor();
-    chunkEncryptor = await makeChunkEncryptor(fakeEncryptor);
+    chunkEncryptor = await makeChunkEncryptor({ encryptor: fakeEncryptor, defaultShareWithSelf: true });
     clearText = 'initial message';
   });
 
@@ -154,7 +154,7 @@ describe('ChunkEncryptor', () => {
     await chunkEncryptor.encrypt(clearText, 7);
     await chunkEncryptor.encrypt(clearText, 11);
     const seal = await chunkEncryptor.seal();
-    const newEnc = await makeChunkEncryptor(fakeEncryptor, seal);
+    const newEnc = await makeChunkEncryptor({ encryptor: fakeEncryptor, seal, defaultShareWithSelf: true });
     expect(newEnc).to.deep.equal(chunkEncryptor);
   });
 
@@ -171,7 +171,7 @@ describe('ChunkEncryptor', () => {
     arr.splice(5, 1);
     const encCorruptedSeal = await fakeEncryptor.encryptData(new Uint8Array(arr));
 
-    await expect(makeChunkEncryptor(fakeEncryptor, encCorruptedSeal))
+    await expect(makeChunkEncryptor({ encryptor: fakeEncryptor, seal: encCorruptedSeal, defaultShareWithSelf: true }))
       .to.be.rejectedWith(errors.InvalidSeal);
   });
 

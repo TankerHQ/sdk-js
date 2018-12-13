@@ -168,6 +168,6 @@ export default class DataProtector {
       encryptData: (data, options) => this.encryptAndShareData(data, options),
       decryptData: (encryptedData) => this.decryptData(encryptedData)
     };
-    return makeChunkEncryptor(encryptor, seal, (this._localUser.deviceType === DEVICE_TYPE.client_device));
+    return makeChunkEncryptor({ encryptor, seal, defaultShareWithSelf: (this._localUser.deviceType === DEVICE_TYPE.client_device) });
   }
 }

@@ -167,10 +167,10 @@ export default class ChunkEncryptor {
   chunkKeys: Array<?Uint8Array>;
   defaultShareWithSelf: bool;
 
-  constructor(encryptor: EncryptorInterface, chunkKeys: Array<?Uint8Array>, defaultShareWithSelf: bool) {
-    Object.defineProperty(this, 'encryptor', { value: encryptor });
-    this.chunkKeys = chunkKeys;
-    this.defaultShareWithSelf = defaultShareWithSelf;
+  constructor(options: { encryptor: EncryptorInterface, chunkKeys: Array<?Uint8Array>, defaultShareWithSelf: bool }) {
+    Object.defineProperty(this, 'encryptor', { value: options.encryptor });
+    this.chunkKeys = options.chunkKeys;
+    this.defaultShareWithSelf = options.defaultShareWithSelf;
   }
 
   get length(): number {
@@ -375,13 +375,13 @@ export default class ChunkEncryptor {
   // END OF DEPRECATED SINCE 1.6.0 SECTION
 }
 
-export async function makeChunkEncryptor(encryptor: EncryptorInterface, seal?: Uint8Array, defaultShareWithSelf: bool): Promise<ChunkEncryptor> {
+export async function makeChunkEncryptor(options: { encryptor: EncryptorInterface, seal?: Uint8Array, defaultShareWithSelf: bool }): Promise<ChunkEncryptor> {
   let chunkKeys: Array<?Uint8Array> = [];
 
-  if (seal) {
-    const clearSeal = await encryptor.decryptData(seal);
+  if (options.seal) {
+    const clearSeal = await options.encryptor.decryptData(options.seal);
     chunkKeys = getChunkKeys(clearSeal);
   }
 
-  return new ChunkEncryptor(encryptor, chunkKeys, defaultShareWithSelf);
+  return new ChunkEncryptor({ encryptor: options.encryptor, chunkKeys, defaultShareWithSelf: options.defaultShareWithSelf });
 }
