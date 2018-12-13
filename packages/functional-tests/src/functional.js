@@ -8,7 +8,7 @@ import { Tanker as TankerCore } from '@tanker/core';
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
 
 import generateChunkEncryptor from './chunkEncryptor';
-import generateStreamEncryptor from './streamEncryptor';
+import generateStreamEncryptor from './encryptorStream';
 import generateEncryptTests from './encrypt';
 import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';

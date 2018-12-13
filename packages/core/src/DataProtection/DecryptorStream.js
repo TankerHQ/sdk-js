@@ -6,10 +6,10 @@ import { Transform } from 'readable-stream';
 import { aead, tcrypto } from '@tanker/crypto';
 import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, DecryptFailed } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
-import BufferedTransformStream from '../Stream/BufferedTransformStream';
-import { defaultOutputSize, defaultDecryptionSize, type ResourceIdKeyMapper, type StreamDecryptorParameters } from './StreamConfigs';
+import ResizerStream from '../Stream/ResizerStream';
+import { defaultOutputSize, defaultDecryptionSize, type ResourceIdKeyMapper } from './StreamConfigs';
 
-export default class StreamDecryptor {
+export default class DecryptorStream extends Transform {
   _mapper: ResourceIdKeyMapper;
   _outputSize: number = defaultOutputSize;
   _decryptionSize: number;
@@ -19,51 +19,51 @@ export default class StreamDecryptor {
     index: number
   };
 
-  _stream: BufferedTransformStream;
+  _resizerStream: ResizerStream;
+  _decryptionStream: Transform;
 
-  constructor(mapper: ResourceIdKeyMapper, parameters: StreamDecryptorParameters, decryptionSize: number = defaultDecryptionSize) {
+  constructor(mapper: ResourceIdKeyMapper, decryptionSize: number = defaultDecryptionSize) {
+    super({ objectMode: true });
+
     this._mapper = mapper;
     this._decryptionSize = decryptionSize;
-    if (parameters.outputSize) {
-      this._outputSize = parameters.outputSize;
-    }
-
     this._state = {
       resourceIdKeyPair: null,
       index: 0
     };
-    const { onData, onEnd, onError } = parameters;
-    const processingStream = this._makeDecryptionStream();
 
-    this._stream = new BufferedTransformStream(
-      processingStream,
-      { onData, onEnd, onError },
-      { inputSize: this._decryptionSize, outputSize: this._outputSize }
-    );
+    this._configureStreams();
   }
 
+  _configureStreams() {
+    this._resizerStream = new ResizerStream(this._decryptionSize);
 
-  _makeDecryptionStream() {
     const derive = this._deriveKey.bind(this);
     // $FlowIKnow _resourceKeyPair is always defined during write
     const resourceId = () => this._state.resourceIdKeyPair.resourceId;
-    return new Transform({
+    this._decryptionStream = new Transform({
       writableHighWaterMark: this._decryptionSize,
-      readableHighWaterMark: this._outputSize,
+      readableHighWaterMark: this._decryptionSize - tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD,
 
-      transform: async function transform(chunk, encoding, callback) {
+      transform: async function transform(chunk, encoding, done) {
         let clearData;
         const subKey = derive();
         try {
           clearData = await aead.decryptAEADv2(subKey, chunk);
         } catch (error) {
-          return callback(new DecryptFailed(error, resourceId()));
+          return done(new DecryptFailed(error, resourceId()));
         }
-
         this.push(clearData);
-        callback();
+        done();
       }
     });
+
+    const forwardData = (data) => this.push(data);
+    this._decryptionStream.on('data', forwardData);
+    const forwardError = (error) => this.emit('error', error);
+    [this._resizerStream, this._decryptionStream].forEach((stream) => stream.on('error', forwardError));
+
+    this._resizerStream.pipe(this._decryptionStream);
   }
 
   _deriveKey() {
@@ -78,7 +78,7 @@ export default class StreamDecryptor {
       case 1:
         return tcrypto.MAC_SIZE;
       default:
-        throw new InvalidEncryptionFormat(`unhandled format version in StreamDecryptor: '${version}'`);
+        throw new InvalidEncryptionFormat(`unhandled format version in DecryptorStream: '${version}'`);
     }
   }
 
@@ -90,7 +90,7 @@ export default class StreamDecryptor {
           resourceId: binaryData
         };
       default:
-        throw new InvalidEncryptionFormat(`unhandled format version in StreamDecryptor: '${version}'`);
+        throw new InvalidEncryptionFormat(`unhandled format version in DecryptorStream: '${version}'`);
     }
   }
 
@@ -111,31 +111,30 @@ export default class StreamDecryptor {
     };
   }
 
-  async write(encryptedData: Uint8Array): Promise<void> {
+  async _transform(encryptedData, encoding, done) {
     if (!(encryptedData instanceof Uint8Array))
-      throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
-
-    this._stream.integrityCheck();
+      return done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
 
     let data = encryptedData;
     if (!this._state.resourceIdKeyPair) {
-      const { header, remaining } = await this._extractHeader(encryptedData);
-      this._state.resourceIdKeyPair = header;
-      data = remaining;
+      try {
+        const { header, remaining } = await this._extractHeader(encryptedData);
+        this._state.resourceIdKeyPair = header;
+        data = remaining;
+      } catch (err) {
+        return done(err);
+      }
     }
 
     if (data.length === 0) {
-      return;
+      return done();
     }
 
-    return this._stream.write(data);
+    this._resizerStream.write(data, done);
   }
 
-  close(): Promise<void> {
-    return this._stream.close();
+  _flush(done) {
+    this._decryptionStream.on('end', done);
+    this._resizerStream.end();
   }
-}
-
-export function makeStreamDecryptor(mapper: ResourceIdKeyMapper, parameters: StreamDecryptorParameters): StreamDecryptor {
-  return new StreamDecryptor(mapper, parameters);
 }

@@ -15,9 +15,8 @@ import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
-import StreamEncryptor from './DataProtection/StreamEncryptor';
-import StreamDecryptor from './DataProtection/StreamDecryptor';
-import { assertStreamParameters, type StreamEncryptorParameters, type StreamDecryptorParameters } from './DataProtection/StreamConfigs';
+import EncryptorStream from './DataProtection/EncryptorStream';
+import DecryptorStream from './DataProtection/DecryptorStream';
 
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 
@@ -461,28 +460,24 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async makeStreamEncryptor(parameters: StreamEncryptorParameters): Promise<StreamEncryptor> {
+  async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
     this.assert(this.OPEN, 'make a stream encryptor');
 
-    assertStreamParameters(parameters);
+    if (!validateEncryptionOptions(options))
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
 
-    if (!validateEncryptionOptions(parameters.shareOptions))
-      throw new InvalidArgument('parameters.shareOptions', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', parameters.shareOptions);
-
-    const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...parameters };
+    const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
 
     if (param.shareWithSelf === false && isShareWithOptionsEmpty(param))
       throw new InvalidArgument('parameters.shareOptions.shareWith*', 'parameters.shareWithUser or parameters.shareWithGroups must contain recipients when parameters.shareWithSelf === false', param);
 
-    return this._session.dataProtector.makeStreamEncryptor(param);
+    return this._session.dataProtector.makeEncryptorStream(param);
   }
 
-  async makeStreamDecryptor(parameters: StreamDecryptorParameters): Promise<StreamDecryptor> {
+  async makeDecryptorStream(): Promise<DecryptorStream> {
     this.assert(this.OPEN, 'make a stream decryptor');
 
-    assertStreamParameters(parameters);
-
-    return this._session.dataProtector.makeStreamDecryptor(parameters);
+    return this._session.dataProtector.makeDecryptorStream();
   }
 }
 
