@@ -411,6 +411,7 @@ export class Tanker extends EventEmitter {
   }
 
   async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
+    console.warn('The ChunkEncryptor is deprecated since version 1.10.0. Please use the simple encryption APIs instead, as described in the migration guide: https://tanker.io/docs/latest/migration-guide/#chunk_encryption_apis_deprecation');
     this.assert(this.OPEN, 'make a chunk encryptor');
     return this._session.dataProtector.makeChunkEncryptor(seal);
   }
