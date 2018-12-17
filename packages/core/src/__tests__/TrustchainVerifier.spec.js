@@ -4,7 +4,7 @@
 import { tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
-import { InvalidBlockError } from '../errors';
+import { InvalidBlockError } from '../errors.internal';
 import { type UnverifiedEntry, blockToEntry, deviceCreationFromBlock } from '../Blocks/entries';
 import { type GeneratorKeyResult, type GeneratorUserResult } from './Generator';
 import { signBlock, type Block } from '../Blocks/Block';

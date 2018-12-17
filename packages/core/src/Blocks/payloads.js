@@ -4,7 +4,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 
 import { type Block } from './Block';
 import { NATURE } from './Nature';
-import { UpgradeRequiredError } from '../errors';
+import { UpgradeRequiredError } from '../errors.internal';
 import { getArray, getStaticArray, concatArrays, encodeArrayLength, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from './Serialize';
 
 export type TrustchainCreationRecord = {|
