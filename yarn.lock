@@ -7297,9 +7297,10 @@ readable-stream@1.0.33:
     isarray "0.0.1"
     string_decoder "~0.10.x"
 
-"readable-stream@git+https://github.com/TankerHQ/readable-stream.git#039a8da8aa5e0e1582190ed0f0a227f059cc2e77":
-  version "3.0.6"
-  resolved "git+https://github.com/TankerHQ/readable-stream.git#039a8da8aa5e0e1582190ed0f0a227f059cc2e77"
+readable-stream@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-3.1.0.tgz#19c2e9c1ce43507c53f6eefbcf1ee3d4aaa786f5"
+  integrity sha512-vpydAvIJvPODZNagCPuHG87O9JNPtvFEtjHHRVwNVsVVRBqemvPJkc2SYbxJsiZXawJdtZNmkmnsPuE3IgsG0A==
   dependencies:
     inherits "^2.0.3"
     string_decoder "^1.1.1"
