@@ -1,0 +1,18 @@
+{
+  "name": "@tanker/errors",
+  "version": "0.0.1",
+  "description": "Common errors used by the Tanker SDK",
+  "author": "Tanker Team",
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "scripts": {
+    "test": "cd ../..; yarn test:errors"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "chai": "^4.2.0"
+  }
+}
