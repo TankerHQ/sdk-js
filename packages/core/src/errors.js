@@ -1,47 +1,9 @@
 // @flow
-
 import { utils, type b64string } from '@tanker/crypto';
+import { TankerError } from '@tanker/errors';
 
-type ErrorNature = (
-  'resource_not_found' |
-  'decrypt_failed' |
-  'invalid_user_secret' |
-  'invalid_user_token' |
-  'invalid_unlock_key' |
-  'invalid_unlock_password' |
-  'max_verification_attempts_reached' |
-  'invalid_session_status' |
-  'invalid_argument' |
-  'invalid_device_validation_code' |
-  'invalid_seal' |
-  'invalid_encryption_format' |
-  'invalid_unlock_verification_code' |
-  'server_error' |
-  'invalid_delegation_token' |
-  'missing_event_handler' |
-  'chunk_index_out_of_range' |
-  'chunk_not_found' |
-  'authentication_error' |
-  'recipients_not_found' |
-  'user_not_found' |
-  'invalid_group_size' |
-  'operation_canceled'
-);
-
-export class TankerError extends Error {
-  nature: ErrorNature;
-
-  constructor(nature: ErrorNature, details: ?string) {
-    let message = `Tanker error: ${nature}`;
-    if (details) {
-      message += `, ${details}`;
-    }
-
-    super(message);
-
-    this.nature = nature;
-  }
-}
+// Re-expose these common error classes:
+export { TankerError, InvalidArgument } from '@tanker/errors';
 
 export class ResourceNotFound extends TankerError {
   b64Mac: b64string;
@@ -130,31 +92,6 @@ export class InvalidSessionStatus extends TankerError {
 export class OperationCanceled extends TankerError {
   constructor(message: string = 'Operation canceled') {
     super('operation_canceled', message);
-  }
-}
-
-function getTypeAsString(value) {
-  // only check the built-ins we care about in the API
-  if (value instanceof Array)
-    return 'Array';
-  else if (value instanceof Uint8Array)
-    return 'Uint8Array';
-
-  return typeof value;
-}
-
-export class InvalidArgument extends TankerError {
-  constructor(name: string, expectedType: string, value: any) {
-    let quotedValue;
-    try {
-      quotedValue = JSON.stringify(value);
-    } catch (e) {
-      quotedValue = value;
-    }
-
-    const foundType = getTypeAsString(value);
-
-    super('invalid_argument', `name: ${name} (${expectedType}), value: ${quotedValue} (${foundType})`);
   }
 }
 
