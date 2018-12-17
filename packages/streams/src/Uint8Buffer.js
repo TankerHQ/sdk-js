@@ -1,4 +1,6 @@
 // @flow
+import { NotEnoughData } from '@tanker/errors';
+
 export default class Uint8Buffer {
   _arrays: Array<Uint8Array> = [];
   _byteSize: number = 0;
@@ -16,7 +18,7 @@ export default class Uint8Buffer {
 
   consume(expectedSize: number): Uint8Array {
     if (expectedSize > this._byteSize) {
-      throw new Error(`NotEnoughData: expected ${expectedSize} but had ${this._byteSize}`);
+      throw new NotEnoughData(`Tried to consume ${expectedSize} bytes but had only ${this._byteSize} bytes`);
     }
 
     const result = new Uint8Array(expectedSize);

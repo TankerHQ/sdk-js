@@ -1,4 +1,6 @@
 // @flow
+import { InvalidArgument } from '@tanker/errors';
+
 import FilePolyfill from './File.polyfill.web';
 import ResizerStream from './ResizerStream';
 import Uint8Buffer from './Uint8Buffer';
@@ -11,14 +13,25 @@ export default class MergerStream extends ResizerStream {
   _mime: string;
   _type: OutputType;
 
-  constructor({ type, mime, filename }: { type?: OutputType, mime?: string, filename?: string } = {}) {
+  constructor(options: { type?: OutputType, mime?: string, filename?: string } = {}) {
+    if (typeof options !== 'object' || options instanceof Array)
+      throw new InvalidArgument('options', 'object', options);
+
+    const { type, mime, filename } = options;
+
     if (type !== undefined) {
       const allowedTypes = ['ArrayBuffer', 'Uint8Array', 'Blob', 'File'];
 
       if (allowedTypes.indexOf(type) === -1) {
-        throw new Error(`InvalidArgument: type should be one of ['ArrayBuffer', 'Uint8Array', 'Blob', 'File'] but was ${type}`);
+        throw new InvalidArgument('options.type', 'string in ["ArrayBuffer", "Uint8Array", "Blob", "File"]', type);
       }
     }
+
+    if (mime && typeof mime !== 'string')
+      throw new InvalidArgument('options.mime', 'string', mime);
+
+    if (filename && typeof filename !== 'string')
+      throw new InvalidArgument('options.filename', 'string', filename);
 
     // Note: can't use Infinity as it will be forwarded to the writableHighWaterMark option
     super(Number.MAX_SAFE_INTEGER);
