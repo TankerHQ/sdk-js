@@ -27,6 +27,7 @@ describe('MergerStream (node)', () => {
 
   it('assumes Uint8Array if no type given', () => {
     const stream = new MergerStream();
+    // $FlowExpectedError
     expect(stream._type).to.equal('Uint8Array'); // eslint-disable-line no-underscore-dangle
   });
 
