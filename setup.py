@@ -19,7 +19,7 @@ setup(
     ],
     extras_require={
         "dev": [
-            "tankersdk==1.8.0.post1",
+            "tankersdk>=1.9.1",
             "pytest",
             "ruamel.yaml",
             ]
