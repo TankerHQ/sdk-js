@@ -1,9 +1,8 @@
 // @flow
 import { InvalidArgument } from '@tanker/errors';
+import { ResizerStream, Uint8Buffer } from '@tanker/stream-base';
 
-import FilePolyfill from './File.polyfill.web';
-import ResizerStream from './ResizerStream';
-import Uint8Buffer from './Uint8Buffer';
+import FilePolyfill from './File.polyfill';
 
 type OutputType = 'ArrayBuffer' | 'Uint8Array' | 'Blob' | 'File';
 

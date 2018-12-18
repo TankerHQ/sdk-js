@@ -7,7 +7,6 @@
   "main": "src/index.js",
   "dependencies": {
     "@tanker/core": "0.0.1",
-    "@tanker/datastore-dexie-browser": "0.0.1",
-    "@tanker/streams": "0.0.1"
+    "@tanker/datastore-dexie-browser": "0.0.1"
   }
 }

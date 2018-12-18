@@ -15,7 +15,7 @@
     "@tanker/crypto": "0.0.1",
     "@tanker/datastore-base": "0.0.1",
     "@tanker/errors": "0.0.1",
-    "@tanker/streams": "0.0.1",
+    "@tanker/stream-base": "0.0.1",
     "array-find": "^1.0.0",
     "array.chunk": "^1.1.0",
     "engine.io-client": "git+https://github.com/TankerHQ/engine.io-client.git#cfb6fa113fb5dc22e08777bd8fc6b6701f00ba67",

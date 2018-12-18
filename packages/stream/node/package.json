@@ -1,7 +1,7 @@
 {
-  "name": "@tanker/streams",
+  "name": "@tanker/stream-node",
   "version": "0.0.1",
-  "description": "Tanker Stream SDK for web browsers and Node.js",
+  "description": "Tanker Stream SDK for Node.js",
   "author": "Tanker Team",
   "license": "Apache-2.0",
   "main": "src/index.js",

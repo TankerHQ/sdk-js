@@ -4,7 +4,7 @@ import varint from 'varint';
 import { Transform } from 'readable-stream';
 
 import { aead, tcrypto } from '@tanker/crypto';
-import { ResizerStream } from '@tanker/streams';
+import { ResizerStream } from '@tanker/stream-base';
 
 import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, DecryptFailed } from '../errors';
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
