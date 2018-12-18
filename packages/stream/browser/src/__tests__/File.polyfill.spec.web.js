@@ -2,7 +2,7 @@
 import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-import FilePolyfill from '../File.polyfill.web';
+import FilePolyfill from '../File.polyfill';
 
 describe('FilePolyfill (web)', () => {
   // Skip if nothing to test

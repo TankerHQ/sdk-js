@@ -2,8 +2,8 @@
 import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-import FilePolyfill from '../File.polyfill.web';
-import SlicerStream from '../SlicerStream.web';
+import FilePolyfill from '../File.polyfill';
+import SlicerStream from '../SlicerStream';
 
 // Because IE11 does not implement Function.prototype.name
 const getConstructorName = (() => {

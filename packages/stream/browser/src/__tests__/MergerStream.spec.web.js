@@ -2,7 +2,7 @@
 import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-import MergerStream from '../MergerStream.web';
+import MergerStream from '../MergerStream';
 
 const toUint8Array = (input: ArrayBuffer | Uint8Array | Blob | File): Promise<Uint8Array> => new Promise((resolve, reject) => {
   if (input instanceof ArrayBuffer) {
