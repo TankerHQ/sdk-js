@@ -399,6 +399,35 @@ describe('BlockVerification', () => {
     });
   });
 
+  describe('key publish to pre-registered user', () => {
+    let user: User;
+    let targetPreRegistrationPublicKey: Uint8Array;
+    let unverifiedKeyPublish: UnverifiedKeyPublish;
+    beforeEach(() => {
+      testGenerator.makeTrustchainCreation();
+      const userId = random(tcrypto.HASH_SIZE);
+      const userCreation = testGenerator.makeUserCreation(userId);
+      user = userCreation.user;
+      targetPreRegistrationPublicKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+      testGenerator.skipIndex(); // used for faking a revocation
+      const keyPublish = testGenerator.makeKeyPublishToPreUser(userCreation, targetPreRegistrationPublicKey);
+      unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
+    });
+
+    it('should accept a correct key publish to pre-user', () => {
+      expect(() => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null))
+        .to.not.throw();
+    });
+
+    it('should reject a keyPublish with an invalid signature', () => {
+      unverifiedKeyPublish.signature[0] += 1;
+      assertFailWithNature(
+        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null),
+        'invalid_signature'
+      );
+    });
+  });
+
   describe('group creation', () => {
     let user: User;
     let externalGroup: ExternalGroup;

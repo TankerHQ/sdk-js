@@ -304,7 +304,7 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToUser = (parentDevice: TestDeviceCreation, recipient: User): TestKeyPublish => {
+  prepareKeyPublishGenerator = (parentDevice: TestDeviceCreation) => {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = random(tcrypto.MAC_SIZE);
 
@@ -314,6 +314,16 @@ class TestGenerator {
       parentDevice.testDevice.id,
     );
     this._trustchainIndex += 1;
+
+    return {
+      resourceKey,
+      resourceId,
+      blockGenerator,
+    };
+  }
+
+  makeKeyPublishToUser = (parentDevice: TestDeviceCreation, recipient: User): TestKeyPublish => {
+    const { resourceKey, resourceId, blockGenerator } = this.prepareKeyPublishGenerator(parentDevice);
     const lastUserKey = getLastUserPublicKey(recipient);
     if (!lastUserKey) {
       throw new Error('flow check');
@@ -321,35 +331,36 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishBlock(lastUserKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user);
     block.index = this._trustchainIndex;
 
-    const unverifiedKeyPublish = keyPublishFromBlock(block);
     return {
-      unverifiedKeyPublish,
+      unverifiedKeyPublish: keyPublishFromBlock(block),
       block,
       resourceId
     };
   }
 
   makeKeyPublishToGroup = (parentDevice: TestDeviceCreation, recipient: ExternalGroup): TestKeyPublish => {
-    const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const resourceId = random(tcrypto.MAC_SIZE);
-
-    const blockGenerator = new BlockGenerator(
-      this._trustchainId,
-      parentDevice.testDevice.signKeys.privateKey,
-      parentDevice.testDevice.id,
-    );
-    this._trustchainIndex += 1;
+    const { resourceKey, resourceId, blockGenerator } = this.prepareKeyPublishGenerator(parentDevice);
     const block = blockGenerator.makeKeyPublishBlock(recipient.publicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
     block.index = this._trustchainIndex;
 
-    const unverifiedKeyPublish = keyPublishFromBlock(block);
     return {
-      unverifiedKeyPublish,
+      unverifiedKeyPublish: keyPublishFromBlock(block),
       block,
       resourceId
     };
   }
 
+  makeKeyPublishToPreUser = (parentDevice: TestDeviceCreation, recipient: Uint8Array): TestKeyPublish => {
+    const { resourceKey, resourceId, blockGenerator } = this.prepareKeyPublishGenerator(parentDevice);
+    const block = blockGenerator.makeKeyPublishBlock(recipient, resourceKey, resourceId, NATURE_KIND.key_publish_to_pre_user);
+    block.index = this._trustchainIndex;
+
+    return {
+      unverifiedKeyPublish: keyPublishFromBlock(block),
+      block,
+      resourceId
+    };
+  }
 
   makeUserGroupCreation = (parentDevice: TestDeviceCreation, members: Array<User>): TestUserGroup => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
