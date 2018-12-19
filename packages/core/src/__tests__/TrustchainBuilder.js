@@ -115,6 +115,13 @@ export default class TrustchainBuilder {
     return result;
   }
 
+  async addKeyPublishToPreUser(args: {from: GeneratorUserResult, to: Uint8Array, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
+    const { symmetricKey, to, from, resourceId } = args;
+    const result = await this.generator.newKeyPublishToPreUser({ symmetricKey, toPresharePublicKey: to, fromDevice: from.device, resourceId });
+    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
+    return result;
+  }
+
   async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>): Promise<GeneratorUserGroupResult> {
     const result = await this.generator.newUserGroupCreation(from.device, members);
     await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);

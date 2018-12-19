@@ -54,6 +54,9 @@ export type KeyPublishToUserRecord = KeyPublishRecord;
 // the recipient is a Group Public Key
 export type KeyPublishToUserGroupRecord = KeyPublishRecord;
 
+// the recipient is a Preshare Public Key
+export type KeyPublishToPreUserRecord = KeyPublishRecord;
+
 export type DeviceRevocationRecord = {|
   device_id: Uint8Array,
   user_keys?: UserKeys,
@@ -80,7 +83,7 @@ export type UserGroupAdditionRecord = {|
 |}
 export type UserGroupRecord = UserGroupCreationRecord | UserGroupAdditionRecord
 
-export type Record = TrustchainCreationRecord | UserDeviceRecord | KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | DeviceRevocationRecord | UserGroupCreationRecord | UserGroupAdditionRecord;
+export type Record = TrustchainCreationRecord | UserDeviceRecord | KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | KeyPublishToPreUserRecord | DeviceRevocationRecord | UserGroupCreationRecord | UserGroupAdditionRecord;
 
 
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
@@ -424,6 +427,7 @@ export function unserializePayload(block: Block): Record {
     case NATURE.key_publish_to_device: return unserializeKeyPublishToDevice(block.payload);
     case NATURE.key_publish_to_user: return unserializeKeyPublish(block.payload);
     case NATURE.key_publish_to_user_group: return unserializeKeyPublish(block.payload);
+    case NATURE.key_publish_to_pre_user: return unserializeKeyPublish(block.payload);
     case NATURE.device_revocation_v1: return unserializeDeviceRevocationV1(block.payload);
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
     case NATURE.user_group_creation: return unserializeUserGroupCreation(block.payload);

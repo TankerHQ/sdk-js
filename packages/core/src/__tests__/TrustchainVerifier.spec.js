@@ -1,7 +1,7 @@
 // @flow
 /* eslint-disable no-underscore-dangle */
 
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 
 import { expect, assert } from './chai';
 import { InvalidBlockError } from '../errors.internal';
@@ -185,6 +185,16 @@ describe('TrustchainVerifier', () => {
 
       const result = await builder.trustchainVerifier.verifyKeyPublishes([alteredKP.unverifiedKeyPublish]);
       expect(result.length).to.equal(0);
+    });
+
+    it('verifies key publishes to pre-registered users', async () => {
+      const preRegistrationKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+      const keyPublish = await builder.addKeyPublishToPreUser({ from: author, to: preRegistrationKey });
+      const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish]);
+      expect(result.length).to.equal(1);
+
+      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
     });
   });
 });

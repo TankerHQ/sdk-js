@@ -8,7 +8,7 @@ import Generator from './Generator';
 
 import { blockToEntry } from '../Blocks/entries';
 import { type UserDeviceRecord, unserializePayload } from '../Blocks/payloads';
-import { isKeyPublishToDevice, isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
+import { isKeyPublishToDevice, isKeyPublishToPreUser, isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
 
 describe('trustchain-generator', () => {
   let generator;
@@ -118,6 +118,28 @@ describe('trustchain-generator', () => {
     };
 
     await expect(generator.newKeyPublishToUser(args)).to.be.rejected;
+  });
+
+  it('should add a key publish to pre-user', async () => {
+    await generator.newUserCreationV3('47');
+    await generator.newDeviceCreationV3({ userId: '47', parentIndex: 0 });
+    const firstDevice = generator.users['47'].devices[0];
+
+    const args = {
+      symmetricKey: random(tcrypto.SYMMETRIC_KEY_SIZE),
+      resourceId: random(tcrypto.MAC_SIZE),
+      toPresharePublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      fromDevice: firstDevice,
+    };
+
+    const { block: keyPublishBlock, entry: keyPublishEntry } = await generator.newKeyPublishToPreUser(args);
+
+    expect(isKeyPublishToPreUser(keyPublishEntry.nature)).to.be.true;
+    expect(tcrypto.verifySignature(
+      keyPublishEntry.hash,
+      keyPublishBlock.signature,
+      firstDevice.signKeys.publicKey
+    )).to.equal(true);
   });
 
   it('should revoke a device', async () => {

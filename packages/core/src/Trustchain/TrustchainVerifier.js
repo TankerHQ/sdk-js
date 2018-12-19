@@ -17,6 +17,7 @@ import {
   natureKind,
   isKeyPublishToDevice,
   isKeyPublishToUser,
+  isKeyPublishToPreUser,
 } from '../Blocks/Nature';
 
 import Storage from '../Session/Storage';
@@ -89,6 +90,8 @@ export default class TrustchainVerifier {
         } else if (isKeyPublishToUser(keyPublish.nature)) {
           const recipient = await this._storage.userStore.findUser({ userPublicKey: keyPublish.recipient });
           verifiedKeyPublish = verifyKeyPublish(keyPublish, author, recipient);
+        } else if (isKeyPublishToPreUser(keyPublish.nature)) {
+          verifiedKeyPublish = verifyKeyPublish(keyPublish, author, null, null);
         } else {
           const recipient = await this._storage.groupStore.findExternal({ groupPublicEncryptionKey: keyPublish.recipient });
           verifiedKeyPublish = verifyKeyPublish(keyPublish, author, null, recipient);
