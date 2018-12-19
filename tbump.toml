@@ -30,10 +30,6 @@ src = "packages/client-browser/package.json"
 search = '"@tanker/datastore-dexie-browser": "{current_version}"'
 
 [[file]]
-src = "packages/client-browser/package.json"
-search = '"@tanker/streams": "{current_version}"'
-
-[[file]]
 src = "packages/client-node/package.json"
 search = '"version": "{current_version}"'
 
@@ -50,10 +46,6 @@ src = "packages/client-node/package.json"
 search = '"@tanker/datastore-pouchdb-memory": "{current_version}"'
 
 [[file]]
-src = "packages/client-node/package.json"
-search = '"@tanker/streams": "{current_version}"'
-
-[[file]]
 src = "packages/core/package.json"
 search = '"version": "{current_version}"'
 
@@ -67,11 +59,15 @@ search = '"@tanker/datastore-base": "{current_version}"'
 
 [[file]]
 src = "packages/core/package.json"
-search = '"@tanker/datastore-pouchdb-memory": "{current_version}"'
+search = '"@tanker/errors": "{current_version}"'
 
 [[file]]
 src = "packages/core/package.json"
-search = '"@tanker/streams": "{current_version}"'
+search = '"@tanker/stream-base": "{current_version}"'
+
+[[file]]
+src = "packages/core/package.json"
+search = '"@tanker/datastore-pouchdb-memory": "{current_version}"'
 
 [[file]]
 src = "packages/core/src/version.js"
@@ -98,19 +94,19 @@ src = "packages/datastore/dexie-browser/package.json"
 search = '"@tanker/crypto": "{current_version}"'
 
 [[file]]
-src = "packages/datastore/pouchdb-base/package.json"
+src = "packages/datastore/mongodb/package.json"
 search = '"version": "{current_version}"'
 
 [[file]]
-src = "packages/datastore/pouchdb-base/package.json"
+src = "packages/datastore/mongodb/package.json"
 search = '"@tanker/datastore-base": "{current_version}"'
 
 [[file]]
-src = "packages/datastore/mongodb/package.json"
+src = "packages/datastore/pouchdb-base/package.json"
 search = '"version": "{current_version}"'
 
 [[file]]
-src = "packages/datastore/mongodb/package.json"
+src = "packages/datastore/pouchdb-base/package.json"
 search = '"@tanker/datastore-base": "{current_version}"'
 
 [[file]]
@@ -134,5 +130,49 @@ src = "packages/datastore/tests/package.json"
 search = '"@tanker/datastore-base": "{current_version}"'
 
 [[file]]
-src = "packages/streams/package.json"
+src = "packages/errors/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/stream/base/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/stream/base/package.json"
+search = '"@tanker/errors": "{current_version}"'
+
+[[file]]
+src = "packages/stream/base/package.json"
+search = '"@tanker/crypto": "{current_version}"'
+
+[[file]]
+src = "packages/stream/browser/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/stream/browser/package.json"
+search = '"@tanker/errors": "{current_version}"'
+
+[[file]]
+src = "packages/stream/browser/package.json"
+search = '"@tanker/stream-base": "{current_version}"'
+
+[[file]]
+src = "packages/stream/browser/package.json"
+search = '"@tanker/crypto": "{current_version}"'
+
+[[file]]
+src = "packages/stream/node/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/stream/node/package.json"
+search = '"@tanker/errors": "{current_version}"'
+
+[[file]]
+src = "packages/stream/node/package.json"
+search = '"@tanker/stream-base": "{current_version}"'
+
+[[file]]
+src = "packages/stream/node/package.json"
 search = '"@tanker/crypto": "{current_version}"'
