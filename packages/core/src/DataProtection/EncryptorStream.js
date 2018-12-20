@@ -1,10 +1,9 @@
 // @flow
 
 import varint from 'varint';
-import { Transform } from 'readable-stream';
 
 import { utils, tcrypto, aead, type b64string } from '@tanker/crypto';
-import { ResizerStream } from '@tanker/stream-base';
+import { ResizerStream, Transform } from '@tanker/stream-base';
 
 import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';

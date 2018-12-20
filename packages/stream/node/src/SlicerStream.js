@@ -1,6 +1,6 @@
 // @flow
-import { Readable } from 'readable-stream';
 import { InvalidArgument } from '@tanker/errors';
+import { Readable } from '@tanker/stream-base';
 
 type Source = ArrayBuffer | Buffer | Uint8Array;
 

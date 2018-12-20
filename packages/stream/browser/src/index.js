@@ -1,6 +1,5 @@
 // @flow
-export { Readable as ReadableStream, Writable as WritableStream } from 'readable-stream';
-export { ResizerStream, Uint8Buffer } from '@tanker/stream-base';
+export { Duplex, Readable, Transform, Writable, ResizerStream, Uint8Buffer } from '@tanker/stream-base';
 
 export { default as File } from './File.polyfill';
 export { default as MergerStream } from './MergerStream';
