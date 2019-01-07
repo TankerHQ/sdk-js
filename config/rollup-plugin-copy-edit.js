@@ -1,11 +1,11 @@
 // Inspired by: https://github.com/meuter/rollup-plugin-copy but:
 //   - adding an edit function to modify content of the file,
 //   - using an array of copy configs instead of a map of src/dest file paths,
-//   - reusing the turbocolor package already used by rollup,
+//   - using the colorette package which is faster than colors,
 //   - fixing bugs (global var, not returning the promise...)
 const fse = require('fs-extra');
 const path = require('path');
-const tc = require('turbocolor');
+const { green, red } = require('colorette');
 
 const name = 'rollup-plugin-copy-edit';
 
@@ -13,14 +13,14 @@ const cross = '\u2718';
 const tick = '\u2714';
 
 const success = (src, dest, mode) => {
-  console.log(`(${name}) '${tc.green(src)}' -> '${tc.green(dest)}' (${tc.green(tick)})`); // eslint-disable-line no-console
+  console.log(`(${name}) '${green(src)}' -> '${green(dest)}' (${green(tick)})`); // eslint-disable-line no-console
   if (mode) {
-    console.log(`(${name}) mode set to ${tc.green(mode)} on '${tc.green(dest)}' (${tc.green(tick)})`); // eslint-disable-line no-console
+    console.log(`(${name}) mode set to ${green(mode)} on '${green(dest)}' (${green(tick)})`); // eslint-disable-line no-console
   }
 };
 
 const fatal = (src, dest, err) => {
-  console.error(`(${name}) '${tc.red(src)}' -> '${tc.red(dest)}' (${tc.red(cross)})`);
+  console.error(`(${name}) '${red(src)}' -> '${red(dest)}' (${red(cross)})`);
   console.error(`\n    ${err}\n`);
   process.exit(err.errno);
 };
