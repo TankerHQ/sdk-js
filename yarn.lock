@@ -772,7 +772,7 @@ acorn@^5.0.0:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-5.7.3.tgz#67aa231bf8812974b85235a96771eb6bd07ea279"
   integrity sha512-T/zvzYRfbVojPWahDsE5evJdHb3oJoQfFbsrKM7w5Zcs++Tr257tia3BmMP8XYVjp1S9RZXQMh7gao96BlqZOw==
 
-acorn@^6.0.2:
+acorn@^6.0.2, acorn@^6.0.4:
   version "6.0.5"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-6.0.5.tgz#81730c0815f3f3b34d8efa95cb7430965f4d887a"
   integrity sha512-i33Zgp3XWtmZBMNvCr4azvOFeWVw1Rk6p3hfi3LUDvIFraOMywb1kAtrbi+med14m4Xfpqm3zRZMT+c0FNE7kg==
@@ -7438,7 +7438,7 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^3.0.0"
     inherits "^2.0.1"
 
-rollup-plugin-babel@^4.0.1:
+rollup-plugin-babel@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/rollup-plugin-babel/-/rollup-plugin-babel-4.2.0.tgz#9a2c119b5c923928842783ec2abd306fa733054f"
   integrity sha512-DBZbItGcru3iZM8aqVOS6+9GgIE+u0eX1HHN2iUIOjeXKMN8MK9/DaCOmQEt/le0sxqQOLIG+rPIhhm8uhJA7Q==
@@ -7482,13 +7482,14 @@ rollup-pluginutils@^2.3.0:
     estree-walker "^0.5.2"
     micromatch "^2.3.11"
 
-rollup@^0.64.1:
-  version "0.64.1"
-  resolved "https://registry.yarnpkg.com/rollup/-/rollup-0.64.1.tgz#9188ee368e5fcd43ffbc00ec414e72eeb5de87ba"
-  integrity sha512-+ThdVXrvonJdOTzyybMBipP0uz605Z8AnzWVY3rf+cSGnLO7uNkJBlN+9jXqWOomkvumXfm/esmBpA5d53qm7g==
+rollup@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/rollup/-/rollup-1.0.2.tgz#df88abda5cfe96afaa07dbd540510f87e60d1baf"
+  integrity sha512-FkkSrWUVo1WliS+/GIgEmKQPILubgVdBRTWampfdhkasxx7sM2nfwSfKiX3paIBVnN0HG3DvkTy13RfjkyBX9w==
   dependencies:
     "@types/estree" "0.0.39"
     "@types/node" "*"
+    acorn "^6.0.4"
 
 run-async@^2.0.0, run-async@^2.2.0:
   version "2.3.0"
