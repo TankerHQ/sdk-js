@@ -33,12 +33,8 @@ const getBabelLoaders = (env) => {
         /node_modules(\\|\/)ws/,
         // supports-color is es6
         /node_modules(\\|\/)supports-color/,
-        // they use es6 classes and probably more
-        /node_modules(\\|\/)express-recaptcha/,
         // they use arrow functions and probably more
         /node_modules(\\|\/)query-string/,
-        // they use Promise
-        /node_modules(\\|\/)react-file-reader-input/,
       ],
     },
     {
