@@ -128,7 +128,10 @@ describe('trustchain-generator', () => {
     const args = {
       symmetricKey: random(tcrypto.SYMMETRIC_KEY_SIZE),
       resourceId: random(tcrypto.MAC_SIZE),
-      toPresharePublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      toPresharePublicKey: {
+        app_public_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        tanker_public_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      },
       fromDevice: firstDevice,
     };
 

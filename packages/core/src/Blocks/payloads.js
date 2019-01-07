@@ -28,6 +28,11 @@ export type UserKeys = {|
   private_keys: Array<UserPrivateKey>,
 |}
 
+export type PresharePublicKey = {|
+  app_public_key: Uint8Array,
+  tanker_public_key: Uint8Array,
+|}
+
 export type UserDeviceRecord = {|
   last_reset: Uint8Array,
   ephemeral_public_signature_key: Uint8Array,
@@ -268,13 +273,6 @@ export function unserializeUserDeviceV3(src: Uint8Array): UserDeviceRecord {
 }
 
 export function serializeKeyPublish(keyPublish: KeyPublishRecord): Uint8Array {
-  if (keyPublish.recipient.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid key publish recipient size');
-  if (keyPublish.resourceId.length !== tcrypto.MAC_SIZE)
-    throw new Error('Assertion error: invalid key publish MAC size');
-  if (keyPublish.key.length !== tcrypto.SEALED_KEY_SIZE)
-    throw new Error('Assertion error: invalid key publish key size');
-
   return concatArrays(
     keyPublish.recipient,
     keyPublish.resourceId,
@@ -292,6 +290,15 @@ export function unserializeKeyPublishToDevice(src: Uint8Array): KeyPublishRecord
   if (result.key.length !== tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE)
     throw new Error('invalid key publish key size');
   return result;
+}
+
+export function unserializeKeyPublishToPreUser(src: Uint8Array): KeyPublishRecord {
+  // NOTE: We concatenate the public signature keys of the app and tanker as a single recipient field, since we don't use them separately
+  return unserializeGeneric(src, [
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE * 2, o, 'recipient'),
+    (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
+    (d, o) => getStaticArray(d, tcrypto.DOUBLY_SEALED_KEY_SIZE, o, 'key'),
+  ]);
 }
 
 export function unserializeKeyPublish(src: Uint8Array): KeyPublishToUserGroupRecord {
@@ -427,7 +434,7 @@ export function unserializePayload(block: Block): Record {
     case NATURE.key_publish_to_device: return unserializeKeyPublishToDevice(block.payload);
     case NATURE.key_publish_to_user: return unserializeKeyPublish(block.payload);
     case NATURE.key_publish_to_user_group: return unserializeKeyPublish(block.payload);
-    case NATURE.key_publish_to_pre_user: return unserializeKeyPublish(block.payload);
+    case NATURE.key_publish_to_pre_user: return unserializeKeyPublishToPreUser(block.payload);
     case NATURE.device_revocation_v1: return unserializeDeviceRevocationV1(block.payload);
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
     case NATURE.user_group_creation: return unserializeUserGroupCreation(block.payload);

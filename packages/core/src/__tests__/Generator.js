@@ -15,6 +15,7 @@ import { serializeTrustchainCreation,
   serializeKeyPublish,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
+  type PresharePublicKey,
   type UserDeviceRecord,
   type KeyPublishRecord } from '../Blocks/payloads';
 
@@ -330,21 +331,15 @@ class Generator {
     };
   }
 
-  async newCommonKeyPublish(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, fromDevice: GeneratorDevice, toKey: Uint8Array, nature: Nature }) {
-    let { resourceId, symmetricKey } = args;
+  async newCommonKeyPublish(args: { symmetricKey: Uint8Array, encryptedKey: Uint8Array, resourceId?: Uint8Array, fromDevice: GeneratorDevice, toKey: Uint8Array, nature: Nature }) {
+    let { resourceId } = args;
     if (!resourceId)
       resourceId = random(tcrypto.MAC_SIZE);
-    if (!symmetricKey)
-      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const encryptedKey = tcrypto.sealEncrypt(
-      symmetricKey,
-      args.toKey,
-    );
     const share = {
       resourceId,
       recipient: args.toKey,
-      key: encryptedKey,
+      key: args.encryptedKey,
     };
     this.trustchainIndex += 1;
     const block = signBlock({
@@ -361,7 +356,7 @@ class Generator {
       ...entry.payload_unverified,
     };
     return {
-      symmetricKey,
+      symmetricKey: args.symmetricKey,
       resourceId,
       block,
       entry,
@@ -373,26 +368,62 @@ class Generator {
   async newKeyPublishToUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toUser: GeneratorUser, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
     if (!args.toUser.userKeys)
       throw new Error('Generator: cannot add a keyPublish to user on a user V1');
+    const toKey = args.toUser.userKeys.publicKey;
+
+    let { symmetricKey } = args;
+    if (!symmetricKey)
+      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const encryptedKey = tcrypto.sealEncrypt(
+      symmetricKey,
+      toKey,
+    );
 
     return this.newCommonKeyPublish({
       ...args,
-      toKey: args.toUser.userKeys.publicKey,
+      symmetricKey,
+      encryptedKey,
+      toKey,
       nature: NATURE.key_publish_to_user,
     });
   }
 
   async newKeyPublishToUserGroup(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toGroup: GeneratorUserGroupResult, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+    let { symmetricKey } = args;
+    if (!symmetricKey)
+      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const encryptedKey = tcrypto.sealEncrypt(
+      symmetricKey,
+      args.toGroup.groupEncryptionKeyPair.publicKey,
+    );
+
     return this.newCommonKeyPublish({
       ...args,
+      symmetricKey,
+      encryptedKey,
       toKey: args.toGroup.groupEncryptionKeyPair.publicKey,
       nature: NATURE.key_publish_to_user_group,
     });
   }
 
-  async newKeyPublishToPreUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toPresharePublicKey: Uint8Array, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+  async newKeyPublishToPreUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toPresharePublicKey: PresharePublicKey, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+    let { symmetricKey } = args;
+    if (!symmetricKey)
+      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+
+    const preEncryptedKey = tcrypto.sealEncrypt(
+      symmetricKey,
+      args.toPresharePublicKey.app_public_key,
+    );
+    const encryptedKey = tcrypto.sealEncrypt(
+      preEncryptedKey,
+      args.toPresharePublicKey.tanker_public_key,
+    );
+
     return this.newCommonKeyPublish({
       ...args,
-      toKey: args.toPresharePublicKey,
+      symmetricKey,
+      encryptedKey,
+      toKey: concatArrays(args.toPresharePublicKey.app_public_key, args.toPresharePublicKey.tanker_public_key),
       nature: NATURE.key_publish_to_pre_user,
     });
   }

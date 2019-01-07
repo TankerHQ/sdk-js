@@ -188,7 +188,10 @@ describe('TrustchainVerifier', () => {
     });
 
     it('verifies key publishes to pre-registered users', async () => {
-      const preRegistrationKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+      const preRegistrationKey = {
+        app_public_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        tanker_public_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      };
       const keyPublish = await builder.addKeyPublishToPreUser({ from: author, to: preRegistrationKey });
       const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish]);
       expect(result.length).to.equal(1);
