@@ -1,7 +1,7 @@
 const babel = require('rollup-plugin-babel');
 const flow = require('rollup-plugin-flow');
 const localResolve = require('rollup-plugin-local-resolve');
-const uglify = require('rollup-plugin-uglify');
+const { terser } = require('rollup-plugin-terser');
 
 const copy = require('./rollup-plugin-copy-edit');
 const getBabelConfig = require('./babel.config');
@@ -34,7 +34,7 @@ const makeConfig = ({ input, output, target, copies }) => ({
       runtimeHelpers: true,
       ...babelPresets[target],
     }),
-    uglify(),
+    terser(),
     copy(copies)
   ],
 });
