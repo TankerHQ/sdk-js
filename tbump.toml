@@ -94,14 +94,6 @@ src = "packages/datastore/pouchdb-base/package.json"
 search = '"@tanker/datastore-base": "{current_version}"'
 
 [[file]]
-src = "packages/datastore/mongodb/package.json"
-search = '"version": "{current_version}"'
-
-[[file]]
-src = "packages/datastore/mongodb/package.json"
-search = '"@tanker/datastore-base": "{current_version}"'
-
-[[file]]
 src = "packages/datastore/pouchdb-memory/package.json"
 search = '"version": "{current_version}"'
 
