@@ -60,4 +60,14 @@ module.exports = {
   // Concurrency level
   // how many browser should be started simultaneous
   concurrency: Infinity,
+
+  // Sandbox does not work in un-privileged dockers, so
+  // use a custom launcher when run in a docker container
+  customLaunchers: {
+    ChromiumInDocker: {
+      base: 'ChromiumHeadless',
+      flags: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-translate', '--disable-extensions'],
+    },
+  },
+
 };

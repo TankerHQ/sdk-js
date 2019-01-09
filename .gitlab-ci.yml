@@ -1,3 +1,5 @@
+image: 10.100.0.1:5000/ci-js:3
+
 stages:
   - check
   - deploy
