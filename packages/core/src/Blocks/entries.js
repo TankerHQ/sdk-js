@@ -135,7 +135,7 @@ export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
       break;
     case NATURE.key_publish_to_user:
     case NATURE.key_publish_to_user_group:
-    case NATURE.key_publish_to_pre_user:
+    case NATURE.key_publish_to_invitee:
       keyPublishAction = unserializeKeyPublish(block.payload);
       break;
     default: throw new Error('Assertion error: wrong type for keyPublishFromBlock');

@@ -410,11 +410,11 @@ describe('BlockVerification', () => {
       user = userCreation.user;
       targetPreRegistrationPublicKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
       testGenerator.skipIndex(); // used for faking a revocation
-      const keyPublish = testGenerator.makeKeyPublishToPreUser(userCreation, targetPreRegistrationPublicKey);
+      const keyPublish = testGenerator.makeKeyPublishToInvitee(userCreation, targetPreRegistrationPublicKey);
       unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
     });
 
-    it('should accept a correct key publish to pre-user', () => {
+    it('should accept a correct key publish to invitee', () => {
       expect(() => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null))
         .to.not.throw();
     });

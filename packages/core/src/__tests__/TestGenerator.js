@@ -350,9 +350,9 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToPreUser = (parentDevice: TestDeviceCreation, recipient: Uint8Array): TestKeyPublish => {
+  makeKeyPublishToInvitee = (parentDevice: TestDeviceCreation, recipient: Uint8Array): TestKeyPublish => {
     const { resourceKey, resourceId, blockGenerator } = this.prepareKeyPublishGenerator(parentDevice);
-    const block = blockGenerator.makeKeyPublishBlock(recipient, resourceKey, resourceId, NATURE_KIND.key_publish_to_pre_user);
+    const block = blockGenerator.makeKeyPublishBlock(recipient, resourceKey, resourceId, NATURE_KIND.key_publish_to_invitee);
     block.index = this._trustchainIndex;
 
     return {

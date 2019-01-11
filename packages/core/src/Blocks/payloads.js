@@ -28,7 +28,7 @@ export type UserKeys = {|
   private_keys: Array<UserPrivateKey>,
 |}
 
-export type PresharePublicKey = {|
+export type InvitePublicKey = {|
   app_public_key: Uint8Array,
   tanker_public_key: Uint8Array,
 |}
@@ -59,8 +59,8 @@ export type KeyPublishToUserRecord = KeyPublishRecord;
 // the recipient is a Group Public Key
 export type KeyPublishToUserGroupRecord = KeyPublishRecord;
 
-// the recipient is a Preshare Public Key
-export type KeyPublishToPreUserRecord = KeyPublishRecord;
+// the recipient is a Invite Public Key
+export type KeyPublishToInviteeRecord = KeyPublishRecord;
 
 export type DeviceRevocationRecord = {|
   device_id: Uint8Array,
@@ -88,7 +88,7 @@ export type UserGroupAdditionRecord = {|
 |}
 export type UserGroupRecord = UserGroupCreationRecord | UserGroupAdditionRecord
 
-export type Record = TrustchainCreationRecord | UserDeviceRecord | KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | KeyPublishToPreUserRecord | DeviceRevocationRecord | UserGroupCreationRecord | UserGroupAdditionRecord;
+export type Record = TrustchainCreationRecord | UserDeviceRecord | KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | KeyPublishToInviteeRecord | DeviceRevocationRecord | UserGroupCreationRecord | UserGroupAdditionRecord;
 
 
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
@@ -292,7 +292,7 @@ export function unserializeKeyPublishToDevice(src: Uint8Array): KeyPublishRecord
   return result;
 }
 
-export function unserializeKeyPublishToPreUser(src: Uint8Array): KeyPublishRecord {
+export function unserializeKeyPublishToInvitee(src: Uint8Array): KeyPublishRecord {
   // NOTE: We concatenate the public signature keys of the app and tanker as a single recipient field, since we don't use them separately
   return unserializeGeneric(src, [
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE * 2, o, 'recipient'),
@@ -434,7 +434,7 @@ export function unserializePayload(block: Block): Record {
     case NATURE.key_publish_to_device: return unserializeKeyPublishToDevice(block.payload);
     case NATURE.key_publish_to_user: return unserializeKeyPublish(block.payload);
     case NATURE.key_publish_to_user_group: return unserializeKeyPublish(block.payload);
-    case NATURE.key_publish_to_pre_user: return unserializeKeyPublishToPreUser(block.payload);
+    case NATURE.key_publish_to_invitee: return unserializeKeyPublishToInvitee(block.payload);
     case NATURE.device_revocation_v1: return unserializeDeviceRevocationV1(block.payload);
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
     case NATURE.user_group_creation: return unserializeUserGroupCreation(block.payload);

@@ -23,7 +23,7 @@ import {
   isKeyPublishToDevice,
   isKeyPublishToUser,
   isKeyPublishToUserGroup,
-  isKeyPublishToPreUser,
+  isKeyPublishToInvitee,
 } from '../Blocks/Nature';
 
 export const rootBlockAuthor = new Uint8Array(32);
@@ -153,7 +153,7 @@ export function verifyKeyPublish(keyPublish: UnverifiedKeyPublish, author: Devic
     verifyKeyPublishToUser(keyPublish, author, recipientUser);
   } else if (isKeyPublishToUserGroup(keyPublish.nature)) {
     verifyKeyPublishToUserGroup(keyPublish, author, recipientGroup);
-  } else if (isKeyPublishToPreUser(keyPublish.nature)) {
+  } else if (isKeyPublishToInvitee(keyPublish.nature)) {
     // Nothing to verify beyond the signature
   }
 

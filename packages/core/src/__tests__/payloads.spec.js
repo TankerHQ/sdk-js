@@ -16,7 +16,7 @@ import {
   serializeKeyPublish,
   unserializeKeyPublish,
   unserializeKeyPublishToDevice,
-  unserializeKeyPublishToPreUser,
+  unserializeKeyPublishToInvitee,
   serializeDeviceRevocationV2,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
@@ -283,7 +283,7 @@ describe('payload test vectors', () => {
     ]);
 
     expect(serializeKeyPublish(keyPublish)).to.deep.equal(payload);
-    expect(unserializeKeyPublishToPreUser(payload)).to.deep.equal(keyPublish);
+    expect(unserializeKeyPublishToInvitee(payload)).to.deep.equal(keyPublish);
   });
 
   it('correctly deserializes a DeviceRevocationV1 test vector', async () => {
