@@ -20,6 +20,7 @@ import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { InvalidDelegationToken } from '../errors';
 import { concatArrays } from './Serialize';
+import { type InviteePublicKeys } from '../DataProtection/DataProtector';
 
 export function getUserGroupCreationBlockSignData(record: UserGroupCreationRecord): Uint8Array {
   return concatArrays(
@@ -202,6 +203,36 @@ export class BlockGenerator {
         index: 0,
         trustchain_id: this.trustchainId,
         nature: preferredNature(nature),
+        author: this.deviceId,
+        payload: serializeKeyPublish(payload)
+      },
+      this.privateSignatureKey
+    );
+
+    return pKeyBlock;
+  }
+
+  makeInviteeKeyPublishBlock(inviteePublicKeys: InviteePublicKeys, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
+    const preEncryptedKey = tcrypto.sealEncrypt(
+      resourceKey,
+      inviteePublicKeys.appSignaturePublicKey,
+    );
+    const encryptedKey = tcrypto.sealEncrypt(
+      preEncryptedKey,
+      inviteePublicKeys.tankerSignaturePublicKey,
+    );
+
+    const payload = {
+      recipient: concatArrays(inviteePublicKeys.appSignaturePublicKey, inviteePublicKeys.tankerSignaturePublicKey),
+      resourceId,
+      key: encryptedKey,
+    };
+
+    const pKeyBlock = signBlock(
+      {
+        index: 0,
+        trustchain_id: this.trustchainId,
+        nature: preferredNature(NATURE_KIND.key_publish_to_pre_user),
         author: this.deviceId,
         payload: serializeKeyPublish(payload)
       },

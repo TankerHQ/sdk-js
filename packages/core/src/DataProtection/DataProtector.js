@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import { type PublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
+import { type PublicIdentity, type PublicProvisionalIdentity, _deserializePublicIdentity } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -20,6 +20,13 @@ import DecryptorStream from './DecryptorStream';
 export type KeyResourceId = {
   key: Uint8Array,
   resourceId: Uint8Array,
+};
+
+export type InviteePublicKeys = {
+  appSignaturePublicKey: Uint8Array,
+  appEncryptionPublicKey: Uint8Array,
+  tankerSignaturePublicKey: Uint8Array,
+  tankerEncryptionPublicKey: Uint8Array,
 };
 
 export default class DataProtector {
@@ -59,9 +66,23 @@ export default class DataProtector {
     return blocks;
   }
 
+  _makeInviteeKeyPublishBlocks(
+    keyResourceIds: Array<KeyResourceId>,
+    invitees: Array<InviteePublicKeys>
+  ): Array<Block> {
+    const blocks: Array<Block> = [];
+    for (const invitee of invitees) {
+      for (const { key, resourceId } of keyResourceIds) {
+        blocks.push(this._localUser.blockGenerator.makeInviteeKeyPublishBlock(invitee, key, resourceId));
+      }
+    }
+    return blocks;
+  }
+
   async _publishKeys(
     keyResourceIds: Array<KeyResourceId>,
     recipientUsers: Array<User>,
+    recipientInvitees: Array<PublicProvisionalIdentity>,
     recipientGroups: Array<ExternalGroup>
   ): Promise<void> {
     let blocks: Array<Block> = [];
@@ -69,6 +90,17 @@ export default class DataProtector {
       const keys = recipientGroups.map(group => group.publicEncryptionKey);
 
       blocks = blocks.concat(this._makeKeyPublishBlocks(keyResourceIds, keys, NATURE_KIND.key_publish_to_user_group));
+    }
+
+    if (recipientInvitees.length > 0) {
+      const provisionalIds = recipientInvitees.map(e => ({ [e.target]: e.value }));
+      const tankerPublicKeys = await this._client.getInviteeKeys(provisionalIds);
+      const invitees = tankerPublicKeys.map((e, i) => ({
+        ...e,
+        appSignaturePublicKey: recipientInvitees[i].publicPreshareSignatureKey,
+        appEncryptionPublicKey: recipientInvitees[i].publicPreshareEncryptionKey,
+      }));
+      blocks = blocks.concat(this._makeInviteeKeyPublishBlocks(keyResourceIds, invitees));
     }
 
     if (recipientUsers.length > 0) {
@@ -87,7 +119,8 @@ export default class DataProtector {
 
   _splitProvisionalAndFullIdentities = (identities: Array<PublicIdentity>): * => {
     const fullUsers: Array<PublicIdentity> = [];
-    const preUsers: Array<PublicIdentity> = identities.filter(elem => {
+    // $FlowIKnow This checks that the target is correct, so type refinement is fine
+    const preUsers: Array<PublicProvisionalIdentity> = identities.filter(elem => {
       const isFull = elem.target === 'user';
       if (isFull)
         fullUsers.push(elem);
@@ -120,10 +153,7 @@ export default class DataProtector {
       await this._resourceManager.saveResourceKey(resourceId, key);
     }
 
-    if (preUsers.length)
-      throw new Error('Sharing to pre-registered users not implemented yet');
-
-    return this._publishKeys(keys, users, groups);
+    return this._publishKeys(keys, users, preUsers, groups);
   }
 
   async decryptData(protectedData: Uint8Array): Promise<Uint8Array> {

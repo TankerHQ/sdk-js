@@ -288,4 +288,15 @@ export class Client extends EventEmitter {
 
     await this._send('push keys', serializedBlocks);
   }
+
+  getInviteeKeys = async (emails: Array<{ email: string }>): Promise<*> => {
+    const result = await this._send('get provisional identities keys', emails);
+    if (result.error)
+      throw new ServerError(result.error, this.trustchainId);
+
+    return result.map(e => ({
+      tankerSignaturePublicKey: utils.fromBase64(e.SignaturePublicKey),
+      tankreEncryptionPublicKey: utils.fromBase64(e.EncryptionPublicKey),
+    }));
+  }
 }
