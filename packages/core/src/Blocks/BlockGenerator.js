@@ -232,7 +232,7 @@ export class BlockGenerator {
       {
         index: 0,
         trustchain_id: this.trustchainId,
-        nature: preferredNature(NATURE_KIND.key_publish_to_pre_user),
+        nature: preferredNature(NATURE_KIND.key_publish_to_invitee),
         author: this.deviceId,
         payload: serializeKeyPublish(payload)
       },

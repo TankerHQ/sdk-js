@@ -12,7 +12,7 @@ export const NATURE = Object.freeze({
   user_group_creation: 10,
   key_publish_to_user_group: 11,
   user_group_addition: 12,
-  key_publish_to_pre_user: 13,
+  key_publish_to_invitee: 13,
 });
 
 export type Nature = $Values<typeof NATURE>;
@@ -26,7 +26,7 @@ export const NATURE_KIND = Object.freeze({
   user_group_creation: 5,
   key_publish_to_user_group: 6,
   user_group_addition: 7,
-  key_publish_to_pre_user: 8,
+  key_publish_to_invitee: 8,
 });
 
 export type NatureKind = $Values<typeof NATURE_KIND>;
@@ -38,7 +38,7 @@ export function preferredNature(kind: NatureKind): Nature {
     case NATURE_KIND.key_publish_to_device: return NATURE.key_publish_to_device;
     case NATURE_KIND.key_publish_to_user: return NATURE.key_publish_to_user;
     case NATURE_KIND.key_publish_to_user_group: return NATURE.key_publish_to_user_group;
-    case NATURE_KIND.key_publish_to_pre_user: return NATURE.key_publish_to_pre_user;
+    case NATURE_KIND.key_publish_to_invitee: return NATURE.key_publish_to_invitee;
     case NATURE_KIND.device_revocation: return NATURE.device_revocation_v2;
     case NATURE_KIND.device_creation: return NATURE.device_creation_v3;
     case NATURE_KIND.user_group_creation: return NATURE.user_group_creation;
@@ -57,7 +57,7 @@ export function natureKind(val: Nature): NatureKind {
     case NATURE.key_publish_to_device: return NATURE_KIND.key_publish_to_device;
     case NATURE.key_publish_to_user: return NATURE_KIND.key_publish_to_user;
     case NATURE.key_publish_to_user_group: return NATURE_KIND.key_publish_to_user_group;
-    case NATURE.key_publish_to_pre_user: return NATURE_KIND.key_publish_to_pre_user;
+    case NATURE.key_publish_to_invitee: return NATURE_KIND.key_publish_to_invitee;
     case NATURE.device_revocation_v1: return NATURE_KIND.device_revocation;
     case NATURE.device_revocation_v2: return NATURE_KIND.device_revocation;
     case NATURE.user_group_creation: return NATURE_KIND.user_group_creation;
@@ -90,15 +90,15 @@ export function isKeyPublishToUserGroup(nature: Nature): bool {
   return natureKind(nature) === NATURE_KIND.key_publish_to_user_group;
 }
 
-export function isKeyPublishToPreUser(nature: Nature): bool {
-  return natureKind(nature) === NATURE_KIND.key_publish_to_pre_user;
+export function isKeyPublishToInvitee(nature: Nature): bool {
+  return natureKind(nature) === NATURE_KIND.key_publish_to_invitee;
 }
 
 export function isKeyPublish(nature: Nature): bool {
   return isKeyPublishToDevice(nature)
   || isKeyPublishToUser(nature)
   || isKeyPublishToUserGroup(nature)
-  || isKeyPublishToPreUser(nature);
+  || isKeyPublishToInvitee(nature);
 }
 
 export function isUserGroup(nature: Nature): bool {

@@ -15,7 +15,7 @@ import { serializeTrustchainCreation,
   serializeKeyPublish,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
-  type PresharePublicKey,
+  type InvitePublicKey,
   type UserDeviceRecord,
   type KeyPublishRecord } from '../Blocks/payloads';
 
@@ -405,26 +405,26 @@ class Generator {
     });
   }
 
-  async newKeyPublishToPreUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toPresharePublicKey: PresharePublicKey, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+  async newKeyPublishToInvitee(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toInvitePublicKey: InvitePublicKey, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
     let { symmetricKey } = args;
     if (!symmetricKey)
       symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
     const preEncryptedKey = tcrypto.sealEncrypt(
       symmetricKey,
-      args.toPresharePublicKey.app_public_key,
+      args.toInvitePublicKey.app_public_key,
     );
     const encryptedKey = tcrypto.sealEncrypt(
       preEncryptedKey,
-      args.toPresharePublicKey.tanker_public_key,
+      args.toInvitePublicKey.tanker_public_key,
     );
 
     return this.newCommonKeyPublish({
       ...args,
       symmetricKey,
       encryptedKey,
-      toKey: concatArrays(args.toPresharePublicKey.app_public_key, args.toPresharePublicKey.tanker_public_key),
-      nature: NATURE.key_publish_to_pre_user,
+      toKey: concatArrays(args.toInvitePublicKey.app_public_key, args.toInvitePublicKey.tanker_public_key),
+      nature: NATURE.key_publish_to_invitee,
     });
   }
 
