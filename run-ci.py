@@ -57,10 +57,8 @@ def main() -> None:
     elif args.command == "mirror":
         ci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
-        compat(env="dev")
-    elif args.command == "upgrade":
         env = args.env
-        upgrade(env=env)
+        compat(env=env)
     else:
         parser.print_help()
         sys.exit(1)
