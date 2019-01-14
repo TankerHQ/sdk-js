@@ -1,16 +1,44 @@
 stages:
+  - select-env
   - check
   - deploy
 
-before_script:
-  - dmenv install
+.select:
+  stage: select-env
+  artifacts:
+    paths:
+      - gitlab_checks_env.sh
+      - gitlab_checks_env.bat
+  script:
+      - echo "export CHECKS_ENV=$CHECKS_ENV_SELECT" >> gitlab_checks_env.sh
+      - echo "set CHECKS_ENV=$CHECKS_ENV_SELECT" >> gitlab_checks_env.bat
+
+autoselect-dev:
+  extends: .select
+  except:
+    - /.*staging\/.*/
+  variables:
+    CHECKS_ENV_SELECT: dev
+
+autoselect-staging:
+  extends: .select
+  only:
+    - /.*staging\/.*/
+  variables:
+    CHECKS_ENV_SELECT: staging
+
+.check:
+  stage: check
+  before_script:
+    - test -z "$CHECKS_ENV" && source gitlab_checks_env.sh
+    - dmenv install
 
 check/linux:
-  stage: check
+  extends: .check
   except:
     - schedules
   script:
-    - dmenv run -- python run-ci.py check --runner linux
+    - dmenv run -- python run-ci.py check --runner linux --env "$CHECKS_ENV"
     - mv coverage/lcov-report lcov-report
   artifacts:
     paths:
@@ -20,16 +48,19 @@ check/linux:
     - linux
 
 check/macos:
-  stage: check
+  extends: .check
   except:
     - schedules
   script:
-    - dmenv run -- python run-ci.py check --runner macos
+    - dmenv run -- python run-ci.py check --runner macos --env "$CHECKS_ENV"
   tags:
     - macos
 
 .check/windows:
   stage: check
+  before_script:
+    - if "%CHECKS_ENV%"=="" CALL gitlab_checks_env.bat
+    - dmenv install
   tags:
     - windows
   allow_failure: true
@@ -37,23 +68,23 @@ check/macos:
 check/windows/edge:
   extends: .check/windows
   script:
-    - dmenv run -- python run-ci.py check --runner windows-edge
+    - dmenv run -- python run-ci.py check --runner windows-edge --env %CHECKS_ENV%
 
 check/windows/ie:
   extends: .check/windows
   only:
     - schedules
   script:
-    - dmenv run -- python run-ci.py check --runner windows-ie
+    - dmenv run -- python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
 
 check/windows/ie/manual:
   extends: .check/windows
   when: manual
   script:
-    - dmenv run -- python run-ci.py check --runner windows-ie
+    - dmenv run -- python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
 
 check/linux/nightly:
-  stage: check
+  extends: .check
   only:
     - schedules
   script:
@@ -63,7 +94,7 @@ check/linux/nightly:
     - linux
 
 check/macos/nightly:
-  stage: check
+  extends: .check
   only:
     - schedules
   script:
@@ -75,6 +106,8 @@ check/macos/nightly:
   stage: deploy
   except:
     - schedules
+  before_script:
+    - dmenv install
   tags:
     - linux
 
@@ -97,6 +130,8 @@ mirror:
     - master
   except:
     - schedules
+  before_script:
+    - dmenv install
   script:
     - dmenv run python run-ci.py mirror
 
@@ -118,17 +153,17 @@ pages:
     - linux
 
 check/compat:
-  stage: check
+  extends: .check
   when: manual
   except:
     - master
   script:
-    - dmenv run -- python run-ci.py compat
+    - dmenv run -- python run-ci.py compat --env "$CHECKS_ENV"
   tags:
     - linux
 
 check/compat/master:
-  stage: check
+  extends: .check
   only:
     - master
   script:

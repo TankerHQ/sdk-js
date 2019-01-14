@@ -57,7 +57,8 @@ def main() -> None:
     elif args.command == "mirror":
         ci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
-        compat(env="dev")
+        env = args.env
+        compat(env=env)
     elif args.command == "e2e":
         ci.endtoend.test(env="dev")
     else:
