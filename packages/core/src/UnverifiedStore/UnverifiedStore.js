@@ -4,11 +4,21 @@ import { type DataStore } from '@tanker/datastore-base';
 import KeyPublishUnverifiedStore, { type UnverifiedKeyPublish } from './KeyPublishUnverifiedStore';
 import UserUnverifiedStore, { type UnverifiedDeviceCreation, type VerifiedDeviceCreation, type UnverifiedDeviceRevocation, type VerifiedDeviceRevocation } from './UserUnverifiedStore';
 import UserGroupsUnverifiedStore, { type UnverifiedUserGroup, type VerifiedUserGroup } from './UserGroupsUnverifiedStore';
+import InviteUnverifiedStore, { type UnverifiedClaimInvite } from './InviteUnverifiedStore';
 
-const schemasTables = [
+const schemasTablesV3 = [
   ...KeyPublishUnverifiedStore.tables,
+];
+
+const schemasTablesV4 = [
+  ...schemasTablesV3,
   ...UserUnverifiedStore.tables,
   ...UserGroupsUnverifiedStore.tables,
+];
+
+const schemasTablesV6 = [
+  ...schemasTablesV4,
+  ...InviteUnverifiedStore.tables,
 ];
 
 // Storage for unverified blocks of different natures
@@ -16,6 +26,7 @@ export default class UnverifiedStore {
   keyPublishUnverifiedStore: KeyPublishUnverifiedStore;
   userUnverifiedStore: UserUnverifiedStore;
   userGroupsUnverifiedStore: UserGroupsUnverifiedStore;
+  inviteUnverifiedStore: InviteUnverifiedStore;
 
   static schemas = [
     {
@@ -28,15 +39,19 @@ export default class UnverifiedStore {
     },
     {
       version: 3,
-      tables: [...KeyPublishUnverifiedStore.tables],
+      tables: schemasTablesV3,
     },
     {
       version: 4,
-      tables: schemasTables,
+      tables: schemasTablesV4,
     },
     {
       version: 5,
-      tables: schemasTables,
+      tables: schemasTablesV4,
+    },
+    {
+      version: 6,
+      tables: schemasTablesV6,
     }
   ];
 
@@ -107,5 +122,9 @@ export default class UnverifiedStore {
 
   async getUserIdFromDeviceId(deviceId: Uint8Array) {
     return this.userUnverifiedStore.getUserIdFromDeviceId(deviceId);
+  }
+
+  async addUnverifiedClaimInviteEntries(entries: Array<UnverifiedClaimInvite>): Promise<void> {
+    return this.inviteUnverifiedStore.addUnverifiedClaimInviteEntries(entries);
   }
 }

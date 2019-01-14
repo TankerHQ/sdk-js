@@ -378,6 +378,12 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
+  async claimInvite(invitee: { email: string }, verificationCode: string, appInvitePrivateSignatureKey: Uint8Array, appInvitePrivateEncryptionKey: Uint8Array): Promise<void> {
+    this.assert(this.OPEN, 'claim invite');
+
+    return this._session.dataProtector.claimInvite(invitee, verificationCode, appInvitePrivateSignatureKey, appInvitePrivateEncryptionKey);
+  }
+
   async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
     this.assert(this.OPEN, 'make a stream encryptor');
 

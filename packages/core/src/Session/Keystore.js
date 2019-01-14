@@ -20,8 +20,9 @@ export default class Keystore {
     { version: 3, tables: [{ name: TABLE, persistent: true }] },
     { version: 4, tables: [{ name: TABLE, persistent: true }] },
     { version: 5, tables: [{ name: TABLE, persistent: true }] },
+    { version: 6, tables: [{ name: TABLE, persistent: true }] },
     // {
-    //   version: 5,
+    //   version: 7,
     //   tables: [{
     //     name: TABLE,
     //     persistent: true,

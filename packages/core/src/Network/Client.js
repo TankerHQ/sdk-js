@@ -296,7 +296,27 @@ export class Client extends EventEmitter {
 
     return result.map(e => ({
       tankerSignaturePublicKey: utils.fromBase64(e.SignaturePublicKey),
-      tankreEncryptionPublicKey: utils.fromBase64(e.EncryptionPublicKey),
+      tankerEncryptionPublicKey: utils.fromBase64(e.EncryptionPublicKey),
     }));
+  }
+
+  getInviteePrivateKeys = async (invitee: { email: string }, verificationCode: string): Promise<*> => {
+    const result = await this._send('get invitees private keys', {
+      email: invitee.email,
+      verificationCode,
+    });
+    if (result.error)
+      throw new ServerError(result.error, this.trustchainId);
+
+    return {
+      tankerSignatureKeyPair: {
+        privateKey: utils.fromBase64(result.SignaturePrivateKey),
+        publicKey: utils.fromBase64(result.SignaturePublicKey),
+      },
+      tankerEncryptionKeyPair: {
+        privateKey: utils.fromBase64(result.EncryptionPrivateKey),
+        publicKey: utils.fromBase64(result.EncryptionPublicKey),
+      }
+    };
   }
 }

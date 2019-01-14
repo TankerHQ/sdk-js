@@ -8,6 +8,7 @@ import {
   serializeDeviceRevocationV2,
   serializeUserGroupCreation,
   serializeUserGroupAddition,
+  serializeClaimInvite,
   type UserDeviceRecord,
   type UserKeys,
   type UserGroupCreationRecord,
@@ -15,12 +16,13 @@ import {
 } from './payloads';
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 
+import LocalUser from '../Session/LocalUser';
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { InvalidDelegationToken } from '../errors';
 import { concatArrays } from './Serialize';
-import { type InviteePublicKeys } from '../DataProtection/DataProtector';
+import { type InviteePublicKeys, type InviteePrivateKeys } from '../DataProtection/DataProtector';
 
 export function getUserGroupCreationBlockSignData(record: UserGroupCreationRecord): Uint8Array {
   return concatArrays(
@@ -306,6 +308,37 @@ export class BlockGenerator {
       payload: serializeUserGroupAddition(payload)
     }, this.privateSignatureKey);
 
+    return block;
+  }
+
+  makeClaimInviteBlock(user: LocalUser, inviteeKeys: InviteePrivateKeys): Block {
+    const multiSignedPayload = concatArrays(
+      this.deviceId,
+      inviteeKeys.appSignatureKeyPair.publicKey,
+      inviteeKeys.tankerSignatureKeyPair.publicKey,
+    );
+    const appSignature = tcrypto.sign(multiSignedPayload, inviteeKeys.appSignatureKeyPair.privateKey);
+    const tankerSignature = tcrypto.sign(multiSignedPayload, inviteeKeys.tankerSignatureKeyPair.privateKey);
+
+    const keysToEncrypt = concatArrays(inviteeKeys.appEncryptionKeyPair.privateKey, inviteeKeys.tankerEncryptionKeyPair.privateKey);
+    const encryptedInviteeKeys = tcrypto.sealEncrypt(keysToEncrypt, user.currentUserKey.publicKey);
+
+    const payload = {
+      user_id: user.userId,
+      app_invitee_signature_public_key: inviteeKeys.appSignatureKeyPair.publicKey,
+      tanker_invitee_signature_public_key: inviteeKeys.tankerSignatureKeyPair.publicKey,
+      author_signature_by_app_key: appSignature,
+      author_signature_by_tanker_key: tankerSignature,
+      encrypted_invitee_private_keys: encryptedInviteeKeys,
+    };
+
+    const block = signBlock({
+      index: 0,
+      trustchain_id: this.trustchainId,
+      nature: preferredNature(NATURE_KIND.claim_invite),
+      author: this.deviceId,
+      payload: serializeClaimInvite(payload)
+    }, this.privateSignatureKey);
     return block;
   }
 }
