@@ -6,8 +6,10 @@ import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { Device, User } from '../Users/User';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
+import { type UnverifiedClaimInvite } from '../UnverifiedStore/InviteUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
+import { type InviteePrivateKeys } from '../DataProtection/DataProtector';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 import { serializeTrustchainCreation,
@@ -15,6 +17,7 @@ import { serializeTrustchainCreation,
   serializeKeyPublish,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
+  serializeClaimInvite,
   type InvitePublicKey,
   type UserDeviceRecord,
   type KeyPublishRecord } from '../Blocks/payloads';
@@ -109,6 +112,13 @@ export type GeneratorUserGroupAdditionResult = {
   entry: UnverifiedEntry,
   block: Block,
   blockPrivateSignatureKey: Uint8Array,
+}
+
+export type GeneratorClaimInviteResult = {
+  entry: UnverifiedEntry,
+  block: Block,
+  inviteePrivateKeys: InviteePrivateKeys,
+  unverifiedClaimInvite: UnverifiedClaimInvite,
 }
 
 type CreateUserResult = {
@@ -565,6 +575,51 @@ class Generator {
     };
   }
 
+  async newClaimInvite(from: GeneratorDevice, inviteeKeys: InviteePrivateKeys): Promise<GeneratorClaimInviteResult> {
+    const deviceId = utils.toBase64(from.id);
+    const userId = this.usersDevices[deviceId];
+    const { userKeys } = this.users[userId];
+    if (!userKeys)
+      throw new Error('Generator: cannot add a ClaimInvite on a device pre-V3');
+
+    const multiSignedPayload = concatArrays(
+      from.id,
+      inviteeKeys.appSignatureKeyPair.publicKey,
+      inviteeKeys.tankerSignatureKeyPair.publicKey,
+    );
+    const appSignature = tcrypto.sign(multiSignedPayload, inviteeKeys.appSignatureKeyPair.privateKey);
+    const tankerSignature = tcrypto.sign(multiSignedPayload, inviteeKeys.tankerSignatureKeyPair.privateKey);
+
+    const keysToEncrypt = concatArrays(inviteeKeys.appEncryptionKeyPair.privateKey, inviteeKeys.tankerEncryptionKeyPair.privateKey);
+    const encryptedInviteeKeys = tcrypto.sealEncrypt(keysToEncrypt, userKeys.publicKey);
+
+    const payload = {
+      user_id: utils.fromBase64(userId),
+      app_invitee_signature_public_key: inviteeKeys.appSignatureKeyPair.publicKey,
+      tanker_invitee_signature_public_key: inviteeKeys.tankerSignatureKeyPair.publicKey,
+      author_signature_by_app_key: appSignature,
+      author_signature_by_tanker_key: tankerSignature,
+      encrypted_invitee_private_keys: encryptedInviteeKeys,
+    };
+    this.trustchainIndex += 1;
+    const block = signBlock({
+      index: this.trustchainIndex,
+      trustchain_id: this.trustchainId,
+      nature: NATURE.claim_invite,
+      author: from.id,
+      payload: serializeClaimInvite(payload)
+    }, from.signKeys.privateKey);
+    this.pushedBlocks.push(block);
+
+    const entry: UnverifiedEntry = { ...blockToEntry(block) };
+    const unverifiedClaimInvite = { ...entry, ...entry.payload_unverified };
+    return {
+      block,
+      entry,
+      unverifiedClaimInvite,
+      inviteePrivateKeys: inviteeKeys,
+    };
+  }
 
   userId(userName: string): Uint8Array {
     return obfuscateUserId(this.trustchainId, userName);

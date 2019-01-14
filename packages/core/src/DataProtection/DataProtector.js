@@ -1,5 +1,5 @@
 // @flow
-import { utils, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { type PublicIdentity, type PublicProvisionalIdentity, _deserializePublicIdentity } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
@@ -27,6 +27,13 @@ export type InviteePublicKeys = {
   appEncryptionPublicKey: Uint8Array,
   tankerSignaturePublicKey: Uint8Array,
   tankerEncryptionPublicKey: Uint8Array,
+};
+
+export type InviteePrivateKeys = {
+  appSignatureKeyPair: tcrypto.SodiumKeyPair,
+  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
+  tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
+  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
 };
 
 export default class DataProtector {
@@ -199,5 +206,17 @@ export default class DataProtector {
       findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId, true)
     };
     return new DecryptorStream(resourceIdKeyMapper);
+  }
+
+  async claimInvite(invitee: { email: string }, verificationCode: string, appInvitePrivateSignatureKey: Uint8Array, appInvitePrivateEncryptionKey: Uint8Array): Promise<void> {
+    const tankerKeys = await this._client.getInviteePrivateKeys(invitee, verificationCode);
+    const inviteeKeys = {
+      ...tankerKeys,
+      appEncryptionKeyPair: tcrypto.getEncryptionKeyPairFromPrivateKey(appInvitePrivateEncryptionKey),
+      appSignatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(appInvitePrivateSignatureKey),
+    };
+    const block = this._localUser.blockGenerator.makeClaimInviteBlock(this._localUser, inviteeKeys);
+
+    await this._client.sendBlock(block);
   }
 }
