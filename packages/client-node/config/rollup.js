@@ -1,4 +1,4 @@
-// @flow
+// @noflow
 const path = require('path');
 const baseConfig = require('../../../config/rollup.config');
 

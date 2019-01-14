@@ -1,3 +1,4 @@
+// @noflow
 const getBabelConfig = require('../babel.config');
 
 module.exports = require('@babel/register')({

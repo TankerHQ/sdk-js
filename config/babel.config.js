@@ -1,3 +1,4 @@
+// @noflow
 const getBabelConfig = ({ target, coverage }) => {
   const config = {
     presets: ['@babel/preset-flow'],

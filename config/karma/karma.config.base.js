@@ -1,3 +1,4 @@
+// @noflow
 const path = require('path');
 const { makeBaseConfig } = require('../webpack.config.base');
 

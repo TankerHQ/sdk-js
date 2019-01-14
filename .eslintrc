@@ -59,6 +59,9 @@ rules:
     - error
     - bool
   flowtype/no-primitive-constructor-types: 2
+  flowtype/require-valid-file-annotation:
+    - error
+    - always
 
 plugins:
     - chai-expect

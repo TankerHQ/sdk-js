@@ -1,3 +1,4 @@
+// @noflow
 module.exports = require('@babel/register')({
   ignore: [file => file.includes('node_modules') && !file.includes('@tanker')],
   presets: [

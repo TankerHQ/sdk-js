@@ -1,3 +1,4 @@
+// @noflow
 // Inspired by: https://github.com/meuter/rollup-plugin-copy but:
 //   - adding an edit function to modify content of the file,
 //   - using an array of copy configs instead of a map of src/dest file paths,
