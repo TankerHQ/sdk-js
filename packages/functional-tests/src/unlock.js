@@ -132,7 +132,7 @@ const generateUnlockTests = (args: TestArgs) => {
         await expect(bobLaptop.registerUnlock({ email: 'john@doe.com' })).to.be.fulfilled;
         const unlockHandler = async () => {
           const verificationCode = await trustchainHelper.getVerificationCode(bobId, 'john@doe.com');
-          bobPhone.unlockCurrentDevice({ verificationCode });
+          await bobPhone.unlockCurrentDevice({ verificationCode });
         };
         await expectUnlock(bobPhone, bobId, bobToken, unlockHandler).to.be.fulfilled;
       });
@@ -219,14 +219,14 @@ const generateUnlockTests = (args: TestArgs) => {
 
           const badUnlockHandler = async () => {
             const verificationCode = await trustchainHelper.getVerificationCode(bobId, 'old@email.com');
-            bobPhone.unlockCurrentDevice({ verificationCode });
+            await bobPhone.unlockCurrentDevice({ verificationCode });
           };
           await expectUnlock(bobPhone, bobId, bobToken, badUnlockHandler).to.be.rejected;
           await bobPhone.close();
 
           const unlockHandler = async () => {
             const verificationCode = await trustchainHelper.getVerificationCode(bobId, 'new@email.com');
-            bobPhone.unlockCurrentDevice({ verificationCode });
+            await bobPhone.unlockCurrentDevice({ verificationCode });
           };
           await expectUnlock(bobPhone, bobId, bobToken, unlockHandler).to.be.fulfilled;
         });
