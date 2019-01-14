@@ -7,8 +7,7 @@ import ci.js
 import ci.mail
 
 
-def check(*, runner: str, nightly: bool) -> None:
-    env = "dev"
+def check(*, runner: str, env: str, nightly: bool) -> None:
     ci.js.yarn_install_deps()
     ci.js.yarn_install_deps(cwd=Path.getcwd() / "ci/compat")
     if runner == "linux":
@@ -34,6 +33,7 @@ def main() -> None:
 
     check_parser = subparsers.add_parser("check")
     check_parser.add_argument("--nightly", action="store_true")
+    check_parser.add_argument("--env", default="dev")
     check_parser.add_argument("--runner", required=True)
 
     deploy_parser = subparsers.add_parser("deploy")
@@ -48,7 +48,8 @@ def main() -> None:
     if args.command == "check":
         runner = args.runner
         nightly = args.nightly
-        check(runner=runner, nightly=nightly)
+        env = args.env
+        check(runner=runner, env=env, nightly=nightly)
     elif args.command == "deploy":
         env = args.env
         git_tag = args.git_tag
@@ -57,6 +58,9 @@ def main() -> None:
         ci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
         compat(env="dev")
+    elif args.command == "upgrade":
+        env = args.env
+        upgrade(env=env)
     else:
         parser.print_help()
         sys.exit(1)
