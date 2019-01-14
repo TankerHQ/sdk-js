@@ -1,7 +1,8 @@
+// @noflow
 const path = require('path');
 const baseConfig = require('../../../config/rollup.config');
 
-const flatten = (arr) => arr.reduce((acc, val) => acc.concat(val), []);
+const flatten = arr => arr.reduce((acc, val) => acc.concat(val), []);
 
 const packages = [
   'base',

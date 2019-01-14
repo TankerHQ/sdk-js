@@ -1,3 +1,4 @@
+// @noflow
 const karmaConfig = require('./karma.config.base');
 
 module.exports = (config) => {

@@ -1,3 +1,4 @@
+// @noflow
 const babel = require('rollup-plugin-babel');
 const flow = require('rollup-plugin-flow');
 const localResolve = require('rollup-plugin-local-resolve');
