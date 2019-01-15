@@ -75,7 +75,7 @@ export default class DecryptorStream extends Transform {
 
   _findHeaderSizeFromVersion(version: number) {
     switch (version) {
-      case 1:
+      case 3:
         return tcrypto.MAC_SIZE;
       default:
         throw new InvalidEncryptionFormat(`unhandled format version in DecryptorStream: '${version}'`);
@@ -84,7 +84,7 @@ export default class DecryptorStream extends Transform {
 
   async _findResourceIdKeyPair(version: number, binaryData: Uint8Array) {
     switch (version) {
-      case 1:
+      case 3:
         return {
           key: await this._mapper.findKey(binaryData),
           resourceId: binaryData

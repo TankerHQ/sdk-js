@@ -5,10 +5,10 @@ import varint from 'varint';
 import { utils, tcrypto, aead, type b64string } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
-import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
+import { currentStreamVersion, type ResourceIdKeyPair } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument } from '../errors';
-import { encryptorStreamVersion, defaultEncryptionSize } from './StreamConfigs';
+import { defaultEncryptionSize } from './StreamConfigs';
 
 export default class EncryptorStream extends Transform {
   _encryptionSize: number;
@@ -72,7 +72,7 @@ export default class EncryptorStream extends Transform {
   }
 
   _writeHeader() {
-    const header = concatArrays(varint.encode(encryptorStreamVersion), this._state.resourceIdKeyPair.resourceId);
+    const header = concatArrays(varint.encode(currentStreamVersion), this._state.resourceIdKeyPair.resourceId);
     this._encryptorStream.push(header);
   }
 

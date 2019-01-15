@@ -73,11 +73,11 @@ describe('Decryptor Stream', () => {
     expect(res2).to.deep.equal(msg2.clear);
   });
 
-  it('can extract resourceId from format header v1', async () => {
+  it('can extract resourceId from format header v3', async () => {
     const spy = sinon.spy(mapper, 'findKey');
 
     const resourceId = utils.fromString('1234567812345678');
-    const formatHeader = concatArrays(varint.encode(1), resourceId);
+    const formatHeader = concatArrays(varint.encode(3), resourceId);
     const msg = await encryptMsg(key, 0, 'message');
 
     const encryptedMsgLength = msg.encrypted.length;
@@ -103,7 +103,7 @@ describe('Decryptor Stream', () => {
       const msg1 = await encryptMsg(key, 0, '1st message');
       const msg2 = await encryptMsg(key, 1, '2nd message');
       const resourceId = utils.fromString('1234567812345678');
-      const header = concatArrays(varint.encode(1), resourceId);
+      const header = concatArrays(varint.encode(3), resourceId);
 
       ref.push(header);
       ref.push(msg1.encrypted);
