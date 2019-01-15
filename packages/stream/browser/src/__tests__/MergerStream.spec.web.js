@@ -45,7 +45,7 @@ describe('MergerStream (web)', () => {
     { type: 'ArrayBuffer' },
     { type: 'Uint8Array' },
     { type: 'Blob' },
-    { type: 'File', filename: 'a-file-name.txt' },
+    { type: 'File', name: 'a-file-name.txt' },
   ].forEach(options => {
     const { type } = options;
     const expectedType = type || 'Uint8Array';
@@ -66,7 +66,7 @@ describe('MergerStream (web)', () => {
             expect(outputBytes).to.deep.equal(bytes);
             if (type === File) {
               // $FlowExpectedError
-              expect(output[0].name).to.equal(options.filename);
+              expect(output[0].name).to.equal(options.name);
             }
             resolve();
           } catch (e) {

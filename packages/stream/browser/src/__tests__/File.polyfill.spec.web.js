@@ -11,16 +11,16 @@ describe('FilePolyfill (web)', () => {
 
   let content: string;
   let bytes: Uint8Array;
-  let filename: string;
+  let name: string;
 
   before(() => {
     content = '0123456789abcdef';
     bytes = utils.fromString(content);
-    filename = 'file.pdf';
+    name = 'file.pdf';
   });
 
   it('is a FilePolyfill instance which inherits File and Blob', () => {
-    const file = new FilePolyfill([bytes], filename);
+    const file = new FilePolyfill([bytes], name);
     expect(file).to.be.an.instanceof(FilePolyfill);
     expect(file).to.be.an.instanceof(File);
     expect(file).to.be.an.instanceof(Blob);
@@ -28,21 +28,21 @@ describe('FilePolyfill (web)', () => {
 
   it('sets the properties given to the constructor', () => {
     const timestamp = Date.now();
-    const file = new FilePolyfill([bytes], filename, { lastModified: timestamp });
-    expect(file.name).to.equal(filename);
+    const file = new FilePolyfill([bytes], name, { lastModified: timestamp });
+    expect(file.name).to.equal(name);
     expect(file.lastModified).to.equal(timestamp);
     expect(file.lastModifiedDate).to.deep.equal(new Date(timestamp));
   });
 
   it('has a default last modified date', () => {
-    const file = new FilePolyfill([bytes], filename);
+    const file = new FilePolyfill([bytes], name);
     expect(typeof file.lastModified).to.equal('number');
     expect(file.lastModifiedDate).to.be.an.instanceof(Date);
     expect(file.lastModifiedDate).to.deep.equal(new Date(file.lastModified));
   });
 
   it('can be sliced and read by a regular FileReader', async () => {
-    const file = new FilePolyfill([bytes], filename);
+    const file = new FilePolyfill([bytes], name);
 
     const reader = new FileReader();
     const readPromise = new Promise((resolve, reject) => {
