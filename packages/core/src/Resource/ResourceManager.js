@@ -25,6 +25,7 @@ export type ResourceIdKeyPair = {
 }
 
 const extractResourceId = (ciphertext: Uint8Array): Uint8Array => aead.extractMac(ciphertext);
+const extractResourceIdV4 = (data: Uint8Array): Uint8Array => data.subarray(0, tcrypto.MAC_SIZE);
 
 export function getEncryptionFormat(encryptedData: Uint8Array): { version: number, versionLength: number } {
   let version;
@@ -39,7 +40,7 @@ export function getEncryptionFormat(encryptedData: Uint8Array): { version: numbe
     }
   }
 
-  if (version < 1 || version > 3)
+  if (version < 1 || version > 4)
     throw new InvalidEncryptionFormat(`unhandled format version in getResourceId: '${version}'`);
 
   const versionLength = varint.decode.bytes;
@@ -51,7 +52,7 @@ export function getEncryptionFormat(encryptedData: Uint8Array): { version: numbe
 }
 
 export function getResourceId(encryptedData: Uint8Array): Uint8Array {
-  const { versionLength } = getEncryptionFormat(encryptedData);
+  const { version, versionLength } = getEncryptionFormat(encryptedData);
   const minEncryptedDataLength = versionLength + tcrypto.MAC_SIZE;
 
   if (encryptedData.length < minEncryptedDataLength)
@@ -59,7 +60,7 @@ export function getResourceId(encryptedData: Uint8Array): Uint8Array {
 
   const subData = encryptedData.subarray(versionLength);
 
-  return extractResourceId(subData);
+  return version === 4 ? extractResourceIdV4(subData) : extractResourceId(subData);
 }
 
 export class ResourceManager {
