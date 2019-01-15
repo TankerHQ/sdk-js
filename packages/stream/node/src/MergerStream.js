@@ -8,7 +8,7 @@ const converters = Object.freeze({
 });
 
 export default class MergerStream extends BaseMergerStream {
-  constructor(options: { type?: string, mime?: string, filename?: string } = {}) {
+  constructor(options: { type?: string, mime?: string, name?: string } = {}) {
     super({ ...options, converters });
   }
 }

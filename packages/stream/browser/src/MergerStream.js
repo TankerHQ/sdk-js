@@ -10,19 +10,19 @@ const converters = Object.freeze({
   ArrayBuffer: (uint8array) => uint8array.buffer,
   Uint8Array: (uint8array) => uint8array,
   Blob: (uint8array, { mime }) => new Blob([uint8array], { type: mime || defaultMime }),
-  File: (uint8array, { filename, mime }) => new FilePolyfill([uint8array], filename || '', { type: mime || defaultMime }),
+  File: (uint8array, { mime, name }) => new FilePolyfill([uint8array], name || '', { type: mime || defaultMime }),
 });
 
 export default class MergerStream extends BaseMergerStream {
-  constructor(options: { type?: string, mime?: string, filename?: string } = {}) {
+  constructor(options: { type?: string, mime?: string, name?: string } = {}) {
     super({ ...options, converters });
 
-    const { mime, filename } = options;
+    const { mime, name } = options;
 
     if (mime && typeof mime !== 'string')
       throw new InvalidArgument('options.mime', 'string', mime);
 
-    if (filename && typeof filename !== 'string')
-      throw new InvalidArgument('options.filename', 'string', filename);
+    if (name && typeof name !== 'string')
+      throw new InvalidArgument('options.name', 'string', name);
   }
 }
