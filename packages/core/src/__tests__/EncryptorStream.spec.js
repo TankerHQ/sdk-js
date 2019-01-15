@@ -1,11 +1,12 @@
 // @flow
 
-import { utils, tcrypto, aead } from '@tanker/crypto';
+import { aead, random, tcrypto, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 import EncryptorStream from '../DataProtection/EncryptorStream';
 import { InvalidArgument } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
+import { getResourceId } from '../Resource/ResourceManager';
 
 describe('Encryptor Stream', () => {
   let buffer: Array<Uint8Array>;
@@ -23,7 +24,7 @@ describe('Encryptor Stream', () => {
 
   before(() => {
     key = utils.fromString('12345678123456781234567812345678');
-    resourceId = new Uint8Array(tcrypto.MAC_SIZE);
+    resourceId = random(tcrypto.MAC_SIZE);
   });
 
   beforeEach(() => {
@@ -48,6 +49,15 @@ describe('Encryptor Stream', () => {
 
     stream.end();
     await sync.promise;
+  });
+
+  it('outputs a resource from which you can get the resource id', async () => {
+    const stream = new EncryptorStream(resourceId, key);
+    const sync = watchStream(stream);
+    stream.end();
+    await sync.promise;
+
+    expect(getResourceId(buffer[0])).to.deep.equal(resourceId);
   });
 
   it('derives its key and push header before encryption', async () => {

@@ -9,7 +9,8 @@ import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverified
 import { KeyDecryptor } from './KeyDecryptor';
 import ResourceStore from './ResourceStore';
 
-export const currentVersion = 2;
+export const currentSimpleVersion = 2;
+export const currentStreamVersion = 3;
 
 export type Resource = {
   key: Uint8Array,
@@ -30,6 +31,8 @@ export function getResourceId(serializedData: Uint8Array): Uint8Array {
     case 1:
     case 2:
       return aead.extractResourceId(binaryData);
+    case 3:
+      return binaryData.subarray(0, tcrypto.MAC_SIZE);
     default:
       throw new InvalidEncryptionFormat(`unhandled format version in getResourceId: '${version}'`);
   }
@@ -50,11 +53,11 @@ export class ResourceManager {
     this._keyDecryptor = keyDecryptor;
   }
 
-  static async makeResource(plain: Uint8Array): Promise<Resource> {
+  static async makeSimpleResource(plain: Uint8Array): Promise<Resource> {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const buffer = await aead.encryptAEADv2(key, plain);
     const resourceId = aead.extractResourceId(buffer);
-    return { key, resourceId, encryptedData: buffer, version: currentVersion };
+    return { key, resourceId, encryptedData: buffer, version: currentSimpleVersion };
   }
 
   static makeStreamResource(): ResourceIdKeyPair {
