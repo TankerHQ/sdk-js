@@ -151,7 +151,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when sharing with an invalid recipient list', async () => {
         const cipherText = await args.bobLaptop.encrypt(clearText);
-        const resourceId = args.bobLaptop.getResourceId(cipherText);
+        const resourceId = await args.bobLaptop.getResourceId(cipherText);
         // $FlowExpectedError
         await expect(args.bobLaptop.share([resourceId])).to.be.rejectedWith(errors.InvalidArgument);
       });
@@ -166,7 +166,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when sharing with a user that doesn\'t exist', async () => {
         const edata = await args.bobLaptop.encrypt(clearText);
-        const resourceId = args.bobLaptop.getResourceId(edata);
+        const resourceId = await args.bobLaptop.getResourceId(edata);
         const eveId = uuid.v4();
 
         await expect(args.bobLaptop.share([resourceId], { shareWithUsers: [eveId] }))
@@ -176,7 +176,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('shares an existing resource to an existing user', async () => {
         const cipherText = await args.bobLaptop.encrypt(clearText);
-        const resourceId = args.bobLaptop.getResourceId(cipherText);
+        const resourceId = await args.bobLaptop.getResourceId(cipherText);
         await args.bobLaptop.share([resourceId], { shareWithUsers: [aliceId] });
 
         const decrypted = await args.aliceLaptop.decrypt(cipherText);
@@ -186,7 +186,7 @@ const generateEncryptTests = (args: TestArgs) => {
       describe('deprecated shareWith format', () => {
         it('shares an existing resource to an existing user', async () => {
           const cipherText = await args.bobLaptop.encrypt(clearText);
-          const resourceId = args.bobLaptop.getResourceId(cipherText);
+          const resourceId = await args.bobLaptop.getResourceId(cipherText);
           await args.bobLaptop.share([resourceId], [aliceId]);
 
           const decrypted = await args.aliceLaptop.decrypt(cipherText);

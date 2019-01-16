@@ -104,7 +104,8 @@ const generateGroupsTests = (args: TestArgs) => {
       const groupId = await args.aliceLaptop.createGroup([aliceId]);
 
       const encrypted = await args.bobLaptop.encrypt(message);
-      await args.bobLaptop.share([args.bobLaptop.getResourceId(encrypted)], { shareWithGroups: [groupId] });
+      const resourceId = await args.bobLaptop.getResourceId(encrypted);
+      await args.bobLaptop.share([resourceId], { shareWithGroups: [groupId] });
 
       const decrypted = await args.aliceLaptop.decrypt(encrypted);
       expect(decrypted).to.equal(message);
@@ -147,7 +148,8 @@ const generateGroupsTests = (args: TestArgs) => {
         const groupId = await args.aliceLaptop.createGroup([aliceId]);
 
         const encrypted = await args.bobLaptop.encrypt(message);
-        await args.bobLaptop.share([args.bobLaptop.getResourceId(encrypted)], [groupId]);
+        const resourceId = await args.bobLaptop.getResourceId(encrypted);
+        await args.bobLaptop.share([resourceId], [groupId]);
 
         const decrypted = await args.aliceLaptop.decrypt(encrypted);
         expect(decrypted).to.equal(message);
