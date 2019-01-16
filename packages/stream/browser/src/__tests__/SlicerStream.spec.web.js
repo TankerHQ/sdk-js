@@ -1,8 +1,8 @@
 // @flow
 import { utils } from '@tanker/crypto';
+import FilePolyfill from '@tanker/file-polyfill';
 
 import { expect } from './chai';
-import FilePolyfill from '../File.polyfill';
 import SlicerStream from '../SlicerStream';
 
 // Because IE11 does not implement Function.prototype.name

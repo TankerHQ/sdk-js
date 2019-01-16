@@ -7,6 +7,7 @@
   "main": "src/index.js",
   "dependencies": {
     "@tanker/errors": "0.0.1",
+    "@tanker/file-polyfill": "0.0.1",
     "@tanker/stream-base": "0.0.1"
   },
   "devDependencies": {
