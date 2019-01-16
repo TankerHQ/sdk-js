@@ -1,8 +1,7 @@
 // @flow
 import { InvalidArgument } from '@tanker/errors';
 import { BaseMergerStream } from '@tanker/stream-base';
-
-import FilePolyfill from './File.polyfill';
+import FilePolyfill from '@tanker/file-polyfill';
 
 const defaultMime = 'application/octet-stream';
 

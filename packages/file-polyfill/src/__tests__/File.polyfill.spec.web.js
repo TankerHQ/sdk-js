@@ -1,7 +1,7 @@
 // @flow
+import { expect } from 'chai';
 import { utils } from '@tanker/crypto';
 
-import { expect } from './chai';
 import FilePolyfill from '../File.polyfill';
 
 describe('FilePolyfill (web)', () => {
@@ -26,12 +26,13 @@ describe('FilePolyfill (web)', () => {
     expect(file).to.be.an.instanceof(Blob);
   });
 
-  it('sets the properties given to the constructor', () => {
-    const timestamp = Date.now();
-    const file = new FilePolyfill([bytes], name, { lastModified: timestamp });
+  it('sets the name and other options given to the constructor', () => {
+    const options = { lastModified: Date.now(), type: 'application/pdf' };
+    const file = new FilePolyfill([bytes], name, options);
     expect(file.name).to.equal(name);
-    expect(file.lastModified).to.equal(timestamp);
-    expect(file.lastModifiedDate).to.deep.equal(new Date(timestamp));
+    expect(file.lastModified).to.equal(options.lastModified);
+    expect(file.lastModifiedDate).to.deep.equal(new Date(options.lastModified));
+    expect(file.type).to.equal(options.type);
   });
 
   it('has a default last modified date', () => {

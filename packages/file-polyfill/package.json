@@ -1,0 +1,14 @@
+{
+  "name": "@tanker/file-polyfill",
+  "version": "0.0.1",
+  "description": "A cross-browser polyfill for File with a working constructor",
+  "author": "Tanker Team",
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "@tanker/crypto": "0.0.1",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1"
+  }
+}
