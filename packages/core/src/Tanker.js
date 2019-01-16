@@ -5,7 +5,7 @@ import EventEmitter from 'events';
 
 import { type ClientOptions, type UnlockMethods } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
-import { getResourceId as egetResourceId } from './Resource/ResourceManager';
+import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
 import { InvalidSessionStatus, InvalidArgument } from './errors';
 import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEVICE_TYPE } from './Unlock/unlock';
@@ -65,12 +65,12 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefa
 }
 
 export function getResourceId(data: Uint8Array): b64string {
-  console.warn('\'getResourceId\' util function is deprecated since version 1.7.2, use the method on a Tanker instance instead, e.g. tanker.getResourceId(...)');
+  console.warn('\'getResourceId\' util function is deprecated since version 1.7.2, use the method on a Tanker instance instead, i.e. await tanker.getResourceId(...)');
 
   if (!(data instanceof Uint8Array))
     throw new InvalidArgument('data', 'Uint8Array', data);
 
-  return utils.toBase64(egetResourceId(data));
+  return utils.toBase64(syncGetResourceId(data));
 }
 
 export class Tanker extends EventEmitter {
@@ -427,11 +427,11 @@ export class Tanker extends EventEmitter {
     return this._session.dataProtector.share(resourceIds, shareWithOptions);
   }
 
-  getResourceId(encryptedData: Uint8Array): b64string {
+  async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
     if (!(encryptedData instanceof Uint8Array))
       throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
-    return utils.toBase64(egetResourceId(encryptedData));
+    return utils.toBase64(syncGetResourceId(encryptedData));
   }
 
   async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {

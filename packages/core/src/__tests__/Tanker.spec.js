@@ -192,10 +192,10 @@ describe('Tanker', () => {
       const notUint8ArrayValues = [undefined, null, 0, {}, [], 'str'];
 
       it('should throw when given an invalid argument', async () => {
-        notUint8ArrayValues.forEach((v, i) => {
+        Promise.all(notUint8ArrayValues.map(async (v, i) => {
           // $FlowExpectedError
-          expect(() => tanker.getResourceId(v), `bad resource #${i}`).to.throw(InvalidArgument);
-        });
+          await expect(tanker.getResourceId(v), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
+        }));
       });
 
       describe('deprecated util', () => {
