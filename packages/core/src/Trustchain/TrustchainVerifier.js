@@ -1,9 +1,9 @@
 // @flow
-import { Mutex } from 'async-mutex';
 import find from 'array-find';
 import { utils, type b64string } from '@tanker/crypto';
 import { InvalidBlockError } from '../errors';
 import { findIndex, compareSameSizeUint8Arrays } from '../utils';
+import TaskQueue from '../TaskQueue';
 import { type User, type Device } from '../Users/User';
 import GroupUpdater from '../Groups/GroupUpdater';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
@@ -31,7 +31,7 @@ import {
 } from './Verify';
 
 export default class TrustchainVerifier {
-  _verifyLock: Mutex = new Mutex();
+  _verifyQueue: TaskQueue = new TaskQueue();
   _trustchainId: Uint8Array;
   _storage: Storage;
   _groupUpdater: GroupUpdater;
@@ -105,7 +105,7 @@ export default class TrustchainVerifier {
   }
 
   async verifyKeyPublishes(entries: Array<UnverifiedKeyPublish>): Promise<Array<VerifiedKeyPublish>> {
-    return this._verifyLock.runExclusive(() => this._unlockedVerifyKeyPublishes(entries));
+    return this._verifyQueue.enqueue(() => this._unlockedVerifyKeyPublishes(entries));
   }
 
   async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
@@ -159,10 +159,11 @@ export default class TrustchainVerifier {
   }
 
   async _throwingVerifyDeviceCreation(entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
-    return this._verifyLock.runExclusive(async () => {
+    return this._verifyQueue.enqueue(async () => {
       let user = await this._storage.userStore.findUser({ userId: entry.user_id });
       user = await this._unlockedProcessUser(entry.user_id, user, entry.index);
-      return this._unlockedVerifyAndApplySingleUserEntry(user, entry);
+      const promise: Promise<VerifiedDeviceCreation> = (this._unlockedVerifyAndApplySingleUserEntry(user, entry): any);
+      return promise;
     });
   }
 
@@ -232,7 +233,7 @@ export default class TrustchainVerifier {
   }
 
   async verifyTrustchainCreation(unverifiedTrustchainCreation: UnverifiedTrustchainCreation) {
-    return this._verifyLock.runExclusive(async () => {
+    return this._verifyQueue.enqueue(async () => {
       verifyTrustchainCreation(unverifiedTrustchainCreation, this._trustchainId);
       return this._storage.trustchainStore.setTrustchainPublicKey(unverifiedTrustchainCreation.public_signature_key);
     });
@@ -252,7 +253,7 @@ export default class TrustchainVerifier {
   }
 
   async updateUserStore(userIds: Array<Uint8Array>) {
-    await this._verifyLock.runExclusive(async () => {
+    await this._verifyQueue.enqueue(async () => {
       let nextDevicesToVerify = await this._storage.unverifiedStore.findUnverifiedUserEntries(userIds);
 
       // We want to batch the first device of every user, then the 2nd of every user, then the 3rd..., so sort by user first
@@ -273,7 +274,7 @@ export default class TrustchainVerifier {
   }
 
   async updateGroupStore(groupIds: Array<Uint8Array>) {
-    await this._verifyLock.runExclusive(async () => {
+    await this._verifyQueue.enqueue(async () => {
       for (const groupId of groupIds) {
         await this._unlockedProcessUserGroup(groupId);
       }
