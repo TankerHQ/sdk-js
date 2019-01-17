@@ -120,28 +120,32 @@ describe('Tanker', () => {
 
     describe('open', () => {
       it('should throw when token is not base64', async () => {
-        await expect(tanker.open(userId, 'garbage')).to.be.rejected;
-        // $FlowIKnow
+        await expect(tanker.open(userId, 'not b64')).to.be.rejected;
+      });
+
+      it('should throw when token is null', async () => {
+        // $FlowExpectedError
         await expect(tanker.open(userId, null)).to.be.rejected;
       });
 
-      it('should throw when token is incorrect', async () => {
-        // empty
-        let badSecret = '';
-        let userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        let promise = tanker.open(userId, userToken);
+      it('should throw when secret is empty', async () => {
+        const badSecret = '';
+        const userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
+        const promise = tanker.open(userId, userToken);
         await expect(promise).to.be.rejectedWith(InvalidUserToken);
+      });
 
-        // wrong size
-        badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE - 1));
-        userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        promise = tanker.open(userId, userToken);
+      it('should throw when secret is the wrong size', async () => {
+        const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE - 1));
+        const userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
+        const promise = tanker.open(userId, userToken);
         await expect(promise).to.be.rejectedWith(InvalidUserToken);
+      });
 
-        // does not match user
-        badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE));
-        userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        promise = tanker.open(userId, userToken);
+      it('should throw when secret is not the user\'s secret', async () => {
+        const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE));
+        const userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
+        const promise = tanker.open(userId, userToken);
         await expect(promise).to.be.rejectedWith(InvalidUserToken);
       });
     });
