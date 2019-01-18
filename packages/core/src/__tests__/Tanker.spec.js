@@ -6,7 +6,7 @@ import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 import { warnings } from './WarningsRemover';
 
-import { Tanker, TankerStatus, getResourceId } from '..';
+import { Tanker, TankerStatus, getResourceId, optionsWithDefaults } from '..';
 import { createUserTokenFromSecret } from './TestSessionTokens';
 import { InvalidArgument, InvalidUserToken, InvalidSessionStatus } from '../errors';
 import { DEVICE_TYPE } from '../Unlock/unlock';
@@ -77,6 +77,29 @@ describe('Tanker', () => {
       const tankerB = new TankerB({});
       expect(tankerB.options.url).to.equal('http://default.io');
       expect(tankerB.options.trustchainId).to.equal('trustchainB');
+    });
+
+    it('tanker options should accept defaults', () => {
+      const options = { trustchainId: 'id' };
+      const defaultOptions = { url: 'http://default.io', sdkType: 'default' };
+      const mergedOptions = optionsWithDefaults(options, defaultOptions);
+      expect(mergedOptions).to.deep.equal({ trustchainId: 'id', url: 'http://default.io', sdkType: 'default' });
+    });
+
+    it('tanker options should (deep) override defaults', () => {
+      const defaultAdapter = () => {};
+      const defaultPrefix = makePrefix();
+      const defaultDatastore = { adapter: defaultAdapter, prefix: defaultPrefix };
+      const defaultOptions = { trustchainId: 'default', url: 'http://default.io', dataStore: defaultDatastore };
+
+      const newAdapter = () => {};
+      const newOptions = { trustchainId: 'new', url: 'http://new.io', dataStore: { adapter: newAdapter } };
+
+      const expectedDatastore = { adapter: newAdapter, prefix: defaultPrefix };
+      const expectedOptions = { trustchainId: 'new', url: 'http://new.io', dataStore: expectedDatastore };
+
+      const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
+      expect(mergedOptions).to.deep.equal(expectedOptions);
     });
 
     it('instance should have numeric status constants matching TankerStatus', () => {
