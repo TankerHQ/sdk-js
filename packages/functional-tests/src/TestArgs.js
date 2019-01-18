@@ -7,4 +7,5 @@ export type TestArgs = {
   aliceLaptop: Tanker,
   bobLaptop: Tanker,
   bobPhone: Tanker,
+  resources: { [resourceType: string]: { clear: string | Uint8Array, encryptionMethod: string, decryptionMethod: string } }
 };
