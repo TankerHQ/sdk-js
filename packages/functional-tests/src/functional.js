@@ -2,7 +2,7 @@
 import sinon from 'sinon';
 import uuid from 'uuid';
 
-import { utils } from '@tanker/crypto';
+import { utils, random } from '@tanker/crypto';
 import { Tanker as TankerCore } from '@tanker/core';
 
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
@@ -59,6 +59,32 @@ export function generateFunctionalTests(name: string, Tanker: any => TankerCore,
       args.bobLaptop = makeTanker(utils.toBase64(args.trustchainHelper.trustchainId));
       args.bobPhone = makeTanker(utils.toBase64(args.trustchainHelper.trustchainId));
       args.aliceLaptop = makeTanker(utils.toBase64(args.trustchainHelper.trustchainId));
+
+      args.resources = {
+        text: {
+          clear: 'Rivest Shamir Adleman',
+          encryptionMethod: 'encrypt',
+          decryptionMethod: 'decrypt'
+        },
+        'small binary': {
+          clear: random(1024), // 1kB
+          encryptionMethod: 'encryptData',
+          decryptionMethod: 'decryptData'
+        },
+        'big binary': {
+          clear: (() => {
+            const sizeOfData = 6 * 1024 * 1024; // 6MB
+            const sizeOfRandomSegment = 1024; // 1kB
+            const randomSegment = random(sizeOfRandomSegment);
+            const data = new Uint8Array(sizeOfData);
+            const randomPos = Math.floor(Math.random() * (sizeOfData - sizeOfRandomSegment));
+            data.set(randomSegment, randomPos);
+            return data;
+          })(),
+          encryptionMethod: 'encryptData',
+          decryptionMethod: 'decryptData'
+        },
+      };
     });
 
     after(async () => {
@@ -69,7 +95,9 @@ export function generateFunctionalTests(name: string, Tanker: any => TankerCore,
 
     generateChunkEncryptor(args);
     generateStreamEncryptor(args);
-    generateEncryptTests(args);
+    generateEncryptTests(args, 'text');
+    generateEncryptTests(args, 'small binary');
+    // generateEncryptTests(args, 'big binary');
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
     generateOpenTests(args);
