@@ -50,6 +50,8 @@ export async function syncTankers(...tankers: Array<Tanker>): Promise<void> {
   await Promise.all(tankers.map(t => t._session._trustchain && t._session._trustchain.ready())); // eslint-disable-line no-underscore-dangle
 }
 
+export const makePrefix = (length: number = 12) => uuid.v4().replace('-', '').slice(0, length);
+
 export function makeRootBlock(trustchainKeyPair: Object) {
   const rootBlock: Block = {
     index: 1,
