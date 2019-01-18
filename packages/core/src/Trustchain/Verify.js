@@ -54,7 +54,7 @@ export function verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser
 
   const delegationBuffer = utils.concatArrays(entry.ephemeral_public_signature_key, entry.user_id);
   if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, authorKey))
-    throw new InvalidBlockError('invalid_delegation_signature', 'delegation signature is invalid', { entry, authorDevice });
+    throw new InvalidBlockError('invalid_delegation_signature', 'delegation signature is invalid, there might be a mismatch between the Trustchains configured client-side and server-side', { entry, authorDevice });
 
   if (!tcrypto.verifySignature(entry.hash, entry.signature, entry.ephemeral_public_signature_key))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, authorDevice });
