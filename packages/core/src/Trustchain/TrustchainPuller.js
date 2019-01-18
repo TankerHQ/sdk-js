@@ -1,6 +1,5 @@
 // @flow
 import { utils } from '@tanker/crypto';
-import uniq from 'lodash.uniqby';
 
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
@@ -16,6 +15,8 @@ import { isKeyPublish, isUserGroup, isDeviceCreation, isDeviceRevocation, isTrus
 import { unserializeBlock } from '../Blocks/payloads';
 import { type Block } from '../Blocks/Block';
 
+
+const uniq = (array: Array<any>): Array<any> => [...new Set(array)];
 
 export default class TrustchainPuller {
   _catchUpInProgress: ?Promise<void> = null;
