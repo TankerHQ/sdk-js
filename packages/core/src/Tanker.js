@@ -51,6 +51,15 @@ export type TankerOptions = {|
   trustchainId: b64string
 |};
 
+export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefaultOptions) {
+  const result = { ...defaults, ...options };
+
+  // Deep merge dataStore option
+  result.dataStore = { ...defaults.dataStore, ...options.dataStore };
+
+  return result;
+}
+
 export function getResourceId(data: Uint8Array): b64string {
   console.warn('\'getResourceId\' util function is deprecated since version 1.7.2, use the method on a Tanker instance instead, i.e. await tanker.getResourceId(...)');
 
@@ -85,12 +94,7 @@ export class Tanker extends EventEmitter {
     // Anonymous class that remembers the default options
     return class extends this {
       constructor(options: TankerOptions) {
-        const optionsWithDefaults = { ...defaultOptions, ...options };
-
-        // Deep merge dataStore option
-        optionsWithDefaults.dataStore = { ...defaultOptions.dataStore, ...options.dataStore };
-
-        super(optionsWithDefaults);
+        super(optionsWithDefaults(options, defaultOptions));
       }
     };
   }
