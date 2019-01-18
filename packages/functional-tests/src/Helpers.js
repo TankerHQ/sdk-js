@@ -8,7 +8,7 @@ import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
 
 import { createUserTokenFromSecret } from '@tanker/core/src/__tests__/TestSessionTokens';
-import { tcrypto, utils, createUserSecretB64, obfuscateUserId, type b64string } from '@tanker/crypto';
+import { random, tcrypto, utils, createUserSecretB64, obfuscateUserId, type b64string } from '@tanker/crypto';
 
 const tankerUrl = process.env.TANKER_URL || '';
 const idToken = process.env.TANKER_TOKEN || '';
@@ -50,6 +50,21 @@ export async function syncTankers(...tankers: Array<TankerInterface>): Promise<v
 }
 
 export const makePrefix = (length: number = 12) => uuid.v4().replace('-', '').slice(0, length);
+
+// Overcome random()'s max size by generating bigger Uint8Arrays
+// having a random segment of 1kB set at a random position.
+export const makeRandomUint8Array = (sizeOfData: number) => {
+  const sizeOfRandomSegment = 1024; // 1kB
+
+  if (sizeOfData < sizeOfRandomSegment)
+    return random(sizeOfData);
+
+  const randomSegment = random(sizeOfRandomSegment);
+  const data = new Uint8Array(sizeOfData);
+  const randomPos = Math.floor(Math.random() * (sizeOfData - sizeOfRandomSegment));
+  data.set(randomSegment, randomPos);
+  return data;
+};
 
 export function makeRootBlock(trustchainKeyPair: Object) {
   const rootBlock: Block = {
