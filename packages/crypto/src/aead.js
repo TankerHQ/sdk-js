@@ -28,12 +28,3 @@ export async function decryptAEADv2(key: Uint8Array, ciphertext: Uint8Array, ass
   const rawCiphertext = ciphertext.subarray(tcrypto.XCHACHA_IV_SIZE);
   return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, rawCiphertext, associatedData, iv, key);
 }
-
-export function extractResourceId(edata: Uint8Array): Uint8Array {
-  const extractedData = new Uint8Array(edata.subarray(edata.length - tcrypto.MAC_SIZE)); // don't use slice, doesn't work on IE11
-
-  if (extractedData.length !== tcrypto.MAC_SIZE) {
-    throw new Error('malformed_data');
-  }
-  return extractedData;
-}
