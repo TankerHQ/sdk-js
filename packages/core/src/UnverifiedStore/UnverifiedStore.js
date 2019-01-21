@@ -60,6 +60,7 @@ export default class UnverifiedStore {
     store.keyPublishUnverifiedStore = await KeyPublishUnverifiedStore.open(ds);
     store.userUnverifiedStore = await UserUnverifiedStore.open(ds);
     store.userGroupsUnverifiedStore = await UserGroupsUnverifiedStore.open(ds);
+    store.inviteUnverifiedStore = await InviteUnverifiedStore.open(ds);
     return store;
   }
 
@@ -67,6 +68,7 @@ export default class UnverifiedStore {
     await this.keyPublishUnverifiedStore.close();
     await this.userUnverifiedStore.close();
     await this.userGroupsUnverifiedStore.close();
+    await this.inviteUnverifiedStore.close();
   }
 
   async addUnverifiedKeyPublishes(entries: Array<UnverifiedKeyPublish>) {

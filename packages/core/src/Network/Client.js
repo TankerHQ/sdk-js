@@ -301,7 +301,7 @@ export class Client extends EventEmitter {
   }
 
   getInviteePrivateKeys = async (invitee: { email: string }, verificationCode: string): Promise<*> => {
-    const result = await this._send('get invitees private keys', {
+    const result = await this._send('get invitee private keys', {
       email: invitee.email,
       verificationCode,
     });

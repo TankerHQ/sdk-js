@@ -401,16 +401,20 @@ describe('BlockVerification', () => {
 
   describe('key publish to pre-registered user', () => {
     let user: User;
-    let targetPreRegistrationPublicKey: Uint8Array;
     let unverifiedKeyPublish: UnverifiedKeyPublish;
     beforeEach(() => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      targetPreRegistrationPublicKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
       testGenerator.skipIndex(); // used for faking a revocation
-      const keyPublish = testGenerator.makeKeyPublishToInvitee(userCreation, targetPreRegistrationPublicKey);
+      const inviteePublicKeys = {
+        appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      };
+      const keyPublish = testGenerator.makeKeyPublishToInvitee(userCreation, inviteePublicKeys);
       unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
     });
 
