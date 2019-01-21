@@ -1,7 +1,8 @@
 // @flow
 
-import { utils, type b64string } from '@tanker/crypto';
+import { utils, generichash, type b64string } from '@tanker/crypto';
 import EventEmitter from 'events';
+import { TextEncoder } from 'text-encoder';
 
 import { type ClientOptions, type UnlockMethods } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
@@ -360,6 +361,20 @@ export class Tanker extends EventEmitter {
     this.assert(this.isOpen, 'claim invite');
 
     return this._session.dataProtector.claimInvite(invitee, verificationCode, appInvitePrivateSignatureKey, appInvitePrivateEncryptionKey);
+  }
+
+  // FIXME: This function is only intended for internal tests, will not work in production.
+  // Remove me!
+  async _getClaimVerificationCode(email: string): Promise<b64string> {
+    const testSecretKey = new Uint8Array([0x31, 0x32, 0x33, 0x34, 0x35]); // Secure AF 👌
+    const emailBuf = new TextEncoder().encode(email);
+    const prefix = new Uint8Array([0x74, 0x61, 0x6e, 0x6b, 0x65, 0x72, 0x20, 0x69, 0x6e, 0x76, 0x69, 0x74,
+      0x65, 0x65, 0x20, 0x76, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
+      0x69, 0x6f, 0x6e, 0x20, 0x63, 0x6f, 0x64, 0x65]);
+    let toHash = utils.concatArrays(prefix, testSecretKey);
+    toHash = utils.concatArrays(toHash, utils.fromBase64(this._options.trustchainId));
+    toHash = utils.concatArrays(toHash, emailBuf);
+    return utils.toBase64(generichash(toHash));
   }
 
   async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {

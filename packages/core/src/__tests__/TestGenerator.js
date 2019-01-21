@@ -19,6 +19,7 @@ import { rootBlockAuthor } from '../Trustchain/Verify';
 import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
 import { type DelegationToken } from '../Session/delegation';
+import { type InviteePublicKeys } from '../DataProtection/DataProtector';
 
 
 export type TestDevice = {
@@ -350,9 +351,9 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToInvitee = (parentDevice: TestDeviceCreation, recipient: Uint8Array): TestKeyPublish => {
+  makeKeyPublishToInvitee = (parentDevice: TestDeviceCreation, recipient: InviteePublicKeys): TestKeyPublish => {
     const { resourceKey, resourceId, blockGenerator } = this.prepareKeyPublishGenerator(parentDevice);
-    const block = blockGenerator.makeKeyPublishBlock(recipient, resourceKey, resourceId, NATURE_KIND.key_publish_to_invitee);
+    const block = blockGenerator.makeInviteeKeyPublishBlock(recipient, resourceKey, resourceId);
     block.index = this._trustchainIndex;
 
     return {
