@@ -4,7 +4,7 @@ import { type DataStore } from '@tanker/datastore-base';
 import KeyPublishUnverifiedStore, { type UnverifiedKeyPublish } from './KeyPublishUnverifiedStore';
 import UserUnverifiedStore, { type UnverifiedDeviceCreation, type VerifiedDeviceCreation, type UnverifiedDeviceRevocation, type VerifiedDeviceRevocation } from './UserUnverifiedStore';
 import UserGroupsUnverifiedStore, { type UnverifiedUserGroup, type VerifiedUserGroup } from './UserGroupsUnverifiedStore';
-import InviteUnverifiedStore, { type UnverifiedClaimInvite } from './InviteUnverifiedStore';
+import InviteUnverifiedStore, { type UnverifiedClaimInvite, type VerifiedClaimInvite } from './InviteUnverifiedStore';
 
 const schemasTablesV3 = [
   ...KeyPublishUnverifiedStore.tables,
@@ -128,5 +128,13 @@ export default class UnverifiedStore {
 
   async addUnverifiedClaimInviteEntries(entries: Array<UnverifiedClaimInvite>): Promise<void> {
     return this.inviteUnverifiedStore.addUnverifiedClaimInviteEntries(entries);
+  }
+
+  async removeVerifiedClaimInviteEntries(entries: Array<VerifiedClaimInvite>): Promise<void> {
+    return this.inviteUnverifiedStore.removeVerifiedClaimInviteEntries(entries);
+  }
+
+  async findUnverifiedClaimInvites(userId: Uint8Array): Promise<Array<UnverifiedClaimInvite>> {
+    return this.inviteUnverifiedStore.findUnverifiedClaimInvites(userId);
   }
 }

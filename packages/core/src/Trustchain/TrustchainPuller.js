@@ -199,6 +199,9 @@ export default class TrustchainPuller {
     if (mustUpdateOurselves) {
       await this._trustchainVerifier.updateUserStore([this._userId]);
     }
+    if (claims.length) {
+      await this._trustchainVerifier.verifyClaimsForUser(this._userId);
+    }
   };
 
   _deviceRevocationFromBlock = async (block: Block) => {

@@ -158,6 +158,23 @@ const generateEncryptTests = (args: TestArgs) => {
           await expect(args.aliceLaptop.claimInvite({ email }, verifCode, sigKeyPair.privateKey, encKeyPair.privateKey)).to.be.fulfilled;
         });
 
+        it.only('decrypt clained block', async () => {
+          const email = 'alice@tanker-functional-test.io';
+          const sigKeyPair = tcrypto.makeSignKeyPair();
+          const encKeyPair = tcrypto.makeEncryptionKeyPair();
+          const invitee = {
+            email,
+            inviteePublicSignatureKey: sigKeyPair.publicKey,
+            inviteePublicEncryptionKey: encKeyPair.publicKey,
+          };
+          const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] });
+
+          const verifCode = await args.aliceLaptop._getClaimVerificationCode(email); // eslint-disable-line no-underscore-dangle
+          await args.aliceLaptop.claimInvite({ email }, verifCode, sigKeyPair.privateKey, encKeyPair.privateKey);
+          const decrypted = await args.aliceLaptop.decrypt(cipherText);
+          expect(decrypted).to.equal(clearText);
+        });
+
         it('shares even when the recipient is not connected', async () => {
           await args.aliceLaptop.signOut();
           const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
