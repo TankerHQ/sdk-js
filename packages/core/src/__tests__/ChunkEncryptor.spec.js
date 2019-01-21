@@ -6,6 +6,7 @@ import { expect } from './chai';
 import { warnings } from './WarningsRemover';
 
 import { errors } from '../index';
+import { extractResourceIdV2 } from '../Resource/ResourceManager';
 import { makeChunkEncryptor, getChunkKeys, type EncryptorInterface } from '../DataProtection/ChunkEncryptor';
 import { concatArrays } from '../Blocks/Serialize';
 
@@ -18,13 +19,15 @@ class FakeEncryptor implements EncryptorInterface {
 
   async encryptData(plaintext) {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const ret = await aead.encryptAEADv1(key, plaintext);
-    this.keys[utils.toBase64(aead.extractResourceId(ret))] = key;
-    return ret;
+    const encryptedData = await aead.encryptAEADv1(key, plaintext);
+    const resourceId = utils.toBase64(extractResourceIdV2(encryptedData));
+    this.keys[resourceId] = key;
+    return encryptedData;
   }
 
   async decryptData(encryptedData) {
-    const key = this.keys[utils.toBase64(aead.extractResourceId(encryptedData))];
+    const resourceId = utils.toBase64(extractResourceIdV2(encryptedData));
+    const key = this.keys[resourceId];
     return aead.decryptAEADv1(key, encryptedData);
   }
 }
@@ -147,7 +150,7 @@ describe('ChunkEncryptor', () => {
     expect(chunkEncryptor).to.have.a.lengthOf(3);
   });
 
-  it('should be possible to create an ChunkEncryptor with an existing seal', async () => {
+  it('should be possible to create a ChunkEncryptor with an existing seal', async () => {
     await chunkEncryptor.encrypt(clearText, 0);
     await chunkEncryptor.encrypt(clearText, 4);
     await chunkEncryptor.encrypt(clearText, 5);
@@ -158,7 +161,7 @@ describe('ChunkEncryptor', () => {
     expect(newEnc).to.deep.equal(chunkEncryptor);
   });
 
-  it('should throw when trying to create an ChunkEncryptor with a corrupted seal', async () => {
+  it('should throw when trying to create a ChunkEncryptor with a corrupted seal', async () => {
     await chunkEncryptor.encrypt(clearText, 0);
     await chunkEncryptor.encrypt(clearText, 4);
     await chunkEncryptor.encrypt(clearText, 5);
@@ -176,10 +179,10 @@ describe('ChunkEncryptor', () => {
   });
 
   it('should change the resource key each time seal is called', async () => {
-    const resourceId = aead.extractResourceId(await chunkEncryptor.seal());
-    const oldKey = fakeEncryptor.keys[utils.toBase64(resourceId)];
-    const newMac = aead.extractResourceId(await chunkEncryptor.seal());
-    const newKey = fakeEncryptor.keys[utils.toBase64(newMac)];
+    const oldResourceId = utils.toBase64(extractResourceIdV2(await chunkEncryptor.seal()));
+    const oldKey = fakeEncryptor.keys[oldResourceId];
+    const newResourceId = utils.toBase64(extractResourceIdV2(await chunkEncryptor.seal()));
+    const newKey = fakeEncryptor.keys[newResourceId];
 
     expect(newKey).to.not.deep.equal(oldKey);
   });

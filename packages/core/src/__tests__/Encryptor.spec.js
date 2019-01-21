@@ -2,13 +2,14 @@
 
 import varint from 'varint';
 
-import { tcrypto, utils } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 
 import { InvalidEncryptionFormat } from '../errors';
 import { decryptData } from '../DataProtection/decrypt';
 import { encryptData } from '../DataProtection/encrypt';
+import { extractResourceIdV2 } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
 
 describe('Encryptor', () => {
@@ -30,7 +31,7 @@ describe('Encryptor', () => {
 
     const { resourceId, encryptedData } = await encryptData(clearData);
 
-    const extractedMac = encryptedData.subarray(-tcrypto.MAC_SIZE);
+    const extractedMac = extractResourceIdV2(encryptedData);
     expect(resourceId).to.deep.equal(extractedMac);
   });
 

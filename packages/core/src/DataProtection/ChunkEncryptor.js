@@ -6,6 +6,7 @@ import { tcrypto, aead, random, utils } from '@tanker/crypto';
 
 import { ChunkIndexOutOfRange, ChunkNotFound, DecryptFailed, InvalidArgument, InvalidSeal } from '../errors';
 import { type EncryptionOptions, validateEncryptionOptions } from './EncryptionOptions';
+import { extractResourceIdV2 } from '../Resource/ResourceManager';
 import { isShareWithOptionsEmpty } from './ShareWithOptions';
 import * as Serialize from '../Blocks/Serialize';
 
@@ -262,7 +263,7 @@ export default class ChunkEncryptor {
       return new Uint8Array(await aead.decryptAEADv1(key, encryptedChunk));
     } catch (e) {
       // note that the resourceId could very well be corrupted
-      throw new DecryptFailed(e, aead.extractResourceId(encryptedChunk), index);
+      throw new DecryptFailed(e, extractResourceIdV2(encryptedChunk), index);
     }
   }
 
@@ -277,8 +278,7 @@ export default class ChunkEncryptor {
 
     const seal = Seal.build(this.chunkKeys);
     const serializedSeal = seal.serialize();
-    const encryptedData = await this.encryptor.encryptData(serializedSeal, opts);
-    return encryptedData;
+    return this.encryptor.encryptData(serializedSeal, opts);
   }
 
   remove(indexes: Array<number>): void {

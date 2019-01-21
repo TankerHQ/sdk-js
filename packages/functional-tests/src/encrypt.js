@@ -1,7 +1,7 @@
 // @flow
 import uuid from 'uuid';
 import { errors } from '@tanker/core';
-import { utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { expect } from './chai';
 
 import { type TestArgs } from './TestArgs';
@@ -52,13 +52,29 @@ const generateEncryptTests = (args: TestArgs) => {
         await expect(promise).to.be.rejectedWith(errors.InvalidArgument);
       });
 
-      it('throws when decrypting undefined', async () => {
-        // $FlowExpectedError
-        await expect(args.bobLaptop.decrypt()).to.be.rejectedWith(errors.InvalidArgument);
+      it('throws when decrypting an invalid type', async () => {
+        const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'str'];
+        for (let i = 0; i < notUint8ArrayTypes.length; i++) {
+          // $FlowExpectedError
+          await expect(args.bobLaptop.decrypt(notUint8ArrayTypes[i]), `bad decryption #${i}`).to.be.rejectedWith(errors.InvalidArgument);
+        }
       });
 
-      it('throws when decrypting invalid cipherText', async () => {
-        await expect(args.bobLaptop.decrypt(utils.fromString('test'))).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+      it('throws when decrypting data with an unknow encryption format', async () => {
+        const invalidEncrypted = new Uint8Array([127]);
+        await expect(args.bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+      });
+
+      it('throws when decrypting data with an invalid encryption format', async () => {
+        const invalidEncrypted = new Uint8Array([255]); // not a varint
+        await expect(args.bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+      });
+
+      it('throws when decrypting truncated encrypted resource', async () => {
+        const encrypted = await args.bobLaptop.encrypt(clearText);
+        // shorter than version + resource ID: should not even try to decrypt
+        const invalidEncrypted = encrypted.subarray(0, tcrypto.MAC_SIZE - 4);
+        await expect(args.bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when calling decrypt with a corrupted buffer', async () => {
