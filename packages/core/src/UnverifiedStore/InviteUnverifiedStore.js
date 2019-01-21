@@ -19,7 +19,7 @@ export default class InviteUnverifiedStore {
 
   static tables = [{
     name: UNVERIFIED_CLAIMS_TABLE,
-    indexes: [['index'], ['app_invitee_signature_public_key']]
+    indexes: [['index'], ['user_id']]
   }];
 
   constructor(ds: DataStore<*>) {
@@ -47,11 +47,11 @@ export default class InviteUnverifiedStore {
     await this._ds.bulkAdd(UNVERIFIED_CLAIMS_TABLE, [...mapEntry.values()]);
   }
 
-  async findUnverifiedClaimInvite(appInviteeSignaturePublicKey: Uint8Array): Promise<Array<UnverifiedClaimInvite>> {
-    const keyBase64 = utils.toBase64(appInviteeSignaturePublicKey);
+  async findUnverifiedClaimInvites(userId: Uint8Array): Promise<Array<UnverifiedClaimInvite>> {
+    const userIdBase64 = utils.toBase64(userId);
     const entries = await this._ds.find(UNVERIFIED_CLAIMS_TABLE, {
       selector: {
-        app_invitee_signature_public_key: keyBase64,
+        user_id: userIdBase64,
       },
       sort: [{ index: 'asc' }],
     });
@@ -59,7 +59,9 @@ export default class InviteUnverifiedStore {
     return entries.map(dbEntryToEntry);
   }
 
-  async removeVerifiedClaimInviteEntry(entry: VerifiedClaimInvite): Promise<void> {
-    await this._ds.delete(UNVERIFIED_CLAIMS_TABLE, utils.toBase64(entry.author_signature_by_app_key));
+  async removeVerifiedClaimInviteEntries(entries: Array<VerifiedClaimInvite>): Promise<void> {
+    for (const entry of entries) {
+      await this._ds.delete(UNVERIFIED_CLAIMS_TABLE, utils.toBase64(entry.author_signature_by_app_key));
+    }
   }
 }

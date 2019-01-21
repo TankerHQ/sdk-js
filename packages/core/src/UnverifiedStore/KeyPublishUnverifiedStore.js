@@ -47,6 +47,7 @@ export default class KeyPublishUnverifiedStore {
       return;
     const mapEntry = new Map();
     for (const entry of entries) {
+      console.log('Adding KP: ', utils.toBase64(entry.resourceId));
       const dbEntry = entryToDbEntry(entry, utils.toBase64(entry.resourceId));
       mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
     }

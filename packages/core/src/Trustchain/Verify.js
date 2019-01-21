@@ -4,12 +4,14 @@ import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidBlockError } from '../errors.internal';
 import { findIndex } from '../utils';
+import { concatArrays } from '../Blocks/Serialize';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedClaimInvite, type VerifiedClaimInvite } from '../UnverifiedStore/InviteUnverifiedStore';
 import { type UnverifiedTrustchainCreation } from './TrustchainStore';
 
 import {
@@ -194,4 +196,25 @@ export function verifyUserGroupAddition(entry: UnverifiedUserGroup, author: Devi
     throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
 
   return (entry: VerifiedUserGroup);
+}
+
+export function verifyClaimInvite(entry: UnverifiedClaimInvite, author: Device, authorUserId: Uint8Array): VerifiedClaimInvite {
+  if (!utils.equalArray(entry.user_id, authorUserId))
+    throw new InvalidBlockError('forbidden', 'Claim Invite author does not match claimed user ID', { entry, authorUserId });
+
+  if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
+    throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
+
+  const multiSignedPayload = concatArrays(
+    utils.fromBase64(author.deviceId),
+    entry.app_invitee_signature_public_key,
+    entry.tanker_invitee_signature_public_key,
+  );
+  if (!tcrypto.verifySignature(multiSignedPayload, entry.author_signature_by_app_key, entry.app_invitee_signature_public_key))
+    throw new InvalidBlockError('invalid_signature', 'app signature is invalid', { entry, author });
+
+  if (!tcrypto.verifySignature(multiSignedPayload, entry.author_signature_by_tanker_key, entry.tanker_invitee_signature_public_key))
+    throw new InvalidBlockError('invalid_signature', 'tanker signature is invalid', { entry, author });
+
+  return (entry: VerifiedClaimInvite);
 }

@@ -10,6 +10,7 @@ import BlockGenerator from '../Blocks/BlockGenerator';
 import { type UserData } from '../UserData';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedClaimInvite } from '../UnverifiedStore/InviteUnverifiedStore';
 
 export type DeviceKeys = {|
   deviceId: ?b64string,
@@ -60,6 +61,33 @@ export default class LocalUser extends EventEmitter {
 
   setUnlockMethods = (unlockMethods: UnlockMethods) => {
     this._unlockMethods = unlockMethods;
+  }
+
+  applyClaimInvite = async (claimInvite: VerifiedClaimInvite) => {
+    // TODO: FIXME: Implement this!
+
+//     this._deviceId = deviceCreation.hash;
+//     await this._keyStore.setDeviceId(deviceCreation.hash);
+
+//     this._blockGenerator = new BlockGenerator(
+//       this.trustchainId,
+//       this.privateSignatureKey,
+//       deviceCreation.hash,
+//     );
+
+//     const userKeyPair = deviceCreation.user_key_pair;
+//     // Possible for deviceCreation 1
+//     if (!userKeyPair)
+//       return;
+
+//     const userKey = {
+//       privateKey: tcrypto.sealDecrypt(userKeyPair.encrypted_private_encryption_key, this._deviceEncryptionKeyPair),
+//       publicKey: userKeyPair.public_encryption_key,
+//     };
+//     await this._keyStore.addUserKey(userKey);
+//     this._userKeys[utils.toBase64(userKey.publicKey)] = userKey;
+//     this._currentUserKey = userKey;
+//     await this._recoverUserKeys();
   }
 
   applyDeviceCreation = async (deviceCreation: VerifiedDeviceCreation) => {

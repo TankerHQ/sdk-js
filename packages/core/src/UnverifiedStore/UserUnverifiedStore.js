@@ -87,6 +87,7 @@ export default class UserUnverifiedStore {
       const b64UserId = utils.toBase64(entry.user_id);
 
       if (isDeviceCreation(entry.nature)) {
+        console.log('Adding device ', utils.toBase64(entry.hash), ' of user ', b64UserId);
         const b64DeviceId = utils.toBase64(entry.hash);
         deviceIdToUserId.push({
           _id: b64DeviceId,
