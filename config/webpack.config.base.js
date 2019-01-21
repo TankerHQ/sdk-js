@@ -53,8 +53,6 @@ const getBabelLoaders = (env) => {
         /node_modules(\\|\/)chai-as-promised/,
         // they use arrow functions
         /node_modules(\\|\/)chai-exclude/,
-        // they use Promise
-        /node_modules(\\|\/)async-mutex/,
       ],
     },
   ];
