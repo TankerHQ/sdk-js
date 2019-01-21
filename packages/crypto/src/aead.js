@@ -29,11 +29,10 @@ export async function decryptAEADv2(key: Uint8Array, ciphertext: Uint8Array, ass
   return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, rawCiphertext, associatedData, iv, key);
 }
 
-export function extractResourceId(edata: Uint8Array): Uint8Array {
-  const extractedData = new Uint8Array(edata.subarray(edata.length - tcrypto.MAC_SIZE)); // don't use slice, doesn't work on IE11
+// Warning: if applied on v1 encrypted data, this will NOT extract the MAC.
+export function extractMac(edata: Uint8Array): Uint8Array {
+  if (edata.length < tcrypto.MAC_SIZE)
+    throw new Error(`Assertion error: at least ${tcrypto.MAC_SIZE} bytes needed to extract a MAC`);
 
-  if (extractedData.length !== tcrypto.MAC_SIZE) {
-    throw new Error('malformed_data');
-  }
-  return extractedData;
+  return new Uint8Array(edata.subarray(edata.length - tcrypto.MAC_SIZE)); // don't use slice, doesn't work on IE11
 }

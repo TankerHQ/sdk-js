@@ -262,7 +262,7 @@ export default class ChunkEncryptor {
       return new Uint8Array(await aead.decryptAEADv1(key, encryptedChunk));
     } catch (e) {
       // note that the resourceId could very well be corrupted
-      throw new DecryptFailed(e, aead.extractResourceId(encryptedChunk), index);
+      throw new DecryptFailed(e, aead.extractMac(encryptedChunk), index);
     }
   }
 
@@ -277,8 +277,7 @@ export default class ChunkEncryptor {
 
     const seal = Seal.build(this.chunkKeys);
     const serializedSeal = seal.serialize();
-    const encryptedData = await this.encryptor.encryptData(serializedSeal, opts);
-    return encryptedData;
+    return this.encryptor.encryptData(serializedSeal, opts);
   }
 
   remove(indexes: Array<number>): void {

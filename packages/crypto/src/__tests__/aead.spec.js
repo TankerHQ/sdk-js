@@ -2,7 +2,7 @@
 import sinon from 'sinon';
 import { expect } from './chai';
 
-import { decryptAEADv1, decryptAEADv2, encryptAEADv1, encryptAEADv2, extractResourceId } from '../aead';
+import { decryptAEADv1, decryptAEADv2, encryptAEADv1, encryptAEADv2, extractMac } from '../aead';
 import { MAC_SIZE, SYMMETRIC_KEY_SIZE } from '../tcrypto';
 import { fromString, toString } from '../utils';
 
@@ -150,10 +150,10 @@ function testAeadDecrypt(name, aeadFunc, testVector, testVectorWithAssociatedDat
   });
 }
 
-describe('extractResourceId', () => {
+describe('extractMac', () => {
   it('should throw if array too short', () => {
     const tooShort = new Uint8Array(2);
-    expect(() => extractResourceId(tooShort)).to.throw();
+    expect(() => extractMac(tooShort)).to.throw();
   });
 
   it('should extract the last 16 digits of ciphertext', () => {
@@ -162,7 +162,7 @@ describe('extractResourceId', () => {
       0x1d, 0x63, 0x47, 0x9d
     ]);
 
-    expect(extractResourceId(resV2))
+    expect(extractMac(resV2))
       .to.deep.equal(last16DigitsExtractedWithLove);
   });
 });
