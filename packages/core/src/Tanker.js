@@ -430,11 +430,11 @@ export class Tanker extends EventEmitter {
     return this._session.dataProtector.share(resourceIds, shareWithOptions);
   }
 
-  async getResourceId(data: Uint8Array): Promise<b64string> {
-    if (!(data instanceof Uint8Array))
-      throw new InvalidArgument('data', 'Uint8Array', data);
+  async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
+    if (!(encryptedData instanceof Uint8Array))
+      throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
-    return utils.toBase64(syncGetResourceId(data));
+    return utils.toBase64(syncGetResourceId(encryptedData));
   }
 
   async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
