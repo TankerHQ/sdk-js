@@ -1,21 +1,10 @@
 // @flow
 import { utils } from '@tanker/crypto';
+import { safePrintType } from '@tanker/errors';
 import FilePolyfill from '@tanker/file-polyfill';
 
 import { expect } from './chai';
 import SlicerStream from '../SlicerStream';
-
-// Because IE11 does not implement Function.prototype.name
-const getConstructorName = (() => {
-  const regExp = /^.*(?:function|class) +([^( ]+).*$/;
-
-  return (constructor: Function) => {
-    if (typeof constructor.name === 'string')
-      return constructor.name;
-
-    return constructor.toString().trim().split('\n')[0].replace(regExp, '$1');
-  };
-})();
 
 describe('SlicerStream (web)', () => {
   const bytes: Uint8Array = utils.fromString('0123456789abcdef'); // 16 bytes
@@ -28,7 +17,7 @@ describe('SlicerStream (web)', () => {
     { source: new FilePolyfill([bytes], 'file.txt') },
   ].forEach(options => {
     const { source } = options;
-    const classname = getConstructorName(source.constructor);
+    const classname = safePrintType(source);
 
     it(`can slice a ${classname}`, async () => {
       const stream = new SlicerStream({ ...options, outputSize });
