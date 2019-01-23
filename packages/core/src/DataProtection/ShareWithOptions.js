@@ -15,9 +15,6 @@ export const validateShareWithOptions = (value: any): bool => {
         return false;
       if (key === 'shareWith' && keys.length > 1)
         return false;
-    } else {
-      // unexpected key
-      return false;
     }
   }
 
