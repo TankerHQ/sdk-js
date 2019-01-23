@@ -370,19 +370,25 @@ export class Tanker extends EventEmitter {
     return devices.some(device => device.isGhostDevice === true && device.isRevoked === false);
   }
 
+  _parseEncryptionOptions = (options?: EncryptionOptions = {}): EncryptionOptions => {
+    if (!validateEncryptionOptions(options))
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
+
+    const opts = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
+
+    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(options))
+      throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);
+
+    return opts;
+  }
+
   async encryptData(plain: Uint8Array, options?: EncryptionOptions): Promise<Uint8Array> {
     this.assert(this.OPEN, 'encrypt data');
 
     if (!(plain instanceof Uint8Array))
       throw new InvalidArgument('plain', 'Uint8Array', plain);
 
-    if (!validateEncryptionOptions(options))
-      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
-
-    const opts = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
-
-    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(opts))
-      throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);
+    const opts = this._parseEncryptionOptions(options);
 
     return this._session.dataProtector.encryptAndShareData(plain, opts);
   }
@@ -474,15 +480,9 @@ export class Tanker extends EventEmitter {
   async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
     this.assert(this.OPEN, 'make a stream encryptor');
 
-    if (!validateEncryptionOptions(options))
-      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
+    const opts = this._parseEncryptionOptions(options);
 
-    const param = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
-
-    if (param.shareWithSelf === false && isShareWithOptionsEmpty(param))
-      throw new InvalidArgument('parameters.shareOptions.shareWith*', 'parameters.shareWithUser or parameters.shareWithGroups must contain recipients when parameters.shareWithSelf === false', param);
-
-    return this._session.dataProtector.makeEncryptorStream(param);
+    return this._session.dataProtector.makeEncryptorStream(opts);
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
