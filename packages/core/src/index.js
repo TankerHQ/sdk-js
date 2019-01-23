@@ -7,6 +7,7 @@ import { Tanker, TankerStatus, getResourceId, optionsWithDefaults } from './Tank
 import * as errors from './errors';
 import { fromBase64, toBase64, fromString, toString, getTankerVersion } from './utils';
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
+import { getEncryptionFormat } from './Resource/ResourceManager';
 
 // export
 export default Tanker;
@@ -25,6 +26,7 @@ export {
   fromBase64,
   fromString,
   getResourceId,
+  getEncryptionFormat,
   toBase64,
   toString,
   ChunkEncryptor,
