@@ -97,7 +97,7 @@ export function generateFunctionalTests(name: string, Tanker: any => TankerCore,
     generateStreamEncryptor(args);
     generateEncryptTests(args, 'text');
     generateEncryptTests(args, 'small binary');
-    // generateEncryptTests(args, 'big binary');
+    generateEncryptTests(args, 'big binary');
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
     generateOpenTests(args);
