@@ -217,11 +217,11 @@ export class BlockGenerator {
   makeInviteeKeyPublishBlock(inviteePublicKeys: InviteePublicKeys, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
     const preEncryptedKey = tcrypto.sealEncrypt(
       resourceKey,
-      inviteePublicKeys.appSignaturePublicKey,
+      inviteePublicKeys.appEncryptionPublicKey,
     );
     const encryptedKey = tcrypto.sealEncrypt(
       preEncryptedKey,
-      inviteePublicKeys.tankerSignaturePublicKey,
+      inviteePublicKeys.tankerEncryptionPublicKey,
     );
 
     const payload = {
