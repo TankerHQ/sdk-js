@@ -29,6 +29,7 @@ export default class LocalUser extends EventEmitter {
   _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
   _currentUserKey: tcrypto.SodiumKeyPair;
+  _inviteeKeys: { [string]: { appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair } } = {};
 
   _keyStore: KeyStore;
 
@@ -64,30 +65,21 @@ export default class LocalUser extends EventEmitter {
   }
 
   applyClaimInvite = async (claimInvite: VerifiedClaimInvite) => {
-    // TODO: FIXME: Implement this!
+    // XXX
+    // FIXME maybe we didn't use the current user key, we must put the public
+    // user key in the block!
+    const userKeyPair = this.currentUserKey;
 
-//     this._deviceId = deviceCreation.hash;
-//     await this._keyStore.setDeviceId(deviceCreation.hash);
+    const inviteeKeys = tcrypto.sealDecrypt(claimInvite.encrypted_invitee_private_keys, userKeyPair);
 
-//     this._blockGenerator = new BlockGenerator(
-//       this.trustchainId,
-//       this.privateSignatureKey,
-//       deviceCreation.hash,
-//     );
+    const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(inviteeKeys.slice(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE));
+    const tankerEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(inviteeKeys.slice(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE));
 
-//     const userKeyPair = deviceCreation.user_key_pair;
-//     // Possible for deviceCreation 1
-//     if (!userKeyPair)
-//       return;
+    const id = utils.toBase64(utils.concatArrays(claimInvite.app_invitee_signature_public_key, claimInvite.tanker_invitee_signature_public_key));
 
-//     const userKey = {
-//       privateKey: tcrypto.sealDecrypt(userKeyPair.encrypted_private_encryption_key, this._deviceEncryptionKeyPair),
-//       publicKey: userKeyPair.public_encryption_key,
-//     };
-//     await this._keyStore.addUserKey(userKey);
-//     this._userKeys[utils.toBase64(userKey.publicKey)] = userKey;
-//     this._currentUserKey = userKey;
-//     await this._recoverUserKeys();
+    this._inviteeKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
+
+    // TODO store them
   }
 
   applyDeviceCreation = async (deviceCreation: VerifiedDeviceCreation) => {
@@ -219,6 +211,8 @@ export default class LocalUser extends EventEmitter {
 
 
   findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
+
+  findInviteeKey = (recipient: Uint8Array) => this._inviteeKeys[utils.toBase64(recipient)]
 
   deviceKeys = (): DeviceKeys => ({
     signaturePair: this._deviceSignatureKeyPair,
