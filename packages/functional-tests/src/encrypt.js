@@ -94,7 +94,7 @@ const generateEncryptTests = (args: TestArgs, resourceType: string) => {
       });
 
       it('throws when decrypting truncated encrypted resource', async () => {
-        const encrypted = await bobLaptopEncrypt(clear);
+        const encrypted = await bobLaptopEncrypt(clear, { type: 'Uint8Array' });
         // shorter than version + resource ID: should not even try to decrypt
         const invalidEncrypted = encrypted.subarray(0, tcrypto.MAC_SIZE - 4);
         const exceptionType = resourceType === 'big binary' ? errors.NotEnoughData : errors.InvalidArgument;
@@ -102,7 +102,7 @@ const generateEncryptTests = (args: TestArgs, resourceType: string) => {
       });
 
       it('throws when calling decrypt with a corrupted buffer', async () => {
-        const encrypted = await bobLaptopEncrypt(clear);
+        const encrypted = await bobLaptopEncrypt(clear, { type: 'Uint8Array' });
         const corruptPos = encrypted.length - 4;
         encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
         // Depending of where the corruption occurs, one of these exceptions is thrown:
