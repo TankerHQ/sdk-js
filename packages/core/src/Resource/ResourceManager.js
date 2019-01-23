@@ -32,7 +32,7 @@ export function extractResourceIdV3(data: Uint8Array): Uint8Array {
   return data.subarray(0, tcrypto.MAC_SIZE);
 }
 
-export function getResourceId(encryptedData: Uint8Array): Uint8Array {
+export function getEncryptionFormat(encryptedData: Uint8Array): { version: number, versionLength: number } {
   let version;
 
   try {
@@ -49,6 +49,15 @@ export function getResourceId(encryptedData: Uint8Array): Uint8Array {
     throw new InvalidEncryptionFormat(`unhandled format version in getResourceId: '${version}'`);
 
   const versionLength = varint.decode.bytes;
+
+  return {
+    version,
+    versionLength,
+  };
+}
+
+export function getResourceId(encryptedData: Uint8Array): Uint8Array {
+  const { version, versionLength } = getEncryptionFormat(encryptedData);
   const minEncryptedDataLength = versionLength + tcrypto.MAC_SIZE;
 
   if (encryptedData.length < minEncryptedDataLength)
