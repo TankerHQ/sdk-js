@@ -80,7 +80,7 @@ export default class EncryptorStream extends Transform {
     return utils.toBase64(this._state.resourceIdKeyPair.resourceId);
   }
 
-  _transform(clearData, encoding, done) {
+  _transform(clearData: Uint8Array, encoding: ?string, done: Function) {
     if (!(clearData instanceof Uint8Array)) {
       done(new InvalidArgument('clearData', 'Uint8Array', clearData));
     } else {
@@ -88,7 +88,7 @@ export default class EncryptorStream extends Transform {
     }
   }
 
-  _flush(done) {
+  _flush(done: Function) {
     this._encryptorStream.on('end', done);
     this._resizerStream.end();
   }
