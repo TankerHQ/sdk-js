@@ -5,17 +5,16 @@ export const validateShareWithOptions = (value: any): bool => {
   if (typeof value !== 'object' || value === null)
     return false;
 
-  const keys = Object.keys(value);
+  const keysToCheck = ['shareWith', 'shareWithGroups', 'shareWithUsers'];
+  const keys = Object.keys(value).filter(key => keysToCheck.indexOf(key) !== -1);
 
   for (const key of keys) {
-    if (key === 'shareWith' || key === 'shareWithGroups' || key === 'shareWithUsers') {
-      if (!(value[key] instanceof Array))
-        return false;
-      if (value[key].some(el => typeof el !== 'string'))
-        return false;
-      if (key === 'shareWith' && keys.length > 1)
-        return false;
-    }
+    if (!(value[key] instanceof Array))
+      return false;
+    if (value[key].some(el => typeof el !== 'string'))
+      return false;
+    if (key === 'shareWith' && keys.length > 1)
+      return false;
   }
 
   return true;
