@@ -1,11 +1,11 @@
 // @flow
-import { Tanker } from '@tanker/core';
+import type { TankerInterface } from '@tanker/core';
 import { TrustchainHelper } from './Helpers';
 
 export type TestArgs = {
   trustchainHelper: TrustchainHelper,
-  aliceLaptop: Tanker,
-  bobLaptop: Tanker,
-  bobPhone: Tanker,
+  aliceLaptop: TankerInterface,
+  bobLaptop: TankerInterface,
+  bobPhone: TankerInterface,
   resources: { [resourceType: string]: { clear: string | Uint8Array, encryptionMethod: string, decryptionMethod: string } }
 };

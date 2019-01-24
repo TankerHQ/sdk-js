@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import uuid from 'uuid';
 
 import { utils, random } from '@tanker/crypto';
-import { Tanker as TankerCore } from '@tanker/core';
+import type { TankerInterface } from '@tanker/core';
 
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
 
@@ -31,7 +31,7 @@ export function makePrefix(length: number = 12) {
   return uuid.v4().replace('-', '').slice(0, length);
 }
 
-export function generateFunctionalTests(name: string, Tanker: any => TankerCore, dbPath?: string) {
+export function generateFunctionalTests(name: string, Tanker: any => TankerInterface, dbPath?: string) {
   if (!tankerUrl || !idToken) {
     // Those functional tests create a trustchain automatically and require a TANKER_TOKEN to run
     // They also require a TANKER_URL to know to which trustchain server they should talk to
@@ -39,7 +39,8 @@ export function generateFunctionalTests(name: string, Tanker: any => TankerCore,
     return;
   }
 
-  const makeTanker = trustchainId => (
+  const makeTanker = (trustchainId): TankerInterface => (
+    // $FlowFixMe We do return a valid TankerInterface
     new Tanker({
       trustchainId,
       dataStore: { dbPath, prefix: makePrefix() },
