@@ -2,7 +2,7 @@
 import sinon from 'sinon';
 
 import { utils } from '@tanker/crypto';
-import { Tanker as TankerCore, type b64string } from '@tanker/core';
+import type { TankerInterface, b64string } from '@tanker/core';
 
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
 import type { TestArgs } from './TestArgs';
@@ -29,7 +29,7 @@ const warnings = {
 
 export function generateFunctionalTests(
   name: string,
-  makeTanker: (trustchainId: b64string) => TankerCore,
+  makeTanker: (trustchainId: b64string) => TankerInterface,
 ) {
   if (!tankerUrl || !idToken) {
     // Those functional tests create a trustchain automatically and require a TANKER_TOKEN to run
