@@ -111,7 +111,7 @@ export default class DecryptorStream extends Transform {
     };
   }
 
-  async _transform(encryptedData, encoding, done) {
+  async _transform(encryptedData: Uint8Array, encoding: ?string, done: Function) {
     if (!(encryptedData instanceof Uint8Array))
       return done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
 
@@ -133,7 +133,7 @@ export default class DecryptorStream extends Transform {
     this._resizerStream.write(data, done);
   }
 
-  _flush(done) {
+  _flush(done: Function) {
     this._decryptionStream.on('end', done);
     this._resizerStream.end();
   }

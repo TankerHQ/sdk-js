@@ -30,13 +30,13 @@ export default class ResizerStream extends Transform {
     }
   }
 
-  _transform(chunk, encoding, callback) {
+  _transform(chunk: Uint8Array, encoding: ?string, callback: Function) {
     this._buffer.push(chunk);
     this._pushChunks();
     callback();
   }
 
-  _flush(callback) {
+  _flush(callback: Function) {
     this._pushChunks();
     this._pushLastChunk();
     callback();
