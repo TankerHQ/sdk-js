@@ -1,10 +1,10 @@
 // @flow
 class TaskQueue {
-  _queue = [];
+  _queue: Array<() => void> = [];
   _running = false;
 
   _ready(): Promise<void> {
-    const handle = new Promise(resolve => this._queue.push(resolve));
+    const handle: Promise<void> = new Promise(resolve => this._queue.push(resolve));
 
     if (!this._running) {
       this._dispatchTask();

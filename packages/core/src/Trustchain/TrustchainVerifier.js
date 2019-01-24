@@ -239,7 +239,9 @@ export default class TrustchainVerifier {
     });
   }
 
-  async _takeOneDeviceOfEachUsers(nextDevicesToVerify) {
+  async _takeOneDeviceOfEachUsers(
+    nextDevicesToVerify: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>
+  ): Promise<Array<Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>>> {
     const remainingDevices = [];
     const firstDeviceOfEachUser = nextDevicesToVerify.filter((entry, index, array) => {
       if (index && utils.equalArray(array[index - 1].user_id, entry.user_id)) {
