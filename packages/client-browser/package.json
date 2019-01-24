@@ -8,6 +8,7 @@
   "dependencies": {
     "@tanker/core": "0.0.1",
     "@tanker/datastore-dexie-browser": "0.0.1",
+    "@tanker/file-polyfill": "0.0.1",
     "@tanker/stream-browser": "0.0.1"
   }
 }
