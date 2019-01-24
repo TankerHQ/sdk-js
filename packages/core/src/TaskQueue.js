@@ -4,7 +4,8 @@ class TaskQueue {
   _running = false;
 
   _ready(): Promise<void> {
-    const handle = new Promise(resolve => this._queue.push(resolve));
+    // $FlowFixMe We do know that the promise will be resolve with no argument
+    const handle: Promise<void> = new Promise(resolve => this._queue.push(resolve));
 
     if (!this._running) {
       this._dispatchTask();
