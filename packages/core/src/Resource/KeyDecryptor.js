@@ -67,7 +67,6 @@ export class KeyDecryptor {
       } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
         resourceKey = this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
       } else if (isKeyPublishToInvitee(keyPublishEntry.nature)) {
-        console.log('#####');
         resourceKey = this.decryptResourceKeyPublishedToInvitee(keyPublishEntry);
       } else {
         resourceKey = Promise.resolve(null);

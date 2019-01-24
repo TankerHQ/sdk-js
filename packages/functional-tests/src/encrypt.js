@@ -158,7 +158,7 @@ const generateEncryptTests = (args: TestArgs) => {
           await expect(args.aliceLaptop.claimInvite({ email }, verifCode, sigKeyPair.privateKey, encKeyPair.privateKey)).to.be.fulfilled;
         });
 
-        it.only('decrypt clained block', async () => {
+        it('decrypt claimed block', async () => {
           const email = 'alice@tanker-functional-test.io';
           const sigKeyPair = tcrypto.makeSignKeyPair();
           const encKeyPair = tcrypto.makeEncryptionKeyPair();
