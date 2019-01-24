@@ -386,39 +386,6 @@ export class Tanker extends EventEmitter {
     return opts;
   }
 
-  async encryptData(plain: Uint8Array, options?: EncryptionOptions): Promise<Uint8Array> {
-    this.assert(this.OPEN, 'encrypt data');
-
-    if (!(plain instanceof Uint8Array))
-      throw new InvalidArgument('plain', 'Uint8Array', plain);
-
-    const opts = this._parseEncryptionOptions(options);
-
-    return this._session.dataProtector.encryptAndShareData(plain, opts);
-  }
-
-  async encrypt(plain: string, options?: EncryptionOptions): Promise<Uint8Array> {
-    this.assert(this.OPEN, 'encrypt');
-
-    if (typeof plain !== 'string')
-      throw new InvalidArgument('plain', 'string', plain);
-
-    return this.encryptData(utils.fromString(plain), options);
-  }
-
-  async decryptData(encryptedData: Uint8Array): Promise<Uint8Array> {
-    this.assert(this.OPEN, 'decrypt data');
-
-    if (!(encryptedData instanceof Uint8Array))
-      throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
-
-    return this._session.dataProtector.decryptData(encryptedData);
-  }
-
-  async decrypt(cipher: Uint8Array): Promise<string> {
-    return utils.toString(await this.decryptData(cipher));
-  }
-
   async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions | Array<string>): Promise<void> {
     this.assert(this.OPEN, 'share');
 

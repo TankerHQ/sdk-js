@@ -109,11 +109,6 @@ describe('Tanker', () => {
       await expect(tanker.acceptDevice('V1d0ak5XTXdlRVJSYmxacFRURktkbGxXWXpGaWEyeElZVWQ0YW1KV1ZUaz0=')).to.be.rejectedWith(InvalidSessionStatus);
     });
 
-    it('should not allow to encrypt/decrypt', async () => {
-      await expect(tanker.encrypt('data')).to.be.rejectedWith(InvalidSessionStatus);
-      await expect(tanker.decrypt(random(100))).to.be.rejectedWith(InvalidSessionStatus);
-    });
-
     it('should not allow to create a ChunkedEncryptor', async () => {
       await expect(tanker.makeChunkEncryptor()).to.be.rejectedWith(InvalidSessionStatus);
     });
@@ -238,14 +233,6 @@ describe('Tanker', () => {
 
       before(() => warnings.silence(/deprecated/));
       after(() => warnings.restore());
-
-      it('encrypt() should throw when given an invalid shareWith', async () => {
-        for (let i = 0; i < notShareWithValues.length; i++) {
-          const v = notShareWithValues[i];
-          // $FlowExpectedError
-          await expect(tanker.encrypt('test', v), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);
-        }
-      });
 
       it('share() should throw when given an invalid shareWith', async () => {
         notShareWithValues.push(undefined);
