@@ -1,5 +1,5 @@
 // @flow
-import { utils } from '@tanker/crypto';
+import { utils, type b64string } from '@tanker/crypto';
 
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
@@ -33,7 +33,7 @@ export default class TrustchainPuller {
   _userId: Uint8Array;
   _closing: bool = false;
 
-  _deviceIdToUserId = new Map();
+  _deviceIdToUserId = new Map<b64string, b64string>();
 
 
   constructor(client: Client, userId: Uint8Array, trustchainStore: TrustchainStore, unverifiedStore: UnverifiedStore, trustchainVerifier: TrustchainVerifier) {

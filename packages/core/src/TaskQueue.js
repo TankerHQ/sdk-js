@@ -4,7 +4,7 @@ class TaskQueue {
   _running = false;
 
   _ready(): Promise<void> {
-    const handle = new Promise(resolve => this._queue.push(resolve));
+    const handle = new Promise<void>(resolve => this._queue.push(resolve));
 
     if (!this._running) {
       this._dispatchTask();
