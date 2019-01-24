@@ -2,12 +2,11 @@
 import uuid from 'uuid';
 import Socket from 'socket.io-client';
 
-import { Tanker } from '@tanker/core';
+import type { TankerInterface } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
 
-// $FlowIKnow
 import { createUserTokenFromSecret } from '@tanker/core/src/__tests__/TestSessionTokens';
 import { tcrypto, utils, createUserSecretB64, obfuscateUserId, type b64string } from '@tanker/crypto';
 
@@ -46,7 +45,7 @@ export function forgeUserToken(userId: string, trustchainId: Uint8Array, trustch
   return token;
 }
 
-export async function syncTankers(...tankers: Array<Tanker>): Promise<void> {
+export async function syncTankers(...tankers: Array<TankerInterface>): Promise<void> {
   await Promise.all(tankers.map(t => t._session._trustchain && t._session._trustchain.ready())); // eslint-disable-line no-underscore-dangle
 }
 
