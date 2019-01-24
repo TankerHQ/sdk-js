@@ -150,7 +150,7 @@ const generateRevocationTests = (args: TestArgs) => {
       await syncTankers(args.aliceLaptop, args.bobLaptop);
 
       const message = 'I love you';
-      const encrypted = await args.aliceLaptop.encrypt(message, { shareWith: [bobId] });
+      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithUsers: [bobId] });
 
       const clear = await args.bobLaptop.decrypt(encrypted);
       expect(clear).to.eq(message);
