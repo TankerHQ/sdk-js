@@ -30,6 +30,14 @@ src = "packages/client-browser/package.json"
 search = '"@tanker/datastore-dexie-browser": "{current_version}"'
 
 [[file]]
+src = "packages/client-browser/package.json"
+search = '"@tanker/file-ponyfill": "{current_version}"'
+
+[[file]]
+src = "packages/client-browser/package.json"
+search = '"@tanker/stream-browser": "{current_version}"'
+
+[[file]]
 src = "packages/client-node/package.json"
 search = '"version": "{current_version}"'
 
@@ -40,6 +48,10 @@ search = '"@tanker/core": "{current_version}"'
 [[file]]
 src = "packages/client-node/package.json"
 search = '"@tanker/datastore-pouchdb-node": "{current_version}"'
+
+[[file]]
+src = "packages/client-node/package.json"
+search = '"@tanker/stream-node": "{current_version}"'
 
 [[file]]
 src = "packages/client-node/package.json"
