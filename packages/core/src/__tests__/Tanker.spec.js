@@ -43,42 +43,6 @@ describe('Tanker', () => {
       expect(() => new Tanker({ trustchainId: 'ok', dataStore: { ...dataStoreConfig, prefix: makePrefix() }, sdkType: 'test' })).not.to.throw;
     });
 
-    it('class should have configurable defaults', () => {
-      const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
-      const TankerA = Tanker.defaults({ trustchainId: 'trustchainA', url: 'http://default.io', dataStore, sdkType: 'test' });
-      // $FlowExpectedError
-      let tankerA = new TankerA({});
-
-      // check types
-      expect(tankerA instanceof TankerA).to.be.true;
-      expect(tankerA instanceof Tanker).to.be.true;
-
-      // check defaults applied
-      expect(tankerA.options.trustchainId).to.equal('trustchainA');
-      expect(tankerA.options.url).to.equal('http://default.io');
-
-      // check defaults overriden by new options
-      tankerA = new TankerA({ trustchainId: 'other', url: 'http://modified.io', sdkType: 'test' });
-      expect(tankerA.options.trustchainId).to.equal('other');
-      expect(tankerA.options.url).to.equal('http://modified.io');
-
-      // check no defaults from TankerA applied if using Tanker constructor
-      const tanker = new Tanker({ trustchainId: 'another', dataStore, sdkType: 'test' });
-      expect(tanker.options.trustchainId).to.equal('another');
-      expect(tanker.options.url).to.not.equal('http://default.io');
-      expect(tanker.options.url).to.not.equal('http://modified.io');
-    });
-
-    it('class should have chainable defaults', () => {
-      const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
-      const TankerB = Tanker.defaults({ trustchainId: 'trustchainA', url: 'http://default.io' })
-                            .defaults({ trustchainId: 'trustchainB', dataStore, sdkType: 'test' }); // eslint-disable-line indent
-      // $FlowExpectedError
-      const tankerB = new TankerB({});
-      expect(tankerB.options.url).to.equal('http://default.io');
-      expect(tankerB.options.trustchainId).to.equal('trustchainB');
-    });
-
     it('tanker options should accept defaults', () => {
       const options = { trustchainId: 'id' };
       const defaultOptions = { url: 'http://default.io', sdkType: 'default' };

@@ -92,17 +92,6 @@ export class Tanker extends EventEmitter {
     return this.UNLOCK_REQUIRED;
   }
 
-  // Inspired by PouchDB.defaults(), see:
-  // https://github.com/pouchdb/pouchdb/blob/e35f949/packages/node_modules/pouchdb-core/src/setup.js#L92
-  static defaults(defaultOptions: TankerDefaultOptions) {
-    // Anonymous class that remembers the default options
-    return class extends this {
-      constructor(options: TankerOptions) {
-        super(optionsWithDefaults(options, defaultOptions));
-      }
-    };
-  }
-
   constructor(options: TankerOptions) {
     super();
 
