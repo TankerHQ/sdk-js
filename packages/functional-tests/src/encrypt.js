@@ -155,7 +155,7 @@ const generateEncryptTests = (args: TestArgs) => {
           await args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] });
 
           const verifCode = await args.aliceLaptop._getClaimVerificationCode(email); // eslint-disable-line no-underscore-dangle
-          await expect(args.aliceLaptop.claimInvite({ email }, verifCode, sigKeyPair.privateKey, encKeyPair.privateKey)).to.be.fulfilled;
+          await expect(args.aliceLaptop.claimInvite({ email }, verifCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
         });
 
         it('decrypt claimed block', async () => {
@@ -172,7 +172,7 @@ const generateEncryptTests = (args: TestArgs) => {
           const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] });
 
           const verifCode = await args.aliceLaptop._getClaimVerificationCode(email); // eslint-disable-line no-underscore-dangle
-          await args.aliceLaptop.claimInvite({ email }, verifCode, sigKeyPair.privateKey, encKeyPair.privateKey);
+          await args.aliceLaptop.claimInvite({ email }, verifCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
           const decrypted = await args.aliceLaptop.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
