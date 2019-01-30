@@ -2,7 +2,7 @@
 import sinon from 'sinon';
 import { expect } from './chai';
 
-import { decryptAEADv1, decryptAEADv2, encryptAEADv1, encryptAEADv2, extractMac } from '../aead';
+import { decryptAEADv1, decryptAEADv2, decryptAEADv3, encryptAEADv1, encryptAEADv2, encryptAEADv3, extractMac } from '../aead';
 import { MAC_SIZE, SYMMETRIC_KEY_SIZE } from '../tcrypto';
 import { fromString, toString } from '../utils';
 
@@ -26,6 +26,13 @@ const resV2 = new Uint8Array([
   0x5e, 0xe3, 0x6a, 0x75, 0xe5, 0x9f, 0xd8, 0x1d, 0x63, 0x47, 0x9d
 ]);
 
+// No IV
+const resV3 = new Uint8Array([
+  0x0c, 0xfb, 0xe5, 0xfd, 0xe7, 0x53, 0x56, 0x56, 0x5f, 0x5e, 0xe3,
+  0x6a, 0x75, 0xe5, 0x9f, 0xd8, 0x1d, 0x63, 0x47, 0x9d
+]);
+
+
 // IV at the end (...)
 const resV1WithAssociatedData = new Uint8Array([
   0x0c, 0xfb, 0xe5, 0xfd, 0x51, 0x76, 0xeb, 0x1e, 0xe8, 0x59, 0x82,
@@ -40,6 +47,12 @@ const resV2WithAssociatedData = new Uint8Array([
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x0c, 0xfb, 0xe5, 0xfd, 0x51, 0x76, 0xeb, 0x1e, 0xe8,
   0x59, 0x82, 0xa1, 0x37, 0x72, 0xad, 0x5e, 0x30, 0xeb, 0x6d, 0xfa
+]);
+
+// No IV
+const resV3WithAssociatedData = new Uint8Array([
+  0x0c, 0xfb, 0xe5, 0xfd, 0x51, 0x76, 0xeb, 0x1e, 0xe8, 0x59, 0x82,
+  0xa1, 0x37, 0x72, 0xad, 0x5e, 0x30, 0xeb, 0x6d, 0xfa
 ]);
 
 // On all platforms, make getRandomValues a no-op method, i.e. it
@@ -92,11 +105,13 @@ function testAeadEncrypt(name, aeadFunc, testVector, testVectorWithAssociatedDat
       await expect(promise).to.be.rejected;
     });
 
-    it('Should not give the same result twice', async () => {
-      const res1 = await aeadFunc(goodKey, fromString('test'));
-      const res2 = await aeadFunc(goodKey, fromString('test'));
-      expect(res1).to.not.be.deep.equal(res2);
-    });
+    if (['decryptAEADv3', 'encryptAEADv3'].indexOf(name) === -1) {
+      it('Should not give the same result twice', async () => {
+        const res1 = await aeadFunc(goodKey, fromString('test'));
+        const res2 = await aeadFunc(goodKey, fromString('test'));
+        expect(res1).to.not.be.deep.equal(res2);
+      });
+    }
 
     describe('given a non random IV', () => {
       let unstubCrypto;
@@ -115,7 +130,7 @@ function testAeadEncrypt(name, aeadFunc, testVector, testVectorWithAssociatedDat
         expect(res1).to.be.deep.equal(res2);
       });
 
-      it('Should be ciphertext + iv', async () => {
+      it('Should return the expected result', async () => {
         const res1 = await aeadFunc(goodKey, fromString('test'));
         expect(res1).to.be.deep.equal(testVector);
       });
@@ -169,7 +184,9 @@ describe('extractMac', () => {
 
 describe('Crypto formats', () => {
   testAeadEncrypt('encryptAEADv1', encryptAEADv1, resV1, resV1WithAssociatedData);
-  testAeadEncrypt('encryptAEADv2', encryptAEADv2, resV2, resV2WithAssociatedData);
   testAeadDecrypt('decryptAEADv1', decryptAEADv1, resV1, resV1WithAssociatedData);
+  testAeadEncrypt('encryptAEADv2', encryptAEADv2, resV2, resV2WithAssociatedData);
   testAeadDecrypt('decryptAEADv2', decryptAEADv2, resV2, resV2WithAssociatedData);
+  testAeadEncrypt('encryptAEADv3', encryptAEADv3, resV3, resV3WithAssociatedData);
+  testAeadDecrypt('decryptAEADv3', decryptAEADv3, resV3, resV3WithAssociatedData);
 });

@@ -9,7 +9,7 @@ import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverified
 import { KeyDecryptor } from './KeyDecryptor';
 import ResourceStore from './ResourceStore';
 
-export const currentVersion = 2;
+export const currentVersion = 3;
 
 export type Resource = {
   key: Uint8Array,
@@ -33,7 +33,7 @@ export function getEncryptionFormat(encryptedData: Uint8Array): { version: numbe
     }
   }
 
-  if (version < 1 || version > 2)
+  if (version < 1 || version > 3)
     throw new InvalidEncryptionFormat(`unhandled format version in getResourceId: '${version}'`);
 
   const versionLength = varint.decode.bytes;
@@ -73,7 +73,7 @@ export class ResourceManager {
 
   static async makeResource(plain: Uint8Array): Promise<Resource> {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const buffer = await aead.encryptAEADv2(key, plain);
+    const buffer = await aead.encryptAEADv3(key, plain);
     const resourceId = extractResourceId(buffer);
     return { key, resourceId, encryptedData: buffer, version: currentVersion };
   }
