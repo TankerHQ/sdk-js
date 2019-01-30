@@ -357,10 +357,10 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async claimInvite(invitee: { email: string }, verificationCode: string, appInvitePrivateSignatureKey: Uint8Array, appInvitePrivateEncryptionKey: Uint8Array): Promise<void> {
+  async claimInvite(invitee: { email: string }, verificationCode: string, appInvitePrivateSignatureKey: string, appInvitePrivateEncryptionKey: string): Promise<void> {
     this.assert(this.isOpen, 'claim invite');
 
-    return this._session.dataProtector.claimInvite(invitee, verificationCode, appInvitePrivateSignatureKey, appInvitePrivateEncryptionKey);
+    return this._session.dataProtector.claimInvite(invitee, verificationCode, utils.fromBase64(appInvitePrivateSignatureKey), utils.fromBase64(appInvitePrivateEncryptionKey));
   }
 
   // FIXME: This function is only intended for internal tests, will not work in production.
