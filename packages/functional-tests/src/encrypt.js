@@ -135,8 +135,8 @@ const generateEncryptTests = (args: TestArgs) => {
             trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
             target: 'email',
             value: 'alice@tanker-functional-test.io',
-            public_signature_key: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-            public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+            public_signature_key: utils.toBase64(random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)),
+            public_encryption_key: utils.toBase64(random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)),
           });
           await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] })).to.be.fulfilled;
         });
@@ -149,8 +149,8 @@ const generateEncryptTests = (args: TestArgs) => {
             trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
             target: 'email',
             value: email,
-            public_signature_key: sigKeyPair.publicKey,
-            public_encryption_key: encKeyPair.publicKey,
+            public_signature_key: utils.toBase64(sigKeyPair.publicKey),
+            public_encryption_key: utils.toBase64(encKeyPair.publicKey),
           });
           await args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] });
 
@@ -162,11 +162,13 @@ const generateEncryptTests = (args: TestArgs) => {
           const email = 'alice@tanker-functional-test.io';
           const sigKeyPair = tcrypto.makeSignKeyPair();
           const encKeyPair = tcrypto.makeEncryptionKeyPair();
-          const invitee = {
-            email,
-            inviteePublicSignatureKey: sigKeyPair.publicKey,
-            inviteePublicEncryptionKey: encKeyPair.publicKey,
-          };
+          const invitee = utils.toB64Json({
+            trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
+            target: 'email',
+            value: email,
+            public_signature_key: utils.toBase64(sigKeyPair.publicKey),
+            public_encryption_key: utils.toBase64(encKeyPair.publicKey),
+          });
           const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] });
 
           const verifCode = await args.aliceLaptop._getClaimVerificationCode(email); // eslint-disable-line no-underscore-dangle
@@ -260,8 +262,8 @@ const generateEncryptTests = (args: TestArgs) => {
           trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
           target: 'email',
           value: 'alice@tanker-functional-test.io',
-          public_signature_key: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-          public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          public_signature_key: utils.toBase64(random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)),
+          public_encryption_key: utils.toBase64(random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)),
         });
         const cipherText = await args.bobLaptop.encrypt(clearText);
         const resourceId = await args.bobLaptop.getResourceId(cipherText);

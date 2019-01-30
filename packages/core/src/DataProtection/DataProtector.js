@@ -104,8 +104,8 @@ export default class DataProtector {
       const tankerPublicKeys = await this._client.getInviteeKeys(provisionalIds);
       const invitees = tankerPublicKeys.map((e, i) => ({
         ...e,
-        appSignaturePublicKey: recipientInvitees[i].publicPreshareSignatureKey,
-        appEncryptionPublicKey: recipientInvitees[i].publicPreshareEncryptionKey,
+        appSignaturePublicKey: utils.fromBase64(recipientInvitees[i].publicPreshareSignatureKey),
+        appEncryptionPublicKey: utils.fromBase64(recipientInvitees[i].publicPreshareEncryptionKey),
       }));
       blocks = blocks.concat(this._makeInviteeKeyPublishBlocks(keyResourceIds, invitees));
     }
