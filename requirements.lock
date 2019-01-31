@@ -28,7 +28,7 @@ six==1.11.0
 sniffio==1.0.0
 sortedcontainers==2.1.0
 tabulate==0.8.2
-tankersdk==1.9.1
+tankersdk==1.9.1.post3 ; sys_platform == "linux"
 tbump==5.0.3
 toml==0.10.0
 trio==0.9.0
