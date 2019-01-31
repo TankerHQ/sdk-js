@@ -59,6 +59,10 @@ search = '"@tanker/datastore-base": "{current_version}"'
 
 [[file]]
 src = "packages/core/package.json"
+search = '"@tanker/errors": "{current_version}"'
+
+[[file]]
+src = "packages/core/package.json"
 search = '"@tanker/datastore-pouchdb-memory": "{current_version}"'
 
 [[file]]
@@ -112,3 +116,7 @@ search = '"@tanker/datastore-pouchdb-base": "{current_version}"'
 [[file]]
 src = "packages/datastore/tests/package.json"
 search = '"@tanker/datastore-base": "{current_version}"'
+
+[[file]]
+src = "packages/errors/package.json"
+search = '"version": "{current_version}"'
