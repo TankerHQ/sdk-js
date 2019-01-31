@@ -1,11 +1,11 @@
 // @flow
 import sinon from 'sinon';
-import uuid from 'uuid';
 
 import { utils } from '@tanker/crypto';
-import { Tanker as TankerCore } from '@tanker/core';
+import { Tanker as TankerCore, type b64string } from '@tanker/core';
 
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
+import type { TestArgs } from './TestArgs';
 
 import generateChunkEncryptor from './chunkEncryptor';
 import generateEncryptTests from './encrypt';
@@ -26,11 +26,10 @@ const warnings = {
   restore: function restore() { if (this._handle) { this._handle.restore(); this._handle = null; } }
 };
 
-export function makePrefix(length: number = 12) {
-  return uuid.v4().replace('-', '').slice(0, length);
-}
-
-export function generateFunctionalTests(name: string, Tanker: any => TankerCore, dbPath?: string) {
+export function generateFunctionalTests(
+  name: string,
+  makeTanker: (trustchainId: b64string) => TankerCore,
+) {
   if (!tankerUrl || !idToken) {
     // Those functional tests create a trustchain automatically and require a TANKER_TOKEN to run
     // They also require a TANKER_URL to know to which trustchain server they should talk to
@@ -38,26 +37,20 @@ export function generateFunctionalTests(name: string, Tanker: any => TankerCore,
     return;
   }
 
-  const makeTanker = trustchainId => (
-    new Tanker({
-      trustchainId,
-      dataStore: { dbPath, prefix: makePrefix() },
-      url: tankerUrl,
-    })
-  );
-
   describe(`functional-tests (${name})`, function () { // eslint-disable-line func-names
     this.timeout(30000);
 
-    const args = {};
+    const args: TestArgs = {};
 
     before(async () => {
       warnings.silence(/deprecated/);
 
       args.trustchainHelper = await TrustchainHelper.newTrustchain();
-      args.bobLaptop = makeTanker(utils.toBase64(args.trustchainHelper.trustchainId));
-      args.bobPhone = makeTanker(utils.toBase64(args.trustchainHelper.trustchainId));
-      args.aliceLaptop = makeTanker(utils.toBase64(args.trustchainHelper.trustchainId));
+      const b64TrustchainId = utils.toBase64(args.trustchainHelper.trustchainId);
+
+      args.bobLaptop = makeTanker(b64TrustchainId);
+      args.bobPhone = makeTanker(b64TrustchainId);
+      args.aliceLaptop = makeTanker(b64TrustchainId);
     });
 
     after(async () => {

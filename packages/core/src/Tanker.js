@@ -48,6 +48,22 @@ export type TankerOptions = {|
   trustchainId: b64string
 |};
 
+export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefaultOptions) {
+  if (!options || typeof options !== 'object' || options instanceof Array)
+    throw new InvalidArgument('options', 'object', options);
+
+  if (!defaults || typeof defaults !== 'object' || defaults instanceof Array)
+    throw new InvalidArgument('defaults', 'object', defaults);
+
+  const result = { ...defaults, ...options };
+
+  // Deep merge dataStore option
+  if ('dataStore' in defaults)
+    result.dataStore = { ...defaults.dataStore, ...options.dataStore };
+
+  return result;
+}
+
 export function getResourceId(data: Uint8Array): b64string {
   console.warn('\'getResourceId\' util function is deprecated since version 1.7.2, use the method on a Tanker instance instead, e.g. tanker.getResourceId(...)');
 
@@ -74,22 +90,6 @@ export class Tanker extends EventEmitter {
   get DEVICE_CREATION(): number {
     console.warn('Property `DEVICE_CREATION` has been deprecated since version 1.7.0, use `UNLOCK_REQUIRED` instead.');
     return this.UNLOCK_REQUIRED;
-  }
-
-  // Inspired by PouchDB.defaults(), see:
-  // https://github.com/pouchdb/pouchdb/blob/e35f949/packages/node_modules/pouchdb-core/src/setup.js#L92
-  static defaults(defaultOptions: TankerDefaultOptions) {
-    // Anonymous class that remembers the default options
-    return class extends this {
-      constructor(options: TankerOptions) {
-        const optionsWithDefaults = { ...defaultOptions, ...options };
-
-        // Deep merge dataStore option
-        optionsWithDefaults.dataStore = { ...defaultOptions.dataStore, ...options.dataStore };
-
-        super(optionsWithDefaults);
-      }
-    };
   }
 
   constructor(options: TankerOptions) {

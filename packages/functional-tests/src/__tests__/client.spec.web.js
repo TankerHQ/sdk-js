@@ -1,7 +1,18 @@
 // @flow
-import { generateFunctionalTests } from '@tanker/functional-tests';
-
 import Tanker from '@tanker/client-browser';
+import { type b64string } from '@tanker/core';
 
-// $FlowFixMe Tanker needs a real flow interface
-generateFunctionalTests('client-browser', Tanker.defaults({ sdkType: 'test' }));
+import { tankerUrl, makePrefix } from '../Helpers';
+import { generateFunctionalTests } from '../functional';
+
+const makeTanker = (trustchainId: b64string): Tanker => (
+  new Tanker({
+    trustchainId,
+    // $FlowIKnow adapter key is passed as a default option by @tanker/client-browser
+    dataStore: { prefix: makePrefix() },
+    sdkType: 'test',
+    url: tankerUrl,
+  })
+);
+
+generateFunctionalTests('client-browser', makeTanker);
