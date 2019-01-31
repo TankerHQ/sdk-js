@@ -1,3 +1,5 @@
+image: 10.100.0.1:5000/ci-js:3
+
 stages:
   - check
   - deploy
@@ -10,7 +12,7 @@ check/linux:
   except:
     - schedules
   script:
-    - xvfb-run dmenv run -- python run-ci.py check --runner linux
+    - dmenv run -- python run-ci.py check --runner linux
     - mv coverage/lcov-report lcov-report
   artifacts:
     paths:
@@ -57,8 +59,8 @@ check/linux/nightly:
   only:
     - schedules
   script:
-    - xvfb-run dmenv run -- python run-ci.py check --runner linux --nightly
-    - xvfb-run dmenv run -- python run-ci.py upgrade
+    - dmenv run -- python run-ci.py check --runner linux --nightly
+    - dmenv run -- python run-ci.py upgrade
   tags:
     - linux
 
@@ -123,7 +125,7 @@ check/upgrade:
   except:
     - master
   script:
-    - xvfb-run dmenv run -- python run-ci.py upgrade
+    - dmenv run -- python run-ci.py upgrade
   tags:
     - linux
 
@@ -132,6 +134,6 @@ check/upgrade/master:
   only:
     - master
   script:
-    - xvfb-run dmenv run -- python run-ci.py upgrade
+    - dmenv run -- python run-ci.py upgrade
   tags:
     - linux
