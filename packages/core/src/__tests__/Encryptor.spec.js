@@ -2,7 +2,7 @@
 
 import varint from 'varint';
 
-import { tcrypto, utils } from '@tanker/crypto';
+import { utils, aead } from '@tanker/crypto';
 
 import { expect } from './chai';
 
@@ -30,7 +30,7 @@ describe('Encryptor', () => {
 
     const { resourceId, encryptedData } = await encryptData(clearData);
 
-    const extractedMac = encryptedData.subarray(-tcrypto.MAC_SIZE);
+    const extractedMac = aead.extractMac(encryptedData);
     expect(resourceId).to.deep.equal(extractedMac);
   });
 

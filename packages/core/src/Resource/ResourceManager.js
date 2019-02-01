@@ -3,13 +3,13 @@
 import varint from 'varint';
 
 import { tcrypto, random, aead, type Key } from '@tanker/crypto';
-import { ResourceNotFound, InvalidEncryptionFormat } from '../errors';
+import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument } from '../errors';
 import Trustchain from '../Trustchain/Trustchain';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { KeyDecryptor } from './KeyDecryptor';
 import ResourceStore from './ResourceStore';
 
-export const currentVersion = 2;
+export const currentVersion = 3;
 
 export type Resource = {
   key: Uint8Array,
@@ -18,16 +18,42 @@ export type Resource = {
   version: number
 }
 
-export function getResourceId(serializedData: Uint8Array): Uint8Array {
-  const version = varint.decode(serializedData);
-  const binaryData = serializedData.subarray(varint.decode.bytes);
-  switch (version) {
-    case 1:
-    case 2:
-      return aead.extractResourceId(binaryData);
-    default:
-      throw new InvalidEncryptionFormat(`unhandled format version in getResourceId: '${version}'`);
+const extractResourceId = (ciphertext: Uint8Array): Uint8Array => aead.extractMac(ciphertext);
+
+export function getEncryptionFormat(encryptedData: Uint8Array): { version: number, versionLength: number } {
+  let version;
+
+  try {
+    version = varint.decode(encryptedData);
+  } catch (err) {
+    if (err instanceof RangeError) {
+      throw new InvalidEncryptionFormat('invalid format version in getResourceId (bad varint)');
+    } else {
+      throw err;
+    }
   }
+
+  if (version < 1 || version > 3)
+    throw new InvalidEncryptionFormat(`unhandled format version in getResourceId: '${version}'`);
+
+  const versionLength = varint.decode.bytes;
+
+  return {
+    version,
+    versionLength,
+  };
+}
+
+export function getResourceId(encryptedData: Uint8Array): Uint8Array {
+  const { versionLength } = getEncryptionFormat(encryptedData);
+  const minEncryptedDataLength = versionLength + tcrypto.MAC_SIZE;
+
+  if (encryptedData.length < minEncryptedDataLength)
+    throw new InvalidArgument('encryptedData', `Uint8Array(${minEncryptedDataLength}+)`, encryptedData);
+
+  const subData = encryptedData.subarray(versionLength);
+
+  return extractResourceId(subData);
 }
 
 export class ResourceManager {
@@ -47,8 +73,8 @@ export class ResourceManager {
 
   static async makeResource(plain: Uint8Array): Promise<Resource> {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const buffer = await aead.encryptAEADv2(key, plain);
-    const resourceId = aead.extractResourceId(buffer);
+    const buffer = await aead.encryptAEADv3(key, plain);
+    const resourceId = extractResourceId(buffer);
     return { key, resourceId, encryptedData: buffer, version: currentVersion };
   }
 

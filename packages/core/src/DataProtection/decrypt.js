@@ -14,6 +14,8 @@ export async function decryptData(key: Uint8Array, encryptedData: Uint8Array): P
       return aead.decryptAEADv1(key, binaryData);
     case 2:
       return aead.decryptAEADv2(key, binaryData);
+    case 3:
+      return aead.decryptAEADv3(key, binaryData);
     default:
       throw new InvalidEncryptionFormat(`unhandled format version in decryptData: '${version}'`);
   }
