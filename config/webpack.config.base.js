@@ -91,6 +91,7 @@ const makeBaseConfig = ({ mode, target }) => {
           NODE_ENV: JSON.stringify(mode),
           TANKER_TOKEN: JSON.stringify(process.env.TANKER_TOKEN),
           TANKER_URL: JSON.stringify(process.env.TANKER_URL),
+          CI: JSON.stringify(process.env.CI),
         },
         __DEVELOPMENT__: mode === 'development',
         __PRODUCTION__: mode === 'production',

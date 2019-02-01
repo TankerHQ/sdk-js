@@ -33,6 +33,9 @@ export function generateFunctionalTests(
   if (!tankerUrl || !idToken) {
     // Those functional tests create a trustchain automatically and require a TANKER_TOKEN to run
     // They also require a TANKER_URL to know to which trustchain server they should talk to
+    if (process.env.CI) {
+      throw new Error('Functional tests should be running, check the configuration');
+    }
     console.log('skipping functional tests'); // eslint-disable-line no-console
     return;
   }
