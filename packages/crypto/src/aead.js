@@ -5,38 +5,46 @@ import * as tcrypto from './tcrypto';
 import { random } from './random';
 import { concatArrays } from './utils';
 
+export function encryptAEAD(key: Uint8Array, iv: Uint8Array, plaintext: Uint8Array, associatedData?: Uint8Array): Uint8Array {
+  return sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(plaintext, associatedData, null, iv, key);
+}
+
+export function decryptAEAD(key: Uint8Array, iv: Uint8Array, ciphertext: Uint8Array, associatedData?: Uint8Array): Uint8Array {
+  return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, ciphertext, associatedData, iv, key);
+}
+
 export async function encryptAEADv1(key: Uint8Array, plaintext: Uint8Array, associatedData?: Uint8Array): Promise<Uint8Array> {
   const iv = random(tcrypto.XCHACHA_IV_SIZE);
-  const ciphertext = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(plaintext, associatedData, null, iv, key);
+  const ciphertext = encryptAEAD(key, iv, plaintext, associatedData);
   return concatArrays(ciphertext, iv);
 }
 
 export async function decryptAEADv1(key: Uint8Array, ciphertext: Uint8Array, associatedData?: Uint8Array): Promise<Uint8Array> {
   const rawCiphertext = ciphertext.subarray(0, ciphertext.length - tcrypto.XCHACHA_IV_SIZE);
   const iv = ciphertext.subarray(ciphertext.length - tcrypto.XCHACHA_IV_SIZE);
-  return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, rawCiphertext, associatedData, iv, key);
+  return decryptAEAD(key, iv, rawCiphertext, associatedData);
 }
 
 export async function encryptAEADv2(key: Uint8Array, plaintext: Uint8Array, associatedData?: Uint8Array): Promise<Uint8Array> {
   const iv = random(tcrypto.XCHACHA_IV_SIZE);
-  const ciphertext = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(plaintext, associatedData, null, iv, key);
+  const ciphertext = encryptAEAD(key, iv, plaintext, associatedData);
   return concatArrays(iv, ciphertext);
 }
 
 export async function decryptAEADv2(key: Uint8Array, ciphertext: Uint8Array, associatedData?: Uint8Array): Promise<Uint8Array> {
   const iv = ciphertext.subarray(0, tcrypto.XCHACHA_IV_SIZE);
   const rawCiphertext = ciphertext.subarray(tcrypto.XCHACHA_IV_SIZE);
-  return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, rawCiphertext, associatedData, iv, key);
+  return decryptAEAD(key, iv, rawCiphertext, associatedData);
 }
 
 export async function encryptAEADv3(key: Uint8Array, plaintext: Uint8Array, associatedData?: Uint8Array): Promise<Uint8Array> {
   const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
-  return sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(plaintext, associatedData, null, iv, key);
+  return encryptAEAD(key, iv, plaintext, associatedData);
 }
 
 export async function decryptAEADv3(key: Uint8Array, ciphertext: Uint8Array, associatedData?: Uint8Array): Promise<Uint8Array> {
   const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
-  return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(null, ciphertext, associatedData, iv, key);
+  return decryptAEAD(key, iv, ciphertext, associatedData);
 }
 
 export function extractMac(edata: Uint8Array): Uint8Array {
