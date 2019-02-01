@@ -6,7 +6,7 @@ import {
   unserializePayload,
   unserializeKeyPublish,
   unserializeKeyPublishToDevice,
-  unserializeKeyPublishToInvitee,
+  unserializePendingKeyPublish,
   unserializeUserDeviceV1,
   unserializeUserDeviceV2,
   unserializeUserDeviceV3,
@@ -136,8 +136,8 @@ export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
     case NATURE.key_publish_to_device:
       keyPublishAction = unserializeKeyPublishToDevice(block.payload);
       break;
-    case NATURE.key_publish_to_invitee:
-      keyPublishAction = unserializeKeyPublishToInvitee(block.payload);
+    case NATURE.pending_key_publish:
+      keyPublishAction = unserializePendingKeyPublish(block.payload);
       break;
     case NATURE.key_publish_to_user:
     case NATURE.key_publish_to_user_group:

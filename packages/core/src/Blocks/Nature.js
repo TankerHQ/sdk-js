@@ -12,7 +12,7 @@ export const NATURE = Object.freeze({
   user_group_creation: 10,
   key_publish_to_user_group: 11,
   user_group_addition: 12,
-  key_publish_to_invitee: 13,
+  pending_key_publish: 13,
   claim_invite: 14,
 });
 
@@ -27,7 +27,7 @@ export const NATURE_KIND = Object.freeze({
   user_group_creation: 5,
   key_publish_to_user_group: 6,
   user_group_addition: 7,
-  key_publish_to_invitee: 8,
+  pending_key_publish: 8,
   claim_invite: 9,
 });
 
@@ -40,7 +40,7 @@ export function preferredNature(kind: NatureKind): Nature {
     case NATURE_KIND.key_publish_to_device: return NATURE.key_publish_to_device;
     case NATURE_KIND.key_publish_to_user: return NATURE.key_publish_to_user;
     case NATURE_KIND.key_publish_to_user_group: return NATURE.key_publish_to_user_group;
-    case NATURE_KIND.key_publish_to_invitee: return NATURE.key_publish_to_invitee;
+    case NATURE_KIND.pending_key_publish: return NATURE.pending_key_publish;
     case NATURE_KIND.device_revocation: return NATURE.device_revocation_v2;
     case NATURE_KIND.device_creation: return NATURE.device_creation_v3;
     case NATURE_KIND.user_group_creation: return NATURE.user_group_creation;
@@ -60,7 +60,7 @@ export function natureKind(val: Nature): NatureKind {
     case NATURE.key_publish_to_device: return NATURE_KIND.key_publish_to_device;
     case NATURE.key_publish_to_user: return NATURE_KIND.key_publish_to_user;
     case NATURE.key_publish_to_user_group: return NATURE_KIND.key_publish_to_user_group;
-    case NATURE.key_publish_to_invitee: return NATURE_KIND.key_publish_to_invitee;
+    case NATURE.pending_key_publish: return NATURE_KIND.pending_key_publish;
     case NATURE.device_revocation_v1: return NATURE_KIND.device_revocation;
     case NATURE.device_revocation_v2: return NATURE_KIND.device_revocation;
     case NATURE.user_group_creation: return NATURE_KIND.user_group_creation;
@@ -94,15 +94,15 @@ export function isKeyPublishToUserGroup(nature: Nature): bool {
   return natureKind(nature) === NATURE_KIND.key_publish_to_user_group;
 }
 
-export function isKeyPublishToInvitee(nature: Nature): bool {
-  return natureKind(nature) === NATURE_KIND.key_publish_to_invitee;
+export function isPendingKeyPublish(nature: Nature): bool {
+  return natureKind(nature) === NATURE_KIND.pending_key_publish;
 }
 
 export function isKeyPublish(nature: Nature): bool {
   return isKeyPublishToDevice(nature)
   || isKeyPublishToUser(nature)
   || isKeyPublishToUserGroup(nature)
-  || isKeyPublishToInvitee(nature);
+  || isPendingKeyPublish(nature);
 }
 
 export function isUserGroup(nature: Nature): bool {

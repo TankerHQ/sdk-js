@@ -8,7 +8,7 @@ import Generator from './Generator';
 
 import { blockToEntry } from '../Blocks/entries';
 import { type UserDeviceRecord, unserializePayload } from '../Blocks/payloads';
-import { isKeyPublishToDevice, isKeyPublishToInvitee, isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
+import { isKeyPublishToDevice, isPendingKeyPublish, isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
 
 describe('trustchain-generator', () => {
   let generator;
@@ -135,9 +135,9 @@ describe('trustchain-generator', () => {
       fromDevice: firstDevice,
     };
 
-    const { block: keyPublishBlock, entry: keyPublishEntry } = await generator.newKeyPublishToInvitee(args);
+    const { block: keyPublishBlock, entry: keyPublishEntry } = await generator.newPendingKeyPublish(args);
 
-    expect(isKeyPublishToInvitee(keyPublishEntry.nature)).to.be.true;
+    expect(isPendingKeyPublish(keyPublishEntry.nature)).to.be.true;
     expect(tcrypto.verifySignature(
       keyPublishEntry.hash,
       keyPublishBlock.signature,

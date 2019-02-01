@@ -414,7 +414,7 @@ describe('BlockVerification', () => {
         tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
         tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
       };
-      const keyPublish = testGenerator.makeKeyPublishToInvitee(userCreation, inviteePublicKeys);
+      const keyPublish = testGenerator.makePendingKeyPublish(userCreation, inviteePublicKeys);
       unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
     });
 

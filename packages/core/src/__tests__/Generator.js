@@ -415,7 +415,7 @@ class Generator {
     });
   }
 
-  async newKeyPublishToInvitee(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toInvitePublicKey: InvitePublicKey, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+  async newPendingKeyPublish(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toInvitePublicKey: InvitePublicKey, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
     let { symmetricKey } = args;
     if (!symmetricKey)
       symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
@@ -434,7 +434,7 @@ class Generator {
       symmetricKey,
       encryptedKey,
       toKey: concatArrays(args.toInvitePublicKey.app_public_key, args.toInvitePublicKey.tanker_public_key),
-      nature: NATURE.key_publish_to_invitee,
+      nature: NATURE.pending_key_publish,
     });
   }
 

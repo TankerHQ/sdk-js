@@ -116,9 +116,9 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async addKeyPublishToInvitee(args: {from: GeneratorUserResult, to: InvitePublicKey, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
+  async addPendingKeyPublish(args: {from: GeneratorUserResult, to: InvitePublicKey, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
     const { symmetricKey, to, from, resourceId } = args;
-    const result = await this.generator.newKeyPublishToInvitee({ symmetricKey, toInvitePublicKey: to, fromDevice: from.device, resourceId });
+    const result = await this.generator.newPendingKeyPublish({ symmetricKey, toInvitePublicKey: to, fromDevice: from.device, resourceId });
     await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
     return result;
   }
