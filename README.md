@@ -61,6 +61,15 @@ To check that the code is correct and launch the tests, use:
 yarn proof
 ```
 
+Note: this command only runs the tests in Node.js.
+
+
+At Tanker headquarters, we use [BrowserStack](https://www.browserstack.com/) to run the tests in
+many browsers too.
+
+<img src="./browserstack.png" alt="BrowserStack logo" width="200" height="105">
+
+
 ## Contributing
 
 We welcome feedback, bug reports and bug fixes in the form of pull requests.
