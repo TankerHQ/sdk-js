@@ -25,7 +25,7 @@ import {
   isKeyPublishToDevice,
   isKeyPublishToUser,
   isKeyPublishToUserGroup,
-  isKeyPublishToInvitee,
+  isPendingKeyPublish,
 } from '../Blocks/Nature';
 
 export const rootBlockAuthor = new Uint8Array(32);
@@ -155,7 +155,7 @@ export function verifyKeyPublish(keyPublish: UnverifiedKeyPublish, author: Devic
     verifyKeyPublishToUser(keyPublish, author, recipientUser);
   } else if (isKeyPublishToUserGroup(keyPublish.nature)) {
     verifyKeyPublishToUserGroup(keyPublish, author, recipientGroup);
-  } else if (isKeyPublishToInvitee(keyPublish.nature)) {
+  } else if (isPendingKeyPublish(keyPublish.nature)) {
     // Nothing to verify beyond the signature
   }
 

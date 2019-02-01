@@ -192,7 +192,7 @@ describe('TrustchainVerifier', () => {
         app_public_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
         tanker_public_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
       };
-      const keyPublish = await builder.addKeyPublishToInvitee({ from: author, to: preRegistrationKey });
+      const keyPublish = await builder.addPendingKeyPublish({ from: author, to: preRegistrationKey });
       const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish]);
       expect(result.length).to.equal(1);
 

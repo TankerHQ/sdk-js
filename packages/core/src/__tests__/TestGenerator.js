@@ -351,7 +351,7 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToInvitee = (parentDevice: TestDeviceCreation, recipient: InviteePublicKeys): TestKeyPublish => {
+  makePendingKeyPublish = (parentDevice: TestDeviceCreation, recipient: InviteePublicKeys): TestKeyPublish => {
     const { resourceKey, resourceId, blockGenerator } = this.prepareKeyPublishGenerator(parentDevice);
     const block = blockGenerator.makeInviteeKeyPublishBlock(recipient, resourceKey, resourceId);
     block.index = this._trustchainIndex;

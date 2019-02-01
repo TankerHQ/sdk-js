@@ -2,7 +2,7 @@
 
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 
-import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToInvitee } from '../Blocks/Nature';
+import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup, isPendingKeyPublish } from '../Blocks/Nature';
 import GroupStore from '../Groups/GroupStore';
 import LocalUser from '../Session/LocalUser';
 import UserAccessor from '../Users/UserAccessor';
@@ -66,7 +66,7 @@ export class KeyDecryptor {
         resourceKey = this.decryptResourceKeyPublishedToUser(keyPublishEntry);
       } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
         resourceKey = this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
-      } else if (isKeyPublishToInvitee(keyPublishEntry.nature)) {
+      } else if (isPendingKeyPublish(keyPublishEntry.nature)) {
         resourceKey = this.decryptResourceKeyPublishedToInvitee(keyPublishEntry);
       } else {
         resourceKey = Promise.resolve(null);
