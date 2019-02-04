@@ -1,60 +1,81 @@
 // @flow
-
-import varint from 'varint';
-
-import { utils, tcrypto, aead, type b64string } from '@tanker/crypto';
+import { aead, random, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
-import { currentStreamVersion, type ResourceIdKeyPair } from '../Resource/ResourceManager';
+import { currentStreamVersion, serializeHeaderV4, type HeaderV4 } from '../Resource/ResourceManager';
 import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument } from '../errors';
-import { defaultEncryptionSize } from './StreamConfigs';
+
+export const defaultEncryptedChunkSize = 1024 * 1024; // 1MB
 
 export default class EncryptorStream extends Transform {
-  _encryptionSize: number;
-
+  _clearChunkSize: number;
+  _encryptedChunkSize: number;
+  _key: Uint8Array;
+  _header: HeaderV4;
+  _serizalizedHeader: Uint8Array;
   _state: {
-    resourceIdKeyPair: ResourceIdKeyPair,
-    index: number
+    index: number,
+    lastClearChunkSize: number,
   }
-
   _resizerStream: ResizerStream;
   _encryptorStream: Transform;
 
-  constructor(resourceId: Uint8Array, key: Uint8Array, encryptionSize: number = defaultEncryptionSize) {
+  constructor(resourceId: Uint8Array, key: Uint8Array, encryptedChunkSize: number = defaultEncryptedChunkSize) {
     super({ objectMode: true });
 
-    this._encryptionSize = encryptionSize;
-    this._state = {
-      resourceIdKeyPair: {
-        key,
-        resourceId
-      },
-      index: 0
+    this._encryptedChunkSize = encryptedChunkSize;
+
+    this._key = key;
+
+    this._header = {
+      version: currentStreamVersion,
+      encryptedChunkSize: this._encryptedChunkSize,
+      resourceId,
     };
 
-    this._configureStreams();
+    this._serizalizedHeader = serializeHeaderV4(this._header);
 
-    this._writeHeader();
+    this._state = {
+      index: 0,
+      lastClearChunkSize: 0,
+    };
+
+    const overheadPerChunk = this._serizalizedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
+    this._clearChunkSize = this._encryptedChunkSize - overheadPerChunk;
+
+    this._configureStreams();
   }
 
   _configureStreams() {
-    this._resizerStream = new ResizerStream(this._encryptionSize);
+    this._resizerStream = new ResizerStream(this._clearChunkSize);
 
-    const derive = this._deriveKey.bind(this);
     this._encryptorStream = new Transform({
-      writableHighWaterMark: this._encryptionSize,
-      readableHighWaterMark: this._encryptionSize + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD,
-      transform: async function transform(clearData, encoding, done) {
-        const subKey = derive();
+      writableHighWaterMark: this._clearChunkSize,
+      readableHighWaterMark: this._encryptedChunkSize,
+
+      transform: (clearData, encoding, done) => {
         try {
-          const eData = await aead.encryptAEADv2(subKey, clearData);
-          this.push(eData);
+          const encryptedChunk = this._encryptChunk(clearData);
+          this._encryptorStream.push(encryptedChunk);
         } catch (err) {
           return done(err);
         }
         done();
-      }
+      },
+
+      flush: (done) => {
+        // flush a last empty block if remaining clear data is an exact multiple of max clear chunk size
+        if (this._state.lastClearChunkSize % this._clearChunkSize === 0) {
+          try {
+            const encryptedChunk = this._encryptChunk(new Uint8Array(0));
+            this._encryptorStream.push(encryptedChunk);
+          } catch (err) {
+            return done(err);
+          }
+        }
+        done();
+      },
     });
 
     const forwardData = (data) => this.push(data);
@@ -65,19 +86,15 @@ export default class EncryptorStream extends Transform {
     this._resizerStream.pipe(this._encryptorStream);
   }
 
-  _deriveKey() {
-    const subKey = tcrypto.deriveKey(this._state.resourceIdKeyPair.key, this._state.index);
-    this._state.index += 1;
-    return subKey;
-  }
+  _encryptChunk(clearChunk: Uint8Array) {
+    const ivSeed = random(tcrypto.XCHACHA_IV_SIZE);
+    const iv = tcrypto.deriveIV(ivSeed, this._state.index);
 
-  _writeHeader() {
-    const header = concatArrays(varint.encode(currentStreamVersion), this._state.resourceIdKeyPair.resourceId);
-    this._encryptorStream.push(header);
-  }
+    this._state.index += 1; // safe as long as index < 2^53
+    this._state.lastClearChunkSize = clearChunk.length;
 
-  resourceId(): b64string {
-    return utils.toBase64(this._state.resourceIdKeyPair.resourceId);
+    const encryptedData = aead.encryptAEAD(this._key, iv, clearChunk);
+    return concatArrays(this._serizalizedHeader, ivSeed, encryptedData);
   }
 
   _transform(clearData: Uint8Array, encoding: ?string, done: Function) {
@@ -91,5 +108,9 @@ export default class EncryptorStream extends Transform {
   _flush(done: Function) {
     this._encryptorStream.on('end', done);
     this._resizerStream.end();
+  }
+
+  resourceId(): b64string {
+    return utils.toBase64(this._header.resourceId);
   }
 }
