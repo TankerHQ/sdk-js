@@ -1,61 +1,84 @@
 // @flow
-
-import varint from 'varint';
-
-import { aead, tcrypto } from '@tanker/crypto';
+import { aead, tcrypto, type Key } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
-import { InvalidEncryptionFormat, InvalidArgument, NotEnoughData, DecryptFailed } from '../errors';
-import { type ResourceIdKeyPair } from '../Resource/ResourceManager';
-import { defaultOutputSize, defaultDecryptionSize, type ResourceIdKeyMapper } from './StreamConfigs';
+import { InvalidArgument, DecryptFailed } from '../errors';
+import { extractHeaderV4, type HeaderV4 } from '../Resource/ResourceManager';
+
+export type ResourceIdKeyMapper = {
+  findKey: (Uint8Array) => Promise<Key>
+};
 
 export default class DecryptorStream extends Transform {
   _mapper: ResourceIdKeyMapper;
-  _outputSize: number = defaultOutputSize;
-  _decryptionSize: number;
 
   _state: {
-    resourceIdKeyPair: ?ResourceIdKeyPair,
-    index: number
+    headerRead: bool,
+    index: number,
+    lastEncryptedChunkSize: number,
   };
 
   _resizerStream: ResizerStream;
   _decryptionStream: Transform;
 
-  constructor(mapper: ResourceIdKeyMapper, decryptionSize: number = defaultDecryptionSize) {
+  constructor(mapper: ResourceIdKeyMapper) {
     super({ objectMode: true });
 
     this._mapper = mapper;
-    this._decryptionSize = decryptionSize;
-    this._state = {
-      resourceIdKeyPair: null,
-      index: 0
-    };
 
-    this._configureStreams();
+    this._state = {
+      headerRead: false,
+      index: 0,
+      lastEncryptedChunkSize: 0,
+    };
   }
 
-  _configureStreams() {
-    this._resizerStream = new ResizerStream(this._decryptionSize);
+  async _extractHeader(encryptedData: Uint8Array): Promise<{ header: HeaderV4, data: Uint8Array, key: Uint8Array }> {
+    const { data, header } = extractHeaderV4(encryptedData);
+    const key = await this._mapper.findKey(header.resourceId);
+    return { data, header, key };
+  }
 
-    const derive = this._deriveKey.bind(this);
-    // $FlowIKnow _resourceKeyPair is always defined during write
-    const resourceId = () => this._state.resourceIdKeyPair.resourceId;
+  async _configureStreams(headOfEncryptedData: Uint8Array) {
+    const { key, header } = await this._extractHeader(headOfEncryptedData);
+    this._state.headerRead = true;
+
+    const { byteLength: headerLength, encryptedChunkSize, resourceId } = header;
+
+    const overheadPerChunk = headerLength + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
+
+    this._resizerStream = new ResizerStream(encryptedChunkSize);
+
     this._decryptionStream = new Transform({
-      writableHighWaterMark: this._decryptionSize,
-      readableHighWaterMark: this._decryptionSize - tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD,
+      writableHighWaterMark: encryptedChunkSize,
+      readableHighWaterMark: encryptedChunkSize - overheadPerChunk,
 
-      transform: async function transform(chunk, encoding, done) {
-        let clearData;
-        const subKey = derive();
+      transform: (encryptedChunk, encoding, done) => {
+        const encryptedData = encryptedChunk.subarray(headerLength + tcrypto.XCHACHA_IV_SIZE);
+        const ivSeed = encryptedChunk.subarray(headerLength, headerLength + tcrypto.XCHACHA_IV_SIZE);
+        const iv = tcrypto.deriveIV(ivSeed, this._state.index);
+
+        this._state.index += 1; // safe as long as index < 2^53
+        this._state.lastEncryptedChunkSize = encryptedChunk.length;
+
         try {
-          clearData = await aead.decryptAEADv2(subKey, chunk);
+          const clearData = aead.decryptAEAD(key, iv, encryptedData);
+          this._decryptionStream.push(clearData);
         } catch (error) {
-          return done(new DecryptFailed(error, resourceId()));
+          return done(new DecryptFailed(error, resourceId));
         }
-        this.push(clearData);
+
         done();
-      }
+      },
+
+      flush: (done) => {
+        if (this._state.lastEncryptedChunkSize % encryptedChunkSize === 0) {
+          done(new DecryptFailed(new Error('Data has been truncated'), resourceId));
+          return;
+        }
+
+        done();
+      },
     });
 
     const forwardData = (data) => this.push(data);
@@ -66,74 +89,28 @@ export default class DecryptorStream extends Transform {
     this._resizerStream.pipe(this._decryptionStream);
   }
 
-  _deriveKey() {
-    // $FlowIKnow _resourceKeyPair is always defined during write
-    const subKey = tcrypto.deriveKey(this._state.resourceIdKeyPair.key, this._state.index);
-    this._state.index += 1;
-    return subKey;
-  }
-
-  _findHeaderSizeFromVersion(version: number) {
-    switch (version) {
-      case 4:
-        return tcrypto.MAC_SIZE;
-      default:
-        throw new InvalidEncryptionFormat(`unhandled format version in DecryptorStream: '${version}'`);
-    }
-  }
-
-  async _findResourceIdKeyPair(version: number, binaryData: Uint8Array) {
-    switch (version) {
-      case 4:
-        return {
-          key: await this._mapper.findKey(binaryData),
-          resourceId: binaryData
-        };
-      default:
-        throw new InvalidEncryptionFormat(`unhandled format version in DecryptorStream: '${version}'`);
-    }
-  }
-
-  async _extractHeader(data: Uint8Array) {
-    const version = varint.decode(data);
-    const headerStart = varint.decode.bytes;
-    const headerEnd = headerStart + this._findHeaderSizeFromVersion(version);
-
-    if (data.length < headerEnd) {
-      throw new NotEnoughData('First write must contain the complete header');
-    }
-
-    const rawHeader = data.subarray(headerStart, headerEnd);
-    const remaining = data.subarray(headerEnd);
-    return {
-      header: await this._findResourceIdKeyPair(version, rawHeader),
-      remaining
-    };
-  }
-
   async _transform(encryptedData: Uint8Array, encoding: ?string, done: Function) {
     if (!(encryptedData instanceof Uint8Array))
       return done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
 
-    let data = encryptedData;
-    if (!this._state.resourceIdKeyPair) {
+    if (!this._state.headerRead) {
       try {
-        const { header, remaining } = await this._extractHeader(encryptedData);
-        this._state.resourceIdKeyPair = header;
-        data = remaining;
+        await this._configureStreams(encryptedData);
       } catch (err) {
         return done(err);
       }
     }
 
-    if (data.length === 0) {
-      return done();
-    }
-
-    this._resizerStream.write(data, done);
+    this._resizerStream.write(encryptedData, done);
   }
 
   _flush(done: Function) {
+    // When end() is called before any data has been written:
+    if (!this._state.headerRead) {
+      done();
+      return;
+    }
+
     this._decryptionStream.on('end', done);
     this._resizerStream.end();
   }

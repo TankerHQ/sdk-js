@@ -2,7 +2,7 @@
 import sodium from 'libsodium-wrappers';
 import { random } from './random';
 import { generichash } from './hash';
-import { concatArrays } from './utils';
+import { concatArrays, fromString } from './utils';
 import { toUint64le } from './number';
 import type { Key } from './aliases';
 
