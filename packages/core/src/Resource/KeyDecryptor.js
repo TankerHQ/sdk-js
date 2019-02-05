@@ -47,8 +47,8 @@ export class KeyDecryptor {
     return tcrypto.sealDecrypt(keyPublishEntry.key, group.encryptionKeyPair);
   }
 
-  async decryptResourceKeyPublishedToInvitee(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
-    const keys = this._localUser.findInviteeKey(keyPublishEntry.recipient);
+  async decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
+    const keys = this._localUser.findProvisionalIdentityKey(keyPublishEntry.recipient);
     if (!keys)
       return null;
     const d1 = tcrypto.sealDecrypt(keyPublishEntry.key, keys.tankerEncryptionKeyPair);
@@ -67,7 +67,7 @@ export class KeyDecryptor {
       } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
         resourceKey = this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
       } else if (isPendingKeyPublish(keyPublishEntry.nature)) {
-        resourceKey = this.decryptResourceKeyPublishedToInvitee(keyPublishEntry);
+        resourceKey = this.decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry);
       } else {
         resourceKey = Promise.resolve(null);
       }

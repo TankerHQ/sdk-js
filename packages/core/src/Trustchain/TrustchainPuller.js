@@ -12,7 +12,7 @@ import {
   userGroupEntryFromBlock,
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
-  claimInviteFromBlock,
+  provisionalIdentityClaimFromBlock,
 } from '../Blocks/entries';
 import TrustchainVerifier from './TrustchainVerifier';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
@@ -24,7 +24,7 @@ import {
   isDeviceCreation,
   isDeviceRevocation,
   isTrustchainCreation,
-  isClaimInvite,
+  isProvisionalIdentityClaim,
 } from '../Blocks/Nature';
 import { unserializeBlock } from '../Blocks/payloads';
 import { type Block } from '../Blocks/Block';
@@ -175,8 +175,8 @@ export default class TrustchainPuller {
         if (utils.equalArray(this._userId, userEntry.user_id)) {
           mustUpdateOurselves = true;
         }
-      } else if (isClaimInvite(block.nature)) {
-        claims.push(claimInviteFromBlock(block));
+      } else if (isProvisionalIdentityClaim(block.nature)) {
+        claims.push(provisionalIdentityClaimFromBlock(block));
       } else if (isTrustchainCreation(block.nature)) {
         trustchainCreationEntry = blockToEntry(block);
       } else {
@@ -193,7 +193,7 @@ export default class TrustchainPuller {
     await this._unverifiedStore.addUnverifiedUserEntries(userEntries);
     await this._unverifiedStore.addUnverifiedKeyPublishes(keyPublishes);
     await this._unverifiedStore.addUnverifiedUserGroups(userGroups);
-    await this._unverifiedStore.addUnverifiedClaimInviteEntries(claims);
+    await this._unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries(claims);
     await this._trustchainStore.updateLastBlockIndex(maxBlockIndex);
 
     if (mustUpdateOurselves) {

@@ -22,14 +22,14 @@ export type KeyResourceId = {
   resourceId: Uint8Array,
 };
 
-export type InviteePublicKeys = {
+export type ProvisionalIdentityPublicKeys = {
   appSignaturePublicKey: Uint8Array,
   appEncryptionPublicKey: Uint8Array,
   tankerSignaturePublicKey: Uint8Array,
   tankerEncryptionPublicKey: Uint8Array,
 };
 
-export type InviteePrivateKeys = {
+export type ProvisionalIdentityPrivateKeys = {
   appSignatureKeyPair: tcrypto.SodiumKeyPair,
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
   tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
@@ -73,14 +73,14 @@ export default class DataProtector {
     return blocks;
   }
 
-  _makeInviteeKeyPublishBlocks(
+  _makeProvisionalIdentityKeyPublishBlocks(
     keyResourceIds: Array<KeyResourceId>,
-    invitees: Array<InviteePublicKeys>
+    provisionalIdentities: Array<ProvisionalIdentityPublicKeys>
   ): Array<Block> {
     const blocks: Array<Block> = [];
-    for (const invitee of invitees) {
+    for (const provisionalIdentity of provisionalIdentities) {
       for (const { key, resourceId } of keyResourceIds) {
-        blocks.push(this._localUser.blockGenerator.makeInviteeKeyPublishBlock(invitee, key, resourceId));
+        blocks.push(this._localUser.blockGenerator.makeProvisionalIdentityKeyPublishBlock(provisionalIdentity, key, resourceId));
       }
     }
     return blocks;
@@ -89,7 +89,7 @@ export default class DataProtector {
   async _publishKeys(
     keyResourceIds: Array<KeyResourceId>,
     recipientUsers: Array<User>,
-    recipientInvitees: Array<PublicProvisionalIdentity>,
+    recipientProvisionalIdentities: Array<PublicProvisionalIdentity>,
     recipientGroups: Array<ExternalGroup>
   ): Promise<void> {
     let blocks: Array<Block> = [];
@@ -99,15 +99,15 @@ export default class DataProtector {
       blocks = blocks.concat(this._makeKeyPublishBlocks(keyResourceIds, keys, NATURE_KIND.key_publish_to_user_group));
     }
 
-    if (recipientInvitees.length > 0) {
-      const provisionalIds = recipientInvitees.map(e => ({ [e.target]: e.value }));
-      const tankerPublicKeys = await this._client.getInviteeKeys(provisionalIds);
-      const invitees = tankerPublicKeys.map((e, i) => ({
+    if (recipientProvisionalIdentities.length > 0) {
+      const provisionalIds = recipientProvisionalIdentities.map(e => ({ [e.target]: e.value }));
+      const tankerPublicKeys = await this._client.getProvisionalIdentityKeys(provisionalIds);
+      const provisionalIdentities = tankerPublicKeys.map((e, i) => ({
         ...e,
-        appSignaturePublicKey: utils.fromBase64(recipientInvitees[i].public_signature_key),
-        appEncryptionPublicKey: utils.fromBase64(recipientInvitees[i].public_encryption_key),
+        appSignaturePublicKey: utils.fromBase64(recipientProvisionalIdentities[i].public_signature_key),
+        appEncryptionPublicKey: utils.fromBase64(recipientProvisionalIdentities[i].public_encryption_key),
       }));
-      blocks = blocks.concat(this._makeInviteeKeyPublishBlocks(keyResourceIds, invitees));
+      blocks = blocks.concat(this._makeProvisionalIdentityKeyPublishBlocks(keyResourceIds, provisionalIdentities));
     }
 
     if (recipientUsers.length > 0) {
@@ -127,13 +127,13 @@ export default class DataProtector {
   _splitProvisionalAndFullIdentities = (identities: Array<PublicIdentity>): * => {
     const fullUsers: Array<PublicIdentity> = [];
     // $FlowIKnow This checks that the target is correct, so type refinement is fine
-    const preUsers: Array<PublicProvisionalIdentity> = identities.filter(elem => {
+    const provisionalUsers: Array<PublicProvisionalIdentity> = identities.filter(elem => {
       const isFull = elem.target === 'user';
       if (isFull)
         fullUsers.push(elem);
       return !isFull;
     });
-    return { fullUsers, preUsers };
+    return { fullUsers, provisionalUsers };
   }
 
   _handleShareWithSelf = (identities: Array<b64string>, shareWithSelf: bool): Array<string> => {
@@ -152,7 +152,7 @@ export default class DataProtector {
     const groups = await this._groupManager.findGroups(groupIds);
     const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
     const deserializedIdentities = b64UserIdentities.map(i => _deserializePublicIdentity(i));
-    const { fullUsers, preUsers } = this._splitProvisionalAndFullIdentities(deserializedIdentities);
+    const { fullUsers, provisionalUsers } = this._splitProvisionalAndFullIdentities(deserializedIdentities);
     const users = await this._userAccessor.getUsers({ publicIdentities: fullUsers });
 
     if (shareWithSelf) {
@@ -160,7 +160,7 @@ export default class DataProtector {
       await this._resourceManager.saveResourceKey(resourceId, key);
     }
 
-    return this._publishKeys(keys, users, preUsers, groups);
+    return this._publishKeys(keys, users, provisionalUsers, groups);
   }
 
   async decryptData(protectedData: Uint8Array): Promise<Uint8Array> {
@@ -208,14 +208,14 @@ export default class DataProtector {
     return new DecryptorStream(resourceIdKeyMapper);
   }
 
-  async claimInvite(invitee: { email: string }, verificationCode: string, appInvitePrivateSignatureKey: Uint8Array, appInvitePrivateEncryptionKey: Uint8Array): Promise<void> {
-    const tankerKeys = await this._client.getInviteePrivateKeys(invitee, verificationCode);
-    const inviteeKeys = {
+  async provisionalIdentityClaim(provisionalIdentity: { email: string }, verificationCode: string, appInvitePrivateSignatureKey: Uint8Array, appInvitePrivateEncryptionKey: Uint8Array): Promise<void> {
+    const tankerKeys = await this._client.getProvisionalIdentityPrivateKeys(provisionalIdentity, verificationCode);
+    const provisionalIdentityKeys = {
       ...tankerKeys,
       appEncryptionKeyPair: tcrypto.getEncryptionKeyPairFromPrivateKey(appInvitePrivateEncryptionKey),
       appSignatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(appInvitePrivateSignatureKey),
     };
-    const block = this._localUser.blockGenerator.makeClaimInviteBlock(this._localUser, inviteeKeys);
+    const block = this._localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this._localUser, provisionalIdentityKeys);
 
     await this._client.sendBlock(block);
   }

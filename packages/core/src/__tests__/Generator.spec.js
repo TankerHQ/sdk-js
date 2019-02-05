@@ -120,7 +120,7 @@ describe('trustchain-generator', () => {
     await expect(generator.newKeyPublishToUser(args)).to.be.rejected;
   });
 
-  it('should add a key publish to invitee', async () => {
+  it('should add a key publish to provisionalIdentity', async () => {
     await generator.newUserCreationV3('47');
     await generator.newDeviceCreationV3({ userId: '47', parentIndex: 0 });
     const firstDevice = generator.users['47'].devices[0];

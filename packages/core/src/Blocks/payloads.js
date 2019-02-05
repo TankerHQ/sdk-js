@@ -88,18 +88,18 @@ export type UserGroupAdditionRecord = {|
 |}
 export type UserGroupRecord = UserGroupCreationRecord | UserGroupAdditionRecord
 
-export type ClaimInviteRecord = {|
+export type ProvisionalIdentityClaimRecord = {|
   user_id: Uint8Array,
-  app_invitee_signature_public_key: Uint8Array,
-  tanker_invitee_signature_public_key: Uint8Array,
+  app_provisional_identity_signature_public_key: Uint8Array,
+  tanker_provisional_identity_signature_public_key: Uint8Array,
   author_signature_by_app_key: Uint8Array,
   author_signature_by_tanker_key: Uint8Array,
-  encrypted_invitee_private_keys: Uint8Array,
+  encrypted_provisional_identity_private_keys: Uint8Array,
 |}
 
 export type Record = TrustchainCreationRecord | UserDeviceRecord | DeviceRevocationRecord |
                       KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | PendingKeyPublishRecord |
-                      UserGroupCreationRecord | UserGroupAdditionRecord | ClaimInviteRecord;
+                      UserGroupCreationRecord | UserGroupAdditionRecord | ProvisionalIdentityClaimRecord;
 
 
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
@@ -436,40 +436,40 @@ export function unserializeUserGroupAddition(src: Uint8Array): UserGroupAddition
   ]);
 }
 
-export function serializeClaimInvite(claimInvite: ClaimInviteRecord): Uint8Array {
-  if (claimInvite.user_id.length !== tcrypto.HASH_SIZE)
+export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: ProvisionalIdentityClaimRecord): Uint8Array {
+  if (provisionalIdentityClaim.user_id.length !== tcrypto.HASH_SIZE)
     throw new Error('Assertion error: invalid claim invite user id size');
-  if (claimInvite.app_invitee_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+  if (provisionalIdentityClaim.app_provisional_identity_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
     throw new Error('Assertion error: invalid claim invite app public key size');
-  if (claimInvite.tanker_invitee_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+  if (provisionalIdentityClaim.tanker_provisional_identity_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
     throw new Error('Assertion error: invalid claim invite tanker public key size');
-  if (claimInvite.author_signature_by_app_key.length !== tcrypto.SIGNATURE_SIZE)
+  if (provisionalIdentityClaim.author_signature_by_app_key.length !== tcrypto.SIGNATURE_SIZE)
     throw new Error('Assertion error: invalid claim invite app signature size');
-  if (claimInvite.author_signature_by_tanker_key.length !== tcrypto.SIGNATURE_SIZE)
+  if (provisionalIdentityClaim.author_signature_by_tanker_key.length !== tcrypto.SIGNATURE_SIZE)
     throw new Error('Assertion error: invalid claim invite tanker signature size');
-  if (claimInvite.encrypted_invitee_private_keys.length !== tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
+  if (provisionalIdentityClaim.encrypted_provisional_identity_private_keys.length !== tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
                                                             + tcrypto.SEAL_OVERHEAD)
     throw new Error('Assertion error: invalid claim invite encrypted keys size');
 
   return concatArrays(
-    claimInvite.user_id,
-    claimInvite.app_invitee_signature_public_key,
-    claimInvite.tanker_invitee_signature_public_key,
-    claimInvite.author_signature_by_app_key,
-    claimInvite.author_signature_by_tanker_key,
-    claimInvite.encrypted_invitee_private_keys,
+    provisionalIdentityClaim.user_id,
+    provisionalIdentityClaim.app_provisional_identity_signature_public_key,
+    provisionalIdentityClaim.tanker_provisional_identity_signature_public_key,
+    provisionalIdentityClaim.author_signature_by_app_key,
+    provisionalIdentityClaim.author_signature_by_tanker_key,
+    provisionalIdentityClaim.encrypted_provisional_identity_private_keys,
   );
 }
 
-export function unserializeClaimInvite(src: Uint8Array): ClaimInviteRecord {
+export function unserializeProvisionalIdentityClaim(src: Uint8Array): ProvisionalIdentityClaimRecord {
   return unserializeGeneric(src, [
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'user_id'),
-    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'app_invitee_signature_public_key'),
-    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_invitee_signature_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'app_provisional_identity_signature_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_provisional_identity_signature_public_key'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'author_signature_by_app_key'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'author_signature_by_tanker_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
-                                + tcrypto.SEAL_OVERHEAD, o, 'encrypted_invitee_private_keys'),
+                                + tcrypto.SEAL_OVERHEAD, o, 'encrypted_provisional_identity_private_keys'),
   ]);
 }
 
@@ -487,7 +487,7 @@ export function unserializePayload(block: Block): Record {
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
     case NATURE.user_group_creation: return unserializeUserGroupCreation(block.payload);
     case NATURE.user_group_addition: return unserializeUserGroupAddition(block.payload);
-    case NATURE.claim_invite: return unserializeClaimInvite(block.payload);
+    case NATURE.provisional_identity_claim: return unserializeProvisionalIdentityClaim(block.payload);
     default: throw new UpgradeRequiredError(`unknown nature: ${block.nature}`);
   }
 }

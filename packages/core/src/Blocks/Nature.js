@@ -13,7 +13,7 @@ export const NATURE = Object.freeze({
   key_publish_to_user_group: 11,
   user_group_addition: 12,
   pending_key_publish: 13,
-  claim_invite: 14,
+  provisional_identity_claim: 14,
 });
 
 export type Nature = $Values<typeof NATURE>;
@@ -28,7 +28,7 @@ export const NATURE_KIND = Object.freeze({
   key_publish_to_user_group: 6,
   user_group_addition: 7,
   pending_key_publish: 8,
-  claim_invite: 9,
+  provisional_identity_claim: 9,
 });
 
 export type NatureKind = $Values<typeof NATURE_KIND>;
@@ -45,7 +45,7 @@ export function preferredNature(kind: NatureKind): Nature {
     case NATURE_KIND.device_creation: return NATURE.device_creation_v3;
     case NATURE_KIND.user_group_creation: return NATURE.user_group_creation;
     case NATURE_KIND.user_group_addition: return NATURE.user_group_addition;
-    case NATURE_KIND.claim_invite: return NATURE.claim_invite;
+    case NATURE_KIND.provisional_identity_claim: return NATURE.provisional_identity_claim;
     default: throw new Error(`invalid kind: ${kind}`);
   }
 }
@@ -65,7 +65,7 @@ export function natureKind(val: Nature): NatureKind {
     case NATURE.device_revocation_v2: return NATURE_KIND.device_revocation;
     case NATURE.user_group_creation: return NATURE_KIND.user_group_creation;
     case NATURE.user_group_addition: return NATURE_KIND.user_group_addition;
-    case NATURE.claim_invite: return NATURE_KIND.claim_invite;
+    case NATURE.provisional_identity_claim: return NATURE_KIND.provisional_identity_claim;
     default: throw new Error(`invalid nature: ${val}`);
   }
 }
@@ -110,6 +110,6 @@ export function isUserGroup(nature: Nature): bool {
   || natureKind(nature) === NATURE_KIND.user_group_addition;
 }
 
-export function isClaimInvite(nature: Nature): bool {
-  return natureKind(nature) === NATURE_KIND.claim_invite;
+export function isProvisionalIdentityClaim(nature: Nature): bool {
+  return natureKind(nature) === NATURE_KIND.provisional_identity_claim;
 }
