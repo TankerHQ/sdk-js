@@ -408,17 +408,17 @@ describe('BlockVerification', () => {
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
       testGenerator.skipIndex(); // used for faking a revocation
-      const inviteePublicKeys = {
+      const provisionalIdentityPublicKeys = {
         appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
         appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
         tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
         tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
       };
-      const keyPublish = testGenerator.makePendingKeyPublish(userCreation, inviteePublicKeys);
+      const keyPublish = testGenerator.makePendingKeyPublish(userCreation, provisionalIdentityPublicKeys);
       unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
     });
 
-    it('should accept a correct key publish to invitee', () => {
+    it('should accept a correct key publish to provisionalIdentity', () => {
       expect(() => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null))
         .to.not.throw();
     });

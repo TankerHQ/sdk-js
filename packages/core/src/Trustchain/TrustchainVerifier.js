@@ -9,7 +9,7 @@ import GroupUpdater from '../Groups/GroupUpdater';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import { type UnverifiedClaimInvite, type VerifiedClaimInvite } from '../UnverifiedStore/InviteUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim, type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/InviteUnverifiedStore';
 import { type UnverifiedTrustchainCreation } from './TrustchainStore';
 
 import {
@@ -30,7 +30,7 @@ import {
   verifyKeyPublish,
   verifyUserGroupCreation,
   verifyUserGroupAddition,
-  verifyClaimInvite,
+  verifyProvisionalIdentityClaim,
 } from './Verify';
 
 export default class TrustchainVerifier {
@@ -237,7 +237,7 @@ export default class TrustchainVerifier {
     return this._unlockedProcessUserGroups(unverifiedEntries);
   }
 
-  async _unlockedVerifyClaims(claims: Array<UnverifiedClaimInvite>): Promise<Array<VerifiedClaimInvite>> {
+  async _unlockedVerifyClaims(claims: Array<UnverifiedProvisionalIdentityClaim>): Promise<Array<VerifiedProvisionalIdentityClaim>> {
     const verifiedClaims = [];
     for (const claim of claims) {
       try {
@@ -248,7 +248,7 @@ export default class TrustchainVerifier {
         const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(claim.author));
         const authorDevice = authorUser.devices[deviceIndex];
 
-        verifiedClaims.push(verifyClaimInvite(claim, authorDevice, utils.fromBase64(authorUser.userId)));
+        verifiedClaims.push(verifyProvisionalIdentityClaim(claim, authorDevice, utils.fromBase64(authorUser.userId)));
       } catch (e) {
         if (!(e instanceof InvalidBlockError)) {
           throw e;
@@ -312,11 +312,11 @@ export default class TrustchainVerifier {
 
   async verifyClaimsForUser(userId: Uint8Array) {
     await this._verifyQueue.enqueue(async () => {
-      const unverifiedClaims = await this._storage.unverifiedStore.findUnverifiedClaimInvites(userId);
+      const unverifiedClaims = await this._storage.unverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
 
       const verifiedClaims = await this._unlockedVerifyClaims(unverifiedClaims);
-      await this._storage.userStore.applyClaimInvites(verifiedClaims);
-      await this._storage.unverifiedStore.removeVerifiedClaimInviteEntries(verifiedClaims);
+      await this._storage.userStore.applyProvisionalIdentityClaims(verifiedClaims);
+      await this._storage.unverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(verifiedClaims);
     });
   }
 }

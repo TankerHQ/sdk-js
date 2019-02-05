@@ -131,48 +131,48 @@ const generateEncryptTests = (args: TestArgs) => {
         });
 
         it('encrypt and share to invitee', async () => {
-          const invitee = utils.toB64Json({
+          const provisionalIdentity = utils.toB64Json({
             trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
             target: 'email',
             value: 'alice@tanker-functional-test.io',
             public_signature_key: utils.toBase64(random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)),
             public_encryption_key: utils.toBase64(random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)),
           });
-          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] })).to.be.fulfilled;
+          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.fulfilled;
         });
 
-        it('claim invitee blocks', async () => {
+        it('claim provisionalIdentity blocks', async () => {
           const email = 'alice@tanker-functional-test.io';
           const sigKeyPair = tcrypto.makeSignKeyPair();
           const encKeyPair = tcrypto.makeEncryptionKeyPair();
-          const invitee = utils.toB64Json({
+          const provisionalIdentity = utils.toB64Json({
             trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
             target: 'email',
             value: email,
             public_signature_key: utils.toBase64(sigKeyPair.publicKey),
             public_encryption_key: utils.toBase64(encKeyPair.publicKey),
           });
-          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] });
+          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
 
           const verifCode = await args.aliceLaptop._getClaimVerificationCode(email); // eslint-disable-line no-underscore-dangle
-          await expect(args.aliceLaptop.claimInvite({ email }, verifCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
+          await expect(args.aliceLaptop.provisionalIdentityClaim({ email }, verifCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
         });
 
         it('decrypt claimed block', async () => {
           const email = 'alice@tanker-functional-test.io';
           const sigKeyPair = tcrypto.makeSignKeyPair();
           const encKeyPair = tcrypto.makeEncryptionKeyPair();
-          const invitee = utils.toB64Json({
+          const provisionalIdentity = utils.toB64Json({
             trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
             target: 'email',
             value: email,
             public_signature_key: utils.toBase64(sigKeyPair.publicKey),
             public_encryption_key: utils.toBase64(encKeyPair.publicKey),
           });
-          const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [invitee] });
+          const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
 
           const verifCode = await args.aliceLaptop._getClaimVerificationCode(email); // eslint-disable-line no-underscore-dangle
-          await args.aliceLaptop.claimInvite({ email }, verifCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
+          await args.aliceLaptop.provisionalIdentityClaim({ email }, verifCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
           const decrypted = await args.aliceLaptop.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
@@ -258,7 +258,7 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('shares to a pre-registered user for an existing resource', async () => {
-        const invitee = utils.toB64Json({
+        const provisionalIdentity = utils.toB64Json({
           trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
           target: 'email',
           value: 'alice@tanker-functional-test.io',
@@ -267,7 +267,7 @@ const generateEncryptTests = (args: TestArgs) => {
         });
         const cipherText = await args.bobLaptop.encrypt(clearText);
         const resourceId = await args.bobLaptop.getResourceId(cipherText);
-        await expect(args.bobLaptop.share([resourceId], { shareWithUsers: [invitee] })).to.be.fulfilled;
+        await expect(args.bobLaptop.share([resourceId], { shareWithUsers: [provisionalIdentity] })).to.be.fulfilled;
       });
     });
   });

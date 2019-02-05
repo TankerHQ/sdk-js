@@ -8,7 +8,7 @@ import {
   serializeDeviceRevocationV2,
   serializeUserGroupCreation,
   serializeUserGroupAddition,
-  serializeClaimInvite,
+  serializeProvisionalIdentityClaim,
   type UserDeviceRecord,
   type UserKeys,
   type UserGroupCreationRecord,
@@ -22,7 +22,7 @@ import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { InvalidDelegationToken } from '../errors';
 import { concatArrays } from './Serialize';
-import { type InviteePublicKeys, type InviteePrivateKeys } from '../DataProtection/DataProtector';
+import { type ProvisionalIdentityPublicKeys, type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
 
 export function getUserGroupCreationBlockSignData(record: UserGroupCreationRecord): Uint8Array {
   return concatArrays(
@@ -214,18 +214,18 @@ export class BlockGenerator {
     return pKeyBlock;
   }
 
-  makeInviteeKeyPublishBlock(inviteePublicKeys: InviteePublicKeys, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
+  makeProvisionalIdentityKeyPublishBlock(provisionalIdentityPublicKeys: ProvisionalIdentityPublicKeys, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
     const preEncryptedKey = tcrypto.sealEncrypt(
       resourceKey,
-      inviteePublicKeys.appEncryptionPublicKey,
+      provisionalIdentityPublicKeys.appEncryptionPublicKey,
     );
     const encryptedKey = tcrypto.sealEncrypt(
       preEncryptedKey,
-      inviteePublicKeys.tankerEncryptionPublicKey,
+      provisionalIdentityPublicKeys.tankerEncryptionPublicKey,
     );
 
     const payload = {
-      recipient: concatArrays(inviteePublicKeys.appSignaturePublicKey, inviteePublicKeys.tankerSignaturePublicKey),
+      recipient: concatArrays(provisionalIdentityPublicKeys.appSignaturePublicKey, provisionalIdentityPublicKeys.tankerSignaturePublicKey),
       resourceId,
       key: encryptedKey,
     };
@@ -311,33 +311,33 @@ export class BlockGenerator {
     return block;
   }
 
-  makeClaimInviteBlock(user: LocalUser, inviteeKeys: InviteePrivateKeys): Block {
+  makeProvisionalIdentityClaimBlock(user: LocalUser, provisionalIdentityKeys: ProvisionalIdentityPrivateKeys): Block {
     const multiSignedPayload = concatArrays(
       this.deviceId,
-      inviteeKeys.appSignatureKeyPair.publicKey,
-      inviteeKeys.tankerSignatureKeyPair.publicKey,
+      provisionalIdentityKeys.appSignatureKeyPair.publicKey,
+      provisionalIdentityKeys.tankerSignatureKeyPair.publicKey,
     );
-    const appSignature = tcrypto.sign(multiSignedPayload, inviteeKeys.appSignatureKeyPair.privateKey);
-    const tankerSignature = tcrypto.sign(multiSignedPayload, inviteeKeys.tankerSignatureKeyPair.privateKey);
+    const appSignature = tcrypto.sign(multiSignedPayload, provisionalIdentityKeys.appSignatureKeyPair.privateKey);
+    const tankerSignature = tcrypto.sign(multiSignedPayload, provisionalIdentityKeys.tankerSignatureKeyPair.privateKey);
 
-    const keysToEncrypt = concatArrays(inviteeKeys.appEncryptionKeyPair.privateKey, inviteeKeys.tankerEncryptionKeyPair.privateKey);
-    const encryptedInviteeKeys = tcrypto.sealEncrypt(keysToEncrypt, user.currentUserKey.publicKey);
+    const keysToEncrypt = concatArrays(provisionalIdentityKeys.appEncryptionKeyPair.privateKey, provisionalIdentityKeys.tankerEncryptionKeyPair.privateKey);
+    const encryptedProvisionalIdentityKeys = tcrypto.sealEncrypt(keysToEncrypt, user.currentUserKey.publicKey);
 
     const payload = {
       user_id: user.userId,
-      app_invitee_signature_public_key: inviteeKeys.appSignatureKeyPair.publicKey,
-      tanker_invitee_signature_public_key: inviteeKeys.tankerSignatureKeyPair.publicKey,
+      app_provisional_identity_signature_public_key: provisionalIdentityKeys.appSignatureKeyPair.publicKey,
+      tanker_provisional_identity_signature_public_key: provisionalIdentityKeys.tankerSignatureKeyPair.publicKey,
       author_signature_by_app_key: appSignature,
       author_signature_by_tanker_key: tankerSignature,
-      encrypted_invitee_private_keys: encryptedInviteeKeys,
+      encrypted_provisional_identity_private_keys: encryptedProvisionalIdentityKeys,
     };
 
     const block = signBlock({
       index: 0,
       trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.claim_invite),
+      nature: preferredNature(NATURE_KIND.provisional_identity_claim),
       author: this.deviceId,
-      payload: serializeClaimInvite(payload)
+      payload: serializeProvisionalIdentityClaim(payload)
     }, this.privateSignatureKey);
     return block;
   }

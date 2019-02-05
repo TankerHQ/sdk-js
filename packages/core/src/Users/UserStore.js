@@ -8,7 +8,7 @@ import { findIndex } from '../utils';
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
 import LocalUser from '../Session/LocalUser';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type VerifiedClaimInvite } from '../UnverifiedStore/InviteUnverifiedStore';
+import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/InviteUnverifiedStore';
 
 type DeviceToUser = {
   deviceId: b64string,
@@ -90,11 +90,11 @@ export default class UserStore {
     this._localUser = localUser;
   }
 
-  async applyClaimInvites(entries: Array<VerifiedClaimInvite>): Promise<void> {
+  async applyProvisionalIdentityClaims(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<void> {
     for (const entry of entries) {
       if (!utils.equalArray(entry.user_id, this._localUser.userId))
         continue;
-      await this._localUser.applyClaimInvite(entry);
+      await this._localUser.applyProvisionalIdentityClaim(entry);
     }
   }
 

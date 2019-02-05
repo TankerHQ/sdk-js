@@ -10,7 +10,7 @@ import BlockGenerator from '../Blocks/BlockGenerator';
 import { type UserData } from '../UserData';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type VerifiedClaimInvite } from '../UnverifiedStore/InviteUnverifiedStore';
+import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/InviteUnverifiedStore';
 
 export type DeviceKeys = {|
   deviceId: ?b64string,
@@ -29,7 +29,7 @@ export default class LocalUser extends EventEmitter {
   _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
   _currentUserKey: tcrypto.SodiumKeyPair;
-  _inviteeKeys: { [string]: { appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair } } = {};
+  _provisionalIdentityKeys: { [string]: { appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair } } = {};
 
   _keyStore: KeyStore;
 
@@ -64,20 +64,20 @@ export default class LocalUser extends EventEmitter {
     this._unlockMethods = unlockMethods;
   }
 
-  applyClaimInvite = async (claimInvite: VerifiedClaimInvite) => {
+  applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim) => {
     // XXX
     // FIXME maybe we didn't use the current user key, we must put the public
     // user key in the block!
     const userKeyPair = this.currentUserKey;
 
-    const inviteeKeys = tcrypto.sealDecrypt(claimInvite.encrypted_invitee_private_keys, userKeyPair);
+    const provisionalIdentityKeys = tcrypto.sealDecrypt(provisionalIdentityClaim.encrypted_provisional_identity_private_keys, userKeyPair);
 
-    const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(inviteeKeys.slice(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE));
-    const tankerEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(inviteeKeys.slice(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE));
+    const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(provisionalIdentityKeys.slice(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE));
+    const tankerEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(provisionalIdentityKeys.slice(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE));
 
-    const id = utils.toBase64(utils.concatArrays(claimInvite.app_invitee_signature_public_key, claimInvite.tanker_invitee_signature_public_key));
+    const id = utils.toBase64(utils.concatArrays(provisionalIdentityClaim.app_provisional_identity_signature_public_key, provisionalIdentityClaim.tanker_provisional_identity_signature_public_key));
 
-    this._inviteeKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
+    this._provisionalIdentityKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
 
     // TODO store them
   }
@@ -212,7 +212,7 @@ export default class LocalUser extends EventEmitter {
 
   findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
 
-  findInviteeKey = (recipient: Uint8Array) => this._inviteeKeys[utils.toBase64(recipient)]
+  findProvisionalIdentityKey = (recipient: Uint8Array) => this._provisionalIdentityKeys[utils.toBase64(recipient)]
 
   deviceKeys = (): DeviceKeys => ({
     signaturePair: this._deviceSignatureKeyPair,

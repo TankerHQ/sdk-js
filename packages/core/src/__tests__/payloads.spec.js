@@ -24,8 +24,8 @@ import {
   unserializeUserGroupCreation,
   serializeUserGroupAddition,
   unserializeUserGroupAddition,
-  serializeClaimInvite,
-  unserializeClaimInvite,
+  serializeProvisionalIdentityClaim,
+  unserializeProvisionalIdentityClaim,
   serializeBlock,
   unserializeBlock,
 } from '../Blocks/payloads';
@@ -560,14 +560,14 @@ describe('payload test vectors', () => {
     });
   });
 
-  it('correctly deserializes a ClaimInvite test vector', async () => {
-    const claimInvite = {
+  it('correctly deserializes a ProvisionalIdentityClaim test vector', async () => {
+    const provisionalIdentityClaim = {
       user_id: makeUint8Array('the user id', tcrypto.HASH_SIZE),
-      app_invitee_signature_public_key: makeUint8Array('the app sig pub key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      tanker_invitee_signature_public_key: makeUint8Array('the tanker sig pub key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      app_provisional_identity_signature_public_key: makeUint8Array('the app sig pub key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      tanker_provisional_identity_signature_public_key: makeUint8Array('the tanker sig pub key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
       author_signature_by_app_key: makeUint8Array('the author sig by app key', tcrypto.SIGNATURE_SIZE),
       author_signature_by_tanker_key: makeUint8Array('the author sig by tanker key', tcrypto.SIGNATURE_SIZE),
-      encrypted_invitee_private_keys: makeUint8Array('both encrypted private keys', tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
+      encrypted_provisional_identity_private_keys: makeUint8Array('both encrypted private keys', tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
                                                                                       + tcrypto.SEAL_OVERHEAD),
     };
 
@@ -576,12 +576,12 @@ describe('payload test vectors', () => {
       0x74, 0x68, 0x65, 0x20, 0x75, 0x73, 0x65, 0x72, 0x20, 0x69, 0x64, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      // AppInviteeSignaturePublicKey
+      // AppProvisionalIdentitySignaturePublicKey
       0x74, 0x68, 0x65, 0x20,
       0x61, 0x70, 0x70, 0x20, 0x73, 0x69, 0x67, 0x20, 0x70, 0x75, 0x62, 0x20,
       0x6b, 0x65, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00,
-      // TankerInviteeSignaturePublicKey
+      // TankerProvisionalIdentitySignaturePublicKey
       0x74, 0x68, 0x65, 0x20, 0x74, 0x61, 0x6e, 0x6b,
       0x65, 0x72, 0x20, 0x73, 0x69, 0x67, 0x20, 0x70, 0x75, 0x62, 0x20, 0x6b,
       0x65, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -599,7 +599,7 @@ describe('payload test vectors', () => {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      // EncryptedInviteePrivateKeys
+      // EncryptedProvisionalIdentityPrivateKeys
       0x62, 0x6f, 0x74, 0x68,
       0x20, 0x65, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x65, 0x64, 0x20, 0x70,
       0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x20, 0x6b, 0x65, 0x79, 0x73, 0x00,
@@ -612,8 +612,8 @@ describe('payload test vectors', () => {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ]);
 
-    expect(serializeClaimInvite(claimInvite)).to.deep.equal(payload);
-    expect(unserializeClaimInvite(payload)).to.deep.equal(claimInvite);
+    expect(serializeProvisionalIdentityClaim(provisionalIdentityClaim)).to.deep.equal(payload);
+    expect(unserializeProvisionalIdentityClaim(payload)).to.deep.equal(provisionalIdentityClaim);
   });
 });
 

@@ -289,7 +289,7 @@ export class Client extends EventEmitter {
     await this._send('push keys', serializedBlocks);
   }
 
-  getInviteeKeys = async (emails: Array<{ email: string }>): Promise<*> => {
+  getProvisionalIdentityKeys = async (emails: Array<{ email: string }>): Promise<*> => {
     const result = await this._send('get provisional identities keys', emails);
     if (result.error)
       throw new ServerError(result.error, this.trustchainId);
@@ -300,9 +300,9 @@ export class Client extends EventEmitter {
     }));
   }
 
-  getInviteePrivateKeys = async (invitee: { email: string }, verificationCode: string): Promise<*> => {
-    const result = await this._send('get invitee private keys', {
-      email: invitee.email,
+  getProvisionalIdentityPrivateKeys = async (provisionalIdentity: { email: string }, verificationCode: string): Promise<*> => {
+    const result = await this._send('get provisional identity private keys', {
+      email: provisionalIdentity.email,
       verificationCode,
     });
     if (result.error)

@@ -4,15 +4,15 @@ import { utils } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 
 import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
-import { type ClaimInviteRecord } from '../Blocks/payloads';
+import { type ProvisionalIdentityClaimRecord } from '../Blocks/payloads';
 
 const UNVERIFIED_CLAIMS_TABLE = 'unverified_invite_claims'; // Table that stores our unverified claim blocks
 
-export type UnverifiedClaimInvite = {
+export type UnverifiedProvisionalIdentityClaim = {
   ...VerificationFields,
-  ...ClaimInviteRecord,
+  ...ProvisionalIdentityClaimRecord,
 };
-export type VerifiedClaimInvite = UnverifiedClaimInvite
+export type VerifiedProvisionalIdentityClaim = UnverifiedProvisionalIdentityClaim
 
 export default class InviteUnverifiedStore {
   _ds: DataStore<*>;
@@ -36,7 +36,7 @@ export default class InviteUnverifiedStore {
     this._ds = null;
   }
 
-  async addUnverifiedClaimInviteEntries(entries: Array<UnverifiedClaimInvite>): Promise<void> {
+  async addUnverifiedProvisionalIdentityClaimEntries(entries: Array<UnverifiedProvisionalIdentityClaim>): Promise<void> {
     if (entries.length === 0)
       return;
     const mapEntry = new Map();
@@ -47,7 +47,7 @@ export default class InviteUnverifiedStore {
     await this._ds.bulkAdd(UNVERIFIED_CLAIMS_TABLE, [...mapEntry.values()]);
   }
 
-  async findUnverifiedClaimInvites(userId: Uint8Array): Promise<Array<UnverifiedClaimInvite>> {
+  async findUnverifiedProvisionalIdentityClaims(userId: Uint8Array): Promise<Array<UnverifiedProvisionalIdentityClaim>> {
     const userIdBase64 = utils.toBase64(userId);
     const entries = await this._ds.find(UNVERIFIED_CLAIMS_TABLE, {
       selector: {
@@ -59,7 +59,7 @@ export default class InviteUnverifiedStore {
     return entries.map(dbEntryToEntry);
   }
 
-  async removeVerifiedClaimInviteEntries(entries: Array<VerifiedClaimInvite>): Promise<void> {
+  async removeVerifiedProvisionalIdentityClaimEntries(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<void> {
     for (const entry of entries) {
       await this._ds.delete(UNVERIFIED_CLAIMS_TABLE, utils.toBase64(entry.author_signature_by_app_key));
     }
