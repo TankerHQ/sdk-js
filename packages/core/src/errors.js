@@ -21,10 +21,19 @@ export class DecryptFailed extends TankerError {
   chunkIndex: ?number;
 
   constructor(e: Error, resourceId: Uint8Array, chunkIndex?: number) {
-    super('decrypt_failed');
+    const b64ResourceId = utils.toBase64(resourceId);
+    let message;
+
+    try {
+      message = `resource ${b64ResourceId} decryption failed with: ${e.toString()}`;
+    } catch (err) {
+      message = `resource ${b64ResourceId} decryption failed`;
+    }
+
+    super('decrypt_failed', message);
 
     this.next = e;
-    this.b64ResourceId = utils.toBase64(resourceId);
+    this.b64ResourceId = b64ResourceId;
     this.chunkIndex = chunkIndex;
   }
 }
