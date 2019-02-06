@@ -6,25 +6,25 @@ import { TankerError } from '@tanker/errors';
 export { TankerError, InvalidArgument } from '@tanker/errors';
 
 export class ResourceNotFound extends TankerError {
-  b64Mac: b64string;
+  b64ResourceId: b64string;
 
   constructor(resourceId: Uint8Array) {
-    const b64Mac = utils.toBase64(resourceId);
-    super('resource_not_found', b64Mac);
-    this.b64Mac = b64Mac;
+    const b64ResourceId = utils.toBase64(resourceId);
+    super('resource_not_found', b64ResourceId);
+    this.b64ResourceId = b64ResourceId;
   }
 }
 
 export class DecryptFailed extends TankerError {
+  b64ResourceId: b64string;
   next: Error;
-  b64Mac: b64string;
   chunkIndex: ?number;
 
   constructor(e: Error, resourceId: Uint8Array, chunkIndex?: number) {
     super('decrypt_failed');
 
     this.next = e;
-    this.b64Mac = utils.toBase64(resourceId);
+    this.b64ResourceId = utils.toBase64(resourceId);
     this.chunkIndex = chunkIndex;
   }
 }

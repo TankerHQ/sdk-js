@@ -177,7 +177,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
         await expect(args.bobLaptop.share([badResourceId], { shareWithUsers: [aliceId] }))
           .to.be.rejectedWith(errors.ResourceNotFound)
-          .and.eventually.have.property('b64Mac', badResourceId);
+          .and.eventually.have.property('b64ResourceId', badResourceId);
       });
 
       it('throws when sharing with a user that doesn\'t exist', async () => {
