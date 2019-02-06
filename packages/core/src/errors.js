@@ -10,7 +10,7 @@ export class ResourceNotFound extends TankerError {
 
   constructor(resourceId: Uint8Array) {
     const b64ResourceId = utils.toBase64(resourceId);
-    super('resource_not_found', b64ResourceId);
+    super('ResourceNotFound', b64ResourceId);
     this.b64ResourceId = b64ResourceId;
   }
 }
@@ -30,7 +30,7 @@ export class DecryptFailed extends TankerError {
       message = `resource ${b64ResourceId} decryption failed`;
     }
 
-    super('decrypt_failed', message);
+    super('DecryptFailed', message);
 
     this.next = e;
     this.b64ResourceId = b64ResourceId;
@@ -42,8 +42,7 @@ export class InvalidUserToken extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('invalid_user_token');
-
+    super('InvalidUserToken');
     this.next = e;
   }
 }
@@ -52,8 +51,7 @@ export class InvalidUnlockKey extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('invalid_unlock_key');
-
+    super('InvalidUnlockKey');
     this.next = e;
   }
 }
@@ -62,8 +60,7 @@ export class InvalidUnlockPassword extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('invalid_unlock_password');
-
+    super('InvalidUnlockPassword');
     this.next = e;
   }
 }
@@ -72,8 +69,7 @@ export class InvalidUnlockVerificationCode extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('invalid_unlock_verification_code');
-
+    super('InvalidUnlockVerificationCode');
     this.next = e;
   }
 }
@@ -82,8 +78,7 @@ export class MaxVerificationAttemptsReached extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('max_verification_attempts_reached');
-
+    super('MaxVerificationAttemptsReached');
     this.next = e;
   }
 }
@@ -92,15 +87,14 @@ export class InvalidSessionStatus extends TankerError {
   status: number;
 
   constructor(status: number, message: string = `status: ${status}`) {
-    super('invalid_session_status', message);
-
+    super('InvalidSessionStatus', message);
     this.status = status;
   }
 }
 
 export class OperationCanceled extends TankerError {
   constructor(message: string = 'Operation canceled') {
-    super('operation_canceled', message);
+    super('OperationCanceled', message);
   }
 }
 
@@ -108,7 +102,7 @@ export class InvalidDeviceValidationCode extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('invalid_device_validation_code');
+    super('InvalidDeviceValidationCode');
     this.next = e;
   }
 }
@@ -117,14 +111,14 @@ export class InvalidSeal extends TankerError {
   next: ?Error;
 
   constructor(message: string, e: ?Error) {
-    super('invalid_seal', message);
+    super('InvalidSeal', message);
     this.next = e;
   }
 }
 
 export class InvalidEncryptionFormat extends TankerError {
   constructor(message: string) {
-    super('invalid_encryption_format', message);
+    super('InvalidEncryptionFormat', message);
   }
 }
 
@@ -134,7 +128,8 @@ export class ServerError extends TankerError {
 
   constructor(error: Object, trustchainId: Uint8Array) {
     const b64TrustchainId = utils.toBase64(trustchainId);
-    super('server_error', `status: ${error.status}, code: ${error.code}, message: ${error.message}, trustchainId: ${b64TrustchainId}`);
+    const message = `status: ${error.status}, code: ${error.code}, message: ${error.message}, trustchainId: ${b64TrustchainId}`;
+    super('ServerError', message);
     this.error = error;
     this.b64TrustchainId = b64TrustchainId;
   }
@@ -142,28 +137,28 @@ export class ServerError extends TankerError {
 
 export class InvalidDelegationToken extends TankerError {
   constructor(message: string) {
-    super('invalid_delegation_token', message);
+    super('InvalidDelegationToken', message);
   }
 }
 
 export class MissingEventHandler extends TankerError {
   constructor(eventName: string) {
     const message = `it is mandatory to add an event handler for the "${eventName}" event`;
-    super('missing_event_handler', message);
+    super('MissingEventHandler', message);
   }
 }
 
 export class ChunkIndexOutOfRange extends TankerError {
   constructor(index: number, length: number) {
     const message = `index ${index} outside [0, ${length}) range`;
-    super('chunk_index_out_of_range', message);
+    super('ChunkIndexOutOfRange', message);
   }
 }
 
 export class ChunkNotFound extends TankerError {
   constructor(index: number) {
     const message = `no chunk found at index ${index}`;
-    super('chunk_not_found', message);
+    super('ChunkNotFound', message);
   }
 }
 
@@ -171,7 +166,7 @@ export class AuthenticationError extends TankerError {
   next: Error;
 
   constructor(e: any) {
-    super('authentication_error', `couldn't authenticate: ${e.message}`);
+    super('AuthenticationError', `couldn't authenticate: ${e.message}`);
     this.next = e;
   }
 }
@@ -180,7 +175,7 @@ export class RecipientsNotFound extends TankerError {
   recipientIds: Array<string>;
 
   constructor(recipientIds: Array<string>) {
-    super('recipients_not_found', `Recipient(s) '${recipientIds.join(', ')}' not found`);
+    super('RecipientsNotFound', `Recipient(s) '${recipientIds.join(', ')}' not found`);
 
     this.recipientIds = recipientIds;
   }
@@ -188,6 +183,6 @@ export class RecipientsNotFound extends TankerError {
 
 export class InvalidGroupSize extends TankerError {
   constructor(msg: string) {
-    super('invalid_group_size', msg);
+    super('InvalidGroupSize', msg);
   }
 }

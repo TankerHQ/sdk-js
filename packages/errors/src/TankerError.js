@@ -1,15 +1,11 @@
 // @flow
 export default class TankerError extends Error {
-  nature: string;
-
-  constructor(nature: string, details: ?string) {
-    let message = `Tanker error: ${nature}`;
-    if (details) {
-      message += `, ${details}`;
-    }
-
+  constructor(name: string = 'TankerError', message?: string) {
     super(message);
+    this.name = name;
+  }
 
-    this.nature = nature;
+  toString() {
+    return `[Tanker] ${super.toString()}`;
   }
 }
