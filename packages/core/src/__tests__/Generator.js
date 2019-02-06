@@ -599,6 +599,7 @@ class Generator {
       tanker_provisional_identity_signature_public_key: provisionalIdentityKeys.tankerSignatureKeyPair.publicKey,
       author_signature_by_app_key: appSignature,
       author_signature_by_tanker_key: tankerSignature,
+      recipient_user_public_key: userKeys.publicKey,
       encrypted_provisional_identity_private_keys: encryptedProvisionalIdentityKeys,
     };
     this.trustchainIndex += 1;
