@@ -94,6 +94,7 @@ export type ProvisionalIdentityClaimRecord = {|
   tanker_provisional_identity_signature_public_key: Uint8Array,
   author_signature_by_app_key: Uint8Array,
   author_signature_by_tanker_key: Uint8Array,
+  recipient_user_public_key: Uint8Array,
   encrypted_provisional_identity_private_keys: Uint8Array,
 |}
 
@@ -447,6 +448,8 @@ export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: Prov
     throw new Error('Assertion error: invalid claim invite app signature size');
   if (provisionalIdentityClaim.author_signature_by_tanker_key.length !== tcrypto.SIGNATURE_SIZE)
     throw new Error('Assertion error: invalid claim invite tanker signature size');
+  if (provisionalIdentityClaim.recipient_user_public_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid claim invite recipient key size');
   if (provisionalIdentityClaim.encrypted_provisional_identity_private_keys.length !== tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
                                                             + tcrypto.SEAL_OVERHEAD)
     throw new Error('Assertion error: invalid claim invite encrypted keys size');
@@ -457,6 +460,7 @@ export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: Prov
     provisionalIdentityClaim.tanker_provisional_identity_signature_public_key,
     provisionalIdentityClaim.author_signature_by_app_key,
     provisionalIdentityClaim.author_signature_by_tanker_key,
+    provisionalIdentityClaim.recipient_user_public_key,
     provisionalIdentityClaim.encrypted_provisional_identity_private_keys,
   );
 }
@@ -468,6 +472,7 @@ export function unserializeProvisionalIdentityClaim(src: Uint8Array): Provisiona
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_provisional_identity_signature_public_key'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'author_signature_by_app_key'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'author_signature_by_tanker_key'),
+    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient_user_public_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
                                 + tcrypto.SEAL_OVERHEAD, o, 'encrypted_provisional_identity_private_keys'),
   ]);
