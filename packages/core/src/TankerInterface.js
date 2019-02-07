@@ -7,7 +7,7 @@ import { type EncryptionOptions } from './DataProtection/EncryptionOptions';
 //       subclasses (see: https://flow.org/en/docs/lang/variance/).
 export interface EncryptionInterface {
   encryptData(clearData: Uint8Array, options?: EncryptionOptions): Promise<any>;
-  decryptData(encryptedData: Uint8Array, options?: { type?: 'Uint8Array' }): Promise<any>;
+  decryptData<T>(encryptedData: Uint8Array, options?: { type?: Class<T> }): Promise<T>;
   encrypt(plain: string, options?: EncryptionOptions): Promise<Uint8Array>;
   decrypt(cipher: Uint8Array): Promise<string>;
 }

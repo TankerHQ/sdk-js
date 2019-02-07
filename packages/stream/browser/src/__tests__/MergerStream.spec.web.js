@@ -1,8 +1,9 @@
 // @flow
 import { utils } from '@tanker/crypto';
+import FilePonyfill from '@tanker/file-ponyfill';
 
 import { expect } from './chai';
-import MergerStream from '../MergerStream';
+import MergerStream, { getConstructorName } from '../MergerStream';
 
 const toUint8Array = (input: ArrayBuffer | Uint8Array | Blob | File): Promise<Uint8Array> => new Promise((resolve, reject) => {
   if (input instanceof ArrayBuffer) {
@@ -37,20 +38,19 @@ describe('MergerStream (web)', () => {
 
   it('assumes Uint8Array if no type given', () => {
     const stream = new MergerStream();
-    // $FlowExpectedError
-    expect(stream._type).to.equal('Uint8Array'); // eslint-disable-line no-underscore-dangle
+    expect(stream._type).to.equal(Uint8Array); // eslint-disable-line no-underscore-dangle
   });
 
   [
-    { type: 'ArrayBuffer' },
-    { type: 'Uint8Array' },
-    { type: 'Blob' },
-    { type: 'File', name: 'a-file-name.txt' },
+    { type: ArrayBuffer },
+    { type: Uint8Array },
+    { type: Blob },
+    { type: File, name: 'a-file.txt' },
+    { type: FilePonyfill, name: 'a-file-ponyfill.txt' },
   ].forEach(options => {
     const { type } = options;
-    const expectedType = type || 'Uint8Array';
 
-    it(`can merge binary chunks into a ${type || 'Uint8Array'}`, async () => {
+    it(`can merge binary chunks into a ${getConstructorName(type)}`, async () => {
       const stream = new MergerStream(options);
 
       const output: Array<Uint8Array> = [];
@@ -61,10 +61,10 @@ describe('MergerStream (web)', () => {
         stream.on('finish', async () => {
           try {
             expect(output).to.have.lengthOf(1);
-            expect(output[0]).to.be.an.instanceOf(window[expectedType]);
+            expect(output[0]).to.be.an.instanceOf(type);
             const outputBytes = await toUint8Array(output[0]);
             expect(outputBytes).to.deep.equal(bytes);
-            if (type === File) {
+            if (type === File || type === FilePonyfill) {
               // $FlowExpectedError
               expect(output[0].name).to.equal(options.name);
             }

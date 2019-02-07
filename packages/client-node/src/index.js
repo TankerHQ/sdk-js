@@ -3,7 +3,7 @@ import { Tanker as TankerCore, errors, optionsWithDefaults, getEncryptionFormat,
 import { MergerStream, SlicerStream } from '@tanker/stream-node';
 import PouchDB from '@tanker/datastore-pouchdb-node';
 
-import { getDataType, castData, type Data, type DataType } from './dataHelpers';
+import { getConstructor, assertDataType, castData, type Data } from './dataHelpers';
 
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
 
@@ -12,20 +12,20 @@ const defaultOptions = {
   sdkType: 'client-node',
 };
 
-type OutputOptions = { type?: DataType };
-type ExtendedEncryptionOptions = EncryptionOptions & OutputOptions;
+type OutputOptions<T: Data> = { type?: Class<T> };
+type ExtendedEncryptionOptions<T> = EncryptionOptions & OutputOptions<T>;
 
 class Tanker extends TankerCore {
   constructor(options: TankerOptions) {
     super(optionsWithDefaults(options, defaultOptions));
   }
 
-  async _simpleEncryptData(clearData: Uint8Array, options: EncryptionOptions, outputType: DataType): Promise<Data> {
+  async _simpleEncryptData<T: Data>(clearData: Uint8Array, options: EncryptionOptions, outputType: Class<T>): Promise<T> {
     const encryptedData = await this._session.dataProtector.encryptAndShareData(clearData, options);
     return castData(encryptedData, outputType);
   }
 
-  async _streamEncryptData(clearData: Uint8Array, options: EncryptionOptions, outputType: DataType): Promise<Data> {
+  async _streamEncryptData<T: Data>(clearData: Uint8Array, options: EncryptionOptions, outputType: Class<T>): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
     const encryptor = await this._session.dataProtector.makeEncryptorStream(options);
     const merger = new MergerStream({ type: outputType });
@@ -36,12 +36,12 @@ class Tanker extends TankerCore {
     });
   }
 
-  async encryptData(clearData: Data, options?: ExtendedEncryptionOptions = {}): Promise<Data> {
+  async encryptData<T: Data>(clearData: Data, options?: ExtendedEncryptionOptions<T> = {}): Promise<T> {
     this.assert(this.OPEN, 'encrypt data');
+    assertDataType(clearData, 'encryptedData');
 
-    const inputType = getDataType(clearData, 'clearData');
-    const castClearData: Uint8Array = (castData(clearData, 'Uint8Array'): any);
-    const outputType = options.type || inputType;
+    const castClearData = castData(clearData, Uint8Array);
+    const outputType = options.type || getConstructor(clearData);
     const encryptionOptions = this._parseEncryptionOptions(options);
 
     if (castClearData.length < STREAM_THRESHOLD)
@@ -50,12 +50,12 @@ class Tanker extends TankerCore {
     return this._streamEncryptData(castClearData, encryptionOptions, outputType);
   }
 
-  async _simpleDecryptData(encryptedData: Uint8Array, outputType: DataType): Promise<Data> {
+  async _simpleDecryptData<T: Data>(encryptedData: Uint8Array, outputType: Class<T>): Promise<T> {
     const clearData = await this._session.dataProtector.decryptData(encryptedData);
     return castData(clearData, outputType);
   }
 
-  async _streamDecryptData(encryptedData: Uint8Array, outputType: DataType): Promise<Data> {
+  async _streamDecryptData<T: Data>(encryptedData: Uint8Array, outputType: Class<T>): Promise<T> {
     const slicer = new SlicerStream({ source: encryptedData });
     const decryptor = await this._session.dataProtector.makeDecryptorStream();
     const merger = new MergerStream({ type: outputType });
@@ -66,15 +66,13 @@ class Tanker extends TankerCore {
     });
   }
 
-  async decryptData(encryptedData: Data, options?: OutputOptions = {}): Promise<Data> {
+  async decryptData<T: Data>(encryptedData: Data, options?: OutputOptions<T> = {}): Promise<T> {
     this.assert(this.OPEN, 'decrypt data');
+    assertDataType(encryptedData, 'encryptedData');
 
-    const inputType = getDataType(encryptedData);
-    const castEncryptedData: Uint8Array = (castData(encryptedData, 'Uint8Array'): any);
-
+    const castEncryptedData = castData(encryptedData, Uint8Array);
     const { version } = getEncryptionFormat(castEncryptedData);
-
-    const outputType = options.type || inputType;
+    const outputType = options.type || getConstructor(encryptedData);
 
     if (version < 4)
       return this._simpleDecryptData(castEncryptedData, outputType);
@@ -88,17 +86,15 @@ class Tanker extends TankerCore {
     if (typeof plain !== 'string')
       throw new errors.InvalidArgument('plain', 'string', plain);
 
-    // $FlowFixMe we ARE asking for a Uint8Array back
-    return this.encryptData(fromString(plain), { ...options, type: 'Uint8Array' });
+    return this.encryptData(fromString(plain), { ...options, type: Uint8Array });
   }
 
   async decrypt(cipher: Data): Promise<string> {
-    // $FlowFixMe we ARE asking for a Uint8Array back
-    return toString(await this.decryptData(cipher, { type: 'Uint8Array' }));
+    return toString(await this.decryptData(cipher, { type: Uint8Array }));
   }
 
   async getResourceId(encryptedData: Data): Promise<b64string> {
-    const source: Uint8Array = (castData(encryptedData, 'Uint8Array'): any);
+    const source = castData(encryptedData, Uint8Array);
     return super.getResourceId(source);
   }
 }

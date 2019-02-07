@@ -24,18 +24,18 @@ const generateTestResources = (): TestResources => {
   const big = makeRandomUint8Array(6 * 1024 * 1024); // 6MB
 
   const result = {
-    small: {
-      ArrayBuffer: small.buffer,
-      Blob: new Blob([small], { type: 'application/octet-stream' }),
-      File: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }),
-      Uint8Array: small,
-    },
-    big: {
-      ArrayBuffer: big.buffer,
-      Blob: new Blob([big], { type: 'application/octet-stream' }),
-      File: new FilePonyfill([big], 'holidays.mp4', { type: 'video/mp4' }),
-      Uint8Array: big,
-    }
+    small: [
+      { type: ArrayBuffer, resource: small.buffer },
+      { type: Blob, resource: new Blob([small], { type: 'application/octet-stream' }) },
+      { type: File, resource: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }) },
+      { type: Uint8Array, resource: small },
+    ],
+    big: [
+      { type: ArrayBuffer, resource: big.buffer },
+      { type: Blob, resource: new Blob([big], { type: 'application/octet-stream' }) },
+      { type: File, resource: new FilePonyfill([big], 'holidays.mp4', { type: 'video/mp4' }) },
+      { type: Uint8Array, resource: big },
+    ],
   };
 
   return result;
