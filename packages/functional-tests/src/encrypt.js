@@ -2,10 +2,36 @@
 import uuid from 'uuid';
 import { errors } from '@tanker/core';
 import { tcrypto, utils } from '@tanker/crypto';
-import { getConstructorName } from '@tanker/errors';
+import FilePonyfill from '@tanker/file-ponyfill';
 import { expect } from './chai';
 
 import { type TestArgs } from './TestArgs';
+
+const getConstructor = instance => {
+  if (instance instanceof ArrayBuffer)
+    return ArrayBuffer;
+  if (global.Buffer && instance instanceof Buffer)
+    return Buffer;
+  else if (instance instanceof Uint8Array)
+    return Uint8Array;
+  else if (global.File && instance instanceof File || instance instanceof FilePonyfill) // must be before Blob
+    return File;
+  // else if (global.Blob && instance instanceof Blob)
+  return Blob;
+};
+
+const getConstructorName = (constructor: Object): string => {
+  if (constructor === ArrayBuffer)
+    return 'ArrayBuffer';
+  if (global.Buffer && constructor === Buffer)
+    return 'Buffer';
+  else if (constructor === Uint8Array)
+    return 'Uint8Array';
+  else if (global.File && constructor === File || constructor === FilePonyfill) // must be before Blob
+    return 'File';
+  // else if (global.Blob && constructor === Blob)
+  return 'Blob';
+};
 
 const generateEncryptTests = (args: TestArgs) => {
   describe('text resource encryption and sharing', () => {
@@ -268,8 +294,8 @@ const generateEncryptTests = (args: TestArgs) => {
 
   // A few helpers needed to test binary resources:
   const objectType = (obj: Object) => {
-    const type = getConstructorName(obj);
-    return type === 'FilePonyfill' ? 'File' : type;
+    const type = getConstructor(obj);
+    return type === 'FilePonyfill' ? File : type;
   };
   // In Edge and IE11, accessing the webkitRelativePath property (though defined) triggers
   // a TypeError: Invalid calling object. We avoid this by comparing only useful props.
@@ -277,10 +303,10 @@ const generateEncryptTests = (args: TestArgs) => {
     const { name, size, type, lastModified } = obj;
     return { name, size, type, lastModified };
   };
-  const expectType = (obj: Object, type: string) => expect(objectType(obj)).to.equal(type);
+  const expectType = (obj: Object, type: Object) => expect(objectType(obj)).to.equal(type);
   const expectSameType = (a: Object, b: Object) => expect(objectType(a)).to.equal(objectType(b));
   const expectDeepEqual = (a: Object, b: Object) => {
-    if (objectType(a) === 'File') {
+    if (global.File && a instanceof File) {
       expect(fileProps(a)).to.deep.equal(fileProps(b));
       return;
     }
@@ -291,8 +317,6 @@ const generateEncryptTests = (args: TestArgs) => {
 
   sizes.forEach(size => {
     describe(`${size} binary resource encryption`, () => {
-      const types = Object.keys(args.resources[size]);
-
       let aliceId;
       let aliceToken;
 
@@ -306,10 +330,8 @@ const generateEncryptTests = (args: TestArgs) => {
         await args.aliceLaptop.close();
       });
 
-      types.forEach(type => {
-        it(`can encrypt and decrypt keeping input type (${type}) by default`, async () => {
-          const clear = args.resources[size][type];
-
+      args.resources[size].forEach(({ type, resource: clear }) => {
+        it(`can encrypt and decrypt keeping input type (${getConstructorName(type)}) by default`, async () => {
           const encrypted = await args.aliceLaptop.encryptData(clear);
           expectSameType(encrypted, clear);
 
@@ -320,27 +342,24 @@ const generateEncryptTests = (args: TestArgs) => {
         });
       });
 
-      types.forEach(originalType => {
-        types.forEach(transientType => {
-          it(`can encrypt a ${originalType} into a ${transientType} and decrypt back a ${originalType}`, async () => {
-            const clear = args.resources[size][originalType];
-
+      args.resources[size].forEach(({ type: originalType, resource: clear }) => {
+        args.resources[size].forEach(({ type: transientType }) => {
+          it(`can encrypt a ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
             const encrypted = await args.aliceLaptop.encryptData(clear, { type: transientType });
             expectType(encrypted, transientType);
 
             const outputOptions = {};
             outputOptions.type = originalType;
 
-            if (outputOptions.type === 'Blob') {
+            if (global.Blob && outputOptions.type === Blob) {
               outputOptions.mime = clear.type;
             }
-            if (outputOptions.type === 'File') {
+            if (global.File && outputOptions.type === File) {
               outputOptions.mime = clear.type;
               outputOptions.name = clear.name;
               outputOptions.lastModified = clear.lastModified;
             }
 
-            // $FlowIKnow Testing more types other than Uint8Array
             const decrypted = await args.aliceLaptop.decryptData(encrypted, outputOptions);
             expectType(decrypted, originalType);
 

@@ -3,38 +3,44 @@ import { errors } from '@tanker/core';
 import FilePonyfill from '@tanker/file-ponyfill';
 
 export type Data = ArrayBuffer | Blob | File | Uint8Array;
-export type DataType = 'ArrayBuffer' | 'Blob' | 'File' | 'Uint8Array';
 
 export const assertDataType = (value: any, argName: string): void => {
   if (![Uint8Array, Blob, File, ArrayBuffer].some(klass => value instanceof klass))
     throw new errors.InvalidArgument(argName, 'ArrayBuffer | Blob | File | Uint8Array', value);
 };
 
-export const getDataType = (value: any): DataType => {
-  if (value instanceof ArrayBuffer)
+export const getConstructor = <T: Data>(instance: T): * => {
+  if (instance instanceof ArrayBuffer)
+    return ArrayBuffer;
+  else if (instance instanceof Uint8Array)
+    return Uint8Array;
+  else if (instance instanceof File) // must be before Blob
+    return File;
+  else if (instance instanceof Blob)
+    return Blob;
+  throw new Error('Assertion error: unhandled type');
+};
+
+const getConstructorName = (constructor): string => {
+  if (constructor === ArrayBuffer)
     return 'ArrayBuffer';
-  else if (value instanceof Uint8Array)
+  else if (constructor === Uint8Array)
     return 'Uint8Array';
-  else if (value instanceof File) // must be before Blob
+  else if (constructor === File || constructor === FilePonyfill) // must be before Blob
     return 'File';
-  else if (value instanceof Blob)
+  else if (constructor === Blob)
     return 'Blob';
-  else
-    throw new errors.InvalidArgument('value', 'ArrayBuffer | Blob | File | Uint8Array', value);
+  throw new Error('Assertion error: unhandled type');
 };
 
 export const getDataLength = (value: Data): number => {
-  switch (getDataType(value)) {
-    case 'ArrayBuffer':
-      // $FlowIKnow
-      return value.byteLength;
-    case 'Uint8Array':
-      // $FlowIKnow
-      return value.length;
-    default: // 'Blob' or 'File'
-      // $FlowIKnow
-      return value.size;
-  }
+  if (value instanceof ArrayBuffer)
+    return value.byteLength;
+  else if (value instanceof Uint8Array)
+    return value.length;
+  else if (value instanceof File || value instanceof Blob)
+    return value.size;
+  throw new Error('Assertion error: unhandled type');
 };
 
 const defaultMime = 'application/octet-stream';
@@ -76,19 +82,20 @@ const toUint8Array = async (value: Data, maxSize: ?number): Promise<Uint8Array> 
   });
 };
 
-export const castData = async (
+export async function castData<T: Data>(
   input: Data,
-  opts: { type: DataType, mime?: string, name?: string, lastModified?: number },
+  opts: { type: Class<T>, mime?: string, name?: string, lastModified?: number },
   maxSize: ?number
-): Promise<Data> => {
+): Promise<T> {
   const { type, ...outputOpts } = opts;
 
-  if (getDataType(input) === type) return input;
+  if (input instanceof type)
+    return input;
 
   const uint8array = await toUint8Array(input, maxSize);
 
-  if (type === 'Blob' || type === 'File')
-    return fromUint8ArrayTo[type](uint8array, outputOpts);
+  if (type === Blob || type === File || type === FilePonyfill)
+    return fromUint8ArrayTo[getConstructorName(type)](uint8array, outputOpts);
 
-  return fromUint8ArrayTo[type](uint8array);
-};
+  return fromUint8ArrayTo[getConstructorName(type)](uint8array);
+}

@@ -27,19 +27,17 @@ describe('MergerStream (node)', () => {
 
   it('assumes Uint8Array if no type given', () => {
     const stream = new MergerStream();
-    // $FlowExpectedError
-    expect(stream._type).to.equal('Uint8Array'); // eslint-disable-line no-underscore-dangle
+    expect(stream._type).to.equal(Uint8Array); // eslint-disable-line no-underscore-dangle
   });
 
   [
-    { type: 'ArrayBuffer' },
-    { type: 'Buffer' },
-    { type: 'Uint8Array' },
+    { type: ArrayBuffer },
+    { type: Buffer },
+    { type: Uint8Array },
   ].forEach(options => {
     const { type } = options;
-    const expectedType = type || 'Uint8Array';
 
-    it(`can merge binary chunks into a ${type || 'Uint8Array'}`, async () => {
+    it(`can merge binary chunks into a ${type.name}`, async () => {
       const stream = new MergerStream(options);
 
       const output: Array<Uint8Array> = [];
@@ -50,7 +48,7 @@ describe('MergerStream (node)', () => {
         stream.on('finish', async () => {
           try {
             expect(output).to.have.lengthOf(1);
-            expect(output[0]).to.be.an.instanceOf(global[expectedType]);
+            expect(output[0]).to.be.an.instanceOf(type);
             const outputBytes = toUint8Array(output[0]);
             expect(outputBytes).to.deep.equal(bytes);
             resolve();

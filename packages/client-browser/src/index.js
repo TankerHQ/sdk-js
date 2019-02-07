@@ -3,7 +3,7 @@ import { Tanker as TankerCore, errors, optionsWithDefaults, getEncryptionFormat,
 import { MergerStream, SlicerStream } from '@tanker/stream-browser';
 import Dexie from '@tanker/datastore-dexie-browser';
 
-import { assertDataType, getDataLength, castData, type Data, type DataType } from './dataHelpers';
+import { assertDataType, getDataLength, castData, type Data } from './dataHelpers';
 import { makeOutputOptions, type OutputOptions } from './outputOptions';
 
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
@@ -15,20 +15,20 @@ const defaultOptions = {
   sdkType: 'client-browser'
 };
 
-type ExtendedEncryptionOptions = EncryptionOptions & OutputOptions;
+type ExtendedEncryptionOptions<T> = EncryptionOptions & OutputOptions<T>;
 
 class Tanker extends TankerCore {
   constructor(options: TankerOptions) {
     super(optionsWithDefaults(options, defaultOptions));
   }
 
-  async _simpleEncryptData(clearData: Data, options: EncryptionOptions, outputOptions: OutputOptions & { type: DataType }): Promise<Data> {
-    const castClearData: Uint8Array = (await castData(clearData, { type: 'Uint8Array' }): any);
+  async _simpleEncryptData<T: Data>(clearData: Data, options: EncryptionOptions, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
+    const castClearData = await castData(clearData, { type: Uint8Array });
     const encryptedData = await this._session.dataProtector.encryptAndShareData(castClearData, options);
     return castData(encryptedData, outputOptions);
   }
 
-  async _streamEncryptData(clearData: Data, options: EncryptionOptions, outputOptions: OutputOptions & { type: DataType }): Promise<Data> {
+  async _streamEncryptData<T: Data>(clearData: Data, options: EncryptionOptions, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
     const encryptor = await this._session.dataProtector.makeEncryptorStream(options);
     // $FlowFixMe Yes types are compatible
@@ -40,7 +40,7 @@ class Tanker extends TankerCore {
     });
   }
 
-  async encryptData(clearData: Data, options?: ExtendedEncryptionOptions = {}): Promise<Data> {
+  async encryptData<T: Data>(clearData: Data, options?: ExtendedEncryptionOptions<T> = {}): Promise<T> {
     this.assert(this.OPEN, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
@@ -53,16 +53,15 @@ class Tanker extends TankerCore {
     return this._streamEncryptData(clearData, encryptionOptions, outputOptions);
   }
 
-  async _simpleDecryptData(encryptedData: Data, outputOptions: OutputOptions & { type: DataType }): Promise<Data> {
-    const castEncryptedData: Uint8Array = (await castData(encryptedData, { type: 'Uint8Array' }): any);
+  async _simpleDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
+    const castEncryptedData = await castData(encryptedData, { type: Uint8Array });
     const clearData = await this._session.dataProtector.decryptData(castEncryptedData);
     return castData(clearData, outputOptions);
   }
 
-  async _streamDecryptData(encryptedData: Data, outputOptions: OutputOptions & { type: DataType }): Promise<Data> {
+  async _streamDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
     const slicer = new SlicerStream({ source: encryptedData });
     const decryptor = await this._session.dataProtector.makeDecryptorStream();
-    // $FlowFixMe Yes types are compatible
     const merger = new MergerStream(outputOptions);
 
     return new Promise((resolve, reject) => {
@@ -71,13 +70,13 @@ class Tanker extends TankerCore {
     });
   }
 
-  async decryptData(encryptedData: Data, options?: OutputOptions = {}): Promise<Data> {
+  async decryptData<T: Data>(encryptedData: Data, options?: OutputOptions<T> = {}): Promise<T> {
     this.assert(this.OPEN, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
     const outputOptions = makeOutputOptions(encryptedData, options);
 
-    const header: Uint8Array = (await castData(encryptedData, { type: 'Uint8Array' }, MAX_FORMAT_HEADER_SIZE): any);
+    const header = await castData(encryptedData, { type: Uint8Array }, MAX_FORMAT_HEADER_SIZE);
     const { version } = getEncryptionFormat(header);
 
     if (version < 4)
@@ -92,17 +91,15 @@ class Tanker extends TankerCore {
     if (typeof plain !== 'string')
       throw new errors.InvalidArgument('plain', 'string', plain);
 
-    // $FlowFixMe we ARE asking for a Uint8Array back
-    return this.encryptData(fromString(plain), { ...options, type: 'Uint8Array' });
+    return this.encryptData(fromString(plain), { ...options, type: Uint8Array });
   }
 
   async decrypt(cipher: Data): Promise<string> {
-    // $FlowFixMe we ARE asking for a Uint8Array back
-    return toString(await this.decryptData(cipher, { type: 'Uint8Array' }));
+    return toString(await this.decryptData(cipher, { type: Uint8Array }));
   }
 
   async getResourceId(encryptedData: Data): Promise<b64string> {
-    const source: Uint8Array = (await castData(encryptedData, { type: 'Uint8Array' }, MAX_SIMPLE_RESOURCE_SIZE): any);
+    const source = await castData(encryptedData, { type: Uint8Array }, MAX_SIMPLE_RESOURCE_SIZE);
     return super.getResourceId(source);
   }
 }

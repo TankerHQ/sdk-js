@@ -23,16 +23,16 @@ const generateTestResources = (): TestResources => {
   const big = makeRandomUint8Array(6 * 1024 * 1024); // 6MB
 
   const result = {
-    small: {
-      ArrayBuffer: small.buffer,
-      Buffer: Buffer.from(small.buffer),
-      Uint8Array: small,
-    },
-    big: {
-      ArrayBuffer: big.buffer,
-      Buffer: Buffer.from(big.buffer),
-      Uint8Array: big,
-    }
+    small: [
+      { type: ArrayBuffer, resource: small.buffer },
+      { type: Buffer, resource: Buffer.from(small.buffer) },
+      { type: Uint8Array, resource: small },
+    ],
+    big: [
+      { type: ArrayBuffer, resource: big.buffer },
+      { type: Buffer, resource: Buffer.from(big.buffer) },
+      { type: Uint8Array, resource: big },
+    ],
   };
 
   return result;

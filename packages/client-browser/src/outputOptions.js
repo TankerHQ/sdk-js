@@ -1,12 +1,13 @@
 // @flow
-import { getDataType, type Data, type DataType } from './dataHelpers';
+import FilePonyfill from '@tanker/file-ponyfill';
+import { getConstructor, type Data } from './dataHelpers';
 
-export type OutputOptions = { type?: DataType, mime?: string, name?: string, lastModified?: number };
+export type OutputOptions<T: Data> = { type?: Class<T>, mime?: string, name?: string, lastModified?: number };
 
-export const makeOutputOptions = (input: Data, options: OutputOptions): { type: DataType } & OutputOptions => {
-  const outputType: DataType = options.type || getDataType(input);
+export const makeOutputOptions = <T: Data>(input: Data, options: OutputOptions<T>): { type: Class<T> } & OutputOptions<T> => {
+  const outputType = options.type || getConstructor(input);
 
-  if (outputType === 'ArrayBuffer' || outputType === 'Uint8Array')
+  if (outputType === ArrayBuffer || outputType === Uint8Array)
     return { type: outputType };
 
   // outputType is 'Blob' or 'File' starting from here
@@ -14,7 +15,7 @@ export const makeOutputOptions = (input: Data, options: OutputOptions): { type: 
   if (input instanceof Blob) {
     inputDefaults.mime = input.type;
   }
-  if (input instanceof File && outputType === 'File') {
+  if (input instanceof File && (outputType === File || outputType === FilePonyfill)) {
     inputDefaults.name = input.name;
     inputDefaults.lastModified = input.lastModified;
   }
@@ -23,7 +24,7 @@ export const makeOutputOptions = (input: Data, options: OutputOptions): { type: 
   if (typeof options.mime === 'string') {
     optionsDefaults.mime = options.mime;
   }
-  if (outputType === 'File') {
+  if (outputType === File || outputType === FilePonyfill) {
     if (typeof options.name === 'string') {
       optionsDefaults.name = options.name;
     }
