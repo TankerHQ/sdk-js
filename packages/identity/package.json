@@ -1,0 +1,20 @@
+{
+  "name": "@tanker/identity",
+  "version": "0.0.1",
+  "description": "Tanker Identity SDK",
+  "author": "Tanker Team",
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "module": "es.js",
+  "scripts": {
+    "test": "cd ../..; yarn test:identity"
+  },
+  "dependencies": {
+    "@tanker/crypto": "0.0.1"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "chai-exclude": "^1.0.12"
+  }
+}
