@@ -180,35 +180,6 @@ const generateUnlockTests = (args: TestArgs) => {
         await bobPhone.open(bobId, bobToken);
         expect(bobPhone.status).to.equal(TankerStatus.OPEN);
       });
-
-      it('should throw a nice error when password is not set', async () => {
-        bobPhone.once('unlockRequired', async () => {
-          await expect(bobPhone.unlockCurrentDevice({ password: 'noPasswordDefined' })).to.be.rejectedWith('invalid_unlock_key');
-          await bobPhone.close();
-        });
-        await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith('operation_canceled');
-        expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
-      });
-
-      it('should throw a nice error when password is not set and email is set', async () => {
-        await expect(bobLaptop.registerUnlock({ email: 'john@doe.com' })).to.be.fulfilled;
-        bobPhone.once('unlockRequired', async () => {
-          await expect(bobPhone.unlockCurrentDevice({ password: 'noPasswordDefined' })).to.be.rejectedWith('invalid_unlock_password');
-          await bobPhone.close();
-        });
-        await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith('operation_canceled');
-        expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
-      });
-
-      it('should throw a nice error when email is not set and password is set', async () => {
-        await expect(bobLaptop.registerUnlock({ password: 'noEmail' })).to.be.fulfilled;
-        bobPhone.once('unlockRequired', async () => {
-          await expect(bobPhone.unlockCurrentDevice({ verificationCode: 'noEmailDefined' })).to.be.rejectedWith('invalid_unlock_verification_code');
-          await bobPhone.close();
-        });
-        await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith('operation_canceled');
-        expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
-      });
     });
 
     describe('deprecated', () => {
