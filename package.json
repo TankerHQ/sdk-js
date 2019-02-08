@@ -3,7 +3,7 @@
   "private": true,
   "license": "Apache-2.0",
   "scripts": {
-    "build:all": "yarn build:crypto && yarn build:errors && yarn build:file-ponyfill && yarn build:streams && yarn build:core && yarn build:datastores && yarn build:client-browser && yarn build:client-node",
+    "build:all": "yarn build:crypto && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:streams && yarn build:core && yarn build:datastores && yarn build:client-browser && yarn build:client-node",
     "build:client-browser-base": "rollup --config packages/client-browser/config/rollup.js",
     "build:client-browser-umd": "webpack --config packages/client-browser/config/webpack.config.js",
     "build:client-browser": "yarn build:client-browser-base && yarn build:client-browser-umd",
@@ -13,6 +13,7 @@
     "build:datastores": "rollup --config packages/datastore/config/rollup.js",
     "build:errors": "rollup --config packages/errors/config/rollup.js",
     "build:file-ponyfill": "rollup --config packages/file-ponyfill/config/rollup.js",
+    "build:file-reader": "rollup --config packages/file-reader/config/rollup.js",
     "build:streams": "rollup --config packages/stream/config/rollup.js",
     "lint:js": "eslint \"packages/**/*.js\"",
     "lint:flow": "flow check",
