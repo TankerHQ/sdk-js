@@ -85,13 +85,13 @@ class Tanker extends TankerCore {
     return this._streamDecryptData(encryptedData, outputOptions);
   }
 
-  async encrypt(plain: string, options?: EncryptionOptions): Promise<Uint8Array> {
+  async encrypt<T: Data>(plain: string, options?: ExtendedEncryptionOptions<T>): Promise<T> {
     this.assert(this.OPEN, 'encrypt');
 
     if (typeof plain !== 'string')
       throw new errors.InvalidArgument('plain', 'string', plain);
 
-    return this.encryptData(fromString(plain), { ...options, type: Uint8Array });
+    return this.encryptData(fromString(plain), options);
   }
 
   async decrypt(cipher: Data): Promise<string> {
