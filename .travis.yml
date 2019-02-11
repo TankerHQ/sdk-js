@@ -8,4 +8,11 @@ install:
 script:
   - yarn build:all
   - yarn coverage
-  - yarn karma --browsers EdgeWindows,ChromeWindows
+  - yarn karma --browsers ChromeWindows
+  - yarn karma --browsers ChromeWindowsOld
+  - yarn karma --browsers EdgeWindows
+  - yarn karma --browsers IeWindows
+  - yarn karma --browsers FirefoxWindows
+  - yarn karma --browsers FirefoxWindowsOld
+  - yarn karma --browsers SafariMojave
+  - yarn karma --browsers OperaMojave
