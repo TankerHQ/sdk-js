@@ -68,6 +68,22 @@ module.exports = {
       base: 'ChromiumHeadless',
       flags: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-translate', '--disable-extensions'],
     },
+    ChromeWindows: {
+      base: 'BrowserStack',
+      browser: 'Chrome',
+      browser_version: '71.0',
+      os: 'Windows',
+      os_version: '10',
+    },
+    EdgeWindows: {
+      base: 'BrowserStack',
+      browser: 'Edge',
+      browser_version: '18.0',
+      os: 'Windows',
+      os_version: '10',
+    },
   },
-
+  browserStack: {
+    project: 'sdk-js',
+  },
 };
