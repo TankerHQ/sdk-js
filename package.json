@@ -74,6 +74,7 @@
     "karma-safari-launcher": "^1.0.0",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^4.0.0-beta.0",
+    "karma-browserstack-launcher": "^1.4.0",
     "mocha": "^5.2.0",
     "nyc": "^13.1.0",
     "rollup": "^1.0.2",
