@@ -3,6 +3,7 @@
 // WARNING: don't import the File ponyfill here! We want to test against the real
 //          File constructor, for both real and ponyfilled files to be accepted.
 import { InvalidArgument } from '@tanker/errors';
+import FileReader from '@tanker/file-reader';
 import { Readable } from '@tanker/stream-base';
 
 type Source = ArrayBuffer | Uint8Array | Blob | File;
@@ -16,9 +17,7 @@ export default class SlicerStream extends Readable {
     byteIndex: number,
     readInProgress?: bool,
   };
-  // $FlowIKnow vendor prefixes
-  _fileSlice: Function = Blob.prototype.slice || Blob.prototype.mozSlice || Blob.prototype.webkitSlice;
-  _fileReader: FileReader = new FileReader();
+  _fileReader: FileReader;
 
   constructor(options: { source: Source, outputSize?: number }) {
     if (!options || typeof options !== 'object' || options instanceof Array)
@@ -93,36 +92,26 @@ export default class SlicerStream extends Readable {
   _initFileMode = (source: Blob | File) => {
     this._mode = 'file';
     this._source = source;
-    this._readingState = {
-      byteSize: this._source.size,
-      byteIndex: 0,
-    };
-
-    this._fileReader.addEventListener('load', (event: any) => this._readFileResult(event.target.result));
-    this._fileReader.addEventListener('error', this._readFileError);
+    this._fileReader = new FileReader(source);
   }
 
-  _readFile = () => {
-    const { byteSize, byteIndex: startIndex } = this._readingState;
+  _readFile = async () => {
+    try {
+      const buffer = await this._fileReader.readAsArrayBuffer(this._outputSize);
+      const length = buffer.byteLength;
 
-    const endIndex = Math.min(startIndex + this._outputSize, byteSize);
-    this._readingState.byteIndex = endIndex;
+      if (length === 0) {
+        this.push(null);
+        return;
+      }
 
-    const byteWindow = this._fileSlice.call(this._source, startIndex, endIndex);
-    this._fileReader.readAsArrayBuffer(byteWindow);
-  }
+      this.push(new Uint8Array(buffer));
 
-  _readFileResult = (result: ArrayBuffer) => {
-    this.push(new Uint8Array(result));
-
-    const { byteSize, byteIndex } = this._readingState;
-
-    if (byteIndex >= byteSize) {
-      this.push(null);
+      if (length < this._outputSize) {
+        this.push(null);
+      }
+    } catch (error) {
+      this.emit('error', error);
     }
-  }
-
-  _readFileError = () => {
-    this.emit('error', this._fileReader.error);
   }
 }

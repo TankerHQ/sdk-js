@@ -1,26 +1,20 @@
 // @flow
 import { utils } from '@tanker/crypto';
 import FilePonyfill from '@tanker/file-ponyfill';
+import FileReader from '@tanker/file-reader';
 
 import { expect } from './chai';
 import MergerStream, { getConstructorName } from '../MergerStream';
 
-const toUint8Array = (input: ArrayBuffer | Uint8Array | Blob | File): Promise<Uint8Array> => new Promise((resolve, reject) => {
-  if (input instanceof ArrayBuffer) {
-    resolve(new Uint8Array(input));
-    return;
-  }
+const toUint8Array = async (input: ArrayBuffer | Uint8Array | Blob | File): Promise<Uint8Array> => {
+  if (input instanceof ArrayBuffer)
+    return new Uint8Array(input);
 
-  if (input instanceof Uint8Array) {
-    resolve(input);
-    return;
-  }
+  if (input instanceof Uint8Array)
+    return input;
 
-  const reader = new FileReader();
-  reader.addEventListener('load', (event: any) => resolve(new Uint8Array(event.target.result)));
-  reader.addEventListener('error', reject);
-  reader.readAsArrayBuffer(input);
-});
+  return new Uint8Array(await new FileReader(input).readAsArrayBuffer());
+};
 
 describe('MergerStream (web)', () => {
   let bytes: Uint8Array;
