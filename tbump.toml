@@ -35,6 +35,10 @@ search = '"@tanker/file-ponyfill": "{current_version}"'
 
 [[file]]
 src = "packages/client-browser/package.json"
+search = '"@tanker/file-reader": "{current_version}"'
+
+[[file]]
+src = "packages/client-browser/package.json"
 search = '"@tanker/stream-browser": "{current_version}"'
 
 [[file]]
@@ -146,6 +150,18 @@ src = "packages/file-ponyfill/package.json"
 search = '"@tanker/crypto": "{current_version}"'
 
 [[file]]
+src = "packages/file-reader/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/file-reader/package.json"
+search = '"@tanker/crypto": "{current_version}"'
+
+[[file]]
+src = "packages/file-reader/package.json"
+search = '"@tanker/file-ponyfill": "{current_version}"'
+
+[[file]]
 src = "packages/stream/base/package.json"
 search = '"version": "{current_version}"'
 
@@ -168,6 +184,10 @@ search = '"@tanker/errors": "{current_version}"'
 [[file]]
 src = "packages/stream/browser/package.json"
 search = '"@tanker/file-ponyfill": "{current_version}"'
+
+[[file]]
+src = "packages/stream/browser/package.json"
+search = '"@tanker/file-reader": "{current_version}"'
 
 [[file]]
 src = "packages/stream/browser/package.json"

@@ -1,6 +1,7 @@
 // @flow
 import { errors } from '@tanker/core';
 import FilePonyfill from '@tanker/file-ponyfill';
+import FileReader from '@tanker/file-reader';
 
 export type Data = ArrayBuffer | Blob | File | Uint8Array;
 
@@ -60,26 +61,15 @@ const fromUint8ArrayTo = {
   ),
 };
 
-// $FlowIKnow Cross-browser compat
-const blobSlice = Blob.prototype.slice || Blob.prototype.mozSlice || Blob.prototype.webkitSlice;
-
 const toUint8Array = async (value: Data, maxSize: ?number): Promise<Uint8Array> => {
   if (value instanceof Uint8Array)
     return value;
   if (value instanceof ArrayBuffer)
     return new Uint8Array(value);
 
-  // value instanceof Blob (File extends Blob)
-  const blob: Blob = (value: any);
-  const reader = new FileReader();
-  return new Promise((resolve, reject) => {
-    reader.addEventListener('load', (event: any) => resolve(new Uint8Array(event.target.result)));
-    reader.addEventListener('error', () => reject(reader.error));
-    const byteStart = 0;
-    const byteEnd = Math.min(blob.size, maxSize || Number.POSITIVE_INFINITY);
-    const byteWindow = blobSlice.call(blob, byteStart, byteEnd);
-    reader.readAsArrayBuffer(byteWindow);
-  });
+  const reader = new FileReader(value);
+  const buffer = await reader.readAsArrayBuffer(maxSize || value.size);
+  return new Uint8Array(buffer);
 };
 
 export async function castData<T: Data>(
