@@ -1,9 +1,10 @@
 // @flow
 import sodium from 'libsodium-wrappers';
 import { random } from './random';
-import { concatArrays, fromString } from './utils';
-import type { Key } from './aliases';
 import { generichash } from './hash';
+import { concatArrays } from './utils';
+import { toUint64le } from './number';
+import type { Key } from './aliases';
 
 export const XCHACHA_IV_SIZE = 24;
 
@@ -73,8 +74,7 @@ export function verifySignature(data: Uint8Array, signature: Uint8Array, publicK
   return sodium.crypto_sign_verify_detached(signature, data, publicKey);
 }
 
-export function deriveKey(key: Key, index: number): Key {
-  // safe as long as index < 2^53
-  const subkey = concatArrays(key, fromString(index.toString()));
-  return generichash(subkey, SYMMETRIC_KEY_SIZE);
+export function deriveIV(seed: Uint8Array, index: number): Uint8Array {
+  const buffer = concatArrays(seed, toUint64le(index));
+  return generichash(buffer, XCHACHA_IV_SIZE);
 }
