@@ -66,4 +66,5 @@ module.exports = {
   browserStack: {
     project: 'sdk-js',
   },
+  hostname: 'bs-local.com',
 };
