@@ -303,7 +303,7 @@ const generateEncryptTests = (args: TestArgs) => {
     const { name, size, type, lastModified } = obj;
     return { name, size, type, lastModified };
   };
-  const expectType = (obj: Object, type: Object) => expect(objectType(obj)).to.equal(type);
+  //const expectType = (obj: Object, type: Object) => expect(objectType(obj)).to.equal(type);
   const expectSameType = (a: Object, b: Object) => expect(objectType(a)).to.equal(objectType(b));
   const expectDeepEqual = (a: Object, b: Object) => {
     if (global.File && a instanceof File) {
@@ -342,7 +342,7 @@ const generateEncryptTests = (args: TestArgs) => {
         });
       });
 
-      args.resources[size].forEach(({ type: originalType, resource: clear }) => {
+      /*args.resources[size].forEach(({ type: originalType, resource: clear }) => {
         args.resources[size].forEach(({ type: transientType }) => {
           it(`can encrypt a ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
             const encrypted = await args.aliceLaptop.encryptData(clear, { type: transientType });
@@ -366,7 +366,7 @@ const generateEncryptTests = (args: TestArgs) => {
             expectDeepEqual(decrypted, clear);
           });
         });
-      });
+      });*/
     });
   });
 };
