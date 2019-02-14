@@ -342,6 +342,9 @@ const generateEncryptTests = (args: TestArgs) => {
         });
       });
 
+      // Type conversions have already been tested with medium resources, so skip for big ones.
+      if (size === 'big') return;
+
       args.resources[size].forEach(({ type: originalType, resource: clear }) => {
         args.resources[size].forEach(({ type: transientType }) => {
           it(`can encrypt a ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {

@@ -20,8 +20,9 @@ const makeTanker = (trustchainId: b64string): TankerInterface => {
 };
 
 const generateTestResources = (): TestResources => {
-  const small = makeRandomUint8Array(1024); // 1kB
-  const big = makeRandomUint8Array(6 * 1024 * 1024); // 6MB
+  const small = makeRandomUint8Array(1024); // 1kB -> this will use v3 format
+  const medium = makeRandomUint8Array(1024 * 1024); // 1MB -> this will use v4 format with 2 chunks
+  const big = makeRandomUint8Array(6 * 1024 * 1024); // 6MB -> this will use v4 format with 7 chunks
 
   const result = {
     small: [
@@ -29,6 +30,12 @@ const generateTestResources = (): TestResources => {
       { type: Blob, resource: new Blob([small], { type: 'application/octet-stream' }) },
       { type: File, resource: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }) },
       { type: Uint8Array, resource: small },
+    ],
+    medium: [
+      { type: ArrayBuffer, resource: medium.buffer },
+      { type: Blob, resource: new Blob([medium], { type: 'application/octet-stream' }) },
+      { type: File, resource: new FilePonyfill([medium], 'picture.jpeg', { type: 'image/jpeg' }) },
+      { type: Uint8Array, resource: medium },
     ],
     big: [
       { type: ArrayBuffer, resource: big.buffer },

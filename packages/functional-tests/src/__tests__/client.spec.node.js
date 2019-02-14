@@ -19,14 +19,20 @@ const makeTanker = (trustchainId: b64string): TankerInterface => {
 };
 
 const generateTestResources = (): TestResources => {
-  const small = makeRandomUint8Array(1024); // 1kB
-  const big = makeRandomUint8Array(6 * 1024 * 1024); // 6MB
+  const small = makeRandomUint8Array(1024); // 1kB -> this will use v3 format
+  const medium = makeRandomUint8Array(1024 * 1024); // 1MB -> this will use v4 format with 2 chunks
+  const big = makeRandomUint8Array(6 * 1024 * 1024); // 6MB -> this will use v4 format with 7 chunks
 
   const result = {
     small: [
       { type: ArrayBuffer, resource: small.buffer },
       { type: Buffer, resource: Buffer.from(small.buffer) },
       { type: Uint8Array, resource: small },
+    ],
+    medium: [
+      { type: ArrayBuffer, resource: medium.buffer },
+      { type: Buffer, resource: Buffer.from(medium.buffer) },
+      { type: Uint8Array, resource: medium },
     ],
     big: [
       { type: ArrayBuffer, resource: big.buffer },
