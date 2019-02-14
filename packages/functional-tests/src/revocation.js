@@ -7,6 +7,8 @@ import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 import { syncTankers } from './Helpers';
 
+const isIE = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\./);
+
 const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
     let bobId;
@@ -34,12 +36,20 @@ const generateRevocationTests = (args: TestArgs) => {
     });
 
     const revokeBobPhone = async () => {
-      const waitForSelfRevoked = new Promise(resolve => args.bobPhone.once('revoked', resolve));
+      if (!isIE) {
+        const waitForPhoneRevoked = new Promise(resolve => args.bobPhone.once('revoked', resolve));
 
-      await args.bobLaptop.revokeDevice(args.bobPhone.deviceId);
-      const waitForRemoteRevoked = args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
+        await args.bobLaptop.revokeDevice(args.bobPhone.deviceId);
+        const waitForLaptopRevoked = args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
 
-      await Promise.all([waitForRemoteRevoked, waitForSelfRevoked]);
+        await Promise.all([waitForPhoneRevoked, waitForLaptopRevoked]);
+      } else {
+        const bobPhoneId = args.bobPhone.deviceId;
+        await args.bobPhone.close();
+        await args.bobLaptop.revokeDevice(bobPhoneId);
+        await args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
+        await expect(args.bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errors.OperationCanceled);
+      }
     };
 
     const expectRevokedEvent = (opts) => new Promise((resolve, reject) => {
@@ -69,15 +79,17 @@ const generateRevocationTests = (args: TestArgs) => {
       await expect(testPromise).to.be.fulfilled;
     });
 
-    it('wipes the storage of the revoked device', async () => {
-      const destroy = sinon.spy(args.bobPhone._session.storage, 'nuke'); //eslint-disable-line no-underscore-dangle
-      try {
-        await revokeBobPhone();
-        expect(destroy.calledOnce).to.be.true;
-      } finally {
-        destroy.restore();
-      }
-    });
+    if (!isIE) {
+      it('wipes the storage of the revoked device', async () => {
+        const destroy = sinon.spy(args.bobPhone._session.storage, 'nuke'); //eslint-disable-line no-underscore-dangle
+        try {
+          await revokeBobPhone();
+          expect(destroy.calledOnce).to.be.true;
+        } finally {
+          destroy.restore();
+        }
+      });
+    }
 
     it('can\'t open a session on a device revoked while closed', async () => {
       const bobPhoneDeviceId = args.bobPhone.deviceId;
