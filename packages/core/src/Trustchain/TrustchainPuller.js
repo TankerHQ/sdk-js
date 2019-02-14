@@ -120,7 +120,7 @@ export default class TrustchainPuller {
       });
       await this._processNewBlocks(blocks);
     } catch (e) {
-      console.error('CatchUp failed: ', e);
+      console.error('CatchUp failed:', e);
     }
     if (!this._caughtUpOnce.settled) {
       this._caughtUpOnce.resolve();
