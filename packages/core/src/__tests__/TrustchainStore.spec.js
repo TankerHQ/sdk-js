@@ -48,7 +48,7 @@ describe('TrustchainStore', () => {
     const { dataStore } = await makeMemoryDataStore();
 
     const t = await TrustchainStore.open(dataStore);
-    expect(() => t.trustchainPublicKey).to.throw;
+    expect(() => t.trustchainPublicKey).to.throw();
   });
 
   it('retrieves a previously stored trustchainPublicKey', async () => {

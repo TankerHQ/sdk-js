@@ -101,7 +101,7 @@ describe('Encryptor Stream', () => {
     const ivSeed = data.subarray(0, tcrypto.XCHACHA_IV_SIZE);
     const iv = tcrypto.deriveIV(ivSeed, 0);
 
-    expect(() => aead.decryptAEAD(key, ivSeed, eMsg)).to.throw;
+    expect(() => aead.decryptAEAD(key, ivSeed, eMsg)).to.throw();
     expect(aead.decryptAEAD(key, iv, eMsg)).to.deep.equal(msg);
   });
 
