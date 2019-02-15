@@ -1,6 +1,6 @@
 {
   "name": "@tanker/identity",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha1",
   "description": "Tanker Identity SDK",
   "author": "Tanker Team",
   "license": "Apache-2.0",
@@ -10,7 +10,7 @@
     "test": "cd ../..; yarn test:identity"
   },
   "dependencies": {
-    "@tanker/crypto": "0.0.1"
+    "@tanker/crypto": "1.9.4"
   },
   "devDependencies": {
     "chai": "^4.2.0",
