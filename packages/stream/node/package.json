@@ -1,0 +1,17 @@
+{
+  "name": "@tanker/stream-node",
+  "version": "0.0.1",
+  "description": "Tanker Stream SDK for Node.js",
+  "author": "Tanker Team",
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "dependencies": {
+    "@tanker/errors": "0.0.1",
+    "@tanker/stream-base": "0.0.1"
+  },
+  "devDependencies": {
+    "@tanker/crypto": "0.0.1",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1"
+  }
+}

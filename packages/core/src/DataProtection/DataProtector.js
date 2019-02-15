@@ -16,6 +16,8 @@ import { encryptData } from './encrypt';
 import { type EncryptionOptions } from './EncryptionOptions';
 import { type ShareWithOptions } from './ShareWithOptions';
 import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
+import EncryptorStream from './EncryptorStream';
+import DecryptorStream from './DecryptorStream';
 
 export type KeyResourceId = {
   key: Uint8Array,
@@ -169,5 +171,21 @@ export default class DataProtector {
       decryptData: (encryptedData) => this.decryptData(encryptedData)
     };
     return makeChunkEncryptor({ encryptor, seal, defaultShareWithSelf: (this._localUser.deviceType === DEVICE_TYPE.client_device) });
+  }
+
+  async makeEncryptorStream(options: EncryptionOptions): Promise<EncryptorStream> {
+    const streamResource = ResourceManager.makeStreamResource();
+    const encryptorStream = new EncryptorStream(streamResource.resourceId, streamResource.key);
+
+    await this._shareResources([streamResource], options, options.shareWithSelf || false);
+
+    return encryptorStream;
+  }
+
+  async makeDecryptorStream(): Promise<DecryptorStream> {
+    const resourceIdKeyMapper = {
+      findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId, true)
+    };
+    return new DecryptorStream(resourceIdKeyMapper);
   }
 }

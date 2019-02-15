@@ -2,14 +2,13 @@
 import uuid from 'uuid';
 import Socket from 'socket.io-client';
 
-import { Tanker } from '@tanker/core';
+import type { TankerInterface } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
 
-// $FlowIKnow
 import { createUserTokenFromSecret } from '@tanker/core/src/__tests__/TestSessionTokens';
-import { tcrypto, utils, createUserSecretB64, obfuscateUserId, type b64string } from '@tanker/crypto';
+import { random, tcrypto, utils, createUserSecretB64, obfuscateUserId, type b64string } from '@tanker/crypto';
 
 const tankerUrl = process.env.TANKER_URL || '';
 const idToken = process.env.TANKER_TOKEN || '';
@@ -46,11 +45,26 @@ export function forgeUserToken(userId: string, trustchainId: Uint8Array, trustch
   return token;
 }
 
-export async function syncTankers(...tankers: Array<Tanker>): Promise<void> {
+export async function syncTankers(...tankers: Array<TankerInterface>): Promise<void> {
   await Promise.all(tankers.map(t => t._session._trustchain && t._session._trustchain.ready())); // eslint-disable-line no-underscore-dangle
 }
 
 export const makePrefix = (length: number = 12) => uuid.v4().replace('-', '').slice(0, length);
+
+// Overcome random()'s max size by generating bigger Uint8Arrays
+// having a random segment of 1kB set at a random position.
+export const makeRandomUint8Array = (sizeOfData: number) => {
+  const sizeOfRandomSegment = 1024; // 1kB
+
+  if (sizeOfData < sizeOfRandomSegment)
+    return random(sizeOfData);
+
+  const randomSegment = random(sizeOfRandomSegment);
+  const data = new Uint8Array(sizeOfData);
+  const randomPos = Math.floor(Math.random() * (sizeOfData - sizeOfRandomSegment));
+  data.set(randomSegment, randomPos);
+  return data;
+};
 
 export function makeRootBlock(trustchainKeyPair: Object) {
   const rootBlock: Block = {

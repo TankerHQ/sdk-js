@@ -1,7 +1,9 @@
 // @flow
 import sodium from 'libsodium-wrappers';
 import { random } from './random';
+import { generichash } from './hash';
 import { concatArrays } from './utils';
+import { toUint64le } from './number';
 import type { Key } from './aliases';
 
 export const XCHACHA_IV_SIZE = 24;
@@ -14,6 +16,7 @@ export const ENCRYPTION_PRIVATE_KEY_SIZE = 32;
 
 export const SIGNATURE_SIZE = 64;
 export const MAC_SIZE = 16;
+export const SYMMETRIC_ENCRYPTION_OVERHEAD = XCHACHA_IV_SIZE + MAC_SIZE;
 export const HASH_SIZE = 32;
 export const SEALED_KEY_SIZE = 80;
 export const SEALED_ENCRYPTION_PRIVATE_KEY_SIZE = 80;
@@ -69,4 +72,9 @@ export function sign(data: Uint8Array, privateKey: Uint8Array): Uint8Array {
 
 export function verifySignature(data: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): bool {
   return sodium.crypto_sign_verify_detached(signature, data, publicKey);
+}
+
+export function deriveIV(seed: Uint8Array, index: number): Uint8Array {
+  const buffer = concatArrays(seed, toUint64le(index));
+  return generichash(buffer, XCHACHA_IV_SIZE);
 }

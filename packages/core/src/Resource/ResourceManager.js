@@ -2,14 +2,18 @@
 
 import varint from 'varint';
 
-import { tcrypto, random, aead, type Key } from '@tanker/crypto';
-import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument } from '../errors';
+import { tcrypto, random, aead, generichash, number, type Key } from '@tanker/crypto';
+import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
+import { concatArrays } from '../Blocks/Serialize';
 import Trustchain from '../Trustchain/Trustchain';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { KeyDecryptor } from './KeyDecryptor';
 import ResourceStore from './ResourceStore';
 
-export const currentVersion = 3;
+export const currentSimpleVersion = 3;
+export const currentStreamVersion = 4;
+export const isValidVersion = (version: number) => version > 0 && version <= 4;
+export const isSimpleVersion = (version: number) => version > 0 && version < 4;
 
 export type Resource = {
   key: Uint8Array,
@@ -18,13 +22,25 @@ export type Resource = {
   version: number
 }
 
-const extractResourceId = (ciphertext: Uint8Array): Uint8Array => aead.extractMac(ciphertext);
+export type HeaderV4 = {
+  version: 4,
+  resourceId: Uint8Array,
+  encryptedChunkSize: number,
+  byteLength?: number,
+};
+
+export type ResourceIdKeyPair = {
+  key: Uint8Array,
+  resourceId: Uint8Array
+}
 
 export function getEncryptionFormat(encryptedData: Uint8Array): { version: number, versionLength: number } {
   let version;
+  let versionLength;
 
   try {
     version = varint.decode(encryptedData);
+    versionLength = varint.decode.bytes;
   } catch (err) {
     if (err instanceof RangeError) {
       throw new InvalidEncryptionFormat('invalid format version in getResourceId (bad varint)');
@@ -33,27 +49,73 @@ export function getEncryptionFormat(encryptedData: Uint8Array): { version: numbe
     }
   }
 
-  if (version < 1 || version > 3)
+  if (!isValidVersion(version))
     throw new InvalidEncryptionFormat(`unhandled format version in getResourceId: '${version}'`);
 
-  const versionLength = varint.decode.bytes;
-
-  return {
-    version,
-    versionLength,
-  };
+  return { version, versionLength };
 }
 
+export const extractHeaderV4 = (encryptedData: Uint8Array): { data: Uint8Array, header: HeaderV4 } => {
+  const { version, versionLength } = getEncryptionFormat(encryptedData);
+
+  if (version !== 4)
+    throw new InvalidEncryptionFormat(`unhandled format version in extractHeaderV4: '${version}'`);
+
+  const uint32Length = 4;
+
+  if (encryptedData.length < versionLength + uint32Length + tcrypto.MAC_SIZE)
+    throw new NotEnoughData('data is not long enough to extract the encryption header');
+
+  let pos = versionLength;
+
+  const encryptedChunkSize = number.fromUint32le(encryptedData.subarray(pos, pos + uint32Length));
+  pos += uint32Length;
+
+  const resourceId = encryptedData.subarray(pos, pos + tcrypto.MAC_SIZE);
+  pos += tcrypto.MAC_SIZE;
+
+  const header = {
+    version,
+    encryptedChunkSize,
+    resourceId,
+    byteLength: pos,
+  };
+
+  const data = encryptedData.subarray(pos);
+
+  return { data, header };
+};
+
+export const serializeHeaderV4 = (header: HeaderV4): Uint8Array => {
+  const version = varint.encode(header.version);
+  const encryptedChunkSize = number.toUint32le(header.encryptedChunkSize);
+  const resourceId = header.resourceId;
+  return concatArrays(version, encryptedChunkSize, resourceId);
+};
+
+const extractSimpleResourceId = (ciphertext: Uint8Array): Uint8Array => aead.extractMac(ciphertext);
+
 export function getResourceId(encryptedData: Uint8Array): Uint8Array {
-  const { versionLength } = getEncryptionFormat(encryptedData);
+  const { version, versionLength } = getEncryptionFormat(encryptedData);
   const minEncryptedDataLength = versionLength + tcrypto.MAC_SIZE;
 
   if (encryptedData.length < minEncryptedDataLength)
     throw new InvalidArgument('encryptedData', `Uint8Array(${minEncryptedDataLength}+)`, encryptedData);
 
-  const subData = encryptedData.subarray(versionLength);
+  if (isSimpleVersion(version)) {
+    const subData = encryptedData.subarray(versionLength);
+    return extractSimpleResourceId(subData);
+  }
 
-  return extractResourceId(subData);
+  let resourceId;
+
+  try {
+    ({ header: { resourceId } } = extractHeaderV4(encryptedData));
+  } catch (err) {
+    throw new InvalidArgument('encryptedData', 'Uint8Array with properly formatted v4 header', encryptedData);
+  }
+
+  return resourceId;
 }
 
 export class ResourceManager {
@@ -71,11 +133,18 @@ export class ResourceManager {
     this._keyDecryptor = keyDecryptor;
   }
 
-  static async makeResource(plain: Uint8Array): Promise<Resource> {
+  static async makeSimpleResource(plain: Uint8Array): Promise<Resource> {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const buffer = await aead.encryptAEADv3(key, plain);
-    const resourceId = extractResourceId(buffer);
-    return { key, resourceId, encryptedData: buffer, version: currentVersion };
+    const resourceId = extractSimpleResourceId(buffer);
+    return { key, resourceId, encryptedData: buffer, version: currentSimpleVersion };
+  }
+
+  static makeStreamResource(): ResourceIdKeyPair {
+    const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const resourceId = generichash(key, tcrypto.MAC_SIZE);
+
+    return { key, resourceId, version: currentStreamVersion };
   }
 
   async findKeyFromResourceId(resourceId: Uint8Array, retry?: bool): Promise<Key> {

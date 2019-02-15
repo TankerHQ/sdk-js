@@ -1,10 +1,14 @@
 // @flow
-import { Tanker } from '@tanker/core';
+import type { TankerInterface } from '@tanker/core';
 import { TrustchainHelper } from './Helpers';
+
+export type TestResource<T> = { type: Class<T>, resource: T };
+export type TestResources = { [string]: Array<TestResource<any>> };
 
 export type TestArgs = {
   trustchainHelper: TrustchainHelper,
-  aliceLaptop: Tanker,
-  bobLaptop: Tanker,
-  bobPhone: Tanker,
+  aliceLaptop: TankerInterface,
+  bobLaptop: TankerInterface,
+  bobPhone: TankerInterface,
+  resources: TestResources,
 };

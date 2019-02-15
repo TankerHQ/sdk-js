@@ -15,6 +15,9 @@ import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
+import EncryptorStream from './DataProtection/EncryptorStream';
+import DecryptorStream from './DataProtection/DecryptorStream';
+
 import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 import { TANKER_SDK_VERSION as version } from './version';
 
@@ -367,43 +370,16 @@ export class Tanker extends EventEmitter {
     return devices.some(device => device.isGhostDevice === true && device.isRevoked === false);
   }
 
-  async encryptData(plain: Uint8Array, options?: EncryptionOptions): Promise<Uint8Array> {
-    this.assert(this.OPEN, 'encrypt data');
-
-    if (!(plain instanceof Uint8Array))
-      throw new InvalidArgument('plain', 'Uint8Array', plain);
-
+  _parseEncryptionOptions = (options?: EncryptionOptions = {}): EncryptionOptions => {
     if (!validateEncryptionOptions(options))
       throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
 
     const opts = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
 
-    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(opts))
+    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(options))
       throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);
 
-    return this._session.dataProtector.encryptAndShareData(plain, opts);
-  }
-
-  async encrypt(plain: string, options?: EncryptionOptions): Promise<Uint8Array> {
-    this.assert(this.OPEN, 'encrypt');
-
-    if (typeof plain !== 'string')
-      throw new InvalidArgument('plain', 'string', plain);
-
-    return this.encryptData(utils.fromString(plain), options);
-  }
-
-  async decryptData(encryptedData: Uint8Array): Promise<Uint8Array> {
-    this.assert(this.OPEN, 'decrypt data');
-
-    if (!(encryptedData instanceof Uint8Array))
-      throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
-
-    return this._session.dataProtector.decryptData(encryptedData);
-  }
-
-  async decrypt(cipher: Uint8Array): Promise<string> {
-    return utils.toString(await this.decryptData(cipher));
+    return opts;
   }
 
   async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions | Array<string>): Promise<void> {
@@ -435,6 +411,7 @@ export class Tanker extends EventEmitter {
   }
 
   async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
+    console.warn('The ChunkEncryptor is deprecated since version 1.10.0. Please use the simple encryption APIs instead, as described in the migration guide: https://tanker.io/docs/latest/migration-guide/#chunk_encryption_apis_deprecation');
     this.assert(this.OPEN, 'make a chunk encryptor');
     return this._session.dataProtector.makeChunkEncryptor(seal);
   }
@@ -466,6 +443,20 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('groupId', 'string', groupId);
 
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
+  }
+
+  async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
+    this.assert(this.OPEN, 'make a stream encryptor');
+
+    const opts = this._parseEncryptionOptions(options);
+
+    return this._session.dataProtector.makeEncryptorStream(opts);
+  }
+
+  async makeDecryptorStream(): Promise<DecryptorStream> {
+    this.assert(this.OPEN, 'make a stream decryptor');
+
+    return this._session.dataProtector.makeDecryptorStream();
   }
 }
 

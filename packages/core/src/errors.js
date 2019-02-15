@@ -3,7 +3,7 @@ import { utils, type b64string } from '@tanker/crypto';
 import { TankerError } from '@tanker/errors';
 
 // Re-expose these common error classes:
-export { TankerError, InvalidArgument } from '@tanker/errors';
+export { TankerError, InvalidArgument, NotEnoughData } from '@tanker/errors';
 
 export class ResourceNotFound extends TankerError {
   b64ResourceId: b64string;

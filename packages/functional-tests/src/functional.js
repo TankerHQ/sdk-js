@@ -2,12 +2,13 @@
 import sinon from 'sinon';
 
 import { utils } from '@tanker/crypto';
-import { Tanker as TankerCore, type b64string } from '@tanker/core';
+import type { TankerInterface, b64string } from '@tanker/core';
 
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
-import type { TestArgs } from './TestArgs';
+import type { TestArgs, TestResources } from './TestArgs';
 
 import generateChunkEncryptor from './chunkEncryptor';
+import generateStreamEncryptor from './encryptorStream';
 import generateEncryptTests from './encrypt';
 import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';
@@ -28,7 +29,8 @@ const warnings = {
 
 export function generateFunctionalTests(
   name: string,
-  makeTanker: (trustchainId: b64string) => TankerCore,
+  makeTanker: (trustchainId: b64string) => TankerInterface,
+  generateTestResources: () => TestResources,
 ) {
   if (!tankerUrl || !idToken) {
     // Those functional tests create a trustchain automatically and require a TANKER_TOKEN to run
@@ -44,6 +46,10 @@ export function generateFunctionalTests(
     this.timeout(30000);
 
     const args: TestArgs = {};
+
+    // We need these resources right now to dynamically generate tests,
+    // depending on the platform (e.g. browser vs. Node.js)
+    args.resources = generateTestResources();
 
     before(async () => {
       warnings.silence(/deprecated/);
@@ -63,6 +69,7 @@ export function generateFunctionalTests(
     });
 
     generateChunkEncryptor(args);
+    generateStreamEncryptor(args);
     generateEncryptTests(args);
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
