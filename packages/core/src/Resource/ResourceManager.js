@@ -2,25 +2,25 @@
 
 import varint from 'varint';
 
-import { tcrypto, random, aead, generichash, number, type Key } from '@tanker/crypto';
+import { tcrypto, random, generichash, number, type Key } from '@tanker/crypto';
 import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
 import { concatArrays } from '../Blocks/Serialize';
+import { getEncryptionFormat, encryptData, extractResourceId } from '../DataProtection/Encryptor';
 import Trustchain from '../Trustchain/Trustchain';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { KeyDecryptor } from './KeyDecryptor';
 import ResourceStore from './ResourceStore';
 
-export const currentSimpleVersion = 3;
 export const currentStreamVersion = 4;
-export const isValidVersion = (version: number) => version > 0 && version <= 4;
+
 export const isSimpleVersion = (version: number) => version > 0 && version < 4;
 
-export type Resource = {
+export type ResourceMeta = $Exact<{
   key: Uint8Array,
   resourceId: Uint8Array,
-  encryptedData: Uint8Array,
-  version: number
-}
+}>;
+
+export type Resource = $Exact<{ ...ResourceMeta, encryptedData: Uint8Array }>;
 
 export type HeaderV4 = {
   version: 4,
@@ -28,32 +28,6 @@ export type HeaderV4 = {
   encryptedChunkSize: number,
   byteLength?: number,
 };
-
-export type ResourceIdKeyPair = {
-  key: Uint8Array,
-  resourceId: Uint8Array
-}
-
-export function getEncryptionFormat(encryptedData: Uint8Array): { version: number, versionLength: number } {
-  let version;
-  let versionLength;
-
-  try {
-    version = varint.decode(encryptedData);
-    versionLength = varint.decode.bytes;
-  } catch (err) {
-    if (err instanceof RangeError) {
-      throw new InvalidEncryptionFormat('invalid format version in getResourceId (bad varint)');
-    } else {
-      throw err;
-    }
-  }
-
-  if (!isValidVersion(version))
-    throw new InvalidEncryptionFormat(`unhandled format version in getResourceId: '${version}'`);
-
-  return { version, versionLength };
-}
 
 export const extractHeaderV4 = (encryptedData: Uint8Array): { data: Uint8Array, header: HeaderV4 } => {
   const { version, versionLength } = getEncryptionFormat(encryptedData);
@@ -93,8 +67,6 @@ export const serializeHeaderV4 = (header: HeaderV4): Uint8Array => {
   return concatArrays(version, encryptedChunkSize, resourceId);
 };
 
-const extractSimpleResourceId = (ciphertext: Uint8Array): Uint8Array => aead.extractMac(ciphertext);
-
 export function getResourceId(encryptedData: Uint8Array): Uint8Array {
   const { version, versionLength } = getEncryptionFormat(encryptedData);
   const minEncryptedDataLength = versionLength + tcrypto.MAC_SIZE;
@@ -103,8 +75,7 @@ export function getResourceId(encryptedData: Uint8Array): Uint8Array {
     throw new InvalidArgument('encryptedData', `Uint8Array(${minEncryptedDataLength}+)`, encryptedData);
 
   if (isSimpleVersion(version)) {
-    const subData = encryptedData.subarray(versionLength);
-    return extractSimpleResourceId(subData);
+    return extractResourceId(encryptedData);
   }
 
   let resourceId;
@@ -133,18 +104,18 @@ export class ResourceManager {
     this._keyDecryptor = keyDecryptor;
   }
 
-  static async makeSimpleResource(plain: Uint8Array): Promise<Resource> {
+  makeSimpleResource(plain: Uint8Array): Resource {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const buffer = await aead.encryptAEADv3(key, plain);
-    const resourceId = extractSimpleResourceId(buffer);
-    return { key, resourceId, encryptedData: buffer, version: currentSimpleVersion };
+    const encryptedData = encryptData(key, plain);
+    const resourceId = extractResourceId(encryptedData);
+    return { key, resourceId, encryptedData };
   }
 
-  static makeStreamResource(): ResourceIdKeyPair {
+  makeStreamResource(): ResourceMeta {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = generichash(key, tcrypto.MAC_SIZE);
 
-    return { key, resourceId, version: currentStreamVersion };
+    return { key, resourceId };
   }
 
   async findKeyFromResourceId(resourceId: Uint8Array, retry?: bool): Promise<Key> {

@@ -1,6 +1,7 @@
 // @flow
-import { tcrypto, utils, aead, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { type UserKeys } from '../Blocks/payloads';
+import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
 
 export type DeviceKeys = {|
   deviceId: ?b64string,
@@ -31,11 +32,11 @@ async function encryptObject(key: Uint8Array, plainObject: Object): Promise<Uint
     }
     return v;
   });
-  return aead.encryptAEADv1(key, utils.fromString(json));
+  return EncryptorV1.encrypt(key, utils.fromString(json));
 }
 
 async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<Object> {
-  const jsonBytes = await aead.decryptAEADv1(key, ciphertext);
+  const jsonBytes = EncryptorV1.decrypt(key, ciphertext);
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
     if (typeof v === 'string' && startsWith(v, base64Prefix))
       return utils.fromBase64(v.substring(base64Prefix.length));

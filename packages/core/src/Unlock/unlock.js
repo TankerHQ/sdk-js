@@ -1,9 +1,10 @@
 // @flow
 
-import { aead, tcrypto, generichash, utils, type b64string, type safeb64string, type Key } from '@tanker/crypto';
+import { generichash, tcrypto, utils, type b64string, type safeb64string, type Key } from '@tanker/crypto';
 import { InvalidDeviceValidationCode, InvalidUnlockKey } from '../errors';
 import { type Block, hashBlock } from '../Blocks/Block';
 import BlockGenerator from '../Blocks/BlockGenerator';
+import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
 import type { EncryptedUserKey } from '../Network/Client';
 import { type DeviceKeys } from '../Session/KeySafe';
 
@@ -42,7 +43,7 @@ export class UnlockKeyAnswer {
   }
 
   async getUnlockKey(userSecret: Key): Promise<UnlockKey> {
-    return utils.toString(await aead.decryptAEADv2(userSecret, this._encryptedUnlockKey));
+    return utils.toString(EncryptorV2.decrypt(userSecret, this._encryptedUnlockKey));
   }
 }
 
@@ -155,7 +156,7 @@ export async function createUnlockKeyMessage({
   if (password)
     message.claims.password = generichash(utils.fromString(password));
   if (unlockKey)
-    message.claims.unlockKey = await aead.encryptAEADv2(userSecret, utils.fromString(unlockKey));
+    message.claims.unlockKey = EncryptorV2.encrypt(userSecret, utils.fromString(unlockKey));
 
   const buff = getSignData(message);
   message.signature = tcrypto.sign(buff, privateSigKey);

@@ -1,10 +1,11 @@
 // @flow
 
 import varint from 'varint';
-import { aead, utils, tcrypto, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 import { type Group, type ExternalGroup } from './types';
 import { getStaticArray, unserializeGeneric, concatArrays } from '../Blocks/Serialize';
+import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
 
 type EncryptedPrivateKeys = {|
   signatureKey: Uint8Array,
@@ -30,7 +31,7 @@ async function encryptGroupKeys(userSecret: Uint8Array, group: Group): Promise<U
     varint.encode(group.index)
   );
   const data = concatArrays(group.signatureKeyPair.privateKey, group.encryptionKeyPair.privateKey);
-  return aead.encryptAEADv2(userSecret, data, ad);
+  return EncryptorV2.encrypt(userSecret, data, ad);
 }
 
 async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promise<EncryptedPrivateKeys> {
@@ -46,7 +47,7 @@ async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promi
   );
 
   // $FlowIKnow already checked for nullity
-  const ec = await aead.decryptAEADv2(userSecret, dbGroup.encryptedPrivateKeys, ad);
+  const ec = EncryptorV2.decrypt(userSecret, dbGroup.encryptedPrivateKeys, ad);
   return unserializeGeneric(ec, [
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PRIVATE_KEY_SIZE, o, 'signatureKey'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE, o, 'encryptionKey'),
@@ -92,12 +93,10 @@ async function dbGroupToGroup(userSecret: Uint8Array, dbGroup: DbGroup): Promise
     groupId: utils.fromBase64(dbGroup._id), // eslint-disable-line no-underscore-dangle,
     signatureKeyPair: {
       publicKey: utils.fromBase64(dbGroup.publicSignatureKey),
-      // $FlowIssue I already checked for nullity
       privateKey: encryptedPrivateKeys.signatureKey,
     },
     encryptionKeyPair: {
       publicKey: utils.fromBase64(dbGroup.publicEncryptionKey),
-      // $FlowIssue I already checked for nullity
       privateKey: encryptedPrivateKeys.encryptionKey,
     },
     lastGroupBlock: utils.fromBase64(dbGroup.lastGroupBlock),

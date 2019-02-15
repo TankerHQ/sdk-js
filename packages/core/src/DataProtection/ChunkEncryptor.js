@@ -2,12 +2,13 @@
 import varint from 'varint';
 import arraychunks from 'array.chunk';
 
-import { tcrypto, aead, random, utils } from '@tanker/crypto';
+import { tcrypto, random, utils } from '@tanker/crypto';
 
 import { ChunkIndexOutOfRange, ChunkNotFound, DecryptFailed, InvalidArgument, InvalidSeal } from '../errors';
 import { type EncryptionOptions, validateEncryptionOptions } from './EncryptionOptions';
 import { isShareWithOptionsEmpty } from './ShareWithOptions';
 import * as Serialize from '../Blocks/Serialize';
+import * as EncryptorV1 from './Encryptors/v1';
 
 const currentSealVersion = 3;
 const firstSupportedVersion = 3;
@@ -217,7 +218,7 @@ export default class ChunkEncryptor {
 
     const ephemeralKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     // do not use encryptor.encrypt here, it would save the key and possibly share it!
-    const encryptedData = await aead.encryptAEADv1(ephemeralKey, clearData);
+    const encryptedData = EncryptorV1.encrypt(ephemeralKey, clearData);
     this.chunkKeys[idx] = ephemeralKey;
     return encryptedData;
   }
@@ -259,10 +260,10 @@ export default class ChunkEncryptor {
     try {
       // The presence of key is ensured by a previous assertIndexExists call
       // $FlowExpectedError (but Flow doesn't known it...)
-      return new Uint8Array(await aead.decryptAEADv1(key, encryptedChunk));
+      return new Uint8Array(EncryptorV1.decrypt(key, encryptedChunk));
     } catch (e) {
       // note that the resourceId could very well be corrupted
-      throw new DecryptFailed(e, aead.extractMac(encryptedChunk), index);
+      throw new DecryptFailed(e, EncryptorV1.extractResourceId(encryptedChunk), index);
     }
   }
 
@@ -336,7 +337,7 @@ export default class ChunkEncryptor {
 
     const ephemeralKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     // do not use encryptor.encrypt here, it would save the key and possibly share it!
-    const encryptedData = await aead.encryptAEADv1(ephemeralKey, clearData);
+    const encryptedData = EncryptorV1.encrypt(ephemeralKey, clearData);
     this.chunkKeys[index] = ephemeralKey;
     return encryptedData;
   }

@@ -1,7 +1,8 @@
 // @flow
 
-import { aead, utils, type Key } from '@tanker/crypto';
+import { utils, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
+import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
 
 const TABLE = 'resource_keys';
 
@@ -40,7 +41,7 @@ export default class ResourceStore {
 
   async saveResourceKey(resourceId: Uint8Array, key: Key): Promise<void> {
     // prevent db corruption by using the resourceId as additional data
-    const encryptedKey = await aead.encryptAEADv1(this._userSecret, key, resourceId);
+    const encryptedKey = EncryptorV1.encrypt(this._userSecret, key, resourceId);
     const b64ResourceId = utils.toBase64(resourceId);
     // We never want to overwrite a key for a given resourceId
     try {
@@ -60,7 +61,7 @@ export default class ResourceStore {
       const b64ResourceId = utils.toBase64(resourceId);
       const result = await this._ds.get(TABLE, b64ResourceId);
       const encryptedKey = utils.fromBase64(result.b64EncryptedKey);
-      return await aead.decryptAEADv1(this._userSecret, encryptedKey, resourceId);
+      return EncryptorV1.decrypt(this._userSecret, encryptedKey, resourceId);
     } catch (e) {
       if (e instanceof dbErrors.RecordNotFound) {
         return;
