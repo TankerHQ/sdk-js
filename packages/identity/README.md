@@ -1,4 +1,4 @@
-# Identity SDK [![Travis][build-badge]][build]
+# Identity SDK
 
 Tanker Identity generation in JavaScript for the [Tanker SDK](https://tanker.io/docs/latest).
 
