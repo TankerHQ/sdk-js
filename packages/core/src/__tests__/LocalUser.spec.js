@@ -60,7 +60,7 @@ describe('Local User', () => {
   });
 
   it('throws if asked for deviceID when its not set', async () => {
-    expect(() => localUser.deviceId).to.throw;
+    expect(() => localUser.deviceId).to.throw();
   });
 
   it('saves our device ID', async () => {
