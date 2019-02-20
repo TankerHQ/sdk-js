@@ -10,12 +10,10 @@ import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-import { DEVICE_TYPE } from '../Unlock/unlock';
 import { decryptData } from './decrypt';
 import { encryptData } from './encrypt';
 import { type EncryptionOptions } from './EncryptionOptions';
 import { type ShareWithOptions } from './ShareWithOptions';
-import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
 
@@ -163,14 +161,6 @@ export default class DataProtector {
     }));
 
     return this._shareResources(keys, shareWith, false);
-  }
-
-  async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
-    const encryptor: EncryptorInterface = {
-      encryptData: (data, options) => this.encryptAndShareData(data, options),
-      decryptData: (encryptedData) => this.decryptData(encryptedData)
-    };
-    return makeChunkEncryptor({ encryptor, seal, defaultShareWithSelf: (this._localUser.deviceType === DEVICE_TYPE.client_device) });
   }
 
   async makeEncryptorStream(options: EncryptionOptions): Promise<EncryptorStream> {

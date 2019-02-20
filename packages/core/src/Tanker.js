@@ -18,7 +18,6 @@ import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOption
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 
-import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 import { TANKER_SDK_VERSION as version } from './version';
 
 const statusDefs = [
@@ -408,12 +407,6 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
     return utils.toBase64(syncGetResourceId(encryptedData));
-  }
-
-  async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
-    console.warn('The ChunkEncryptor is deprecated since version 1.10.0. Please use the simple encryption APIs instead, as described in the migration guide: https://tanker.io/docs/latest/migration-guide/#chunk_encryption_apis_deprecation');
-    this.assert(this.OPEN, 'make a chunk encryptor');
-    return this._session.dataProtector.makeChunkEncryptor(seal);
   }
 
   async revokeDevice(deviceId: b64string): Promise<void> {
