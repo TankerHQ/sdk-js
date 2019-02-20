@@ -302,16 +302,6 @@ export class Tanker extends EventEmitter {
     return this._session.unlockKeys.acceptDevice(validationCode);
   }
 
-  async updateUnlock(params: RegisterUnlockParams): Promise<void> {
-    console.warn('The updateUnlock() method has been deprecated, please use registerUnlock() instead.');
-    return this.registerUnlock(params);
-  }
-
-  async setupUnlock(params: RegisterUnlockParams): Promise<void> {
-    console.warn('The setupUnlock() method has been deprecated, please use registerUnlock() instead.');
-    return this.registerUnlock(params);
-  }
-
   async registerUnlock(params: RegisterUnlockParams): Promise<void> {
     this.assert(this.OPEN, 'register an unlock method');
 
