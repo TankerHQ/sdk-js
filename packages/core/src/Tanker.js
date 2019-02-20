@@ -155,16 +155,10 @@ export class Tanker extends EventEmitter {
   }
 
   on(eventName: string, listener: any): any {
-    if (eventName === 'waitingForValidation') {
-      console.warn('\'waitingForValidation\' event has been deprecated since version 1.7.0, please use \'unlockRequired\' instead.');
-    }
     return super.on(eventName, listener);
   }
 
   once(eventName: string, listener: any): any {
-    if (eventName === 'waitingForValidation') {
-      console.warn('\'waitingForValidation\' event has been deprecated since version 1.7.0, please use \'unlockRequired\' instead.');
-    }
     return super.once(eventName, listener);
   }
 
@@ -172,9 +166,7 @@ export class Tanker extends EventEmitter {
     if (opener) {
       this._sessionOpener = opener;
       this._sessionOpener.on('unlockRequired', () => {
-        const validationCode = this.deviceValidationCode();
         this.emit('unlockRequired');
-        this.emit('waitingForValidation', validationCode);
         this.emit('statusChange', this.status);
       });
     } else {
@@ -228,8 +220,7 @@ export class Tanker extends EventEmitter {
     const sessionOpener = await SessionOpener.create(userData, this._dataStoreOptions, this._clientOptions);
     this._setSessionOpener(sessionOpener);
 
-    const allowedToUnlock = !(this.listenerCount('unlockRequired') === 0
-      && this.listenerCount('waitingForValidation') === 0);
+    const allowedToUnlock = this.listenerCount('unlockRequired') !== 0;
 
     const session = await this._sessionOpener.openSession(allowedToUnlock);
     this._setSession(session);

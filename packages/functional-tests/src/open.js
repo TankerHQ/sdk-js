@@ -52,20 +52,6 @@ const generateOpenTests = (args: TestArgs) => {
       expect(args.bobLaptop.status).to.equal(OPEN);
     });
 
-    it('unlocks a new device using the `waitingForValidation` event (deprecated)', async () => {
-      const bobId = uuid.v4();
-      const bobToken = args.trustchainHelper.generateUserToken(bobId);
-      await args.bobLaptop.open(bobId, bobToken);
-      const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
-
-      args.bobPhone.once('waitingForValidation', async () => {
-        await args.bobPhone.unlockCurrentDevice({ unlockKey: bobUnlockKey });
-      });
-
-      await args.bobPhone.open(bobId, bobToken);
-      expect(args.bobPhone.status).to.equal(OPEN);
-    });
-
     it('unlocks a new device using the `unlockRequired` event', async () => {
       const bobId = uuid.v4();
       const bobToken = args.trustchainHelper.generateUserToken(bobId);
