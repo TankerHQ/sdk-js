@@ -220,16 +220,6 @@ const generateUnlockTests = (args: TestArgs) => {
           expect(bobPhone.status).to.equal(OPEN);
         });
 
-        it('can unlock the device with the device validation code using deprecated signal', async () => {
-          bobPhone.once('waitingForValidation', async (validationCode: string) => {
-            expect(bobPhone.status).to.equal(UNLOCK_REQUIRED);
-            await bobLaptop.acceptDevice(validationCode);
-          });
-
-          await bobPhone.open(bobId, bobToken);
-          expect(bobPhone.status).to.equal(OPEN);
-        });
-
         it('can be unlocked by another existing device while disconnected', async () => {
           const closingDone = new PromiseWrapper();
           let validationCode = '';
