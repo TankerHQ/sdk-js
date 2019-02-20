@@ -4,7 +4,6 @@ import { tcrypto, utils, random, obfuscateUserId } from '@tanker/crypto';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
-import { warnings } from './WarningsRemover';
 
 import { Tanker, TankerStatus, optionsWithDefaults } from '..';
 import { createUserTokenFromSecret } from './TestSessionTokens';
@@ -175,22 +174,18 @@ describe('Tanker', () => {
       });
     });
 
-    describe('shareWith', () => {
+    describe('sharing', () => {
       const notShareWithValues = [
         null,
         0,
         'noArrayAroundMe',
-        { shareWith: ['bob'], shareWithGroups: ['admin group'] },
+        { shareWithUsers: [undefined] },
+        { shareWithUsers: 'noArrayAroundMe' },
         { shareWithGroups: 'noArrayAroundMe' },
         { shareWithGroups: [new Uint8Array(32)] },
-        { shareWithUsers: 'noArrayAroundMe' },
-        { shareWithUsers: [undefined] },
       ];
 
-      before(() => warnings.silence(/deprecated/));
-      after(() => warnings.restore());
-
-      it('share() should throw when given an invalid shareWith', async () => {
+      it('share() should throw when given an invalid option', async () => {
         notShareWithValues.push(undefined);
         notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
         const resourceId = random(tcrypto.MAC_SIZE);
@@ -198,7 +193,7 @@ describe('Tanker', () => {
         for (let i = 0; i < notShareWithValues.length; i++) {
           const v = notShareWithValues[i];
           // $FlowExpectedError
-          await expect(tanker.share([resourceId], v), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);
+          await expect(tanker.share([resourceId], v), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
     });

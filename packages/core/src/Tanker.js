@@ -354,23 +354,14 @@ export class Tanker extends EventEmitter {
     return opts;
   }
 
-  async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions | Array<string>): Promise<void> {
+  async share(resourceIds: Array<b64string>, shareWithOptions: ShareWithOptions): Promise<void> {
     this.assert(this.OPEN, 'share');
 
     if (!(resourceIds instanceof Array))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    let shareWithOptions;
-
-    if (shareWith instanceof Array) {
-      console.warn('The shareWith option as an array is deprecated, use { shareWithUsers: [], shareWithGroups: [] } format instead');
-      shareWithOptions = { shareWith };
-    } else {
-      shareWithOptions = shareWith;
-    }
-
     if (!validateShareWithOptions(shareWithOptions))
-      throw new InvalidArgument('shareWith', '{ shareWithUsers: Array<string>, shareWithGroups: Array<string> }', shareWith);
+      throw new InvalidArgument('shareWithOptions', '{ shareWithUsers: Array<string>, shareWithGroups: Array<string> }', shareWithOptions);
 
     return this._session.dataProtector.share(resourceIds, shareWithOptions);
   }
