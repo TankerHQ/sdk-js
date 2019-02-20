@@ -145,11 +145,9 @@ const generateUnlockTests = (args: TestArgs) => {
     });
 
     describe('advanced device unlocking', () => {
-      let bobUnlockKey;
-
       beforeEach(async () => {
         await expect(bobLaptop.isUnlockAlreadySetUp()).to.be.eventually.false;
-        bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
+        await bobLaptop.generateAndRegisterUnlockKey();
       });
 
       it('can test if unlock is setup', async () => {
@@ -169,16 +167,6 @@ const generateUnlockTests = (args: TestArgs) => {
 
         const isSetup = await bobLaptop.isUnlockAlreadySetUp();
         expect(isSetup).to.be.false;
-      });
-
-      it('can unlock a device with the deprecated signature of unlockCurrentDevice', async () => {
-        // accept device
-        bobPhone.once('unlockRequired', async () => {
-          // $FlowExpectedError
-          await bobPhone.unlockCurrentDevice(bobUnlockKey);
-        });
-        await bobPhone.open(bobId, bobToken);
-        expect(bobPhone.status).to.equal(TankerStatus.OPEN);
       });
 
       it('should throw a nice error when password is not set', async () => {
