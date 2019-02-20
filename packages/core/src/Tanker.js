@@ -320,11 +320,8 @@ export class Tanker extends EventEmitter {
 
   async unlockCurrentDevice(value: UnlockDeviceParams): Promise<void> {
     this.assert(this.UNLOCK_REQUIRED, 'unlock a device');
-    if (!value) {
+    if (!value || typeof value !== 'object' || value instanceof Array) {
       throw new InvalidArgument('unlock options', 'object', value);
-    } else if (typeof value === 'string') {
-      console.warn('unlockCurrentDevice(unlockKey) has been deprecated, pass a dictionary instead');
-      return this.unlockCurrentDevice({ unlockKey: value });
     } else if (Object.keys(value).length !== 1) {
       throw new InvalidArgument('unlock options', 'object', value);
     }
