@@ -165,14 +165,6 @@ const generateEncryptTests = (args: TestArgs) => {
           const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithSelf: false, shareWithUsers: [bobId] });
           await expect(args.bobLaptop.decrypt(encrypted)).to.be.fulfilled;
         });
-
-        describe('deprecated shareWith format', () => {
-          it('shares with the recipient', async () => {
-            const encrypted = await args.bobLaptop.encrypt(clearText, { shareWith: [aliceId] });
-            const decrypted = await args.aliceLaptop.decrypt(encrypted);
-            expect(decrypted).to.equal(clearText);
-          });
-        });
       });
     });
 
@@ -231,17 +223,6 @@ const generateEncryptTests = (args: TestArgs) => {
 
         const decrypted = await args.aliceLaptop.decrypt(encrypted);
         expect(decrypted).to.equal(clearText);
-      });
-
-      describe('deprecated shareWith format', () => {
-        it('shares an existing resource to an existing user', async () => {
-          const encrypted = await args.bobLaptop.encrypt(clearText);
-          const resourceId = await args.bobLaptop.getResourceId(encrypted);
-          await args.bobLaptop.share([resourceId], [aliceId]);
-
-          const decrypted = await args.aliceLaptop.decrypt(encrypted);
-          expect(decrypted).to.equal(clearText);
-        });
       });
     });
 

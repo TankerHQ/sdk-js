@@ -134,27 +134,6 @@ const generateGroupsTests = (args: TestArgs) => {
       await expect(args.bobLaptop.updateGroupMembers(groupId, { usersToAdd: [bobId] }))
         .to.be.rejectedWith(errors.InvalidArgument);
     });
-
-    describe('deprecated shareWith format', () => {
-      it('should publish keys to group with deprecated shareWith format', async () => {
-        const groupId = await args.bobLaptop.createGroup([aliceId, bobId]);
-
-        const encrypted = await args.bobLaptop.encrypt(message, { shareWith: [groupId] });
-        const decrypted = await args.aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(message);
-      });
-
-      it('should share keys to group with deprecated shareWith format', async () => {
-        const groupId = await args.aliceLaptop.createGroup([aliceId]);
-
-        const encrypted = await args.bobLaptop.encrypt(message);
-        const resourceId = await args.bobLaptop.getResourceId(encrypted);
-        await args.bobLaptop.share([resourceId], [groupId]);
-
-        const decrypted = await args.aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(message);
-      });
-    });
   });
 };
 

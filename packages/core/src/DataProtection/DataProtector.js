@@ -1,5 +1,5 @@
 // @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { utils, type b64string } from '@tanker/crypto';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -84,26 +84,6 @@ export default class DataProtector {
     await this._client.sendKeyPublishBlocks(blocks);
   }
 
-  async _separateGroupsFromUsers(shareWith: Array<string>): Object {
-    const maybeGroupIds = shareWith.map((candidate) => {
-      try {
-        return utils.fromBase64(candidate);
-      } catch (e) { // not base64, can't be a groupId
-        return new Uint8Array(0); // will be filtered out
-      }
-    }).filter(id => id.length === tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
-
-    const groups = await this._groupManager.findGroups(maybeGroupIds);
-    const b64groupIds = groups.map(group => utils.toBase64(group.groupId));
-    const userIds = shareWith.filter(id => b64groupIds.indexOf(id) === -1);
-    const users = await this._userAccessor.getUsers({ userIds });
-
-    return {
-      users,
-      groups,
-    };
-  }
-
   _handleShareWithSelf = (ids: Array<string>, shareWithSelf: bool): Array<string> => {
     if (shareWithSelf) {
       const selfUserId = this._localUser.clearUserId;
@@ -116,19 +96,10 @@ export default class DataProtector {
   }
 
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWithOptions: ShareWithOptions, shareWithSelf: bool): Promise<void> {
-    let groups;
-    let users;
-
-    // deprecated format:
-    if (shareWithOptions.shareWith) {
-      const mixedIds = this._handleShareWithSelf(shareWithOptions.shareWith, shareWithSelf);
-      ({ groups, users } = await this._separateGroupsFromUsers(mixedIds));
-    } else {
-      const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
-      const userIds = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
-      groups = await this._groupManager.findGroups(groupIds);
-      users = await this._userAccessor.getUsers({ userIds });
-    }
+    const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
+    const userIds = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
+    const groups = await this._groupManager.findGroups(groupIds);
+    const users = await this._userAccessor.getUsers({ userIds });
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;
