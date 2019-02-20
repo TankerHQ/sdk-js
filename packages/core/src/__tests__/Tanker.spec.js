@@ -103,10 +103,6 @@ describe('Tanker', () => {
       await expect(tanker.acceptDevice('V1d0ak5XTXdlRVJSYmxacFRURktkbGxXWXpGaWEyeElZVWQ0YW1KV1ZUaz0=')).to.be.rejectedWith(InvalidSessionStatus);
     });
 
-    it('should not allow to create a ChunkedEncryptor', async () => {
-      await expect(tanker.makeChunkEncryptor()).to.be.rejectedWith(InvalidSessionStatus);
-    });
-
     describe('open', () => {
       it('should throw when token is not base64', async () => {
         await expect(tanker.open(userId, 'not b64')).to.be.rejected;
