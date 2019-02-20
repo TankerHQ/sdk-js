@@ -66,15 +66,6 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefa
   return result;
 }
 
-export function getResourceId(data: Uint8Array): b64string {
-  console.warn('\'getResourceId\' util function is deprecated since version 1.7.2, use the method on a Tanker instance instead, i.e. await tanker.getResourceId(...)');
-
-  if (!(data instanceof Uint8Array))
-    throw new InvalidArgument('data', 'Uint8Array', data);
-
-  return utils.toBase64(syncGetResourceId(data));
-}
-
 export class Tanker extends EventEmitter {
   _session: Session;
   _sessionOpener: SessionOpener;

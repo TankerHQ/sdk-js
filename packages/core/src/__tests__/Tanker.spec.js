@@ -6,7 +6,7 @@ import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 import { warnings } from './WarningsRemover';
 
-import { Tanker, TankerStatus, getResourceId, optionsWithDefaults } from '..';
+import { Tanker, TankerStatus, optionsWithDefaults } from '..';
 import { createUserTokenFromSecret } from './TestSessionTokens';
 import { InvalidArgument, InvalidUserToken, InvalidSessionStatus } from '../errors';
 import { DEVICE_TYPE } from '../Unlock/unlock';
@@ -172,18 +172,6 @@ describe('Tanker', () => {
           // $FlowExpectedError
           await expect(tanker.getResourceId(v), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
         }));
-      });
-
-      describe('deprecated util', () => {
-        before(() => warnings.silence(/deprecated/));
-        after(() => warnings.restore());
-
-        it('should throw when given an invalid type', async () => {
-          notUint8ArrayValues.forEach((v, i) => {
-            // $FlowExpectedError
-            expect(() => getResourceId(v), `bad resource #${i}`).to.throw(InvalidArgument);
-          });
-        });
       });
     });
 
