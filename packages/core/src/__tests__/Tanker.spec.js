@@ -173,21 +173,6 @@ describe('Tanker', () => {
           await expect(tanker.registerUnlock(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
-
-      describe('deprecated methods', () => {
-        before(() => warnings.silence(/deprecated/));
-        after(() => warnings.restore());
-
-        it('should throw if invalid argument given to deprecated methods', async () => {
-          for (let i = 0; i < badArgs.length; i++) {
-            const arg = badArgs[i];
-            // $FlowIKnow
-            await expect(tanker.setupUnlock(arg), `setup test n°${i}`).to.be.rejectedWith(InvalidArgument);
-            // $FlowIKnow
-            await expect(tanker.updateUnlock(arg), `update test n°${i}`).to.be.rejectedWith(InvalidArgument);
-          }
-        });
-      });
     });
 
     describe('getResourceId', () => {
