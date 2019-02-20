@@ -80,11 +80,6 @@ export class Tanker extends EventEmitter {
   USER_CREATION: number = TankerStatus.USER_CREATION;
   UNLOCK_REQUIRED: number = TankerStatus.UNLOCK_REQUIRED;
 
-  get DEVICE_CREATION(): number {
-    console.warn('Property `DEVICE_CREATION` has been deprecated since version 1.7.0, use `UNLOCK_REQUIRED` instead.');
-    return this.UNLOCK_REQUIRED;
-  }
-
   constructor(options: TankerOptions) {
     super();
 
