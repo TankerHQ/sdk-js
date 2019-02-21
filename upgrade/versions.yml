@@ -1,3 +1,8 @@
+- version: 1.10.0
+  tests:
+    - encrypt.js
+    - group.js
+    - unlock.js
 - version: 1.9.4
   tests:
     - encrypt.js
