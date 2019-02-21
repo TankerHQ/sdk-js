@@ -1,6 +1,6 @@
 // @flow
 
-import { utils, type b64string } from '@tanker/crypto';
+import { type b64string } from '@tanker/crypto';
 
 export type UserToken = {|
   ephemeral_public_signature_key: b64string,
@@ -17,9 +17,3 @@ export type UserDelegationToken = {|
   delegation_signature: b64string,
   last_reset: b64string,
 |};
-
-export function extractFromUserToken(userToken: UserToken) {
-  const { user_secret, ...delegationToken } = userToken; // eslint-disable-line camelcase
-
-  return { userSecret: utils.fromBase64(user_secret), delegationToken };
-}
