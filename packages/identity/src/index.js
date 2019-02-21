@@ -1,7 +1,7 @@
 // @flow
 import { tcrypto, utils, obfuscateUserId, createUserSecretB64, type b64string } from '@tanker/crypto';
 
-type UserToken = {|
+export type UserToken = {|
   ephemeral_public_signature_key: b64string,
   ephemeral_private_signature_key: b64string,
   user_id: b64string,
@@ -19,40 +19,35 @@ type PreshareKeys = {|
   signature_key_pair: KeyPair,
 |};
 
-type Identity = {|
+export type Identity = {|
   ...UserToken,
   trustchain_id: b64string,
 |};
 
-type ProvisionalIdentityElement = {|
-  target: string,
+export type IdentityTargetType = 'email';
+
+export type ProvisionalIdentity = {|
+  trustchain_id: b64string,
+  target: IdentityTargetType,
+  value: string,
   ...PreshareKeys,
-|};
-
-type PublicIdentityElement = {|
-  target: string,
-  signature_public_key: b64string,
-  encryption_public_key: b64string,
-|};
-
-type ProvisionalIdentity = {|
-  trustchain_id: b64string,
-  provisional_identities: {
-    email: ProvisionalIdentityElement,
-  },
-|};
-
-type PublicIdentity = {|
-  trustchain_id: b64string,
-  user_id: b64string,
 |};
 
 type PublicProvisionalIdentity = {|
   trustchain_id: b64string,
-  provisional_identities: {
-    email: PublicIdentityElement,
-  }
-|};
+  target: IdentityTargetType,
+  value: string,
+  public_signature_key: b64string,
+  public_encryption_key: b64string,
+|}
+
+type PublicNormalIdentity = {|
+  trustchain_id: b64string,
+  target: 'user',
+  value: b64string,
+|}
+
+export type PublicIdentity = PublicNormalIdentity | PublicProvisionalIdentity;
 
 function createUserTokenObject(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): UserToken {
   const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
@@ -115,12 +110,9 @@ export function createIdentity(trustchainId: b64string, trustchainPrivateKey: b6
 export function createProvisionalIdentity(email: string, trustchainId: b64string): b64string {
   const provisionalIdentity: ProvisionalIdentity = {
     trustchain_id: trustchainId,
-    provisional_identities: {
-      email: {
-        target: email,
-        ...tankerPreshareKeys(),
-      },
-    },
+    target: 'email',
+    value: email,
+    ...tankerPreshareKeys(),
   };
   return utils.toB64Json(provisionalIdentity);
 }
@@ -128,23 +120,20 @@ export function createProvisionalIdentity(email: string, trustchainId: b64string
 // tankerIdentity = a Tanker identity created by either createProvisionalIdentity() or createIdentity()
 export function getPublicIdentity(tankerIdentity: b64string): b64string {
   const identity: Identity | ProvisionalIdentity = utils.fromB64Json(tankerIdentity);
-  let publicIdentity: PublicIdentity | PublicProvisionalIdentity;
+  let publicIdentity: PublicIdentity;
   if (identity.user_id) {
     publicIdentity = {
       trustchain_id: identity.trustchain_id,
-      user_id: identity.user_id,
+      target: 'user',
+      value: identity.user_id,
     };
-  } else if (identity.provisional_identities) {
-    const emailElement: ProvisionalIdentityElement = identity.provisional_identities.email;
+  } else if (identity.encryption_key_pair && identity.signature_key_pair) {
     publicIdentity = {
       trustchain_id: identity.trustchain_id,
-      provisional_identities: {
-        email: {
-          target: emailElement.target,
-          signature_public_key: emailElement.signature_key_pair.public_key,
-          encryption_public_key: emailElement.encryption_key_pair.public_key,
-        },
-      },
+      target: identity.target,
+      value: identity.value,
+      public_signature_key: identity.signature_key_pair.public_key,
+      public_encryption_key: identity.encryption_key_pair.public_key,
     };
   } else {
     throw new Error('Incorrect Tanker identity provided');
