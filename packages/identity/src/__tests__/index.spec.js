@@ -54,25 +54,25 @@ describe('Identity', () => {
   it('returns a tanker provisional identity', () => {
     const b64Identity = createProvisionalIdentity(userEmail, trustchain.id);
 
-    const { trustchain_id, provisional_identities } = utils.fromB64Json(b64Identity); // eslint-disable-line camelcase
+    const { trustchain_id, value, target, encryption_key_pair, signature_key_pair } = utils.fromB64Json(b64Identity); // eslint-disable-line camelcase
     expect(trustchain_id).to.equal(trustchain.id);
-    expect(provisional_identities.email).to.not.be.null;
-    const element = provisional_identities.email;
-    expect(element.target).to.be.equal(userEmail);
-    expect(element.encryption_key_pair.public_key).to.not.be.null;
-    expect(element.encryption_key_pair.private_key).to.not.be.null;
-    expect(element.signature_key_pair.public_key).to.not.be.null;
-    expect(element.signature_key_pair.private_key).to.not.be.null;
+    expect(target).to.be.equal('email');
+    expect(value).to.be.equal(userEmail);
+    expect(encryption_key_pair.public_key).to.not.be.null;
+    expect(encryption_key_pair.private_key).to.not.be.null;
+    expect(signature_key_pair.public_key).to.not.be.null;
+    expect(signature_key_pair.private_key).to.not.be.null;
   });
 
   it('returns a tanker public identity from an tanker indentity', () => {
     const b64Identity = getPublicIdentity(createIdentity(trustchain.id, trustchain.sk, userId));
 
-    const { trustchain_id, user_id, ...trail } = utils.fromB64Json(b64Identity); // eslint-disable-line camelcase
-
+    const { trustchain_id, target, value, ...trail } = utils.fromB64Json(b64Identity); // eslint-disable-line camelcase
     expect(trustchain_id).to.equal(trustchain.id);
-    expect(utils.fromBase64(user_id)).to.have.lengthOf(tcrypto.HASH_SIZE);
     expect(trail).to.be.empty;
+
+    expect(target).to.equal('user');
+    expect(utils.fromBase64(value)).to.have.lengthOf(tcrypto.HASH_SIZE);
   });
 
   it('returns a tanker public identity from an tanker provisional indentity', () => {
@@ -80,19 +80,17 @@ describe('Identity', () => {
     const b64PublicIdentity = getPublicIdentity(b64ProvisionalIdentity);
 
     const provisionalIdentity = utils.fromB64Json(b64ProvisionalIdentity);
-    const { provisional_identities, trustchain_id, ...trail } = utils.fromB64Json(b64PublicIdentity); // eslint-disable-line camelcase
+    const { trustchain_id, target, value, // eslint-disable-line camelcase
+      public_signature_key, public_encryption_key, ...trail } = utils.fromB64Json(b64PublicIdentity); // eslint-disable-line camelcase
 
     expect(trustchain_id).to.equal(trustchain.id);
     expect(trail).to.be.empty;
-    expect(provisional_identities).to.not.be.null;
-    expect(provisional_identities.email).to.not.be.null;
-    const { target, signature_public_key, encryption_public_key } = provisional_identities.email; // eslint-disable-line camelcase
-    expect(target).to.be.equal(userEmail);
-    expect(target).to.be.equal(userEmail);
-    expect(encryption_public_key).to.not.be.null;
-    expect(signature_public_key).to.not.be.null;
-    expect(encryption_public_key).to.equal(provisionalIdentity.provisional_identities.email.encryption_key_pair.public_key);
-    expect(signature_public_key).to.equal(provisionalIdentity.provisional_identities.email.signature_key_pair.public_key);
+    expect(target).to.equal('email');
+    expect(value).to.be.equal(userEmail);
+    expect(public_encryption_key).to.not.be.null;
+    expect(public_signature_key).to.not.be.null;
+    expect(public_encryption_key).to.equal(provisionalIdentity.encryption_key_pair.public_key);
+    expect(public_signature_key).to.equal(provisionalIdentity.signature_key_pair.public_key);
   });
 
   it('upgrade a user token to an identity', () => {
