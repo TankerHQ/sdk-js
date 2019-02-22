@@ -96,15 +96,6 @@ export class OperationCanceled extends TankerError {
   }
 }
 
-export class InvalidDeviceValidationCode extends TankerError {
-  next: Error;
-
-  constructor(e: Error) {
-    super('InvalidDeviceValidationCode');
-    this.next = e;
-  }
-}
-
 export class InvalidEncryptionFormat extends TankerError {
   constructor(message: string) {
     super('InvalidEncryptionFormat', message);

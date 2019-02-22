@@ -74,11 +74,4 @@ export class Unlocker {
     const key = await this._fetchUnlockKey(password, verificationCode);
     return this.unlockWithUnlockKey(key);
   }
-
-  deviceValidationCode = () => {
-    const keyS = utils.toBase64(this._localUser.publicSignatureKey);
-    const keyC = utils.toBase64(this._localUser.publicEncryptionKey);
-    const userId = utils.toBase64(this._localUser.userId);
-    return utils.toB64Json({ keyS, keyC, userId });
-  }
 }

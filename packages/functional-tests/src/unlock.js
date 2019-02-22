@@ -2,13 +2,12 @@
 import uuid from 'uuid';
 import find from 'array-find';
 import { errors, TankerStatus } from '@tanker/core';
-import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 import { PromiseWrapper } from './PromiseWrapper';
 
-const { OPEN, UNLOCK_REQUIRED } = TankerStatus;
+const { OPEN } = TankerStatus;
 
 const expectUnlock = (tanker, userId, userToken, asyncUnlockHandler) => {
   const pw = new PromiseWrapper();
@@ -196,45 +195,6 @@ const generateUnlockTests = (args: TestArgs) => {
         });
         await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errors.OperationCanceled);
         expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
-      });
-    });
-
-    describe('deprecated', () => {
-      describe('device unlocking with validation code', () => {
-        it('should throw when accepting a device with incorrect validation code', async () => {
-          await expect(bobLaptop.acceptDevice(utils.toBase64(utils.fromString('test test'))))
-            .to.be.rejectedWith(errors.InvalidDeviceValidationCode);
-          await expect(bobLaptop.acceptDevice(utils.toB64Json({})))
-            .to.be.rejectedWith(errors.InvalidDeviceValidationCode);
-        });
-
-        it('can unlock the device with the device validation code', async () => {
-          bobPhone.once('unlockRequired', async () => {
-            const validationCode = bobPhone.deviceValidationCode();
-            expect(bobPhone.status).to.equal(UNLOCK_REQUIRED);
-            await bobLaptop.acceptDevice(validationCode);
-          });
-
-          await bobPhone.open(bobId, bobToken);
-          expect(bobPhone.status).to.equal(OPEN);
-        });
-
-        it('can be unlocked by another existing device while disconnected', async () => {
-          const closingDone = new PromiseWrapper();
-          let validationCode = '';
-          bobPhone.once('unlockRequired', async () => {
-            validationCode = bobPhone.deviceValidationCode();
-            await bobPhone.close();
-            closingDone.resolve();
-          });
-          await expect(bobPhone.open(bobId, bobToken)).to.be.rejected;
-          await closingDone;
-
-          await bobLaptop.acceptDevice(validationCode);
-
-          await bobPhone.open(bobId, bobToken);
-          expect(bobPhone.status).to.equal(OPEN);
-        });
       });
     });
   });
