@@ -186,11 +186,6 @@ export class Tanker extends EventEmitter {
     this.emit('statusChange', this.status);
   }
 
-  deviceValidationCode(): b64string {
-    this.assert(this.UNLOCK_REQUIRED, 'generate a device validation code');
-    return this._sessionOpener.unlocker.deviceValidationCode();
-  }
-
   get deviceId(): b64string {
     if (!this._session.storage.keyStore || !this._session.storage.keyStore.deviceId)
       throw new Error('Tried to get our device hash, but could not find it!');
@@ -272,11 +267,6 @@ export class Tanker extends EventEmitter {
   async generateAndRegisterUnlockKey(): Promise<UnlockKey> {
     this.assert(this.OPEN, 'generate an unlock key');
     return this._session.unlockKeys.generateAndRegisterUnlockKey();
-  }
-
-  async acceptDevice(validationCode: b64string): Promise<void> {
-    this.assert(this.OPEN, 'accept a device');
-    return this._session.unlockKeys.acceptDevice(validationCode);
   }
 
   async registerUnlock(params: RegisterUnlockParams): Promise<void> {

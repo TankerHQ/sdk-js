@@ -7,7 +7,7 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, TankerStatus, optionsWithDefaults } from '..';
 import { createUserTokenFromSecret } from './TestSessionTokens';
-import { InvalidArgument, InvalidUserToken, InvalidSessionStatus } from '../errors';
+import { InvalidArgument, InvalidUserToken } from '../errors';
 import { DEVICE_TYPE } from '../Unlock/unlock';
 
 describe('Tanker', () => {
@@ -96,10 +96,6 @@ describe('Tanker', () => {
         dataStore: { ...dataStoreConfig, prefix: makePrefix() },
         sdkType: 'test'
       });
-    });
-
-    it('should not allow to accept a device', async () => {
-      await expect(tanker.acceptDevice('V1d0ak5XTXdlRVJSYmxacFRURktkbGxXWXpGaWEyeElZVWQ0YW1KV1ZUaz0=')).to.be.rejectedWith(InvalidSessionStatus);
     });
 
     describe('open', () => {
