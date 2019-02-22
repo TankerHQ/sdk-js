@@ -1,6 +1,7 @@
 // @noflow
 const path = require('path');
 const { makeBaseConfig } = require('../webpack.config.base');
+const { customLaunchers } = require('./launchers.js');
 
 module.exports = {
   // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -36,7 +37,7 @@ module.exports = {
   // test results reporter to use
   // possible values: 'dots', 'progress'
   // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-  reporters: ['mocha'],
+  reporters: ['mocha', 'BrowserStack'],
 
   mochaReporter: {
     output: 'full',
@@ -61,13 +62,9 @@ module.exports = {
   // how many browser should be started simultaneous
   concurrency: Infinity,
 
-  // Sandbox does not work in un-privileged dockers, so
-  // use a custom launcher when run in a docker container
-  customLaunchers: {
-    ChromiumInDocker: {
-      base: 'ChromiumHeadless',
-      flags: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-translate', '--disable-extensions'],
-    },
+  customLaunchers,
+  browserStack: {
+    project: 'sdk-js',
   },
-
+  hostname: 'bs-local.com',
 };
