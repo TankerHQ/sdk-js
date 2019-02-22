@@ -11,15 +11,15 @@
     "test": "cd ../..; yarn test:core"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "7.0.0",
+    "@babel/runtime-corejs2": "7.3.1",
     "@tanker/crypto": "0.0.1",
     "@tanker/datastore-base": "0.0.1",
     "@tanker/errors": "0.0.1",
     "@tanker/stream-base": "0.0.1",
     "array-find": "^1.0.0",
     "array.chunk": "^1.1.0",
-    "engine.io-client": "git+https://github.com/TankerHQ/engine.io-client.git#cfb6fa113fb5dc22e08777bd8fc6b6701f00ba67",
-    "socket.io-client": "git+https://github.com/TankerHQ/socket.io-client.git#d09a5b73b6075b88b6722575bc5e24e9f7d4eb1d",
+    "engine.io-client": "git+https://github.com/TankerHQ/engine.io-client.git#2996c2d746d4695742cbc3f8fb47c60d4c5757f7",
+    "socket.io-client": "git+https://github.com/TankerHQ/socket.io-client.git#4f71b8dda24bea5e4949c37fec6b790795615c25",
     "varint": "^5.0.0"
   },
   "devDependencies": {
