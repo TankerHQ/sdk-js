@@ -30,6 +30,10 @@ module.exports = flatten(packages.map(pack => {
         edit: (string) => string.replace(/"src\/([^"]+)"/g, (_, p1) => `"${p1}"`),
       },
       {
+        src: path.resolve(packageRoot, 'README.md'),
+        dest: path.resolve(packageRoot, 'dist', 'README.md'),
+      },
+      {
         src: path.resolve(packageRoot, 'LICENSE'),
         dest: path.resolve(packageRoot, 'dist', 'LICENSE'),
       },
