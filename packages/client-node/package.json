@@ -12,5 +12,8 @@
   },
   "devDependencies": {
     "@tanker/datastore-pouchdb-memory": "0.0.1"
+  },
+  "engines": {
+    "node": ">=8"
   }
 }
