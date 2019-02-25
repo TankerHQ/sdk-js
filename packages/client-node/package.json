@@ -12,6 +12,16 @@
   "bugs": {
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
+  "keywords": [
+    "tanker",
+    "encryption",
+    "end-to-end",
+    "sdk",
+    "cryptography",
+    "privacy",
+    "client-side",
+    "security"
+  ],
   "main": "src/index.js",
   "dependencies": {
     "@tanker/core": "0.0.1",
