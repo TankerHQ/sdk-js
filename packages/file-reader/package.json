@@ -12,6 +12,16 @@
   "bugs": {
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
+  "keywords": [
+    "filereader",
+    "browser",
+    "promise",
+    "async",
+    "await",
+    "file",
+    "blob",
+    "ponyfill"
+  ],
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",

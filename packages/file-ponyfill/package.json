@@ -12,6 +12,14 @@
   "bugs": {
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
+  "keywords": [
+    "file",
+    "browser",
+    "dom",
+    "constructor",
+    "ponyfill",
+    "polyfill"
+  ],
   "main": "src/index.js",
   "dependencies": {},
   "devDependencies": {

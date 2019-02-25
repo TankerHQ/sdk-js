@@ -1,3 +1,7 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![NPM Package](https://img.shields.io/npm/v/@tanker/file-ponyfill.svg)](http://npmjs.org/package/@tanker/file-ponyfill)
+![Minified Size](https://img.shields.io/bundlephobia/minzip/@tanker/file-ponyfill.svg)
+
 # A cross-browser ponyfill for File
 
 ## Why
