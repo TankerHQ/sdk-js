@@ -1,7 +1,17 @@
 {
   "name": "@tanker/datastore-dexie-browser",
   "version": "0.0.1",
+  "description": "Tanker SDK (datastore dexie browser)",
+  "author": "Tanker Team",
   "license": "Apache-2.0",
+  "homepage": "https://tanker.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TankerHQ/sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TankerHQ/sdk-js/issues"
+  },
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",

@@ -1,11 +1,20 @@
 {
   "name": "@tanker/crypto",
   "version": "0.0.1",
-  "description": "Cryptographic primitives used by the Tanker SDK",
+  "description": "Tanker SDK (cryptographic primitives)",
+  "author": "Tanker Team",
+  "license": "Apache-2.0",
+  "homepage": "https://tanker.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TankerHQ/sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TankerHQ/sdk-js/issues"
+  },
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",
-  "license": "Apache-2.0",
   "scripts": {
     "build": "cd ../..; yarn build:crypto",
     "test": "cd ../..; yarn test:crypto",
