@@ -4,11 +4,10 @@ import { tcrypto, utils, random, obfuscateUserId } from '@tanker/crypto';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
-import { warnings } from './WarningsRemover';
 
-import { Tanker, TankerStatus, getResourceId, optionsWithDefaults } from '..';
+import { Tanker, TankerStatus, optionsWithDefaults } from '..';
 import { createUserTokenFromSecret } from './TestSessionTokens';
-import { InvalidArgument, InvalidUserToken, InvalidSessionStatus } from '../errors';
+import { InvalidArgument, InvalidUserToken } from '../errors';
 import { DEVICE_TYPE } from '../Unlock/unlock';
 
 describe('Tanker', () => {
@@ -92,14 +91,6 @@ describe('Tanker', () => {
       });
     });
 
-    it('should not allow to accept a device', async () => {
-      await expect(tanker.acceptDevice('V1d0ak5XTXdlRVJSYmxacFRURktkbGxXWXpGaWEyeElZVWQ0YW1KV1ZUaz0=')).to.be.rejectedWith(InvalidSessionStatus);
-    });
-
-    it('should not allow to create a ChunkedEncryptor', async () => {
-      await expect(tanker.makeChunkEncryptor()).to.be.rejectedWith(InvalidSessionStatus);
-    });
-
     describe('open', () => {
       it('should throw when token is not base64', async () => {
         await expect(tanker.open(userId, 'not b64')).to.be.rejected;
@@ -166,21 +157,6 @@ describe('Tanker', () => {
           await expect(tanker.registerUnlock(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
-
-      describe('deprecated methods', () => {
-        before(() => warnings.silence(/deprecated/));
-        after(() => warnings.restore());
-
-        it('should throw if invalid argument given to deprecated methods', async () => {
-          for (let i = 0; i < badArgs.length; i++) {
-            const arg = badArgs[i];
-            // $FlowIKnow
-            await expect(tanker.setupUnlock(arg), `setup test n°${i}`).to.be.rejectedWith(InvalidArgument);
-            // $FlowIKnow
-            await expect(tanker.updateUnlock(arg), `update test n°${i}`).to.be.rejectedWith(InvalidArgument);
-          }
-        });
-      });
     });
 
     describe('getResourceId', () => {
@@ -192,36 +168,20 @@ describe('Tanker', () => {
           await expect(tanker.getResourceId(v), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
         }));
       });
-
-      describe('deprecated util', () => {
-        before(() => warnings.silence(/deprecated/));
-        after(() => warnings.restore());
-
-        it('should throw when given an invalid type', async () => {
-          notUint8ArrayValues.forEach((v, i) => {
-            // $FlowExpectedError
-            expect(() => getResourceId(v), `bad resource #${i}`).to.throw(InvalidArgument);
-          });
-        });
-      });
     });
 
-    describe('shareWith', () => {
+    describe('sharing', () => {
       const notShareWithValues = [
         null,
         0,
         'noArrayAroundMe',
-        { shareWith: ['bob'], shareWithGroups: ['admin group'] },
+        { shareWithUsers: [undefined] },
+        { shareWithUsers: 'noArrayAroundMe' },
         { shareWithGroups: 'noArrayAroundMe' },
         { shareWithGroups: [new Uint8Array(32)] },
-        { shareWithUsers: 'noArrayAroundMe' },
-        { shareWithUsers: [undefined] },
       ];
 
-      before(() => warnings.silence(/deprecated/));
-      after(() => warnings.restore());
-
-      it('share() should throw when given an invalid shareWith', async () => {
+      it('share() should throw when given an invalid option', async () => {
         notShareWithValues.push(undefined);
         notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
         const resourceId = random(tcrypto.MAC_SIZE);
@@ -229,7 +189,7 @@ describe('Tanker', () => {
         for (let i = 0; i < notShareWithValues.length; i++) {
           const v = notShareWithValues[i];
           // $FlowExpectedError
-          await expect(tanker.share([resourceId], v), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);
+          await expect(tanker.share([resourceId], v), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
     });

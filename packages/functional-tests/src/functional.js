@@ -7,7 +7,6 @@ import type { TankerInterface, b64string } from '@tanker/core';
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
 import type { TestArgs, TestResources } from './TestArgs';
 
-import generateChunkEncryptor from './chunkEncryptor';
 import generateStreamEncryptor from './encryptorStream';
 import generateEncryptTests from './encrypt';
 import generateGetDeviceListTests from './getDeviceList';
@@ -68,7 +67,6 @@ export function generateFunctionalTests(
       warnings.restore();
     });
 
-    generateChunkEncryptor(args);
     generateStreamEncryptor(args);
     generateEncryptTests(args);
     generateGetDeviceListTests(args);

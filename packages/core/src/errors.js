@@ -18,9 +18,8 @@ export class ResourceNotFound extends TankerError {
 export class DecryptFailed extends TankerError {
   b64ResourceId: b64string;
   next: Error;
-  chunkIndex: ?number;
 
-  constructor(e: Error, resourceId: Uint8Array, chunkIndex?: number) {
+  constructor(e: Error, resourceId: Uint8Array) {
     const b64ResourceId = utils.toBase64(resourceId);
     let message;
 
@@ -34,7 +33,6 @@ export class DecryptFailed extends TankerError {
 
     this.next = e;
     this.b64ResourceId = b64ResourceId;
-    this.chunkIndex = chunkIndex;
   }
 }
 
@@ -98,24 +96,6 @@ export class OperationCanceled extends TankerError {
   }
 }
 
-export class InvalidDeviceValidationCode extends TankerError {
-  next: Error;
-
-  constructor(e: Error) {
-    super('InvalidDeviceValidationCode');
-    this.next = e;
-  }
-}
-
-export class InvalidSeal extends TankerError {
-  next: ?Error;
-
-  constructor(message: string, e: ?Error) {
-    super('InvalidSeal', message);
-    this.next = e;
-  }
-}
-
 export class InvalidEncryptionFormat extends TankerError {
   constructor(message: string) {
     super('InvalidEncryptionFormat', message);
@@ -147,21 +127,6 @@ export class MissingEventHandler extends TankerError {
     super('MissingEventHandler', message);
   }
 }
-
-export class ChunkIndexOutOfRange extends TankerError {
-  constructor(index: number, length: number) {
-    const message = `index ${index} outside [0, ${length}) range`;
-    super('ChunkIndexOutOfRange', message);
-  }
-}
-
-export class ChunkNotFound extends TankerError {
-  constructor(index: number) {
-    const message = `no chunk found at index ${index}`;
-    super('ChunkNotFound', message);
-  }
-}
-
 export class AuthenticationError extends TankerError {
   next: Error;
 

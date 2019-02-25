@@ -18,7 +18,6 @@ import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOption
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 
-import ChunkEncryptor from './DataProtection/ChunkEncryptor';
 import { TANKER_SDK_VERSION as version } from './version';
 
 const statusDefs = [
@@ -67,15 +66,6 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefa
   return result;
 }
 
-export function getResourceId(data: Uint8Array): b64string {
-  console.warn('\'getResourceId\' util function is deprecated since version 1.7.2, use the method on a Tanker instance instead, i.e. await tanker.getResourceId(...)');
-
-  if (!(data instanceof Uint8Array))
-    throw new InvalidArgument('data', 'Uint8Array', data);
-
-  return utils.toBase64(syncGetResourceId(data));
-}
-
 export class Tanker extends EventEmitter {
   _session: Session;
   _sessionOpener: SessionOpener;
@@ -89,11 +79,6 @@ export class Tanker extends EventEmitter {
   OPENING: number = TankerStatus.OPENING;
   USER_CREATION: number = TankerStatus.USER_CREATION;
   UNLOCK_REQUIRED: number = TankerStatus.UNLOCK_REQUIRED;
-
-  get DEVICE_CREATION(): number {
-    console.warn('Property `DEVICE_CREATION` has been deprecated since version 1.7.0, use `UNLOCK_REQUIRED` instead.');
-    return this.UNLOCK_REQUIRED;
-  }
 
   constructor(options: TankerOptions) {
     super();
@@ -170,16 +155,10 @@ export class Tanker extends EventEmitter {
   }
 
   on(eventName: string, listener: any): any {
-    if (eventName === 'waitingForValidation') {
-      console.warn('\'waitingForValidation\' event has been deprecated since version 1.7.0, please use \'unlockRequired\' instead.');
-    }
     return super.on(eventName, listener);
   }
 
   once(eventName: string, listener: any): any {
-    if (eventName === 'waitingForValidation') {
-      console.warn('\'waitingForValidation\' event has been deprecated since version 1.7.0, please use \'unlockRequired\' instead.');
-    }
     return super.once(eventName, listener);
   }
 
@@ -187,9 +166,7 @@ export class Tanker extends EventEmitter {
     if (opener) {
       this._sessionOpener = opener;
       this._sessionOpener.on('unlockRequired', () => {
-        const validationCode = this.deviceValidationCode();
         this.emit('unlockRequired');
-        this.emit('waitingForValidation', validationCode);
         this.emit('statusChange', this.status);
       });
     } else {
@@ -207,11 +184,6 @@ export class Tanker extends EventEmitter {
       this.emit('sessionClosed');
     }
     this.emit('statusChange', this.status);
-  }
-
-  deviceValidationCode(): b64string {
-    this.assert(this.UNLOCK_REQUIRED, 'generate a device validation code');
-    return this._sessionOpener.unlocker.deviceValidationCode();
   }
 
   get deviceId(): b64string {
@@ -243,8 +215,7 @@ export class Tanker extends EventEmitter {
     const sessionOpener = await SessionOpener.create(userData, this._dataStoreOptions, this._clientOptions);
     this._setSessionOpener(sessionOpener);
 
-    const allowedToUnlock = !(this.listenerCount('unlockRequired') === 0
-      && this.listenerCount('waitingForValidation') === 0);
+    const allowedToUnlock = this.listenerCount('unlockRequired') !== 0;
 
     const session = await this._sessionOpener.openSession(allowedToUnlock);
     this._setSession(session);
@@ -298,21 +269,6 @@ export class Tanker extends EventEmitter {
     return this._session.unlockKeys.generateAndRegisterUnlockKey();
   }
 
-  async acceptDevice(validationCode: b64string): Promise<void> {
-    this.assert(this.OPEN, 'accept a device');
-    return this._session.unlockKeys.acceptDevice(validationCode);
-  }
-
-  async updateUnlock(params: RegisterUnlockParams): Promise<void> {
-    console.warn('The updateUnlock() method has been deprecated, please use registerUnlock() instead.');
-    return this.registerUnlock(params);
-  }
-
-  async setupUnlock(params: RegisterUnlockParams): Promise<void> {
-    console.warn('The setupUnlock() method has been deprecated, please use registerUnlock() instead.');
-    return this.registerUnlock(params);
-  }
-
   async registerUnlock(params: RegisterUnlockParams): Promise<void> {
     this.assert(this.OPEN, 'register an unlock method');
 
@@ -340,11 +296,8 @@ export class Tanker extends EventEmitter {
 
   async unlockCurrentDevice(value: UnlockDeviceParams): Promise<void> {
     this.assert(this.UNLOCK_REQUIRED, 'unlock a device');
-    if (!value) {
+    if (!value || typeof value !== 'object' || value instanceof Array) {
       throw new InvalidArgument('unlock options', 'object', value);
-    } else if (typeof value === 'string') {
-      console.warn('unlockCurrentDevice(unlockKey) has been deprecated, pass a dictionary instead');
-      return this.unlockCurrentDevice({ unlockKey: value });
     } else if (Object.keys(value).length !== 1) {
       throw new InvalidArgument('unlock options', 'object', value);
     }
@@ -382,23 +335,14 @@ export class Tanker extends EventEmitter {
     return opts;
   }
 
-  async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions | Array<string>): Promise<void> {
+  async share(resourceIds: Array<b64string>, shareWithOptions: ShareWithOptions): Promise<void> {
     this.assert(this.OPEN, 'share');
 
     if (!(resourceIds instanceof Array))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    let shareWithOptions;
-
-    if (shareWith instanceof Array) {
-      console.warn('The shareWith option as an array is deprecated, use { shareWithUsers: [], shareWithGroups: [] } format instead');
-      shareWithOptions = { shareWith };
-    } else {
-      shareWithOptions = shareWith;
-    }
-
     if (!validateShareWithOptions(shareWithOptions))
-      throw new InvalidArgument('shareWith', '{ shareWithUsers: Array<string>, shareWithGroups: Array<string> }', shareWith);
+      throw new InvalidArgument('shareWithOptions', '{ shareWithUsers: Array<string>, shareWithGroups: Array<string> }', shareWithOptions);
 
     return this._session.dataProtector.share(resourceIds, shareWithOptions);
   }
@@ -408,12 +352,6 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
     return utils.toBase64(syncGetResourceId(encryptedData));
-  }
-
-  async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
-    console.warn('The ChunkEncryptor is deprecated since version 1.10.0. Please use the simple encryption APIs instead, as described in the migration guide: https://tanker.io/docs/latest/migration-guide/#chunk_encryption_apis_deprecation');
-    this.assert(this.OPEN, 'make a chunk encryptor');
-    return this._session.dataProtector.makeChunkEncryptor(seal);
   }
 
   async revokeDevice(deviceId: b64string): Promise<void> {
