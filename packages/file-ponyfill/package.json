@@ -21,7 +21,9 @@
     "polyfill"
   ],
   "main": "src/index.js",
-  "dependencies": {},
+  "dependencies": {
+    "@babel/runtime-corejs2": "7.3.1"
+  },
   "devDependencies": {
     "@tanker/crypto": "0.0.1",
     "chai": "^4.2.0",

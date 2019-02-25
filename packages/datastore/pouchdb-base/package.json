@@ -16,6 +16,7 @@
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
+    "@babel/runtime-corejs2": "7.3.1",
     "@tanker/datastore-base": "0.0.1"
   }
 }
