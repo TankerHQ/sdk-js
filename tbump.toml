@@ -90,8 +90,16 @@ src = "packages/core/src/version.js"
 search = "TANKER_SDK_VERSION = '{current_version}'"
 
 [[file]]
-src = "packages/crypto/package.json"
+src = "packages/core/package.json"
+search = '"@tanker/crypto": "{current_version}"'
+
+[[file]]
+src = "packages/identity/package.json"
 search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/identity/package.json"
+search = '"@tanker/crypto": "{current_version}"'
 
 [[file]]
 src = "packages/datastore/base/package.json"
