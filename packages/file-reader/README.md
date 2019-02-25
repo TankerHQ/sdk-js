@@ -15,7 +15,11 @@ A promisified `FileReader` implementation very similar to the [browser's FileRea
 import FileReader from '@tanker/file-reader';
 
 // Retrieve a file or blob somehow
-const file = new File(['The quick brown fox jumps over the lazy dog'], 'fox.txt', { type: 'plain/text' });
+const file = new File(
+  ['The quick brown fox jumps over the lazy dog'],
+  'fox.txt',
+  { type: 'plain/text' }
+);
 
 // Create your file reader
 const reader = new FileReader(file);
