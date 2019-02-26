@@ -1,3 +1,7 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![NPM Package](https://img.shields.io/npm/v/@tanker/file-ponyfill.svg)](http://npmjs.org/package/@tanker/file-ponyfill)
+![Minified Size](https://img.shields.io/bundlephobia/minzip/@tanker/file-ponyfill.svg)
+
 # A cross-browser ponyfill for File
 
 ## Why
@@ -39,8 +43,10 @@ Note that the ponyfill is built using a clever class hierarchy so that instances
 
 Developped by [Tanker](https://tanker.io), under the [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0) license.
 
-Tanker allows seamless integration of end-to-end encryption in your application.
+Tanker's client SDKs allow for seamless integration of client-side end-to-end encryption in your application.
+
+Tanker is available for iOS, Android, and Web apps.
 
 Read the [documentation](https://tanker.io/docs/latest/) to get started.
 
-Go to [tanker.io](https://tanker.io) for more informations about Tanker.
+Go to [tanker.io](https://tanker.io) for more information about Tanker.

@@ -1,4 +1,4 @@
-# Tanker SDK (crypto)
+# Tanker SDK (datastore pouchdb base)
 
 This package is a dependency of the Tanker client SDKs for end-to-end encryption:
 

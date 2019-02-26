@@ -105,6 +105,14 @@ describe('FileReader', () => {
         const additionalReadLength = additionalReads.reduce((prev, curr) => prev + curr.byteLength, 0);
         expect(additionalReadLength).to.equal(0);
       });
+
+      it('gracefully aborts a read', async () => {
+        const source = builder([binary], 'utf8.txt', { type });
+        const reader = new FileReader(source);
+        const readPromise = reader.readAsArrayBuffer();
+        reader.abort();
+        await expect(readPromise).to.be.rejected;
+      });
     });
   });
 });

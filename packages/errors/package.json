@@ -1,9 +1,17 @@
 {
   "name": "@tanker/errors",
   "version": "0.0.1",
-  "description": "Common errors used by the Tanker SDK",
+  "description": "Tanker SDK (common error classes)",
   "author": "Tanker Team",
   "license": "Apache-2.0",
+  "homepage": "https://tanker.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TankerHQ/sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TankerHQ/sdk-js/issues"
+  },
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",
@@ -11,6 +19,7 @@
     "test": "cd ../..; yarn test:errors"
   },
   "dependencies": {
+    "@babel/runtime-corejs2": "7.3.1"
   },
   "devDependencies": {
     "chai": "^4.2.0"

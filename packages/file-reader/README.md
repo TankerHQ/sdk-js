@@ -1,3 +1,7 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![NPM Package](https://img.shields.io/npm/v/@tanker/file-reader.svg)](http://npmjs.org/package/@tanker/file-reader)
+![Minified Size](https://img.shields.io/bundlephobia/minzip/@tanker/file-reader.svg)
+
 # A promisified FileReader for browsers
 
 A promisified `FileReader` implementation very similar to the [browser's FileReader API](https://developer.mozilla.org/en-US/docs/Web/API/FileReader), with a few differencies:
@@ -15,7 +19,11 @@ A promisified `FileReader` implementation very similar to the [browser's FileRea
 import FileReader from '@tanker/file-reader';
 
 // Retrieve a file or blob somehow
-const file = new File(['The quick brown fox jumps over the lazy dog'], 'fox.txt', { type: 'plain/text' });
+const file = new File(
+  ['The quick brown fox jumps over the lazy dog'],
+  'fox.txt',
+  { type: 'plain/text' }
+);
 
 // Create your file reader
 const reader = new FileReader(file);
@@ -38,8 +46,10 @@ do {
 
 Developped by [Tanker](https://tanker.io), under the [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0) license.
 
-Tanker allows seamless integration of end-to-end encryption in your application.
+Tanker's client SDKs allow for seamless integration of client-side end-to-end encryption in your application.
+
+Tanker is available for iOS, Android, and Web apps.
 
 Read the [documentation](https://tanker.io/docs/latest/) to get started.
 
-Go to [tanker.io](https://tanker.io) for more informations about Tanker.
+Go to [tanker.io](https://tanker.io) for more information about Tanker.

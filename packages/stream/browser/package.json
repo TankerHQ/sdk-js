@@ -4,8 +4,17 @@
   "description": "Tanker Stream SDK for web browsers",
   "author": "Tanker Team",
   "license": "Apache-2.0",
+  "homepage": "https://tanker.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TankerHQ/sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TankerHQ/sdk-js/issues"
+  },
   "main": "src/index.js",
   "dependencies": {
+    "@babel/runtime-corejs2": "7.3.1",
     "@tanker/errors": "0.0.1",
     "@tanker/file-ponyfill": "0.0.1",
     "@tanker/file-reader": "0.0.1",

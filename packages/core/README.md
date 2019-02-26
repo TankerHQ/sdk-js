@@ -1,12 +1,16 @@
 # Tanker SDK (core)
 
-This package is a dependency of other @tanker/* packages, and as of today should not be used directly.
+This package is a dependency of the Tanker client SDKs for end-to-end encryption:
+
+* [@tanker/client-browser](https://www.npmjs.com/package/@tanker/client-browser) for Web applications
+* [@tanker/client-node](https://www.npmjs.com/package/@tanker/client-node) for Node.js client applications
 
 ## More about Tanker
 
-Tanker allows seamless integration of end-to-end encryption in your application.
+Tanker's client SDKs allow for seamless integration of client-side end-to-end encryption in your application.
+
+Tanker is available for iOS, Android, and Web apps.
 
 Read the [documentation](https://tanker.io/docs/latest/) to get started.
 
-
-Go to [tanker.io](https://tanker.io) for more informations about Tanker.
+Go to [tanker.io](https://tanker.io) for more information about Tanker.

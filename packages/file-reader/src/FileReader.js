@@ -15,6 +15,7 @@ export default class FileReader {
     this._reader = new window.FileReader();
     this._reader.addEventListener('load', this._onLoad.bind(this));
     this._reader.addEventListener('error', this._onError.bind(this));
+    this._reader.addEventListener('abort', this._onError.bind(this));
   }
 
   _onLoad() {

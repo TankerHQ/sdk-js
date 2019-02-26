@@ -1,4 +1,4 @@
-# Tanker SDK (crypto)
+# Tanker SDK (datastore dexie browser)
 
 This package is a dependency of the Tanker client SDKs for end-to-end encryption:
 

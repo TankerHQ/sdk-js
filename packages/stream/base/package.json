@@ -4,10 +4,19 @@
   "description": "Tanker Stream SDK",
   "author": "Tanker Team",
   "license": "Apache-2.0",
+  "homepage": "https://tanker.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TankerHQ/sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TankerHQ/sdk-js/issues"
+  },
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
+    "@babel/runtime-corejs2": "7.3.1",
     "@tanker/errors": "0.0.1",
     "readable-stream": "^3.1.1"
   },

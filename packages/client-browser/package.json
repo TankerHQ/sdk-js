@@ -1,11 +1,30 @@
 {
   "name": "@tanker/client-browser",
   "version": "0.0.1",
-  "description": "Tanker client SDK for web browsers",
+  "description": "Tanker end-to-end encryption SDK for web applications",
   "author": "Tanker Team",
   "license": "Apache-2.0",
+  "homepage": "https://tanker.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TankerHQ/sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TankerHQ/sdk-js/issues"
+  },
+  "keywords": [
+    "tanker",
+    "encryption",
+    "end-to-end",
+    "sdk",
+    "cryptography",
+    "privacy",
+    "client-side",
+    "security"
+  ],
   "main": "src/index.js",
   "dependencies": {
+    "@babel/runtime-corejs2": "7.3.1",
     "@tanker/core": "0.0.1",
     "@tanker/datastore-dexie-browser": "0.0.1",
     "@tanker/file-ponyfill": "0.0.1",
