@@ -60,7 +60,7 @@ check/linux/nightly:
     - schedules
   script:
     - dmenv run -- python run-ci.py check --runner linux --nightly
-    - dmenv run -- python run-ci.py upgrade
+    - dmenv run -- python run-ci.py compat
   tags:
     - linux
 
@@ -119,21 +119,21 @@ pages:
   tags:
     - linux
 
-check/upgrade:
+check/compat:
   stage: check
   when: manual
   except:
     - master
   script:
-    - dmenv run -- python run-ci.py upgrade
+    - dmenv run -- python run-ci.py compat
   tags:
     - linux
 
-check/upgrade/master:
+check/compat/master:
   stage: check
   only:
     - master
   script:
-    - dmenv run -- python run-ci.py upgrade
+    - dmenv run -- python run-ci.py compat
   tags:
     - linux
