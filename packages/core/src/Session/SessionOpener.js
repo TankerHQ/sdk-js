@@ -8,7 +8,7 @@ import Storage, { type DataStoreOptions } from './Storage';
 import { Unlocker } from '../Unlock/Unlocker';
 import { DEVICE_TYPE } from '../Unlock/unlock';
 
-import { type UserData } from '../Tokens/UserData';
+import { type UserData } from '../UserData';
 
 import { takeChallenge } from './ClientAuthenticator';
 import { Client, type ClientOptions } from '../Network/Client';

@@ -2,7 +2,7 @@
 import { tcrypto, utils } from '@tanker/crypto';
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
 
-import { extractUserData } from '../Tokens/UserData';
+import { extractUserData } from '../UserData';
 import { createUserToken } from './TestSessionTokens';
 import LocalUser from '../Session/LocalUser';
 

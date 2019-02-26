@@ -7,7 +7,7 @@ import { type UnlockMethods } from '../Network/Client';
 import { type DeviceType } from '../Unlock/unlock';
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import { type UserData } from '../Tokens/UserData';
+import { type UserData } from '../UserData';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 

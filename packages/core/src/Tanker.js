@@ -10,7 +10,7 @@ import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 import { InvalidSessionStatus, InvalidArgument } from './errors';
 import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEVICE_TYPE } from './Unlock/unlock';
 
-import { extractUserData } from './Tokens/UserData';
+import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
 import { SessionOpener } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';

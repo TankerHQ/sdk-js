@@ -1,9 +1,9 @@
 // @flow
 
 import { utils, checkUserSecret, obfuscateUserId, type b64string } from '@tanker/crypto';
-import { DEVICE_TYPE, type DeviceType } from '../Unlock/unlock';
-import { InvalidUserToken } from '../errors';
-import { type DelegationToken } from '../Session/delegation';
+import { DEVICE_TYPE, type DeviceType } from './Unlock/unlock';
+import { InvalidUserToken } from './errors';
+import { type DelegationToken } from './Session/delegation';
 
 export type UserData = {
   trustchainId: Uint8Array,

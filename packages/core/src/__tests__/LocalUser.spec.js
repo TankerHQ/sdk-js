@@ -2,7 +2,7 @@
 
 import { tcrypto, random } from '@tanker/crypto';
 
-import { extractUserData } from '../Tokens/UserData';
+import { extractUserData } from '../UserData';
 import { createUserToken } from './TestSessionTokens';
 
 import { expect } from './chai';
