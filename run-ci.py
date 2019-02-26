@@ -10,6 +10,7 @@ import ci.mail
 def check(*, runner: str, nightly: bool) -> None:
     env = "dev"
     ci.js.yarn_install_deps()
+    ci.js.yarn_install_deps(cwd=Path.getcwd() / "ci/compat")
     if runner == "linux":
         ci.js.run_linters()
         ci.js.run_tests_in_node(env=env)

@@ -1,0 +1,10 @@
+{
+  "name": "1.9.4",
+  "version": "0.0.1",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@tanker/client-node": "1.9.4",
+    "tests": "0.0.1-local"
+  }
+}

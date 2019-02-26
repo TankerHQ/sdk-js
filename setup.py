@@ -17,11 +17,4 @@ setup(
         "unidecode",
         "websockets==6.0",
     ],
-    extras_require={
-        "dev": [
-            "tankersdk>=1.9.1",
-            "pytest",
-            "ruamel.yaml",
-            ]
-    },
 )

@@ -1,4 +1,0 @@
-data/*.json
-package.json
-yarn.lock
-yarn-*.log
