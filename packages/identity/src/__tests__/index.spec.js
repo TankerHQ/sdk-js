@@ -94,10 +94,15 @@ describe('Identity', () => {
   });
 
   it('upgrade a user token to an identity', () => {
-    const b64Identity = upgradeUserToken(trustchain.id, generateUserToken(trustchain.id, trustchain.sk, userId));
+    const b64Identity = upgradeUserToken(trustchain.id, userId, generateUserToken(trustchain.id, trustchain.sk, userId));
     const identity = utils.fromB64Json(b64Identity);
 
     expect(identity.trustchain_id).to.be.equal(trustchain.id);
     checkToken(identity, trustchain.pk);
+  });
+
+  it('throws when upgrading with the wrong userId', () => {
+    const token = generateUserToken(trustchain.id, trustchain.sk, userId);
+    expect(() => upgradeUserToken(trustchain.id, 'bad user id', token)).to.throw();
   });
 });

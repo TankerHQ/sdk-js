@@ -143,8 +143,11 @@ export function getPublicIdentity(tankerIdentity: b64string): b64string {
 
 // trustchainId = base64 encoded trustchain id
 // userToken = a user token created by generateUserToken()
-export function upgradeUserToken(trustchainId: b64string, userToken: b64string): b64string {
+export function upgradeUserToken(trustchainId: b64string, userId: string, userToken: b64string): b64string {
   const token: UserToken = utils.fromB64Json(userToken);
+  const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
+  if (utils.toBase64(obfuscatedUserId) !== token.user_id)
+    throw new Error('Invalid userId provided');
   return utils.toB64Json({
     ...token,
     trustchain_id: trustchainId,
