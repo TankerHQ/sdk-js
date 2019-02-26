@@ -1,5 +1,5 @@
 // @flow
-import { generichash, tcrypto, utils, createUserSecretB64, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, obfuscateUserId, createUserSecretB64, type b64string } from '@tanker/crypto';
 
 export type UserToken = {|
   ephemeral_public_signature_key: b64string,
@@ -50,8 +50,7 @@ type PublicProvisionalIdentity = {|
 export type PublicIdentity = PublicNormalIdentity | PublicProvisionalIdentity;
 
 function createUserTokenObject(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): UserToken {
-  const userIdBuffer = utils.concatArrays(utils.fromString(userId), utils.fromBase64(trustchainId));
-  const obfuscatedUserId = generichash(userIdBuffer);
+  const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
 
   const ephemeralKeyPair = tcrypto.makeSignKeyPair();
 
