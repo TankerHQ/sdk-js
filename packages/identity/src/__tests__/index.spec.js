@@ -1,19 +1,17 @@
 // @flow
 import { expect } from 'chai';
-import { generichash, tcrypto, utils } from '@tanker/crypto';
+import { generichash, obfuscateUserId, tcrypto, utils } from '@tanker/crypto';
 import { generateUserToken, createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken } from '../index';
 
-function checkToken(token, trustchainPublicKey) {
-  // check valid control byte in user secret
-  const hashedUserId = utils.fromBase64(token.user_id);
-  const userSecret = utils.fromBase64(token.user_secret);
-  expect(hashedUserId).to.have.lengthOf(tcrypto.HASH_SIZE);
+function checkUserSecret(userSecret, obfuscatedUserId) {
+  expect(obfuscatedUserId).to.have.lengthOf(tcrypto.HASH_SIZE);
   expect(userSecret).to.have.lengthOf(tcrypto.HASH_SIZE);
-  const hashPayload = utils.concatArrays(userSecret.slice(0, userSecret.length - 1), hashedUserId);
+  const hashPayload = utils.concatArrays(userSecret.slice(0, userSecret.length - 1), obfuscatedUserId);
   const control = generichash(hashPayload, 16);
   expect(userSecret[userSecret.length - 1]).to.equal(control[0]);
+}
 
-  // verify signature
+function checkDelegationSignature(token, trustchainPublicKey) {
   const signedData = utils.concatArrays(
     utils.fromBase64(token.ephemeral_public_signature_key),
     utils.fromBase64(token.user_id)
@@ -26,14 +24,38 @@ function checkToken(token, trustchainPublicKey) {
   )).to.equal(true);
 }
 
+function checkToken(token, trustchainPublicKey) {
+  checkUserSecret(utils.fromBase64(token.user_secret), utils.fromBase64(token.user_id));
+
+  checkDelegationSignature(token, trustchainPublicKey);
+}
+
 describe('Identity', () => {
+  const goodUserToken = 'eyJkZWxlZ2F0aW9uX3NpZ25hdHVyZSI6IlU5V1FvbEN2UnlqVDhvUjJQUW1kMVdYTkNpMHFtTDEyaE5ydEdhYllSRVdpcnk1MmtXeDFBZ1l6a0x4SDZncG8zTWlBOXIrK3pobm1vWWRFSjArSkN3PT0iLCJlcGhlbWVyYWxfcHJpdmF0ZV9zaWduYXR1cmVfa2V5IjoiakVEVDR3UUNjMURGd29kWE5QSEZDbG5kVFBuRnVGbVhoQnQraXNLVTRacGVIZUxURU5PbXZjZGUwSFpEblh0QXEvZHJNM05jc3RjeDBrTk5JZmh0M2c9PSIsImVwaGVtZXJhbF9wdWJsaWNfc2lnbmF0dXJlX2tleSI6IlhoM2kweERUcHIzSFh0QjJRNTE3UUt2M2F6TnpYTExYTWRKRFRTSDRiZDQ9IiwidXNlcl9pZCI6IlJEYTBlcTRYTnVqNXRWN2hkYXBqT3hobWhlVGg0UUJETnB5NFN2eTlYb2s9IiwidXNlcl9zZWNyZXQiOiI3RlNmL24wZTc2UVQzczBEa3ZldFJWVkpoWFpHRWpPeGo1RVdBRmV4dmpJPSJ9';
+  const goodIdentity = 'eyJkZWxlZ2F0aW9uX3NpZ25hdHVyZSI6IlU5V1FvbEN2UnlqVDhvUjJQUW1kMVdYTkNpMHFtTDEyaE5ydEdhYllSRVdpcnk1MmtXeDFBZ1l6a0x4SDZncG8zTWlBOXIrK3pobm1vWWRFSjArSkN3PT0iLCJlcGhlbWVyYWxfcHJpdmF0ZV9zaWduYXR1cmVfa2V5IjoiakVEVDR3UUNjMURGd29kWE5QSEZDbG5kVFBuRnVGbVhoQnQraXNLVTRacGVIZUxURU5PbXZjZGUwSFpEblh0QXEvZHJNM05jc3RjeDBrTk5JZmh0M2c9PSIsImVwaGVtZXJhbF9wdWJsaWNfc2lnbmF0dXJlX2tleSI6IlhoM2kweERUcHIzSFh0QjJRNTE3UUt2M2F6TnpYTExYTWRKRFRTSDRiZDQ9IiwidHJ1c3RjaGFpbl9pZCI6InRwb3h5TnpoMGhVOUcyaTlhZ012SHl5ZCtwTzZ6R0NqTzlCZmhyQ0xqZDQ9IiwidXNlcl9pZCI6IlJEYTBlcTRYTnVqNXRWN2hkYXBqT3hobWhlVGg0UUJETnB5NFN2eTlYb2s9IiwidXNlcl9zZWNyZXQiOiI3RlNmL24wZTc2UVQzczBEa3ZldFJWVkpoWFpHRWpPeGo1RVdBRmV4dmpJPSJ9';
+
   const trustchain = {
-    id: 'AzES0aJwDCej9bQVY9AUMZBCLdX0msEc/TJ4DOhZaQs=',
-    pk: 'dOeLBpHz2IF37UQkS36sXomqEcEAjSyCsXZ7irn9UQA=',
-    sk: 'cBAq6A00rRNVTHicxNHdDFuq6LNUo6gAz58oKqy9CGd054sGkfPYgXftRCRLfqxeiaoRwQCNLIKxdnuKuf1RAA=='
+    id: 'tpoxyNzh0hU9G2i9agMvHyyd+pO6zGCjO9BfhrCLjd4=',
+    sk: 'cTMoGGUKhwN47ypq4xAXAtVkNWeyUtMltQnYwJhxWYSvqjPVGmXd2wwa7y17QtPTZhn8bxb015CZC/e4ZI7+MQ==',
+    pk: 'r6oz1Rpl3dsMGu8te0LT02YZ/G8W9NeQmQv3uGSO/jE=',
   };
   const userId = 'b_eich';
+  const obfuscatedUserId = utils.toBase64(obfuscateUserId(utils.fromBase64(trustchain.id), userId));
   const userEmail = 'brendan.eich@tanker.io';
+
+  const userSecret = '7FSf/n0e76QT3s0DkvetRVVJhXZGEjOxj5EWAFexvjI=';
+  const publicSignatureKey = 'Xh3i0xDTpr3HXtB2Q517QKv3azNzXLLXMdJDTSH4bd4=';
+  const privateSignatureKey = 'jEDT4wQCc1DFwodXNPHFClndTPnFuFmXhBt+isKU4ZpeHeLTENOmvcde0HZDnXtAq/drM3Ncstcx0kNNIfht3g==';
+  const delegationSignature = 'U9WQolCvRyjT8oR2PQmd1WXNCi0qmL12hNrtGabYREWiry52kWx1AgYzkLxH6gpo3MiA9r++zhnmoYdEJ0+JCw==';
+
+  const checkGoodToken = (token) => {
+    checkToken(token, trustchain.pk);
+    expect(token.user_secret).to.equal(userSecret);
+    expect(token.ephemeral_public_signature_key).to.equal(publicSignatureKey);
+    expect(token.ephemeral_private_signature_key).to.equal(privateSignatureKey);
+    expect(token.delegation_signature).to.equal(delegationSignature);
+    expect(token.user_id).to.equal(obfuscatedUserId);
+  };
 
   it('returns a valid token signed with the trustchain private key', () => {
     const b64Token = generateUserToken(trustchain.id, trustchain.sk, userId);
@@ -93,8 +115,19 @@ describe('Identity', () => {
     expect(public_signature_key).to.equal(provisionalIdentity.signature_key_pair.public_key);
   });
 
+  it('Parse a valid user token', () => {
+    const userToken = utils.fromB64Json(goodUserToken);
+    checkGoodToken(userToken);
+  });
+
+  it('Parse a valid identity', () => {
+    const identity = utils.fromB64Json(goodIdentity);
+    expect(identity.trustchain_id).to.equal(trustchain.id);
+    checkGoodToken(identity);
+  });
+
   it('upgrade a user token to an identity', () => {
-    const b64Identity = upgradeUserToken(trustchain.id, userId, generateUserToken(trustchain.id, trustchain.sk, userId));
+    const b64Identity = upgradeUserToken(trustchain.id, userId, goodUserToken);
     const identity = utils.fromB64Json(b64Identity);
 
     expect(identity.trustchain_id).to.be.equal(trustchain.id);
