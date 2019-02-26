@@ -1,14 +1,13 @@
 // @flow
 
 import sinon from 'sinon';
-import uuid from 'uuid';
 
 import { tcrypto, random } from '@tanker/crypto';
 
 import { expect } from './chai';
 
 import { extractUserData } from '../Tokens/UserData';
-import { createUserToken, createServerToken } from './TestSessionTokens';
+import { createUserToken } from './TestSessionTokens';
 
 import { SessionOpener } from '../Session/SessionOpener';
 
@@ -123,27 +122,6 @@ describe('Session opening', () => {
       mockStorage.hasLocalDevice = () => false;
       // Oops, we forgot to listen on 'unlockRequired'
       await expect(sessionOpener.openSession(false)).to.be.rejectedWith(MissingEventHandler);
-    });
-  });
-
-
-  describe('for server', () => {
-    let serverId;
-    let serverToken;
-    let userData;
-
-    before(() => {
-      serverId = uuid.v4();
-      serverToken = createServerToken(trustchainId, trustchainKeyPair.privateKey, serverId);
-      userData = extractUserData(trustchainId, serverId, serverToken);
-    });
-
-    beforeEach(() => {
-      sessionOpener = new SessionOpener(userData, mockStorage, mockTrustchain, mockClient);
-    });
-
-    it('should open a session', async () => {
-      await expect(sessionOpener.openSession(false)).to.be.fulfilled;
     });
   });
 });

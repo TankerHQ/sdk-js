@@ -1,6 +1,5 @@
 // @flow
 import { tcrypto, utils, obfuscateUserId, createUserSecretB64 } from '@tanker/crypto';
-import { generateUnlockKeyRegistration, DEVICE_TYPE } from '../Unlock/unlock';
 
 export function createUserTokenFromSecret(userId: Uint8Array, trustchainPrivateKey: Uint8Array, userSecret: string) {
   const ephemeralKeys = tcrypto.makeSignKeyPair();
@@ -21,29 +20,4 @@ export function createUserToken(trustchainId: Uint8Array, userIdString: string, 
   const userId = obfuscateUserId(trustchainId, userIdString);
   const userSecret = createUserSecretB64(utils.toBase64(trustchainId), userIdString);
   return createUserTokenFromSecret(userId, trustchainPrivateKey, userSecret);
-}
-
-export function createServerToken(trustchainId: Uint8Array, trustchainPrivateKey: Uint8Array, serverId: string) {
-  const userKeys = tcrypto.makeEncryptionKeyPair();
-  const obfuscatedServerId = obfuscateUserId(trustchainId, serverId);
-
-  const unlockKeyRegistration = generateUnlockKeyRegistration({
-    trustchainId,
-    userId: obfuscatedServerId,
-    userKeys,
-    deviceType: DEVICE_TYPE.server_device,
-    authorDevice: {
-      id: trustchainId,
-      privateSignatureKey: trustchainPrivateKey,
-    }
-  });
-  const userToken = createUserToken(trustchainId, serverId, trustchainPrivateKey);
-  return utils.toB64Json({
-    version: 1,
-    type: 'serverToken',
-    settings: {
-      userToken,
-      unlockKey: unlockKeyRegistration.unlockKey,
-    },
-  });
 }

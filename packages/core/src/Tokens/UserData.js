@@ -1,8 +1,6 @@
 // @flow
 
 import { utils, checkUserSecret, obfuscateUserId, type b64string } from '@tanker/crypto';
-import { type UserToken } from './UserToken';
-import { isServerToken, extractFromServerToken, type ServerToken } from './ServerToken';
 import { DEVICE_TYPE, type DeviceType } from '../Unlock/unlock';
 import { InvalidUserToken } from '../errors';
 import { type DelegationToken } from '../Session/delegation';
@@ -14,26 +12,13 @@ export type UserData = {
   userSecret: Uint8Array,
   delegationToken: DelegationToken,
   deviceType: DeviceType,
-  unlockKey: ?string
 }
 
 export function extractUserData(trustchainId: Uint8Array, clearUserId: string, sessionTokenB64: b64string): UserData {
   const userId = obfuscateUserId(trustchainId, clearUserId);
 
-  let userToken: UserToken;
-  let deviceType;
-  let unlock;
-
-  if (isServerToken(sessionTokenB64)) {
-    const serverToken: ServerToken = utils.fromB64Json(sessionTokenB64);
-    deviceType = DEVICE_TYPE.server_device;
-    const extractedServerToken = extractFromServerToken(serverToken);
-    userToken = utils.fromB64Json(extractedServerToken.userToken);
-    unlock = extractedServerToken.unlockKey;
-  } else {
-    userToken = utils.fromB64Json(sessionTokenB64);
-    deviceType = DEVICE_TYPE.client_device;
-  }
+  const userToken = utils.fromB64Json(sessionTokenB64);
+  const deviceType = DEVICE_TYPE.client_device;
 
   const userSecret = utils.fromBase64(userToken.user_secret);
 
@@ -57,6 +42,5 @@ export function extractUserData(trustchainId: Uint8Array, clearUserId: string, s
     userSecret,
     delegationToken,
     deviceType,
-    unlockKey: unlock,
   };
 }
