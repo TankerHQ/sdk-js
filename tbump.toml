@@ -94,6 +94,10 @@ src = "packages/core/package.json"
 search = '"@tanker/crypto": "{current_version}"'
 
 [[file]]
+src = "packages/crypto/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
 src = "packages/identity/package.json"
 search = '"version": "{current_version}"'
 
