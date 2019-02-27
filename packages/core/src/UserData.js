@@ -2,7 +2,7 @@
 
 import { utils, checkUserSecret, type b64string } from '@tanker/crypto';
 import { DEVICE_TYPE, type DeviceType } from './Unlock/unlock';
-import { InvalidUserToken } from './errors';
+import { InvalidIdentity } from './errors';
 import { type DelegationToken } from './Session/delegation';
 
 export type UserData = {
@@ -19,7 +19,7 @@ export function extractUserData(trustchainId: Uint8Array, identityB64: b64string
   try {
     identity = utils.fromB64Json(identityB64);
   } catch (e) {
-    throw new InvalidUserToken(e);
+    throw new InvalidIdentity(e);
   }
   const userId = utils.fromBase64(identity.user_id);
 
@@ -36,7 +36,7 @@ export function extractUserData(trustchainId: Uint8Array, identityB64: b64string
   try {
     checkUserSecret(userId, userSecret);
   } catch (e) {
-    throw new InvalidUserToken(e);
+    throw new InvalidIdentity(e);
   }
   return {
     trustchainId,

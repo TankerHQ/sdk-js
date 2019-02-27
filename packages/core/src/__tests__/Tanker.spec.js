@@ -7,7 +7,7 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, TankerStatus, optionsWithDefaults } from '..';
 import { createIdentityFromSecret } from './TestSessionTokens';
-import { InvalidArgument, InvalidUserToken } from '../errors';
+import { InvalidArgument, InvalidIdentity } from '../errors';
 import { DEVICE_TYPE } from '../Unlock/unlock';
 
 describe('Tanker', () => {
@@ -112,21 +112,21 @@ describe('Tanker', () => {
         const badSecret = '';
         const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
         const promise = tanker.open(identity);
-        await expect(promise).to.be.rejectedWith(InvalidUserToken);
+        await expect(promise).to.be.rejectedWith(InvalidIdentity);
       });
 
       it('should throw when secret is the wrong size', async () => {
         const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE - 1));
         const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
         const promise = tanker.open(identity);
-        await expect(promise).to.be.rejectedWith(InvalidUserToken);
+        await expect(promise).to.be.rejectedWith(InvalidIdentity);
       });
 
       it('should throw when secret is not the user\'s secret', async () => {
         const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE));
         const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
         const promise = tanker.open(identity);
-        await expect(promise).to.be.rejectedWith(InvalidUserToken);
+        await expect(promise).to.be.rejectedWith(InvalidIdentity);
       });
     });
   });

@@ -3,7 +3,7 @@
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import { InvalidUserToken } from '../errors';
+import { InvalidIdentity } from '../errors';
 import KeySafe from './KeySafe';
 import { type UserKeys } from '../Blocks/payloads';
 
@@ -122,7 +122,7 @@ export default class Keystore {
         const record = { _id: 'keySafe', encryptedSafe: await safe.serialize() };
         await this._ds.put(TABLE, record);
       } else {
-        throw new InvalidUserToken(e);
+        throw new InvalidIdentity(e);
       }
     }
 

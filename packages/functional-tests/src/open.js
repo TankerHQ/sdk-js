@@ -25,7 +25,7 @@ const generateOpenTests = (args: TestArgs) => {
 
     it('throws when giving invalid arguments', async () => {
       // $FlowExpectedError
-      await expect(args.bobLaptop.open('secret')).to.be.rejectedWith(errors.InvalidUserToken);
+      await expect(args.bobLaptop.open('secret')).to.be.rejectedWith(errors.InvalidIdentity);
     });
 
     it('throws when the session is already opened', async () => {

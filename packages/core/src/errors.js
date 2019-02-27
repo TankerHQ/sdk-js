@@ -36,11 +36,11 @@ export class DecryptFailed extends TankerError {
   }
 }
 
-export class InvalidUserToken extends TankerError {
+export class InvalidIdentity extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('InvalidUserToken');
+    super('InvalidIdentity');
     this.next = e;
   }
 }
