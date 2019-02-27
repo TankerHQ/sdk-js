@@ -10,8 +10,8 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
   describe('EncryptorStream', () => {
     let aliceId;
     let bobId;
-    let aliceToken;
-    let bobToken;
+    let aliceIdentity;
+    let bobIdentity;
 
     const watchStream = (stream) => {
       const sync = {};
@@ -28,10 +28,10 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
     beforeEach(async () => {
       aliceId = uuid.v4();
       bobId = uuid.v4();
-      aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-      bobToken = args.trustchainHelper.generateUserToken(bobId);
-      await args.aliceLaptop.open(aliceId, aliceToken);
-      await args.bobLaptop.open(bobId, bobToken);
+      aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
+      bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+      await args.aliceLaptop.open(aliceIdentity);
+      await args.bobLaptop.open(bobIdentity);
     });
 
     afterEach(async () => {

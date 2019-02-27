@@ -1,5 +1,7 @@
 // @flow
-export type ShareWithOptions = { shareWithUsers?: Array<string>, shareWithGroups?: Array<string> };
+import { type b64string } from '@tanker/crypto';
+
+export type ShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
 
 export const validateShareWithOptions = (value: ShareWithOptions): bool => {
   if (!value || typeof value !== 'object' || value instanceof Array)

@@ -3,7 +3,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
 
 import { extractUserData } from '../UserData';
-import { createUserToken } from './TestSessionTokens';
+import { createIdentity } from './TestSessionTokens';
 import LocalUser from '../Session/LocalUser';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
@@ -55,8 +55,8 @@ export default class TrustchainBuilder {
     const { trustchainId } = this.generator;
 
     const userIdString = 'let try this for now';
-    const userToken = createUserToken(trustchainId, userIdString, this.trustchainKeyPair.privateKey);
-    const userData = extractUserData(trustchainId, userIdString, userToken);
+    const identity = createIdentity(trustchainId, userIdString, this.trustchainKeyPair.privateKey);
+    const userData = extractUserData(trustchainId, identity);
 
     const storage = new Storage(this.dataStoreConfig);
     await storage.open(userData.userId, userData.userSecret);

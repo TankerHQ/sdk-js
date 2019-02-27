@@ -135,7 +135,7 @@ describe('Users', () => {
       const alice = await builder.newUserCreationV3('alice');
       const bob = await builder.newUserCreationV3('bob');
 
-      const retUsers = await users.getUsers({ userIds: ['alice', 'bob'] });
+      const retUsers = await users.getUsersFromClearUserIds({ userIds: ['alice', 'bob'] });
       const retUserIds = retUsers.map(u => u.userId);
       const expectedUserIds = [alice, bob].map(u => utils.toBase64(u.entry.user_id));
       expect(retUserIds).to.have.members(expectedUserIds);
@@ -146,7 +146,7 @@ describe('Users', () => {
       await builder.newUserCreationV3('alice');
       await builder.newUserCreationV3('bob');
 
-      await expect(users.getUsers({ userIds: ['alice', 'bob', 'casper'] }))
+      await expect(users.getUsersFromClearUserIds({ userIds: ['alice', 'bob', 'casper'] }))
         .to.be.rejectedWith(RecipientsNotFound);
     });
   });

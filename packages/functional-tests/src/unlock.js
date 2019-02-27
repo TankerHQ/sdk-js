@@ -9,7 +9,7 @@ import { PromiseWrapper } from './PromiseWrapper';
 
 const { OPEN } = TankerStatus;
 
-const expectUnlock = (tanker, userId, userToken, asyncUnlockHandler) => {
+const expectUnlock = (tanker, userId, identity, asyncUnlockHandler) => {
   const pw = new PromiseWrapper();
 
   tanker.once('unlockRequired', async () => {
@@ -24,7 +24,7 @@ const expectUnlock = (tanker, userId, userToken, asyncUnlockHandler) => {
   return expect(Promise.all([
     pw.promise,
     (async () => {
-      await tanker.open(userId, userToken);
+      await tanker.open(identity);
       expect(tanker.status).to.equal(OPEN);
     })()
   ]));
@@ -35,7 +35,7 @@ const generateUnlockTests = (args: TestArgs) => {
     let bobLaptop;
     let bobPhone;
     let bobId;
-    let bobToken;
+    let bobIdentity;
     let trustchainHelper;
 
     before(() => {
@@ -44,8 +44,8 @@ const generateUnlockTests = (args: TestArgs) => {
 
     beforeEach(async () => {
       bobId = uuid.v4();
-      bobToken = trustchainHelper.generateUserToken(bobId);
-      await bobLaptop.open(bobId, bobToken);
+      bobIdentity = trustchainHelper.generateIdentity(bobId);
+      await bobLaptop.open(bobIdentity);
     });
 
     afterEach(async () => {
@@ -93,7 +93,7 @@ const generateUnlockTests = (args: TestArgs) => {
         const errorMessage = 'Unexpected error from sync handler';
         const syncUnlockHandler = () => { throw new Error(errorMessage); };
         bobPhone.once('unlockRequired', syncUnlockHandler);
-        await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errorMessage);
+        await expect(bobPhone.open(bobIdentity)).to.be.rejectedWith(errorMessage);
       });
     });
 
@@ -101,18 +101,18 @@ const generateUnlockTests = (args: TestArgs) => {
       it('can register an unlock password and unlock a new device with it', async () => {
         await expect(bobLaptop.registerUnlock({ password: 'my pass' })).to.be.fulfilled;
         const unlockHandler = () => bobPhone.unlockCurrentDevice({ password: 'my pass' });
-        await expectUnlock(bobPhone, bobId, bobToken, unlockHandler).to.be.fulfilled;
+        await expectUnlock(bobPhone, bobId, bobIdentity, unlockHandler).to.be.fulfilled;
       });
 
       it('fails to unlock a new device with a wrong password', async () => {
         await expect(bobLaptop.registerUnlock({ password: 'my pass' })).to.be.fulfilled;
         const unlockHandler = () => bobPhone.unlockCurrentDevice({ password: 'my wrong pass' });
-        await expectUnlock(bobPhone, bobId, bobToken, unlockHandler).to.be.rejectedWith(errors.InvalidUnlockPassword);
+        await expectUnlock(bobPhone, bobId, bobIdentity, unlockHandler).to.be.rejectedWith(errors.InvalidUnlockPassword);
       });
 
       it('fails to unlock a new device without having registered a password', async () => {
         const unlockHandler = () => bobPhone.unlockCurrentDevice({ password: 'my pass' });
-        await expectUnlock(bobPhone, bobId, bobToken, unlockHandler).to.be.rejectedWith(errors.InvalidUnlockKey);
+        await expectUnlock(bobPhone, bobId, bobIdentity, unlockHandler).to.be.rejectedWith(errors.InvalidUnlockKey);
       });
 
       it('can register an unlock password, update it, and unlock a new device with the new password only', async () => {
@@ -120,11 +120,11 @@ const generateUnlockTests = (args: TestArgs) => {
         await expect(bobLaptop.registerUnlock({ password: 'my new pass' })).to.be.fulfilled;
 
         const badUnlockHandler = () => bobPhone.unlockCurrentDevice({ password: 'my pass' });
-        await expectUnlock(bobPhone, bobId, bobToken, badUnlockHandler).to.be.rejectedWith(errors.InvalidUnlockPassword);
+        await expectUnlock(bobPhone, bobId, bobIdentity, badUnlockHandler).to.be.rejectedWith(errors.InvalidUnlockPassword);
         await bobPhone.close();
 
         const unlockHandler = () => bobPhone.unlockCurrentDevice({ password: 'my new pass' });
-        await expectUnlock(bobPhone, bobId, bobToken, unlockHandler).to.be.fulfilled;
+        await expectUnlock(bobPhone, bobId, bobIdentity, unlockHandler).to.be.fulfilled;
       });
 
       it('can register an unlock email and unlock a new device with a valid verification code', async () => {
@@ -133,13 +133,13 @@ const generateUnlockTests = (args: TestArgs) => {
           const verificationCode = await trustchainHelper.getVerificationCode(bobId, 'john@doe.com');
           await bobPhone.unlockCurrentDevice({ verificationCode });
         };
-        await expectUnlock(bobPhone, bobId, bobToken, unlockHandler).to.be.fulfilled;
+        await expectUnlock(bobPhone, bobId, bobIdentity, unlockHandler).to.be.fulfilled;
       });
 
       it('fails to unlock a new device with a wrong verification code', async () => {
         await expect(bobLaptop.registerUnlock({ email: 'john@doe.com' })).to.be.fulfilled;
         const unlockHandler = () => bobPhone.unlockCurrentDevice({ verificationCode: 'wxFeLY8V4BrUagIFv5HsWGS2qnrn/FL4D9zrphgTPXQ=' });
-        await expectUnlock(bobPhone, bobId, bobToken, unlockHandler).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
+        await expectUnlock(bobPhone, bobId, bobIdentity, unlockHandler).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
       });
     });
 
@@ -173,7 +173,7 @@ const generateUnlockTests = (args: TestArgs) => {
           await expect(bobPhone.unlockCurrentDevice({ password: 'noPasswordDefined' })).to.be.rejectedWith(errors.InvalidUnlockKey);
           await bobPhone.close();
         });
-        await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errors.OperationCanceled);
+        await expect(bobPhone.open(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
         expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
       });
 
@@ -183,7 +183,7 @@ const generateUnlockTests = (args: TestArgs) => {
           await expect(bobPhone.unlockCurrentDevice({ password: 'noPasswordDefined' })).to.be.rejectedWith(errors.InvalidUnlockPassword);
           await bobPhone.close();
         });
-        await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errors.OperationCanceled);
+        await expect(bobPhone.open(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
         expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
       });
 
@@ -194,7 +194,7 @@ const generateUnlockTests = (args: TestArgs) => {
           await expect(bobPhone.unlockCurrentDevice({ verificationCode })).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
           await bobPhone.close();
         });
-        await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errors.OperationCanceled);
+        await expect(bobPhone.open(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
         expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
       });
     });

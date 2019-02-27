@@ -7,7 +7,7 @@ import { tcrypto, random } from '@tanker/crypto';
 import { expect } from './chai';
 
 import { extractUserData } from '../UserData';
-import { createUserToken } from './TestSessionTokens';
+import { createIdentity } from './TestSessionTokens';
 
 import { SessionOpener } from '../Session/SessionOpener';
 
@@ -73,13 +73,13 @@ describe('Session opening', () => {
 
   describe('for user', () => {
     let userIdString;
-    let userToken;
+    let identity;
     let userData;
 
     before(() => {
       userIdString = 'clear user id';
-      userToken = createUserToken(trustchainId, userIdString, trustchainKeyPair.privateKey);
-      userData = extractUserData(trustchainId, userIdString, userToken);
+      identity = createIdentity(trustchainId, userIdString, trustchainKeyPair.privateKey);
+      userData = extractUserData(trustchainId, identity);
     });
 
     beforeEach(() => {

@@ -13,12 +13,12 @@ const generateGroupsTests = (args: TestArgs) => {
 
     before(async () => {
       aliceId = uuid.v4();
-      const aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-      await args.aliceLaptop.open(aliceId, aliceToken);
+      const aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
+      await args.aliceLaptop.open(aliceIdentity);
 
       bobId = uuid.v4();
-      const bobToken = args.trustchainHelper.generateUserToken(bobId);
-      await args.bobLaptop.open(bobId, bobToken);
+      const bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+      await args.bobLaptop.open(bobIdentity);
     });
 
     after(async () => {

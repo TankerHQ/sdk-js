@@ -4,6 +4,7 @@ import uuid from 'uuid';
 import { expect } from 'chai';
 
 import { toBase64 } from '../../../../packages/client-node';
+import { generateUserToken } from '../../../../packages/identity';
 import { TrustchainHelper } from '../../../../packages/functional-tests/src/Helpers';
 import { makeCurrentUser, makeUser } from './helpers';
 
@@ -18,8 +19,9 @@ function generateTests(version: string, Tanker: any) {
       args.trustchainId = toBase64(args.trustchainHelper.trustchainId);
       const aliceId = uuid.v4();
       const bobId = uuid.v4();
-      const aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-      const bobToken = args.trustchainHelper.generateUserToken(bobId);
+      const trustchainPrivateKey = args.trustchainHelper.trustchainKeyPair.trustchainPrivateKey;
+      const aliceToken = generateUserToken(args.trustchainId, trustchainPrivateKey, aliceId);
+      const bobToken = generateUserToken(args.trustchainId, trustchainPrivateKey, bobId);
       args.currentBob = makeCurrentUser(bobId, bobToken, args.trustchainId);
       args.versionBob = makeUser(Tanker, bobId, bobToken, args.trustchainId);
       args.currentAlice = makeCurrentUser(aliceId, aliceToken, args.trustchainId);

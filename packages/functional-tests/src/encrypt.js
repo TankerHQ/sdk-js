@@ -37,9 +37,9 @@ const generateEncryptTests = (args: TestArgs) => {
   describe('text resource encryption and sharing', () => {
     const clearText: string = 'Rivest Shamir Adleman';
     let aliceId;
-    let aliceToken;
+    let aliceIdentity;
     let bobId;
-    let bobToken;
+    let bobIdentity;
 
     describe('no session', () => {
       it('throws when using a session in an invalid state', async () => {
@@ -55,10 +55,10 @@ const generateEncryptTests = (args: TestArgs) => {
       before(async () => {
         aliceId = uuid.v4();
         bobId = uuid.v4();
-        aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-        bobToken = args.trustchainHelper.generateUserToken(bobId);
-        await args.aliceLaptop.open(aliceId, aliceToken);
-        await args.bobLaptop.open(bobId, bobToken);
+        aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
+        bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+        await args.aliceLaptop.open(aliceIdentity);
+        await args.bobLaptop.open(bobIdentity);
       });
 
       after(async () => {
@@ -135,7 +135,7 @@ const generateEncryptTests = (args: TestArgs) => {
           await args.aliceLaptop.close();
           const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [aliceId] });
 
-          await args.aliceLaptop.open(aliceId, aliceToken);
+          await args.aliceLaptop.open(aliceIdentity);
           const decrypted = await args.aliceLaptop.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
         });
@@ -149,7 +149,7 @@ const generateEncryptTests = (args: TestArgs) => {
           args.bobPhone.once('unlockRequired', async () => {
             args.bobPhone.unlockCurrentDevice({ unlockKey: bobUnlockKey });
           });
-          await args.bobPhone.open(bobId, bobToken);
+          await args.bobPhone.open(bobIdentity);
 
           const decrypted = await args.bobPhone.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
@@ -172,10 +172,10 @@ const generateEncryptTests = (args: TestArgs) => {
       before(async () => {
         aliceId = uuid.v4();
         bobId = uuid.v4();
-        aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-        bobToken = args.trustchainHelper.generateUserToken(bobId);
-        await args.aliceLaptop.open(aliceId, aliceToken);
-        await args.bobLaptop.open(bobId, bobToken);
+        aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
+        bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+        await args.aliceLaptop.open(aliceIdentity);
+        await args.bobLaptop.open(bobIdentity);
       });
 
       after(async () => {
@@ -230,14 +230,14 @@ const generateEncryptTests = (args: TestArgs) => {
       before(async () => {
         const bobUnlockPassword = 'my password';
         bobId = uuid.v4();
-        bobToken = args.trustchainHelper.generateUserToken(bobId);
-        await args.bobLaptop.open(bobId, bobToken);
+        bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+        await args.bobLaptop.open(bobIdentity);
         await args.bobLaptop.registerUnlock({ password: 'my password' });
 
         args.bobPhone.once('unlockRequired', async () => {
           args.bobPhone.unlockCurrentDevice({ password: bobUnlockPassword });
         });
-        await args.bobPhone.open(bobId, bobToken);
+        await args.bobPhone.open(bobIdentity);
       });
 
       after(async () => {
@@ -257,8 +257,8 @@ const generateEncryptTests = (args: TestArgs) => {
       it('can\'t decrypt from another device if encrypted with shareWithSelf = false', async () => {
         // create alice so that we can at least share with one recipient
         aliceId = uuid.v4();
-        aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-        await args.aliceLaptop.open(aliceId, aliceToken);
+        aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
+        await args.aliceLaptop.open(aliceIdentity);
         await args.aliceLaptop.close();
 
         const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithSelf: false, shareWithUsers: [aliceId] });
@@ -304,12 +304,12 @@ const generateEncryptTests = (args: TestArgs) => {
   sizes.forEach(size => {
     describe(`${size} binary resource encryption`, () => {
       let aliceId;
-      let aliceToken;
+      let aliceIdentity;
 
       before(async () => {
         aliceId = uuid.v4();
-        aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-        await args.aliceLaptop.open(aliceId, aliceToken);
+        aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
+        await args.aliceLaptop.open(aliceIdentity);
       });
 
       after(async () => {

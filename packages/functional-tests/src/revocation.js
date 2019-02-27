@@ -12,19 +12,19 @@ const isIE = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Tr
 const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
     let bobId;
-    let bobToken;
+    let bobIdentity;
 
     beforeEach(async () => {
       bobId = uuid.v4();
-      bobToken = args.trustchainHelper.generateUserToken(bobId);
+      bobIdentity = args.trustchainHelper.generateIdentity(bobId);
 
-      await args.bobLaptop.open(bobId, bobToken);
+      await args.bobLaptop.open(bobIdentity);
       const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
 
       args.bobPhone.once('unlockRequired', async () => {
         args.bobPhone.unlockCurrentDevice({ unlockKey: bobUnlockKey });
       });
-      await args.bobPhone.open(bobId, bobToken);
+      await args.bobPhone.open(bobIdentity);
     });
 
     afterEach(async () => {
@@ -48,7 +48,7 @@ const generateRevocationTests = (args: TestArgs) => {
         await args.bobPhone.close();
         await args.bobLaptop.revokeDevice(bobPhoneId);
         await args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
-        await expect(args.bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errors.OperationCanceled);
+        await expect(args.bobPhone.open(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
       }
     };
 
@@ -95,7 +95,7 @@ const generateRevocationTests = (args: TestArgs) => {
       const bobPhoneDeviceId = args.bobPhone.deviceId;
       await args.bobPhone.close();
       await args.bobLaptop.revokeDevice(bobPhoneDeviceId);
-      const promise = args.bobPhone.open(bobId, bobToken);
+      const promise = args.bobPhone.open(bobIdentity);
       await expect(promise).to.be.rejected;
     });
 
@@ -154,8 +154,8 @@ const generateRevocationTests = (args: TestArgs) => {
 
     it('Alice can share with Bob who has a revoked device', async () => {
       const aliceId = uuid.v4();
-      const aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-      await args.aliceLaptop.open(aliceId, aliceToken);
+      const aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
+      await args.aliceLaptop.open(aliceIdentity);
 
       await revokeBobPhone();
 

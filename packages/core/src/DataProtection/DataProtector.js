@@ -1,5 +1,5 @@
 // @flow
-import { utils, type b64string } from '@tanker/crypto';
+import { utils, type b64string, obfuscateUserId } from '@tanker/crypto';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -84,9 +84,9 @@ export default class DataProtector {
     await this._client.sendKeyPublishBlocks(blocks);
   }
 
-  _handleShareWithSelf = (ids: Array<string>, shareWithSelf: bool): Array<string> => {
+  _handleShareWithSelf = (ids: Array<b64string>, shareWithSelf: bool): Array<string> => {
     if (shareWithSelf) {
-      const selfUserId = this._localUser.clearUserId;
+      const selfUserId = utils.toBase64(this._localUser.userId);
       if (ids.indexOf(selfUserId) === -1) {
         return ids.concat([selfUserId]);
       }
@@ -97,9 +97,11 @@ export default class DataProtector {
 
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWithOptions: ShareWithOptions, shareWithSelf: bool): Promise<void> {
     const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
-    const userIds = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
     const groups = await this._groupManager.findGroups(groupIds);
-    const users = await this._userAccessor.getUsers({ userIds });
+    const userIds = shareWithOptions.shareWithUsers || [];
+    const obfuscatedUserIds = userIds.map(u => utils.toBase64(obfuscateUserId(this._localUser.trustchainId, u)));
+    const b64userIds = this._handleShareWithSelf(obfuscatedUserIds, shareWithSelf);
+    const users = await this._userAccessor.getUsers({ b64userIds });
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;

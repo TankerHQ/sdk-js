@@ -3,7 +3,7 @@
 import { tcrypto, random } from '@tanker/crypto';
 
 import { extractUserData } from '../UserData';
-import { createUserToken } from './TestSessionTokens';
+import { createIdentity } from './TestSessionTokens';
 
 import { expect } from './chai';
 import { type UserKeys } from '../Blocks/payloads';
@@ -41,15 +41,15 @@ describe('Local User', () => {
   let trustchainId;
   let trustchainKeyPair;
   let userIdString;
-  let userToken;
+  let identity;
   let userData;
 
   before(() => {
     trustchainId = random(tcrypto.HASH_SIZE);
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     userIdString = 'clear user id';
-    userToken = createUserToken(trustchainId, userIdString, trustchainKeyPair.privateKey);
-    userData = extractUserData(trustchainId, userIdString, userToken);
+    identity = createIdentity(trustchainId, userIdString, trustchainKeyPair.privateKey);
+    userData = extractUserData(trustchainId, identity);
   });
 
   beforeEach(async () => {

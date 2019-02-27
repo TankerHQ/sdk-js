@@ -1,6 +1,6 @@
 // @flow
 
-import { utils, obfuscateUserId } from '@tanker/crypto';
+import { utils, type b64string, obfuscateUserId } from '@tanker/crypto';
 
 import UserStore, { type FindUserParameters, type FindUsersParameters } from './UserStore';
 import { type User } from './User';
@@ -71,8 +71,14 @@ export default class UserAccessor {
     return users;
   }
 
-  async getUsers({ userIds }: {userIds: Array<string>}): Promise<Array<User>> {
-    const obfuscatedUserIds = userIds.map(u => obfuscateUserId(this._trustchainId, u));
+  async getUsersFromClearUserIds({ userIds }: {userIds: Array<string>}): Promise<Array<User>> {
+    const b64userIds = userIds.map(u => utils.toBase64(obfuscateUserId(this._trustchainId, u)));
+    const fullUsers = await this.getUsers({ b64userIds });
+    return fullUsers;
+  }
+
+  async getUsers({ b64userIds }: {b64userIds: Array<b64string>}): Promise<Array<User>> {
+    const obfuscatedUserIds = b64userIds.map(u => utils.fromBase64(u));
 
     const fullUsers = await this.findUsers({ hashedUserIds: obfuscatedUserIds });
 
@@ -84,7 +90,7 @@ export default class UserAccessor {
       const b64ObfuscatedId = utils.toBase64(obfuscatedId);
       const found = fullUsers.some(user => user.userId === b64ObfuscatedId);
       if (!found)
-        missingIds.push(userIds[index]);
+        missingIds.push(b64userIds[index]);
     }
     throw new RecipientsNotFound(missingIds);
   }

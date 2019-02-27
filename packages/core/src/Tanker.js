@@ -201,17 +201,13 @@ export class Tanker extends EventEmitter {
     }
   }
 
-  async open(userIdString: string, sessionTokenB64: b64string, oldDelegationToken: *): Promise<number> {
+  async open(identityB64: b64string): Promise<number> {
     this.assert(this.CLOSED, 'open a session');
     // Type verif arguments
-    if (oldDelegationToken)
-      throw new Error('open does not take a delegation token anymore, see https://tanker.io/docs/latest/changelog/#new_open_workflow_breaking_change');
-    if (!userIdString || typeof userIdString !== 'string')
-      throw new InvalidArgument('userId', 'string', userIdString);
-    if (!sessionTokenB64 || typeof sessionTokenB64 !== 'string')
-      throw new InvalidArgument('userToken', 'b64string', sessionTokenB64);
+    if (!identityB64 || typeof identityB64 !== 'string')
+      throw new InvalidArgument('identity', 'b64string', identityB64);
     // End type verif
-    const userData = extractUserData(utils.fromBase64(this.trustchainId), userIdString, sessionTokenB64);
+    const userData = extractUserData(utils.fromBase64(this.trustchainId), identityB64);
     const sessionOpener = await SessionOpener.create(userData, this._dataStoreOptions, this._clientOptions);
     this._setSessionOpener(sessionOpener);
 

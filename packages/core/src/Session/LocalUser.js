@@ -182,9 +182,6 @@ export default class LocalUser extends EventEmitter {
   get userSecret(): Uint8Array {
     return this._userData.userSecret;
   }
-  get clearUserId(): string {
-    return this._userData.clearUserId;
-  }
   get unlockMethods(): UnlockMethods {
     return this._unlockMethods;
   }

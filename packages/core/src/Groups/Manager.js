@@ -39,7 +39,7 @@ export default class GroupManager {
     if (userIds.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
-    const fullUsers = await this._userAccessor.getUsers({ userIds });
+    const fullUsers = await this._userAccessor.getUsersFromClearUserIds({ userIds });
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
@@ -62,7 +62,7 @@ export default class GroupManager {
     if (userIdsToAdd.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
 
-    const fullUsers = await this._userAccessor.getUsers({ userIds: userIdsToAdd });
+    const fullUsers = await this._userAccessor.getUsersFromClearUserIds({ userIds: userIdsToAdd });
 
     const internalGroupId = utils.fromBase64(groupId);
     await this._trustchain.updateGroupStore([internalGroupId]);
