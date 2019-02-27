@@ -1,4 +1,4 @@
--e git+ssh://git@tanker.local/Tanker/ci@bc04f37a36b595970f0a8bcf0f79508c73ddadf3#egg=ci
+-e git+ssh://git@tanker.local/Tanker/ci@c49567c049f6fd5846e66b5e522c475f759eccdc#egg=ci
 aiofiles==0.4.0
 async-generator==1.10
 atomicwrites==1.2.1
