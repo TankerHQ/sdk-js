@@ -91,8 +91,6 @@ export class TrustchainHelper {
   }
 
   static async newTrustchain(): Promise<TrustchainHelper> {
-    await sendMessage('authenticate customer', { idToken });
-
     const trustchainKeyPair = tcrypto.makeSignKeyPair();
     const rootBlock = makeRootBlock(trustchainKeyPair);
     const message = {
@@ -100,6 +98,7 @@ export class TrustchainHelper {
       name: `functest-${uuid.v4()}`,
       is_test: true,
     };
+    await sendMessage('authenticate customer', { idToken });
     await sendMessage('create trustchain', message);
 
     const trustchainId = rootBlock.trustchain_id;
@@ -118,9 +117,11 @@ export class TrustchainHelper {
       email,
       user_id: utils.toBase64(hashedUserId),
     };
+    await sendMessage('authenticate customer', { idToken });
     const answer = await sendMessage('get verification code', msg);
-    if (!answer.verification_code)
+    if (!answer.verification_code) {
       throw new Error('Invalid response');
+    }
     return answer.verification_code;
   }
 
