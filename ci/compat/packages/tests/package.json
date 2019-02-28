@@ -1,0 +1,12 @@
+{
+  "name": "tests",
+  "version": "0.0.1-local",
+  "main": "index.js",
+  "author": "Tanker Team",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "chai": "^4.2.0",
+    "uuid": "^3.3.2"
+  }
+}
