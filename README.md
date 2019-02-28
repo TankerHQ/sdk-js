@@ -1,35 +1,99 @@
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Build](https://img.shields.io/travis/TankerHQ/sdk-js/master.svg)](https://travis-ci.org/TankerHQ/sdk-js)
-[![BrowserStack Status](https://www.browserstack.com/automate/badge.svg?badge_key=emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1)](https://www.browserstack.com/automate/public-build/emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1)
+[license-badge]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+[license-link]: https://opensource.org/licenses/Apache-2.0
 
-# Tanker JavaScript SDK
+[travis-badge]: https://img.shields.io/travis/TankerHQ/sdk-js/master.svg?label=Build
+[travis-link]: https://travis-ci.org/TankerHQ/sdk-js
 
-## Table of Contents
+[browserstack-badge]: https://www.browserstack.com/automate/badge.svg?badge_key=emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1
+[browserstack-link]: https://www.browserstack.com/automate/public-build/emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1
 
- * [Overview](#overview)
- * [Setup](#setup)
- * [Contributing](#contributing)
- * [Documentation](#documentation)
- * [License and Terms](#license-and-terms)
+[snyk-badge]: https://img.shields.io/snyk/vulnerabilities/github/TankerHQ/sdk-js.svg?label=Vulnerabilities
+[last-commit-badge]: https://img.shields.io/github/last-commit/TankerHQ/sdk-js.svg?label=Last%20commit&logo=github
+
+[browser_npm-badge]: https://img.shields.io/npm/v/@tanker/client-browser.svg
+[browser_npm-link]: https://npmjs.com/package/@tanker/client-browser
+
+[nodejs_npm-badge]: https://img.shields.io/npm/v/@tanker/client-node.svg
+[nodejs_npm-link]: https://npmjs.com/package/@tanker/client-node
+
+<img src="./src/public/tanker.png" alt="Tanker logo" width="180" />
+
+[![License][license-badge]][license-link]
+[![Build][travis-badge]][travis-link]
+[![BrowserStack Status][browserstack-badge]][browserstack-link]
+![Vulnerabilities][snyk-badge]
+![Last Commit][last-commit-badge]
+
+# Encryption SDK for JavaScript
+
+[Overview](#overview) · [Packages](#packages) · [Usage example](#usage-example) · [Documentation](#documentation) · [Release notes](#release-notes) · [Browser support](#browser-support) · [Contributing](#contributing) · [License](#license)
 
 ## Overview
 
-[The Tanker SDK](https://tanker.io) provides an easy-to-use SDK allowing you to protect your users'
-data.
+Tanker is an open-source client SDK that can be embedded in any application.
 
-The Tanker SDK consists of the following packages, which are distributed on npm:
+It leverages powerful **client-side encryption** of any type of data, textual or binary, but without performance loss and assuring a **seamless end-user experience**. No cryptographic skills are required.
 
-* `@tanker/client-browser` for Web applications
-* `@tanker/client-node` for Node.js client applications
+## Packages
 
+| Package | Version | Description |
+|:--------|:--------|:------------|
+| [@tanker/client-browser][browser_npm-link] | [![browser_npm-badge]][browser_npm-link] | Client SDK for **Web applications** |
+| [@tanker/client-node][browser_npm-link]    | [![nodejs_npm-badge]][nodejs_npm-link]   | Client SDK for Node.js client applications |
 
-For more information about usage, visit the
-[Tanker SDK guide](https://tanker.io/docs/latest/guide/getting-started/).
+To use Tanker in your **mobile applications**, use our open-source **[iOS](https://github.com/TankerHQ/sdk-ios)** and **[Android](https://github.com/TankerHQ/sdk-android)** SDKs.
 
+## Usage example
 
-## Setup
+The client SDK takes care of all the difficult cryptography in the background, leaving you with simple high-level APIs:
 
-If you want to build the Tanker SDK yourself, follow these steps:
+```javascript
+import { Tanker } from '@tanker/client-browser';
+
+// Init the isolated Tanker environment within your application
+const tanker = new Tanker({ trustchainId: '...' });
+
+// Sign in with the user's cryptographic identity
+await tanker.open(aliceUserId, aliceUserToken);
+
+// Encrypt data and share it with separate recipients or groups
+const encryptedMessage = await tanker.encrypt(
+  'It is a secret to everybody',
+  { shareWithUsers: [bobUserId] }
+);
+
+// Decrypt data (or throw if not a legitimate recipient)
+const message = await tanker.decrypt(encryptedMessage);
+```
+
+The client SDK automatically handles complex key exchanges, cryptographic operations, and identity verification for you.
+
+## Documentation
+
+For more details and advanced examples, please refer to:
+
+* [SDK implementation guide](https://tanker.io/docs/latest/guide/getting-started/)
+* [API reference](https://tanker.io/docs/latest/api/tanker/)
+* [Product overview](https://tanker.io/product)
+
+Or fiddle with the [quickstart examples](https://github.com/TankerHQ/quickstart-examples) to see the Tanker SDKs integrated in a collection of demo apps.
+
+## Release notes
+
+Detailed changes for each release are documented in the [release notes](https://github.com/TankerHQ/sdk-js/releases).
+
+## Browser support
+
+The JavaScript client SDK supports and is heavily tested on:
+
+* Chrome, Firefox, Safari, Edge, and Internet Explorer 11
+* Node.js 8+
+
+## Contributing
+
+We welcome feedback, [bug reports](https://github.com/TankerHQ/sdk-js/issues), and bug fixes in the form of [pull requests](https://github.com/TankerHQ/sdk-js/pulls).
+
+To build the JavaScript client SDK yourself, please follow the steps below.
 
 ### Prerequisites
 
@@ -54,39 +118,28 @@ cd sdk-js && yarn
 
 ### Test and lint
 
-Our codebase is using the following ES6 features: async/await, import/export, and classes with flow for type-checking and with eslint for linting.
+Our codebase uses the following ES6 features: `async` / `await`, `import` / `export`, and classes with flow for type-checking and with eslint for linting.
 
-To check that the code is correct and launch the tests, use:
+To check that the code is correct and to launch the tests in Node.js, use:
 
 ```bash
 yarn proof
 ```
 
-Note: this command only runs the tests in Node.js.
+### Submit your pull request
 
+Before submitting your pull request, please make sure that your changes pass the linters and that all the tests pass on your local machine.
 
-At Tanker headquarters, we use [BrowserStack](https://www.browserstack.com/) to run the tests in
-many browsers too.
+For non-trivial changes, we highly recommend including extra tests.
 
-<img src="./browserstack.png" alt="BrowserStack logo" width="200" height="105">
+When you're ready, submit your [pull request](https://github.com/TankerHQ/sdk-js/pulls), targeting the `master` branch of this repository.
 
+### Credits
 
-## Contributing
+At Tanker, we happily use [BrowserStack](https://www.browserstack.com/) to automate testing on many browsers.
 
-We welcome feedback, bug reports and bug fixes in the form of pull requests.
+<img src="./src/public/browserstack.png" alt="BrowserStack logo">
 
-Please make sure that your changes pass the linters and that all the tests pass on your local machine.
+## License
 
-Most non-trivial changes should include some extra tests.
-
-## Documentation
-
-* [Guide](https://tanker.io/docs/latest/guide/getting-started/)
-* [API Documentation](https://tanker.io/docs/latest/api/tanker/)
-* [Changelog](https://tanker.io/docs/latest/changelog/)
-
-
-## License and Terms
-
-The Tanker Javascript SDK is licensed under the
-[Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+The Tanker JavaScript SDK is licensed under the [Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
