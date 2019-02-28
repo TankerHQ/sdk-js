@@ -101,6 +101,20 @@ const customLaunchers = {
     os: 'OS X',
     os_version: 'El Capitan',
   },
+  iPhone8: {
+    base: 'BrowserStack',
+    device: 'iPhone 8',
+    real_mobile: 'true',
+    os: 'ios',
+    os_version: '11.0',
+  },
+  Android7: {
+    base: 'BrowserStack',
+    device: 'Samsung Galaxy S8',
+    real_mobile: 'true',
+    os: 'Android',
+    os_version: '7.0',
+  },
 }
 
 module.exports = { customLaunchers };

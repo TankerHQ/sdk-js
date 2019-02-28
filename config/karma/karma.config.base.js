@@ -57,6 +57,7 @@ module.exports = {
   browsers: ['ChromiumHeadless'],
 
   browserNoActivityTimeout: 60000,
+  browserDisconnectTimeout: 20000,
 
   // Concurrency level
   // how many browser should be started simultaneous
