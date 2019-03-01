@@ -4,14 +4,14 @@
 [travis-badge]: https://img.shields.io/travis/TankerHQ/sdk-js/master.svg?label=Build
 [travis-link]: https://travis-ci.org/TankerHQ/sdk-js
 
-[codecov-badge]: https://codecov.io/gh/TankerHQ/sdk-js/branch/master/graph/badge.svg
+[codecov-badge]: https://img.shields.io/codecov/c/github/TankerHQ/sdk-js.svg?label=Coverage
 [codecov-link]: https://codecov.io/gh/TankerHQ/sdk-js
 
 [browserstack-badge]: https://www.browserstack.com/automate/badge.svg?badge_key=emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1
 [browserstack-link]: https://www.browserstack.com/automate/public-build/emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1
 
-[snyk-badge]: https://img.shields.io/snyk/vulnerabilities/github/TankerHQ/sdk-js.svg?label=Vulnerabilities
 [last-commit-badge]: https://img.shields.io/github/last-commit/TankerHQ/sdk-js.svg?label=Last%20commit&logo=github
+[last-commit-link]: https://github.com/TankerHQ/sdk-js/commits/master
 
 [browser_npm-badge]: https://img.shields.io/npm/v/@tanker/client-browser.svg
 [browser_npm-link]: https://npmjs.com/package/@tanker/client-browser
@@ -19,14 +19,13 @@
 [nodejs_npm-badge]: https://img.shields.io/npm/v/@tanker/client-node.svg
 [nodejs_npm-link]: https://npmjs.com/package/@tanker/client-node
 
-<img src="./src/public/tanker.png" alt="Tanker logo" width="180" />
+<a href="#readme"><img src="./src/public/tanker.png" alt="Tanker logo" width="180" /></a>
 
 [![License][license-badge]][license-link]
 [![Build][travis-badge]][travis-link]
-[![Coverage][codecov-badge]][codecov-link]
 [![BrowserStack Status][browserstack-badge]][browserstack-link]
-![Vulnerabilities][snyk-badge]
-![Last Commit][last-commit-badge]
+[![Coverage][codecov-badge]][codecov-link]
+[![Last Commit][last-commit-badge]][last-commit-link]
 
 # Encryption SDK for JavaScript
 
