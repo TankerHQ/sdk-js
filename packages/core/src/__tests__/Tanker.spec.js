@@ -12,11 +12,18 @@ import { InvalidArgument, InvalidUserToken, InvalidSessionStatus } from '../erro
 import { DEVICE_TYPE } from '../Unlock/unlock';
 
 describe('Tanker', () => {
-  const trustchainKeyPair = tcrypto.makeSignKeyPair();
-  const trustchainId = random(tcrypto.HASH_SIZE);
+  let trustchainKeyPair;
+  let trustchainId;
+  let userId;
+  let obfuscatedUserId;
 
-  const userId = 'winnie';
-  const obfuscatedUserId = obfuscateUserId(trustchainId, userId);
+  before(() => {
+    trustchainKeyPair = tcrypto.makeSignKeyPair();
+    trustchainId = random(tcrypto.HASH_SIZE);
+    userId = 'winnie';
+    obfuscatedUserId = obfuscateUserId(trustchainId, userId);
+  });
+
   describe('init', () => {
     it('constructor should throw with bad config argument', () => {
       [
@@ -134,14 +141,18 @@ describe('Tanker', () => {
   });
 
   describe('opened session', () => {
-    const tanker = new Tanker({
-      trustchainId: utils.toBase64(trustchainId),
-      socket: {},
-      dataStore: { ...dataStoreConfig, prefix: makePrefix() },
-      sdkType: 'test'
+    let tanker;
+
+    before(() => {
+      tanker = new Tanker({
+        trustchainId: utils.toBase64(trustchainId),
+        socket: {},
+        dataStore: { ...dataStoreConfig, prefix: makePrefix() },
+        sdkType: 'test'
+      });
+      // "open" a session
+      tanker._session = ({ localUser: { deviceType: DEVICE_TYPE.client_device } }: any); // eslint-disable-line no-underscore-dangle
     });
-    // "open" a session
-    tanker._session = ({ localUser: { deviceType: DEVICE_TYPE.client_device } }: any); // eslint-disable-line no-underscore-dangle
 
     describe('unlock method registration', () => {
       const badArgs = [

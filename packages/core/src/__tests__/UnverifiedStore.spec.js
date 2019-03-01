@@ -16,10 +16,12 @@ async function initUnverifiedStore(): Promise<UnverifiedStore> {
 
 describe('UnverifiedStore', () => {
   let unverifiedStore;
-  const testGenerator = new TestGenerator();
-  testGenerator.makeTrustchainCreation();
+  let testGenerator;
 
   before(async () => {
+    testGenerator = new TestGenerator();
+    testGenerator.makeTrustchainCreation();
+
     unverifiedStore = await initUnverifiedStore();
   });
 

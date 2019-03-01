@@ -10,14 +10,21 @@ import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../B
 import BlockGenerator, { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
 
 describe('BlockGenerator', () => {
-  const userKeys = tcrypto.makeEncryptionKeyPair();
-  const signatureKeys = tcrypto.makeSignKeyPair();
-  const user = { userId: 'userId', userPublicKeys: [{ index: 0, userPublicKey: userKeys.publicKey }], devices: [] };
-  const blockGenerator = new BlockGenerator(
-    random(tcrypto.HASH_SIZE),
-    signatureKeys.privateKey,
-    random(tcrypto.HASH_SIZE),
-  );
+  let userKeys;
+  let signatureKeys;
+  let user;
+  let blockGenerator;
+
+  before(() => {
+    userKeys = tcrypto.makeEncryptionKeyPair();
+    signatureKeys = tcrypto.makeSignKeyPair();
+    user = { userId: 'userId', userPublicKeys: [{ index: 0, userPublicKey: userKeys.publicKey }], devices: [] };
+    blockGenerator = new BlockGenerator(
+      random(tcrypto.HASH_SIZE),
+      signatureKeys.privateKey,
+      random(tcrypto.HASH_SIZE),
+    );
+  });
 
   it('order stuff correctly for UserGroupCreation sign data', async () => {
     const record = {

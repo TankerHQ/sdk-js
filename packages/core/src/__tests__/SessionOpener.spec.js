@@ -54,12 +54,17 @@ class MockTrustchain {
 }
 
 describe('Session opening', () => {
-  const trustchainId = random(tcrypto.HASH_SIZE);
-  const trustchainKeyPair = tcrypto.makeSignKeyPair();
   let mockStorage: Storage;
   let mockClient: Client;
   let mockTrustchain: Trustchain;
   let sessionOpener;
+  let trustchainId;
+  let trustchainKeyPair;
+
+  before(() => {
+    trustchainId = random(tcrypto.HASH_SIZE);
+    trustchainKeyPair = tcrypto.makeSignKeyPair();
+  });
 
   beforeEach(() => {
     mockStorage = (new MockStorage(): any);
@@ -68,9 +73,15 @@ describe('Session opening', () => {
   });
 
   describe('for user', () => {
-    const userIdString = 'clear user id';
-    const userToken = createUserToken(trustchainId, userIdString, trustchainKeyPair.privateKey);
-    const userData = extractUserData(trustchainId, userIdString, userToken);
+    let userIdString;
+    let userToken;
+    let userData;
+
+    before(() => {
+      userIdString = 'clear user id';
+      userToken = createUserToken(trustchainId, userIdString, trustchainKeyPair.privateKey);
+      userData = extractUserData(trustchainId, userIdString, userToken);
+    });
 
     beforeEach(() => {
       sessionOpener = new SessionOpener(userData, mockStorage, mockTrustchain, mockClient);
@@ -117,9 +128,15 @@ describe('Session opening', () => {
 
 
   describe('for server', () => {
-    const serverId = uuid.v4();
-    const serverToken = createServerToken(trustchainId, trustchainKeyPair.privateKey, serverId);
-    const userData = extractUserData(trustchainId, serverId, serverToken);
+    let serverId;
+    let serverToken;
+    let userData;
+
+    before(() => {
+      serverId = uuid.v4();
+      serverToken = createServerToken(trustchainId, trustchainKeyPair.privateKey, serverId);
+      userData = extractUserData(trustchainId, serverId, serverToken);
+    });
 
     beforeEach(() => {
       sessionOpener = new SessionOpener(userData, mockStorage, mockTrustchain, mockClient);

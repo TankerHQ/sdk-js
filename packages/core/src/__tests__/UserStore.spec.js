@@ -19,12 +19,10 @@ async function makeUserStore(userId: Uint8Array): Promise<UserStore> {
   return userStore;
 }
 
-
 describe('UserStore', () => {
-  const testGenerator = new TestGenerator();
-  testGenerator.makeTrustchainCreation();
+  let testGenerator;
 
-  let userId = random(tcrypto.HASH_SIZE);
+  let userId: Uint8Array;
   let userStore: UserStore;
   let deviceCreation: VerifiedDeviceCreation;
   let deviceCreationV1: VerifiedDeviceCreation;
@@ -33,6 +31,10 @@ describe('UserStore', () => {
   let testUserCreation: TestDeviceCreation;
 
   before(async () => {
+    testGenerator = new TestGenerator();
+    testGenerator.makeTrustchainCreation();
+
+    userId = random(tcrypto.HASH_SIZE);
     userStore = await makeUserStore(userId);
   });
 
