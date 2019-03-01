@@ -10,6 +10,7 @@ matrix:
     - script:
         - yarn build:all
         - yarn coverage
+        - yarn run codecov
       name: "Coverage"
     - script: yarn karma --browsers ChromeWindows
       name: "Latest Chrome on Windows"

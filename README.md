@@ -4,6 +4,9 @@
 [travis-badge]: https://img.shields.io/travis/TankerHQ/sdk-js/master.svg?label=Build
 [travis-link]: https://travis-ci.org/TankerHQ/sdk-js
 
+[codecov-badge]: https://codecov.io/gh/TankerHQ/sdk-js/branch/master/graph/badge.svg
+[codecov-link]: https://codecov.io/gh/TankerHQ/sdk-js
+
 [browserstack-badge]: https://www.browserstack.com/automate/badge.svg?badge_key=emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1
 [browserstack-link]: https://www.browserstack.com/automate/public-build/emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1
 
@@ -20,6 +23,7 @@
 
 [![License][license-badge]][license-link]
 [![Build][travis-badge]][travis-link]
+[![Coverage][codecov-badge]][codecov-link]
 [![BrowserStack Status][browserstack-badge]][browserstack-link]
 ![Vulnerabilities][snyk-badge]
 ![Last Commit][last-commit-badge]
