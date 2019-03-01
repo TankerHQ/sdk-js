@@ -358,7 +358,7 @@ export class Tanker extends EventEmitter {
     return this._session.revokeDevice(deviceId);
   }
 
-  async createGroup(users: Array<string>): Promise<b64string> {
+  async createGroup(users: Array<b64string>): Promise<b64string> {
     this.assert(this.OPEN, 'create a group');
 
     if (!(users instanceof Array))
@@ -367,7 +367,7 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.createGroup(users);
   }
 
-  async updateGroupMembers(groupId: string, { usersToAdd }: {| usersToAdd?: Array<string> |}): Promise<void> {
+  async updateGroupMembers(groupId: string, { usersToAdd }: {| usersToAdd?: Array<b64string> |}): Promise<void> {
     this.assert(this.OPEN, 'update a group');
 
     if (!usersToAdd || !(usersToAdd instanceof Array))
