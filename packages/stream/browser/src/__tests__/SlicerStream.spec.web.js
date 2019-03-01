@@ -1,5 +1,4 @@
 // @flow
-import { utils } from '@tanker/crypto';
 import { safePrintType } from '@tanker/errors';
 import FilePonyfill from '@tanker/file-ponyfill';
 
@@ -7,7 +6,7 @@ import { expect } from './chai';
 import SlicerStream from '../SlicerStream';
 
 describe('SlicerStream (web)', () => {
-  const bytes: Uint8Array = utils.fromString('0123456789abcdef'); // 16 bytes
+  const bytes = new Uint8Array([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102]); // 16 bytes
   const outputSize = 4;
 
   [

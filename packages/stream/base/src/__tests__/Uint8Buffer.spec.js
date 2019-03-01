@@ -1,5 +1,4 @@
 // @flow
-import { utils } from '@tanker/crypto';
 import { NotEnoughData } from '@tanker/errors';
 
 import { expect } from './chai';
@@ -20,7 +19,10 @@ describe('Uint8Buffer', () => {
   it('can store/consume data and keeps track of stored size', () => {
     const buffer = new Uint8Buffer();
 
-    const data = utils.fromString('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+    const data = new Uint8Array([
+      65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77,
+      78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90,
+    ]);
 
     expect(buffer.byteSize()).to.equal(0);
 

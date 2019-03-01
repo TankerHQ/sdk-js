@@ -1,6 +1,4 @@
 // @flow
-import { utils } from '@tanker/crypto';
-
 import { expect } from './chai';
 import ResizerStream from '../ResizerStream';
 
@@ -72,7 +70,7 @@ describe('ResizerStream', () => {
     const stream = new ResizerStream(20);
     stream.on('data', callback);
 
-    const data = utils.fromString('0123456789');
+    const data = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
     for (let i = 0; i < data.length; ++i) {
       stream.write(data.subarray(i, i + 1));
