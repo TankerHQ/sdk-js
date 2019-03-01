@@ -16,21 +16,14 @@ export function toBase64(bytes: Uint8Array): b64string {
   if (!(bytes instanceof Uint8Array))
     throw new TypeError('"bytes" is not a Uint8Array');
 
-  return sodium.to_base64(bytes);
+  return sodium.to_base64(bytes, sodium.base64_variants.ORIGINAL);
 }
 
 export function fromBase64(str: b64string): Uint8Array {
   if (typeof str !== 'string')
     throw new TypeError('"str" is not a string');
 
-  return sodium.from_base64(str);
-}
-
-// Note: use /[=/+]/g regex to strip padding, /[/+]/g otherwise
-function base64ToUrlsafeReplacer(char: string) {
-  if (char === '/') return '_';
-  if (char === '+') return '-';
-  return '';
+  return sodium.from_base64(str, sodium.base64_variants.ORIGINAL);
 }
 
 // Base 64 encoding with URL and Filename Safe Alphabet
@@ -39,20 +32,22 @@ export function toSafeBase64(bytes: Uint8Array): safeb64string {
   if (!(bytes instanceof Uint8Array))
     throw new TypeError('"bytes" is not a Uint8Array');
 
-  return toBase64(bytes).replace(/[/+]/g, base64ToUrlsafeReplacer);
+  return sodium.to_base64(bytes, sodium.base64_variants.URLSAFE);
 }
 
-function base64FromUrlsafeReplacer(char: string) {
-  if (char === '_') return '/';
-  if (char === '-') return '+';
+const toUrlSafeNoPaddingRegExp = /[+/=]/g;
+const toUrlSafeNoPaddingReplacer = (char: string): string => {
+  if (char === '/') return '_';
+  if (char === '+') return '-';
   return '';
-}
+};
 
 export function fromSafeBase64(str: safeb64string): Uint8Array {
   if (typeof str !== 'string')
     throw new TypeError('"str" is not a string');
 
-  return fromBase64(str.replace(/[-_]/g, base64FromUrlsafeReplacer));
+  const safeStr = str.replace(toUrlSafeNoPaddingRegExp, toUrlSafeNoPaddingReplacer);
+  return sodium.from_base64(safeStr, sodium.base64_variants.URLSAFE_NO_PADDING);
 }
 
 export function toString(bytes: Uint8Array): string {

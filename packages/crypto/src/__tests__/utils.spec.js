@@ -2,6 +2,7 @@
 import { expect } from '@tanker/test-utils';
 import { InvalidArgument } from '@tanker/errors';
 
+import { ready } from '../ready';
 import {
   concatArrays, equalArray, isNullArray, memzero,
   fromB64Json, fromBase64, fromSafeBase64, toB64Json, toBase64, toSafeBase64,
@@ -17,7 +18,9 @@ describe('utils', () => {
   let str;
   let urlSafeBase64;
 
-  before(() => {
+  before(async () => {
+    await ready;
+
     str = '\u{1F680} Tanker rocks!!!';
     bytes = new Uint8Array([240, 159, 154, 128, 32, 84, 97, 110, 107, 101, 114, 32, 114, 111, 99, 107, 115, 33, 33, 33]);
     base64 = '8J+agCBUYW5rZXIgcm9ja3MhISE=';
