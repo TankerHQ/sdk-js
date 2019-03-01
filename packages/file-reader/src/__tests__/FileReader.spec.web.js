@@ -1,12 +1,12 @@
 // @flow
 import File from '@tanker/file-ponyfill';
-import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 import FileReader from '../FileReader';
 
 describe('FileReader', () => {
   const ascii = 'The quick brown fox jumps over the lazy dog';
+  const asciiAsBase64 = 'VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==';
   const utf8 = '古池や蛙飛び込む水の音';
   const type = 'plain/text';
   const binary = new Uint8Array([
@@ -48,7 +48,7 @@ describe('FileReader', () => {
         const source = builder([ascii], 'ascii.txt', { type });
         const reader = new FileReader(source);
         const dataURL = await reader.readAsDataURL();
-        const expectedDataURL = `data:${type};base64,${utils.toBase64(utils.fromString(ascii))}`;
+        const expectedDataURL = `data:${type};base64,${asciiAsBase64}`;
         expect(dataURL).to.equal(expectedDataURL);
       });
 
