@@ -1,33 +1,26 @@
 // @flow
-import uuid from 'uuid';
-
 import { errors } from '@tanker/core';
-import { utils } from '@tanker/crypto';
-import { createIdentity, getPublicIdentity } from '@tanker/identity';
+import { getPublicIdentity } from '@tanker/identity';
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const generateGroupsTests = (args: TestArgs) => {
   describe('groups', () => {
-    let aliceId;
     let alicePublicIdentity;
-    let bobId;
     let bobPublicIdentity;
     let unknownUsers;
     const message = "Two's company, three's a crowd";
 
     before(async () => {
-      aliceId = uuid.v4();
-      const aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
+      const aliceIdentity = args.trustchainHelper.generateIdentity();
       alicePublicIdentity = getPublicIdentity(aliceIdentity);
       await args.aliceLaptop.open(aliceIdentity);
 
-      bobId = uuid.v4();
-      const bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+      const bobIdentity = args.trustchainHelper.generateIdentity();
       bobPublicIdentity = getPublicIdentity(bobIdentity);
       await args.bobLaptop.open(bobIdentity);
 
-      unknownUsers = [getPublicIdentity(createIdentity(utils.toBase64(args.trustchainHelper.trustchainId), utils.toBase64(args.trustchainHelper.trustchainKeyPair.privateKey), 'galette'))];
+      unknownUsers = [getPublicIdentity(args.trustchainHelper.generateIdentity('galette'))];
     });
 
     after(async () => {

@@ -2,6 +2,7 @@
 import uuid from 'uuid';
 import sinon from 'sinon';
 import { errors } from '@tanker/core';
+import { getPublicIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
@@ -13,10 +14,12 @@ const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
     let bobId;
     let bobIdentity;
+    let bobPublicIdentity;
 
     beforeEach(async () => {
       bobId = uuid.v4();
       bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+      bobPublicIdentity = getPublicIdentity(bobIdentity);
 
       await args.bobLaptop.open(bobIdentity);
       const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
@@ -162,7 +165,7 @@ const generateRevocationTests = (args: TestArgs) => {
       await syncTankers(args.aliceLaptop, args.bobLaptop);
 
       const message = 'I love you';
-      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithUsers: [bobId] });
+      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithUsers: [bobPublicIdentity] });
 
       const clear = await args.bobLaptop.decrypt(encrypted);
       expect(clear).to.eq(message);

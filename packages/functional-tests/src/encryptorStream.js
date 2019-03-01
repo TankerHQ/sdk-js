@@ -1,17 +1,14 @@
 // @flow
-import uuid from 'uuid';
 import { utils } from '@tanker/crypto';
 import { errors } from '@tanker/core';
+import { getPublicIdentity } from '@tanker/identity';
 import { expect } from './chai';
 
 import { type TestArgs } from './TestArgs';
 
 const generateEncryptorStreamTests = (args: TestArgs) => {
   describe('EncryptorStream', () => {
-    let aliceId;
-    let bobId;
-    let aliceIdentity;
-    let bobIdentity;
+    let bobPublicIdentity;
 
     const watchStream = (stream) => {
       const sync = {};
@@ -26,10 +23,9 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
     };
 
     beforeEach(async () => {
-      aliceId = uuid.v4();
-      bobId = uuid.v4();
-      aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
-      bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+      const aliceIdentity = args.trustchainHelper.generateIdentity();
+      const bobIdentity = args.trustchainHelper.generateIdentity();
+      bobPublicIdentity = getPublicIdentity(bobIdentity);
       await args.aliceLaptop.open(aliceIdentity);
       await args.bobLaptop.open(bobIdentity);
     });
@@ -47,7 +43,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         const letterContents = 'Secret message';
         let decryptedData = '';
 
-        const encryptor = await args.aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobId] });
+        const encryptor = await args.aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity] });
         const decryptor = await args.bobLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => {
@@ -78,7 +74,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         encryptor.end();
 
         const resourceId = encryptor.resourceId();
-        await args.aliceLaptop.share([resourceId], { shareWithUsers: [bobId] });
+        await args.aliceLaptop.share([resourceId], { shareWithUsers: [bobPublicIdentity] });
 
         encryptor.pipe(decryptor);
         await expect(sync.promise).to.be.fulfilled;

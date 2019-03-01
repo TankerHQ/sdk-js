@@ -2,6 +2,7 @@
 
 import EventEmitter from 'events';
 import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
+import { type PublicIdentity } from '@tanker/identity';
 
 import { type UnlockMethods } from '../Network/Client';
 import { type DeviceType } from '../Unlock/unlock';
@@ -187,6 +188,9 @@ export default class LocalUser extends EventEmitter {
   }
   get wasRevoked(): bool {
     return this._wasRevoked;
+  }
+  get publicIdentity(): PublicIdentity {
+    return { trustchain_id: utils.toBase64(this._userData.trustchainId), target: 'user', value: utils.toBase64(this._userData.userId) };
   }
 
 

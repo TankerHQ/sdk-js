@@ -6,9 +6,9 @@ import type { TankerInterface } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
+import { createIdentity } from '@tanker/identity';
 
-import { createIdentityFromSecret } from '@tanker/core/src/__tests__/TestSessionTokens';
-import { random, tcrypto, utils, createUserSecretB64, obfuscateUserId, type b64string } from '@tanker/crypto';
+import { random, tcrypto, utils, obfuscateUserId } from '@tanker/crypto';
 
 const tankerUrl = process.env.TANKER_URL || '';
 const idToken = process.env.TANKER_TOKEN || '';
@@ -36,13 +36,6 @@ async function sendMessage(eventName: string, message: Object | string) {
       }
     );
   });
-}
-
-export function forgeIdentity(userId: string, trustchainId: Uint8Array, trustchainPrivateKey: Uint8Array): b64string {
-  const hashedUserId = obfuscateUserId(trustchainId, userId);
-  const userSecret = createUserSecretB64(utils.toBase64(trustchainId), userId);
-  const identity = createIdentityFromSecret(trustchainId, hashedUserId, trustchainPrivateKey, userSecret);
-  return identity;
 }
 
 export async function syncTankers(...tankers: Array<TankerInterface>): Promise<void> {
@@ -106,8 +99,9 @@ export class TrustchainHelper {
     return new TrustchainHelper(trustchainId, trustchainKeyPair);
   }
 
-  generateIdentity(userId: string) {
-    return forgeIdentity(userId, this.trustchainId, this.trustchainKeyPair.privateKey);
+  generateIdentity(userId?: string) {
+    const id = userId || uuid.v4();
+    return createIdentity(utils.toBase64(this.trustchainId), utils.toBase64(this.trustchainKeyPair.privateKey), id);
   }
 
   async getVerificationCode(userId: string, email: string): Promise<string> {

@@ -1,5 +1,5 @@
 // @flow
-import { utils, type b64string, obfuscateUserId } from '@tanker/crypto';
+import { utils, type b64string } from '@tanker/crypto';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -84,24 +84,23 @@ export default class DataProtector {
     await this._client.sendKeyPublishBlocks(blocks);
   }
 
-  _handleShareWithSelf = (ids: Array<b64string>, shareWithSelf: bool): Array<string> => {
+  _handleShareWithSelf = (identities: Array<b64string>, shareWithSelf: bool): Array<string> => {
     if (shareWithSelf) {
-      const selfUserId = utils.toBase64(this._localUser.userId);
-      if (ids.indexOf(selfUserId) === -1) {
-        return ids.concat([selfUserId]);
+      const selfUserIdentity = utils.toB64Json(this._localUser.publicIdentity);
+      if (identities.indexOf(selfUserIdentity) === -1) {
+        return identities.concat([selfUserIdentity]);
       }
     }
 
-    return ids;
+    return identities;
   }
 
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWithOptions: ShareWithOptions, shareWithSelf: bool): Promise<void> {
     const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
     const groups = await this._groupManager.findGroups(groupIds);
-    const userIds = shareWithOptions.shareWithUsers || [];
-    const obfuscatedUserIds = userIds.map(u => utils.toBase64(obfuscateUserId(this._localUser.trustchainId, u)));
-    const b64userIds = this._handleShareWithSelf(obfuscatedUserIds, shareWithSelf);
-    const users = await this._userAccessor.getUsers({ b64userIds });
+    const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
+    const b64UserIds = b64UserIdentities.map(u => utils.fromB64Json(u).value);
+    const users = await this._userAccessor.getUsers({ b64UserIds, publicIdentities: b64UserIdentities });
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;

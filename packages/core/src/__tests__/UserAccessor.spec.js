@@ -1,12 +1,12 @@
 // @flow
 import sinon from 'sinon';
-import { utils } from '@tanker/crypto';
+import { utils, obfuscateUserId } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { makeUserStoreBuilder } from './UserStoreBuilder';
 import UserAccessor from '../Users/UserAccessor';
-import { RecipientsNotFound } from '../errors';
 import makeUint8Array from './makeUint8Array';
+import { RecipientsNotFound } from '../errors';
 
 import Trustchain from '../Trustchain/Trustchain';
 
@@ -131,22 +131,35 @@ describe('Users', () => {
 
   describe('getUsers', () => {
     it('returns users', async () => {
-      const { users, builder } = await makeTestUsers();
+      const { users, builder, generator } = await makeTestUsers();
       const alice = await builder.newUserCreationV3('alice');
       const bob = await builder.newUserCreationV3('bob');
+      const aliceB64 = utils.toBase64(obfuscateUserId(generator.trustchainId, 'alice'));
+      const bobB64 = utils.toBase64(obfuscateUserId(generator.trustchainId, 'bob'));
+      // real identities are troublesome to craft and there only are needed for error reporting in the fct
+      const aliceIdentity = utils.toB64Json({ user_id: aliceB64 });
+      const bobIdentity = utils.toB64Json({ user_id: bobB64 });
 
-      const retUsers = await users.getUsersFromClearUserIds({ userIds: ['alice', 'bob'] });
+      const retUsers = await users.getUsers({ b64UserIds: [aliceB64, bobB64], publicIdentities: [aliceIdentity, bobIdentity] });
       const retUserIds = retUsers.map(u => u.userId);
       const expectedUserIds = [alice, bob].map(u => utils.toBase64(u.entry.user_id));
       expect(retUserIds).to.have.members(expectedUserIds);
     });
 
     it('throws RecipientsNotFound as appropriate', async () => {
-      const { users, builder } = await makeTestUsers();
+      const { users, builder, generator } = await makeTestUsers();
       await builder.newUserCreationV3('alice');
       await builder.newUserCreationV3('bob');
+      const aliceB64 = utils.toBase64(obfuscateUserId(generator.trustchainId, 'alice'));
+      const bobB64 = utils.toBase64(obfuscateUserId(generator.trustchainId, 'bob'));
+      const casperB64 = utils.toBase64(obfuscateUserId(generator.trustchainId, 'casper'));
+      // real identities are troublesome to craft and there only are needed for error reporting in the fct
+      const aliceIdentity = utils.toB64Json({ user_id: aliceB64 });
+      const bobIdentity = utils.toB64Json({ user_id: bobB64 });
+      const casperIdentity = utils.toB64Json({ user_id: casperB64 });
 
-      await expect(users.getUsersFromClearUserIds({ userIds: ['alice', 'bob', 'casper'] }))
+
+      await expect(users.getUsers({ b64UserIds: [aliceB64, bobB64, casperB64], publicIdentities: [aliceIdentity, bobIdentity, casperIdentity] }))
         .to.be.rejectedWith(RecipientsNotFound);
     });
   });

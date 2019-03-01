@@ -321,7 +321,7 @@ export class Tanker extends EventEmitter {
 
   _parseEncryptionOptions = (options?: EncryptionOptions = {}): EncryptionOptions => {
     if (!validateEncryptionOptions(options))
-      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<String> }', options);
 
     const opts = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
 
@@ -338,7 +338,7 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
     if (!validateShareWithOptions(shareWithOptions))
-      throw new InvalidArgument('shareWithOptions', '{ shareWithUsers: Array<string>, shareWithGroups: Array<string> }', shareWithOptions);
+      throw new InvalidArgument('shareWithOptions', '{ shareWithUsers: Array<b64string>, shareWithGroups: Array<string> }', shareWithOptions);
 
     return this._session.dataProtector.share(resourceIds, shareWithOptions);
   }
