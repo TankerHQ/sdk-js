@@ -98,8 +98,11 @@ export function equalArray(b1: Uint8Array, b2: Uint8Array): bool {
   return true;
 }
 
-export function isNullArray(a: Uint8Array): bool {
-  return equalArray(a, new Uint8Array(a.length));
+export function isNullArray(bytes: Uint8Array): bool {
+  if (!(bytes instanceof Uint8Array))
+    throw new TypeError('"bytes" is not a Uint8Array');
+
+  return sodium.is_zero(bytes);
 }
 
 export function memzero(bytes: Uint8Array) {

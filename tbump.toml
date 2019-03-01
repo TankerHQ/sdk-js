@@ -106,10 +106,6 @@ src = "packages/datastore/dexie-browser/package.json"
 search = '"version": "{current_version}"'
 
 [[file]]
-src = "packages/datastore/dexie-browser/package.json"
-search = '"@tanker/crypto": "{current_version}"'
-
-[[file]]
 src = "packages/datastore/pouchdb-base/package.json"
 search = '"version": "{current_version}"'
 

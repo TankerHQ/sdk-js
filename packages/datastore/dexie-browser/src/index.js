@@ -2,8 +2,6 @@
 import Dexie from 'dexie';
 import { errors as dbErrors, transform, type DataStore, type SortParams, type Schema, type BaseConfig } from '@tanker/datastore-base';
 
-import { extractDbNames, extractRecords } from './extract/PouchDB';
-
 export type Config = BaseConfig;
 export type { Schema };
 
@@ -92,56 +90,6 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
     return store;
   }
 
-  async migrateDataFromPouchDB(tableNames: Array<string>): Promise<void> {
-    // migrate only if current store is Dexie in a browser
-    const dbName = this._db.name;
-
-    // migrate only old pouchDBs starting with 'tanker' (non-test dbs)
-    if (dbName.slice(0, 6) !== 'tanker') return;
-
-    // migrate only if Dexie tables have not been populated yet
-    const newTableSize = await this._db.table('device').count();
-    if (newTableSize > 0) return;
-
-    // old pouchDBs had old names...
-    const pouchDbNameMap = {
-      device: 'keystore',
-      resource_keys: 'sharedkeystore',
-      trustchain: 'trustchain'
-    };
-
-    for (const table of tableNames) {
-      if (!pouchDbNameMap[table]) continue; // eslint-disable-line no-continue
-
-      // compute the old name of the PouchDB for this table
-      //   - was using '+' instead of '-' in url safe base64
-      //   - was prefixed with 'keystore-' (and alike) instead of 'tanker_'
-      const pouchDbName = dbName.replace(/-/g, '+').replace(/^tanker_/, `${pouchDbNameMap[table]}-`);
-
-      // migrate the records to Dexie
-      let records = [];
-
-      try {
-        records = await extractRecords(Dexie, pouchDbName);
-      } catch (e) {
-        // no previous keystore in PouchDB => no migration needed
-        if (table === 'device' && e.name === 'NoSuchDatabaseError') {
-          break;
-        } else {
-          throw e;
-        }
-      }
-
-      await this.bulkPut(table, records);
-
-      // delete old PouchDBs
-      const dbsToDelete = await extractDbNames(Dexie, pouchDbName);
-      for (const dbToDelete of dbsToDelete) {
-        await Dexie.delete(dbToDelete);
-      }
-    }
-  }
-
   async defineSchemas(schemas: Array<Schema>): Promise<void> {
     // Example:
     //
@@ -187,14 +135,6 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
       for (const table of schema.tables) {
         tableMap[table.name] = true;
       }
-    }
-
-    try {
-      const tableNames = Object.keys(tableMap);
-      await this.migrateDataFromPouchDB(tableNames);
-    } catch (e) {
-      // just log migration errors and hope for the best
-      console.error(e);
     }
   }
 
