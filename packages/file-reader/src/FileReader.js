@@ -28,8 +28,11 @@ export default class FileReader {
   }
 
   _onError() {
-    if (!this._currentRead)
-      throw new Error('Assertion error: a result was received but no read operation was in progress');
+    // Ignore errors if no current read (happens in Safari because calling abort() will trigger
+    // both 'abort' and 'error' events, whereas no 'error' event is fired in other browsers)
+    if (!this._currentRead) {
+      return;
+    }
 
     const { reject } = this._currentRead;
     this._currentRead = null;
