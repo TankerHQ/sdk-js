@@ -10,6 +10,7 @@ matrix:
     - script:
         - yarn build:all
         - yarn coverage
+        - yarn run codecov
       name: "Coverage"
     - script: yarn karma --browsers ChromeWindows
       name: "Latest Chrome on Windows"
@@ -21,3 +22,9 @@ matrix:
       name: "Latest Firefox on Windows"
     - script: yarn karma --browsers Firefox64Windows
       name: "Firefox 64 on Windows"
+    - script: yarn karma --browsers SafariMojave
+      name: "Safari on Mojave"
+    - script: yarn karma --browsers Android7
+      name: "Chorme on android 7"
+    - script: yarn karma --browsers Android5
+      name: "Chorme on android 5"
