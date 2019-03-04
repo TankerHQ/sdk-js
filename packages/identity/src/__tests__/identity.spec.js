@@ -1,5 +1,5 @@
 // @flow
-import { tcrypto, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
@@ -37,7 +37,8 @@ describe('Identity', () => {
 
   let obfuscatedUserId;
 
-  before(() => {
+  before(async () => {
+    await cryptoReady;
     obfuscatedUserId = utils.toBase64(obfuscateUserId(utils.fromBase64(trustchain.id), userId));
   });
 

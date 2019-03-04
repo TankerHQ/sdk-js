@@ -1,6 +1,6 @@
 // @flow
 import varint from 'varint';
-import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, type Key, random, tcrypto } from '@tanker/crypto';
+import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, random, tcrypto, type Key } from '@tanker/crypto';
 
 import { InvalidArgument } from '@tanker/errors';
 

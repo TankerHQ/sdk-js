@@ -1,5 +1,5 @@
 // @flow
-import { tcrypto, random, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { usersFromBlocks } from '../ManagerHelper';
@@ -7,6 +7,7 @@ import { usersFromBlocks } from '../ManagerHelper';
 import TestGenerator from '../../__tests__/TestGenerator';
 
 describe('UserManagerHelper', () => {
+  before(() => cryptoReady);
   describe('usersFromBlocks()', () => {
     it('can inflate multiple users from different blocks', async () => {
       const userId = random(tcrypto.HASH_SIZE);

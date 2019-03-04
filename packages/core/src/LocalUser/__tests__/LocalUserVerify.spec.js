@@ -1,4 +1,5 @@
 // @flow
+import { ready as cryptoReady } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import TestGenerator from '../../__tests__/TestGenerator';
@@ -19,6 +20,8 @@ function assertFailWithNature(verifyFunc: () => any, nature: string) {
 
 describe('BlockVerification', () => {
   let testGenerator: TestGenerator;
+
+  before(() => cryptoReady);
 
   beforeEach(() => {
     testGenerator = new TestGenerator();

@@ -1,6 +1,6 @@
 // @flow
 import { Writable } from '@tanker/stream-base';
-import { aead, random, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
+import { aead, random, ready as cryptoReady, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 
@@ -20,7 +20,9 @@ describe('EncryptionStream', () => {
     return sync;
   };
 
-  before(() => {
+  before(async () => {
+    await cryptoReady;
+
     key = utils.fromString('12345678123456781234567812345678');
     resourceId = random(tcrypto.MAC_SIZE);
   });

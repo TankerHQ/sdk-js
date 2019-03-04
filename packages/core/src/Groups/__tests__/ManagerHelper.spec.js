@@ -1,5 +1,5 @@
 // @flow
-import { tcrypto, random, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, random, utils } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
@@ -51,6 +51,8 @@ describe('GroupManagerHelper', () => {
   let provisionalIdentityManager;
   let localUser;
   let userGroupCreation: TestUserGroup;
+
+  before(() => cryptoReady);
 
   beforeEach(async () => {
     testGenerator = new TestGenerator();

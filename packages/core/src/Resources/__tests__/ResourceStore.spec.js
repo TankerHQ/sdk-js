@@ -1,5 +1,5 @@
 // @flow
-import { random, tcrypto } from '@tanker/crypto';
+import { random, ready as cryptoReady, tcrypto } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
@@ -13,6 +13,8 @@ describe('ResourceStore', () => {
   let sharedKeystoreConfig;
   let sharedKeystore;
   let datastore;
+
+  before(() => cryptoReady);
 
   beforeEach(async () => {
     dbName = `sharedKeystore-test-${makePrefix()}`;

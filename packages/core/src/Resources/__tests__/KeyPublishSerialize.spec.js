@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import makeUint8Array from '../../__tests__/makeUint8Array';
@@ -8,6 +8,8 @@ import makeUint8Array from '../../__tests__/makeUint8Array';
 import { serializeKeyPublish, unserializeKeyPublish, serializeKeyPublishToProvisionalUser, unserializeKeyPublishToProvisionalUser } from '../Serialize';
 
 describe('key publish', () => {
+  before(() => cryptoReady);
+
   it('correctly deserializes a KeyPublishV2 test vector', async () => {
     const keyPublish = {
       recipient: makeUint8Array('recipient user', tcrypto.HASH_SIZE),

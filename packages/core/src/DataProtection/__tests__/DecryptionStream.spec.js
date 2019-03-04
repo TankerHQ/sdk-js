@@ -1,5 +1,5 @@
 // @flow
-import { utils, random, tcrypto, encryptionV4 } from '@tanker/crypto';
+import { utils, random, ready as cryptoReady, tcrypto, encryptionV4 } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { Writable } from '@tanker/stream-base';
@@ -30,6 +30,8 @@ describe('DecryptionStream', () => {
     const encrypted = encryptionV4.serialize(encryptionV4.encrypt(key, index, resourceId, encryptedChunkSize, clear));
     return { clear, encrypted };
   };
+
+  before(() => cryptoReady);
 
   beforeEach(() => {
     key = random(tcrypto.SYMMETRIC_KEY_SIZE);

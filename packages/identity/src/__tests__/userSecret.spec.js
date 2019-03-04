@@ -1,5 +1,5 @@
 // @flow
-import { utils } from '@tanker/crypto';
+import { ready as cryptoReady, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { obfuscateUserId } from '../userId';
@@ -11,7 +11,8 @@ describe('userSecret', () => {
   let trustchainId;
   let trustchainIdB64;
 
-  before(() => {
+  before(async () => {
+    await cryptoReady;
     trustchainIdB64 = 'uxTyZYP8OOYP13A4GQC4zfVr7hJz5tsF7YdMpd3PT8w=';
     trustchainId = fromBase64(trustchainIdB64);
   });

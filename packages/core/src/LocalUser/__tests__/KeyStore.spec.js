@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, random } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
@@ -14,6 +14,8 @@ describe('KeyStore', () => {
   let secret;
 
   const { schemas } = KeyStore;
+
+  before(() => cryptoReady);
 
   beforeEach(async () => {
     datastoresToClose = [];

@@ -3,7 +3,7 @@ import type { b64string } from '@tanker/core';
 import { hashBlock } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
-import { tcrypto, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
@@ -41,6 +41,8 @@ export class AppHelper {
   }
 
   static async newApp(): Promise<AppHelper> {
+    await cryptoReady;
+
     const appKeyPair = tcrypto.makeSignKeyPair();
     const rootBlock = makeRootBlock(appKeyPair);
 

@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
@@ -50,7 +50,9 @@ describe('KeyDecryptor', () => {
   let groupManager;
   const provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
 
-  before(() => {
+  before(async () => {
+    await cryptoReady;
+
     const kp = tcrypto.makeEncryptionKeyPair();
     keys = {
       ...kp,

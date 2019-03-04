@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, random, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { encodeListLength } from '../../Blocks/Serialize';
@@ -19,6 +19,8 @@ import makeUint8Array from '../../__tests__/makeUint8Array';
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
 describe('user serialization: payload test vectors', () => {
+  before(() => cryptoReady);
+
   it('correctly deserializes a DeviceCreation v1 test vector', async () => {
     const deviceCreation = {
       ephemeral_public_signature_key: new Uint8Array([

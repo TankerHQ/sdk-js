@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
@@ -37,6 +37,7 @@ describe('Local User', () => {
   let userData;
 
   before(async () => {
+    await cryptoReady;
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     trustchainId = utils.generateAppID(trustchainKeyPair.publicKey);
     userIdString = 'clear user id';

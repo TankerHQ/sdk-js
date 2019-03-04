@@ -1,5 +1,5 @@
 // @flow
-import { utils } from '@tanker/crypto';
+import { ready as cryptoReady, utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
@@ -44,6 +44,7 @@ export function generateFunctionalTests(
     args.resources = generateTestResources();
 
     before(async () => {
+      await cryptoReady;
       silencer.silence('warn', /deprecated/);
 
       args.appHelper = await AppHelper.newApp();
