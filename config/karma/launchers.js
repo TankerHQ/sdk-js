@@ -10,110 +10,91 @@ const customLaunchers = {
 
   // All sorts of BrowserStack browsers, you can create your using:
   // https://www.browserstack.com/automate/capabilities
-  ChromeWindows: {
+  ChromeWindows10: {
     base: 'BrowserStack',
     browser: 'Chrome',
     os: 'Windows',
     os_version: '10',
   },
-  Chrome70Windows: {
+  Chrome70Windows7: {
     base: 'BrowserStack',
     browser: 'Chrome',
     browser_version: '70.0',
     os: 'Windows',
-    os_version: '10',
-  },
-  ChromeWindows7: {
-    base: 'BrowserStack',
-    browser: 'Chrome',
-    os: 'Windows',
     os_version: '7',
   },
-  ChromeOsx: {
+  ChomeOSX: {
     base: 'BrowserStack',
     browser: 'Chrome',
     os: 'OS X',
     os_version: 'Mojave',
   },
-  EdgeWindows: {
+  EdgeWindows10: {
     base: 'BrowserStack',
     browser: 'Edge',
     os: 'Windows',
     os_version: '10',
   },
-  IeWindows: {
+  IeWindows7: {
     base: 'BrowserStack',
     browser: 'IE',
     browser_version: '11.0',
     os: 'Windows',
     os_version: '7',
   },
-  FirefoxWindows: {
+  FirefoxWindows10: {
     base: 'BrowserStack',
     browser: 'Firefox',
     os: 'Windows',
     os_version: '10',
   },
-  Firefox64Windows: {
+  Firefox64Windows8: {
     base: 'BrowserStack',
     browser: 'Firefox',
     browser_version: '64.0',
     os: 'Windows',
     os_version: '8.1',
   },
-  FirefoxWindows7: {
-    base: 'BrowserStack',
-    browser: 'Firefox',
-    os: 'Windows',
-    os_version: '7',
-  },
-  FirefoxOsx: {
+  FirefoxOSX: {
     base: 'BrowserStack',
     browser: 'Firefox',
     os: 'OS X',
     os_version: 'Mojave',
   },
-  SafariMojave: {
+  Safari12Mojave: {
     base: 'BrowserStack',
     browser: 'Safari',
     browser_version: '12.0',
     os: 'OS X',
     os_version: 'Mojave',
   },
-  SafariHighSierra: {
-    base: 'BrowserStack',
-    browser: 'Safari',
-    browser_version: '11.1',
-    os: 'OS X',
-    os_version: 'High Sierra',
-  },
-  SafariSierra: {
+  Safari10Sierra: {
     base: 'BrowserStack',
     browser: 'Safari',
     browser_version: '10.0',
     os: 'OS X',
     os_version: 'Sierra',
   },
-  SafariElCapitan: {
+  iOS12: {
     base: 'BrowserStack',
-    browser: 'Safari',
-    browser_version: '9.1',
-    os: 'OS X',
-    os_version: 'El Capitan',
-  },
-  iPhone8: {
-    base: 'BrowserStack',
-    device: 'iPhone 8',
+    device: 'iPhone XS',
     real_mobile: 'true',
     os: 'ios',
-    os_version: '11.0',
+    os_version: '12.1',
   },
-  Android7: {
+  iOS10: {
     base: 'BrowserStack',
-    device: 'Samsung Galaxy S8',
+    device: 'iPhone 7',
+    real_mobile: 'true',
+    os: 'ios',
+    os_version: '10.0',
+  },
+  Android8: {
+    base: 'BrowserStack',
+    device: 'Samsung Galaxy S9',
     real_mobile: 'true',
     os: 'Android',
-    os_version: '7.0',
+    os_version: '8.0',
   },
   Android5: {
     base: 'BrowserStack',
