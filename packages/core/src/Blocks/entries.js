@@ -80,19 +80,20 @@ export function entryToDbEntry(entry: any, id: any): any {
 
 export function dbEntryToEntry(dbEntry: any): any {
   const result = {};
-  Object.entries(dbEntry).forEach(elem => {
-    if (elem[0] === '_id' || elem[1] == null) {
+  Object.entries(dbEntry).forEach(([key, value]) => {
+    // Skip '_id' (and '_rev' in PouchDB records)
+    if (key[0] === '_' || value == null) {
       return;
     }
     // We don't have real strings for now.
-    if (typeof elem[1] === 'string') {
-      result[elem[0]] = utils.fromBase64(elem[1]);
-    } else if (Array.isArray(elem[1])) {
-      result[elem[0]] = elem[1].map(dbEntryToEntry);
-    } else if (typeof elem[1] === 'object') {
-      result[elem[0]] = dbEntryToEntry(elem[1]);
+    if (typeof value === 'string') {
+      result[key] = utils.fromBase64(value);
+    } else if (Array.isArray(value)) {
+      result[key] = value.map(dbEntryToEntry);
+    } else if (typeof value === 'object') {
+      result[key] = dbEntryToEntry(value);
     } else {
-      result[elem[0]] = elem[1]; // eslint-disable-line prefer-destructuring
+      result[key] = value; // eslint-disable-line prefer-destructuring
     }
   });
   return result;

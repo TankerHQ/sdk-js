@@ -203,7 +203,8 @@ const generateUnlockTests = (args: TestArgs) => {
       it('should throw a nice error when email is not set and password is set', async () => {
         await expect(bobLaptop.registerUnlock({ password: 'noEmail' })).to.be.fulfilled;
         bobPhone.once('unlockRequired', async () => {
-          await expect(bobPhone.unlockCurrentDevice({ verificationCode: 'noEmailDefined' })).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
+          const verificationCode = 'ZW1haWwgbm90IHNldA=='; // any b64 value, will be ignored
+          await expect(bobPhone.unlockCurrentDevice({ verificationCode })).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
           await bobPhone.close();
         });
         await expect(bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errors.OperationCanceled);
