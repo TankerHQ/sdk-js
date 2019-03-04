@@ -115,6 +115,13 @@ const customLaunchers = {
     os: 'Android',
     os_version: '7.0',
   },
+  Android5: {
+    base: 'BrowserStack',
+    device: 'Samsung Galaxy S6',
+    real_mobile: 'true',
+    os: 'Android',
+    os_version: '5.0',
+  },
 }
 
 module.exports = { customLaunchers };
