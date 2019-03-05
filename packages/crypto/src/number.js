@@ -53,12 +53,8 @@ function isSafeLe(value: Uint8Array): bool {
   if (value.length === 8 && value[7] !== 0)
     return false;
 
-  // Length is 7 or 8 with MSB at index 6. Reject if a bit higher than 52 is set,
-  // where 52 = 6 lower bytes * 8 bits + 4 bits (0x0a) on highest byte
-  if (value[6] > 0x0a)
-    return false;
-
-  return true;
+  // value is 7 or 8 byte long with most significant byte at index 6
+  return value[6] < 32;
 }
 
 function fromUintle(value: Uint8Array, byteSize: ByteSize): number {
@@ -76,4 +72,8 @@ function fromUintle(value: Uint8Array, byteSize: ByteSize): number {
 
 export function fromUint32le(value: Uint8Array): number {
   return fromUintle(value, 4);
+}
+
+export function fromUint64le(value: Uint8Array): number {
+  return fromUintle(value, 8);
 }
