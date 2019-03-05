@@ -66,7 +66,7 @@ module.exports = {
   customLaunchers,
   browserStack: {
     project: 'sdk-js',
-    timeout: 900,
+    timeout: 1800,
   },
   hostname: 'bs-local.com',
 };
