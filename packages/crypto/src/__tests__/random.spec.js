@@ -15,11 +15,25 @@ const trustchainIdB64 = 'uxTyZYP8OOYP13A4GQC4zfVr7hJz5tsF7YdMpd3PT8w=';
 const trustchainId = fromBase64(trustchainIdB64);
 
 describe('random', () => {
+  it('should throw if bad arguments given to createUserSecretBinary', () => {
+    // $FlowExpectedError
+    expect(() => createUserSecretBinary()).to.throw(TypeError);
+    // $FlowExpectedError
+    expect(() => createUserSecretBinary(trustchainIdB64)).to.throw(TypeError);
+  });
+
   // Warning! This test only works 99.9999999999999999999999999999999999999999999999999999999999999999999999999991% of the time!
   it('should give two different secrets for two requests', async () => {
     const secret1 = createUserSecretBinary(trustchainIdB64, 'mondego');
     const secret2 = createUserSecretBinary(trustchainIdB64, 'mondego');
     expect(secret1).to.not.equal(secret2);
+  });
+
+  it('should throw if bad arguments given to checkUserSecret', () => {
+    // $FlowExpectedError
+    expect(() => checkUserSecret()).to.throw(TypeError);
+    // $FlowExpectedError
+    expect(() => checkUserSecret(obfuscateUserId(trustchainId, 'edmond'))).to.throw(TypeError);
   });
 
   it('should accept secrets of the right user', async () => {
