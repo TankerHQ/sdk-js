@@ -1,2 +1,2 @@
 // @flow
-export { default } from './File.ponyfill';
+export { default } from './FilePonyfill';
