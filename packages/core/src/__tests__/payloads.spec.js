@@ -33,6 +33,8 @@ import { serializeUserDeviceV1 } from './Generator';
 
 import makeUint8Array from './makeUint8Array';
 
+import { UpgradeRequiredError } from '../errors.internal';
+
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
 describe('payload test vectors', () => {
@@ -222,6 +224,22 @@ describe('payload test vectors', () => {
     expect(unserializeKeyPublishToDevice(payload)).to.deep.equal(keyPublish);
   });
 
+  it('should throw when unserializeKeyPublishToDevice with invalid key publish key size', async () => {
+    const keyPublish = {
+      recipient: new Uint8Array(tcrypto.HASH_SIZE),
+      resourceId: new Uint8Array(tcrypto.MAC_SIZE),
+      key: new Uint8Array(0),
+    };
+
+    const payload = concatArrays(
+      keyPublish.recipient,
+      keyPublish.resourceId,
+      new Uint8Array([keyPublish.key.length]),
+      keyPublish.key
+    );
+    expect(() => unserializeKeyPublishToDevice(payload)).to.throw();
+  });
+
   it('correctly deserializes a KeyPublishV2 test vector', async () => {
     const keyPublish = {
       recipient: makeUint8Array('recipient user', tcrypto.HASH_SIZE),
@@ -409,6 +427,48 @@ describe('payload test vectors', () => {
     expect(unserializeUserGroupCreation(payload)).to.deep.equal(userGroupCreation);
   });
 
+  describe('serializing invalid group creation block', () => {
+    let userGroupCreation;
+
+    beforeEach(() => {
+      userGroupCreation = {
+        public_signature_key: new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        encrypted_group_private_signature_key: new Uint8Array(tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE),
+        encrypted_group_private_encryption_keys_for_users: [{
+          public_user_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_group_private_encryption_key: new Uint8Array(tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+        }],
+        self_signature: new Uint8Array(tcrypto.SIGNATURE_SIZE),
+      };
+    });
+
+    it('should serialize a valid a user group creation block', async () => {
+      expect(() => serializeUserGroupCreation(userGroupCreation)).not.to.throw();
+    });
+
+    const fields = [
+      'public_signature_key',
+      'public_encryption_key',
+      'encrypted_group_private_signature_key',
+      'self_signature',
+    ];
+    fields.forEach(field => {
+      it(`should throw when serializing a user group creation block with invalid ${field}`, async () => {
+        userGroupCreation[field] = new Uint8Array(0);
+        expect(() => serializeUserGroupCreation(userGroupCreation)).to.throw();
+      });
+    });
+    it('should throw when serializing a user group creation block with invalid public_user_encryption_key', async () => {
+      userGroupCreation.encrypted_group_private_encryption_keys_for_users[0].public_user_encryption_key = new Uint8Array(0);
+      expect(() => serializeUserGroupCreation(userGroupCreation)).to.throw();
+    });
+    it('should throw when serializing a user group creation block with invalid encrypted_group_private_encryption_key', async () => {
+      userGroupCreation.encrypted_group_private_encryption_keys_for_users[0].encrypted_group_private_encryption_key = new Uint8Array(0);
+      expect(() => serializeUserGroupCreation(userGroupCreation)).to.throw();
+    });
+  });
+
   it('correctly deserializes a UserGroupAddition test vector', async () => {
     const userGroupAdd = {
       group_id: makeUint8Array('group id', tcrypto.HASH_SIZE),
@@ -475,9 +535,35 @@ describe('payload test vectors', () => {
     expect(serializeUserGroupAddition(userGroupAdd)).to.deep.equal(payload);
     expect(unserializeUserGroupAddition(payload)).to.deep.equal(userGroupAdd);
   });
+
+  const fields = [
+    'previous_group_block',
+    'self_signature_with_current_key',
+  ];
+  fields.forEach(field => {
+    it(`should throw when serializing an user group addition block with invalid ${field}`, async () => {
+      const userGroupAdd = {
+        group_id: new Uint8Array(tcrypto.HASH_SIZE),
+        previous_group_block: new Uint8Array(tcrypto.HASH_SIZE),
+        self_signature_with_current_key: new Uint8Array(tcrypto.SIGNATURE_SIZE),
+        encrypted_group_private_encryption_keys_for_users: [],
+      };
+      expect(() => serializeUserGroupAddition(userGroupAdd)).not.to.throw();
+      userGroupAdd[field] = new Uint8Array(0);
+      expect(() => serializeUserGroupAddition(userGroupAdd)).to.throw();
+    });
+  });
 });
 
 describe('payloads', () => {
+  it('should throw when serializing an invalid TrustchainCreation', async () => {
+    const trustchainCreation = {
+      public_signature_key: new Uint8Array(0),
+    };
+    expect(() => serializeTrustchainCreation(trustchainCreation)).to.throw();
+  });
+
+
   it('should serialize/unserialize a TrustchainCreation', async () => {
     const trustchainCreation = {
       public_signature_key: random(tcrypto.SYMMETRIC_KEY_SIZE),
@@ -563,6 +649,92 @@ describe('payloads', () => {
     expect(unserializeDeviceRevocationV2(serializeDeviceRevocationV2(deviceRevocation))).to.deep.equal(deviceRevocation);
   });
 
+  it('should throw when serializing invalid revocation blocks', async () => {
+    const initValidBlock = () => ({
+      device_id: new Uint8Array(tcrypto.HASH_SIZE),
+      user_keys: {
+        public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        previous_public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        encrypted_previous_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+        private_keys: [{
+          recipient: new Uint8Array(tcrypto.HASH_SIZE),
+          key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+        }],
+      },
+    });
+
+    let invalidBlock = initValidBlock();
+    invalidBlock.device_id = new Uint8Array(0);
+    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
+
+    invalidBlock = initValidBlock();
+    invalidBlock.user_keys = {};
+    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
+
+    invalidBlock = initValidBlock();
+    invalidBlock.user_keys.public_encryption_key = new Uint8Array(0);
+    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
+
+    invalidBlock = initValidBlock();
+    invalidBlock.user_keys.previous_public_encryption_key = new Uint8Array(0);
+    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
+
+    invalidBlock = initValidBlock();
+    invalidBlock.user_keys.encrypted_previous_encryption_key = new Uint8Array(0);
+    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
+
+    invalidBlock = initValidBlock();
+    invalidBlock.user_keys.private_keys[0].recipient = new Uint8Array(0);
+    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
+
+    invalidBlock = initValidBlock();
+    invalidBlock.user_keys.private_keys[0].key = new Uint8Array(0);
+    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
+  });
+
+  let fields = ['author', 'signature', 'trustchain_id'];
+  fields.forEach(field => {
+    it(`should throw when serializing blocks with invalid ${field}`, async () => {
+      const block = {
+        author: new Uint8Array(tcrypto.HASH_SIZE),
+        signature: new Uint8Array(tcrypto.SIGNATURE_SIZE),
+        trustchain_id: new Uint8Array(tcrypto.HASH_SIZE),
+        payload: new Uint8Array(0),
+        index: 0,
+        nature: NATURE_KIND.key_publish_to_device,
+      };
+      block[field] = new Uint8Array(0);
+      expect(() => serializeBlock(block)).to.throw();
+    });
+  });
+
+  it('should throw when unserializing unsupported block version', async () => {
+    const block = {
+      author: random(tcrypto.HASH_SIZE),
+      signature: random(tcrypto.SIGNATURE_SIZE),
+      trustchain_id: random(tcrypto.HASH_SIZE),
+      payload: new Uint8Array(0),
+      index: 0,
+      nature: NATURE_KIND.key_publish_to_device,
+    };
+    const serializedBlock = serializeBlock(block);
+    serializedBlock[0] = 99;
+    expect(() => unserializeBlock(serializedBlock)).to.throw(UpgradeRequiredError);
+  });
+
+  fields = ['recipient', 'resourceId', 'key'];
+  fields.forEach(field => {
+    it(`should thow when serializing key publish with invalid ${field}`, async () => {
+      const keyPublish = {
+        recipient: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        resourceId: new Uint8Array(tcrypto.MAC_SIZE),
+        key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+      };
+      keyPublish[field] = new Uint8Array(0);
+      expect(() => serializeKeyPublish(keyPublish)).to.throw();
+    });
+  });
+
   it('should serialize/unserialize a Block', async () => {
     const keyPublish = {
       resourceId: random(tcrypto.MAC_SIZE),
@@ -604,5 +776,50 @@ describe('payloads', () => {
     };
 
     expect(() => serializeUserDeviceV3(userDevice)).to.throw();
+  });
+
+  describe('serialization of invalid user device', () => {
+    let userDevice;
+
+    beforeEach(() => {
+      userDevice = {
+        last_reset: new Uint8Array(tcrypto.HASH_SIZE),
+        ephemeral_public_signature_key: new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        user_id: new Uint8Array(tcrypto.HASH_SIZE),
+        delegation_signature: new Uint8Array(tcrypto.SIGNATURE_SIZE),
+        public_signature_key: new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        public_encryption_key: new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        user_key_pair: {
+          public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+          encrypted_private_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+        },
+        is_ghost_device: true,
+        is_server_device: false,
+        revoked: Number.MAX_SAFE_INTEGER,
+      };
+    });
+    fields = [
+      'ephemeral_public_signature_key',
+      'user_id',
+      'delegation_signature',
+      'public_signature_key',
+      'public_encryption_key',
+    ];
+    fields.forEach(field => {
+      it(`should throw if user device with invalid ${field}`, async () => {
+        userDevice[field] = new Uint8Array(0);
+        expect(() => serializeUserDeviceV3(userDevice)).to.throw();
+      });
+    });
+
+    it('should throw if user device with invalid encrypted_private_encryption_key', async () => {
+      userDevice.user_key_pair.encrypted_private_encryption_key = new Uint8Array(0);
+      expect(() => serializeUserDeviceV3(userDevice)).to.throw();
+    });
+
+    it('should throw if user device with invalid public_encryption_key', () => {
+      userDevice.user_key_pair.public_encryption_key = new Uint8Array(0);
+      expect(() => serializeUserDeviceV3(userDevice)).to.throw();
+    });
   });
 });
