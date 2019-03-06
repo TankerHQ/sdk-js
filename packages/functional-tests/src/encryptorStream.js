@@ -32,9 +32,9 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
-        args.bobLaptop.close(),
-        args.bobPhone.close(),
+        args.aliceLaptop.signOut(),
+        args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
@@ -135,7 +135,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
 
     describe('Error Handling', () => {
       it('cannot makeEncryptorStream and makeDecryptorStream when session has ended', async () => {
-        await args.aliceLaptop.close();
+        await args.aliceLaptop.signOut();
         await expect(args.aliceLaptop.makeEncryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
         await expect(args.aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
       });

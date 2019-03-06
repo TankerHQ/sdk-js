@@ -62,8 +62,8 @@ const generateEncryptTests = (args: TestArgs) => {
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
-        args.bobLaptop.close(),
+        args.aliceLaptop.signOut(),
+        args.bobLaptop.signOut(),
       ]);
     });
 
@@ -131,7 +131,7 @@ const generateEncryptTests = (args: TestArgs) => {
         });
 
         it('shares even when the recipient is not connected', async () => {
-          await args.aliceLaptop.close();
+          await args.aliceLaptop.signOut();
           const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
 
           await args.aliceLaptop.signIn(aliceIdentity);
@@ -148,7 +148,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
           const decrypted = await args.bobPhone.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
-          await args.bobPhone.close();
+          await args.bobPhone.signOut();
         });
 
         it('can\'t decrypt if shareWithSelf = false', async () => {
@@ -222,9 +222,9 @@ const generateEncryptTests = (args: TestArgs) => {
 
     after(async () => {
       await Promise.all([
-        args.bobPhone.close(),
-        args.bobLaptop.close(),
-        args.aliceLaptop.close(),
+        args.bobPhone.signOut(),
+        args.bobLaptop.signOut(),
+        args.aliceLaptop.signOut(),
       ]);
     });
 
@@ -244,7 +244,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       // revoke args.bobLaptop
       await args.bobLaptop.revokeDevice(args.bobLaptop.deviceId);
-      await args.bobLaptop.close(); // NOTE: This shouldn't be necessary, but see revocation.spec.js:120 @ da06447e3
+      await args.bobLaptop.signOut(); // NOTE: This shouldn't be necessary, but see revocation.spec.js:120 @ da06447e3
 
       const decrypted = await args.bobPhone.decrypt(encrypted);
       expect(decrypted).to.equal(clearText);
@@ -282,7 +282,7 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       after(async () => {
-        await args.aliceLaptop.close();
+        await args.aliceLaptop.signOut();
       });
 
       args.resources[size].forEach(({ type, resource: clear }) => {

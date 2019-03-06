@@ -25,9 +25,9 @@ const generateGroupsTests = (args: TestArgs) => {
 
     after(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
-        args.bobLaptop.close(),
-        args.bobPhone.close(),
+        args.aliceLaptop.signOut(),
+        args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 

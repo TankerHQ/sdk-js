@@ -16,9 +16,9 @@ const generateOpenTests = (args: TestArgs) => {
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
-        args.bobLaptop.close(),
-        args.bobPhone.close(),
+        args.aliceLaptop.signOut(),
+        args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
@@ -58,7 +58,7 @@ const generateOpenTests = (args: TestArgs) => {
 
     it('re-opens a session', async () => {
       await args.bobLaptop.signUp(bobIdentity);
-      await args.bobLaptop.close();
+      await args.bobLaptop.signOut();
       const signInResult = await args.bobLaptop.signIn(bobIdentity);
       expect(signInResult).to.equal(SIGN_IN_RESULT.OK);
       expect(args.bobLaptop.status).to.equal(OPEN);
@@ -67,7 +67,7 @@ const generateOpenTests = (args: TestArgs) => {
     it('adds multiple devices to a user', async () => {
       await args.bobLaptop.signUp(bobIdentity);
       const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
-      await args.bobLaptop.close();
+      await args.bobLaptop.signOut();
 
       await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
       expect(args.bobPhone.status).to.equal(OPEN);
@@ -76,7 +76,7 @@ const generateOpenTests = (args: TestArgs) => {
     it('adds multiple devices to a user after cancelling once', async () => {
       await args.bobLaptop.signUp(bobIdentity);
       const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
-      await args.bobLaptop.close();
+      await args.bobLaptop.signOut();
 
       const result = await args.bobPhone.signIn(bobIdentity);
       await expect(result).to.equal(SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED);

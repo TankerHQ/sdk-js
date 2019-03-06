@@ -234,7 +234,7 @@ export class Tanker extends EventEmitter {
     return openResult.signInResult;
   }
 
-  async close(): Promise<void> {
+  async signOut(): Promise<void> {
     const sessionOpener = this._sessionOpener;
     this._setSessionOpener(null);
 

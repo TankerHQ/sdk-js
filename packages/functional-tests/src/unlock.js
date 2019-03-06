@@ -34,8 +34,8 @@ const generateUnlockTests = (args: TestArgs) => {
 
     afterEach(async () => {
       await Promise.all([
-        bobLaptop.close(),
-        bobPhone.close(),
+        bobLaptop.signOut(),
+        bobPhone.signOut(),
       ]);
     });
 
@@ -99,7 +99,7 @@ const generateUnlockTests = (args: TestArgs) => {
         await expect(bobLaptop.registerUnlock({ password: 'my new pass' })).to.be.fulfilled;
 
         await expect(expectUnlock(bobPhone, bobIdentity, { password: 'my pass' })).to.be.rejectedWith(errors.InvalidUnlockPassword);
-        await bobPhone.close();
+        await bobPhone.signOut();
 
         await expect(expectUnlock(bobPhone, bobIdentity, { password: 'my new pass' })).to.be.fulfilled;
       });

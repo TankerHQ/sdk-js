@@ -26,8 +26,8 @@ const generateRevocationTests = (args: TestArgs) => {
 
     afterEach(async () => {
       await Promise.all([
-        args.bobLaptop.close(),
-        args.bobPhone.close(),
+        args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
@@ -41,7 +41,7 @@ const generateRevocationTests = (args: TestArgs) => {
         await Promise.all([waitForPhoneRevoked, waitForLaptopRevoked]);
       } else {
         const bobPhoneId = args.bobPhone.deviceId;
-        await args.bobPhone.close();
+        await args.bobPhone.signOut();
         await args.bobLaptop.revokeDevice(bobPhoneId);
         await args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
         await expect(args.bobPhone.signIn(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
@@ -89,7 +89,7 @@ const generateRevocationTests = (args: TestArgs) => {
 
     it('can\'t open a session on a device revoked while closed', async () => {
       const bobPhoneDeviceId = args.bobPhone.deviceId;
-      await args.bobPhone.close();
+      await args.bobPhone.signOut();
       await args.bobLaptop.revokeDevice(bobPhoneDeviceId);
       const promise = args.bobPhone.signIn(bobIdentity);
       await expect(promise).to.be.rejected;
@@ -163,7 +163,7 @@ const generateRevocationTests = (args: TestArgs) => {
       expect(clear).to.eq(message);
 
       await expect(args.bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidSessionStatus);
-      await args.aliceLaptop.close();
+      await args.aliceLaptop.signOut();
     });
   });
 };

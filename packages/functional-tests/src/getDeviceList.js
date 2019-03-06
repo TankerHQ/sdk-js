@@ -18,14 +18,14 @@ const generateGetDeviceListTests = (args: TestArgs) => {
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
-        args.bobLaptop.close(),
-        args.bobPhone.close(),
+        args.aliceLaptop.signOut(),
+        args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
     it('should throw when using a session in an invalid state', async () => {
-      await args.bobLaptop.close();
+      await args.bobLaptop.signOut();
       await expect(args.bobLaptop.getDeviceList()).to.be.rejectedWith(errors.InvalidSessionStatus);
     });
 
@@ -44,7 +44,7 @@ const generateGetDeviceListTests = (args: TestArgs) => {
 
     it('does not expose ghostDevices in device list', async () => {
       await args.bobLaptop.registerUnlock({ password: 'my password' });
-      await args.bobLaptop.close();
+      await args.bobLaptop.signOut();
       await args.bobLaptop.signIn(bobIdentity);
 
       expect(await args.bobLaptop.getDeviceList()).to.have.length(1);
