@@ -49,9 +49,6 @@ export function verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser
   if (userPublicKey && entry.nature !== NATURE.device_creation_v3)
     throw new InvalidBlockError('forbidden', 'device creation version mismatch', { entry, authorDevice });
 
-  if (!utils.isNullArray(entry.last_reset))
-    throw new InvalidBlockError('invalid_last_reset', 'last_reset is not null', { entry });
-
   const delegationBuffer = utils.concatArrays(entry.ephemeral_public_signature_key, entry.user_id);
   if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, authorKey))
     throw new InvalidBlockError('invalid_delegation_signature', 'delegation signature is invalid, there might be a mismatch between the Trustchains configured client-side and server-side', { entry, authorDevice });
