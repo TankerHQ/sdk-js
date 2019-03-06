@@ -13,7 +13,7 @@ const generateGetDeviceListTests = (args: TestArgs) => {
     beforeEach(async () => {
       bobId = uuid.v4();
       bobIdentity = args.trustchainHelper.generateIdentity(bobId);
-      await args.bobLaptop.open(bobIdentity);
+      await args.bobLaptop.signUp(bobIdentity);
     });
 
     afterEach(async () => {
@@ -32,11 +32,7 @@ const generateGetDeviceListTests = (args: TestArgs) => {
     it('can list the devices of a user', async () => {
       await args.bobLaptop.registerUnlock({ password: 'password' });
 
-      // accept device
-      args.bobPhone.once('unlockRequired', async () => {
-        args.bobPhone.unlockCurrentDevice({ password: 'password' });
-      });
-      await args.bobPhone.open(bobIdentity);
+      await args.bobPhone.signIn(bobIdentity, { password: 'password' });
 
       const list1 = await args.bobLaptop.getDeviceList();
       const list2 = await args.bobPhone.getDeviceList();
@@ -49,7 +45,7 @@ const generateGetDeviceListTests = (args: TestArgs) => {
     it('does not expose ghostDevices in device list', async () => {
       await args.bobLaptop.registerUnlock({ password: 'my password' });
       await args.bobLaptop.close();
-      await args.bobLaptop.open(bobIdentity);
+      await args.bobLaptop.signIn(bobIdentity);
 
       expect(await args.bobLaptop.getDeviceList()).to.have.length(1);
     });

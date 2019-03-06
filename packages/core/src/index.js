@@ -7,6 +7,7 @@ import { Tanker, TankerStatus, optionsWithDefaults } from './Tanker';
 import * as errors from './errors';
 import { fromBase64, toBase64, fromString, toString, getTankerVersion } from './utils';
 import { getEncryptionFormat } from './DataProtection/Encryptor';
+import { SIGN_IN_RESULT } from './Session/SessionOpener';
 
 // export
 export default Tanker;
@@ -28,4 +29,5 @@ export {
   getEncryptionFormat,
   toBase64,
   toString,
+  SIGN_IN_RESULT,
 };

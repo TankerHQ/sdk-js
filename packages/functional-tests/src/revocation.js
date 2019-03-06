@@ -1,5 +1,4 @@
 // @flow
-import uuid from 'uuid';
 import sinon from 'sinon';
 import { errors } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
@@ -12,27 +11,21 @@ const isIE = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Tr
 
 const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
-    let bobId;
     let bobIdentity;
     let bobPublicIdentity;
 
     beforeEach(async () => {
-      bobId = uuid.v4();
-      bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+      bobIdentity = args.trustchainHelper.generateIdentity();
       bobPublicIdentity = getPublicIdentity(bobIdentity);
 
-      await args.bobLaptop.open(bobIdentity);
+      await args.bobLaptop.signUp(bobIdentity);
       const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
 
-      args.bobPhone.once('unlockRequired', async () => {
-        args.bobPhone.unlockCurrentDevice({ unlockKey: bobUnlockKey });
-      });
-      await args.bobPhone.open(bobIdentity);
+      await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
     });
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
         args.bobLaptop.close(),
         args.bobPhone.close(),
       ]);
@@ -51,7 +44,7 @@ const generateRevocationTests = (args: TestArgs) => {
         await args.bobPhone.close();
         await args.bobLaptop.revokeDevice(bobPhoneId);
         await args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
-        await expect(args.bobPhone.open(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
+        await expect(args.bobPhone.signIn(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
       }
     };
 
@@ -98,7 +91,7 @@ const generateRevocationTests = (args: TestArgs) => {
       const bobPhoneDeviceId = args.bobPhone.deviceId;
       await args.bobPhone.close();
       await args.bobLaptop.revokeDevice(bobPhoneDeviceId);
-      const promise = args.bobPhone.open(bobIdentity);
+      const promise = args.bobPhone.signIn(bobIdentity);
       await expect(promise).to.be.rejected;
     });
 
@@ -156,9 +149,8 @@ const generateRevocationTests = (args: TestArgs) => {
     });
 
     it('Alice can share with Bob who has a revoked device', async () => {
-      const aliceId = uuid.v4();
-      const aliceIdentity = args.trustchainHelper.generateIdentity(aliceId);
-      await args.aliceLaptop.open(aliceIdentity);
+      const aliceIdentity = args.trustchainHelper.generateIdentity();
+      await args.aliceLaptop.signUp(aliceIdentity);
 
       await revokeBobPhone();
 
@@ -171,6 +163,7 @@ const generateRevocationTests = (args: TestArgs) => {
       expect(clear).to.eq(message);
 
       await expect(args.bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await args.aliceLaptop.close();
     });
   });
 };

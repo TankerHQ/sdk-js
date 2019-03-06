@@ -9,9 +9,7 @@ import { expect } from './chai';
 import { extractUserData } from '../UserData';
 import { createIdentity } from './TestSessionTokens';
 
-import { SessionOpener } from '../Session/SessionOpener';
-
-import { OperationCanceled, MissingEventHandler } from '../errors';
+import { SessionOpener, SIGN_IN_RESULT, OPEN_MODE } from '../Session/SessionOpener';
 
 import Trustchain from '../Trustchain/Trustchain';
 import { Client } from '../Network/Client';
@@ -79,7 +77,7 @@ describe('Session opening', () => {
     before(() => {
       userIdString = 'clear user id';
       identity = createIdentity(trustchainId, userIdString, trustchainKeyPair.privateKey);
-      userData = extractUserData(trustchainId, identity);
+      userData = extractUserData(identity);
     });
 
     beforeEach(() => {
@@ -87,23 +85,15 @@ describe('Session opening', () => {
     });
 
     it('should succeed if everything is well', async () => {
-      await expect(sessionOpener.openSession(false)).to.be.fulfilled;
+      await expect(sessionOpener.openSession(OPEN_MODE.SIGN_UP)).to.be.fulfilled;
     });
 
-    it('should block open and emit the unlockRequired event if user exists but does not have a local device', async () => {
+    it('should block open and return identity_verification_needed status if user exists but does not have a local device', async () => {
       // $FlowIKnow
       mockStorage.hasLocalDevice = () => false;
 
-      const eventPromise = new Promise(async (resolve, reject) => {
-        sessionOpener.on('unlockRequired', () => {
-          setTimeout(resolve, 10);
-        });
-        await expect(sessionOpener.openSession(true)).to.be.rejectedWith(OperationCanceled);
-        reject();
-      });
-
-      // new device
-      await expect(eventPromise).to.be.fulfilled;
+      const openResult = await sessionOpener.openSession(OPEN_MODE.SIGN_IN);
+      expect(openResult.signInResult).to.equal(SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED);
     });
 
     it('should create account if user does not exist', async () => {
@@ -112,16 +102,10 @@ describe('Session opening', () => {
       // $FlowIKnow
       mockClient.userExists = () => false;
 
-      await expect(sessionOpener.openSession(false)).to.be.fulfilled;
+      const openResult = await sessionOpener.openSession(OPEN_MODE.SIGN_UP);
+      expect(openResult.signInResult).to.equal(SIGN_IN_RESULT.OK);
       // $FlowIKnow
       expect(mockClient.sendBlock.calledOnce).to.be.true;
-    });
-
-    it('should throw if unlockRequired event has no handler', async () => {
-      // $FlowIKnow
-      mockStorage.hasLocalDevice = () => false;
-      // Oops, we forgot to listen on 'unlockRequired'
-      await expect(sessionOpener.openSession(false)).to.be.rejectedWith(MissingEventHandler);
     });
   });
 });

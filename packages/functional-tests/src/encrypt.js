@@ -56,8 +56,8 @@ const generateEncryptTests = (args: TestArgs) => {
       alicePublicIdentity = getPublicIdentity(aliceIdentity);
       bobIdentity = args.trustchainHelper.generateIdentity();
       bobPublicIdentity = getPublicIdentity(bobIdentity);
-      await args.aliceLaptop.open(aliceIdentity);
-      await args.bobLaptop.open(bobIdentity);
+      await args.aliceLaptop.signUp(aliceIdentity);
+      await args.bobLaptop.signUp(bobIdentity);
     });
 
     afterEach(async () => {
@@ -134,7 +134,7 @@ const generateEncryptTests = (args: TestArgs) => {
           await args.aliceLaptop.close();
           const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
 
-          await args.aliceLaptop.open(aliceIdentity);
+          await args.aliceLaptop.signIn(aliceIdentity);
           const decrypted = await args.aliceLaptop.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
         });
@@ -144,11 +144,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
           const encrypted = await args.aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
 
-          // accept device
-          args.bobPhone.once('unlockRequired', async () => {
-            args.bobPhone.unlockCurrentDevice({ unlockKey: bobUnlockKey });
-          });
-          await args.bobPhone.open(bobIdentity);
+          await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
 
           const decrypted = await args.bobPhone.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
@@ -217,15 +213,11 @@ const generateEncryptTests = (args: TestArgs) => {
       const aliceIdentity = args.trustchainHelper.generateIdentity();
       alicePublicIdentity = getPublicIdentity(aliceIdentity);
       const bobIdentity = args.trustchainHelper.generateIdentity();
-      await args.bobLaptop.open(bobIdentity);
-      await args.aliceLaptop.open(aliceIdentity);
+      await args.bobLaptop.signUp(bobIdentity);
+      await args.aliceLaptop.signUp(aliceIdentity);
       const bobUnlockPassword = 'my password';
-      await args.bobLaptop.registerUnlock({ password: 'my password' });
-
-      args.bobPhone.once('unlockRequired', async () => {
-        args.bobPhone.unlockCurrentDevice({ password: bobUnlockPassword });
-      });
-      await args.bobPhone.open(bobIdentity);
+      await args.bobLaptop.registerUnlock({ password: bobUnlockPassword });
+      await args.bobPhone.signIn(bobIdentity, { password: bobUnlockPassword });
     });
 
     after(async () => {
@@ -286,7 +278,7 @@ const generateEncryptTests = (args: TestArgs) => {
     describe(`${size} binary resource encryption`, () => {
       before(async () => {
         const aliceIdentity = args.trustchainHelper.generateIdentity();
-        await args.aliceLaptop.open(aliceIdentity);
+        await args.aliceLaptop.signUp(aliceIdentity);
       });
 
       after(async () => {

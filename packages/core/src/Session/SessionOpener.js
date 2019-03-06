@@ -1,22 +1,45 @@
 // @flow
 
 import EventEmitter from 'events';
-import { tcrypto } from '@tanker/crypto';
 import Trustchain from '../Trustchain/Trustchain';
-import { PromiseWrapper } from '../PromiseWrapper';
 import Storage, { type DataStoreOptions } from './Storage';
 import { Unlocker } from '../Unlock/Unlocker';
-import { DEVICE_TYPE } from '../Unlock/unlock';
 
 import { type UserData } from '../UserData';
 
 import { takeChallenge } from './ClientAuthenticator';
 import { Client, type ClientOptions } from '../Network/Client';
 
-import { MissingEventHandler, OperationCanceled } from '../errors';
+import { OperationCanceled, IdentityAlreadyRegistered } from '../errors';
 import { Session } from './Session';
 import LocalUser from './LocalUser';
 import { type DelegationToken } from './delegation';
+
+export const SIGN_IN_RESULT = Object.freeze({
+  OK: 1,
+  IDENTITY_VERIFICATION_NEEDED: 2,
+  IDENTITY_NOT_REGISTERED: 3,
+});
+
+export type SignInResult = $Values<typeof SIGN_IN_RESULT>;
+
+export type OpenResult = {|
+  signInResult: SignInResult,
+  session?: Session,
+|};
+
+export const OPEN_MODE = Object.freeze({
+  SIGN_UP: 1,
+  SIGN_IN: 2,
+});
+
+export type OpenMode = $Values<typeof OPEN_MODE>;
+
+export type SignInOptions = {|
+  unlockKey?: string,
+  verificationCode?: string,
+  password?: string,
+|};
 
 export class SessionOpener extends EventEmitter {
   _storage: Storage;
@@ -26,7 +49,6 @@ export class SessionOpener extends EventEmitter {
   _delegationToken: DelegationToken;
 
   unlocker: Unlocker;
-  _unlockInProgress: PromiseWrapper<void>;
 
   constructor(userData: UserData, storage: Storage, trustchain: Trustchain, client: Client) {
     super();
@@ -44,10 +66,6 @@ export class SessionOpener extends EventEmitter {
       this._localUser,
       this._client,
     );
-  }
-
-  get unlockRequired(): bool {
-    return !!this._unlockInProgress;
   }
 
   static create = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
@@ -71,33 +89,34 @@ export class SessionOpener extends EventEmitter {
     await this._client.sendBlock(newUserBlock);
   }
 
-  _unlockExistingUser = async (allowedToUnlock: bool) => {
-    this._unlockInProgress = new PromiseWrapper();
-    try {
-      const publicSignatureKeySignature = tcrypto.sign(this._localUser.publicSignatureKey, this._localUser.privateSignatureKey);
-      await this._client.subscribeToCreation(this._localUser.publicSignatureKey, publicSignatureKeySignature, this._unlockInProgress.resolve);
-
-      if (this._localUser.deviceType === DEVICE_TYPE.server_device) {
-        // $FlowIKnow that unlockKey is present in userData
-        await this.unlocker.unlockWithUnlockKey(this._localUser.unlockKey);
-      } else if (!this._unlockInProgress.settled && !allowedToUnlock) {
-        throw new MissingEventHandler('unlockRequired');
-      } else {
-        this.emit('unlockRequired');
-      }
-      await this._unlockInProgress.promise;
-    } finally {
-      delete this._unlockInProgress;
-    }
+  _unlockExistingUser = async (signInOptions?: SignInOptions): Promise<SignInResult> => {
+    if (signInOptions && signInOptions.unlockKey)
+      await this.unlocker.unlockWithUnlockKey(signInOptions.unlockKey);
+    else if (signInOptions && signInOptions.verificationCode)
+      await this.unlocker.unlockWithPassword(null, signInOptions.verificationCode);
+    else if (signInOptions && signInOptions.password)
+      await this.unlocker.unlockWithPassword(signInOptions.password, null);
+    else
+      return SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED;
+    return SIGN_IN_RESULT.OK;
   }
 
-  openSession = async (allowedToUnlock: bool): Promise<Session> => {
+  openSession = async (openMode: OpenMode, signInOptions?: SignInOptions): Promise<OpenResult> => {
     if (!this._storage.hasLocalDevice()) {
       const userExists = await this._client.userExists(this._localUser.trustchainId, this._localUser.userId, this._localUser.publicSignatureKey);
-      if (userExists) {
-        await this._unlockExistingUser(allowedToUnlock);
-      } else {
+      if (userExists && openMode === OPEN_MODE.SIGN_UP) {
+        throw new IdentityAlreadyRegistered('signUp failed: user already exists');
+      } else if (userExists) {
+        const result = await this._unlockExistingUser(signInOptions);
+        if (result !== SIGN_IN_RESULT.OK) {
+          return { signInResult: result };
+        }
+      } else if (openMode === OPEN_MODE.SIGN_UP) {
         await this._createNewUser();
+      } else if (openMode === OPEN_MODE.SIGN_IN) {
+        return { signInResult: SIGN_IN_RESULT.IDENTITY_NOT_REGISTERED };
+      } else {
+        throw new Error('assertion error: invalid open mode');
       }
     }
     const unlockMethods = await this._client.setAuthenticator((challenge: string) => takeChallenge(this._localUser, this._storage.keyStore.signatureKeyPair, challenge));
@@ -111,16 +130,12 @@ export class SessionOpener extends EventEmitter {
 
       throw new OperationCanceled('this device was revoked');
     }
-    return new Session(this._localUser, this._storage, this._trustchain, this._client);
+    return { session: new Session(this._localUser, this._storage, this._trustchain, this._client), signInResult: SIGN_IN_RESULT.OK };
   };
 
   cancel = async () => {
     await this._trustchain.close();
     await this._client.close();
     await this._storage.close();
-
-    if (this._unlockInProgress) {
-      this._unlockInProgress.reject(new OperationCanceled('Open canceled while unlocking'));
-    }
   }
 }

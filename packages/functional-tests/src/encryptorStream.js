@@ -26,8 +26,8 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
       const aliceIdentity = args.trustchainHelper.generateIdentity();
       const bobIdentity = args.trustchainHelper.generateIdentity();
       bobPublicIdentity = getPublicIdentity(bobIdentity);
-      await args.aliceLaptop.open(aliceIdentity);
-      await args.bobLaptop.open(bobIdentity);
+      await args.aliceLaptop.signUp(aliceIdentity);
+      await args.bobLaptop.signUp(bobIdentity);
     });
 
     afterEach(async () => {

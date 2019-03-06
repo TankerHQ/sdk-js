@@ -12,7 +12,7 @@ import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEV
 
 import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
-import { SessionOpener } from './Session/SessionOpener';
+import { SessionOpener, type OpenMode, type SignInResult, type SignInOptions, SIGN_IN_RESULT, OPEN_MODE } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import EncryptorStream from './DataProtection/EncryptorStream';
@@ -20,13 +20,11 @@ import DecryptorStream from './DataProtection/DecryptorStream';
 
 import { TANKER_SDK_VERSION as version } from './version';
 
+export type { SignInOptions, SignInResult } from './Session/SessionOpener';
+
 const statusDefs = [
   /* 0 */ { name: 'CLOSED', description: 'tanker session is closed' },
   /* 1 */ { name: 'OPEN', description: 'tanker session is open' },
-  /* 2 */ { name: 'OPENING', description: 'opening tanker session' },
-  /* 3 */ { name: 'USER_CREATION', description: 'new tanker user registration: waiting for finalizeUserCreation to be called' },
-  /* 4 */ { name: 'UNLOCK_REQUIRED', description: 'new tanker device registration: the device needs to be unlocked' },
-  /* 5 */ { name: 'CLOSING', description: 'closing tanker session' },
 ];
 
 export const TankerStatus: { [name: string]: number } = (() => {
@@ -48,6 +46,11 @@ type TankerDefaultOptions = {|
 export type TankerOptions = {|
   ...TankerDefaultOptions,
   trustchainId: b64string
+|};
+
+export type AuthenticationMethods = {|
+  email?: string,
+  password?: string,
 |};
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefaultOptions) {
@@ -74,11 +77,7 @@ export class Tanker extends EventEmitter {
   _dataStoreOptions: DataStoreOptions;
 
   CLOSED: number = TankerStatus.CLOSED;
-  CLOSING: number = TankerStatus.CLOSING;
   OPEN: number = TankerStatus.OPEN;
-  OPENING: number = TankerStatus.OPENING;
-  USER_CREATION: number = TankerStatus.USER_CREATION;
-  UNLOCK_REQUIRED: number = TankerStatus.UNLOCK_REQUIRED;
 
   constructor(options: TankerOptions) {
     super();
@@ -139,8 +138,6 @@ export class Tanker extends EventEmitter {
   get status(): number {
     if (this._session) {
       return this.OPEN;
-    } else if (this._sessionOpener && this._sessionOpener.unlockRequired) {
-      return this.UNLOCK_REQUIRED;
     }
     return this.CLOSED;
   }
@@ -201,21 +198,40 @@ export class Tanker extends EventEmitter {
     }
   }
 
-  async open(identityB64: b64string): Promise<number> {
+  async signUp(identityB64: b64string, authenticationMethods?: AuthenticationMethods): Promise<void> {
+    await this._open(identityB64, OPEN_MODE.SIGN_UP);
+    if (authenticationMethods) {
+      await this.registerUnlock(authenticationMethods);
+    }
+  }
+
+  async signIn(identityB64: b64string, signInOptions?: SignInOptions): Promise<SignInResult> {
+    return this._open(identityB64, OPEN_MODE.SIGN_IN, signInOptions);
+  }
+
+  async _open(identityB64: b64string, openMode: OpenMode, signInOptions?: SignInOptions): Promise<SignInResult> {
     this.assert(this.CLOSED, 'open a session');
     // Type verif arguments
     if (!identityB64 || typeof identityB64 !== 'string')
       throw new InvalidArgument('identity', 'b64string', identityB64);
     // End type verif
-    const userData = extractUserData(utils.fromBase64(this.trustchainId), identityB64);
+    const userData = extractUserData(identityB64);
+
+    if (this.trustchainId !== utils.toBase64(userData.trustchainId))
+      throw new InvalidArgument('identity', 'b64string', identityB64);
+
     const sessionOpener = await SessionOpener.create(userData, this._dataStoreOptions, this._clientOptions);
     this._setSessionOpener(sessionOpener);
 
-    const allowedToUnlock = this.listenerCount('unlockRequired') !== 0;
+    const openResult = await this._sessionOpener.openSession(openMode, signInOptions);
 
-    const session = await this._sessionOpener.openSession(allowedToUnlock);
-    this._setSession(session);
-    return this.OPEN;
+    if (openResult.signInResult === SIGN_IN_RESULT.OK) {
+      if (!openResult.session)
+        throw new Error('Assertion error: Session should be opened');
+      this._setSession(openResult.session);
+    }
+
+    return openResult.signInResult;
   }
 
   async close(): Promise<void> {
@@ -291,7 +307,6 @@ export class Tanker extends EventEmitter {
   }
 
   async unlockCurrentDevice(value: UnlockDeviceParams): Promise<void> {
-    this.assert(this.UNLOCK_REQUIRED, 'unlock a device');
     if (!value || typeof value !== 'object' || value instanceof Array) {
       throw new InvalidArgument('unlock options', 'object', value);
     } else if (Object.keys(value).length !== 1) {

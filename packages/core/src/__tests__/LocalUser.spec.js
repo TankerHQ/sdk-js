@@ -49,7 +49,7 @@ describe('Local User', () => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     userIdString = 'clear user id';
     identity = createIdentity(trustchainId, userIdString, trustchainKeyPair.privateKey);
-    userData = extractUserData(trustchainId, identity);
+    userData = extractUserData(identity);
   });
 
   beforeEach(async () => {

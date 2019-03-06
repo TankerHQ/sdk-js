@@ -73,7 +73,7 @@ describe('Tanker', () => {
     });
 
     it('instance should have numeric status constants matching TankerStatus', () => {
-      const statuses = ['CLOSED', 'CLOSING', 'UNLOCK_REQUIRED', 'OPEN', 'OPENING', 'USER_CREATION'];
+      const statuses = ['CLOSED', 'OPEN'];
       const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
       const tanker = new Tanker({ trustchainId: 'nevermind', dataStore, sdkType: 'test' });
 
@@ -98,34 +98,34 @@ describe('Tanker', () => {
       });
     });
 
-    describe('open', () => {
+    describe('signUp', () => {
       it('should throw when identity is not base64', async () => {
-        await expect(tanker.open('not b64')).to.be.rejected;
+        await expect(tanker.signUp('not b64')).to.be.rejected;
       });
 
       it('should throw when identity is null', async () => {
         // $FlowExpectedError
-        await expect(tanker.open(null)).to.be.rejected;
+        await expect(tanker.signUp(null)).to.be.rejected;
       });
 
       it('should throw when secret is empty', async () => {
         const badSecret = '';
         const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.open(identity);
+        const promise = tanker.signUp(identity);
         await expect(promise).to.be.rejectedWith(InvalidIdentity);
       });
 
       it('should throw when secret is the wrong size', async () => {
         const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE - 1));
         const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.open(identity);
+        const promise = tanker.signUp(identity);
         await expect(promise).to.be.rejectedWith(InvalidIdentity);
       });
 
       it('should throw when secret is not the user\'s secret', async () => {
         const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE));
         const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.open(identity);
+        const promise = tanker.signUp(identity);
         await expect(promise).to.be.rejectedWith(InvalidIdentity);
       });
     });

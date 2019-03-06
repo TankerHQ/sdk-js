@@ -13,7 +13,7 @@ export type UserData = {
   deviceType: DeviceType,
 }
 
-export function extractUserData(trustchainId: Uint8Array, identityB64: b64string): UserData {
+export function extractUserData(identityB64: b64string): UserData {
   let identity;
   const deviceType = DEVICE_TYPE.client_device;
   try {
@@ -24,6 +24,8 @@ export function extractUserData(trustchainId: Uint8Array, identityB64: b64string
   const userId = utils.fromBase64(identity.user_id);
 
   const userSecret = utils.fromBase64(identity.user_secret);
+
+  const trustchainId = utils.fromBase64(identity.trustchain_id);
 
   const delegationToken: DelegationToken = {
     ephemeral_public_signature_key: utils.fromBase64(identity.ephemeral_public_signature_key),

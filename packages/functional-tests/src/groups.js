@@ -14,11 +14,11 @@ const generateGroupsTests = (args: TestArgs) => {
     before(async () => {
       const aliceIdentity = args.trustchainHelper.generateIdentity();
       alicePublicIdentity = getPublicIdentity(aliceIdentity);
-      await args.aliceLaptop.open(aliceIdentity);
+      await args.aliceLaptop.signUp(aliceIdentity);
 
       const bobIdentity = args.trustchainHelper.generateIdentity();
       bobPublicIdentity = getPublicIdentity(bobIdentity);
-      await args.bobLaptop.open(bobIdentity);
+      await args.bobLaptop.signUp(bobIdentity);
 
       unknownUsers = [getPublicIdentity(args.trustchainHelper.generateIdentity('galette'))];
     });
