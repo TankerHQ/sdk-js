@@ -73,6 +73,14 @@ describe('BlockVerification', () => {
       );
     });
 
+    it('should reject a root block if it has invalid nature', () => {
+      unverifiedTrustchainCreation.nature = NATURE.user_group_addition;
+      assertFailWithNature(
+        () => verifyTrustchainCreation(unverifiedTrustchainCreation, trustchainId),
+        'invalid_nature'
+      );
+    });
+
     it('should accept a root block if all the requirements are met', () => {
       expect(() => verifyTrustchainCreation(unverifiedTrustchainCreation, trustchainId))
         .not.to.throw();
@@ -159,6 +167,14 @@ describe('BlockVerification', () => {
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
         'invalid_author_type'
+      );
+    });
+
+    it('should reject a deviceCreationV3 if last_reset is not null', () => {
+      unverifiedDeviceCreation.last_reset = new Uint8Array([1]);
+      assertFailWithNature(
+        () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
+        'invalid_last_reset'
       );
     });
 
@@ -262,6 +278,31 @@ describe('BlockVerification', () => {
       );
     });
 
+    it('should reject a revocation v2 if could not find revoked user in user store', () => {
+      assertFailWithNature(
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, null),
+        'invalid_revoked_user'
+      );
+    });
+
+    it('should reject a revocation v2 if user keys are missing', () => {
+      // $FlowExpectedError
+      unverifiedDeviceRevocation.user_keys = null;
+      assertFailWithNature(
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        'missing_user_keys'
+      );
+    });
+
+    it('should reject a revocation v2 if previous public user encryption key does not match', () => {
+      // $FlowIKnow user_keys is not null
+      unverifiedDeviceRevocation.user_keys.previous_public_encryption_key = new Uint8Array([1]);
+      assertFailWithNature(
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        'invalid_previous_key'
+      );
+    });
+
     it('should reject a revocation v1 if the user has a user key', () => {
       unverifiedDeviceRevocation.nature = NATURE.device_revocation_v1;
       delete unverifiedDeviceRevocation.user_keys;
@@ -313,6 +354,17 @@ describe('BlockVerification', () => {
         'invalid_recipient'
       );
     });
+
+    it('should reject a keyPublish to device with version mismatch', () => {
+      user.userPublicKeys = [{
+        index: 0,
+        userPublicKey: new Uint8Array(0),
+      }];
+      assertFailWithNature(
+        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[1], user, null),
+        'version_mismatch'
+      );
+    });
   });
 
   describe('key publish to user', () => {
@@ -344,6 +396,21 @@ describe('BlockVerification', () => {
       assertFailWithNature(
         () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null),
         'invalid_recipient'
+      );
+    });
+
+    it('should reject a keyPublish to user if public key is not the most recent', () => {
+      user.userPublicKeys = [{
+        index: unverifiedKeyPublish.index - 1,
+        userPublicKey: unverifiedKeyPublish.recipient,
+      }, {
+        index: unverifiedKeyPublish.index,
+        userPublicKey: new Uint8Array(0),
+      }];
+      unverifiedKeyPublish.index += 1;
+      assertFailWithNature(
+        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, null),
+        'invalid_user_public_key'
       );
     });
   });
