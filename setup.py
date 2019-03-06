@@ -12,9 +12,5 @@ setup(
     packages=find_packages(),
     install_requires=[
         "ci",
-        "psutil",
-        "tbump >= 5.0",
-        "unidecode",
-        "websockets==6.0",
     ],
 )
