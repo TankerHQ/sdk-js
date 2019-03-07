@@ -187,7 +187,6 @@ export default class UserStore {
       deviceId: newDevice.deviceId,
       userId: b64Id,
       isGhostDevice: newDevice.isGhostDevice,
-      isServerDevice: newDevice.isServerDevice,
     };
 
     const storeableEntry: Object = {

@@ -154,22 +154,6 @@ describe('BlockVerification', () => {
       );
     });
 
-    it('should reject a deviceCreationV3 if the parent device is a server, and the new one a client', () => {
-      user.devices[0].isServerDevice = true;
-      assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
-        'invalid_author_type'
-      );
-    });
-
-    it('should reject a deviceCreationV3 if the parent device is a client, and the new one a server', () => {
-      unverifiedDeviceCreation.is_server_device = true;
-      assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
-        'invalid_author_type'
-      );
-    });
-
     it('should reject a deviceCreationV3 if last_reset is not null', () => {
       unverifiedDeviceCreation.last_reset = new Uint8Array([1]);
       assertFailWithNature(

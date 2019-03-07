@@ -21,7 +21,6 @@ export class UnlockKeys {
     trustchainId: this._localUser.trustchainId,
     userId: this._localUser.userId,
     userKeys: this._localUser.currentUserKey,
-    deviceType: this._localUser.deviceType,
     authorDevice: {
       id: this._localUser.deviceId,
       privateSignatureKey: this._localUser.privateSignatureKey,

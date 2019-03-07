@@ -77,7 +77,6 @@ describe('payload test vectors', () => {
       ]),
       user_key_pair: null,
       is_ghost_device: false,
-      is_server_device: false,
       last_reset: new Uint8Array(tcrypto.HASH_SIZE),
       revoked: Number.MAX_SAFE_INTEGER,
     };
@@ -120,7 +119,6 @@ describe('payload test vectors', () => {
       ]),
       user_key_pair: null,
       is_ghost_device: false,
-      is_server_device: false,
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
@@ -189,7 +187,6 @@ describe('payload test vectors', () => {
         encrypted_private_encryption_key: makeUint8Array('user enc key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
-      is_server_device: false,
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
@@ -585,7 +582,6 @@ describe('payloads', () => {
       public_encryption_key: encryptionKeys.publicKey,
       user_key_pair: null,
       is_ghost_device: false,
-      is_server_device: false,
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
@@ -608,7 +604,6 @@ describe('payloads', () => {
         encrypted_private_encryption_key: makeUint8Array('user enc priv key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
-      is_server_device: false,
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
@@ -771,7 +766,6 @@ describe('payloads', () => {
         encrypted_private_encryption_key: makeUint8Array('user enc priv key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
-      is_server_device: false,
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
@@ -794,7 +788,6 @@ describe('payloads', () => {
           encrypted_private_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
         },
         is_ghost_device: true,
-        is_server_device: false,
         revoked: Number.MAX_SAFE_INTEGER,
       };
     });

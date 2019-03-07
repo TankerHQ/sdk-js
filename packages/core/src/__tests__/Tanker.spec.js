@@ -8,7 +8,6 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 import { Tanker, TankerStatus, optionsWithDefaults } from '..';
 import { createIdentityFromSecret } from './TestSessionTokens';
 import { InvalidArgument, InvalidIdentity } from '../errors';
-import { DEVICE_TYPE } from '../Unlock/unlock';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
@@ -142,7 +141,7 @@ describe('Tanker', () => {
         sdkType: 'test'
       });
       // "open" a session
-      tanker._session = ({ localUser: { deviceType: DEVICE_TYPE.client_device } }: any); // eslint-disable-line no-underscore-dangle
+      tanker._session = ({ localUser: {} }: any); // eslint-disable-line no-underscore-dangle
     });
 
     describe('unlock method registration', () => {

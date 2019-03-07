@@ -37,7 +37,6 @@ export type UserDeviceRecord = {|
   public_encryption_key: Uint8Array,
   user_key_pair: ?UserKeyPair,
   is_ghost_device: bool,
-  is_server_device: bool,
 
   revoked: number,
 |}
@@ -186,7 +185,7 @@ export function serializeUserDeviceV3(userDevice: UserDeviceRecord): Uint8Array 
     throw new Error('Assertion error: invalid user device user encrypted private encryption key size');
 
   const deviceFlags = new Uint8Array(1);
-  deviceFlags[0] = ((userDevice.is_server_device ? 1 : 0) << 1) | (userDevice.is_ghost_device ? 1 : 0); // eslint-disable-line no-bitwise
+  deviceFlags[0] = userDevice.is_ghost_device ? 1 : 0;
 
   return concatArrays(
     userDevice.ephemeral_public_signature_key,
@@ -233,7 +232,6 @@ export function unserializeUserDeviceV1(src: Uint8Array): UserDeviceRecord {
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
     (d, o) => ({ user_key_pair: null, newOffset: o }),
     (d, o) => ({ is_ghost_device: false, newOffset: o }),
-    (d, o) => ({ is_server_device: false, newOffset: o }),
     (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }
@@ -248,7 +246,6 @@ export function unserializeUserDeviceV2(src: Uint8Array): UserDeviceRecord {
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
     (d, o) => ({ user_key_pair: null, newOffset: o }),
     (d, o) => ({ is_ghost_device: false, newOffset: o }),
-    (d, o) => ({ is_server_device: false, newOffset: o }),
     (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }
@@ -262,8 +259,7 @@ export function unserializeUserDeviceV3(src: Uint8Array): UserDeviceRecord {
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
     (d, o) => unserializeUserKeyPair(d, o),
-    (d, o) => ({ is_ghost_device: !!(d[o] & 0x01), newOffset: o }), // eslint-disable-line no-bitwise
-    (d, o) => ({ is_server_device: !!(d[o] & 0x02), newOffset: o + 1 }), // eslint-disable-line no-bitwise
+    (d, o) => ({ is_ghost_device: !!(d[o] & 0x01), newOffset: o + 1 }), // eslint-disable-line no-bitwise
     (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }

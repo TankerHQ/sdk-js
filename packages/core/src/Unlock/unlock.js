@@ -15,14 +15,6 @@ export type UnlockKeyRegistration = {|
   block: Block,
 |};
 
-export const DEVICE_TYPE = Object.freeze({
-  client_device: 1,
-  server_device: 2,
-});
-
-export type DeviceType = $Values<typeof DEVICE_TYPE>;
-
-
 export type UnlockDeviceParams = {|
   unlockKey?: UnlockKey,
   password?: string,
@@ -182,7 +174,6 @@ type CreateDevUnlockArgV3 = {
   deviceKeys: DeviceKeys,
   ghostDevice: GhostDevice,
   encryptedUserKey: EncryptedUserKey,
-  deviceType: DeviceType,
 }
 
 type AuthorDevice = {
@@ -194,7 +185,6 @@ type GenerateUnlockKeyRegistrationArg = {
   trustchainId: Uint8Array,
   userId: Uint8Array,
   userKeys: tcrypto.SodiumKeyPair,
-  deviceType: DeviceType,
   authorDevice: AuthorDevice,
 };
 
@@ -204,7 +194,6 @@ export function createDeviceFromUnlockKey({
   deviceKeys,
   ghostDevice,
   encryptedUserKey,
-  deviceType,
 }: CreateDevUnlockArgV3): Block {
   const ghostDeviceEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey);
 
@@ -229,7 +218,6 @@ export function createDeviceFromUnlockKey({
     publicSignatureKey: deviceKeys.signaturePair.publicKey,
     publicEncryptionKey: deviceKeys.encryptionPair.publicKey,
     isGhost: false,
-    isServer: (deviceType === DEVICE_TYPE.server_device)
   });
 }
 
@@ -237,7 +225,6 @@ export function generateUnlockKeyRegistration({
   trustchainId,
   userId,
   userKeys,
-  deviceType,
   authorDevice,
 }: GenerateUnlockKeyRegistrationArg): UnlockKeyRegistration {
   const ghostEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
@@ -255,7 +242,6 @@ export function generateUnlockKeyRegistration({
     publicSignatureKey: ghostSignatureKeyPair.publicKey,
     publicEncryptionKey: ghostEncryptionKeyPair.publicKey,
     isGhost: true,
-    isServer: (deviceType === DEVICE_TYPE.server_device)
   });
 
   const ghostDeviceId = hashBlock(newDeviceBlock);

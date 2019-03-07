@@ -8,7 +8,7 @@ import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
 import { InvalidSessionStatus, InvalidArgument } from './errors';
-import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEVICE_TYPE } from './Unlock/unlock';
+import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams } from './Unlock/unlock';
 
 import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
@@ -338,7 +338,7 @@ export class Tanker extends EventEmitter {
     if (!validateEncryptionOptions(options))
       throw new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<String> }', options);
 
-    const opts = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
+    const opts = { shareWithSelf: true, ...options };
 
     if (opts.shareWithSelf === false && isShareWithOptionsEmpty(options))
       throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);

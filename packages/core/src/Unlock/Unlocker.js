@@ -61,7 +61,6 @@ export class Unlocker {
       deviceKeys: this._localUser.deviceKeys(),
       ghostDevice,
       encryptedUserKey,
-      deviceType: this._localUser.deviceType,
     });
   }
 

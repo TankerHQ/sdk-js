@@ -11,7 +11,6 @@ import Generator, { type GeneratorUserResult, type GeneratorKeyResult, type Gene
 import TrustchainStore from '../Trustchain/TrustchainStore';
 import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
-import { type DeviceType } from '../Unlock/unlock';
 
 import Storage from '../Session/Storage';
 import KeySafe from '../Session/KeySafe';
@@ -81,15 +80,15 @@ export default class TrustchainBuilder {
     }
   }
 
-  async addUserV3(userName: string, deviceType?: DeviceType): Promise<GeneratorUserResult> {
-    const result = await this.generator.newUserCreationV3(userName, { deviceType });
+  async addUserV3(userName: string): Promise<GeneratorUserResult> {
+    const result = await this.generator.newUserCreationV3(userName);
     await this.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(result.block)]);
     return result;
   }
 
-  async addDeviceV3(args: { id: string, parentIndex?: number, deviceType?: DeviceType }): Promise<GeneratorUserResult> {
-    const { id, parentIndex, deviceType } = args;
-    const result = await this.generator.newDeviceCreationV3({ userId: id, parentIndex: parentIndex || 0, deviceType });
+  async addDeviceV3(args: { id: string, parentIndex?: number }): Promise<GeneratorUserResult> {
+    const { id, parentIndex } = args;
+    const result = await this.generator.newDeviceCreationV3({ userId: id, parentIndex: parentIndex || 0 });
     await this.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(result.block)]);
     return result;
   }

@@ -5,7 +5,6 @@ import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
 import { type PublicIdentity } from '@tanker/identity';
 
 import { type UnlockMethods } from '../Network/Client';
-import { type DeviceType } from '../Unlock/unlock';
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import { type UserData } from '../UserData';
@@ -176,9 +175,6 @@ export default class LocalUser extends EventEmitter {
   }
   get trustchainId(): Uint8Array {
     return this._userData.trustchainId;
-  }
-  get deviceType(): DeviceType {
-    return this._userData.deviceType;
   }
   get userSecret(): Uint8Array {
     return this._userData.userSecret;

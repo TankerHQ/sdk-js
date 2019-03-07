@@ -69,10 +69,6 @@ export function verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser
 
     if (utils.toBase64(entry.user_id) !== authorUser.userId)
       throw new InvalidBlockError('forbidden', 'the author is not authorized to create a device for this user', { entry, authorDevice });
-
-    if (entry.is_server_device !== authorDevice.isServerDevice) {
-      throw new InvalidBlockError('invalid_author_type', 'device type mismatch', { entry, authorDevice });
-    }
   } else {
     if (!user || user.devices.length === 0)
       return;
