@@ -13,7 +13,7 @@ export default class EncryptorStream extends Transform {
   _encryptedChunkSize: number;
   _key: Uint8Array;
   _header: HeaderV4;
-  _serizalizedHeader: Uint8Array;
+  _serializedHeader: Uint8Array;
   _state: {
     index: number,
     lastClearChunkSize: number,
@@ -34,14 +34,14 @@ export default class EncryptorStream extends Transform {
       resourceId,
     };
 
-    this._serizalizedHeader = serializeHeaderV4(this._header);
+    this._serializedHeader = serializeHeaderV4(this._header);
 
     this._state = {
       index: 0,
       lastClearChunkSize: 0,
     };
 
-    const overheadPerChunk = this._serizalizedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
+    const overheadPerChunk = this._serializedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
     this._clearChunkSize = this._encryptedChunkSize - overheadPerChunk;
 
     this._configureStreams();
@@ -94,7 +94,7 @@ export default class EncryptorStream extends Transform {
     this._state.lastClearChunkSize = clearChunk.length;
 
     const encryptedData = aead.encryptAEAD(this._key, iv, clearChunk);
-    return concatArrays(this._serizalizedHeader, ivSeed, encryptedData);
+    return concatArrays(this._serializedHeader, ivSeed, encryptedData);
   }
 
   _transform(clearData: Uint8Array, encoding: ?string, done: Function) {
