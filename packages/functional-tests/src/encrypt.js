@@ -104,13 +104,18 @@ const generateEncryptTests = (args: TestArgs) => {
         await expect(args.bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
-      it('throws when calling decrypt with a corrupted buffer', async () => {
+      it('throws when calling decrypt with a corrupted buffer (resource id)', async () => {
         const encrypted = await args.bobLaptop.encrypt(clearText);
         const corruptPos = encrypted.length - 4;
         encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
-        // Depending of where the corruption occurs, one of these exceptions is thrown:
-        const exceptionTypes = [errors.DecryptFailed, errors.ResourceNotFound];
-        await expect(args.bobLaptop.decrypt(encrypted)).to.be.rejectedWith(exceptionTypes);
+        await expect(args.bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
+      });
+
+      it('throws when calling decrypt with a corrupted buffer (data)', async () => {
+        const encrypted = await args.bobLaptop.encrypt(clearText);
+        const corruptPos = 4;
+        encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
+        await expect(args.bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptFailed);
       });
 
       it('can encrypt and decrypt a text resource', async () => {

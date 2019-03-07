@@ -1,192 +1,152 @@
 // @flow
-import sinon from 'sinon';
 import { expect } from './chai';
 
-import { decryptAEADv1, decryptAEADv2, decryptAEADv3, encryptAEADv1, encryptAEADv2, encryptAEADv3, extractMac } from '../aead';
-import { MAC_SIZE, SYMMETRIC_KEY_SIZE } from '../tcrypto';
-import { fromString, toString } from '../utils';
+import { decryptAEAD, encryptAEAD, extractMac } from '../aead';
+import { MAC_SIZE, SYMMETRIC_KEY_SIZE, XCHACHA_IV_SIZE } from '../tcrypto';
 
+describe('aead', () => {
+  const key = new Uint8Array(SYMMETRIC_KEY_SIZE); // filled with zeros
+  const iv = new Uint8Array(XCHACHA_IV_SIZE); // filled with zeros
+  const associatedData = new Uint8Array(MAC_SIZE); // filled with zeros
+  const clearData = new Uint8Array([116, 101, 115, 116]); // bytes of "test" string
 
-const key = 'ThisIsABadKey';
-const goodKey = new Uint8Array(SYMMETRIC_KEY_SIZE);
+  const testVector = new Uint8Array([
+    0x0c, 0xfb, 0xe5, 0xfd, 0xe7, 0x53, 0x56, 0x56, 0x5f, 0x5e, 0xe3, 0x6a,
+    0x75, 0xe5, 0x9f, 0xd8, 0x1d, 0x63, 0x47, 0x9d,
+  ]);
 
-// IV at the end (...)
-const resV1 = new Uint8Array([
-  0x0c, 0xfb, 0xe5, 0xfd, 0xe7, 0x53, 0x56, 0x56, 0x5f, 0x5e, 0xe3,
-  0x6a, 0x75, 0xe5, 0x9f, 0xd8, 0x1d, 0x63, 0x47, 0x9d, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-]);
+  // IV at the end (...)
+  const testVectorWithAssociatedData = new Uint8Array([
+    0x0c, 0xfb, 0xe5, 0xfd, 0x51, 0x76, 0xeb, 0x1e, 0xe8, 0x59, 0x82, 0xa1,
+    0x37, 0x72, 0xad, 0x5e, 0x30, 0xeb, 0x6d, 0xfa,
+  ]);
 
-// IV at the begining
-const resV2 = new Uint8Array([
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x0c, 0xfb, 0xe5, 0xfd, 0xe7, 0x53, 0x56, 0x56, 0x5f,
-  0x5e, 0xe3, 0x6a, 0x75, 0xe5, 0x9f, 0xd8, 0x1d, 0x63, 0x47, 0x9d
-]);
-
-// No IV
-const resV3 = new Uint8Array([
-  0x0c, 0xfb, 0xe5, 0xfd, 0xe7, 0x53, 0x56, 0x56, 0x5f, 0x5e, 0xe3,
-  0x6a, 0x75, 0xe5, 0x9f, 0xd8, 0x1d, 0x63, 0x47, 0x9d
-]);
-
-
-// IV at the end (...)
-const resV1WithAssociatedData = new Uint8Array([
-  0x0c, 0xfb, 0xe5, 0xfd, 0x51, 0x76, 0xeb, 0x1e, 0xe8, 0x59, 0x82,
-  0xa1, 0x37, 0x72, 0xad, 0x5e, 0x30, 0xeb, 0x6d, 0xfa, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-]);
-
-// IV at the begining
-const resV2WithAssociatedData = new Uint8Array([
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x0c, 0xfb, 0xe5, 0xfd, 0x51, 0x76, 0xeb, 0x1e, 0xe8,
-  0x59, 0x82, 0xa1, 0x37, 0x72, 0xad, 0x5e, 0x30, 0xeb, 0x6d, 0xfa
-]);
-
-// No IV
-const resV3WithAssociatedData = new Uint8Array([
-  0x0c, 0xfb, 0xe5, 0xfd, 0x51, 0x76, 0xeb, 0x1e, 0xe8, 0x59, 0x82,
-  0xa1, 0x37, 0x72, 0xad, 0x5e, 0x30, 0xeb, 0x6d, 0xfa
-]);
-
-// On all platforms, make getRandomValues a no-op method, i.e. it
-// will not populate the Uint8Array taken in argument.
-const stubCrypto = () => {
-  const hasWindow = typeof window !== 'undefined';
-  if (!hasWindow) {
-    global.window = { crypto: { getRandomValues: () => {} } };
-    return () => { delete global.window; };
-  }
-
-  let randomStub;
-  const hasMSCrypto = typeof window.msCrypto !== 'undefined';
-  if (hasMSCrypto)
-    randomStub = sinon.stub(window.msCrypto, 'getRandomValues').returns();
-  else
-    randomStub = sinon.stub(window.crypto, 'getRandomValues').returns();
-
-  return () => { randomStub.restore(); };
-};
-
-function testAeadEncrypt(name, aeadFunc, testVector, testVectorWithAssociatedData) {
-  return describe(name, () => {
-    it('Should throw if no params are given', async () => {
+  describe('encryptAEAD', () => {
+    it('should throw if no params are given', () => {
       // $FlowExpectedError
-      const promise = aeadFunc();
-      await expect(promise).to.be.rejected;
+      expect(() => encryptAEAD()).to.throw(TypeError);
     });
 
-    it('Should throw if key is undefined', async () => {
+    it('should throw if key is undefined', () => {
       // $FlowExpectedError
-      const promise = aeadFunc(undefined, fromString('test'));
-      await expect(promise).to.be.rejected;
+      expect(() => encryptAEAD(undefined, iv, clearData)).to.throw(TypeError);
     });
 
-    it('Should throw if message is empty', async () => {
+    it('should throw if key type is wrong', () => {
+      const badKey = 'ThisIsABadKey';
       // $FlowExpectedError
-      const promise = aeadFunc(key, fromString(''));
-      await expect(promise).to.be.rejected;
+      expect(() => encryptAEAD(badKey, iv, clearData)).to.throw(TypeError);
     });
 
-    it('Should throw if key type is wrong', async () => {
+    it('should throw if key has the wrong length', () => {
+      const badKey = new Uint8Array(SYMMETRIC_KEY_SIZE - 1);
+      expect(() => encryptAEAD(badKey, iv, clearData)).to.throw(TypeError);
+    });
+
+    it('should throw if iv is undefined', () => {
       // $FlowExpectedError
-      const promise = aeadFunc(key, fromString('test'));
-      await expect(promise).to.be.rejected;
+      expect(() => encryptAEAD(key, undefined, clearData)).to.throw(TypeError);
     });
 
-    it('Should throw if key has the wrong length', async () => {
-      const promise = aeadFunc(fromString(key), fromString('test'));
-      await expect(promise).to.be.rejected;
+    it('should throw if iv type is wrong', () => {
+      const badIV = 'ThisIsABadIV';
+      // $FlowExpectedError
+      expect(() => encryptAEAD(key, badIV, clearData)).to.throw(TypeError);
     });
 
-    if (['decryptAEADv3', 'encryptAEADv3'].indexOf(name) === -1) {
-      it('Should not give the same result twice', async () => {
-        const res1 = await aeadFunc(goodKey, fromString('test'));
-        const res2 = await aeadFunc(goodKey, fromString('test'));
-        expect(res1).to.not.be.deep.equal(res2);
-      });
-    }
+    it('should throw if iv has the wrong length', () => {
+      const badIV = new Uint8Array(XCHACHA_IV_SIZE - 1);
+      expect(() => encryptAEAD(key, badIV, clearData)).to.throw(TypeError);
+    });
+
+    it('should throw if message is undefined', () => {
+      // $FlowExpectedError
+      expect(() => encryptAEAD(key, iv, undefined)).to.throw(TypeError);
+    });
+
+    it('should not throw if message is empty', () => {
+      const emptyData = new Uint8Array(0);
+      expect(() => encryptAEAD(key, iv, emptyData)).not.to.throw();
+    });
+
+    it('should not give the same result if changing the iv', () => {
+      const iv2 = new Uint8Array(iv);
+      iv2[0] += 1;
+      const res1 = encryptAEAD(key, iv, clearData);
+      const res2 = encryptAEAD(key, iv2, clearData);
+      expect(res1).to.not.be.deep.equal(res2);
+    });
 
     describe('given a non random IV', () => {
-      let unstubCrypto;
-
-      before(() => {
-        unstubCrypto = stubCrypto();
-      });
-
-      after(() => {
-        unstubCrypto();
-      });
-
-      it('Should always return the same thing if the random is the same', async () => {
-        const res1 = await aeadFunc(goodKey, fromString('test'));
-        const res2 = await aeadFunc(goodKey, fromString('test'));
+      it('should always return the same thing if the random is the same', () => {
+        const res1 = encryptAEAD(key, iv, clearData);
+        const res2 = encryptAEAD(key, iv, clearData);
         expect(res1).to.be.deep.equal(res2);
       });
 
-      it('Should return the expected result', async () => {
-        const res1 = await aeadFunc(goodKey, fromString('test'));
+      it('should return the expected result', () => {
+        const res1 = encryptAEAD(key, iv, clearData);
         expect(res1).to.be.deep.equal(testVector);
       });
 
-      it('Should work with associated data', async () => {
-        const gudAssociatedData = new Uint8Array(MAC_SIZE);
-        const res1 = await aeadFunc(goodKey, fromString('test'), gudAssociatedData);
+      it('should work with associated data', () => {
+        const res1 = encryptAEAD(key, iv, clearData, associatedData);
         expect(res1).to.be.deep.equal(testVectorWithAssociatedData);
       });
     });
   });
-}
 
-function testAeadDecrypt(name, aeadFunc, testVector, testVectorWithAssociatedData) {
-  return describe(name, () => {
-    it('should decrypt', async () => {
-      const res = await aeadFunc(goodKey, testVector);
-      expect(toString(res)).to.deep.equal('test');
+  describe('decryptAEAD', () => {
+    const tamperWith = (data: Uint8Array): Uint8Array => {
+      const bytePosition = Math.floor(Math.random() * data.length);
+      const tamperedData = new Uint8Array(data);
+      tamperedData[bytePosition] = (tamperedData[bytePosition] + 1) % 256;
+      return tamperedData;
+    };
+
+    it('should decrypt without associated data', () => {
+      expect(decryptAEAD(key, iv, testVector)).to.deep.equal(clearData);
     });
 
-    it('Should throw if associated data is wrong', async () => {
-      const wrongAssociatedData = new Uint8Array(MAC_SIZE);
-      const promise = aeadFunc(goodKey, testVector, wrongAssociatedData);
-      await expect(promise).to.be.rejected;
+    it('should throw if key is wrong', () => {
+      const badKey = tamperWith(key);
+      expect(() => decryptAEAD(badKey, iv, testVector)).to.throw();
     });
 
-    it('Should decrypt if associated data is gud', async () => {
-      const gudAssociatedData = new Uint8Array(MAC_SIZE);
-      const promise = aeadFunc(goodKey, testVectorWithAssociatedData, gudAssociatedData);
-      await expect(promise).to.be.fulfilled;
+    it('should throw if iv is wrong', () => {
+      const badIV = tamperWith(iv);
+      expect(() => decryptAEAD(key, badIV, testVector)).to.throw();
+    });
+
+    it('should throw if message is corrupted', () => {
+      const badVector = tamperWith(testVector);
+      expect(() => decryptAEAD(key, iv, badVector)).to.throw();
+    });
+
+    it('should decrypt with associated data', () => {
+      expect(decryptAEAD(key, iv, testVectorWithAssociatedData, associatedData)).to.deep.equal(clearData);
+    });
+
+    it('should throw if associated data is wrong', () => {
+      const badAssociatedData = tamperWith(associatedData);
+      expect(() => decryptAEAD(key, iv, testVectorWithAssociatedData, badAssociatedData)).to.throw();
     });
   });
-}
 
-describe('extractMac', () => {
-  it('should throw if array too short', () => {
-    const tooShort = new Uint8Array(2);
-    expect(() => extractMac(tooShort)).to.throw();
+  describe('extractMac', () => {
+    it('should throw if array too short', () => {
+      const tooShort = new Uint8Array(2);
+      expect(() => extractMac(tooShort)).to.throw();
+    });
+
+    it('should extract the last 16 digits of ciphertext', () => {
+      const last16Digits = new Uint8Array([
+        0xe7, 0x53, 0x56, 0x56, 0x5f, 0x5e, 0xe3, 0x6a, 0x75, 0xe5, 0x9f, 0xd8,
+        0x1d, 0x63, 0x47, 0x9d
+      ]);
+
+      expect(extractMac(testVector))
+        .to.deep.equal(last16Digits);
+    });
   });
-
-  it('should extract the last 16 digits of ciphertext', () => {
-    const last16DigitsExtractedWithLove = new Uint8Array([
-      0xe7, 0x53, 0x56, 0x56, 0x5f, 0x5e, 0xe3, 0x6a, 0x75, 0xe5, 0x9f, 0xd8,
-      0x1d, 0x63, 0x47, 0x9d
-    ]);
-
-    expect(extractMac(resV2))
-      .to.deep.equal(last16DigitsExtractedWithLove);
-  });
-});
-
-describe('Crypto formats', () => {
-  testAeadEncrypt('encryptAEADv1', encryptAEADv1, resV1, resV1WithAssociatedData);
-  testAeadDecrypt('decryptAEADv1', decryptAEADv1, resV1, resV1WithAssociatedData);
-  testAeadEncrypt('encryptAEADv2', encryptAEADv2, resV2, resV2WithAssociatedData);
-  testAeadDecrypt('decryptAEADv2', decryptAEADv2, resV2, resV2WithAssociatedData);
-  testAeadEncrypt('encryptAEADv3', encryptAEADv3, resV3, resV3WithAssociatedData);
-  testAeadDecrypt('decryptAEADv3', decryptAEADv3, resV3, resV3WithAssociatedData);
 });

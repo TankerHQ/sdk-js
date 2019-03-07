@@ -8,6 +8,7 @@ import { warnings } from './WarningsRemover';
 import { errors } from '../index';
 import { makeChunkEncryptor, getChunkKeys, type EncryptorInterface } from '../DataProtection/ChunkEncryptor';
 import { concatArrays } from '../Blocks/Serialize';
+import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
 
 class FakeEncryptor implements EncryptorInterface {
   keys: { [string]: Uint8Array }
@@ -18,7 +19,7 @@ class FakeEncryptor implements EncryptorInterface {
 
   async encryptData(plaintext) {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const encryptedData = await aead.encryptAEADv1(key, plaintext);
+    const encryptedData = EncryptorV1.encrypt(key, plaintext);
     const resourceId = utils.toBase64(aead.extractMac(encryptedData));
     this.keys[resourceId] = key;
     return encryptedData;
@@ -27,7 +28,7 @@ class FakeEncryptor implements EncryptorInterface {
   async decryptData(encryptedData) {
     const resourceId = utils.toBase64(aead.extractMac(encryptedData));
     const key = this.keys[resourceId];
-    return aead.decryptAEADv1(key, encryptedData);
+    return EncryptorV1.decrypt(key, encryptedData);
   }
 }
 
@@ -84,7 +85,7 @@ describe('ChunkEncryptor', () => {
   it('should return encrypted data when calling encrypt without an index', async () => {
     const chunk = await chunkEncryptor.encrypt(clearText);
     // $FlowIKnow
-    const clear = await aead.decryptAEADv1(chunkEncryptor.chunkKeys[0], chunk);
+    const clear = EncryptorV1.decrypt(chunkEncryptor.chunkKeys[0], chunk);
 
     expect(utils.toString(clear)).to.deep.equal(clearText);
   });
@@ -92,7 +93,7 @@ describe('ChunkEncryptor', () => {
   it('should return encrypted data when calling encrypt with an index', async () => {
     const chunk = await chunkEncryptor.encrypt(clearText, 0);
     // $FlowIKnow
-    const clear = await aead.decryptAEADv1(chunkEncryptor.chunkKeys[0], chunk);
+    const clear = EncryptorV1.decrypt(chunkEncryptor.chunkKeys[0], chunk);
 
     expect(utils.toString(clear)).to.deep.equal(clearText);
   });
@@ -100,7 +101,7 @@ describe('ChunkEncryptor', () => {
   it('should create empty elements when encrypt is called with an index > nb chunks', async () => {
     const chunk = await chunkEncryptor.encrypt(clearText, 3);
     // $FlowIKnow
-    const clear = await aead.decryptAEADv1(chunkEncryptor.chunkKeys[3], chunk);
+    const clear = EncryptorV1.decrypt(chunkEncryptor.chunkKeys[3], chunk);
 
     expect(chunkEncryptor.chunkKeys.length).to.deep.equal(4);
     expect(chunkEncryptor.chunkKeys[0]).to.be.null;

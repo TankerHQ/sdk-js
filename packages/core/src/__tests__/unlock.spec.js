@@ -1,9 +1,10 @@
 // @flow
-import { tcrypto, utils, generichash, aead } from '@tanker/crypto';
+import { tcrypto, utils, generichash } from '@tanker/crypto';
 
 import { expect } from './chai';
 import makeUint8Array from './makeUint8Array';
 
+import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
 import { getSignData, ghostDeviceToUnlockKey, createUnlockKeyMessage } from '../Unlock/unlock';
 
 describe('unlock', () => {
@@ -43,7 +44,7 @@ describe('unlock', () => {
     expect(unlockKeyMessage.claims.email).to.deep.equal(utils.fromString(email));
     expect(unlockKeyMessage.claims.password).to.deep.equal(generichash(utils.fromString(password)));
     //$FlowIKnow
-    expect(utils.toString(await aead.decryptAEADv2(userSecret, unlockKeyMessage.claims.unlockKey))).to.deep.equal(unlockKey);
+    expect(utils.toString(EncryptorV2.decrypt(userSecret, unlockKeyMessage.claims.unlockKey))).to.deep.equal(unlockKey);
 
     const signedBuffer = getSignData(unlockKeyMessage);
     expect(tcrypto.verifySignature(signedBuffer, unlockKeyMessage.signature, senderSignatureKeyPair.publicKey)).to.equal(true);
