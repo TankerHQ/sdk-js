@@ -37,15 +37,13 @@ const generateGroupsTests = (args: TestArgs) => {
 
     it('should add a member to a group', async () => {
       const groupId = await args.bobLaptop.createGroup([alicePublicIdentity]);
-      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
-      // FIXME no asserts wtf
+      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
     });
 
     it('should add a member to a group twice', async () => {
       const groupId = await args.bobLaptop.createGroup([alicePublicIdentity]);
-      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
-      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
-      // FIXME no asserts wtf
+      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
+      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
     });
 
     it('throws on groupCreation with invalid user', async () => {
