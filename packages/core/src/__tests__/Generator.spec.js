@@ -10,12 +10,12 @@ import { blockToEntry } from '../Blocks/entries';
 import { type UserDeviceRecord, unserializePayload } from '../Blocks/payloads';
 import { isKeyPublishToDevice, isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
 
-let generator;
-
-const trustchainKeys = tcrypto.makeSignKeyPair();
-
 describe('trustchain-generator', () => {
+  let generator;
+  let trustchainKeys;
+
   beforeEach(async () => {
+    trustchainKeys = tcrypto.makeSignKeyPair();
     generator = await Generator.open(trustchainKeys);
   });
 

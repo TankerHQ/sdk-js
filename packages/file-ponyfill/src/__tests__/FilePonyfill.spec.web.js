@@ -1,21 +1,19 @@
 // @flow
 import { expect } from 'chai';
-import { utils } from '@tanker/crypto';
 
-import FilePonyfill from '../File.ponyfill';
+import FilePonyfill from '../FilePonyfill';
 
 describe('FilePonyfill (web)', () => {
   // Skip if nothing to test
   if (FilePonyfill === undefined || FilePonyfill === File)
     return;
 
-  let content: string;
   let bytes: Uint8Array;
   let name: string;
 
   before(() => {
-    content = '0123456789abcdef';
-    bytes = utils.fromString(content);
+    // string '0123456789abcdef' as bytes:
+    bytes = new Uint8Array([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102]);
     name = 'file.pdf';
   });
 
@@ -50,8 +48,7 @@ describe('FilePonyfill (web)', () => {
       reader.addEventListener('error', reject);
       reader.addEventListener('load', (event: any) => {
         const buffer = event.target.result;
-        const string = utils.toString(new Uint8Array(buffer));
-        resolve(string);
+        resolve(new Uint8Array(buffer));
       });
     });
 
@@ -61,6 +58,6 @@ describe('FilePonyfill (web)', () => {
     reader.readAsArrayBuffer(byteWindow);
 
     const result = await readPromise;
-    expect(result).to.equal(content.slice(start, end));
+    expect(result).to.deep.equal(bytes.subarray(start, end));
   });
 });

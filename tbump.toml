@@ -106,10 +106,6 @@ src = "packages/datastore/dexie-browser/package.json"
 search = '"version": "{current_version}"'
 
 [[file]]
-src = "packages/datastore/dexie-browser/package.json"
-search = '"@tanker/crypto": "{current_version}"'
-
-[[file]]
 src = "packages/datastore/pouchdb-base/package.json"
 search = '"version": "{current_version}"'
 
@@ -146,16 +142,8 @@ src = "packages/file-ponyfill/package.json"
 search = '"version": "{current_version}"'
 
 [[file]]
-src = "packages/file-ponyfill/package.json"
-search = '"@tanker/crypto": "{current_version}"'
-
-[[file]]
 src = "packages/file-reader/package.json"
 search = '"version": "{current_version}"'
-
-[[file]]
-src = "packages/file-reader/package.json"
-search = '"@tanker/crypto": "{current_version}"'
 
 [[file]]
 src = "packages/file-reader/package.json"
@@ -168,10 +156,6 @@ search = '"version": "{current_version}"'
 [[file]]
 src = "packages/stream/base/package.json"
 search = '"@tanker/errors": "{current_version}"'
-
-[[file]]
-src = "packages/stream/base/package.json"
-search = '"@tanker/crypto": "{current_version}"'
 
 [[file]]
 src = "packages/stream/browser/package.json"
@@ -194,10 +178,6 @@ src = "packages/stream/browser/package.json"
 search = '"@tanker/stream-base": "{current_version}"'
 
 [[file]]
-src = "packages/stream/browser/package.json"
-search = '"@tanker/crypto": "{current_version}"'
-
-[[file]]
 src = "packages/stream/node/package.json"
 search = '"version": "{current_version}"'
 
@@ -208,7 +188,3 @@ search = '"@tanker/errors": "{current_version}"'
 [[file]]
 src = "packages/stream/node/package.json"
 search = '"@tanker/stream-base": "{current_version}"'
-
-[[file]]
-src = "packages/stream/node/package.json"
-search = '"@tanker/crypto": "{current_version}"'

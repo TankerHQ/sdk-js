@@ -1,6 +1,4 @@
 // @flow
-import { utils } from '@tanker/crypto';
-
 import { expect } from './chai';
 import MergerStream from '../MergerStream';
 
@@ -16,7 +14,7 @@ describe('MergerStream (node)', () => {
   let input: Array<Uint8Array>;
 
   before(() => {
-    bytes = utils.fromString('0123456789abcdef');
+    bytes = new Uint8Array([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102]); // 16 bytes
 
     input = [
       bytes.subarray(0, 8),

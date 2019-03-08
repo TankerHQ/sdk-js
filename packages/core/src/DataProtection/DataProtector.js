@@ -87,7 +87,13 @@ export default class DataProtector {
   }
 
   async _separateGroupsFromUsers(shareWith: Array<string>): Object {
-    const maybeGroupIds = shareWith.map(utils.fromBase64).filter(id => id.length === tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    const maybeGroupIds = shareWith.map((candidate) => {
+      try {
+        return utils.fromBase64(candidate);
+      } catch (e) { // not base64, can't be a groupId
+        return new Uint8Array(0); // will be filtered out
+      }
+    }).filter(id => id.length === tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
     const groups = await this._groupManager.findGroups(maybeGroupIds);
     const b64groupIds = groups.map(group => utils.toBase64(group.groupId));

@@ -33,17 +33,24 @@ class FakeKeyStore {
 }
 
 describe('Local User', () => {
-  const trustchainId = random(tcrypto.HASH_SIZE);
-  const trustchainKeyPair = tcrypto.makeSignKeyPair();
-  const userIdString = 'clear user id';
-  const userToken = createUserToken(trustchainId, userIdString, trustchainKeyPair.privateKey);
-  const userData = extractUserData(trustchainId, userIdString, userToken);
-
   let localUser;
   let deviceCreation1;
   let deviceCreation2;
   let keyStore;
   let testGenerator;
+  let trustchainId;
+  let trustchainKeyPair;
+  let userIdString;
+  let userToken;
+  let userData;
+
+  before(() => {
+    trustchainId = random(tcrypto.HASH_SIZE);
+    trustchainKeyPair = tcrypto.makeSignKeyPair();
+    userIdString = 'clear user id';
+    userToken = createUserToken(trustchainId, userIdString, trustchainKeyPair.privateKey);
+    userData = extractUserData(trustchainId, userIdString, userToken);
+  });
 
   beforeEach(async () => {
     testGenerator = new TestGenerator();

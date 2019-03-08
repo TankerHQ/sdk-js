@@ -33,9 +33,10 @@ export function obfuscateUserId(trustchainId: Uint8Array, userId: string): Uint8
 
 export function createUserSecretBinary(trustchainId: b64string, userId: string): Uint8Array {
   if (typeof trustchainId !== 'string')
-    throw new Error('Invalid Trustchain ID.');
+    throw new TypeError('Invalid Trustchain ID.');
+
   if (typeof userId !== 'string')
-    throw new Error('Invalid user ID.');
+    throw new TypeError('Invalid user ID.');
 
   const rand = random(USER_SECRET_SIZE - 1);
   const check = userSecretHash(rand, obfuscateUserId(fromBase64(trustchainId), userId));
@@ -51,8 +52,11 @@ export function createUserSecretB64(trustchainId: b64string, userId: string): b6
 }
 
 export function checkUserSecret(userId: Uint8Array, secret: Uint8Array) {
-  if (!secret)
-    throw new Error(`Empty user secret provided, got ${secret}`);
+  if (!(userId instanceof Uint8Array))
+    throw new TypeError(`Bad userId provided, expected a Uint8Array but got ${userId}`);
+
+  if (!(secret instanceof Uint8Array))
+    throw new TypeError(`Bad secret provided, expected a Uint8Array but got ${secret}`);
 
   if (secret.length !== USER_SECRET_SIZE)
     throw new Error(`Invalid secret length. Expecting ${USER_SECRET_SIZE}, got ${secret.length}`);
