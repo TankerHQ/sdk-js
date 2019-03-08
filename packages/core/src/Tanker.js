@@ -23,25 +23,36 @@ import { TANKER_SDK_VERSION } from './version';
 
 export type { SignInOptions, SignInResult } from './Session/SessionOpener';
 
-type TankerDefaultOptions = {|
+type TankerDefaultOptions = $Exact<{
   trustchainId?: b64string,
   socket?: any,
   url?: string,
-  dataStore?: { adapter: Function, prefix?: string, dbPath?: string, url?: string },
-  sdkType?: string,
-|};
+  dataStore: DataStoreOptions,
+  sdkType: string,
+}>;
 
-export type TankerOptions = {|
-  ...TankerDefaultOptions,
-  trustchainId: b64string
-|};
+type TankerCoreOptions = $Exact<{
+  trustchainId: b64string,
+  socket?: any,
+  url?: string,
+  dataStore: DataStoreOptions,
+  sdkType: string,
+}>;
+
+export type TankerOptions = $Exact<{
+  trustchainId: b64string,
+  socket?: any,
+  url?: string,
+  dataStore?: DataStoreOptions,
+  sdkType?: string,
+}>;
 
 export type AuthenticationMethods = {|
   email?: string,
   password?: string,
 |};
 
-export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefaultOptions) {
+export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefaultOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
     throw new InvalidArgument('options', 'object', options);
 
@@ -60,14 +71,14 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefa
 export class Tanker extends EventEmitter {
   _session: Session;
   _sessionOpener: SessionOpener;
-  _options: TankerOptions;
+  _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
 
   static version = TANKER_SDK_VERSION;
   static signInResult = SIGN_IN_RESULT;
 
-  constructor(options: TankerOptions) {
+  constructor(options: TankerCoreOptions) {
     super();
 
     if (!options || typeof options !== 'object' || options instanceof Array) {
@@ -118,7 +129,7 @@ export class Tanker extends EventEmitter {
     return this._options.trustchainId;
   }
 
-  get options(): TankerOptions {
+  get options(): TankerCoreOptions {
     return this._options;
   }
 
@@ -337,8 +348,10 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.createGroup(users);
   }
 
-  async updateGroupMembers(groupId: string, { usersToAdd }: {| usersToAdd?: Array<b64string> |}): Promise<void> {
+  async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd: Array<string> }>): Promise<void> {
     this.assert(this.isOpen, 'update a group');
+
+    const { usersToAdd } = args;
 
     if (!usersToAdd || !(usersToAdd instanceof Array))
       throw new InvalidArgument('usersToAdd', 'Array<string>', usersToAdd);

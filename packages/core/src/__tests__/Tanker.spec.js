@@ -54,23 +54,27 @@ describe('Tanker', () => {
     });
 
     it('tanker options should accept defaults', () => {
+      const { adapter } = dataStoreConfig;
       const options = { trustchainId: 'id' };
-      const defaultOptions = { url: 'http://default.io', sdkType: 'default' };
+      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter } };
       const mergedOptions = optionsWithDefaults(options, defaultOptions);
-      expect(mergedOptions).to.deep.equal({ trustchainId: 'id', url: 'http://default.io', sdkType: 'default' });
+      expect(mergedOptions).to.deep.equal({
+        trustchainId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }
+      });
     });
 
     it('tanker options should (deep) override defaults', () => {
-      const defaultAdapter = () => {};
+      const { adapter } = dataStoreConfig;
+
       const defaultPrefix = makePrefix();
-      const defaultDatastore = { adapter: defaultAdapter, prefix: defaultPrefix };
-      const defaultOptions = { trustchainId: 'default', url: 'http://default.io', dataStore: defaultDatastore };
+      const defaultDatastore = { adapter, prefix: defaultPrefix };
+      const defaultOptions = { trustchainId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore };
 
-      const newAdapter = () => {};
-      const newOptions = { trustchainId: 'new', url: 'http://new.io', dataStore: { adapter: newAdapter } };
+      const newPrefix = makePrefix();
+      const newOptions = { trustchainId: 'new', url: 'http://new.io', dataStore: { adapter, prefix: newPrefix } };
 
-      const expectedDatastore = { adapter: newAdapter, prefix: defaultPrefix };
-      const expectedOptions = { trustchainId: 'new', url: 'http://new.io', dataStore: expectedDatastore };
+      const expectedDatastore = { adapter, prefix: newPrefix };
+      const expectedOptions = { trustchainId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore };
 
       const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
       expect(mergedOptions).to.deep.equal(expectedOptions);
