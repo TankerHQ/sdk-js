@@ -1,5 +1,5 @@
 # Generated with dmenv 0.11.1, python 3.6.8, on Linux
--e git+ssh://git@tanker.local/Tanker/ci@7862e8a57d835ed13e0c185462bce885f6576e3d#egg=ci
+-e git+ssh://git@tanker.local/Tanker/ci@1fc5e67d0ff102c296667116065894279c12d82f#egg=ci
 astroid==2.2.4
 attrs==19.1.0
 bottle==0.12.16
