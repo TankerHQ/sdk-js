@@ -1,6 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { type PublicIdentity } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
@@ -8,16 +9,16 @@ import { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
 import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
-import { InvalidArgument, InvalidGroupSize, ServerError, InvalidIdentity, TankerError } from '../errors';
-
-function publicIdentityToB64UserId(publicIdentity: b64string): b64string {
-  const decodedIdentity = utils.fromB64Json(publicIdentity);
-  if (decodedIdentity.target !== 'user')
-    throw new InvalidIdentity(new TankerError('A PublicTemporalIdentity cannot have a userId'));
-  return decodedIdentity.value;
-}
+import { InvalidArgument, InvalidGroupSize, ServerError, InvalidIdentity } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
+
+function decodePublicIdentity(publicIdentity: b64string): PublicIdentity {
+  const decodedIdentity = utils.fromB64Json(publicIdentity);
+  if (decodedIdentity.target !== 'user')
+    throw new InvalidIdentity('Group members cannot be provisional identities');
+  return decodedIdentity;
+}
 
 export default class GroupManager {
   _localUser: LocalUser
@@ -46,8 +47,8 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
-    const b64UserIds = publicIdentities.map(publicIdentityToB64UserId);
-    const fullUsers = await this._userAccessor.getUsers({ b64UserIds, publicIdentities });
+    const decodedIdentities = publicIdentities.map(decodePublicIdentity);
+    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
@@ -70,8 +71,8 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
 
-    const b64UserIds = publicIdentities.map(publicIdentityToB64UserId);
-    const fullUsers = await this._userAccessor.getUsers({ b64UserIds, publicIdentities });
+    const decodedIdentities = publicIdentities.map(decodePublicIdentity);
+    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     const internalGroupId = utils.fromBase64(groupId);
     await this._trustchain.updateGroupStore([internalGroupId]);

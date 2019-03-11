@@ -99,8 +99,8 @@ export default class DataProtector {
     const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
     const groups = await this._groupManager.findGroups(groupIds);
     const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
-    const b64UserIds = b64UserIdentities.map(u => utils.fromB64Json(u).value);
-    const users = await this._userAccessor.getUsers({ b64UserIds, publicIdentities: b64UserIdentities });
+    const decodedIdentities = b64UserIdentities.map(utils.fromB64Json);
+    const users = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;

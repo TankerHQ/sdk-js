@@ -37,11 +37,15 @@ export class DecryptFailed extends TankerError {
 }
 
 export class InvalidIdentity extends TankerError {
-  next: Error;
+  next: ?Error;
 
-  constructor(e: Error) {
-    super('InvalidIdentity');
-    this.next = e;
+  constructor(e: Error | string) {
+    if (typeof e === 'string') {
+      super('InvalidIdentity', e);
+    } else {
+      super('InvalidIdentity');
+      this.next = e;
+    }
   }
 }
 
