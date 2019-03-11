@@ -3,11 +3,31 @@
 import uuid from 'uuid';
 import { expect } from 'chai';
 
-import { toBase64 } from '../../../../packages/client-node';
-import { generateUserToken } from '../../../../packages/identity';
+import { utils, type b64string } from '../../../../packages/crypto';
+import { createIdentity } from '../../../../packages/identity';
 import { TrustchainHelper } from '../../../../packages/functional-tests/src/Helpers';
 import { makeCurrentUser, makeUser } from './helpers';
 
+/* eslint-disable camelcase */
+function generateUserToken(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): b64string {
+  const identity = createIdentity(trustchainId, trustchainPrivateKey, userId);
+  const {
+    ephemeral_public_signature_key,
+    ephemeral_private_signature_key,
+    value: user_id,
+    delegation_signature,
+    user_secret,
+  } = utils.fromB64Json(identity);
+
+  return utils.toB64Json({
+    delegation_signature,
+    ephemeral_public_signature_key,
+    ephemeral_private_signature_key,
+    user_id,
+    user_secret,
+  });
+}
+/* eslint-disable enable */
 
 function generateTests(version: string, Tanker: any) {
   describe(version, function () { // eslint-disable-line func-names
@@ -16,7 +36,7 @@ function generateTests(version: string, Tanker: any) {
 
     before(async () => {
       args.trustchainHelper = await TrustchainHelper.newTrustchain();
-      args.trustchainId = toBase64(args.trustchainHelper.trustchainId);
+      args.trustchainId = utils.toBase64(args.trustchainHelper.trustchainId);
       const aliceId = uuid.v4();
       const bobId = uuid.v4();
       const trustchainPrivateKey = args.trustchainHelper.trustchainKeyPair.trustchainPrivateKey;

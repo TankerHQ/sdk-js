@@ -6,12 +6,13 @@ export function createIdentityFromSecret(trustchainId: Uint8Array, userId: Uint8
   const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, userId);
 
   const identity = {
+    trustchain_id: utils.toBase64(trustchainId),
+    target: 'user',
+    value: utils.toBase64(userId),
     delegation_signature: utils.toBase64(tcrypto.sign(delegationBuffer, trustchainPrivateKey)),
     ephemeral_private_signature_key: utils.toBase64(ephemeralKeys.privateKey),
     ephemeral_public_signature_key: utils.toBase64(ephemeralKeys.publicKey),
-    user_id: utils.toBase64(userId),
     user_secret: userSecret,
-    trustchain_id: utils.toBase64(trustchainId),
   };
 
   return utils.toB64Json(identity);

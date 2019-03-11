@@ -18,7 +18,7 @@ export function extractUserData(identityB64: b64string): UserData {
   } catch (e) {
     throw new InvalidIdentity(e);
   }
-  const userId = utils.fromBase64(identity.user_id);
+  const userId = utils.fromBase64(identity.value);
 
   const userSecret = utils.fromBase64(identity.user_secret);
 
