@@ -15,12 +15,6 @@ export type UnlockKeyRegistration = {|
   block: Block,
 |};
 
-export type UnlockDeviceParams = {|
-  unlockKey?: UnlockKey,
-  password?: string,
-  verificationCode?: string,
-|}
-
 export type GhostDevice = {
   deviceId: Uint8Array,
   privateSignatureKey: Uint8Array,

@@ -8,7 +8,7 @@ import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
 import { InvalidSessionStatus, InvalidArgument } from './errors';
-import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams } from './Unlock/unlock';
+import { type UnlockKey, type RegisterUnlockParams } from './Unlock/unlock';
 
 import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
@@ -304,22 +304,6 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('register unlock options', 'password should be a string', password);
     }
     return this._session.unlockKeys.registerUnlock(password, email);
-  }
-
-  async unlockCurrentDevice(value: UnlockDeviceParams): Promise<void> {
-    if (!value || typeof value !== 'object' || value instanceof Array) {
-      throw new InvalidArgument('unlock options', 'object', value);
-    } else if (Object.keys(value).length !== 1) {
-      throw new InvalidArgument('unlock options', 'object', value);
-    }
-    const { unlockKey, password, verificationCode } = value;
-    if (unlockKey) {
-      return this._sessionOpener.unlocker.unlockWithUnlockKey(unlockKey);
-    } else if (password || verificationCode) {
-      return this._sessionOpener.unlocker.unlockWithPassword(password, verificationCode);
-    } else {
-      throw new InvalidArgument('unlock options', 'object', value);
-    }
   }
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
