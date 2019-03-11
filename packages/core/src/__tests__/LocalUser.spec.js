@@ -1,15 +1,14 @@
 // @flow
 
-import { tcrypto, random } from '@tanker/crypto';
-
-import { extractUserData } from '../UserData';
-import { createIdentity } from './TestSessionTokens';
+import { tcrypto, random, utils } from '@tanker/crypto';
+import { createIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
-import { type UserKeys } from '../Blocks/payloads';
-
-import LocalUser from '../Session/LocalUser';
 import TestGenerator from './TestGenerator';
+
+import { type UserKeys } from '../Blocks/payloads';
+import LocalUser from '../Session/LocalUser';
+import { extractUserData } from '../UserData';
 
 class FakeKeyStore {
   signatureKeyPair: tcrypto.SodiumKeyPair;
@@ -48,7 +47,7 @@ describe('Local User', () => {
     trustchainId = random(tcrypto.HASH_SIZE);
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     userIdString = 'clear user id';
-    identity = createIdentity(trustchainId, userIdString, trustchainKeyPair.privateKey);
+    identity = createIdentity(utils.toBase64(trustchainId), utils.toBase64(trustchainKeyPair.privateKey), userIdString);
     userData = extractUserData(identity);
   });
 

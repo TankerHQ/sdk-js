@@ -1,19 +1,15 @@
 // @flow
-
 import sinon from 'sinon';
-
-import { tcrypto, random } from '@tanker/crypto';
+import { tcrypto, random, utils } from '@tanker/crypto';
+import { createIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 
-import { extractUserData } from '../UserData';
-import { createIdentity } from './TestSessionTokens';
-
-import { SessionOpener, SIGN_IN_RESULT, OPEN_MODE } from '../Session/SessionOpener';
-
 import Trustchain from '../Trustchain/Trustchain';
 import { Client } from '../Network/Client';
+import { SessionOpener, SIGN_IN_RESULT, OPEN_MODE } from '../Session/SessionOpener';
 import Storage from '../Session/Storage';
+import { extractUserData } from '../UserData';
 
 class MockStorage {
   keyStore;
@@ -76,7 +72,7 @@ describe('Session opening', () => {
 
     before(() => {
       userIdString = 'clear user id';
-      identity = createIdentity(trustchainId, userIdString, trustchainKeyPair.privateKey);
+      identity = createIdentity(utils.toBase64(trustchainId), utils.toBase64(trustchainKeyPair.privateKey), userIdString);
       userData = extractUserData(identity);
     });
 

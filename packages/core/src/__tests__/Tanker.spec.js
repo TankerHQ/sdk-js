@@ -1,25 +1,23 @@
 // @flow
 
-import { tcrypto, utils, random, obfuscateUserId } from '@tanker/crypto';
+import { tcrypto, utils, random } from '@tanker/crypto';
+import { createIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, TankerStatus, optionsWithDefaults } from '..';
-import { createIdentityFromSecret } from './TestSessionTokens';
 import { InvalidArgument, InvalidIdentity } from '../errors';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
   let trustchainId;
   let userId;
-  let obfuscatedUserId;
 
   before(() => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     trustchainId = random(tcrypto.HASH_SIZE);
     userId = 'winnie';
-    obfuscatedUserId = obfuscateUserId(trustchainId, userId);
   });
 
   describe('init', () => {
@@ -98,34 +96,24 @@ describe('Tanker', () => {
     });
 
     describe('signUp', () => {
-      it('should throw when identity is not base64', async () => {
-        await expect(tanker.signUp('not b64')).to.be.rejected;
-      });
-
-      it('should throw when identity is null', async () => {
+      it('should throw when identity is undefined', async () => {
         // $FlowExpectedError
-        await expect(tanker.signUp(null)).to.be.rejected;
+        await expect(tanker.signUp(undefined)).to.be.rejectedWith(InvalidArgument);
       });
 
-      it('should throw when secret is empty', async () => {
-        const badSecret = '';
-        const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.signUp(identity);
-        await expect(promise).to.be.rejectedWith(InvalidIdentity);
+      it('should throw when identity is not base64', async () => {
+        await expect(tanker.signUp('not b64')).to.be.rejectedWith(InvalidIdentity);
       });
 
-      it('should throw when secret is the wrong size', async () => {
-        const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE - 1));
-        const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.signUp(identity);
-        await expect(promise).to.be.rejectedWith(InvalidIdentity);
-      });
-
-      it('should throw when secret is not the user\'s secret', async () => {
-        const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE));
-        const identity = createIdentityFromSecret(trustchainId, obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.signUp(identity);
-        await expect(promise).to.be.rejectedWith(InvalidIdentity);
+      it('should throw when identity is valid but truncated', async () => {
+        const identity = createIdentity(
+          utils.toBase64(trustchainId),
+          utils.toBase64(trustchainKeyPair.privateKey),
+          userId,
+        );
+        const truncatedIdentity = identity.slice(0, identity.length - 10);
+        // $FlowExpectedError
+        await expect(tanker.signUp(truncatedIdentity)).to.be.rejectedWith(InvalidIdentity);
       });
     });
   });
