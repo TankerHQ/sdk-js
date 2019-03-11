@@ -1,7 +1,10 @@
 // @flow
 import { expect } from 'chai';
 import { generichash, obfuscateUserId, tcrypto, utils } from '@tanker/crypto';
-import { createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken } from '../index';
+import {
+  _deserializeIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
+  createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken, InvalidIdentity,
+} from '../index';
 
 function checkUserSecret(userSecret, obfuscatedUserId) {
   expect(obfuscatedUserId).to.have.lengthOf(tcrypto.HASH_SIZE);
@@ -63,14 +66,14 @@ describe('Identity', () => {
 
   it('returns a tanker identity', () => {
     const b64Identity = createIdentity(trustchain.id, trustchain.sk, userId);
-    const identity = utils.fromB64Json(b64Identity);
+    const identity = _deserializeIdentity(b64Identity);
     checkIdentityIntegrity(identity, trustchain);
   });
 
   it('returns a tanker provisional identity', () => {
     const b64Identity = createProvisionalIdentity(userEmail, trustchain.id);
 
-    const { trustchain_id, value, target, encryption_key_pair, signature_key_pair } = utils.fromB64Json(b64Identity); // eslint-disable-line camelcase
+    const { trustchain_id, value, target, encryption_key_pair, signature_key_pair } = _deserializeProvisionalIdentity(b64Identity); // eslint-disable-line camelcase
     expect(trustchain_id).to.equal(trustchain.id);
     expect(target).to.be.equal('email');
     expect(value).to.be.equal(userEmail);
@@ -83,7 +86,7 @@ describe('Identity', () => {
   it('returns a tanker public identity from an tanker indentity', () => {
     const b64Identity = getPublicIdentity(createIdentity(trustchain.id, trustchain.sk, userId));
 
-    const { trustchain_id, target, value, ...trail } = utils.fromB64Json(b64Identity); // eslint-disable-line camelcase
+    const { trustchain_id, target, value, ...trail } = _deserializePublicIdentity(b64Identity); // eslint-disable-line camelcase
     expect(trustchain_id).to.equal(trustchain.id);
     expect(trail).to.be.empty;
 
@@ -95,9 +98,11 @@ describe('Identity', () => {
     const b64ProvisionalIdentity = createProvisionalIdentity(userEmail, trustchain.id);
     const b64PublicIdentity = getPublicIdentity(b64ProvisionalIdentity);
 
-    const provisionalIdentity = utils.fromB64Json(b64ProvisionalIdentity);
-    const { trustchain_id, target, value, // eslint-disable-line camelcase
-      public_signature_key, public_encryption_key, ...trail } = utils.fromB64Json(b64PublicIdentity); // eslint-disable-line camelcase
+    const provisionalIdentity = _deserializeProvisionalIdentity(b64ProvisionalIdentity);
+    const {
+      // $FlowIKnow We know a provisional identity is expected
+      trustchain_id, target, value, public_signature_key, public_encryption_key, ...trail // eslint-disable-line camelcase
+    } = _deserializePublicIdentity(b64PublicIdentity);
 
     expect(trustchain_id).to.equal(trustchain.id);
     expect(trail).to.be.empty;
@@ -110,12 +115,12 @@ describe('Identity', () => {
   });
 
   it('parse a valid identity', () => {
-    const identity = utils.fromB64Json(goodIdentity);
+    const identity = _deserializeIdentity(goodIdentity);
     checkGoodIdentity(identity);
   });
 
   it('parse a valid public identity', () => {
-    const identity = utils.fromB64Json(goodPublicIdentity);
+    const identity = _deserializePublicIdentity(goodPublicIdentity);
     expect(identity.trustchain_id).to.equal(trustchain.id);
     expect(identity.target).to.equal('user');
     expect(identity.value).to.equal(obfuscatedUserId);
@@ -123,11 +128,11 @@ describe('Identity', () => {
 
   it('upgrade a user token to an identity', () => {
     const b64Identity = upgradeUserToken(trustchain.id, userId, goodUserToken);
-    const identity = utils.fromB64Json(b64Identity);
+    const identity = _deserializeIdentity(b64Identity);
     checkIdentityIntegrity(identity, trustchain);
   });
 
   it('throws when upgrading with the wrong userId', () => {
-    expect(() => upgradeUserToken(trustchain.id, 'bad user id', goodUserToken)).to.throw();
+    expect(() => upgradeUserToken(trustchain.id, 'bad user id', goodUserToken)).to.throw(InvalidIdentity);
   });
 });

@@ -1,7 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { type PublicIdentity } from '@tanker/identity';
+import { _deserializePublicIdentity, InvalidIdentity, type PublicIdentity } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
@@ -9,15 +9,15 @@ import { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
 import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
-import { InvalidArgument, InvalidGroupSize, ServerError, InvalidIdentity } from '../errors';
+import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
 
-function decodePublicIdentity(publicIdentity: b64string): PublicIdentity {
-  const decodedIdentity = utils.fromB64Json(publicIdentity);
-  if (decodedIdentity.target !== 'user')
+function deserializePublicIdentity(publicIdentity: b64string): PublicIdentity {
+  const deserializedIdentity = _deserializePublicIdentity(publicIdentity);
+  if (deserializedIdentity.target !== 'user')
     throw new InvalidIdentity('Group members cannot be provisional identities');
-  return decodedIdentity;
+  return deserializedIdentity;
 }
 
 export default class GroupManager {
@@ -47,7 +47,7 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
-    const decodedIdentities = publicIdentities.map(decodePublicIdentity);
+    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
     const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
@@ -71,7 +71,7 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
 
-    const decodedIdentities = publicIdentities.map(decodePublicIdentity);
+    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
     const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     const internalGroupId = utils.fromBase64(groupId);

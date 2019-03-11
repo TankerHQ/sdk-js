@@ -1,7 +1,7 @@
 // @flow
 import sinon from 'sinon';
 import { utils } from '@tanker/crypto';
-import { createIdentity, getPublicIdentity } from '@tanker/identity';
+import { createIdentity, getPublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import { makeUserStoreBuilder } from './UserStoreBuilder';
@@ -138,7 +138,7 @@ describe('Users', () => {
       const aliceIdentity = createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'alice');
       const bobIdentity = createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'bob');
 
-      const retUsers = await users.getUsers({ publicIdentities: [aliceIdentity, bobIdentity].map(u => utils.fromB64Json(getPublicIdentity(u))) });
+      const retUsers = await users.getUsers({ publicIdentities: [aliceIdentity, bobIdentity].map(u => _deserializePublicIdentity(getPublicIdentity(u))) });
       const retUserIds = retUsers.map(u => u.userId);
       const expectedUserIds = [alice, bob].map(u => utils.toBase64(u.entry.user_id));
       expect(retUserIds).to.have.members(expectedUserIds);
@@ -152,7 +152,7 @@ describe('Users', () => {
       const bobIdentity = createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'bob');
       const casperIdentity = createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'casper');
 
-      await expect(users.getUsers({ publicIdentities: [aliceIdentity, bobIdentity, casperIdentity].map(u => utils.fromB64Json(getPublicIdentity(u))) }))
+      await expect(users.getUsers({ publicIdentities: [aliceIdentity, bobIdentity, casperIdentity].map(u => _deserializePublicIdentity(getPublicIdentity(u))) }))
         .to.be.rejectedWith(RecipientsNotFound);
     });
   });

@@ -1,7 +1,7 @@
 // @flow
 
 import { utils, checkUserSecret, type b64string } from '@tanker/crypto';
-import { InvalidIdentity } from './errors';
+import { _deserializeIdentity, InvalidIdentity } from '@tanker/identity';
 import { type DelegationToken } from './Session/delegation';
 
 export type UserData = {
@@ -12,16 +12,10 @@ export type UserData = {
 }
 
 export function extractUserData(identityB64: b64string): UserData {
-  let identity;
-  try {
-    identity = utils.fromB64Json(identityB64);
-  } catch (e) {
-    throw new InvalidIdentity(e);
-  }
+  const identity = _deserializeIdentity(identityB64);
+
   const userId = utils.fromBase64(identity.value);
-
   const userSecret = utils.fromBase64(identity.user_secret);
-
   const trustchainId = utils.fromBase64(identity.trustchain_id);
 
   const delegationToken: DelegationToken = {

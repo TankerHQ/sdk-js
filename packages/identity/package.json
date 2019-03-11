@@ -10,7 +10,8 @@
     "test": "cd ../..; yarn test:identity"
   },
   "dependencies": {
-    "@tanker/crypto": "0.0.1"
+    "@tanker/crypto": "0.0.1",
+    "@tanker/errors": "0.0.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",

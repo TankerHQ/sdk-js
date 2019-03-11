@@ -1,5 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
+import { _deserializePublicIdentity } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -99,8 +100,8 @@ export default class DataProtector {
     const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
     const groups = await this._groupManager.findGroups(groupIds);
     const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
-    const decodedIdentities = b64UserIdentities.map(utils.fromB64Json);
-    const users = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
+    const deserializedIdentities = b64UserIdentities.map(i => _deserializePublicIdentity(i));
+    const users = await this._userAccessor.getUsers({ publicIdentities: deserializedIdentities });
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;

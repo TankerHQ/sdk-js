@@ -23,6 +23,7 @@
     "@tanker/crypto": "0.0.1",
     "@tanker/datastore-base": "0.0.1",
     "@tanker/errors": "0.0.1",
+    "@tanker/identity": "0.0.1",
     "@tanker/stream-base": "0.0.1",
     "array-find": "^1.0.0",
     "engine.io-client": "git+https://github.com/TankerHQ/engine.io-client.git#2996c2d746d4695742cbc3f8fb47c60d4c5757f7",

@@ -4,7 +4,7 @@ import uuid from 'uuid';
 import { expect } from 'chai';
 
 import { utils, type b64string } from '../../../../packages/crypto';
-import { createIdentity } from '../../../../packages/identity';
+import { createIdentity, _deserializeIdentity } from '../../../../packages/identity';
 import { TrustchainHelper } from '../../../../packages/functional-tests/src/Helpers';
 import { makeCurrentUser, makeUser } from './helpers';
 
@@ -17,7 +17,7 @@ function generateUserToken(trustchainId: b64string, trustchainPrivateKey: b64str
     value: user_id,
     delegation_signature,
     user_secret,
-  } = utils.fromB64Json(identity);
+  } = _deserializeIdentity(identity);
 
   return utils.toB64Json({
     delegation_signature,

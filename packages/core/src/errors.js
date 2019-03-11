@@ -4,6 +4,7 @@ import { TankerError } from '@tanker/errors';
 
 // Re-expose these common error classes:
 export { TankerError, InvalidArgument, NotEnoughData } from '@tanker/errors';
+export { InvalidIdentity } from '@tanker/identity';
 
 export class ResourceNotFound extends TankerError {
   b64ResourceId: b64string;
@@ -33,19 +34,6 @@ export class DecryptFailed extends TankerError {
 
     this.next = e;
     this.b64ResourceId = b64ResourceId;
-  }
-}
-
-export class InvalidIdentity extends TankerError {
-  next: ?Error;
-
-  constructor(e: Error | string) {
-    if (typeof e === 'string') {
-      super('InvalidIdentity', e);
-    } else {
-      super('InvalidIdentity');
-      this.next = e;
-    }
   }
 }
 

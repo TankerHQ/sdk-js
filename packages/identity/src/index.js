@@ -1,6 +1,10 @@
 // @flow
 import { tcrypto, utils, obfuscateUserId, createUserSecretB64, type b64string } from '@tanker/crypto';
 
+import { InvalidIdentity } from './InvalidIdentity';
+
+export { InvalidIdentity };
+
 type KeyPair = {|
   public_key: b64string,
   private_key: b64string,
@@ -61,6 +65,34 @@ function generatePreshareKeys(): PreshareKeys {
   };
 }
 
+function _serializeIdentity(identity: Identity | PublicIdentity | ProvisionalIdentity): b64string { // eslint-disable-line no-underscore-dangle
+  return utils.toB64Json(identity);
+}
+
+export function _deserializeIdentity(identity: b64string): Identity { // eslint-disable-line no-underscore-dangle
+  try {
+    return utils.fromB64Json(identity);
+  } catch (e) {
+    throw new InvalidIdentity(e);
+  }
+}
+
+export function _deserializeProvisionalIdentity(identity: b64string): ProvisionalIdentity { // eslint-disable-line no-underscore-dangle
+  try {
+    return utils.fromB64Json(identity);
+  } catch (e) {
+    throw new InvalidIdentity(e);
+  }
+}
+
+export function _deserializePublicIdentity(identity: b64string): PublicIdentity { // eslint-disable-line no-underscore-dangle
+  try {
+    return utils.fromB64Json(identity);
+  } catch (e) {
+    throw new InvalidIdentity(e);
+  }
+}
+
 export function createIdentity(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): b64string {
   const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
 
@@ -71,7 +103,7 @@ export function createIdentity(trustchainId: b64string, trustchainPrivateKey: b6
 
   const userSecret = createUserSecretB64(trustchainId, userId);
 
-  return utils.toB64Json({
+  return _serializeIdentity({
     trustchain_id: trustchainId,
     target: 'user',
     value: utils.toBase64(obfuscatedUserId),
@@ -89,20 +121,20 @@ export function createProvisionalIdentity(email: string, trustchainId: b64string
     value: email,
     ...generatePreshareKeys(),
   };
-  return utils.toB64Json(provisionalIdentity);
+  return _serializeIdentity(provisionalIdentity);
 }
 
 // Note: tankerIdentity is a Tanker identity created by either createIdentity() or createProvisionalIdentity()
 export function getPublicIdentity(tankerIdentity: b64string): b64string {
-  const identity = utils.fromB64Json(tankerIdentity);
+  const identity = _deserializeIdentity(tankerIdentity);
 
   if (identity.target === 'user') {
     const { trustchain_id, target, value } = identity; // eslint-disable-line camelcase
-    return utils.toB64Json({ trustchain_id, target, value });
+    return _serializeIdentity({ trustchain_id, target, value });
   }
 
   if (identity.encryption_key_pair && identity.signature_key_pair) {
-    return utils.toB64Json({
+    return _serializeIdentity({
       trustchain_id: identity.trustchain_id,
       target: identity.target,
       value: identity.value,
@@ -111,7 +143,7 @@ export function getPublicIdentity(tankerIdentity: b64string): b64string {
     });
   }
 
-  throw new Error('Incorrect Tanker identity provided');
+  throw new InvalidIdentity('Invalid Tanker identity provided');
 }
 
 // Note: userToken generated with the deprecated @tanker/user-token sdk
@@ -127,9 +159,9 @@ export function upgradeUserToken(trustchainId: b64string, userId: string, userTo
   } = utils.fromB64Json(userToken);
 
   if (utils.toBase64(obfuscatedUserId) !== user_id)
-    throw new Error('Invalid userId provided');
+    throw new InvalidIdentity('Invalid userId provided');
 
-  return utils.toB64Json({
+  return _serializeIdentity({
     trustchain_id: trustchainId,
     target: 'user',
     value: user_id,
