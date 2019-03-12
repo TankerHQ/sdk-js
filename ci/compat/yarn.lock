@@ -163,6 +163,14 @@
     "@babel/runtime-corejs2" "7.0.0"
     libsodium-wrappers "^0.5.1"
 
+"@tanker/crypto@1.6.2":
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/@tanker/crypto/-/crypto-1.6.2.tgz#a5a8191bbf48e8110224a7a6a922bcca372aa6b7"
+  integrity sha512-RWZ07WUYV2H9QKjPfJXzrpliDn5kzzZeyWeTX6ayzwljKdYdYj1EaNRgvNLpMrN//wcMf1tlSJGAGRRg0BPrqA==
+  dependencies:
+    babel-runtime "^6.22.0"
+    libsodium-wrappers "^0.5.1"
+
 "@tanker/crypto@1.9.0":
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/@tanker/crypto/-/crypto-1.9.0.tgz#dfb9416acfc78a359ef8253f631583736eb4a5b6"
@@ -390,6 +398,13 @@
     "@tanker/errors" "1.10.0"
     "@tanker/stream-base" "1.10.0"
 
+"@tanker/user-token@^1.4.2":
+  version "1.4.2"
+  resolved "https://registry.yarnpkg.com/@tanker/user-token/-/user-token-1.4.2.tgz#78fb1011df2c53ea39b18748f3d12d0c53b2b23d"
+  integrity sha512-ib7CVZVemvF8aknFlqCRbPlEFdWRulX2DLASbOIvPxmO8DB0nHP0QGG38Lww4jN5r1zx8kF40W0ngsM9pQUo5g==
+  dependencies:
+    "@tanker/crypto" "1.6.2"
+
 abstract-leveldown@2.4.1:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/abstract-leveldown/-/abstract-leveldown-2.4.1.tgz#b3bfedb884eb693a12775f0c55e9f0a420ccee64"
@@ -473,6 +488,14 @@ attempt-x@^1.1.0, attempt-x@^1.1.1:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/attempt-x/-/attempt-x-1.1.3.tgz#9ac844c75bca2c4e9e30d8d5c01f41eeb481a8b7"
   integrity sha512-y/+ek8IjxVpTbj/phC87jK5YRhlP5Uu7FlQdCmYuut1DTjNruyrGqUWi5bcX1VKsQX1B0FX16A1hqHomKpHv3A==
+
+babel-runtime@^6.22.0:
+  version "6.26.0"
+  resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-6.26.0.tgz#965c7058668e82b55d7bfe04ff2337bc8b5647fe"
+  integrity sha1-llxwWGaOgrVde/4E/yM3vItWR/4=
+  dependencies:
+    core-js "^2.4.0"
+    regenerator-runtime "^0.11.0"
 
 backo2@1.0.2:
   version "1.0.2"
@@ -624,7 +647,7 @@ console-control-strings@^1.0.0, console-control-strings@~1.1.0:
   resolved "https://registry.yarnpkg.com/console-control-strings/-/console-control-strings-1.1.0.tgz#3d7cf4464db6446ea644bf4b39507f9851008e8e"
   integrity sha1-PXz0Rk22RG6mRL9LOVB/mFEAjo4=
 
-core-js@^2.5.7:
+core-js@^2.4.0, core-js@^2.5.7:
   version "2.6.5"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.6.5.tgz#44bc8d249e7fb2ff5d00e0341a7ffb94fbf67895"
   integrity sha512-klh/kDpwX8hryYL14M9w/xei6vrv6sE8gTHDG7/T/+SEovB/G4ejwcfE/CBzO6Edsu+OETZMZ3wcX/EjUkrl5A==
@@ -1682,6 +1705,11 @@ readable-stream@~0.0.2:
   version "0.0.4"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-0.0.4.tgz#f32d76e3fb863344a548d79923007173665b3b8d"
   integrity sha1-8y124/uGM0SlSNeZIwBxc2ZbO40=
+
+regenerator-runtime@^0.11.0:
+  version "0.11.1"
+  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.11.1.tgz#be05ad7f9bf7d22e056f9726cee5017fbf19e2e9"
+  integrity sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==
 
 regenerator-runtime@^0.12.0:
   version "0.12.1"

@@ -5,6 +5,7 @@
   "private": true,
   "dependencies": {
     "@tanker/client-node": "1.9.2",
+    "@tanker/user-token": "^1.4.2",
     "tests": "0.0.1-local"
   }
 }
