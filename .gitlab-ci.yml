@@ -135,3 +135,11 @@ check/compat/master:
     - dmenv run -- python run-ci.py compat
   tags:
     - linux
+
+check/e2e:
+  stage: check
+  when: manual
+  script:
+    - dmenv run -- python run-ci.py e2e
+  tags:
+    - linux

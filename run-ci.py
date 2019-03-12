@@ -5,6 +5,7 @@ from path import Path
 
 import ci.js
 import ci.mail
+import ci.endtoend
 
 
 def check(*, runner: str, nightly: bool) -> None:
@@ -40,7 +41,7 @@ def main() -> None:
     deploy_parser.add_argument("--env", required=True)
 
     subparsers.add_parser("compat")
-
+    subparsers.add_parser("e2e")
     subparsers.add_parser("mirror")
 
     args = parser.parse_args()
@@ -56,6 +57,8 @@ def main() -> None:
         ci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
         compat(env="dev")
+    elif args.command == "e2e":
+        ci.endtoend.test(env="dev")
     else:
         parser.print_help()
         sys.exit(1)
