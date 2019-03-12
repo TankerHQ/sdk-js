@@ -77,14 +77,14 @@ describe('Identity', () => {
   it('returns a tanker provisional identity', async () => {
     const b64Identity = await createProvisionalIdentity(userEmail, trustchain.id);
 
-    const { trustchain_id, value, target, encryption_key_pair, signature_key_pair } = _deserializeProvisionalIdentity(b64Identity); // eslint-disable-line camelcase
+    const { trustchain_id, value, target, public_signature_key, public_encryption_key, private_signature_key, private_encryption_key } = _deserializeProvisionalIdentity(b64Identity); // eslint-disable-line camelcase
     expect(trustchain_id).to.equal(trustchain.id);
     expect(target).to.be.equal('email');
     expect(value).to.be.equal(userEmail);
-    expect(encryption_key_pair.public_key).to.not.be.null;
-    expect(encryption_key_pair.private_key).to.not.be.null;
-    expect(signature_key_pair.public_key).to.not.be.null;
-    expect(signature_key_pair.private_key).to.not.be.null;
+    expect(public_encryption_key).to.be.a('string').that.is.not.empty;
+    expect(private_encryption_key).to.be.a('string').that.is.not.empty;
+    expect(public_signature_key).to.be.a('string').that.is.not.empty;
+    expect(private_signature_key).to.be.a('string').that.is.not.empty;
   });
 
   it('returns a tanker public identity from an tanker indentity', async () => {
@@ -112,8 +112,8 @@ describe('Identity', () => {
     expect(trail).to.be.empty;
     expect(target).to.equal('email');
     expect(value).to.be.equal(userEmail);
-    expect(public_encryption_key).to.equal(provisionalIdentity.encryption_key_pair.public_key);
-    expect(public_signature_key).to.equal(provisionalIdentity.signature_key_pair.public_key);
+    expect(public_encryption_key).to.equal(provisionalIdentity.public_encryption_key);
+    expect(public_signature_key).to.equal(provisionalIdentity.public_signature_key);
   });
 
   it('parse a valid identity', () => {

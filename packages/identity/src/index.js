@@ -5,16 +5,6 @@ import { InvalidIdentity } from './InvalidIdentity';
 
 export { InvalidIdentity };
 
-type KeyPair = {|
-  public_key: b64string,
-  private_key: b64string,
-|};
-
-type PreshareKeys = {|
-  encryption_key_pair: KeyPair,
-  signature_key_pair: KeyPair,
-|};
-
 type PermanentIdentityTarget = 'user';
 type ProvisionalIdentityTarget = 'email';
 
@@ -32,13 +22,6 @@ export type SecretPermanentIdentity = {|
   user_secret: b64string,
 |};
 
-export type SecretProvisionalIdentity = {|
-  trustchain_id: b64string,
-  target: ProvisionalIdentityTarget,
-  value: string,
-  ...PreshareKeys,
-|};
-
 export type PublicProvisionalIdentity = {|
   trustchain_id: b64string,
   target: ProvisionalIdentityTarget,
@@ -47,24 +30,14 @@ export type PublicProvisionalIdentity = {|
   public_encryption_key: b64string,
 |};
 
+export type SecretProvisionalIdentity = {|
+  ...PublicProvisionalIdentity,
+  private_encryption_key: b64string,
+  private_signature_key: b64string,
+|};
+
 export type SecretIdentity = SecretPermanentIdentity | SecretProvisionalIdentity;
 export type PublicIdentity = PublicPermanentIdentity | PublicProvisionalIdentity;
-
-function generatePreshareKeys(): PreshareKeys {
-  const encryptionKeys = tcrypto.makeEncryptionKeyPair();
-  const signatureKeys = tcrypto.makeSignKeyPair();
-
-  return {
-    encryption_key_pair: {
-      public_key: utils.toBase64(encryptionKeys.publicKey),
-      private_key: utils.toBase64(encryptionKeys.privateKey),
-    },
-    signature_key_pair: {
-      public_key: utils.toBase64(signatureKeys.publicKey),
-      private_key: utils.toBase64(signatureKeys.privateKey),
-    },
-  };
-}
 
 function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b64string { // eslint-disable-line no-underscore-dangle
   return utils.toB64Json(identity);
@@ -126,7 +99,7 @@ export async function createIdentity(trustchainId: b64string, trustchainPrivateK
 
   const userSecret = createUserSecretB64(trustchainId, userId);
 
-  return _serializeIdentity({
+  const permanentIdentity: SecretPermanentIdentity = {
     trustchain_id: trustchainId,
     target: 'user',
     value: utils.toBase64(obfuscatedUserId),
@@ -134,16 +107,25 @@ export async function createIdentity(trustchainId: b64string, trustchainPrivateK
     ephemeral_public_signature_key: utils.toBase64(ephemeralKeyPair.publicKey),
     ephemeral_private_signature_key: utils.toBase64(ephemeralKeyPair.privateKey),
     user_secret: userSecret
-  });
+  };
+
+  return _serializeIdentity(permanentIdentity);
 }
 
 export async function createProvisionalIdentity(email: string, trustchainId: b64string): Promise<b64string> {
+  const encryptionKeys = tcrypto.makeEncryptionKeyPair();
+  const signatureKeys = tcrypto.makeSignKeyPair();
+
   const provisionalIdentity: SecretProvisionalIdentity = {
     trustchain_id: trustchainId,
     target: 'email',
     value: email,
-    ...generatePreshareKeys(),
+    public_encryption_key: utils.toBase64(encryptionKeys.publicKey),
+    private_encryption_key: utils.toBase64(encryptionKeys.privateKey),
+    public_signature_key: utils.toBase64(signatureKeys.publicKey),
+    private_signature_key: utils.toBase64(signatureKeys.privateKey),
   };
+
   return _serializeIdentity(provisionalIdentity);
 }
 
@@ -156,14 +138,9 @@ export async function getPublicIdentity(tankerIdentity: b64string): Promise<b64s
     return _serializeIdentity({ trustchain_id, target, value });
   }
 
-  if (identity.encryption_key_pair && identity.signature_key_pair) {
-    return _serializeIdentity({
-      trustchain_id: identity.trustchain_id,
-      target: identity.target,
-      value: identity.value,
-      public_signature_key: identity.signature_key_pair.public_key,
-      public_encryption_key: identity.encryption_key_pair.public_key,
-    });
+  if (identity.public_signature_key && identity.public_encryption_key) {
+    const { trustchain_id, target, value, public_signature_key, public_encryption_key } = identity; // eslint-disable-line camelcase
+    return _serializeIdentity({ trustchain_id, target, value, public_signature_key, public_encryption_key });
   }
 
   throw new InvalidIdentity('Invalid Tanker identity provided');
@@ -184,7 +161,7 @@ export async function upgradeUserToken(trustchainId: b64string, userId: string, 
   if (utils.toBase64(obfuscatedUserId) !== user_id)
     throw new InvalidIdentity('Invalid userId provided');
 
-  return _serializeIdentity({
+  const permanentIdentity: SecretPermanentIdentity = {
     trustchain_id: trustchainId,
     target: 'user',
     value: user_id,
@@ -192,6 +169,8 @@ export async function upgradeUserToken(trustchainId: b64string, userId: string, 
     ephemeral_public_signature_key,
     ephemeral_private_signature_key,
     user_secret,
-  });
+  };
+
+  return _serializeIdentity(permanentIdentity);
 }
 /* eslint-enable */
