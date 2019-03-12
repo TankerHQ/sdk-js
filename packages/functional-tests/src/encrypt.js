@@ -3,7 +3,7 @@ import { errors } from '@tanker/core';
 import { tcrypto, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
 import FilePonyfill from '@tanker/file-ponyfill';
-import { expect } from './chai';
+import { expect, expectRejectedWithProperty } from './chai';
 
 import { type TestArgs } from './TestArgs';
 
@@ -180,9 +180,12 @@ const generateEncryptTests = (args: TestArgs) => {
       it('throws when sharing a resource that doesn\'t exist', async () => {
         const badResourceId = 'AAAAAAAAAAAAAAAAAAAA';
 
-        await expect(args.bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] }))
-          .to.be.rejectedWith(errors.ResourceNotFound)
-          .and.eventually.have.property('b64ResourceId', badResourceId);
+        await expectRejectedWithProperty({
+          handler: async () => args.bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] }),
+          exception: errors.ResourceNotFound,
+          property: 'b64ResourceId',
+          expectedValue: badResourceId
+        });
       });
 
       it('throws when sharing with a user that doesn\'t exist', async () => {
@@ -190,9 +193,12 @@ const generateEncryptTests = (args: TestArgs) => {
         const resourceId = await args.bobLaptop.getResourceId(edata);
         const eveIdentity = getPublicIdentity(args.trustchainHelper.generateIdentity('eve'));
 
-        await expect(args.bobLaptop.share([resourceId], { shareWithUsers: [eveIdentity] }))
-          .to.be.rejectedWith(errors.RecipientsNotFound)
-          .and.eventually.have.property('recipientIds').to.deep.equal([eveIdentity]);
+        await expectRejectedWithProperty({
+          handler: async () => args.bobLaptop.share([resourceId], { shareWithUsers: [eveIdentity] }),
+          exception: errors.RecipientsNotFound,
+          property: 'recipientIds',
+          expectedValue: [eveIdentity]
+        });
       });
 
       it('shares an existing resource to an existing user', async () => {

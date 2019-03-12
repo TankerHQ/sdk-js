@@ -3,7 +3,7 @@
 
 import { tcrypto } from '@tanker/crypto';
 
-import { expect } from './chai';
+import { expect, assert } from './chai';
 import { InvalidBlockError } from '../errors.internal';
 import { type UnverifiedEntry, blockToEntry, deviceCreationFromBlock } from '../Blocks/entries';
 import { type GeneratorKeyResult, type GeneratorUserResult } from './Generator';
@@ -21,9 +21,14 @@ type EntryBlockSignParam = {
 };
 
 async function assertFailsWithNature(promise: Promise<*>, nature: string): Promise<void> {
-  await expect(promise)
-    .to.be.rejectedWith(InvalidBlockError)
-    .and.eventually.have.property('nature', nature);
+  try {
+    await promise;
+  } catch (e) {
+    expect(e).to.be.an.instanceOf(InvalidBlockError);
+    expect(e.nature).to.deep.equal(nature);
+    return;
+  }
+  assert.fail('Exception not thrown');
 }
 
 function mergeBlock<T: EntryBlockSignParam>(user: T, block: Object, maybeBlockPrivateSignatureKey = null): T {

@@ -1,7 +1,7 @@
 // @flow
 import { errors } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
-import { expect } from './chai';
+import { expect, expectRejectedWithProperty } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const generateGroupsTests = (args: TestArgs) => {
@@ -47,25 +47,34 @@ const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('throws on groupCreation with invalid user', async () => {
-      await expect(args.aliceLaptop.createGroup([alicePublicIdentity, ...unknownUsers]))
-        .to.be.rejectedWith(errors.RecipientsNotFound)
-        .and.eventually.have.property('recipientIds').to.deep.equal(unknownUsers);
+      await expectRejectedWithProperty({
+        handler: async () => args.aliceLaptop.createGroup([alicePublicIdentity, ...unknownUsers]),
+        exception: errors.RecipientsNotFound,
+        property: 'recipientIds',
+        expectedValue: unknownUsers
+      });
     });
 
     it('throws on groupUpdate with invalid users', async () => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
-      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: unknownUsers }))
-        .to.be.rejectedWith(errors.RecipientsNotFound)
-        .and.eventually.have.property('recipientIds').to.deep.equal(unknownUsers);
+      await expectRejectedWithProperty({
+        handler: async () => args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: unknownUsers }),
+        exception: errors.RecipientsNotFound,
+        property: 'recipientIds',
+        expectedValue: unknownUsers
+      });
     });
 
     it('throws on groupUpdate with mix valid/invalid users', async () => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
-      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, ...unknownUsers] }))
-        .to.be.rejectedWith(errors.RecipientsNotFound)
-        .and.eventually.have.property('recipientIds').to.deep.equal(unknownUsers);
+      await expectRejectedWithProperty({
+        handler: async () => args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, ...unknownUsers] }),
+        exception: errors.RecipientsNotFound,
+        property: 'recipientIds',
+        expectedValue: unknownUsers
+      });
     });
 
     it('throws on groupCreation with empty users', async () => {
