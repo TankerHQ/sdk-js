@@ -75,7 +75,7 @@ describe('Identity', () => {
   });
 
   it('returns a tanker provisional identity', async () => {
-    const b64Identity = await createProvisionalIdentity(userEmail, trustchain.id);
+    const b64Identity = await createProvisionalIdentity(trustchain.id, userEmail);
 
     const { trustchain_id, value, target, public_signature_key, public_encryption_key, private_signature_key, private_encryption_key } = _deserializeProvisionalIdentity(b64Identity); // eslint-disable-line camelcase
     expect(trustchain_id).to.equal(trustchain.id);
@@ -99,7 +99,7 @@ describe('Identity', () => {
   });
 
   it('returns a tanker public identity from an tanker provisional indentity', async () => {
-    const b64ProvisionalIdentity = await createProvisionalIdentity(userEmail, trustchain.id);
+    const b64ProvisionalIdentity = await createProvisionalIdentity(trustchain.id, userEmail);
     const b64PublicIdentity = await getPublicIdentity(b64ProvisionalIdentity);
 
     const provisionalIdentity = _deserializeProvisionalIdentity(b64ProvisionalIdentity);

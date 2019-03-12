@@ -112,7 +112,7 @@ export async function createIdentity(trustchainId: b64string, trustchainPrivateK
   return _serializeIdentity(permanentIdentity);
 }
 
-export async function createProvisionalIdentity(email: string, trustchainId: b64string): Promise<b64string> {
+export async function createProvisionalIdentity(trustchainId: b64string, email: string): Promise<b64string> {
   const encryptionKeys = tcrypto.makeEncryptionKeyPair();
   const signatureKeys = tcrypto.makeSignKeyPair();
 
