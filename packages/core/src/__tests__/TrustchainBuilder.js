@@ -54,7 +54,7 @@ export default class TrustchainBuilder {
     const { trustchainId } = this.generator;
 
     const userIdString = 'let try this for now';
-    const identity = createIdentity(utils.toBase64(trustchainId), utils.toBase64(this.trustchainKeyPair.privateKey), userIdString);
+    const identity = await createIdentity(utils.toBase64(trustchainId), utils.toBase64(this.trustchainKeyPair.privateKey), userIdString);
     const userData = extractUserData(identity);
 
     const storage = new Storage(this.dataStoreConfig);

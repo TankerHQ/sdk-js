@@ -108,13 +108,13 @@ describe('GroupManager', () => {
 
   it('throws when creating a group with provisional identities', async () => {
     const { groupMan, generator } = await makeTestUsers();
-    const users = [createProvisionalIdentity('bob@zmail.com', generator.trustchainId)];
+    const users = [await createProvisionalIdentity('bob@zmail.com', generator.trustchainId)];
     await expect(groupMan.createGroup(users)).to.be.rejectedWith(InvalidIdentity);
   });
 
   it('throws when updating a group with provisional identities', async () => {
     const { groupMan, generator } = await makeTestUsers();
-    const users = [createProvisionalIdentity('bob@zmail.com', generator.trustchainId)];
+    const users = [await createProvisionalIdentity('bob@zmail.com', generator.trustchainId)];
     await expect(groupMan.updateGroupMembers('fakeid', users)).to.be.rejectedWith(InvalidIdentity);
   });
 });

@@ -44,8 +44,8 @@ describe('Identity', () => {
     pk: 'r6oz1Rpl3dsMGu8te0LT02YZ/G8W9NeQmQv3uGSO/jE=',
   };
   const userId = 'b_eich';
-  const obfuscatedUserId = utils.toBase64(obfuscateUserId(utils.fromBase64(trustchain.id), userId));
   const userEmail = 'brendan.eich@tanker.io';
+  let obfuscatedUserId;
 
   const userSecret = '7FSf/n0e76QT3s0DkvetRVVJhXZGEjOxj5EWAFexvjI=';
   const publicSignatureKey = 'Xh3i0xDTpr3HXtB2Q517QKv3azNzXLLXMdJDTSH4bd4=';
@@ -64,14 +64,18 @@ describe('Identity', () => {
     checkIdentityIntegrity(identity, trustchain);
   };
 
-  it('returns a tanker identity', () => {
-    const b64Identity = createIdentity(trustchain.id, trustchain.sk, userId);
+  before(() => {
+    obfuscatedUserId = utils.toBase64(obfuscateUserId(utils.fromBase64(trustchain.id), userId));
+  });
+
+  it('returns a tanker identity', async () => {
+    const b64Identity = await createIdentity(trustchain.id, trustchain.sk, userId);
     const identity = _deserializeIdentity(b64Identity);
     checkIdentityIntegrity(identity, trustchain);
   });
 
-  it('returns a tanker provisional identity', () => {
-    const b64Identity = createProvisionalIdentity(userEmail, trustchain.id);
+  it('returns a tanker provisional identity', async () => {
+    const b64Identity = await createProvisionalIdentity(userEmail, trustchain.id);
 
     const { trustchain_id, value, target, encryption_key_pair, signature_key_pair } = _deserializeProvisionalIdentity(b64Identity); // eslint-disable-line camelcase
     expect(trustchain_id).to.equal(trustchain.id);
@@ -83,8 +87,8 @@ describe('Identity', () => {
     expect(signature_key_pair.private_key).to.not.be.null;
   });
 
-  it('returns a tanker public identity from an tanker indentity', () => {
-    const b64Identity = getPublicIdentity(createIdentity(trustchain.id, trustchain.sk, userId));
+  it('returns a tanker public identity from an tanker indentity', async () => {
+    const b64Identity = await getPublicIdentity(await createIdentity(trustchain.id, trustchain.sk, userId));
 
     const { trustchain_id, target, value, ...trail } = _deserializePublicIdentity(b64Identity); // eslint-disable-line camelcase
     expect(trustchain_id).to.equal(trustchain.id);
@@ -94,9 +98,9 @@ describe('Identity', () => {
     expect(utils.fromBase64(value)).to.have.lengthOf(tcrypto.HASH_SIZE);
   });
 
-  it('returns a tanker public identity from an tanker provisional indentity', () => {
-    const b64ProvisionalIdentity = createProvisionalIdentity(userEmail, trustchain.id);
-    const b64PublicIdentity = getPublicIdentity(b64ProvisionalIdentity);
+  it('returns a tanker public identity from an tanker provisional indentity', async () => {
+    const b64ProvisionalIdentity = await createProvisionalIdentity(userEmail, trustchain.id);
+    const b64PublicIdentity = await getPublicIdentity(b64ProvisionalIdentity);
 
     const provisionalIdentity = _deserializeProvisionalIdentity(b64ProvisionalIdentity);
     const {
@@ -126,13 +130,13 @@ describe('Identity', () => {
     expect(identity.value).to.equal(obfuscatedUserId);
   });
 
-  it('upgrade a user token to an identity', () => {
-    const b64Identity = upgradeUserToken(trustchain.id, userId, goodUserToken);
+  it('upgrade a user token to an identity', async () => {
+    const b64Identity = await upgradeUserToken(trustchain.id, userId, goodUserToken);
     const identity = _deserializeIdentity(b64Identity);
     checkIdentityIntegrity(identity, trustchain);
   });
 
-  it('throws when upgrading with the wrong userId', () => {
-    expect(() => upgradeUserToken(trustchain.id, 'bad user id', goodUserToken)).to.throw(InvalidIdentity);
+  it('throws when upgrading with the wrong userId', async () => {
+    await expect(upgradeUserToken(trustchain.id, 'bad user id', goodUserToken)).to.be.rejectedWith(InvalidIdentity);
   });
 });

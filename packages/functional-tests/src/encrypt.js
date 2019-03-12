@@ -52,10 +52,10 @@ const generateEncryptTests = (args: TestArgs) => {
     let bobPublicIdentity;
 
     beforeEach(async () => {
-      aliceIdentity = args.trustchainHelper.generateIdentity();
-      alicePublicIdentity = getPublicIdentity(aliceIdentity);
-      bobIdentity = args.trustchainHelper.generateIdentity();
-      bobPublicIdentity = getPublicIdentity(bobIdentity);
+      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      alicePublicIdentity = await getPublicIdentity(aliceIdentity);
+      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
       await args.aliceLaptop.signUp(aliceIdentity);
       await args.bobLaptop.signUp(bobIdentity);
     });
@@ -191,7 +191,7 @@ const generateEncryptTests = (args: TestArgs) => {
       it('throws when sharing with a user that doesn\'t exist', async () => {
         const edata = await args.bobLaptop.encrypt(clearText);
         const resourceId = await args.bobLaptop.getResourceId(edata);
-        const eveIdentity = getPublicIdentity(args.trustchainHelper.generateIdentity('eve'));
+        const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
 
         await expectRejectedWithProperty({
           handler: async () => args.bobLaptop.share([resourceId], { shareWithUsers: [eveIdentity] }),
@@ -216,9 +216,9 @@ const generateEncryptTests = (args: TestArgs) => {
     let alicePublicIdentity;
 
     before(async () => {
-      const aliceIdentity = args.trustchainHelper.generateIdentity();
-      alicePublicIdentity = getPublicIdentity(aliceIdentity);
-      const bobIdentity = args.trustchainHelper.generateIdentity();
+      const aliceIdentity = await args.trustchainHelper.generateIdentity();
+      alicePublicIdentity = await getPublicIdentity(aliceIdentity);
+      const bobIdentity = await args.trustchainHelper.generateIdentity();
       await args.bobLaptop.signUp(bobIdentity);
       await args.aliceLaptop.signUp(aliceIdentity);
       const bobUnlockPassword = 'my password';
@@ -283,7 +283,7 @@ const generateEncryptTests = (args: TestArgs) => {
   sizes.forEach(size => {
     describe(`${size} binary resource encryption`, () => {
       before(async () => {
-        const aliceIdentity = args.trustchainHelper.generateIdentity();
+        const aliceIdentity = await args.trustchainHelper.generateIdentity();
         await args.aliceLaptop.signUp(aliceIdentity);
       });
 

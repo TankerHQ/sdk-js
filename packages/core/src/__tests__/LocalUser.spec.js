@@ -43,11 +43,11 @@ describe('Local User', () => {
   let identity;
   let userData;
 
-  before(() => {
+  before(async () => {
     trustchainId = random(tcrypto.HASH_SIZE);
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     userIdString = 'clear user id';
-    identity = createIdentity(utils.toBase64(trustchainId), utils.toBase64(trustchainKeyPair.privateKey), userIdString);
+    identity = await createIdentity(utils.toBase64(trustchainId), utils.toBase64(trustchainKeyPair.privateKey), userIdString);
     userData = extractUserData(identity);
   });
 

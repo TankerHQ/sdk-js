@@ -12,15 +12,15 @@ const generateGroupsTests = (args: TestArgs) => {
     const message = "Two's company, three's a crowd";
 
     before(async () => {
-      const aliceIdentity = args.trustchainHelper.generateIdentity();
-      alicePublicIdentity = getPublicIdentity(aliceIdentity);
+      const aliceIdentity = await args.trustchainHelper.generateIdentity();
+      alicePublicIdentity = await getPublicIdentity(aliceIdentity);
       await args.aliceLaptop.signUp(aliceIdentity);
 
-      const bobIdentity = args.trustchainHelper.generateIdentity();
-      bobPublicIdentity = getPublicIdentity(bobIdentity);
+      const bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
       await args.bobLaptop.signUp(bobIdentity);
 
-      unknownUsers = [getPublicIdentity(args.trustchainHelper.generateIdentity('galette'))];
+      unknownUsers = [await getPublicIdentity(await args.trustchainHelper.generateIdentity('galette'))];
     });
 
     after(async () => {

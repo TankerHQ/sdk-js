@@ -11,7 +11,7 @@ const generateOpenTests = (args: TestArgs) => {
     let bobIdentity;
 
     beforeEach(async () => {
-      bobIdentity = args.trustchainHelper.generateIdentity();
+      bobIdentity = await args.trustchainHelper.generateIdentity();
     });
 
     afterEach(async () => {

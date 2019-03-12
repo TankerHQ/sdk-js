@@ -70,9 +70,9 @@ describe('Session opening', () => {
     let identity;
     let userData;
 
-    before(() => {
+    before(async () => {
       userIdString = 'clear user id';
-      identity = createIdentity(utils.toBase64(trustchainId), utils.toBase64(trustchainKeyPair.privateKey), userIdString);
+      identity = await createIdentity(utils.toBase64(trustchainId), utils.toBase64(trustchainKeyPair.privateKey), userIdString);
       userData = extractUserData(identity);
     });
 

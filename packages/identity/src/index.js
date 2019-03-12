@@ -93,7 +93,7 @@ export function _deserializePublicIdentity(identity: b64string): PublicIdentity 
   }
 }
 
-export function createIdentity(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): b64string {
+export async function createIdentity(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): Promise<b64string> {
   const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
 
   const ephemeralKeyPair = tcrypto.makeSignKeyPair();
@@ -114,7 +114,7 @@ export function createIdentity(trustchainId: b64string, trustchainPrivateKey: b6
   });
 }
 
-export function createProvisionalIdentity(email: string, trustchainId: b64string): b64string {
+export async function createProvisionalIdentity(email: string, trustchainId: b64string): Promise<b64string> {
   const provisionalIdentity: ProvisionalIdentity = {
     trustchain_id: trustchainId,
     target: 'email',
@@ -125,7 +125,7 @@ export function createProvisionalIdentity(email: string, trustchainId: b64string
 }
 
 // Note: tankerIdentity is a Tanker identity created by either createIdentity() or createProvisionalIdentity()
-export function getPublicIdentity(tankerIdentity: b64string): b64string {
+export async function getPublicIdentity(tankerIdentity: b64string): Promise<b64string> {
   const identity = _deserializeIdentity(tankerIdentity);
 
   if (identity.target === 'user') {
@@ -148,7 +148,7 @@ export function getPublicIdentity(tankerIdentity: b64string): b64string {
 
 // Note: userToken generated with the deprecated @tanker/user-token sdk
 /* eslint-disable camelcase */
-export function upgradeUserToken(trustchainId: b64string, userId: string, userToken: b64string): b64string {
+export async function upgradeUserToken(trustchainId: b64string, userId: string, userToken: b64string): Promise<b64string> {
   const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
   const {
     delegation_signature,

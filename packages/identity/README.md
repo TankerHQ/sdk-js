@@ -24,7 +24,7 @@ const trustchainPrivateKey = '<trustchain-private-key>';
 // Example server-side function in which you would implement checkAuth(),
 // retrieveUserIdentity() and storeUserIdentity() to use your own authentication
 // and data storage mechanisms:
-function getUserIdentity(userId) {
+async function getUserIdentity(userId) {
   const isAuthenticated = checkAuth(userId);
 
   // Always ensure user is authenticated before returning a user identity
@@ -37,7 +37,7 @@ function getUserIdentity(userId) {
 
   // If not found, create a new user identity
   if (!identity) {
-    identity = createIdentity(trustchainId, trustchainPrivateKey, userId);
+    identity = await createIdentity(trustchainId, trustchainPrivateKey, userId);
 
     // Store the newly generated user identity
     storeUserIdentity(userId, identity);

@@ -2,7 +2,7 @@
 import uuid from 'uuid';
 import Socket from 'socket.io-client';
 
-import type { TankerInterface } from '@tanker/core';
+import type { TankerInterface, b64string } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
@@ -99,7 +99,7 @@ export class TrustchainHelper {
     return new TrustchainHelper(trustchainId, trustchainKeyPair);
   }
 
-  generateIdentity(userId?: string) {
+  generateIdentity(userId?: string): Promise<b64string> {
     const id = userId || uuid.v4();
     return createIdentity(utils.toBase64(this.trustchainId), utils.toBase64(this.trustchainKeyPair.privateKey), id);
   }

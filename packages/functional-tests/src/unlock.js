@@ -28,7 +28,7 @@ const generateUnlockTests = (args: TestArgs) => {
 
     beforeEach(async () => {
       bobId = uuid.v4();
-      bobIdentity = trustchainHelper.generateIdentity(bobId);
+      bobIdentity = await trustchainHelper.generateIdentity(bobId);
       await bobLaptop.signUp(bobIdentity);
     });
 

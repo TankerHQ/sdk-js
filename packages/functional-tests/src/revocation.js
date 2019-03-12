@@ -15,8 +15,8 @@ const generateRevocationTests = (args: TestArgs) => {
     let bobPublicIdentity;
 
     beforeEach(async () => {
-      bobIdentity = args.trustchainHelper.generateIdentity();
-      bobPublicIdentity = getPublicIdentity(bobIdentity);
+      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
 
       await args.bobLaptop.signUp(bobIdentity);
       const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
@@ -149,7 +149,7 @@ const generateRevocationTests = (args: TestArgs) => {
     });
 
     it('Alice can share with Bob who has a revoked device', async () => {
-      const aliceIdentity = args.trustchainHelper.generateIdentity();
+      const aliceIdentity = await args.trustchainHelper.generateIdentity();
       await args.aliceLaptop.signUp(aliceIdentity);
 
       await revokeBobPhone();

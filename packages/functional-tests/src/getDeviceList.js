@@ -12,7 +12,7 @@ const generateGetDeviceListTests = (args: TestArgs) => {
 
     beforeEach(async () => {
       bobId = uuid.v4();
-      bobIdentity = args.trustchainHelper.generateIdentity(bobId);
+      bobIdentity = await args.trustchainHelper.generateIdentity(bobId);
       await args.bobLaptop.signUp(bobIdentity);
     });
 

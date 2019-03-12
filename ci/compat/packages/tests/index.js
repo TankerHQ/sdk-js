@@ -9,8 +9,8 @@ import { TrustchainHelper } from '../../../../packages/functional-tests/src/Help
 import { makeCurrentUser, makeUser } from './helpers';
 
 /* eslint-disable camelcase */
-function generateUserToken(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): b64string {
-  const identity = createIdentity(trustchainId, trustchainPrivateKey, userId);
+async function generateUserToken(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): Promise<b64string> {
+  const identity = await createIdentity(trustchainId, trustchainPrivateKey, userId);
   const {
     ephemeral_public_signature_key,
     ephemeral_private_signature_key,
@@ -40,8 +40,8 @@ function generateTests(version: string, Tanker: any) {
       const aliceId = uuid.v4();
       const bobId = uuid.v4();
       const trustchainPrivateKey = args.trustchainHelper.trustchainKeyPair.trustchainPrivateKey;
-      const aliceToken = generateUserToken(args.trustchainId, trustchainPrivateKey, aliceId);
-      const bobToken = generateUserToken(args.trustchainId, trustchainPrivateKey, bobId);
+      const aliceToken = await generateUserToken(args.trustchainId, trustchainPrivateKey, aliceId);
+      const bobToken = await generateUserToken(args.trustchainId, trustchainPrivateKey, bobId);
       args.currentBob = makeCurrentUser(bobId, bobToken, args.trustchainId);
       args.versionBob = makeUser(Tanker, bobId, bobToken, args.trustchainId);
       args.currentAlice = makeCurrentUser(aliceId, aliceToken, args.trustchainId);

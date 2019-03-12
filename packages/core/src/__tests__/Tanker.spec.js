@@ -106,7 +106,7 @@ describe('Tanker', () => {
       });
 
       it('should throw when identity is valid but truncated', async () => {
-        const identity = createIdentity(
+        const identity = await createIdentity(
           utils.toBase64(trustchainId),
           utils.toBase64(trustchainKeyPair.privateKey),
           userId,
