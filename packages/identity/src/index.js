@@ -15,24 +15,24 @@ type PreshareKeys = {|
   signature_key_pair: KeyPair,
 |};
 
-type IdentityTarget = 'user';
+type PermanentIdentityTarget = 'user';
 type ProvisionalIdentityTarget = 'email';
 
-export type PublicNormalIdentity = {|
+export type PublicPermanentIdentity = {|
   trustchain_id: b64string,
-  target: IdentityTarget,
+  target: PermanentIdentityTarget,
   value: b64string,
 |};
 
-export type Identity = {|
-  ...PublicNormalIdentity,
+export type SecretPermanentIdentity = {|
+  ...PublicPermanentIdentity,
   ephemeral_public_signature_key: b64string,
   ephemeral_private_signature_key: b64string,
   delegation_signature: b64string,
   user_secret: b64string,
 |};
 
-export type ProvisionalIdentity = {|
+export type SecretProvisionalIdentity = {|
   trustchain_id: b64string,
   target: ProvisionalIdentityTarget,
   value: string,
@@ -47,7 +47,8 @@ export type PublicProvisionalIdentity = {|
   public_encryption_key: b64string,
 |};
 
-export type PublicIdentity = PublicNormalIdentity | PublicProvisionalIdentity;
+export type SecretIdentity = SecretPermanentIdentity | SecretProvisionalIdentity;
+export type PublicIdentity = PublicPermanentIdentity | PublicProvisionalIdentity;
 
 function generatePreshareKeys(): PreshareKeys {
   const encryptionKeys = tcrypto.makeEncryptionKeyPair();
@@ -65,11 +66,11 @@ function generatePreshareKeys(): PreshareKeys {
   };
 }
 
-function _serializeIdentity(identity: Identity | PublicIdentity | ProvisionalIdentity): b64string { // eslint-disable-line no-underscore-dangle
+function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b64string { // eslint-disable-line no-underscore-dangle
   return utils.toB64Json(identity);
 }
 
-export function _deserializeIdentity(identity: b64string): Identity { // eslint-disable-line no-underscore-dangle
+export function _deserializeIdentity(identity: b64string): SecretIdentity { // eslint-disable-line no-underscore-dangle
   try {
     return utils.fromB64Json(identity);
   } catch (e) {
@@ -77,12 +78,34 @@ export function _deserializeIdentity(identity: b64string): Identity { // eslint-
   }
 }
 
-export function _deserializeProvisionalIdentity(identity: b64string): ProvisionalIdentity { // eslint-disable-line no-underscore-dangle
+export function _deserializePermanentIdentity(identity: b64string): SecretPermanentIdentity { // eslint-disable-line no-underscore-dangle
+  let result;
+
   try {
-    return utils.fromB64Json(identity);
+    result = utils.fromB64Json(identity);
   } catch (e) {
     throw new InvalidIdentity(e);
   }
+
+  if (result.target !== 'user')
+    throw new InvalidIdentity(`Expected an identity, but contained target "${result.target}"`);
+
+  return result;
+}
+
+export function _deserializeProvisionalIdentity(identity: b64string): SecretProvisionalIdentity { // eslint-disable-line no-underscore-dangle
+  let result;
+
+  try {
+    result = utils.fromB64Json(identity);
+  } catch (e) {
+    throw new InvalidIdentity(e);
+  }
+
+  if (result.target !== 'email')
+    throw new InvalidIdentity(`Expected a provisional identity, but contained target "${result.target}"`);
+
+  return result;
 }
 
 export function _deserializePublicIdentity(identity: b64string): PublicIdentity { // eslint-disable-line no-underscore-dangle
@@ -115,7 +138,7 @@ export async function createIdentity(trustchainId: b64string, trustchainPrivateK
 }
 
 export async function createProvisionalIdentity(email: string, trustchainId: b64string): Promise<b64string> {
-  const provisionalIdentity: ProvisionalIdentity = {
+  const provisionalIdentity: SecretProvisionalIdentity = {
     trustchain_id: trustchainId,
     target: 'email',
     value: email,

@@ -2,7 +2,7 @@
 import { expect } from 'chai';
 import { generichash, obfuscateUserId, tcrypto, utils } from '@tanker/crypto';
 import {
-  _deserializeIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
+  _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
   createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken, InvalidIdentity,
 } from '../index';
 
@@ -70,7 +70,7 @@ describe('Identity', () => {
 
   it('returns a tanker identity', async () => {
     const b64Identity = await createIdentity(trustchain.id, trustchain.sk, userId);
-    const identity = _deserializeIdentity(b64Identity);
+    const identity = _deserializePermanentIdentity(b64Identity);
     checkIdentityIntegrity(identity, trustchain);
   });
 
@@ -112,14 +112,12 @@ describe('Identity', () => {
     expect(trail).to.be.empty;
     expect(target).to.equal('email');
     expect(value).to.be.equal(userEmail);
-    expect(public_encryption_key).to.not.be.null;
-    expect(public_signature_key).to.not.be.null;
     expect(public_encryption_key).to.equal(provisionalIdentity.encryption_key_pair.public_key);
     expect(public_signature_key).to.equal(provisionalIdentity.signature_key_pair.public_key);
   });
 
   it('parse a valid identity', () => {
-    const identity = _deserializeIdentity(goodIdentity);
+    const identity = _deserializePermanentIdentity(goodIdentity);
     checkGoodIdentity(identity);
   });
 
@@ -132,7 +130,7 @@ describe('Identity', () => {
 
   it('upgrade a user token to an identity', async () => {
     const b64Identity = await upgradeUserToken(trustchain.id, userId, goodUserToken);
-    const identity = _deserializeIdentity(b64Identity);
+    const identity = _deserializePermanentIdentity(b64Identity);
     checkIdentityIntegrity(identity, trustchain);
   });
 
