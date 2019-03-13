@@ -4,11 +4,12 @@ import { mergeSchemas } from '@tanker/datastore-base';
 import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
-import { type UserGroupAdditionRecord, type UserGroupCreationRecord } from '../Blocks/payloads';
+import { type UserGroupAdditionRecord, type UserGroupCreationRecordV2, type UserGroupCreationRecord } from '../Blocks/payloads';
 import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
+import { type UnverifiedUserGroupCreation } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 
 async function makeMemoryGroupStore(): Promise<GroupStore> {
   const schemas = mergeSchemas(GroupStore.schemas);
@@ -30,9 +31,13 @@ describe('GroupUpdater', () => {
     const groupStore = await makeMemoryGroupStore();
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
 
-    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecordV2 = (group.entry.payload_unverified: any);
+    const entry: UnverifiedUserGroupCreation = {
+      ...group.entry,
+      ...payload,
+    };
 
-    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+    await groupUpdater.applyEntry(entry);
 
     expect(await groupStore.findExternal({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal({
       groupId: group.groupSignatureKeyPair.publicKey,
