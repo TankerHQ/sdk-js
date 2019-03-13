@@ -20,10 +20,12 @@ import {
   serializeDeviceRevocationV2,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
-  serializeUserGroupCreation,
-  unserializeUserGroupCreation,
-  serializeUserGroupAddition,
-  unserializeUserGroupAddition,
+  serializeUserGroupCreationV1,
+  unserializeUserGroupCreationV1,
+  serializeUserGroupCreationV2,
+  unserializeUserGroupCreationV2,
+  serializeUserGroupAdditionV1,
+  unserializeUserGroupAdditionV1,
   serializeProvisionalIdentityClaim,
   unserializeProvisionalIdentityClaim,
   serializeBlock,
@@ -429,8 +431,8 @@ describe('payload test vectors', () => {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ]);
 
-    expect(serializeUserGroupCreation(userGroupCreation)).to.deep.equal(payload);
-    expect(unserializeUserGroupCreation(payload)).to.deep.equal(userGroupCreation);
+    expect(serializeUserGroupCreationV1(userGroupCreation)).to.deep.equal(payload);
+    expect(unserializeUserGroupCreationV1(payload)).to.deep.equal(userGroupCreation);
   });
 
   describe('serializing invalid group creation block', () => {
@@ -450,7 +452,7 @@ describe('payload test vectors', () => {
     });
 
     it('should serialize a valid a user group creation block', async () => {
-      expect(() => serializeUserGroupCreation(userGroupCreation)).not.to.throw();
+      expect(() => serializeUserGroupCreationV1(userGroupCreation)).not.to.throw();
     });
 
     const fields = [
@@ -462,16 +464,16 @@ describe('payload test vectors', () => {
     fields.forEach(field => {
       it(`should throw when serializing a user group creation block with invalid ${field}`, async () => {
         userGroupCreation[field] = new Uint8Array(0);
-        expect(() => serializeUserGroupCreation(userGroupCreation)).to.throw();
+        expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
       });
     });
     it('should throw when serializing a user group creation block with invalid public_user_encryption_key', async () => {
       userGroupCreation.encrypted_group_private_encryption_keys_for_users[0].public_user_encryption_key = new Uint8Array(0);
-      expect(() => serializeUserGroupCreation(userGroupCreation)).to.throw();
+      expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
     });
     it('should throw when serializing a user group creation block with invalid encrypted_group_private_encryption_key', async () => {
       userGroupCreation.encrypted_group_private_encryption_keys_for_users[0].encrypted_group_private_encryption_key = new Uint8Array(0);
-      expect(() => serializeUserGroupCreation(userGroupCreation)).to.throw();
+      expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
     });
   });
 
@@ -538,8 +540,8 @@ describe('payload test vectors', () => {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ]);
 
-    expect(serializeUserGroupAddition(userGroupAdd)).to.deep.equal(payload);
-    expect(unserializeUserGroupAddition(payload)).to.deep.equal(userGroupAdd);
+    expect(serializeUserGroupAdditionV1(userGroupAdd)).to.deep.equal(payload);
+    expect(unserializeUserGroupAdditionV1(payload)).to.deep.equal(userGroupAdd);
   });
 
   const fields = [
@@ -554,9 +556,9 @@ describe('payload test vectors', () => {
         self_signature_with_current_key: new Uint8Array(tcrypto.SIGNATURE_SIZE),
         encrypted_group_private_encryption_keys_for_users: [],
       };
-      expect(() => serializeUserGroupAddition(userGroupAdd)).not.to.throw();
+      expect(() => serializeUserGroupAdditionV1(userGroupAdd)).not.to.throw();
       userGroupAdd[field] = new Uint8Array(0);
-      expect(() => serializeUserGroupAddition(userGroupAdd)).to.throw();
+      expect(() => serializeUserGroupAdditionV1(userGroupAdd)).to.throw();
     });
   });
 

@@ -84,6 +84,6 @@ export function encodeArrayLength(array: Uint8Array | Array<number>): Uint8Array
   return new Uint8Array(varint.encode(array.length));
 }
 
-export function encodeListLength(array: Array<any>): Uint8Array {
+export function encodeListLength(array: $ReadOnlyArray<any>): Uint8Array {
   return new Uint8Array(varint.encode(array.length));
 }

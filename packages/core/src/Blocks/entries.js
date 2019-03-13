@@ -12,8 +12,9 @@ import {
   unserializeUserDeviceV3,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
-  unserializeUserGroupCreation,
-  unserializeUserGroupAddition,
+  unserializeUserGroupCreationV1,
+  unserializeUserGroupCreationV2,
+  unserializeUserGroupAdditionV1,
   unserializeProvisionalIdentityClaim,
 } from './payloads';
 
@@ -154,14 +155,21 @@ export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
 export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
   const verificationFields = verificationFieldsFromBlock(block);
   if (block.nature === NATURE.user_group_creation_v1) {
-    const userGroupAction = unserializeUserGroupCreation(block.payload);
+    const userGroupAction = unserializeUserGroupCreationV1(block.payload);
+    return {
+      ...verificationFields,
+      ...userGroupAction,
+      group_id: userGroupAction.public_signature_key
+    };
+  } else if (block.nature === NATURE.user_group_creation_v2) {
+    const userGroupAction = unserializeUserGroupCreationV2(block.payload);
     return {
       ...verificationFields,
       ...userGroupAction,
       group_id: userGroupAction.public_signature_key
     };
   } else if (block.nature === NATURE.user_group_addition_v1) {
-    const userGroupAction = unserializeUserGroupAddition(block.payload);
+    const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
     return {
       ...verificationFields,
       ...userGroupAction,
