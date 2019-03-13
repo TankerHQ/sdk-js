@@ -18,10 +18,13 @@ describe('userSecret', () => {
   });
 
   it('should throw if bad arguments given to createUserSecretBinary', () => {
-    // $FlowExpectedError
-    expect(() => createUserSecretBinary()).to.throw('Assertion error');
-    // $FlowExpectedError
-    expect(() => createUserSecretBinary(trustchainIdB64)).to.throw('Assertion error');
+    [
+      // $FlowExpectedError
+      [], [undefined, 'fernand'], [trustchainIdB64], [trustchainIdB64, null]
+    ].forEach((badArgs, i) => {
+      // $FlowExpectedError
+      expect(() => createUserSecretBinary(...badArgs), `bad args #${i}`).to.throw('Assertion error');
+    });
   });
 
   // Warning! This test only works 99.9999999999999999999999999999999999999999999999999999999999999999999999999991% of the time!
@@ -32,13 +35,18 @@ describe('userSecret', () => {
   });
 
   it('should throw if bad arguments given to assertUserSecret', () => {
-    // $FlowExpectedError No arguments
-    expect(() => assertUserSecret()).to.throw('Assertion error');
-    // $FlowExpectedError Missing second argument
-    expect(() => assertUserSecret(obfuscateUserId(trustchainId, 'edmond'))).to.throw('Assertion error');
-
+    const userId = 'edmond';
+    const hashedUserId = obfuscateUserId(trustchainId, userId);
+    const secret = createUserSecretBinary(trustchainIdB64, userId);
     const tooShortSecret = new Uint8Array(USER_SECRET_SIZE - 1);
-    expect(() => assertUserSecret(obfuscateUserId(trustchainId, 'caderousse'), tooShortSecret)).to.throw('Assertion error');
+
+    [
+      // $FlowExpectedError
+      [], [undefined, secret], [hashedUserId], [hashedUserId, null], [userId, secret], [hashedUserId, tooShortSecret]
+    ].forEach((badArgs, i) => {
+      // $FlowExpectedError
+      expect(() => assertUserSecret(...badArgs), `bad args #${i}`).to.throw('Assertion error');
+    });
   });
 
   it('should accept secrets of the right user', async () => {
