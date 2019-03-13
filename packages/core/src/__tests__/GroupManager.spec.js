@@ -2,12 +2,12 @@
 
 import sinon from 'sinon';
 
-import { tcrypto } from '@tanker/crypto';
-import { createProvisionalIdentity } from '@tanker/identity';
+import { tcrypto, utils } from '@tanker/crypto';
+import { createProvisionalIdentity, createIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect } from './chai';
 import { makeGroupStoreBuilder } from './GroupStoreBuilder';
 import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
-import { InvalidGroupSize, InvalidIdentity } from '../errors';
+import { InvalidGroupSize, InvalidIdentity, InvalidArgument } from '../errors';
 
 class StubTrustchain {
   sync = () => null;
@@ -43,10 +43,22 @@ async function makeTestUsers({ onUpdateGroupStore } = {}) {
 }
 
 describe('GroupManager', () => {
+  let groupMan;
+  let builder;
+  let generator;
+  let stubs;
+  let alice;
+  let aliceGroup;
+  let aliceGroupId;
+
+  beforeEach(async () => {
+    ({ groupMan, builder, generator, stubs } = await makeTestUsers());
+    alice = await generator.newUserCreationV3('alice');
+    aliceGroup = await builder.newUserGroupCreation(alice.device, ['alice']);
+    aliceGroupId = utils.toBase64(aliceGroup.groupSignatureKeyPair.publicKey);
+  });
+
   it('returns a group', async () => {
-    const { groupMan, builder, generator } = await makeTestUsers();
-    const alice = await generator.newUserCreationV3('alice');
-    const aliceGroup = await builder.newUserGroupCreation(alice.device, ['alice']);
     const groups = await groupMan.findGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
 
     expect(groups.length).to.equal(1);
@@ -54,9 +66,6 @@ describe('GroupManager', () => {
   });
 
   it('does not fetch a fetched group', async () => {
-    const { groupMan, builder, generator, stubs } = await makeTestUsers();
-    const alice = await generator.newUserCreationV3('alice');
-    const aliceGroup = await builder.newUserGroupCreation(alice.device, ['alice']);
     await groupMan.findGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
 
     expect(stubs.sync.notCalled).to.be.true;
@@ -64,7 +73,6 @@ describe('GroupManager', () => {
   });
 
   it('fetches a user if not present in the userStore', async () => {
-    const { groupMan, stubs } = await makeTestUsers();
     const groupId = new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
     await groupMan.findGroups([groupId]);
@@ -74,9 +82,6 @@ describe('GroupManager', () => {
   });
 
   it('returns a fetched user', async () => {
-    const { groupMan, builder, generator, stubs } = await makeTestUsers();
-    const alice = await generator.newUserCreationV3('alice');
-    const aliceGroup = await generator.newUserGroupCreation(alice.device, ['alice']);
     await groupMan.findGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
 
     stubs.updateGroupStore.callsFake(async () => {
@@ -90,31 +95,36 @@ describe('GroupManager', () => {
   });
 
   it('throws when creating a group with 0 members', async () => {
-    const { groupMan } = await makeTestUsers();
     await expect(groupMan.createGroup([])).to.be.rejectedWith(InvalidGroupSize);
   });
 
+  it('throws when updating a group with 0 members', async () => {
+    await expect(groupMan.updateGroupMembers(aliceGroupId, [])).to.be.rejectedWith(InvalidGroupSize);
+  });
+
   it('throws when creating a group with 1001 members', async () => {
-    const { groupMan } = await makeTestUsers();
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
     await expect(groupMan.createGroup(users)).to.be.rejectedWith(InvalidGroupSize);
   });
 
   it('throws when updating a group with 1001 members', async () => {
-    const { groupMan } = await makeTestUsers();
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
-    await expect(groupMan.updateGroupMembers('fakeid', users)).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupMan.updateGroupMembers(aliceGroupId, users)).to.be.rejectedWith(InvalidGroupSize);
   });
 
   it('throws when creating a group with provisional identities', async () => {
-    const { groupMan, generator } = await makeTestUsers();
-    const users = [await createProvisionalIdentity(generator.trustchainId, 'bob@zmail.com')];
+    const users = [await createProvisionalIdentity(utils.toBase64(generator.trustchainId), 'bob@zmail.com')];
     await expect(groupMan.createGroup(users)).to.be.rejectedWith(InvalidIdentity);
   });
 
   it('throws when updating a group with provisional identities', async () => {
-    const { groupMan, generator } = await makeTestUsers();
-    const users = [await createProvisionalIdentity(generator.trustchainId, 'bob@zmail.com')];
-    await expect(groupMan.updateGroupMembers('fakeid', users)).to.be.rejectedWith(InvalidIdentity);
+    const users = [await createProvisionalIdentity(utils.toBase64(generator.trustchainId), 'bob@zmail.com')];
+    await expect(groupMan.updateGroupMembers(aliceGroupId, users)).to.be.rejectedWith(InvalidIdentity);
+  });
+
+  it('throws when updating a non existent group', async () => {
+    const fakeGroupId = utils.toBase64(new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE));
+    const users = [await getPublicIdentity(await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'alice'))];
+    await expect(groupMan.updateGroupMembers(fakeGroupId, users)).to.be.rejectedWith(InvalidArgument);
   });
 });
