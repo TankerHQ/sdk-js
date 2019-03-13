@@ -72,7 +72,8 @@ export default class GroupManager {
       throw new InvalidGroupSize(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
 
     const internalGroupId = utils.fromBase64(groupId);
-    await this._trustchain.updateGroupStore([internalGroupId]);
+    await this._fetchGroups([internalGroupId]);
+
     const existingGroup = await this._groupStore.findFull({ groupId: internalGroupId });
 
     if (!existingGroup) {
