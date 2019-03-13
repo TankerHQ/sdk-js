@@ -9,9 +9,9 @@ export const NATURE = Object.freeze({
   device_creation_v3: 7,
   key_publish_to_user: 8,
   device_revocation_v2: 9,
-  user_group_creation: 10,
+  user_group_creation_v1: 10,
   key_publish_to_user_group: 11,
-  user_group_addition: 12,
+  user_group_addition_v1: 12,
   pending_key_publish: 13,
   provisional_identity_claim: 14,
 });
@@ -43,8 +43,8 @@ export function preferredNature(kind: NatureKind): Nature {
     case NATURE_KIND.pending_key_publish: return NATURE.pending_key_publish;
     case NATURE_KIND.device_revocation: return NATURE.device_revocation_v2;
     case NATURE_KIND.device_creation: return NATURE.device_creation_v3;
-    case NATURE_KIND.user_group_creation: return NATURE.user_group_creation;
-    case NATURE_KIND.user_group_addition: return NATURE.user_group_addition;
+    case NATURE_KIND.user_group_creation: return NATURE.user_group_creation_v1;
+    case NATURE_KIND.user_group_addition: return NATURE.user_group_addition_v1;
     case NATURE_KIND.provisional_identity_claim: return NATURE.provisional_identity_claim;
     default: throw new Error(`invalid kind: ${kind}`);
   }
@@ -63,8 +63,8 @@ export function natureKind(val: Nature): NatureKind {
     case NATURE.pending_key_publish: return NATURE_KIND.pending_key_publish;
     case NATURE.device_revocation_v1: return NATURE_KIND.device_revocation;
     case NATURE.device_revocation_v2: return NATURE_KIND.device_revocation;
-    case NATURE.user_group_creation: return NATURE_KIND.user_group_creation;
-    case NATURE.user_group_addition: return NATURE_KIND.user_group_addition;
+    case NATURE.user_group_creation_v1: return NATURE_KIND.user_group_creation;
+    case NATURE.user_group_addition_v1: return NATURE_KIND.user_group_addition;
     case NATURE.provisional_identity_claim: return NATURE_KIND.provisional_identity_claim;
     default: throw new Error(`invalid nature: ${val}`);
   }

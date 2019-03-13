@@ -490,8 +490,8 @@ export function unserializePayload(block: Block): Record {
     case NATURE.pending_key_publish: return unserializePendingKeyPublish(block.payload);
     case NATURE.device_revocation_v1: return unserializeDeviceRevocationV1(block.payload);
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
-    case NATURE.user_group_creation: return unserializeUserGroupCreation(block.payload);
-    case NATURE.user_group_addition: return unserializeUserGroupAddition(block.payload);
+    case NATURE.user_group_creation_v1: return unserializeUserGroupCreation(block.payload);
+    case NATURE.user_group_addition_v1: return unserializeUserGroupAddition(block.payload);
     case NATURE.provisional_identity_claim: return unserializeProvisionalIdentityClaim(block.payload);
     default: throw new UpgradeRequiredError(`unknown nature: ${block.nature}`);
   }

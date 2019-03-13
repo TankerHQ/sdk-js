@@ -96,9 +96,9 @@ export default class GroupUpdater {
   }
 
   applyEntry = async (entry: VerifiedUserGroup) => {
-    if (entry.nature === NATURE.user_group_creation)
+    if (entry.nature === NATURE.user_group_creation_v1)
       await this._applyUserGroupCreation(entry);
-    else if (entry.nature === NATURE.user_group_addition)
+    else if (entry.nature === NATURE.user_group_addition_v1)
       await this._applyUserGroupAddition(entry);
     else
       throw new Error(`unsupported group update block nature: ${entry.nature}`);

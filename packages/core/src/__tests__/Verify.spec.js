@@ -74,7 +74,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a root block if it has invalid nature', () => {
-      unverifiedTrustchainCreation.nature = NATURE.user_group_addition;
+      unverifiedTrustchainCreation.nature = NATURE.user_group_addition_v1;
       assertFailWithNature(
         () => verifyTrustchainCreation(unverifiedTrustchainCreation, trustchainId),
         'invalid_nature'
