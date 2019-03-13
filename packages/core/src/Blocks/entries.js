@@ -13,6 +13,7 @@ import {
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
   unserializeUserGroupCreationV1,
+  unserializeUserGroupCreationV2,
   unserializeUserGroupAdditionV1,
   unserializeProvisionalIdentityClaim,
 } from './payloads';
@@ -155,6 +156,13 @@ export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
   const verificationFields = verificationFieldsFromBlock(block);
   if (block.nature === NATURE.user_group_creation_v1) {
     const userGroupAction = unserializeUserGroupCreationV1(block.payload);
+    return {
+      ...verificationFields,
+      ...userGroupAction,
+      group_id: userGroupAction.public_signature_key
+    };
+  } else if (block.nature === NATURE.user_group_creation_v2) {
+    const userGroupAction = unserializeUserGroupCreationV2(block.payload);
     return {
       ...verificationFields,
       ...userGroupAction,

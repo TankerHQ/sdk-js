@@ -5,10 +5,14 @@ import GroupStore from './GroupStore';
 import Keystore from '../Session/Keystore';
 
 import { type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import { type GroupEncryptedKeyV1, type UserGroupCreationRecordV1, type UserGroupAdditionRecordV1 } from '../Blocks/payloads';
-import { NATURE } from '../Blocks/Nature';
+import {
+  type GroupEncryptedKey,
+  type UserGroupCreationRecord,
+  type UserGroupAdditionRecordV1,
+} from '../Blocks/payloads';
+import { NATURE_KIND, natureKind } from '../Blocks/Nature';
 
-function findMyKeys(groupKeys: Array<GroupEncryptedKeyV1>, keystore: Keystore): ?Object {
+function findMyKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: Keystore): ?Object {
   for (const gek of groupKeys) {
     const correspondingPair = keystore.findUserKey(gek.public_user_encryption_key);
     if (correspondingPair)
@@ -30,7 +34,9 @@ export default class GroupUpdater {
   }
 
   _applyUserGroupCreation = async (entry: VerifiedUserGroup) => {
-    const userGroupCreation: UserGroupCreationRecordV1 = (entry: any);
+    const userGroupCreation: UserGroupCreationRecord = (entry: any);
+
+    // FIXME: Handle group creation V2 properly (we can just handle V1 as a special case missing some fields)
 
     const myKeys = findMyKeys(userGroupCreation.encrypted_group_private_encryption_keys_for_users, this._keystore);
     if (!myKeys) {
@@ -96,9 +102,9 @@ export default class GroupUpdater {
   }
 
   applyEntry = async (entry: VerifiedUserGroup) => {
-    if (entry.nature === NATURE.user_group_creation_v1)
+    if (natureKind(entry.nature) === NATURE_KIND.user_group_creation)
       await this._applyUserGroupCreation(entry);
-    else if (entry.nature === NATURE.user_group_addition_v1)
+    else if (natureKind(entry.nature) === NATURE_KIND.user_group_addition)
       await this._applyUserGroupAddition(entry);
     else
       throw new Error(`unsupported group update block nature: ${entry.nature}`);
