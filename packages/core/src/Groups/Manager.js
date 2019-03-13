@@ -71,9 +71,6 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
 
-    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
-    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
-
     const internalGroupId = utils.fromBase64(groupId);
     await this._trustchain.updateGroupStore([internalGroupId]);
     const existingGroup = await this._groupStore.findFull({ groupId: internalGroupId });
@@ -81,6 +78,9 @@ export default class GroupManager {
     if (!existingGroup) {
       throw new InvalidArgument('groupId', 'string', groupId);
     }
+
+    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
+    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     // no need to keep the keys, we will get them when we receive the group block
     const userGroupCreationBlock = this._localUser.blockGenerator.addToUserGroup(
