@@ -16,6 +16,7 @@ class StubTrustchain {
   _trustchainStore = {
     _trustchainId: null,
   };
+  verifyDevice = () => null;
 }
 
 async function makeTestUsers({ onUpdateUserStore } = {}) {
@@ -147,6 +148,22 @@ describe('Users', () => {
 
       await expect(users.getUsers({ userIds: ['alice', 'bob', 'casper'] }))
         .to.be.rejectedWith(RecipientsNotFound);
+    });
+  });
+
+  describe('getDevicePublicEncryptionKey', () => {
+    it('returns device public encryption key', async () => {
+      const { users, builder } = await makeTestUsers();
+      const alice = await builder.newUserCreationV3('alice');
+      const expected = alice.device.encryptionKeys.publicKey;
+      const devicePublicEncryptionKey = await users.getDevicePublicEncryptionKey(alice.device.id);
+      expect(devicePublicEncryptionKey).to.deep.equal(expected);
+    });
+
+    it('throws if device does not exist', async () => {
+      const { users, builder } = await makeTestUsers();
+      await builder.newUserCreationV3('alice');
+      await expect(users.getDevicePublicEncryptionKey(new Uint8Array(0))).to.be.rejectedWith(RecipientsNotFound);
     });
   });
 });
