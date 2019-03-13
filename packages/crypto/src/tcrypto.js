@@ -21,7 +21,6 @@ export const HASH_SIZE = 32;
 export const SEALED_KEY_SIZE = 80;
 export const SEALED_ENCRYPTION_PRIVATE_KEY_SIZE = 80;
 export const SEALED_SIGNATURE_PRIVATE_KEY_SIZE = 112;
-export { USER_SECRET_SIZE } from './random';
 
 export type SodiumKeyPair = {
   privateKey: Key,

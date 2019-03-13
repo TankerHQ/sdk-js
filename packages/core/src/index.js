@@ -1,7 +1,7 @@
 // @flow
 
 // import
-import { createUserSecretB64 as createUserSecret } from '@tanker/crypto';
+import { createUserSecretB64 as createUserSecret } from '@tanker/identity';
 
 import { Tanker, TankerStatus, optionsWithDefaults } from './Tanker';
 import * as errors from './errors';

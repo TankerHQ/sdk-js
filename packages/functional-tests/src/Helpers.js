@@ -6,9 +6,8 @@ import type { TankerInterface, b64string } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
-import { createIdentity } from '@tanker/identity';
-
-import { random, tcrypto, utils, obfuscateUserId } from '@tanker/crypto';
+import { random, tcrypto, utils } from '@tanker/crypto';
+import { createIdentity, obfuscateUserId } from '@tanker/identity';
 
 const tankerUrl = process.env.TANKER_URL || '';
 const idToken = process.env.TANKER_TOKEN || '';

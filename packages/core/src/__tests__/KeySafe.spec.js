@@ -1,6 +1,6 @@
 // @flow
 
-import { createUserSecretBinary } from '@tanker/crypto';
+import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
 

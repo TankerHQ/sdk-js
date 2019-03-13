@@ -1,6 +1,7 @@
 // @flow
 
-import { tcrypto, createUserSecretBinary, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
+import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
