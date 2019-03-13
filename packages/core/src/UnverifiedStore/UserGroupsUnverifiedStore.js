@@ -54,7 +54,7 @@ export default class UserGroupsUnverifiedStore {
     const mapEntry = new Map();
     const mapEncKeys = new Map();
     for (const entry of entries) {
-      if (entry.nature === NATURE.user_group_creation) {
+      if (entry.nature === NATURE.user_group_creation_v1) {
         const groupCreation: UnverifiedUserGroupCreation = (entry: any);
         const b64GroupId = utils.toBase64(entry.group_id);
 
@@ -67,7 +67,7 @@ export default class UserGroupsUnverifiedStore {
           group_id: b64GroupId,
         };
         mapEncKeys.set(dbGroupKey._id, dbGroupKey); // eslint-disable-line no-underscore-dangle
-      } else if (entry.nature === NATURE.user_group_addition) {
+      } else if (entry.nature === NATURE.user_group_addition_v1) {
         const groupAddition: UnverifiedUserGroupAddition = (entry: any);
         const dbEntry = entryToDbEntry(entry, utils.toBase64(groupAddition.previous_group_block));
         mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
@@ -112,9 +112,9 @@ export default class UserGroupsUnverifiedStore {
   async removeVerifiedUserGroupEntry(userGroupEntry: VerifiedUserGroup): Promise<void> {
     const cast: any = userGroupEntry;
 
-    if (userGroupEntry.nature === NATURE.user_group_creation) {
+    if (userGroupEntry.nature === NATURE.user_group_creation_v1) {
       await this._ds.delete(UNVERIFIED_GROUPS_TABLE, utils.toBase64(cast.public_signature_key));
-    } else if (userGroupEntry.nature === NATURE.user_group_addition) {
+    } else if (userGroupEntry.nature === NATURE.user_group_addition_v1) {
       await this._ds.delete(UNVERIFIED_GROUPS_TABLE, utils.toBase64(cast.previous_group_block));
     }
   }
