@@ -6,7 +6,7 @@ import { expect } from 'chai';
 import { toBase64 } from '../../../../packages/client-node';
 import { upgradeUserToken } from '../../../../packages/identity';
 import { TrustchainHelper } from '../../../../packages/functional-tests/src/Helpers';
-import { makeCurrentUser, makeUser } from './helpers';
+import { makeCurrentUser, makeV1User } from './helpers';
 
 function generateTests(version: string, Tanker: any, generateUserToken: any) {
   describe(version, function () { // eslint-disable-line func-names
@@ -23,10 +23,10 @@ function generateTests(version: string, Tanker: any, generateUserToken: any) {
       const bobToken = generateUserToken(args.trustchainId, trustchainPrivateKey, bobId);
       const aliceIdentity = await upgradeUserToken(args.trustchainId, aliceId, aliceToken);
       const bobIdentity = await upgradeUserToken(args.trustchainId, bobId, bobToken);
-      args.currentBob = makeCurrentUser(bobId, bobToken, bobIdentity, args.trustchainId);
-      args.versionBob = makeUser(Tanker, bobId, bobToken, bobIdentity, args.trustchainId);
-      args.currentAlice = makeCurrentUser(aliceId, aliceToken, aliceIdentity, args.trustchainId);
-      args.versionAlice = makeUser(Tanker, aliceId, aliceToken, aliceIdentity, args.trustchainId);
+      args.currentBob = makeCurrentUser(bobId, bobIdentity, args.trustchainId);
+      args.versionBob = makeV1User(Tanker, bobId, bobToken, args.trustchainId);
+      args.currentAlice = makeCurrentUser(aliceId, aliceIdentity, args.trustchainId);
+      args.versionAlice = makeV1User(Tanker, aliceId, aliceToken, args.trustchainId);
       await args.versionBob.create();
       await args.versionBob.close();
       await args.versionAlice.create();
@@ -78,7 +78,7 @@ function generateTests(version: string, Tanker: any, generateUserToken: any) {
     });
 
     it(`registers unlock with ${version} and unlocks with current code`, async () => {
-      const phone = makeCurrentUser(args.versionBob.id, args.versionBob.token, args.versionBob.identity, args.trustchainId, 'phone');
+      const phone = makeCurrentUser(args.currentBob.id, args.currentBob.identity, args.trustchainId, 'phone');
       await phone.signIn();
       await phone.signOut();
     });
