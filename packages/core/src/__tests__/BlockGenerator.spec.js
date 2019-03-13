@@ -5,8 +5,8 @@ import { tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from './chai';
 import makeUint8Array from './makeUint8Array';
 import { blockToEntry } from '../Blocks/entries';
-import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
-import BlockGenerator, { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
+import { type UserGroupCreationRecordV1, type UserGroupAdditionRecordV1 } from '../Blocks/payloads';
+import BlockGenerator, { getUserGroupCreationBlockSignDataV1, getUserGroupAdditionBlockSignDataV1 } from '../Blocks/BlockGenerator';
 
 describe('BlockGenerator', () => {
   let userKeys;
@@ -52,7 +52,7 @@ describe('BlockGenerator', () => {
       record.encrypted_group_private_encryption_keys_for_users[1].encrypted_group_private_encryption_key,
     );
 
-    const gotSignData = getUserGroupCreationBlockSignData(record);
+    const gotSignData = getUserGroupCreationBlockSignDataV1(record);
 
     expect(gotSignData).to.deep.equal(expectedSignData);
   });
@@ -68,14 +68,14 @@ describe('BlockGenerator', () => {
     );
 
     const entry = blockToEntry(block);
-    const record: UserGroupCreationRecord = (entry.payload_unverified: any);
+    const record: UserGroupCreationRecordV1 = (entry.payload_unverified: any);
     expect(record.public_signature_key).to.deep.equal(groupSignatureKeyPair.publicKey);
     expect(record.public_encryption_key).to.deep.equal(groupEncryptionKeyPair.publicKey);
     expect(tcrypto.sealDecrypt(record.encrypted_group_private_signature_key, groupEncryptionKeyPair)).to.deep.equal(groupSignatureKeyPair.privateKey);
     expect(record.encrypted_group_private_encryption_keys_for_users.length).to.deep.equal(1);
     expect(record.encrypted_group_private_encryption_keys_for_users[0].public_user_encryption_key).to.deep.equal(userKeys.publicKey);
     expect(tcrypto.sealDecrypt(record.encrypted_group_private_encryption_keys_for_users[0].encrypted_group_private_encryption_key, userKeys)).to.deep.equal(groupEncryptionKeyPair.privateKey);
-    const signData = getUserGroupCreationBlockSignData(record);
+    const signData = getUserGroupCreationBlockSignDataV1(record);
     expect(tcrypto.verifySignature(signData, record.self_signature, groupSignatureKeyPair.publicKey)).to.equal(true);
   });
 
@@ -104,7 +104,7 @@ describe('BlockGenerator', () => {
       record.encrypted_group_private_encryption_keys_for_users[1].encrypted_group_private_encryption_key,
     );
 
-    const gotSignData = getUserGroupAdditionBlockSignData(record);
+    const gotSignData = getUserGroupAdditionBlockSignDataV1(record);
 
     expect(gotSignData).to.deep.equal(expectedSignData);
   });
@@ -123,13 +123,13 @@ describe('BlockGenerator', () => {
     );
 
     const entry = blockToEntry(block);
-    const record: UserGroupAdditionRecord = (entry.payload_unverified: any);
+    const record: UserGroupAdditionRecordV1 = (entry.payload_unverified: any);
     expect(record.group_id).to.deep.equal(groupSignatureKeyPair.publicKey);
     expect(record.previous_group_block).to.deep.equal(previousGroupBlock);
     expect(record.encrypted_group_private_encryption_keys_for_users.length).to.deep.equal(1);
     expect(record.encrypted_group_private_encryption_keys_for_users[0].public_user_encryption_key).to.deep.equal(userKeys.publicKey);
     expect(tcrypto.sealDecrypt(record.encrypted_group_private_encryption_keys_for_users[0].encrypted_group_private_encryption_key, userKeys)).to.deep.equal(groupEncryptionKeyPair.privateKey);
-    const signData = getUserGroupAdditionBlockSignData(record);
+    const signData = getUserGroupAdditionBlockSignDataV1(record);
     expect(tcrypto.verifySignature(signData, record.self_signature_with_current_key, groupSignatureKeyPair.publicKey)).to.equal(true);
   });
 });

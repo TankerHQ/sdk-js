@@ -5,10 +5,10 @@ import GroupStore from './GroupStore';
 import Keystore from '../Session/Keystore';
 
 import { type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import { type GroupEncryptedKey, type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
+import { type GroupEncryptedKeyV1, type UserGroupCreationRecordV1, type UserGroupAdditionRecordV1 } from '../Blocks/payloads';
 import { NATURE } from '../Blocks/Nature';
 
-function findMyKeys(groupKeys: Array<GroupEncryptedKey>, keystore: Keystore): ?Object {
+function findMyKeys(groupKeys: Array<GroupEncryptedKeyV1>, keystore: Keystore): ?Object {
   for (const gek of groupKeys) {
     const correspondingPair = keystore.findUserKey(gek.public_user_encryption_key);
     if (correspondingPair)
@@ -30,7 +30,7 @@ export default class GroupUpdater {
   }
 
   _applyUserGroupCreation = async (entry: VerifiedUserGroup) => {
-    const userGroupCreation: UserGroupCreationRecord = (entry: any);
+    const userGroupCreation: UserGroupCreationRecordV1 = (entry: any);
 
     const myKeys = findMyKeys(userGroupCreation.encrypted_group_private_encryption_keys_for_users, this._keystore);
     if (!myKeys) {
@@ -62,7 +62,7 @@ export default class GroupUpdater {
   }
 
   _applyUserGroupAddition = async (entry: VerifiedUserGroup) => {
-    const userGroupAddition: UserGroupAdditionRecord = (entry: any);
+    const userGroupAddition: UserGroupAdditionRecordV1 = (entry: any);
 
     const previousGroup = await this._groupStore.findExternal({ groupId: userGroupAddition.group_id });
     if (!previousGroup)
@@ -96,9 +96,9 @@ export default class GroupUpdater {
   }
 
   applyEntry = async (entry: VerifiedUserGroup) => {
-    if (entry.nature === NATURE.user_group_creation)
+    if (entry.nature === NATURE.user_group_creation_v1)
       await this._applyUserGroupCreation(entry);
-    else if (entry.nature === NATURE.user_group_addition)
+    else if (entry.nature === NATURE.user_group_addition_v1)
       await this._applyUserGroupAddition(entry);
     else
       throw new Error(`unsupported group update block nature: ${entry.nature}`);

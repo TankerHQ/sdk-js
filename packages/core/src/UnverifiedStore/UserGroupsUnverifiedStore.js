@@ -4,7 +4,7 @@ import { utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
-import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
+import { type UserGroupCreationRecordV1, type UserGroupAdditionRecordV1 } from '../Blocks/payloads';
 import { NATURE } from '../Blocks/Nature';
 
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
@@ -12,13 +12,13 @@ const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';
 
 export type UnverifiedUserGroupCreation = {
   ...VerificationFields,
-  ...UserGroupCreationRecord,
+  ...UserGroupCreationRecordV1,
   group_id: Uint8Array
 };
 
 export type UnverifiedUserGroupAddition = {
   ...VerificationFields,
-  ...UserGroupAdditionRecord,
+  ...UserGroupAdditionRecordV1,
 };
 
 export type UnverifiedUserGroup = UnverifiedUserGroupCreation | UnverifiedUserGroupAddition
@@ -54,7 +54,7 @@ export default class UserGroupsUnverifiedStore {
     const mapEntry = new Map();
     const mapEncKeys = new Map();
     for (const entry of entries) {
-      if (entry.nature === NATURE.user_group_creation) {
+      if (entry.nature === NATURE.user_group_creation_v1) {
         const groupCreation: UnverifiedUserGroupCreation = (entry: any);
         const b64GroupId = utils.toBase64(entry.group_id);
 
@@ -67,7 +67,7 @@ export default class UserGroupsUnverifiedStore {
           group_id: b64GroupId,
         };
         mapEncKeys.set(dbGroupKey._id, dbGroupKey); // eslint-disable-line no-underscore-dangle
-      } else if (entry.nature === NATURE.user_group_addition) {
+      } else if (entry.nature === NATURE.user_group_addition_v1) {
         const groupAddition: UnverifiedUserGroupAddition = (entry: any);
         const dbEntry = entryToDbEntry(entry, utils.toBase64(groupAddition.previous_group_block));
         mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
@@ -112,9 +112,9 @@ export default class UserGroupsUnverifiedStore {
   async removeVerifiedUserGroupEntry(userGroupEntry: VerifiedUserGroup): Promise<void> {
     const cast: any = userGroupEntry;
 
-    if (userGroupEntry.nature === NATURE.user_group_creation) {
+    if (userGroupEntry.nature === NATURE.user_group_creation_v1) {
       await this._ds.delete(UNVERIFIED_GROUPS_TABLE, utils.toBase64(cast.public_signature_key));
-    } else if (userGroupEntry.nature === NATURE.user_group_addition) {
+    } else if (userGroupEntry.nature === NATURE.user_group_addition_v1) {
       await this._ds.delete(UNVERIFIED_GROUPS_TABLE, utils.toBase64(cast.previous_group_block));
     }
   }
