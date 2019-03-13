@@ -3,7 +3,8 @@ import { expect } from 'chai';
 import { utils } from '@tanker/crypto';
 
 import { obfuscateUserId } from '../userId';
-import { createUserSecretBinary, checkUserSecret, USER_SECRET_SIZE } from '../userSecret';
+import { createUserSecretBinary, assertUserSecret, USER_SECRET_SIZE } from '../userSecret';
+import { InvalidIdentity } from '../InvalidIdentity';
 
 const { fromBase64, fromString } = utils;
 
@@ -18,9 +19,9 @@ describe('userSecret', () => {
 
   it('should throw if bad arguments given to createUserSecretBinary', () => {
     // $FlowExpectedError
-    expect(() => createUserSecretBinary()).to.throw(TypeError);
+    expect(() => createUserSecretBinary()).to.throw('Assertion error');
     // $FlowExpectedError
-    expect(() => createUserSecretBinary(trustchainIdB64)).to.throw(TypeError);
+    expect(() => createUserSecretBinary(trustchainIdB64)).to.throw('Assertion error');
   });
 
   // Warning! This test only works 99.9999999999999999999999999999999999999999999999999999999999999999999999999991% of the time!
@@ -30,28 +31,26 @@ describe('userSecret', () => {
     expect(secret1).to.not.equal(secret2);
   });
 
-  it('should throw if bad arguments given to checkUserSecret', () => {
-    // $FlowExpectedError
-    expect(() => checkUserSecret()).to.throw(TypeError);
-    // $FlowExpectedError
-    expect(() => checkUserSecret(obfuscateUserId(trustchainId, 'edmond'))).to.throw(TypeError);
+  it('should throw if bad arguments given to assertUserSecret', () => {
+    // $FlowExpectedError No arguments
+    expect(() => assertUserSecret()).to.throw('Assertion error');
+    // $FlowExpectedError Missing second argument
+    expect(() => assertUserSecret(obfuscateUserId(trustchainId, 'edmond'))).to.throw('Assertion error');
+
+    const tooShortSecret = new Uint8Array(USER_SECRET_SIZE - 1);
+    expect(() => assertUserSecret(obfuscateUserId(trustchainId, 'caderousse'), tooShortSecret)).to.throw('Assertion error');
   });
 
   it('should accept secrets of the right user', async () => {
     const userId = 'fernand';
     const secret = createUserSecretBinary(trustchainIdB64, userId);
     const obfuscatedUserId = obfuscateUserId(trustchainId, userId);
-    expect(() => checkUserSecret(obfuscatedUserId, secret)).not.to.throw();
-  });
-
-  it('should reject secrets with invalid size', async () => {
-    const badSecret = new Uint8Array(USER_SECRET_SIZE - 1);
-    expect(() => checkUserSecret(obfuscateUserId(trustchainId, 'caderousse'), badSecret)).to.throw();
+    expect(() => assertUserSecret(obfuscatedUserId, secret)).not.to.throw();
   });
 
   it('should reject invalid secrets, even with correct size', async () => {
     const secret = fromString('And our interests are the same !');
-    expect(() => checkUserSecret(obfuscateUserId(trustchainId, 'danglars'), secret)).to.throw();
+    expect(() => assertUserSecret(obfuscateUserId(trustchainId, 'danglars'), secret)).to.throw(InvalidIdentity);
   });
 
   it('should reject secrets of the wrong user most of the time', async () => {
@@ -60,7 +59,7 @@ describe('userSecret', () => {
     for (let i = 0; i < count; ++i) {
       const secret = createUserSecretBinary(trustchainIdB64, 'villefort');
       try {
-        checkUserSecret(obfuscateUserId(trustchainId, 'edmond'), secret);
+        assertUserSecret(obfuscateUserId(trustchainId, 'edmond'), secret);
       } catch (e) {
         rejections += 1;
       }

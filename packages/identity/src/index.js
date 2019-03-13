@@ -13,4 +13,4 @@ export {
 } from './identity';
 
 export { obfuscateUserId } from './userId';
-export { createUserSecretBinary, createUserSecretB64, checkUserSecret, USER_SECRET_SIZE } from './userSecret';
+export { createUserSecretBinary, createUserSecretB64, assertUserSecret, USER_SECRET_SIZE } from './userSecret';

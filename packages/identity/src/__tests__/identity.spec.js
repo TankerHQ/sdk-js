@@ -7,7 +7,7 @@ import {
   createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken,
 } from '../identity';
 import { obfuscateUserId } from '../userId';
-import { checkUserSecret } from '../userSecret';
+import { assertUserSecret } from '../userSecret';
 
 function checkDelegationSignature(identity, trustchainPublicKey) {
   const signedData = utils.concatArrays(
@@ -97,7 +97,7 @@ describe('Identity', () => {
       expect(identity.trustchain_id).to.be.equal(trustchain.id);
       expect(identity.target).to.be.equal('user');
       expect(identity.value).to.be.equal(obfuscatedUserId);
-      checkUserSecret(utils.fromBase64(identity.value), utils.fromBase64(identity.user_secret));
+      assertUserSecret(utils.fromBase64(identity.value), utils.fromBase64(identity.user_secret));
       checkDelegationSignature(identity, trustchain.pk);
     });
 

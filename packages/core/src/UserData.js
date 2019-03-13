@@ -1,7 +1,7 @@
 // @flow
 
 import { utils, type b64string } from '@tanker/crypto';
-import { _deserializePermanentIdentity, checkUserSecret, InvalidIdentity } from '@tanker/identity';
+import { _deserializePermanentIdentity, assertUserSecret } from '@tanker/identity';
 import { type DelegationToken } from './Session/delegation';
 
 export type UserData = {
@@ -26,11 +26,8 @@ export function extractUserData(identityB64: b64string): UserData {
     last_reset: new Uint8Array(32),
   };
 
-  try {
-    checkUserSecret(userId, userSecret);
-  } catch (e) {
-    throw new InvalidIdentity(e);
-  }
+  assertUserSecret(userId, userSecret);
+
   return {
     trustchainId,
     userId,

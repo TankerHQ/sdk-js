@@ -1,6 +1,7 @@
 // @flow
 import { generichash, random, utils, type b64string } from '@tanker/crypto';
 import { obfuscateUserId } from './userId';
+import { InvalidIdentity } from './InvalidIdentity';
 
 export const USER_SECRET_SIZE = 32;
 
@@ -16,10 +17,10 @@ function checksumByte(secretRand: Uint8Array, userIdBytes: Uint8Array): number {
 
 export function createUserSecretBinary(trustchainId: b64string, userId: string): Uint8Array {
   if (typeof trustchainId !== 'string')
-    throw new TypeError('Invalid Trustchain ID.');
+    throw new Error('Assertion error: invalid Trustchain ID.');
 
   if (typeof userId !== 'string')
-    throw new TypeError('Invalid user ID.');
+    throw new Error('Assertion error: invalid user ID.');
 
   const rand = random(USER_SECRET_SIZE - 1);
   const checkByte = checksumByte(rand, obfuscateUserId(fromBase64(trustchainId), userId));
@@ -33,17 +34,17 @@ export function createUserSecretB64(trustchainId: b64string, userId: string): b6
   return toBase64(createUserSecretBinary(trustchainId, userId));
 }
 
-export function checkUserSecret(userId: Uint8Array, secret: Uint8Array) {
+export function assertUserSecret(userId: Uint8Array, secret: Uint8Array) {
   if (!(userId instanceof Uint8Array))
-    throw new TypeError(`Bad userId provided, expected a Uint8Array but got ${userId}`);
+    throw new Error(`Assertion error: bad userId provided, expected a Uint8Array but got ${userId}`);
 
   if (!(secret instanceof Uint8Array))
-    throw new TypeError(`Bad secret provided, expected a Uint8Array but got ${secret}`);
+    throw new Error(`Assertion error: bad secret provided, expected a Uint8Array but got ${secret}`);
 
   if (secret.length !== USER_SECRET_SIZE)
-    throw new Error(`Invalid secret length. Expecting ${USER_SECRET_SIZE}, got ${secret.length}`);
+    throw new Error(`Assertion error: invalid secret length, expected ${USER_SECRET_SIZE} but got ${secret.length}`);
 
   const checkByte = checksumByte(secret.subarray(0, USER_SECRET_SIZE - 1), userId);
   if (checkByte !== secret[USER_SECRET_SIZE - 1])
-    throw new Error('Secret does not match the user ID');
+    throw new InvalidIdentity('Secret does not match the user ID');
 }
