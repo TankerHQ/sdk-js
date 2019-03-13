@@ -2,7 +2,7 @@
 
 import * as tcrypto from './tcrypto';
 import * as aead from './aead';
-import { random, createUserSecretBinary, createUserSecretB64, checkUserSecret, obfuscateUserId } from './random';
+import { random } from './random';
 import { generichash } from './hash';
 import * as utils from './utils';
 import * as number from './number';
@@ -12,10 +12,6 @@ export {
   aead,
   tcrypto,
   random,
-  createUserSecretBinary,
-  createUserSecretB64,
-  checkUserSecret,
-  obfuscateUserId,
   generichash,
   number,
   utils,

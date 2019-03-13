@@ -1,6 +1,6 @@
 // @flow
-
-import { tcrypto, random, utils, obfuscateUserId } from '@tanker/crypto';
+import { tcrypto, random, utils } from '@tanker/crypto';
+import { obfuscateUserId } from '@tanker/identity';
 
 import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import BlockGenerator from '../Blocks/BlockGenerator';

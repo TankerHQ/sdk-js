@@ -1,17 +1,13 @@
 // @flow
-import { expect } from './chai';
-import { random, createUserSecretBinary, checkUserSecret, obfuscateUserId } from '../random';
-import { fromBase64, fromString } from '../utils';
+import { expect } from 'chai';
+import { utils } from '@tanker/crypto';
 
-function assertValidSecret(userId, secret) {
-  expect(() => checkUserSecret(userId, secret)).to.not.throw();
-}
+import { obfuscateUserId } from '../userId';
+import { createUserSecretBinary, checkUserSecret, USER_SECRET_SIZE } from '../userSecret';
 
-function assertInCorrectSecret(userId, secret) {
-  expect(() => checkUserSecret(userId, secret)).to.throw();
-}
+const { fromBase64, fromString } = utils;
 
-describe('random', () => {
+describe('userSecret', () => {
   let trustchainId;
   let trustchainIdB64;
 
@@ -42,18 +38,20 @@ describe('random', () => {
   });
 
   it('should accept secrets of the right user', async () => {
-    const secret = createUserSecretBinary(trustchainIdB64, 'fernand');
-    assertValidSecret(obfuscateUserId(trustchainId, 'fernand'), secret);
+    const userId = 'fernand';
+    const secret = createUserSecretBinary(trustchainIdB64, userId);
+    const obfuscatedUserId = obfuscateUserId(trustchainId, userId);
+    expect(() => checkUserSecret(obfuscatedUserId, secret)).not.to.throw();
   });
 
   it('should reject secrets with invalid size', async () => {
-    const twoshort = random(2);
-    assertInCorrectSecret(obfuscateUserId(trustchainId, 'caderousse'), twoshort);
+    const badSecret = new Uint8Array(USER_SECRET_SIZE - 1);
+    expect(() => checkUserSecret(obfuscateUserId(trustchainId, 'caderousse'), badSecret)).to.throw();
   });
 
   it('should reject invalid secrets, even with correct size', async () => {
     const secret = fromString('And our interests are the same !');
-    assertInCorrectSecret(obfuscateUserId(trustchainId, 'danglars'), secret);
+    expect(() => checkUserSecret(obfuscateUserId(trustchainId, 'danglars'), secret)).to.throw();
   });
 
   it('should reject secrets of the wrong user most of the time', async () => {

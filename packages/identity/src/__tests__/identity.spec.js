@@ -1,10 +1,13 @@
 // @flow
 import { expect } from 'chai';
-import { checkUserSecret, obfuscateUserId, tcrypto, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
+import { InvalidIdentity } from '../InvalidIdentity';
 import {
   _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
-  createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken, InvalidIdentity,
-} from '../index';
+  createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken,
+} from '../identity';
+import { obfuscateUserId } from '../userId';
+import { checkUserSecret } from '../userSecret';
 
 function checkDelegationSignature(identity, trustchainPublicKey) {
   const signedData = utils.concatArrays(

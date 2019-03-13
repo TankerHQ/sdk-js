@@ -1,7 +1,7 @@
 // @flow
 
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
-import { createUserSecretBinary } from '@tanker/crypto';
+import { createUserSecretBinary } from '@tanker/identity';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 

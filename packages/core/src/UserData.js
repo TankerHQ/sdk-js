@@ -1,7 +1,7 @@
 // @flow
 
-import { utils, checkUserSecret, type b64string } from '@tanker/crypto';
-import { _deserializePermanentIdentity, InvalidIdentity } from '@tanker/identity';
+import { utils, type b64string } from '@tanker/crypto';
+import { _deserializePermanentIdentity, checkUserSecret, InvalidIdentity } from '@tanker/identity';
 import { type DelegationToken } from './Session/delegation';
 
 export type UserData = {

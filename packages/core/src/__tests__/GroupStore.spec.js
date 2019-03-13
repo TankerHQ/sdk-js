@@ -1,7 +1,8 @@
 // @flow
 
-import { tcrypto, createUserSecretBinary } from '@tanker/crypto';
+import { tcrypto } from '@tanker/crypto';
 import { mergeSchemas } from '@tanker/datastore-base';
+import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
 import GroupStore from '../Groups/GroupStore';
