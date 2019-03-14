@@ -104,7 +104,7 @@ const generateUnlockTests = (args: TestArgs) => {
 
       it('can register an unlock email and unlock a new device with a valid verification code', async () => {
         await expect(bobLaptop.registerUnlock({ email: 'john@doe.com' })).to.be.fulfilled;
-        const verificationCode = await trustchainHelper.getVerificationCode(bobId, 'john@doe.com');
+        const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await expect(expectUnlock(bobPhone, bobIdentity, { verificationCode })).to.be.fulfilled;
       });
 
