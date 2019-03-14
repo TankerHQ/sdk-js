@@ -1,8 +1,7 @@
 // @flow
 
-import { utils, generichash, type b64string } from '@tanker/crypto';
+import { utils, type b64string } from '@tanker/crypto';
 import EventEmitter from 'events';
-import { TextEncoder } from 'text-encoder';
 
 import { type ClientOptions, type UnlockMethods } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
@@ -357,24 +356,12 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async provisionalIdentityClaim(provisionalIdentity: { email: string }, verificationCode: string, appInvitePrivateSignatureKey: string, appInvitePrivateEncryptionKey: string): Promise<void> {
+  async provisionalIdentityClaim(provisionalIdentity: { email: string }, verificationCodeNoPad: string, appInvitePrivateSignatureKey: string, appInvitePrivateEncryptionKey: string): Promise<void> {
     this.assert(this.isOpen, 'claim invite');
 
-    return this._session.dataProtector.provisionalIdentityClaim(provisionalIdentity, verificationCode, utils.fromBase64(appInvitePrivateSignatureKey), utils.fromBase64(appInvitePrivateEncryptionKey));
-  }
+    const verificationCode = utils.toBase64(utils.fromSafeBase64(verificationCodeNoPad));
 
-  // FIXME: This function is only intended for internal tests, will not work in production.
-  // Remove me!
-  async _getClaimVerificationCode(email: string): Promise<b64string> {
-    const testSecretKey = new Uint8Array([0x31, 0x32, 0x33, 0x34, 0x35]); // Secure AF 👌
-    const emailBuf = new TextEncoder().encode(email);
-    const prefix = new Uint8Array([0x74, 0x61, 0x6e, 0x6b, 0x65, 0x72, 0x20, 0x69, 0x6e, 0x76, 0x69, 0x74,
-      0x65, 0x65, 0x20, 0x76, 0x65, 0x72, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74,
-      0x69, 0x6f, 0x6e, 0x20, 0x63, 0x6f, 0x64, 0x65]);
-    let toHash = utils.concatArrays(prefix, testSecretKey);
-    toHash = utils.concatArrays(toHash, utils.fromBase64(this._options.trustchainId));
-    toHash = utils.concatArrays(toHash, emailBuf);
-    return utils.toBase64(generichash(toHash));
+    return this._session.dataProtector.provisionalIdentityClaim(provisionalIdentity, verificationCode, utils.fromBase64(appInvitePrivateSignatureKey), utils.fromBase64(appInvitePrivateEncryptionKey));
   }
 
   async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
