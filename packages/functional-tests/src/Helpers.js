@@ -8,7 +8,7 @@ import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
 import { createIdentity } from '@tanker/identity';
 
-import { random, tcrypto, utils, obfuscateUserId } from '@tanker/crypto';
+import { random, tcrypto, utils } from '@tanker/crypto';
 
 const tankerUrl = process.env.TANKER_URL || '';
 const idToken = process.env.TANKER_TOKEN || '';
@@ -104,12 +104,10 @@ export class TrustchainHelper {
     return createIdentity(utils.toBase64(this.trustchainId), utils.toBase64(this.trustchainKeyPair.privateKey), id);
   }
 
-  async getVerificationCode(userId: string, email: string): Promise<string> {
-    const hashedUserId = obfuscateUserId(this.trustchainId, userId);
+  async getVerificationCode(email: string): Promise<string> {
     const msg = {
       trustchain_id: utils.toBase64(this.trustchainId),
       email,
-      user_id: utils.toBase64(hashedUserId),
     };
     await sendMessage('authenticate customer', { idToken });
     const answer = await sendMessage('get verification code', msg);
