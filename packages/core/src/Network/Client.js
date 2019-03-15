@@ -290,7 +290,7 @@ export class Client extends EventEmitter {
   }
 
   getProvisionalIdentityKeys = async (emails: Array<{ email: string }>): Promise<*> => {
-    const result = await this._send('get provisional identities keys', emails);
+    const result = await this._send('get public provisional identities', emails);
     if (result.error)
       throw new ServerError(result.error, this.trustchainId);
 
@@ -301,7 +301,7 @@ export class Client extends EventEmitter {
   }
 
   getProvisionalIdentityPrivateKeys = async (provisionalIdentity: { email: string }, verificationCode: string): Promise<*> => {
-    const result = await this._send('get provisional identity private keys', {
+    const result = await this._send('get provisional identity', {
       email: provisionalIdentity.email,
       verificationCode,
     });
