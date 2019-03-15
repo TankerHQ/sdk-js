@@ -113,12 +113,6 @@ export class InvalidDelegationToken extends TankerError {
   }
 }
 
-export class MissingEventHandler extends TankerError {
-  constructor(eventName: string) {
-    const message = `it is mandatory to add an event handler for the "${eventName}" event`;
-    super('MissingEventHandler', message);
-  }
-}
 export class AuthenticationError extends TankerError {
   next: Error;
 

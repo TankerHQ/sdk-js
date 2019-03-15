@@ -72,7 +72,6 @@ export default class Storage {
     );
 
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
-    // $FlowIKnow
     this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
     this._schemas = schemas;
 

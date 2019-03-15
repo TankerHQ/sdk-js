@@ -93,7 +93,6 @@ export class Tanker extends EventEmitter {
     if (typeof options.dataStore !== 'object' || options.dataStore instanceof Array) {
       throw new InvalidArgument('options.dataStore', 'object', options.dataStore);
     } else if (typeof options.dataStore.adapter !== 'function') {
-      // $FlowFixMe
       throw new InvalidArgument('options.dataStore.adapter', 'function', options.dataStore.adapter);
     }
     if (typeof options.sdkType !== 'string') {

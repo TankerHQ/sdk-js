@@ -112,7 +112,6 @@ describe('Tanker', () => {
           userId,
         );
         const truncatedIdentity = identity.slice(0, identity.length - 10);
-        // $FlowExpectedError
         await expect(tanker.signUp(truncatedIdentity)).to.be.rejectedWith(InvalidIdentity);
       });
     });

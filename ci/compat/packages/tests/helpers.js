@@ -9,40 +9,13 @@ import { fromBase64, toBase64 } from '../../../../packages/client-node';
 
 const password = 'plop';
 
-class User {
+class BaseUser {
   _tanker: any;
   _id: string;
-  _token: string;
-  _identity: string;
 
-  constructor(tanker: any, id: string, token: string, identity: string) {
+  constructor(tanker: any, id: string) {
     this._tanker = tanker;
     this._id = id;
-    this._token = token;
-    this._identity = identity;
-  }
-
-  async open() {
-    await this._tanker.open(this._id, this._token);
-  }
-
-  async signIn() {
-    await this._tanker.signIn(this._identity, { password });
-  }
-
-  async signOut() {
-    await this._tanker.signOut();
-  }
-
-  async create() {
-    await this.open();
-    if (!await this._tanker.hasRegisteredUnlockMethods()) {
-      await this._tanker.registerUnlock({ password });
-    }
-  }
-
-  async close() {
-    await this._tanker.close();
   }
 
   async encrypt(message: string, userIds: Array<string>, groupIds: Array<string>) {
@@ -60,9 +33,50 @@ class User {
   get id() {
     return this._id;
   }
+}
+
+class UserV1 extends BaseUser {
+  _token: string;
+
+  constructor(tanker: any, id: string, token: string) {
+    super(tanker, id);
+    this._token = token;
+  }
+
+  async open() {
+    await this._tanker.open(this._id, this._token);
+  }
+
+  async create() {
+    await this.open();
+    if (!await this._tanker.hasRegisteredUnlockMethods()) {
+      await this._tanker.registerUnlock({ password });
+    }
+  }
+
+  async close() {
+    await this._tanker.close();
+  }
 
   get token() {
     return this._token;
+  }
+}
+
+class UserV2 extends BaseUser {
+  _identity: string;
+
+  constructor(tanker: any, id: string, identity: string) {
+    super(tanker, id);
+    this._identity = identity;
+  }
+
+  async signIn() {
+    await this._tanker.signIn(this._identity, { password });
+  }
+
+  async signOut() {
+    await this._tanker.signOut();
   }
 
   get identity() {
@@ -70,12 +84,12 @@ class User {
   }
 }
 
-export function makeUser(Tanker: any, userId: string, userToken: string, identity: string, trustchainId: string, prefix: string = 'default') {
-  const dbPath = path.join('/tmp', `${prefix}${trustchainId.replace(/[/\\]/g, '_')}/`);
+function makeTanker(Tanker: any, userId: string, trustchainId: string, prefix: string) {
+  const dbPath = path.join('/tmp', `${prefix}${userId}${trustchainId.replace(/[/\\]/g, '_')}/`);
   if (!fs.existsSync(dbPath)) {
     fs.mkdirSync(dbPath);
   }
-  const tanker = new Tanker({
+  return new Tanker({
     trustchainId,
     url: tankerUrl,
     sdkType: 'test',
@@ -83,13 +97,18 @@ export function makeUser(Tanker: any, userId: string, userToken: string, identit
       dbPath,
     },
   });
+}
+
+export function makeV1User(Tanker: any, userId: string, token: string, trustchainId: string, prefix: string = 'default') {
+  const tanker = makeTanker(Tanker, userId, trustchainId, prefix);
   tanker.on('unlockRequired', async () => {
     await tanker.unlockCurrentDevice({ password });
   });
-  return new User(tanker, userId, userToken, identity);
+  return new UserV1(tanker, userId, token);
 }
 
-export function makeCurrentUser(userId: string, userToken: string, identity: string, trustchainId: string, prefix: string = 'default') {
+export function makeCurrentUser(userId: string, identity: string, trustchainId: string, prefix: string = 'default') {
   const Tanker = require('../../../../packages/client-node').default; // eslint-disable-line global-require
-  return makeUser(Tanker, userId, userToken, identity, trustchainId, prefix);
+  const tanker = makeTanker(Tanker, userId, trustchainId, prefix);
+  return new UserV2(tanker, userId, identity);
 }
