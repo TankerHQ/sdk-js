@@ -37,7 +37,7 @@ class Tanker extends TankerCore {
   }
 
   async encryptData<T: Data>(clearData: Data, options?: ExtendedEncryptionOptions<T> = {}): Promise<T> {
-    this.assert(this.OPEN, 'encrypt data');
+    this.assert(this.isOpen, 'encrypt data');
     assertDataType(clearData, 'encryptedData');
 
     const castClearData = castData(clearData, Uint8Array);
@@ -67,7 +67,7 @@ class Tanker extends TankerCore {
   }
 
   async decryptData<T: Data>(encryptedData: Data, options?: OutputOptions<T> = {}): Promise<T> {
-    this.assert(this.OPEN, 'decrypt data');
+    this.assert(this.isOpen, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
     const castEncryptedData = castData(encryptedData, Uint8Array);
@@ -81,7 +81,7 @@ class Tanker extends TankerCore {
   }
 
   async encrypt<T: Data>(plain: string, options?: ExtendedEncryptionOptions<T>): Promise<T> {
-    this.assert(this.OPEN, 'encrypt');
+    this.assert(this.isOpen, 'encrypt');
 
     if (typeof plain !== 'string')
       throw new errors.InvalidArgument('plain', 'string', plain);
@@ -100,6 +100,6 @@ class Tanker extends TankerCore {
 }
 
 export type { b64string } from '@tanker/core';
-export { errors, getTankerVersion, TankerStatus, fromBase64, fromString, toBase64, toString } from '@tanker/core';
+export { errors, getTankerVersion, fromBase64, fromString, toBase64, toString } from '@tanker/core';
 export { Tanker };
 export default Tanker;

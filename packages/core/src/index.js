@@ -1,7 +1,7 @@
 // @flow
 
 // import
-import { Tanker, TankerStatus, optionsWithDefaults } from './Tanker';
+import { Tanker, optionsWithDefaults } from './Tanker';
 import * as errors from './errors';
 import { fromBase64, toBase64, fromString, toString, getTankerVersion } from './utils';
 import { getEncryptionFormat } from './DataProtection/Encryptor';
@@ -20,7 +20,6 @@ export {
   getTankerVersion,
   optionsWithDefaults,
   Tanker,
-  TankerStatus,
   fromBase64,
   fromString,
   getEncryptionFormat,

@@ -1,10 +1,8 @@
 // @flow
-import { errors, TankerStatus, SIGN_IN_RESULT } from '@tanker/core';
+import { errors, SIGN_IN_RESULT } from '@tanker/core';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
-
-const { OPEN, CLOSED } = TankerStatus;
 
 const generateOpenTests = (args: TestArgs) => {
   describe('signIn/signUp', () => {
@@ -51,7 +49,7 @@ const generateOpenTests = (args: TestArgs) => {
 
     it('creates an account', async () => {
       await args.bobLaptop.signUp(bobIdentity);
-      expect(args.bobLaptop.status).to.equal(OPEN);
+      expect(args.bobLaptop.isOpen).to.be.true;
     });
 
     it('re-opens a session', async () => {
@@ -59,7 +57,7 @@ const generateOpenTests = (args: TestArgs) => {
       await args.bobLaptop.signOut();
       const signInResult = await args.bobLaptop.signIn(bobIdentity);
       expect(signInResult).to.equal(SIGN_IN_RESULT.OK);
-      expect(args.bobLaptop.status).to.equal(OPEN);
+      expect(args.bobLaptop.isOpen).to.be.true;
     });
 
     it('adds multiple devices to a user', async () => {
@@ -68,7 +66,7 @@ const generateOpenTests = (args: TestArgs) => {
       await args.bobLaptop.signOut();
 
       await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
-      expect(args.bobPhone.status).to.equal(OPEN);
+      expect(args.bobPhone.isOpen).to.be.true;
     });
 
     it('adds multiple devices to a user after cancelling once', async () => {
@@ -79,10 +77,10 @@ const generateOpenTests = (args: TestArgs) => {
       const result = await args.bobPhone.signIn(bobIdentity);
       await expect(result).to.equal(SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED);
 
-      expect(args.bobPhone.status).to.equal(CLOSED);
+      expect(args.bobPhone.isOpen).to.be.false;
 
       await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
-      expect(args.bobPhone.status).to.equal(OPEN);
+      expect(args.bobPhone.isOpen).to.be.true;
     });
   });
 };
