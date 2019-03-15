@@ -75,8 +75,7 @@ export default class LocalUser extends EventEmitter {
     const id = utils.toBase64(utils.concatArrays(provisionalIdentityClaim.app_provisional_identity_signature_public_key, provisionalIdentityClaim.tanker_provisional_identity_signature_public_key));
 
     this._provisionalIdentityKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
-
-    // TODO store them
+    await this._keyStore.addProvisionalIdentityKeys(id, appEncryptionKeyPair, tankerEncryptionKeyPair);
   }
 
   applyDeviceCreation = async (deviceCreation: VerifiedDeviceCreation) => {
