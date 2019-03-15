@@ -30,9 +30,7 @@ const generateOpenTests = (args: TestArgs) => {
     });
 
     it('throws when giving an invalid identity', async () => {
-      // $FlowExpectedError
       await expect(args.bobLaptop.signIn('secret')).to.be.rejectedWith(errors.InvalidIdentity);
-      // $FlowExpectedError
       await expect(args.bobLaptop.signUp('secret')).to.be.rejectedWith(errors.InvalidIdentity);
     });
 

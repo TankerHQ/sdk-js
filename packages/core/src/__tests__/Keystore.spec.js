@@ -74,7 +74,6 @@ describe('Keystore', () => {
     await keystore.prependUserKey(key1);
     await keystore.addUserKey(key3);
 
-    // $FlowIKnow
     expect(keystore.userKeys).to.deep.eq([key1, key2, key3]);
   });
 

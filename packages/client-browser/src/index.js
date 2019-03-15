@@ -31,7 +31,6 @@ class Tanker extends TankerCore {
   async _streamEncryptData<T: Data>(clearData: Data, options: EncryptionOptions, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
     const encryptor = await this._session.dataProtector.makeEncryptorStream(options);
-    // $FlowFixMe Yes types are compatible
     const merger = new MergerStream(outputOptions);
 
     return new Promise((resolve, reject) => {
