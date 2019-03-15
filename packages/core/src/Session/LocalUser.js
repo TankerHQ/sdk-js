@@ -65,10 +65,7 @@ export default class LocalUser extends EventEmitter {
   }
 
   applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim) => {
-    // XXX
-    // FIXME maybe we didn't use the current user key, we must put the public
-    // user key in the block!
-    const userKeyPair = this.currentUserKey;
+    const userKeyPair = this.findUserKey(provisionalIdentityClaim.recipient_user_public_key);
 
     const provisionalIdentityKeys = tcrypto.sealDecrypt(provisionalIdentityClaim.encrypted_provisional_identity_private_keys, userKeyPair);
 

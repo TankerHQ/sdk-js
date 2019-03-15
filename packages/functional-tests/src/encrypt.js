@@ -64,6 +64,7 @@ const generateEncryptTests = (args: TestArgs) => {
       await Promise.all([
         args.aliceLaptop.signOut(),
         args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
@@ -174,6 +175,32 @@ const generateEncryptTests = (args: TestArgs) => {
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
           await args.aliceLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
           const decrypted = await args.aliceLaptop.decrypt(cipherText);
+          expect(decrypted).to.equal(clearText);
+        });
+
+        it('decrypt claimed block on a new device', async () => {
+          const email = 'alice@tanker-functional-test.io';
+          const sigKeyPair = tcrypto.makeSignKeyPair();
+          const encKeyPair = tcrypto.makeEncryptionKeyPair();
+          const provisionalIdentity = utils.toB64Json({
+            trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
+            target: 'email',
+            value: email,
+            public_signature_key: utils.toBase64(sigKeyPair.publicKey),
+            public_encryption_key: utils.toBase64(encKeyPair.publicKey),
+          });
+          const cipherText = await args.aliceLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
+
+          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          await args.bobLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
+
+          const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
+
+          await args.bobLaptop.revokeDevice(args.bobLaptop.deviceId);
+
+          await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
+
+          const decrypted = await args.bobPhone.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
 
