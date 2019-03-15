@@ -13,7 +13,7 @@ export default class Keystore {
   _ds: DataStore<*>;
   _safe: KeySafe;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
-  _userInviteKeys: { [string]: { appPrivateKey: Uint8Array, tankerPrivateKey: Uint8Array } };
+  _provisionalIdentityKeys: { [string]: { appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair } };
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE, persistent: true }] },
@@ -82,6 +82,7 @@ export default class Keystore {
     delete this._safe.deviceId;
     this._safe.userKeys = [];
     this._safe.encryptedUserKeys = [];
+    this._safe.provisionalIdentityKeys = [];
     this._userKeys = {};
     const record = await this._ds.get(TABLE, 'keySafe');
     record.encryptedSafe = await this._safe.serialize();
@@ -137,10 +138,16 @@ export default class Keystore {
     // This allows migration from SDK < 1.7.0 (userKeys did not exist before DC3):
     if (!safe.userKeys)
       safe.userKeys = [];
+    if (!safe.provisionalIdentityKeys)
+      safe.provisionalIdentityKeys = [];
 
     const userKeys = {};
     for (const userKey of safe.userKeys) {
       userKeys[utils.toBase64(userKey.publicKey)] = userKey;
+    }
+    const provisionalIdentityKeys = {};
+    for (const ident of safe.provisionalIdentityKeys) {
+      provisionalIdentityKeys[ident.id] = ident;
     }
 
     // Read-only (non writable, non enumerable, non reconfigurable)
@@ -148,6 +155,7 @@ export default class Keystore {
       value: safe,
     });
     this._userKeys = userKeys;
+    this._provisionalIdentityKeys = provisionalIdentityKeys;
   }
 
   async setDeviceId(hash: Uint8Array) {
@@ -184,6 +192,15 @@ export default class Keystore {
   async prependUserKey(keyPair: tcrypto.SodiumKeyPair) {
     this._safe.userKeys.unshift(keyPair);
     this._userKeys[utils.toBase64(keyPair.publicKey)] = keyPair;
+    const record = await this._ds.get(TABLE, 'keySafe');
+    record.encryptedSafe = await this._safe.serialize();
+    return this._ds.put(TABLE, record);
+  }
+
+  async addProvisionalIdentityKeys(id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair) {
+    const keys = { appEncryptionKeyPair, tankerEncryptionKeyPair };
+    this._safe.provisionalIdentityKeys.push({ id, ...keys });
+    this._provisionalIdentityKeys[id] = keys;
     const record = await this._ds.get(TABLE, 'keySafe');
     record.encryptedSafe = await this._safe.serialize();
     return this._ds.put(TABLE, record);
