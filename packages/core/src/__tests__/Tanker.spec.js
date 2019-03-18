@@ -6,7 +6,7 @@ import { createIdentity } from '@tanker/identity';
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
-import { Tanker, TankerStatus, optionsWithDefaults } from '..';
+import { Tanker, optionsWithDefaults } from '..';
 import { InvalidArgument, InvalidIdentity } from '../errors';
 
 describe('Tanker', () => {
@@ -18,6 +18,12 @@ describe('Tanker', () => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     trustchainId = random(tcrypto.HASH_SIZE);
     userId = 'winnie';
+  });
+
+  describe('version', () => {
+    it('Tanker should have a static version attribute', () => {
+      expect(typeof Tanker.version).to.equal('string');
+    });
   });
 
   describe('init', () => {
@@ -67,19 +73,6 @@ describe('Tanker', () => {
 
       const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
       expect(mergedOptions).to.deep.equal(expectedOptions);
-    });
-
-    it('instance should have numeric status constants matching TankerStatus', () => {
-      const statuses = ['CLOSED', 'OPEN'];
-      const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
-      const tanker = new Tanker({ trustchainId: 'nevermind', dataStore, sdkType: 'test' });
-
-      for (const status of statuses) {
-        // $FlowIKnow
-        expect(typeof tanker[status]).to.equal('number');
-        // $FlowIKnow
-        expect(tanker[status]).to.equal(TankerStatus[status]);
-      }
     });
   });
 

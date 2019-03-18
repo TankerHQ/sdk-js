@@ -1,7 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from './errors';
-import { TANKER_SDK_VERSION } from './version';
 
 export function toBase64(bytes: Uint8Array): b64string {
   if (!(bytes instanceof Uint8Array))
@@ -41,10 +40,6 @@ export function compareSameSizeUint8Arrays(left: Uint8Array, right: Uint8Array):
       return 1;
   }
   return 0;
-}
-
-export function getTankerVersion(): string {
-  return TANKER_SDK_VERSION;
 }
 
 // Because IE11: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex#Browser_compatibility

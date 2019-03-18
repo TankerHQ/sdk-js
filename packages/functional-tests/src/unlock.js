@@ -1,17 +1,15 @@
 // @flow
 import uuid from 'uuid';
 import find from 'array-find';
-import { errors, TankerStatus, SIGN_IN_RESULT } from '@tanker/core';
+import { Tanker, errors } from '@tanker/core';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
-const { OPEN } = TankerStatus;
-
 const expectUnlock = async (tanker, identity, signInOptions) => {
   const signInResult = await tanker.signIn(identity, signInOptions);
-  expect(tanker.status).to.equal(OPEN);
-  expect(signInResult).to.equal(SIGN_IN_RESULT.OK);
+  expect(tanker.isOpen).to.be.true;
+  expect(signInResult).to.equal(Tanker.signInResult.OK);
 };
 
 const generateUnlockTests = (args: TestArgs) => {
@@ -75,7 +73,7 @@ const generateUnlockTests = (args: TestArgs) => {
     describe('faulty handlers', () => {
       it('rejects opening without verifying the identity', async () => {
         const signInResult = await bobPhone.signIn(bobIdentity);
-        expect(signInResult).to.equal(SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED);
+        expect(signInResult).to.equal(Tanker.signInResult.IDENTITY_VERIFICATION_NEEDED);
       });
     });
 
@@ -143,20 +141,20 @@ const generateUnlockTests = (args: TestArgs) => {
 
       it('should throw a nice error when password is not set', async () => {
         await expect(bobPhone.signIn(bobIdentity, { password: 'noPasswordDefined' })).to.be.rejectedWith(errors.InvalidUnlockKey);
-        expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
+        expect(bobPhone.isOpen).to.be.false;
       });
 
       it('should throw a nice error when password is not set and email is set', async () => {
         await expect(bobLaptop.registerUnlock({ email: 'john@doe.com' })).to.be.fulfilled;
         await expect(bobPhone.signIn(bobIdentity, { password: 'noPasswordDefined' })).to.be.rejectedWith(errors.InvalidUnlockPassword);
-        expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
+        expect(bobPhone.isOpen).to.be.false;
       });
 
       it('should throw a nice error when email is not set and password is set', async () => {
         await expect(bobLaptop.registerUnlock({ password: 'noEmail' })).to.be.fulfilled;
         const verificationCode = 'ZW1haWwgbm90IHNldA=='; // any b64 value, will be ignored
         await expect(bobPhone.signIn(bobIdentity, { verificationCode })).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
-        expect(bobPhone.status).to.equal(TankerStatus.CLOSED);
+        expect(bobPhone.isOpen).to.be.false;
       });
     });
   });

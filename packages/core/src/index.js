@@ -1,11 +1,10 @@
 // @flow
 
 // import
-import { Tanker, TankerStatus, optionsWithDefaults } from './Tanker';
+import { Tanker, optionsWithDefaults } from './Tanker';
 import * as errors from './errors';
-import { fromBase64, toBase64, fromString, toString, getTankerVersion } from './utils';
+import { fromBase64, toBase64, fromString, toString } from './utils';
 import { getEncryptionFormat } from './DataProtection/Encryptor';
-import { SIGN_IN_RESULT } from './Session/SessionOpener';
 
 // export
 export default Tanker;
@@ -17,14 +16,11 @@ export type { TankerInterface, EncryptionInterface } from './TankerInterface';
 
 export {
   errors,
-  getTankerVersion,
   optionsWithDefaults,
   Tanker,
-  TankerStatus,
   fromBase64,
   fromString,
   getEncryptionFormat,
   toBase64,
   toString,
-  SIGN_IN_RESULT,
 };

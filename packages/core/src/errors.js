@@ -74,11 +74,12 @@ export class MaxVerificationAttemptsReached extends TankerError {
 }
 
 export class InvalidSessionStatus extends TankerError {
-  status: number;
+  isOpen: bool;
 
-  constructor(status: number, message: string = `status: ${status}`) {
+  // $FlowIKnow
+  constructor(isOpen: bool, message: string = `isOpen: ${isOpen}`) {
     super('InvalidSessionStatus', message);
-    this.status = status;
+    this.isOpen = isOpen;
   }
 }
 
