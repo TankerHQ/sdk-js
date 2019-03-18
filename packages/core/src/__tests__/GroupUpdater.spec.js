@@ -173,4 +173,44 @@ describe('GroupUpdater', () => {
       index: groupAdd.entry.index,
     });
   });
+
+  it('handles a group addition I do not belong to as a pre-registered user', async () => {
+    const alice = await builder.addUserV3('alice');
+    const charlie = await builder.addUserV3('charlie');
+
+    const group = await builder.addUserGroupCreation(alice, ['alice']);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+
+    const groupAdd = await builder.addUserGroupAddition(alice, group, [], [provisionalIdentityPublicKeys]);
+    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+    await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal(null);
+  });
+
+  it('handles a group addition I belong to as a pre-registered user', async () => {
+    const alice = await builder.addUserV3('alice');
+    const charlie = await builder.addUserV3('charlie');
+
+    const group = await builder.addUserGroupCreation(alice, ['alice']);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+
+    const groupAdd = await builder.addUserGroupAddition(alice, group, [], [provisionalIdentityPublicKeys]);
+    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device, [provisionalIdentityPrivateKeys]));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+    await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal({
+      groupId: group.groupSignatureKeyPair.publicKey,
+      signatureKeyPair: group.groupSignatureKeyPair,
+      encryptionKeyPair: group.groupEncryptionKeyPair,
+      lastGroupBlock: groupAdd.entry.hash,
+      index: groupAdd.entry.index,
+    });
+  });
 });

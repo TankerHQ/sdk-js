@@ -434,7 +434,7 @@ class TestGenerator {
     };
   }
 
-  makeUserGroupAddition = (parentDevice: TestDeviceCreation, previousGroup: TestUserGroup, newMembers: Array<User>): TestUserGroup => {
+  makeUserGroupAddition = (parentDevice: TestDeviceCreation, previousGroup: TestUserGroup, newMembers: Array<User>, provisionalUsers?: Array<FullPublicProvisionalIdentity>): TestUserGroup => {
     const blockGenerator = new BlockGenerator(
       this._trustchainId,
       parentDevice.testDevice.signKeys.privateKey,
@@ -446,7 +446,8 @@ class TestGenerator {
       previousGroup.group.signatureKeyPair.privateKey,
       previousGroup.group.lastGroupBlock,
       previousGroup.group.encryptionKeyPair.privateKey,
-      newMembers
+      newMembers,
+      provisionalUsers || []
     );
     block.index = this._trustchainIndex;
 
@@ -467,7 +468,6 @@ class TestGenerator {
       externalGroup
     };
   }
-
 
   _testDeviceToDevice = (testDevice: TestDevice): Device => ({
     deviceId: utils.toBase64(testDevice.id),

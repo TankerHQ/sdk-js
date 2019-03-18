@@ -1,7 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { _deserializePublicIdentity, InvalidIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity } from '@tanker/identity';
+import { _deserializePublicIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
@@ -14,11 +14,11 @@ import { fillProvisionalIdentities } from '../ProvisionalIdentity';
 
 export const MAX_GROUP_SIZE = 1000;
 
-function deserializePublicIdentity(publicIdentity: b64string): PublicPermanentIdentity {
-  const deserializedIdentity = _deserializePublicIdentity(publicIdentity);
-  if (deserializedIdentity.target !== 'user')
-    throw new InvalidIdentity('Group members cannot be provisional identities');
-  return deserializedIdentity;
+function splitUsersAndProvisionalUsers(publicIdentities: Array<b64string>): { permanentIdentities: Array<PublicPermanentIdentity>, provisionalIdentities: Array<PublicProvisionalIdentity> } {
+  const decodedIdentities: Array<PublicPermanentIdentity | PublicProvisionalIdentity> = publicIdentities.map(_deserializePublicIdentity);
+  const permanentIdentities: Array<PublicPermanentIdentity> = (decodedIdentities.filter(i => i.target === 'user'): any);
+  const provisionalIdentities: Array<PublicProvisionalIdentity> = (decodedIdentities.filter(i => i.target === 'email'): any);
+  return { permanentIdentities, provisionalIdentities };
 }
 
 export default class GroupManager {
@@ -48,10 +48,8 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
-    const decodedIdentities: Array<PublicPermanentIdentity | PublicProvisionalIdentity> = publicIdentities.map(_deserializePublicIdentity);
-    const permanentIdentities: Array<PublicPermanentIdentity> = (decodedIdentities.filter(i => i.target === 'user'): any);
-    const provisionalIdentities: Array<PublicProvisionalIdentity> = (decodedIdentities.filter(i => i.target === 'email'): any);
-    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: (permanentIdentities: Array<PublicPermanentIdentity>) });
+    const { permanentIdentities, provisionalIdentities } = splitUsersAndProvisionalUsers(publicIdentities);
+    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
 
     const fullProvisionalIdentities = await fillProvisionalIdentities(this._client, provisionalIdentities);
 
@@ -77,8 +75,9 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
 
-    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
-    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
+    const { permanentIdentities, provisionalIdentities } = splitUsersAndProvisionalUsers(publicIdentities);
+    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
+    const fullProvisionalIdentities = await fillProvisionalIdentities(this._client, provisionalIdentities);
 
     const internalGroupId = utils.fromBase64(groupId);
     await this._trustchain.updateGroupStore([internalGroupId]);
@@ -94,7 +93,8 @@ export default class GroupManager {
       existingGroup.signatureKeyPair.privateKey,
       existingGroup.lastGroupBlock,
       existingGroup.encryptionKeyPair.privateKey,
-      fullUsers
+      fullUsers,
+      fullProvisionalIdentities
     );
     try {
       await this._client.sendBlock(userGroupCreationBlock);

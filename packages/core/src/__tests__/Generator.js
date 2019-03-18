@@ -554,7 +554,7 @@ class Generator {
     };
   }
 
-  async newUserGroupAddition(from: GeneratorDevice, group: GeneratorUserGroupResult, members: Array<string>): Promise<GeneratorUserGroupAdditionResult> {
+  async newUserGroupAddition(from: GeneratorDevice, group: GeneratorUserGroupResult, members: Array<string>, provisionalMembers?: Array<FullPublicProvisionalIdentity>): Promise<GeneratorUserGroupAdditionResult> {
     const blockGenerator = new BlockGenerator(
       this.trustchainId,
       from.signKeys.privateKey,
@@ -562,7 +562,7 @@ class Generator {
     );
 
     const fullUsers = members.map(m => generatorUserToUser(this.trustchainId, this.users[m]));
-    const block = blockGenerator.addToUserGroup(group.groupSignatureKeyPair.publicKey, group.groupSignatureKeyPair.privateKey, hashBlock(group.block), group.groupEncryptionKeyPair.privateKey, fullUsers);
+    const block = blockGenerator.addToUserGroup(group.groupSignatureKeyPair.publicKey, group.groupSignatureKeyPair.privateKey, hashBlock(group.block), group.groupEncryptionKeyPair.privateKey, fullUsers, provisionalMembers || []);
 
     this.trustchainIndex += 1;
     block.index = this.trustchainIndex;

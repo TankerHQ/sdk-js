@@ -5,7 +5,7 @@ import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
 import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
-import { natureKind, NATURE, NATURE_KIND } from '../Blocks/Nature';
+import { natureKind, NATURE_KIND } from '../Blocks/Nature';
 
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';
@@ -67,7 +67,7 @@ export default class UserGroupsUnverifiedStore {
           group_id: b64GroupId,
         };
         mapEncKeys.set(dbGroupKey._id, dbGroupKey); // eslint-disable-line no-underscore-dangle
-      } else if (entry.nature === NATURE.user_group_addition_v1) {
+      } else if (natureKind(entry.nature) === NATURE_KIND.user_group_addition) {
         const groupAddition: UnverifiedUserGroupAddition = (entry: any);
         const dbEntry = entryToDbEntry(entry, utils.toBase64(groupAddition.previous_group_block));
         mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
@@ -114,7 +114,7 @@ export default class UserGroupsUnverifiedStore {
 
     if (natureKind(userGroupEntry.nature) === NATURE_KIND.user_group_creation) {
       await this._ds.delete(UNVERIFIED_GROUPS_TABLE, utils.toBase64(cast.public_signature_key));
-    } else if (userGroupEntry.nature === NATURE.user_group_addition_v1) {
+    } else if (natureKind(userGroupEntry.nature) === NATURE_KIND.user_group_addition) {
       await this._ds.delete(UNVERIFIED_GROUPS_TABLE, utils.toBase64(cast.previous_group_block));
     }
   }

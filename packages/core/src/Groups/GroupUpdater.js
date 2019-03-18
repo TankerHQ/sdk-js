@@ -10,7 +10,7 @@ import {
   type GroupEncryptedKey,
   type PendingGroupV2EncryptedKey,
   type UserGroupCreationRecord,
-  type UserGroupAdditionRecordV1,
+  type UserGroupAdditionRecord,
 } from '../Blocks/payloads';
 import { NATURE_KIND, natureKind } from '../Blocks/Nature';
 
@@ -94,7 +94,8 @@ export default class GroupUpdater {
   }
 
   _applyUserGroupAddition = async (entry: VerifiedUserGroup) => {
-    const userGroupAddition: UserGroupAdditionRecordV1 = (entry: any);
+    const userGroupAddition: UserGroupAdditionRecord = (entry: any);
+    let groupPrivateEncryptionKey;
 
     const previousGroup = await this._groupStore.findExternal({ groupId: userGroupAddition.group_id });
     if (!previousGroup)
@@ -102,15 +103,23 @@ export default class GroupUpdater {
 
     await this._groupStore.updateLastGroupBlock({ groupId: userGroupAddition.group_id, currentLastGroupBlock: entry.hash, currentLastGroupIndex: entry.index });
 
-    const myKeys = findMyUserKeys(userGroupAddition.encrypted_group_private_encryption_keys_for_users, this._keystore);
-    if (!myKeys)
-      return;
+    const userKeys = findMyUserKeys(userGroupAddition.encrypted_group_private_encryption_keys_for_users, this._keystore);
+    if (userKeys) {
+      groupPrivateEncryptionKey = tcrypto.sealDecrypt(userKeys.groupEncryptedKey, userKeys.userKeyPair);
+    } else if (userGroupAddition.pending_encrypted_group_private_encryption_keys_for_users) {
+      const provisionalKeys = findMyProvisionalKeys(userGroupAddition.pending_encrypted_group_private_encryption_keys_for_users, this._keystore);
+      if (provisionalKeys)
+        groupPrivateEncryptionKey = provisionalUnseal(provisionalKeys.groupEncryptedKey, provisionalKeys.provisionalKeyPair);
+    }
+
+    if (!groupPrivateEncryptionKey
+    ) return;
+
     // I am already member of this group, ignore
     if (!previousGroup.encryptedPrivateSignatureKey)
       return;
 
     // I've just been added to this group, lets keep the private keys
-    const groupPrivateEncryptionKey = tcrypto.sealDecrypt(myKeys.groupEncryptedKey, myKeys.userKeyPair);
     const groupPrivateSignatureKey = tcrypto.sealDecrypt(previousGroup.encryptedPrivateSignatureKey, { publicKey: previousGroup.publicEncryptionKey, privateKey: groupPrivateEncryptionKey });
     await this._groupStore.put({
       groupId: previousGroup.groupId,

@@ -3,11 +3,10 @@
 import sinon from 'sinon';
 
 import { tcrypto } from '@tanker/crypto';
-import { createProvisionalIdentity } from '@tanker/identity';
 import { expect } from './chai';
 import { makeGroupStoreBuilder } from './GroupStoreBuilder';
 import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
-import { InvalidGroupSize, InvalidIdentity } from '../errors';
+import { InvalidGroupSize } from '../errors';
 
 class StubTrustchain {
   sync = () => null;
@@ -104,11 +103,5 @@ describe('GroupManager', () => {
     const { groupMan } = await makeTestUsers();
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
     await expect(groupMan.updateGroupMembers('fakeid', users)).to.be.rejectedWith(InvalidGroupSize);
-  });
-
-  it('throws when updating a group with provisional identities', async () => {
-    const { groupMan, generator } = await makeTestUsers();
-    const users = [await createProvisionalIdentity(generator.trustchainId, 'bob@zmail.com')];
-    await expect(groupMan.updateGroupMembers('fakeid', users)).to.be.rejectedWith(InvalidIdentity);
   });
 });
