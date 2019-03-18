@@ -178,11 +178,11 @@ export function verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Devi
 
   let selfSigBuffer;
   if (entry.nature === NATURE.user_group_creation_v1) {
-    const versionnedPayload: UserGroupCreationRecordV1 = (currentPayload: any);
-    selfSigBuffer = getUserGroupV1CreationBlockSignData(versionnedPayload);
+    const versionedPayload: UserGroupCreationRecordV1 = (currentPayload: any);
+    selfSigBuffer = getUserGroupV1CreationBlockSignData(versionedPayload);
   } else if (entry.nature === NATURE.user_group_creation_v2) {
-    const versionnedPayload: UserGroupCreationRecordV2 = (currentPayload: any);
-    selfSigBuffer = getUserGroupV2CreationBlockSignData(versionnedPayload);
+    const versionedPayload: UserGroupCreationRecordV2 = (currentPayload: any);
+    selfSigBuffer = getUserGroupV2CreationBlockSignData(versionedPayload);
   } else {
     throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
   }
@@ -206,11 +206,11 @@ export function verifyUserGroupAddition(entry: UnverifiedUserGroup, author: Devi
 
   let selfSigBuffer;
   if (entry.nature === NATURE.user_group_addition_v1) {
-    const versionnedPayload: UserGroupAdditionRecordV1 = (currentPayload: any);
-    selfSigBuffer = getUserGroupV1AdditionBlockSignData(versionnedPayload);
+    const versionedPayload: UserGroupAdditionRecordV1 = (currentPayload: any);
+    selfSigBuffer = getUserGroupV1AdditionBlockSignData(versionedPayload);
   } else if (entry.nature === NATURE.user_group_addition_v2) {
-    const versionnedPayload: UserGroupAdditionRecordV2 = (currentPayload: any);
-    selfSigBuffer = getUserGroupV2AdditionBlockSignData(versionnedPayload);
+    const versionedPayload: UserGroupAdditionRecordV2 = (currentPayload: any);
+    selfSigBuffer = getUserGroupV2AdditionBlockSignData(versionedPayload);
   } else {
     throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
   }
