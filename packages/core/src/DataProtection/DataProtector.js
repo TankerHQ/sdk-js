@@ -215,7 +215,8 @@ export default class DataProtector {
       appEncryptionKeyPair: tcrypto.getEncryptionKeyPairFromPrivateKey(appInvitePrivateEncryptionKey),
       appSignatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(appInvitePrivateSignatureKey),
     };
-    const block = this._localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this._localUser, provisionalIdentityKeys);
+    const userPubKey = this._localUser.currentUserKey.publicKey;
+    const block = this._localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this._localUser.userId, userPubKey, provisionalIdentityKeys);
 
     await this._client.sendBlock(block);
   }
