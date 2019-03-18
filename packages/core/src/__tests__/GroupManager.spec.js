@@ -3,11 +3,10 @@
 import sinon from 'sinon';
 
 import { tcrypto, utils } from '@tanker/crypto';
-import { createProvisionalIdentity, createIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect } from './chai';
 import { makeGroupStoreBuilder } from './GroupStoreBuilder';
 import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
-import { InvalidGroupSize, InvalidIdentity, InvalidArgument } from '../errors';
+import { InvalidGroupSize } from '../errors';
 
 class StubTrustchain {
   sync = () => null;
@@ -110,16 +109,5 @@ describe('GroupManager', () => {
   it('throws when updating a group with 1001 members', async () => {
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
     await expect(groupMan.updateGroupMembers(aliceGroupId, users)).to.be.rejectedWith(InvalidGroupSize);
-  });
-
-  it('throws when updating a group with provisional identities', async () => {
-    const users = [await createProvisionalIdentity(utils.toBase64(generator.trustchainId), 'bob@zmail.com')];
-    await expect(groupMan.updateGroupMembers(aliceGroupId, users)).to.be.rejectedWith(InvalidIdentity);
-  });
-
-  it('throws when updating a non existent group', async () => {
-    const fakeGroupId = utils.toBase64(new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE));
-    const users = [await getPublicIdentity(await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'alice'))];
-    await expect(groupMan.updateGroupMembers(fakeGroupId, users)).to.be.rejectedWith(InvalidArgument);
   });
 });
