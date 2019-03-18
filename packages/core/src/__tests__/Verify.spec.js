@@ -409,6 +409,9 @@ describe('BlockVerification', () => {
       user = userCreation.user;
       testGenerator.skipIndex(); // used for faking a revocation
       const provisionalIdentityPublicKeys = {
+        trustchainId: random(tcrypto.HASH_SIZE),
+        target: 'email',
+        value: 'bob@gmail',
         appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
         appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
         tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),

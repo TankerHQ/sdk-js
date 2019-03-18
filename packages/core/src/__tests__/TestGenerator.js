@@ -27,7 +27,7 @@ import { rootBlockAuthor } from '../Trustchain/Verify';
 import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
 import { type DelegationToken } from '../Session/delegation';
-import { type ProvisionalIdentityPublicKeys } from '../DataProtection/DataProtector';
+import { type FullPublicProvisionalIdentity } from '../ProvisionalIdentity';
 
 
 export type TestDevice = {
@@ -364,7 +364,7 @@ class TestGenerator {
     };
   }
 
-  makePendingKeyPublish = (parentDevice: TestDeviceCreation, recipient: ProvisionalIdentityPublicKeys): TestKeyPublish => {
+  makePendingKeyPublish = (parentDevice: TestDeviceCreation, recipient: FullPublicProvisionalIdentity): TestKeyPublish => {
     const { resourceKey, resourceId, blockGenerator } = this.prepareKeyPublishGenerator(parentDevice);
     const block = blockGenerator.makeProvisionalIdentityKeyPublishBlock(recipient, resourceKey, resourceId);
     block.index = this._trustchainIndex;
@@ -398,7 +398,7 @@ class TestGenerator {
     };
   }
 
-  makeUserGroupCreation = (parentDevice: TestDeviceCreation, members: Array<User>, provisionalUsers?: Array<ProvisionalIdentityPublicKeys>): TestUserGroup => {
+  makeUserGroupCreation = (parentDevice: TestDeviceCreation, members: Array<User>, provisionalUsers?: Array<FullPublicProvisionalIdentity>): TestUserGroup => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
     const blockGenerator = new BlockGenerator(

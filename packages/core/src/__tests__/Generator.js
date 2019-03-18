@@ -9,7 +9,8 @@ import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifi
 import { type UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/InviteUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
-import { type ProvisionalIdentityPublicKeys, type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
+import { type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
+import { type FullPublicProvisionalIdentity } from '../ProvisionalIdentity';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 import { serializeTrustchainCreation,
@@ -525,7 +526,7 @@ class Generator {
     };
   }
 
-  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>, provisionalMembers?: Array<ProvisionalIdentityPublicKeys>): Promise<GeneratorUserGroupResult> {
+  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>, provisionalMembers?: Array<FullPublicProvisionalIdentity>): Promise<GeneratorUserGroupResult> {
     const blockGenerator = new BlockGenerator(
       this.trustchainId,
       from.signKeys.privateKey,

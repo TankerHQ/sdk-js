@@ -289,7 +289,7 @@ export class Client extends EventEmitter {
     await this._send('push keys', serializedBlocks);
   }
 
-  getProvisionalIdentityKeys = async (emails: Array<{ email: string }>): Promise<*> => {
+  getProvisionalIdentityKeys = async (emails: Array<{ email: string }>): Promise<Array<Object>> => {
     const result = await this._send('get public provisional identities', emails);
     if (result.error)
       throw new ServerError(result.error, this.trustchainId);
