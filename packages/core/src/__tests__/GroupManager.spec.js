@@ -116,11 +116,6 @@ describe('GroupManager', () => {
     await expect(groupMan.updateGroupMembers(aliceGroupId, users)).to.be.rejectedWith(InvalidGroupSize);
   });
 
-  it('throws when creating a group with provisional identities', async () => {
-    const users = [await createProvisionalIdentity(utils.toBase64(generator.trustchainId), 'bob@zmail.com')];
-    await expect(groupMan.createGroup(users)).to.be.rejectedWith(InvalidIdentity);
-  });
-
   it('throws when updating a group with provisional identities', async () => {
     const users = [await createProvisionalIdentity(utils.toBase64(generator.trustchainId), 'bob@zmail.com')];
     await expect(groupMan.updateGroupMembers(aliceGroupId, users)).to.be.rejectedWith(InvalidIdentity);

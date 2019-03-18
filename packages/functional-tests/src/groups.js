@@ -1,6 +1,7 @@
 // @flow
 import { errors } from '@tanker/core';
-import { getPublicIdentity } from '@tanker/identity';
+import { utils } from '@tanker/crypto';
+import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, expectRejectedWithProperty } from './chai';
 import { type TestArgs } from './TestArgs';
 
@@ -139,6 +140,19 @@ const generateGroupsTests = (args: TestArgs) => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
       await expect(args.bobLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] }))
         .to.be.rejectedWith(errors.InvalidArgument);
+    });
+
+    it('create a group with a provisional user', async () => {
+      const email = 'alice@tanker-functional-test.io';
+      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+
+      const groupId = await args.bobLaptop.createGroup([provisionalIdentity]);
+      const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+
+      const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+      await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.fulfilled;
+
+      expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
     });
   });
 };

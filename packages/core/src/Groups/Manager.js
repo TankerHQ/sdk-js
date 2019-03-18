@@ -1,7 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { _deserializePublicIdentity, InvalidIdentity, type PublicPermanentIdentity } from '@tanker/identity';
+import { _deserializePublicIdentity, InvalidIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
@@ -47,8 +47,12 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
-    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
-    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
+    const decodedIdentities: Array<PublicPermanentIdentity | PublicProvisionalIdentity> = publicIdentities.map(_deserializePublicIdentity);
+    const permanentIdentities: Array<PublicPermanentIdentity> = (decodedIdentities.filter(i => i.target === 'user'): any);
+    const provisionalIdentities: Array<PublicProvisionalIdentity> = (decodedIdentities.filter(i => i.target === 'email'): any);
+    const users = await this._userAccessor.getUsers({ publicIdentities: (permanentIdentities: Array<PublicPermanentIdentity>) });
+
+    const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
@@ -56,8 +60,8 @@ export default class GroupManager {
     const userGroupCreationBlock = this._localUser.blockGenerator.createUserGroup(
       groupSignatureKeyPair,
       tcrypto.makeEncryptionKeyPair(),
-      fullUsers,
-      []
+      users,
+      provisionalUsers
     );
     await this._client.sendBlock(userGroupCreationBlock);
 
@@ -82,7 +86,7 @@ export default class GroupManager {
     }
 
     const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
-    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
+    const users = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     // no need to keep the keys, we will get them when we receive the group block
     const userGroupCreationBlock = this._localUser.blockGenerator.addToUserGroup(
@@ -90,7 +94,7 @@ export default class GroupManager {
       existingGroup.signatureKeyPair.privateKey,
       existingGroup.lastGroupBlock,
       existingGroup.encryptionKeyPair.privateKey,
-      fullUsers
+      users
     );
     try {
       await this._client.sendBlock(userGroupCreationBlock);
