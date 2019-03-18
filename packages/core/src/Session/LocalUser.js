@@ -2,12 +2,12 @@
 
 import EventEmitter from 'events';
 import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
+import { type PublicIdentity } from '@tanker/identity';
 
 import { type UnlockMethods } from '../Network/Client';
-import { type DeviceType } from '../Unlock/unlock';
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import { type UserData } from '../Tokens/UserData';
+import { type UserData } from '../UserData';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 
@@ -176,20 +176,17 @@ export default class LocalUser extends EventEmitter {
   get trustchainId(): Uint8Array {
     return this._userData.trustchainId;
   }
-  get deviceType(): DeviceType {
-    return this._userData.deviceType;
-  }
   get userSecret(): Uint8Array {
     return this._userData.userSecret;
-  }
-  get clearUserId(): string {
-    return this._userData.clearUserId;
   }
   get unlockMethods(): UnlockMethods {
     return this._unlockMethods;
   }
   get wasRevoked(): bool {
     return this._wasRevoked;
+  }
+  get publicIdentity(): PublicIdentity {
+    return { trustchain_id: utils.toBase64(this._userData.trustchainId), target: 'user', value: utils.toBase64(this._userData.userId) };
   }
 
 

@@ -14,7 +14,6 @@ export function makePrefix(length: number = 10) {
 
 export const openDataStore = async (config: DataStoreConfig): Promise<DataStore<*>> => {
   const { adapter, ...baseConfig } = config;
-  // $FlowIKnow
   return adapter().open(baseConfig);
 };
 

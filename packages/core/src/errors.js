@@ -4,6 +4,7 @@ import { TankerError } from '@tanker/errors';
 
 // Re-expose these common error classes:
 export { TankerError, InvalidArgument, NotEnoughData } from '@tanker/errors';
+export { InvalidIdentity } from '@tanker/identity';
 
 export class ResourceNotFound extends TankerError {
   b64ResourceId: b64string;
@@ -18,9 +19,8 @@ export class ResourceNotFound extends TankerError {
 export class DecryptFailed extends TankerError {
   b64ResourceId: b64string;
   next: Error;
-  chunkIndex: ?number;
 
-  constructor(e: Error, resourceId: Uint8Array, chunkIndex?: number) {
+  constructor(e: Error, resourceId: Uint8Array) {
     const b64ResourceId = utils.toBase64(resourceId);
     let message;
 
@@ -34,16 +34,6 @@ export class DecryptFailed extends TankerError {
 
     this.next = e;
     this.b64ResourceId = b64ResourceId;
-    this.chunkIndex = chunkIndex;
-  }
-}
-
-export class InvalidUserToken extends TankerError {
-  next: Error;
-
-  constructor(e: Error) {
-    super('InvalidUserToken');
-    this.next = e;
   }
 }
 
@@ -84,35 +74,18 @@ export class MaxVerificationAttemptsReached extends TankerError {
 }
 
 export class InvalidSessionStatus extends TankerError {
-  status: number;
+  isOpen: bool;
 
-  constructor(status: number, message: string = `status: ${status}`) {
+  // $FlowIKnow
+  constructor(isOpen: bool, message: string = `isOpen: ${isOpen}`) {
     super('InvalidSessionStatus', message);
-    this.status = status;
+    this.isOpen = isOpen;
   }
 }
 
 export class OperationCanceled extends TankerError {
   constructor(message: string = 'Operation canceled') {
     super('OperationCanceled', message);
-  }
-}
-
-export class InvalidDeviceValidationCode extends TankerError {
-  next: Error;
-
-  constructor(e: Error) {
-    super('InvalidDeviceValidationCode');
-    this.next = e;
-  }
-}
-
-export class InvalidSeal extends TankerError {
-  next: ?Error;
-
-  constructor(message: string, e: ?Error) {
-    super('InvalidSeal', message);
-    this.next = e;
   }
 }
 
@@ -141,27 +114,6 @@ export class InvalidDelegationToken extends TankerError {
   }
 }
 
-export class MissingEventHandler extends TankerError {
-  constructor(eventName: string) {
-    const message = `it is mandatory to add an event handler for the "${eventName}" event`;
-    super('MissingEventHandler', message);
-  }
-}
-
-export class ChunkIndexOutOfRange extends TankerError {
-  constructor(index: number, length: number) {
-    const message = `index ${index} outside [0, ${length}) range`;
-    super('ChunkIndexOutOfRange', message);
-  }
-}
-
-export class ChunkNotFound extends TankerError {
-  constructor(index: number) {
-    const message = `no chunk found at index ${index}`;
-    super('ChunkNotFound', message);
-  }
-}
-
 export class AuthenticationError extends TankerError {
   next: Error;
 
@@ -184,5 +136,11 @@ export class RecipientsNotFound extends TankerError {
 export class InvalidGroupSize extends TankerError {
   constructor(msg: string) {
     super('InvalidGroupSize', msg);
+  }
+}
+
+export class IdentityAlreadyRegistered extends TankerError {
+  constructor(msg: string) {
+    super('IdentityAlreadyRegistered', msg);
   }
 }

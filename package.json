@@ -3,22 +3,24 @@
   "private": true,
   "license": "Apache-2.0",
   "scripts": {
-    "build:all": "yarn build:crypto && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:streams && yarn build:core && yarn build:datastores && yarn build:client-browser && yarn build:client-node",
+    "build:all": "yarn build:crypto && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:streams && yarn build:identity && yarn build:core && yarn build:datastores && yarn build:client-browser && yarn build:client-node",
     "build:client-browser-base": "rollup --config packages/client-browser/config/rollup.js",
     "build:client-browser-umd": "webpack --config packages/client-browser/config/webpack.config.js",
     "build:client-browser": "yarn build:client-browser-base && yarn build:client-browser-umd",
     "build:client-node": "rollup --config packages/client-node/config/rollup.js",
     "build:core": "rollup --config packages/core/config/rollup.js",
+    "build:identity": "rollup --config packages/identity/config/rollup.js",
     "build:crypto": "rollup --config packages/crypto/config/rollup.js",
     "build:datastores": "rollup --config packages/datastore/config/rollup.js",
     "build:errors": "rollup --config packages/errors/config/rollup.js",
     "build:file-ponyfill": "rollup --config packages/file-ponyfill/config/rollup.js",
     "build:file-reader": "rollup --config packages/file-reader/config/rollup.js",
     "build:streams": "rollup --config packages/stream/config/rollup.js",
-    "lint:js": "eslint \"packages/**/*.js\" \"ci/compat/packages/**/*.js\"",
+    "lint:js": "eslint \"packages/**/*.js\"",
     "lint:flow": "flow check",
     "test": "mocha \"packages/**/src/**/*.spec{,.node}.js\" --exit --require ./config/tests/babel.setup.js --recursive --full-trace --trace-warnings --reporter=spec",
     "test:core": "mocha \"packages/core/src/**/*.spec{,.node}.js\" --exit --require ./config/tests/babel.setup.js --recursive --full-trace --trace-warnings --reporter=spec",
+    "test:identity": "mocha \"packages/identity/src/**/*.spec{,.node}.js\" --exit --require ./config/tests/babel.setup.js --recursive --full-trace --trace-warnings --reporter=spec",
     "test:crypto": "mocha \"packages/crypto/src/**/*.spec{,.node}.js\" --exit --require ./config/tests/babel.setup.js --recursive --full-trace --trace-warnings --reporter=spec",
     "test:datastore-base": "mocha \"packages/datastore/base/src/**/*.spec{,.node}.js\" --exit --require ./config/tests/babel.setup.js --recursive --full-trace --trace-warnings --reporter=spec",
     "test:datastore-pouchdb-memory": "mocha \"packages/datastore/pouchdb-memory/src/**/*.spec{,.node}.js\" --exit --require ./config/tests/babel.setup.js --recursive --full-trace --trace-warnings --reporter=spec",
@@ -33,10 +35,6 @@
     "debug:streams": "karma start packages/stream/config/karma.config.debug.js",
     "proof": "yarn lint:js && yarn lint:flow && yarn test",
     "coverage": "nyc --reporter=lcov --reporter=text-summary yarn test"
-  },
-  "bin": {
-    "eslint": "./node_modules/.bin/eslint",
-    "flow": "./node_modules/.bin/flow"
   },
   "devDependencies": {
     "@babel/core": "7.3.3",

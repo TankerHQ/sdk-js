@@ -8,35 +8,19 @@ import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
 import { InvalidSessionStatus, InvalidArgument } from './errors';
-import { type UnlockKey, type UnlockDeviceParams, type RegisterUnlockParams, DEVICE_TYPE } from './Unlock/unlock';
+import { type UnlockKey, type RegisterUnlockParams } from './Unlock/unlock';
 
-import { extractUserData } from './Tokens/UserData';
+import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
-import { SessionOpener } from './Session/SessionOpener';
+import { SessionOpener, type OpenMode, type SignInResult, type SignInOptions, SIGN_IN_RESULT, OPEN_MODE } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 
-import ChunkEncryptor from './DataProtection/ChunkEncryptor';
-import { TANKER_SDK_VERSION as version } from './version';
+import { TANKER_SDK_VERSION } from './version';
 
-const statusDefs = [
-  /* 0 */ { name: 'CLOSED', description: 'tanker session is closed' },
-  /* 1 */ { name: 'OPEN', description: 'tanker session is open' },
-  /* 2 */ { name: 'OPENING', description: 'opening tanker session' },
-  /* 3 */ { name: 'USER_CREATION', description: 'new tanker user registration: waiting for finalizeUserCreation to be called' },
-  /* 4 */ { name: 'UNLOCK_REQUIRED', description: 'new tanker device registration: the device needs to be unlocked' },
-  /* 5 */ { name: 'CLOSING', description: 'closing tanker session' },
-];
-
-export const TankerStatus: { [name: string]: number } = (() => {
-  const h = {};
-  statusDefs.forEach((def, value) => {
-    h[def.name] = value;
-  });
-  return h;
-})();
+export type { SignInOptions, SignInResult } from './Session/SessionOpener';
 
 type TankerDefaultOptions = {|
   trustchainId?: b64string,
@@ -49,6 +33,11 @@ type TankerDefaultOptions = {|
 export type TankerOptions = {|
   ...TankerDefaultOptions,
   trustchainId: b64string
+|};
+
+export type AuthenticationMethods = {|
+  email?: string,
+  password?: string,
 |};
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefaultOptions) {
@@ -67,15 +56,6 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefa
   return result;
 }
 
-export function getResourceId(data: Uint8Array): b64string {
-  console.warn('\'getResourceId\' util function is deprecated since version 1.7.2, use the method on a Tanker instance instead, i.e. await tanker.getResourceId(...)');
-
-  if (!(data instanceof Uint8Array))
-    throw new InvalidArgument('data', 'Uint8Array', data);
-
-  return utils.toBase64(syncGetResourceId(data));
-}
-
 export class Tanker extends EventEmitter {
   _session: Session;
   _sessionOpener: SessionOpener;
@@ -83,17 +63,8 @@ export class Tanker extends EventEmitter {
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
 
-  CLOSED: number = TankerStatus.CLOSED;
-  CLOSING: number = TankerStatus.CLOSING;
-  OPEN: number = TankerStatus.OPEN;
-  OPENING: number = TankerStatus.OPENING;
-  USER_CREATION: number = TankerStatus.USER_CREATION;
-  UNLOCK_REQUIRED: number = TankerStatus.UNLOCK_REQUIRED;
-
-  get DEVICE_CREATION(): number {
-    console.warn('Property `DEVICE_CREATION` has been deprecated since version 1.7.0, use `UNLOCK_REQUIRED` instead.');
-    return this.UNLOCK_REQUIRED;
-  }
+  static version = TANKER_SDK_VERSION;
+  static signInResult = SIGN_IN_RESULT;
 
   constructor(options: TankerOptions) {
     super();
@@ -109,7 +80,6 @@ export class Tanker extends EventEmitter {
     if (typeof options.dataStore !== 'object' || options.dataStore instanceof Array) {
       throw new InvalidArgument('options.dataStore', 'object', options.dataStore);
     } else if (typeof options.dataStore.adapter !== 'function') {
-      // $FlowFixMe
       throw new InvalidArgument('options.dataStore.adapter', 'function', options.dataStore.adapter);
     }
     if (typeof options.sdkType !== 'string') {
@@ -120,7 +90,7 @@ export class Tanker extends EventEmitter {
 
     const clientOptions: ClientOptions = {
       sdkInfo: {
-        version,
+        version: Tanker.version,
         type: options.sdkType,
         trustchainId: options.trustchainId
       }
@@ -151,18 +121,8 @@ export class Tanker extends EventEmitter {
     return this._options;
   }
 
-  get status(): number {
-    if (this._session) {
-      return this.OPEN;
-    } else if (this._sessionOpener && this._sessionOpener.unlockRequired) {
-      return this.UNLOCK_REQUIRED;
-    }
-    return this.CLOSED;
-  }
-
-  get statusName(): string {
-    const def = statusDefs[this.status];
-    return def ? def.name : `invalid status: ${this.status}`;
+  get isOpen(): bool {
+    return !!this._session;
   }
 
   addListener(eventName: string, listener: any): any {
@@ -170,16 +130,10 @@ export class Tanker extends EventEmitter {
   }
 
   on(eventName: string, listener: any): any {
-    if (eventName === 'waitingForValidation') {
-      console.warn('\'waitingForValidation\' event has been deprecated since version 1.7.0, please use \'unlockRequired\' instead.');
-    }
     return super.on(eventName, listener);
   }
 
   once(eventName: string, listener: any): any {
-    if (eventName === 'waitingForValidation') {
-      console.warn('\'waitingForValidation\' event has been deprecated since version 1.7.0, please use \'unlockRequired\' instead.');
-    }
     return super.once(eventName, listener);
   }
 
@@ -187,10 +141,8 @@ export class Tanker extends EventEmitter {
     if (opener) {
       this._sessionOpener = opener;
       this._sessionOpener.on('unlockRequired', () => {
-        const validationCode = this.deviceValidationCode();
         this.emit('unlockRequired');
-        this.emit('waitingForValidation', validationCode);
-        this.emit('statusChange', this.status);
+        this.emit('statusChange', this.isOpen);
       });
     } else {
       delete this._sessionOpener;
@@ -206,12 +158,7 @@ export class Tanker extends EventEmitter {
       delete this._session;
       this.emit('sessionClosed');
     }
-    this.emit('statusChange', this.status);
-  }
-
-  deviceValidationCode(): b64string {
-    this.assert(this.UNLOCK_REQUIRED, 'generate a device validation code');
-    return this._sessionOpener.unlocker.deviceValidationCode();
+    this.emit('statusChange', this.isOpen);
   }
 
   get deviceId(): b64string {
@@ -221,37 +168,51 @@ export class Tanker extends EventEmitter {
     return utils.toBase64(this._session.storage.keyStore.deviceId);
   }
 
-  assert(status: number, to: string): void {
-    if (this.status !== status) {
-      const { name } = statusDefs[status];
-      const message = `Expected status ${name} but got ${this.statusName} trying to ${to}.`;
-      throw new InvalidSessionStatus(this.status, message);
+  assert(expected: bool, to: string): void {
+    if (!expected) {
+      const name = this.isOpen ? 'closed' : 'opened';
+      const message = `Expected session to be ${name} trying to ${to}.`;
+      throw new InvalidSessionStatus(this.isOpen, message);
     }
   }
 
-  async open(userIdString: string, sessionTokenB64: b64string, oldDelegationToken: *): Promise<number> {
-    this.assert(this.CLOSED, 'open a session');
+  async signUp(identityB64: b64string, authenticationMethods?: AuthenticationMethods): Promise<void> {
+    await this._open(identityB64, OPEN_MODE.SIGN_UP);
+    if (authenticationMethods) {
+      await this.registerUnlock(authenticationMethods);
+    }
+  }
+
+  async signIn(identityB64: b64string, signInOptions?: SignInOptions): Promise<SignInResult> {
+    return this._open(identityB64, OPEN_MODE.SIGN_IN, signInOptions);
+  }
+
+  async _open(identityB64: b64string, openMode: OpenMode, signInOptions?: SignInOptions): Promise<SignInResult> {
+    this.assert(!this.isOpen, 'open a session');
     // Type verif arguments
-    if (oldDelegationToken)
-      throw new Error('open does not take a delegation token anymore, see https://tanker.io/docs/latest/changelog/#new_open_workflow_breaking_change');
-    if (!userIdString || typeof userIdString !== 'string')
-      throw new InvalidArgument('userId', 'string', userIdString);
-    if (!sessionTokenB64 || typeof sessionTokenB64 !== 'string')
-      throw new InvalidArgument('userToken', 'b64string', sessionTokenB64);
+    if (!identityB64 || typeof identityB64 !== 'string')
+      throw new InvalidArgument('identity', 'b64string', identityB64);
     // End type verif
-    const userData = extractUserData(utils.fromBase64(this.trustchainId), userIdString, sessionTokenB64);
+    const userData = extractUserData(identityB64);
+
+    if (this.trustchainId !== utils.toBase64(userData.trustchainId))
+      throw new InvalidArgument('identity', 'b64string', identityB64);
+
     const sessionOpener = await SessionOpener.create(userData, this._dataStoreOptions, this._clientOptions);
     this._setSessionOpener(sessionOpener);
 
-    const allowedToUnlock = !(this.listenerCount('unlockRequired') === 0
-      && this.listenerCount('waitingForValidation') === 0);
+    const openResult = await this._sessionOpener.openSession(openMode, signInOptions);
 
-    const session = await this._sessionOpener.openSession(allowedToUnlock);
-    this._setSession(session);
-    return this.OPEN;
+    if (openResult.signInResult === SIGN_IN_RESULT.OK) {
+      if (!openResult.session)
+        throw new Error('Assertion error: Session should be opened');
+      this._setSession(openResult.session);
+    }
+
+    return openResult.signInResult;
   }
 
-  async close(): Promise<void> {
+  async signOut(): Promise<void> {
     const sessionOpener = this._sessionOpener;
     this._setSessionOpener(null);
 
@@ -276,17 +237,17 @@ export class Tanker extends EventEmitter {
   }
 
   get registeredUnlockMethods(): UnlockMethods {
-    this.assert(this.OPEN, 'has registered unlock methods');
+    this.assert(this.isOpen, 'has registered unlock methods');
     return this._session.localUser.unlockMethods;
   }
 
   hasRegisteredUnlockMethods(): bool {
-    this.assert(this.OPEN, 'has registered unlock methods');
+    this.assert(this.isOpen, 'has registered unlock methods');
     return this.registeredUnlockMethods.length !== 0;
   }
 
   hasRegisteredUnlockMethod(method: "password" | "email"): bool {
-    this.assert(this.OPEN, 'has registered unlock method');
+    this.assert(this.isOpen, 'has registered unlock method');
     if (['password', 'email'].indexOf(method) === -1) {
       throw new InvalidArgument('method', 'password or email', method);
     }
@@ -294,27 +255,12 @@ export class Tanker extends EventEmitter {
   }
 
   async generateAndRegisterUnlockKey(): Promise<UnlockKey> {
-    this.assert(this.OPEN, 'generate an unlock key');
+    this.assert(this.isOpen, 'generate an unlock key');
     return this._session.unlockKeys.generateAndRegisterUnlockKey();
   }
 
-  async acceptDevice(validationCode: b64string): Promise<void> {
-    this.assert(this.OPEN, 'accept a device');
-    return this._session.unlockKeys.acceptDevice(validationCode);
-  }
-
-  async updateUnlock(params: RegisterUnlockParams): Promise<void> {
-    console.warn('The updateUnlock() method has been deprecated, please use registerUnlock() instead.');
-    return this.registerUnlock(params);
-  }
-
-  async setupUnlock(params: RegisterUnlockParams): Promise<void> {
-    console.warn('The setupUnlock() method has been deprecated, please use registerUnlock() instead.');
-    return this.registerUnlock(params);
-  }
-
   async registerUnlock(params: RegisterUnlockParams): Promise<void> {
-    this.assert(this.OPEN, 'register an unlock method');
+    this.assert(this.isOpen, 'register an unlock method');
 
     if (typeof params !== 'object' || params === null) {
       throw new InvalidArgument('register unlock options', 'should be an object', params);
@@ -338,43 +284,23 @@ export class Tanker extends EventEmitter {
     return this._session.unlockKeys.registerUnlock(password, email);
   }
 
-  async unlockCurrentDevice(value: UnlockDeviceParams): Promise<void> {
-    this.assert(this.UNLOCK_REQUIRED, 'unlock a device');
-    if (!value) {
-      throw new InvalidArgument('unlock options', 'object', value);
-    } else if (typeof value === 'string') {
-      console.warn('unlockCurrentDevice(unlockKey) has been deprecated, pass a dictionary instead');
-      return this.unlockCurrentDevice({ unlockKey: value });
-    } else if (Object.keys(value).length !== 1) {
-      throw new InvalidArgument('unlock options', 'object', value);
-    }
-    const { unlockKey, password, verificationCode } = value;
-    if (unlockKey) {
-      return this._sessionOpener.unlocker.unlockWithUnlockKey(unlockKey);
-    } else if (password || verificationCode) {
-      return this._sessionOpener.unlocker.unlockWithPassword(password, verificationCode);
-    } else {
-      throw new InvalidArgument('unlock options', 'object', value);
-    }
-  }
-
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
-    this.assert(this.OPEN, 'get the device list');
+    this.assert(this.isOpen, 'get the device list');
     const allDevices = await this._session.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
     return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
   }
 
   async isUnlockAlreadySetUp(): Promise<bool> {
-    this.assert(this.OPEN, 'is unlock already setup');
+    this.assert(this.isOpen, 'is unlock already setup');
     const devices = await this._session.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
     return devices.some(device => device.isGhostDevice === true && device.isRevoked === false);
   }
 
   _parseEncryptionOptions = (options?: EncryptionOptions = {}): EncryptionOptions => {
     if (!validateEncryptionOptions(options))
-      throw new InvalidArgument('options', '{ shareWithUsers?: Array<String>, shareWithGroups?: Array<String> }', options);
+      throw new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<String> }', options);
 
-    const opts = { shareWithSelf: (this._session.localUser.deviceType === DEVICE_TYPE.client_device), ...options };
+    const opts = { shareWithSelf: true, ...options };
 
     if (opts.shareWithSelf === false && isShareWithOptionsEmpty(options))
       throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);
@@ -382,23 +308,14 @@ export class Tanker extends EventEmitter {
     return opts;
   }
 
-  async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions | Array<string>): Promise<void> {
-    this.assert(this.OPEN, 'share');
+  async share(resourceIds: Array<b64string>, shareWithOptions: ShareWithOptions): Promise<void> {
+    this.assert(this.isOpen, 'share');
 
     if (!(resourceIds instanceof Array))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    let shareWithOptions;
-
-    if (shareWith instanceof Array) {
-      console.warn('The shareWith option as an array is deprecated, use { shareWithUsers: [], shareWithGroups: [] } format instead');
-      shareWithOptions = { shareWith };
-    } else {
-      shareWithOptions = shareWith;
-    }
-
     if (!validateShareWithOptions(shareWithOptions))
-      throw new InvalidArgument('shareWith', '{ shareWithUsers: Array<string>, shareWithGroups: Array<string> }', shareWith);
+      throw new InvalidArgument('shareWithOptions', '{ shareWithUsers: Array<b64string>, shareWithGroups: Array<string> }', shareWithOptions);
 
     return this._session.dataProtector.share(resourceIds, shareWithOptions);
   }
@@ -410,22 +327,16 @@ export class Tanker extends EventEmitter {
     return utils.toBase64(syncGetResourceId(encryptedData));
   }
 
-  async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
-    console.warn('The ChunkEncryptor is deprecated since version 1.10.0. Please use the simple encryption APIs instead, as described in the migration guide: https://tanker.io/docs/latest/migration-guide/#chunk_encryption_apis_deprecation');
-    this.assert(this.OPEN, 'make a chunk encryptor');
-    return this._session.dataProtector.makeChunkEncryptor(seal);
-  }
-
   async revokeDevice(deviceId: b64string): Promise<void> {
-    this.assert(this.OPEN, 'revoke a device');
+    this.assert(this.isOpen, 'revoke a device');
 
     if (typeof deviceId !== 'string')
       throw new InvalidArgument('deviceId', 'string', deviceId);
     return this._session.revokeDevice(deviceId);
   }
 
-  async createGroup(users: Array<string>): Promise<b64string> {
-    this.assert(this.OPEN, 'create a group');
+  async createGroup(users: Array<b64string>): Promise<b64string> {
+    this.assert(this.isOpen, 'create a group');
 
     if (!(users instanceof Array))
       throw new InvalidArgument('users', 'Array<string>', users);
@@ -433,8 +344,8 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.createGroup(users);
   }
 
-  async updateGroupMembers(groupId: string, { usersToAdd }: {| usersToAdd?: Array<string> |}): Promise<void> {
-    this.assert(this.OPEN, 'update a group');
+  async updateGroupMembers(groupId: string, { usersToAdd }: {| usersToAdd?: Array<b64string> |}): Promise<void> {
+    this.assert(this.isOpen, 'update a group');
 
     if (!usersToAdd || !(usersToAdd instanceof Array))
       throw new InvalidArgument('usersToAdd', 'Array<string>', usersToAdd);
@@ -446,7 +357,7 @@ export class Tanker extends EventEmitter {
   }
 
   async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
-    this.assert(this.OPEN, 'make a stream encryptor');
+    this.assert(this.isOpen, 'make a stream encryptor');
 
     const opts = this._parseEncryptionOptions(options);
 
@@ -454,7 +365,7 @@ export class Tanker extends EventEmitter {
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
-    this.assert(this.OPEN, 'make a stream decryptor');
+    this.assert(this.isOpen, 'make a stream decryptor');
 
     return this._session.dataProtector.makeDecryptorStream();
   }

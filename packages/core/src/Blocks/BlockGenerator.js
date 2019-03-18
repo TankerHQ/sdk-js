@@ -49,7 +49,6 @@ type MakeDeviceParams = {
   publicEncryptionKey: Uint8Array,
   blockSignatureKey: Uint8Array,
   isGhost: bool,
-  isServer: bool
 };
 
 type NewUserParams = {
@@ -66,7 +65,6 @@ type NewDeviceParams = {
     publicSignatureKey: Uint8Array,
     publicEncryptionKey: Uint8Array,
     isGhost: bool,
-    isServer: bool
 };
 
 
@@ -102,7 +100,6 @@ export class BlockGenerator {
         encrypted_private_encryption_key: encryptedUserKey,
       },
       is_ghost_device: args.isGhost,
-      is_server_device: args.isServer,
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
@@ -127,8 +124,7 @@ export class BlockGenerator {
       delegationSignature: args.delegationToken.delegation_signature,
       blockSignatureKey: args.delegationToken.ephemeral_private_signature_key,
       userKeys,
-      isGhost: false,
-      isServer: false });
+      isGhost: false });
   }
 
   makeNewDeviceBlock(args: NewDeviceParams): Block {

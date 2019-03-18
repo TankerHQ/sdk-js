@@ -61,7 +61,6 @@ export class Unlocker {
       deviceKeys: this._localUser.deviceKeys(),
       ghostDevice,
       encryptedUserKey,
-      deviceType: this._localUser.deviceType,
     });
   }
 
@@ -73,12 +72,5 @@ export class Unlocker {
   unlockWithPassword = async (password: ?string, verificationCode: ?string) => {
     const key = await this._fetchUnlockKey(password, verificationCode);
     return this.unlockWithUnlockKey(key);
-  }
-
-  deviceValidationCode = () => {
-    const keyS = utils.toBase64(this._localUser.publicSignatureKey);
-    const keyC = utils.toBase64(this._localUser.publicEncryptionKey);
-    const userId = utils.toBase64(this._localUser.userId);
-    return utils.toB64Json({ keyS, keyC, userId });
   }
 }

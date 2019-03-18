@@ -1,27 +1,29 @@
 // @flow
 
-import { tcrypto, utils, random, obfuscateUserId } from '@tanker/crypto';
+import { tcrypto, utils, random } from '@tanker/crypto';
+import { createIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
-import { warnings } from './WarningsRemover';
 
-import { Tanker, TankerStatus, getResourceId, optionsWithDefaults } from '..';
-import { createUserTokenFromSecret } from './TestSessionTokens';
-import { InvalidArgument, InvalidUserToken, InvalidSessionStatus } from '../errors';
-import { DEVICE_TYPE } from '../Unlock/unlock';
+import { Tanker, optionsWithDefaults } from '..';
+import { InvalidArgument, InvalidIdentity } from '../errors';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
   let trustchainId;
   let userId;
-  let obfuscatedUserId;
 
   before(() => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     trustchainId = random(tcrypto.HASH_SIZE);
     userId = 'winnie';
-    obfuscatedUserId = obfuscateUserId(trustchainId, userId);
+  });
+
+  describe('version', () => {
+    it('Tanker should have a static version attribute', () => {
+      expect(typeof Tanker.version).to.equal('string');
+    });
   });
 
   describe('init', () => {
@@ -72,19 +74,6 @@ describe('Tanker', () => {
       const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
       expect(mergedOptions).to.deep.equal(expectedOptions);
     });
-
-    it('instance should have numeric status constants matching TankerStatus', () => {
-      const statuses = ['CLOSED', 'CLOSING', 'UNLOCK_REQUIRED', 'OPEN', 'OPENING', 'USER_CREATION'];
-      const dataStore = { ...dataStoreConfig, prefix: makePrefix() };
-      const tanker = new Tanker({ trustchainId: 'nevermind', dataStore, sdkType: 'test' });
-
-      for (const status of statuses) {
-        // $FlowIKnow
-        expect(typeof tanker[status]).to.equal('number');
-        // $FlowIKnow
-        expect(tanker[status]).to.equal(TankerStatus[status]);
-      }
-    });
   });
 
   describe('closed session', () => {
@@ -99,43 +88,24 @@ describe('Tanker', () => {
       });
     });
 
-    it('should not allow to accept a device', async () => {
-      await expect(tanker.acceptDevice('V1d0ak5XTXdlRVJSYmxacFRURktkbGxXWXpGaWEyeElZVWQ0YW1KV1ZUaz0=')).to.be.rejectedWith(InvalidSessionStatus);
-    });
-
-    it('should not allow to create a ChunkedEncryptor', async () => {
-      await expect(tanker.makeChunkEncryptor()).to.be.rejectedWith(InvalidSessionStatus);
-    });
-
-    describe('open', () => {
-      it('should throw when token is not base64', async () => {
-        await expect(tanker.open(userId, 'not b64')).to.be.rejected;
-      });
-
-      it('should throw when token is null', async () => {
+    describe('signUp', () => {
+      it('should throw when identity is undefined', async () => {
         // $FlowExpectedError
-        await expect(tanker.open(userId, null)).to.be.rejected;
+        await expect(tanker.signUp(undefined)).to.be.rejectedWith(InvalidArgument);
       });
 
-      it('should throw when secret is empty', async () => {
-        const badSecret = '';
-        const userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.open(userId, userToken);
-        await expect(promise).to.be.rejectedWith(InvalidUserToken);
+      it('should throw when identity is not base64', async () => {
+        await expect(tanker.signUp('not b64')).to.be.rejectedWith(InvalidIdentity);
       });
 
-      it('should throw when secret is the wrong size', async () => {
-        const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE - 1));
-        const userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.open(userId, userToken);
-        await expect(promise).to.be.rejectedWith(InvalidUserToken);
-      });
-
-      it('should throw when secret is not the user\'s secret', async () => {
-        const badSecret = utils.toBase64(random(tcrypto.USER_SECRET_SIZE));
-        const userToken = createUserTokenFromSecret(obfuscatedUserId, trustchainKeyPair.privateKey, badSecret);
-        const promise = tanker.open(userId, userToken);
-        await expect(promise).to.be.rejectedWith(InvalidUserToken);
+      it('should throw when identity is valid but truncated', async () => {
+        const identity = await createIdentity(
+          utils.toBase64(trustchainId),
+          utils.toBase64(trustchainKeyPair.privateKey),
+          userId,
+        );
+        const truncatedIdentity = identity.slice(0, identity.length - 10);
+        await expect(tanker.signUp(truncatedIdentity)).to.be.rejectedWith(InvalidIdentity);
       });
     });
   });
@@ -151,7 +121,7 @@ describe('Tanker', () => {
         sdkType: 'test'
       });
       // "open" a session
-      tanker._session = ({ localUser: { deviceType: DEVICE_TYPE.client_device } }: any); // eslint-disable-line no-underscore-dangle
+      tanker._session = ({ localUser: {} }: any); // eslint-disable-line no-underscore-dangle
     });
 
     describe('unlock method registration', () => {
@@ -177,21 +147,6 @@ describe('Tanker', () => {
           await expect(tanker.registerUnlock(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
-
-      describe('deprecated methods', () => {
-        before(() => warnings.silence(/deprecated/));
-        after(() => warnings.restore());
-
-        it('should throw if invalid argument given to deprecated methods', async () => {
-          for (let i = 0; i < badArgs.length; i++) {
-            const arg = badArgs[i];
-            // $FlowIKnow
-            await expect(tanker.setupUnlock(arg), `setup test n°${i}`).to.be.rejectedWith(InvalidArgument);
-            // $FlowIKnow
-            await expect(tanker.updateUnlock(arg), `update test n°${i}`).to.be.rejectedWith(InvalidArgument);
-          }
-        });
-      });
     });
 
     describe('getResourceId', () => {
@@ -203,36 +158,20 @@ describe('Tanker', () => {
           await expect(tanker.getResourceId(v), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
         }));
       });
-
-      describe('deprecated util', () => {
-        before(() => warnings.silence(/deprecated/));
-        after(() => warnings.restore());
-
-        it('should throw when given an invalid type', async () => {
-          notUint8ArrayValues.forEach((v, i) => {
-            // $FlowExpectedError
-            expect(() => getResourceId(v), `bad resource #${i}`).to.throw(InvalidArgument);
-          });
-        });
-      });
     });
 
-    describe('shareWith', () => {
+    describe('sharing', () => {
       const notShareWithValues = [
         null,
         0,
         'noArrayAroundMe',
-        { shareWith: ['bob'], shareWithGroups: ['admin group'] },
+        { shareWithUsers: [undefined] },
+        { shareWithUsers: 'noArrayAroundMe' },
         { shareWithGroups: 'noArrayAroundMe' },
         { shareWithGroups: [new Uint8Array(32)] },
-        { shareWithUsers: 'noArrayAroundMe' },
-        { shareWithUsers: [undefined] },
       ];
 
-      before(() => warnings.silence(/deprecated/));
-      after(() => warnings.restore());
-
-      it('share() should throw when given an invalid shareWith', async () => {
+      it('share() should throw when given an invalid option', async () => {
         notShareWithValues.push(undefined);
         notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
         const resourceId = random(tcrypto.MAC_SIZE);
@@ -240,7 +179,7 @@ describe('Tanker', () => {
         for (let i = 0; i < notShareWithValues.length; i++) {
           const v = notShareWithValues[i];
           // $FlowExpectedError
-          await expect(tanker.share([resourceId], v), `bad shareWith #${i}`).to.be.rejectedWith(InvalidArgument);
+          await expect(tanker.share([resourceId], v), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
     });

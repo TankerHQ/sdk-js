@@ -1,7 +1,7 @@
 // @flow
 
 import { mergeSchemas } from '@tanker/datastore-base';
-import { createUserSecretBinary } from '@tanker/crypto';
+import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
 import { type UserGroupAdditionRecord, type UserGroupCreationRecord } from '../Blocks/payloads';

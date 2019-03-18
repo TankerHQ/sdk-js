@@ -1,9 +1,9 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
+import { createIdentity } from '@tanker/identity';
 
-import { extractUserData } from '../Tokens/UserData';
-import { createUserToken } from './TestSessionTokens';
+import { extractUserData } from '../UserData';
 import LocalUser from '../Session/LocalUser';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
@@ -11,7 +11,6 @@ import Generator, { type GeneratorUserResult, type GeneratorKeyResult, type Gene
 import TrustchainStore from '../Trustchain/TrustchainStore';
 import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
-import { type DeviceType } from '../Unlock/unlock';
 
 import Storage from '../Session/Storage';
 import KeySafe from '../Session/KeySafe';
@@ -55,8 +54,8 @@ export default class TrustchainBuilder {
     const { trustchainId } = this.generator;
 
     const userIdString = 'let try this for now';
-    const userToken = createUserToken(trustchainId, userIdString, this.trustchainKeyPair.privateKey);
-    const userData = extractUserData(trustchainId, userIdString, userToken);
+    const identity = await createIdentity(utils.toBase64(trustchainId), utils.toBase64(this.trustchainKeyPair.privateKey), userIdString);
+    const userData = extractUserData(identity);
 
     const storage = new Storage(this.dataStoreConfig);
     await storage.open(userData.userId, userData.userSecret);
@@ -81,15 +80,15 @@ export default class TrustchainBuilder {
     }
   }
 
-  async addUserV3(userName: string, deviceType?: DeviceType): Promise<GeneratorUserResult> {
-    const result = await this.generator.newUserCreationV3(userName, { deviceType });
+  async addUserV3(userName: string): Promise<GeneratorUserResult> {
+    const result = await this.generator.newUserCreationV3(userName);
     await this.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(result.block)]);
     return result;
   }
 
-  async addDeviceV3(args: { id: string, parentIndex?: number, deviceType?: DeviceType }): Promise<GeneratorUserResult> {
-    const { id, parentIndex, deviceType } = args;
-    const result = await this.generator.newDeviceCreationV3({ userId: id, parentIndex: parentIndex || 0, deviceType });
+  async addDeviceV3(args: { id: string, parentIndex?: number }): Promise<GeneratorUserResult> {
+    const { id, parentIndex } = args;
+    const result = await this.generator.newDeviceCreationV3({ userId: id, parentIndex: parentIndex || 0 });
     await this.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(result.block)]);
     return result;
   }

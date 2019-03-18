@@ -41,7 +41,6 @@ export default class SlicerStream extends Readable {
     const { byteSize, byteIndex: startIndex } = this._readingState;
     const endIndex = Math.min(startIndex + this._outputSize, byteSize);
 
-    // $FlowIKnow we know _source is an Uint8Array
     const bytes = this._source.subarray(startIndex, endIndex);
     const pushMore = this.push(bytes);
 

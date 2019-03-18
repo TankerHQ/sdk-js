@@ -1,8 +1,8 @@
 // @flow
 
-import { utils, type b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 
-import { generateUnlockKeyRegistration, createUnlockKeyMessage, createDeviceFromValidationCode, type UnlockKey, type UnlockKeyMessage } from './unlock';
+import { generateUnlockKeyRegistration, createUnlockKeyMessage, type UnlockKey, type UnlockKeyMessage } from './unlock';
 
 import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
@@ -21,7 +21,6 @@ export class UnlockKeys {
     trustchainId: this._localUser.trustchainId,
     userId: this._localUser.userId,
     userKeys: this._localUser.currentUserKey,
-    deviceType: this._localUser.deviceType,
     authorDevice: {
       id: this._localUser.deviceId,
       privateSignatureKey: this._localUser.privateSignatureKey,
@@ -73,16 +72,5 @@ export class UnlockKeys {
     }
 
     this._updateLocalUser(password, email);
-  }
-
-  acceptDevice = async (validationCode: b64string): Promise<void> => {
-    const block = createDeviceFromValidationCode({
-      trustchainId: this._localUser.trustchainId,
-      userId: this._localUser.userId,
-      deviceKeys: this._localUser.deviceKeys(),
-      userKeys: this._localUser.currentUserKey,
-      validationCode
-    });
-    await this._client.sendBlock(block);
   }
 }

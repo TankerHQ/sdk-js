@@ -79,6 +79,10 @@ search = '"@tanker/errors": "{current_version}"'
 
 [[file]]
 src = "packages/core/package.json"
+search = '"@tanker/identity": "{current_version}"'
+
+[[file]]
+src = "packages/core/package.json"
 search = '"@tanker/stream-base": "{current_version}"'
 
 [[file]]
@@ -130,10 +134,6 @@ src = "packages/datastore/pouchdb-node/package.json"
 search = '"@tanker/datastore-pouchdb-base": "{current_version}"'
 
 [[file]]
-src = "packages/datastore/tests/package.json"
-search = '"@tanker/datastore-base": "{current_version}"'
-
-[[file]]
 src = "packages/errors/package.json"
 search = '"version": "{current_version}"'
 
@@ -148,6 +148,18 @@ search = '"version": "{current_version}"'
 [[file]]
 src = "packages/file-reader/package.json"
 search = '"@tanker/file-ponyfill": "{current_version}"'
+
+[[file]]
+src = "packages/identity/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/identity/package.json"
+search = '"@tanker/crypto": "{current_version}"'
+
+[[file]]
+src = "packages/identity/package.json"
+search = '"@tanker/errors": "{current_version}"'
 
 [[file]]
 src = "packages/stream/base/package.json"

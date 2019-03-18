@@ -1,7 +1,7 @@
 // @flow
 
 import { generichash, tcrypto, utils, type b64string, type safeb64string, type Key } from '@tanker/crypto';
-import { InvalidDeviceValidationCode, InvalidUnlockKey } from '../errors';
+import { InvalidUnlockKey } from '../errors';
 import { type Block, hashBlock } from '../Blocks/Block';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
@@ -14,20 +14,6 @@ export type UnlockKeyRegistration = {|
   unlockKey: b64string,
   block: Block,
 |};
-
-export const DEVICE_TYPE = Object.freeze({
-  client_device: 1,
-  server_device: 2,
-});
-
-export type DeviceType = $Values<typeof DEVICE_TYPE>;
-
-
-export type UnlockDeviceParams = {|
-  unlockKey?: UnlockKey,
-  password?: string,
-  verificationCode?: string,
-|}
 
 export type GhostDevice = {
   deviceId: Uint8Array,
@@ -163,50 +149,6 @@ export async function createUnlockKeyMessage({
   return message;
 }
 
-type CreateDevCodeParams = {
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-  deviceKeys: DeviceKeys,
-  userKeys: tcrypto.SodiumKeyPair,
-  validationCode: b64string
-}
-
-export function createDeviceFromValidationCode({
-  trustchainId,
-  userId,
-  deviceKeys,
-  userKeys,
-  validationCode
-}: CreateDevCodeParams): Block {
-  let code;
-  try {
-    code = utils.fromB64Json(validationCode);
-    const codeUserId = utils.fromBase64(code.userId);
-    if (!utils.equalArray(codeUserId, userId))
-      throw new Error(`Expecting userId ${utils.toBase64(userId)}, got ${utils.toBase64(codeUserId)}`);
-    if (!code.keyS || !code.keyC)
-      throw new Error('Key not found in validation code');
-  } catch (e) {
-    throw new InvalidDeviceValidationCode(e);
-  }
-
-  const blockGenerator = new BlockGenerator(
-    trustchainId,
-    deviceKeys.signaturePair.privateKey,
-    // $FlowIssue
-    utils.fromBase64(deviceKeys.deviceId)
-  );
-
-  return blockGenerator.makeNewDeviceBlock({
-    userId,
-    userKeys,
-    publicSignatureKey: utils.fromBase64(code.keyS),
-    publicEncryptionKey: utils.fromBase64(code.keyC),
-    isGhost: false,
-    isServer: false
-  });
-}
-
 export function extractUnlockKey(unlockKey: b64string): GhostDevice {
   try {
     const decoded = utils.fromB64Json(unlockKey);
@@ -226,7 +168,6 @@ type CreateDevUnlockArgV3 = {
   deviceKeys: DeviceKeys,
   ghostDevice: GhostDevice,
   encryptedUserKey: EncryptedUserKey,
-  deviceType: DeviceType,
 }
 
 type AuthorDevice = {
@@ -238,7 +179,6 @@ type GenerateUnlockKeyRegistrationArg = {
   trustchainId: Uint8Array,
   userId: Uint8Array,
   userKeys: tcrypto.SodiumKeyPair,
-  deviceType: DeviceType,
   authorDevice: AuthorDevice,
 };
 
@@ -248,7 +188,6 @@ export function createDeviceFromUnlockKey({
   deviceKeys,
   ghostDevice,
   encryptedUserKey,
-  deviceType,
 }: CreateDevUnlockArgV3): Block {
   const ghostDeviceEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey);
 
@@ -273,7 +212,6 @@ export function createDeviceFromUnlockKey({
     publicSignatureKey: deviceKeys.signaturePair.publicKey,
     publicEncryptionKey: deviceKeys.encryptionPair.publicKey,
     isGhost: false,
-    isServer: (deviceType === DEVICE_TYPE.server_device)
   });
 }
 
@@ -281,7 +219,6 @@ export function generateUnlockKeyRegistration({
   trustchainId,
   userId,
   userKeys,
-  deviceType,
   authorDevice,
 }: GenerateUnlockKeyRegistrationArg): UnlockKeyRegistration {
   const ghostEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
@@ -299,7 +236,6 @@ export function generateUnlockKeyRegistration({
     publicSignatureKey: ghostSignatureKeyPair.publicKey,
     publicEncryptionKey: ghostEncryptionKeyPair.publicKey,
     isGhost: true,
-    isServer: (deviceType === DEVICE_TYPE.server_device)
   });
 
   const ghostDeviceId = hashBlock(newDeviceBlock);

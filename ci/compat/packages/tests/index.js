@@ -4,11 +4,11 @@ import uuid from 'uuid';
 import { expect } from 'chai';
 
 import { toBase64 } from '../../../../packages/client-node';
+import { upgradeUserToken } from '../../../../packages/identity';
 import { TrustchainHelper } from '../../../../packages/functional-tests/src/Helpers';
-import { makeCurrentUser, makeUser } from './helpers';
+import { makeCurrentUser, makeV1User } from './helpers';
 
-
-function generateTests(version: string, Tanker: any) {
+function generateTests(version: string, Tanker: any, generateUserToken: any) {
   describe(version, function () { // eslint-disable-line func-names
     this.timeout(30000);
     const args = {};
@@ -18,12 +18,15 @@ function generateTests(version: string, Tanker: any) {
       args.trustchainId = toBase64(args.trustchainHelper.trustchainId);
       const aliceId = uuid.v4();
       const bobId = uuid.v4();
-      const aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-      const bobToken = args.trustchainHelper.generateUserToken(bobId);
-      args.currentBob = makeCurrentUser(bobId, bobToken, args.trustchainId);
-      args.versionBob = makeUser(Tanker, bobId, bobToken, args.trustchainId);
-      args.currentAlice = makeCurrentUser(aliceId, aliceToken, args.trustchainId);
-      args.versionAlice = makeUser(Tanker, aliceId, aliceToken, args.trustchainId);
+      const trustchainPrivateKey = toBase64(args.trustchainHelper.trustchainKeyPair.privateKey);
+      const aliceToken = generateUserToken(args.trustchainId, trustchainPrivateKey, aliceId);
+      const bobToken = generateUserToken(args.trustchainId, trustchainPrivateKey, bobId);
+      const aliceIdentity = await upgradeUserToken(args.trustchainId, aliceId, aliceToken);
+      const bobIdentity = await upgradeUserToken(args.trustchainId, bobId, bobToken);
+      args.currentBob = makeCurrentUser(bobId, bobIdentity, args.trustchainId);
+      args.versionBob = makeV1User(Tanker, bobId, bobToken, args.trustchainId);
+      args.currentAlice = makeCurrentUser(aliceId, aliceIdentity, args.trustchainId);
+      args.versionAlice = makeV1User(Tanker, aliceId, aliceToken, args.trustchainId);
       await args.versionBob.create();
       await args.versionBob.close();
       await args.versionAlice.create();
@@ -40,15 +43,15 @@ function generateTests(version: string, Tanker: any) {
       const encryptedData = await args.versionAlice.encrypt(message, [args.versionBob.id], []);
       await args.versionAlice.close();
 
-      await args.currentBob.open();
+      await args.currentBob.signIn();
       let decryptedData = await args.currentBob.decrypt(encryptedData);
       expect(decryptedData).to.equal(message);
-      await args.currentBob.close();
+      await args.currentBob.signOut();
 
-      await args.currentAlice.open();
+      await args.currentAlice.signIn();
       decryptedData = await args.currentAlice.decrypt(encryptedData);
       expect(decryptedData).to.equal(message);
-      await args.currentAlice.close();
+      await args.currentAlice.signOut();
     });
 
     it(`encrypts and shares with a group in ${version} and decrypts with current code`, async () => {
@@ -58,26 +61,26 @@ function generateTests(version: string, Tanker: any) {
       let encryptedData = await args.versionAlice.encrypt(message, [], [groupId]);
       await args.versionAlice.close();
 
-      await args.currentBob.open();
+      await args.currentBob.signIn();
       let decryptedData = await args.currentBob.decrypt(encryptedData);
       expect(decryptedData).to.equal(message);
 
-      await args.currentAlice.open();
+      await args.currentAlice.signIn();
       decryptedData = await args.currentAlice.decrypt(encryptedData);
       expect(decryptedData).to.equal(message);
       message = 'another secret message for a group';
       encryptedData = await args.currentAlice.encrypt(message, [], [groupId]);
-      await args.currentAlice.close();
+      await args.currentAlice.signOut();
 
       decryptedData = await args.currentBob.decrypt(encryptedData);
       expect(decryptedData).to.equal(message);
-      await args.currentBob.close();
+      await args.currentBob.signOut();
     });
 
     it(`registers unlock with ${version} and unlocks with current code`, async () => {
-      const phone = makeCurrentUser(args.versionBob.id, args.versionBob.token, args.trustchainId, 'phone');
-      await phone.open();
-      await phone.close();
+      const phone = makeCurrentUser(args.currentBob.id, args.currentBob.identity, args.trustchainId, 'phone');
+      await phone.signIn();
+      await phone.signOut();
     });
   });
 }

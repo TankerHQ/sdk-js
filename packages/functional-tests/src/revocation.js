@@ -1,7 +1,7 @@
 // @flow
-import uuid from 'uuid';
 import sinon from 'sinon';
 import { errors } from '@tanker/core';
+import { getPublicIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
@@ -11,27 +11,23 @@ const isIE = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Tr
 
 const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
-    let bobId;
-    let bobToken;
+    let bobIdentity;
+    let bobPublicIdentity;
 
     beforeEach(async () => {
-      bobId = uuid.v4();
-      bobToken = args.trustchainHelper.generateUserToken(bobId);
+      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
 
-      await args.bobLaptop.open(bobId, bobToken);
+      await args.bobLaptop.signUp(bobIdentity);
       const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
 
-      args.bobPhone.once('unlockRequired', async () => {
-        args.bobPhone.unlockCurrentDevice({ unlockKey: bobUnlockKey });
-      });
-      await args.bobPhone.open(bobId, bobToken);
+      await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
     });
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
-        args.bobLaptop.close(),
-        args.bobPhone.close(),
+        args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
@@ -45,10 +41,10 @@ const generateRevocationTests = (args: TestArgs) => {
         await Promise.all([waitForPhoneRevoked, waitForLaptopRevoked]);
       } else {
         const bobPhoneId = args.bobPhone.deviceId;
-        await args.bobPhone.close();
+        await args.bobPhone.signOut();
         await args.bobLaptop.revokeDevice(bobPhoneId);
         await args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
-        await expect(args.bobPhone.open(bobId, bobToken)).to.be.rejectedWith(errors.OperationCanceled);
+        await expect(args.bobPhone.signIn(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
       }
     };
 
@@ -93,9 +89,9 @@ const generateRevocationTests = (args: TestArgs) => {
 
     it('can\'t open a session on a device revoked while closed', async () => {
       const bobPhoneDeviceId = args.bobPhone.deviceId;
-      await args.bobPhone.close();
+      await args.bobPhone.signOut();
       await args.bobLaptop.revokeDevice(bobPhoneDeviceId);
-      const promise = args.bobPhone.open(bobId, bobToken);
+      const promise = args.bobPhone.signIn(bobIdentity);
       await expect(promise).to.be.rejected;
     });
 
@@ -153,21 +149,21 @@ const generateRevocationTests = (args: TestArgs) => {
     });
 
     it('Alice can share with Bob who has a revoked device', async () => {
-      const aliceId = uuid.v4();
-      const aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-      await args.aliceLaptop.open(aliceId, aliceToken);
+      const aliceIdentity = await args.trustchainHelper.generateIdentity();
+      await args.aliceLaptop.signUp(aliceIdentity);
 
       await revokeBobPhone();
 
       await syncTankers(args.aliceLaptop, args.bobLaptop);
 
       const message = 'I love you';
-      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithUsers: [bobId] });
+      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithUsers: [bobPublicIdentity] });
 
       const clear = await args.bobLaptop.decrypt(encrypted);
       expect(clear).to.eq(message);
 
       await expect(args.bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await args.aliceLaptop.signOut();
     });
   });
 };

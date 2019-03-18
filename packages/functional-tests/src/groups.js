@@ -1,77 +1,80 @@
 // @flow
-import uuid from 'uuid';
-
 import { errors } from '@tanker/core';
-import { expect } from './chai';
+import { getPublicIdentity } from '@tanker/identity';
+import { expect, expectRejectedWithProperty } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const generateGroupsTests = (args: TestArgs) => {
   describe('groups', () => {
-    let aliceId;
-    let bobId;
+    let alicePublicIdentity;
+    let bobPublicIdentity;
+    let unknownUsers;
     const message = "Two's company, three's a crowd";
 
     before(async () => {
-      aliceId = uuid.v4();
-      const aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-      await args.aliceLaptop.open(aliceId, aliceToken);
+      const aliceIdentity = await args.trustchainHelper.generateIdentity();
+      alicePublicIdentity = await getPublicIdentity(aliceIdentity);
+      await args.aliceLaptop.signUp(aliceIdentity);
 
-      bobId = uuid.v4();
-      const bobToken = args.trustchainHelper.generateUserToken(bobId);
-      await args.bobLaptop.open(bobId, bobToken);
+      const bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
+      await args.bobLaptop.signUp(bobIdentity);
+
+      unknownUsers = [await getPublicIdentity(await args.trustchainHelper.generateIdentity('galette'))];
     });
 
     after(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
-        args.bobLaptop.close(),
-        args.bobPhone.close(),
+        args.aliceLaptop.signOut(),
+        args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
     it('should create a group', async () => {
-      await args.bobLaptop.createGroup([aliceId, bobId]);
+      await args.bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
     });
 
     it('should add a member to a group', async () => {
-      const groupId = await args.bobLaptop.createGroup([aliceId]);
-      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobId] });
-      // FIXME no asserts wtf
+      const groupId = await args.bobLaptop.createGroup([alicePublicIdentity]);
+      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
     });
 
     it('should add a member to a group twice', async () => {
-      const groupId = await args.bobLaptop.createGroup([aliceId]);
-      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobId] });
-      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobId] });
-      // FIXME no asserts wtf
+      const groupId = await args.bobLaptop.createGroup([alicePublicIdentity]);
+      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
+      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
     });
 
     it('throws on groupCreation with invalid user', async () => {
-      const whereAreYou = ['galette', 'saucisse'];
-
-      await expect(args.aliceLaptop.createGroup([aliceId, ...whereAreYou]))
-        .to.be.rejectedWith(errors.RecipientsNotFound)
-        .and.eventually.have.property('recipientIds').to.deep.equal(whereAreYou);
+      await expectRejectedWithProperty({
+        handler: async () => args.aliceLaptop.createGroup([alicePublicIdentity, ...unknownUsers]),
+        exception: errors.RecipientsNotFound,
+        property: 'recipientIds',
+        expectedValue: unknownUsers
+      });
     });
 
     it('throws on groupUpdate with invalid users', async () => {
-      const whereAreYou = ['galette', 'saucisse'];
+      const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
-      const groupId = await args.aliceLaptop.createGroup([aliceId]);
-
-      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: whereAreYou }))
-        .to.be.rejectedWith(errors.RecipientsNotFound)
-        .and.eventually.have.property('recipientIds').to.deep.equal(whereAreYou);
+      await expectRejectedWithProperty({
+        handler: async () => args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: unknownUsers }),
+        exception: errors.RecipientsNotFound,
+        property: 'recipientIds',
+        expectedValue: unknownUsers
+      });
     });
 
     it('throws on groupUpdate with mix valid/invalid users', async () => {
-      const whereAreYou = ['galette', 'saucisse'];
+      const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
-      const groupId = await args.aliceLaptop.createGroup([aliceId]);
-
-      await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobId, ...whereAreYou] }))
-        .to.be.rejectedWith(errors.RecipientsNotFound)
-        .and.eventually.have.property('recipientIds').to.deep.equal(whereAreYou);
+      await expectRejectedWithProperty({
+        handler: async () => args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, ...unknownUsers] }),
+        exception: errors.RecipientsNotFound,
+        property: 'recipientIds',
+        expectedValue: unknownUsers
+      });
     });
 
     it('throws on groupCreation with empty users', async () => {
@@ -80,28 +83,28 @@ const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('throws on groupUpdate with empty users', async () => {
-      const groupId = await args.aliceLaptop.createGroup([aliceId]);
+      const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
       await expect(args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [] }))
         .to.be.rejectedWith(errors.InvalidGroupSize);
     });
 
     it('should publish keys to group', async () => {
-      const groupId = await args.bobLaptop.createGroup([aliceId, bobId]);
+      const groupId = await args.bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
 
       const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] }); const decrypted = await args.aliceLaptop.decrypt(encrypted);
       expect(decrypted).to.equal(message);
     });
 
     it('should publish keys to non-local group', async () => {
-      const groupId = await args.aliceLaptop.createGroup([aliceId]);
+      const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
       const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] }); const decrypted = await args.aliceLaptop.decrypt(encrypted);
       expect(decrypted).to.equal(message);
     });
 
     it('should share keys to group', async () => {
-      const groupId = await args.aliceLaptop.createGroup([aliceId]);
+      const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
       const encrypted = await args.bobLaptop.encrypt(message);
       const resourceId = await args.bobLaptop.getResourceId(encrypted);
@@ -112,48 +115,27 @@ const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('should publish keys to updated group', async () => {
-      const groupId = await args.aliceLaptop.createGroup([aliceId]);
-      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobId] });
+      const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
+      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
 
       const encrypted = await args.aliceLaptop.encrypt(message, { shareWithGroups: [groupId] }); const decrypted = await args.bobLaptop.decrypt(encrypted);
       expect(decrypted).to.equal(message);
     });
 
     it('should publish old keys to new group member', async () => {
-      const groupId = await args.aliceLaptop.createGroup([aliceId]);
+      const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
       const encrypted = await args.aliceLaptop.encrypt(message, { shareWithGroups: [groupId] }); await expect(args.bobLaptop.decrypt(encrypted))
         .to.be.rejectedWith(errors.ResourceNotFound);
-      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobId] });
+      await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
 
       const decrypted = await args.bobLaptop.decrypt(encrypted);
       expect(decrypted).to.equal(message);
     });
 
     it('should not be able to update a group you are not in', async () => {
-      const groupId = await args.aliceLaptop.createGroup([aliceId]);
-      await expect(args.bobLaptop.updateGroupMembers(groupId, { usersToAdd: [bobId] }))
+      const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
+      await expect(args.bobLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] }))
         .to.be.rejectedWith(errors.InvalidArgument);
-    });
-
-    describe('deprecated shareWith format', () => {
-      it('should publish keys to group with deprecated shareWith format', async () => {
-        const groupId = await args.bobLaptop.createGroup([aliceId, bobId]);
-
-        const encrypted = await args.bobLaptop.encrypt(message, { shareWith: [groupId] });
-        const decrypted = await args.aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(message);
-      });
-
-      it('should share keys to group with deprecated shareWith format', async () => {
-        const groupId = await args.aliceLaptop.createGroup([aliceId]);
-
-        const encrypted = await args.bobLaptop.encrypt(message);
-        const resourceId = await args.bobLaptop.getResourceId(encrypted);
-        await args.bobLaptop.share([resourceId], [groupId]);
-
-        const decrypted = await args.aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(message);
-      });
     });
   });
 };

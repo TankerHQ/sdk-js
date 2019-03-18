@@ -1,6 +1,6 @@
 // @flow
 import { expect } from './chai';
-import { toBase64, fromBase64, toString, fromString, findIndex, getTankerVersion, compareSameSizeUint8Arrays } from '../utils';
+import { toBase64, fromBase64, toString, fromString, findIndex, compareSameSizeUint8Arrays } from '../utils';
 import { errors } from '../index';
 
 const notStringTypes = [undefined, null, 0, {}, [], new Uint8Array(0)];
@@ -36,12 +36,6 @@ describe('utils (core)', () => {
       expect(findIndex([0, 1, 2, 3, 4], (el) => el > 1)).to.equal(2);
       expect(findIndex(['a', 'b', 'c'], (el) => el === 'b')).to.equal(1);
       expect(findIndex([1, 3, 5, 7, 9], (el) => el % 2 === 0)).to.equal(-1);
-    });
-  });
-
-  describe('get tanker version', () => {
-    it('should look like a version', () => {
-      expect(typeof getTankerVersion()).to.equal('string');
     });
   });
 

@@ -1,17 +1,14 @@
 // @flow
-import uuid from 'uuid';
 import { utils } from '@tanker/crypto';
 import { errors } from '@tanker/core';
+import { getPublicIdentity } from '@tanker/identity';
 import { expect } from './chai';
 
 import { type TestArgs } from './TestArgs';
 
 const generateEncryptorStreamTests = (args: TestArgs) => {
   describe('EncryptorStream', () => {
-    let aliceId;
-    let bobId;
-    let aliceToken;
-    let bobToken;
+    let bobPublicIdentity;
 
     const watchStream = (stream) => {
       const sync = {};
@@ -26,19 +23,18 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
     };
 
     beforeEach(async () => {
-      aliceId = uuid.v4();
-      bobId = uuid.v4();
-      aliceToken = args.trustchainHelper.generateUserToken(aliceId);
-      bobToken = args.trustchainHelper.generateUserToken(bobId);
-      await args.aliceLaptop.open(aliceId, aliceToken);
-      await args.bobLaptop.open(bobId, bobToken);
+      const aliceIdentity = await args.trustchainHelper.generateIdentity();
+      const bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
+      await args.aliceLaptop.signUp(aliceIdentity);
+      await args.bobLaptop.signUp(bobIdentity);
     });
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.close(),
-        args.bobLaptop.close(),
-        args.bobPhone.close(),
+        args.aliceLaptop.signOut(),
+        args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
@@ -47,7 +43,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         const letterContents = 'Secret message';
         let decryptedData = '';
 
-        const encryptor = await args.aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobId] });
+        const encryptor = await args.aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity] });
         const decryptor = await args.bobLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => {
@@ -78,7 +74,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         encryptor.end();
 
         const resourceId = encryptor.resourceId();
-        await args.aliceLaptop.share([resourceId], { shareWithUsers: [bobId] });
+        await args.aliceLaptop.share([resourceId], { shareWithUsers: [bobPublicIdentity] });
 
         encryptor.pipe(decryptor);
         await expect(sync.promise).to.be.fulfilled;
@@ -139,7 +135,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
 
     describe('Error Handling', () => {
       it('cannot makeEncryptorStream and makeDecryptorStream when session has ended', async () => {
-        await args.aliceLaptop.close();
+        await args.aliceLaptop.signOut();
         await expect(args.aliceLaptop.makeEncryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
         await expect(args.aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
       });

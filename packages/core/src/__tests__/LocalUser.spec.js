@@ -1,15 +1,14 @@
 // @flow
 
-import { tcrypto, random } from '@tanker/crypto';
-
-import { extractUserData } from '../Tokens/UserData';
-import { createUserToken } from './TestSessionTokens';
+import { tcrypto, random, utils } from '@tanker/crypto';
+import { createIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
-import { type UserKeys } from '../Blocks/payloads';
-
-import LocalUser from '../Session/LocalUser';
 import TestGenerator from './TestGenerator';
+
+import { type UserKeys } from '../Blocks/payloads';
+import LocalUser from '../Session/LocalUser';
+import { extractUserData } from '../UserData';
 
 class FakeKeyStore {
   signatureKeyPair: tcrypto.SodiumKeyPair;
@@ -41,15 +40,15 @@ describe('Local User', () => {
   let trustchainId;
   let trustchainKeyPair;
   let userIdString;
-  let userToken;
+  let identity;
   let userData;
 
-  before(() => {
+  before(async () => {
     trustchainId = random(tcrypto.HASH_SIZE);
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     userIdString = 'clear user id';
-    userToken = createUserToken(trustchainId, userIdString, trustchainKeyPair.privateKey);
-    userData = extractUserData(trustchainId, userIdString, userToken);
+    identity = await createIdentity(utils.toBase64(trustchainId), utils.toBase64(trustchainKeyPair.privateKey), userIdString);
+    userData = extractUserData(identity);
   });
 
   beforeEach(async () => {

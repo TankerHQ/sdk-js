@@ -1,12 +1,13 @@
 // @flow
 import sinon from 'sinon';
 import { utils } from '@tanker/crypto';
+import { createIdentity, getPublicIdentity, _deserializePublicIdentity, type PublicIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import { makeUserStoreBuilder } from './UserStoreBuilder';
 import UserAccessor from '../Users/UserAccessor';
-import { RecipientsNotFound } from '../errors';
 import makeUint8Array from './makeUint8Array';
+import { RecipientsNotFound } from '../errors';
 
 import Trustchain from '../Trustchain/Trustchain';
 
@@ -130,23 +131,36 @@ describe('Users', () => {
   });
 
   describe('getUsers', () => {
+    const toPublicIdentity = async (identity): Promise<PublicIdentity> => {
+      const publicIdentity = await getPublicIdentity(identity);
+      return _deserializePublicIdentity(publicIdentity);
+    };
+    const toPublicIdentities = (list): Promise<Array<PublicIdentity>> => Promise.all(list.map(toPublicIdentity));
+
     it('returns users', async () => {
-      const { users, builder } = await makeTestUsers();
+      const { users, builder, generator } = await makeTestUsers();
       const alice = await builder.newUserCreationV3('alice');
       const bob = await builder.newUserCreationV3('bob');
+      const aliceIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'alice');
+      const bobIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'bob');
 
-      const retUsers = await users.getUsers({ userIds: ['alice', 'bob'] });
+      const publicIdentities = await toPublicIdentities([aliceIdentity, bobIdentity]);
+      const retUsers = await users.getUsers({ publicIdentities });
       const retUserIds = retUsers.map(u => u.userId);
       const expectedUserIds = [alice, bob].map(u => utils.toBase64(u.entry.user_id));
       expect(retUserIds).to.have.members(expectedUserIds);
     });
 
     it('throws RecipientsNotFound as appropriate', async () => {
-      const { users, builder } = await makeTestUsers();
+      const { users, builder, generator } = await makeTestUsers();
       await builder.newUserCreationV3('alice');
       await builder.newUserCreationV3('bob');
+      const aliceIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'alice');
+      const bobIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'bob');
+      const casperIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'casper');
 
-      await expect(users.getUsers({ userIds: ['alice', 'bob', 'casper'] }))
+      const publicIdentities = await toPublicIdentities([aliceIdentity, bobIdentity, casperIdentity]);
+      await expect(users.getUsers({ publicIdentities }))
         .to.be.rejectedWith(RecipientsNotFound);
     });
   });

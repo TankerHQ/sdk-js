@@ -1,5 +1,6 @@
 // @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { utils, type b64string } from '@tanker/crypto';
+import { _deserializePublicIdentity } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -10,11 +11,9 @@ import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-import { DEVICE_TYPE } from '../Unlock/unlock';
 import { decryptData } from './Encryptor';
 import { type EncryptionOptions } from './EncryptionOptions';
 import { type ShareWithOptions } from './ShareWithOptions';
-import ChunkEncryptor, { makeChunkEncryptor, type EncryptorInterface } from './ChunkEncryptor';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
 
@@ -86,51 +85,23 @@ export default class DataProtector {
     await this._client.sendKeyPublishBlocks(blocks);
   }
 
-  async _separateGroupsFromUsers(shareWith: Array<string>): Object {
-    const maybeGroupIds = shareWith.map((candidate) => {
-      try {
-        return utils.fromBase64(candidate);
-      } catch (e) { // not base64, can't be a groupId
-        return new Uint8Array(0); // will be filtered out
-      }
-    }).filter(id => id.length === tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
-
-    const groups = await this._groupManager.findGroups(maybeGroupIds);
-    const b64groupIds = groups.map(group => utils.toBase64(group.groupId));
-    const userIds = shareWith.filter(id => b64groupIds.indexOf(id) === -1);
-    const users = await this._userAccessor.getUsers({ userIds });
-
-    return {
-      users,
-      groups,
-    };
-  }
-
-  _handleShareWithSelf = (ids: Array<string>, shareWithSelf: bool): Array<string> => {
+  _handleShareWithSelf = (identities: Array<b64string>, shareWithSelf: bool): Array<string> => {
     if (shareWithSelf) {
-      const selfUserId = this._localUser.clearUserId;
-      if (ids.indexOf(selfUserId) === -1) {
-        return ids.concat([selfUserId]);
+      const selfUserIdentity = utils.toB64Json(this._localUser.publicIdentity);
+      if (identities.indexOf(selfUserIdentity) === -1) {
+        return identities.concat([selfUserIdentity]);
       }
     }
 
-    return ids;
+    return identities;
   }
 
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWithOptions: ShareWithOptions, shareWithSelf: bool): Promise<void> {
-    let groups;
-    let users;
-
-    // deprecated format:
-    if (shareWithOptions.shareWith) {
-      const mixedIds = this._handleShareWithSelf(shareWithOptions.shareWith, shareWithSelf);
-      ({ groups, users } = await this._separateGroupsFromUsers(mixedIds));
-    } else {
-      const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
-      const userIds = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
-      groups = await this._groupManager.findGroups(groupIds);
-      users = await this._userAccessor.getUsers({ userIds });
-    }
+    const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
+    const groups = await this._groupManager.findGroups(groupIds);
+    const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
+    const deserializedIdentities = b64UserIdentities.map(i => _deserializePublicIdentity(i));
+    const users = await this._userAccessor.getUsers({ publicIdentities: deserializedIdentities });
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;
@@ -167,14 +138,6 @@ export default class DataProtector {
     }));
 
     return this._shareResources(keys, shareWith, false);
-  }
-
-  async makeChunkEncryptor(seal?: Uint8Array): Promise<ChunkEncryptor> {
-    const encryptor: EncryptorInterface = {
-      encryptData: (data, options) => this.encryptAndShareData(data, options),
-      decryptData: (encryptedData) => this.decryptData(encryptedData)
-    };
-    return makeChunkEncryptor({ encryptor, seal, defaultShareWithSelf: (this._localUser.deviceType === DEVICE_TYPE.client_device) });
   }
 
   async makeEncryptorStream(options: EncryptionOptions): Promise<EncryptorStream> {

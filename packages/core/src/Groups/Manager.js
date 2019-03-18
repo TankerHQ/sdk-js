@@ -1,6 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { _deserializePublicIdentity, InvalidIdentity, type PublicIdentity } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
@@ -11,6 +12,13 @@ import Trustchain from '../Trustchain/Trustchain';
 import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
+
+function deserializePublicIdentity(publicIdentity: b64string): PublicIdentity {
+  const deserializedIdentity = _deserializePublicIdentity(publicIdentity);
+  if (deserializedIdentity.target !== 'user')
+    throw new InvalidIdentity('Group members cannot be provisional identities');
+  return deserializedIdentity;
+}
 
 export default class GroupManager {
   _localUser: LocalUser
@@ -33,13 +41,14 @@ export default class GroupManager {
     this._client = client;
   }
 
-  async createGroup(userIds: Array<string>): Promise<b64string> {
-    if (userIds.length === 0)
+  async createGroup(publicIdentities: Array<b64string>): Promise<b64string> {
+    if (publicIdentities.length === 0)
       throw new InvalidGroupSize('A group cannot be created empty');
-    if (userIds.length > MAX_GROUP_SIZE)
+    if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
-    const fullUsers = await this._userAccessor.getUsers({ userIds });
+    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
+    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
@@ -47,7 +56,7 @@ export default class GroupManager {
     const userGroupCreationBlock = this._localUser.blockGenerator.createUserGroup(
       groupSignatureKeyPair,
       tcrypto.makeEncryptionKeyPair(),
-      fullUsers
+      fullUsers,
     );
     await this._client.sendBlock(userGroupCreationBlock);
 
@@ -56,21 +65,23 @@ export default class GroupManager {
     return utils.toBase64(groupSignatureKeyPair.publicKey);
   }
 
-  async updateGroupMembers(groupId: string, userIdsToAdd: Array<string>): Promise<void> {
-    if (userIdsToAdd.length === 0)
+  async updateGroupMembers(groupId: string, publicIdentities: Array<b64string>): Promise<void> {
+    if (publicIdentities.length === 0)
       throw new InvalidGroupSize(`Cannot add no member to group ${groupId}`);
-    if (userIdsToAdd.length > MAX_GROUP_SIZE)
+    if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
 
-    const fullUsers = await this._userAccessor.getUsers({ userIds: userIdsToAdd });
-
     const internalGroupId = utils.fromBase64(groupId);
-    await this._trustchain.updateGroupStore([internalGroupId]);
+    await this._fetchGroups([internalGroupId]);
+
     const existingGroup = await this._groupStore.findFull({ groupId: internalGroupId });
 
     if (!existingGroup) {
       throw new InvalidArgument('groupId', 'string', groupId);
     }
+
+    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
+    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
 
     // no need to keep the keys, we will get them when we receive the group block
     const userGroupCreationBlock = this._localUser.blockGenerator.addToUserGroup(

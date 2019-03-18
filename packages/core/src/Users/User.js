@@ -14,7 +14,6 @@ export type Device = {
   devicePublicEncryptionKey: Uint8Array,
   devicePublicSignatureKey: Uint8Array,
   isGhostDevice: bool,
-  isServerDevice: bool,
   createdAt: number,
   revokedAt: number,
 };
@@ -45,7 +44,6 @@ export function applyDeviceCreationToUser(deviceCreation: VerifiedDeviceCreation
     devicePublicSignatureKey: deviceCreation.public_signature_key,
     createdAt: deviceCreation.index,
     isGhostDevice: deviceCreation.is_ghost_device,
-    isServerDevice: deviceCreation.is_server_device,
     revokedAt: Number.MAX_SAFE_INTEGER,
   };
 

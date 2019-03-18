@@ -179,7 +179,7 @@ class TestGenerator {
     };
   }
 
-  makeDeviceCreation = (parentDevice: TestDeviceCreation, isServer: bool = false): TestDeviceCreation => {
+  makeDeviceCreation = (parentDevice: TestDeviceCreation): TestDeviceCreation => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
 
@@ -196,7 +196,6 @@ class TestGenerator {
       publicSignatureKey: signatureKeyPair.publicKey,
       publicEncryptionKey: encryptionKeyPair.publicKey,
       isGhost: false,
-      isServer,
     });
     block.index = this._trustchainIndex;
 
@@ -428,7 +427,6 @@ class TestGenerator {
     devicePublicEncryptionKey: testDevice.encryptionKeys.publicKey,
     devicePublicSignatureKey: testDevice.signKeys.publicKey,
     isGhostDevice: false,
-    isServerDevice: false,
     createdAt: testDevice.createdAt,
     revokedAt: testDevice.revokedAt,
   })

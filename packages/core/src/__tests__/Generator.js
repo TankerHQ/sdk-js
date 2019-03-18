@@ -1,9 +1,8 @@
 // @flow
-
-import { tcrypto, random, utils, obfuscateUserId } from '@tanker/crypto';
+import { tcrypto, random, utils } from '@tanker/crypto';
+import { obfuscateUserId } from '@tanker/identity';
 
 import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
-import { DEVICE_TYPE, type DeviceType } from '../Unlock/unlock';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { Device, User } from '../Users/User';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
@@ -58,7 +57,6 @@ export function generatorDeviceToDevice(u: GeneratorDevice): Device {
     devicePublicEncryptionKey: u.encryptionKeys.publicKey,
     devicePublicSignatureKey: u.signKeys.publicKey,
     isGhostDevice: false,
-    isServerDevice: false,
     createdAt: 0,
     revokedAt: Number.MAX_SAFE_INTEGER,
   };
@@ -155,7 +153,7 @@ class Generator {
     return new Generator(rootBlock.trustchain_id, rootBlock, appSignKeys);
   }
 
-  createUser(args: { userId: string, parentDevice?: GeneratorDevice, userKeys: tcrypto.SodiumKeyPair, nature: Nature, deviceType?: DeviceType}): CreateUserResult {
+  createUser(args: { userId: string, parentDevice?: GeneratorDevice, userKeys: tcrypto.SodiumKeyPair, nature: Nature}): CreateUserResult {
     const ephemeralKeys = tcrypto.makeSignKeyPair();
     const signKeys = tcrypto.makeSignKeyPair();
     const encryptionKeys = tcrypto.makeEncryptionKeyPair();
@@ -185,7 +183,6 @@ class Generator {
       public_signature_key: signKeys.publicKey,
       public_encryption_key: encryptionKeys.publicKey,
       is_ghost_device: false,
-      is_server_device: (!!args.deviceType && args.deviceType === DEVICE_TYPE.server_device),
       revoked: Number.MAX_SAFE_INTEGER,
       user_key_pair: userKeyPair,
     };
@@ -228,12 +225,12 @@ class Generator {
     };
   }
 
-  async newUserCreationV3(userId: string, { deviceType, unsafe }: { deviceType?: DeviceType, unsafe?: bool } = {}): Promise<GeneratorUserResult> {
+  async newUserCreationV3(userId: string, { unsafe }: { unsafe?: bool } = {}): Promise<GeneratorUserResult> {
     if (!unsafe && this.users[userId])
       throw new Error(`Generator: user ${userId} already exists`);
     const userKeys = tcrypto.makeEncryptionKeyPair();
 
-    const result = this.createUser({ userId, userKeys, nature: NATURE.device_creation_v3, deviceType });
+    const result = this.createUser({ userId, userKeys, nature: NATURE.device_creation_v3 });
 
     const user = { id: userId, userKeys, devices: [result.device] };
     this.users[userId] = user;
@@ -268,8 +265,8 @@ class Generator {
     };
   }
 
-  async newDeviceCreationV3(args: { userId: string, parentIndex: number, deviceType?: DeviceType }): Promise<GeneratorUserResult> {
-    const { userId, parentIndex, deviceType } = args;
+  async newDeviceCreationV3(args: { userId: string, parentIndex: number }): Promise<GeneratorUserResult> {
+    const { userId, parentIndex } = args;
     if (!this.users[userId])
       throw new Error(`Generator: cannot add device: ${userId} does not exist`);
     const user = this.users[userId];
@@ -280,7 +277,7 @@ class Generator {
       throw new Error('Generator: cannot add device: index out of bounds');
     const parentDevice = devices[parentIndex];
 
-    const result = this.createUser({ userId, userKeys, parentDevice, nature: NATURE.device_creation_v3, deviceType });
+    const result = this.createUser({ userId, userKeys, parentDevice, nature: NATURE.device_creation_v3 });
 
     this.users[userId] = { ...user, devices: [...user.devices, result.device] };
     this.usersDevices[utils.toBase64(result.entry.hash)] = userId;

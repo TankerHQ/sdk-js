@@ -1,6 +1,7 @@
 // @flow
 
-import { tcrypto, createUserSecretBinary, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
+import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
@@ -73,7 +74,6 @@ describe('Keystore', () => {
     await keystore.prependUserKey(key1);
     await keystore.addUserKey(key3);
 
-    // $FlowIKnow
     expect(keystore.userKeys).to.deep.eq([key1, key2, key3]);
   });
 

@@ -9,14 +9,37 @@ import { fromBase64, toBase64 } from '../../../../packages/client-node';
 
 const password = 'plop';
 
-class User {
+class BaseUser {
   _tanker: any;
   _id: string;
+
+  constructor(tanker: any, id: string) {
+    this._tanker = tanker;
+    this._id = id;
+  }
+
+  async encrypt(message: string, userIds: Array<string>, groupIds: Array<string>) {
+    return toBase64(await this._tanker.encrypt(message, { shareWithUsers: userIds, shareWithGroups: groupIds }));
+  }
+
+  async decrypt(encryptedData: string) {
+    return this._tanker.decrypt(fromBase64(encryptedData));
+  }
+
+  async createGroup(ids: Array<string>) {
+    return this._tanker.createGroup(ids);
+  }
+
+  get id() {
+    return this._id;
+  }
+}
+
+class UserV1 extends BaseUser {
   _token: string;
 
   constructor(tanker: any, id: string, token: string) {
-    this._tanker = tanker;
-    this._id = id;
+    super(tanker, id);
     this._token = token;
   }
 
@@ -35,33 +58,38 @@ class User {
     await this._tanker.close();
   }
 
-  async encrypt(message: string, userIds: Array<string>, groupIds: Array<string>) {
-    return toBase64(await this._tanker.encrypt(message, { shareWithUsers: userIds, shareWithGroups: groupIds }));
-  }
-
-  async decrypt(encryptedData: string) {
-    return this._tanker.decrypt(fromBase64(encryptedData));
-  }
-
-  async createGroup(ids: Array<string>) {
-    return this._tanker.createGroup(ids);
-  }
-
-  get id() {
-    return this._id;
-  }
-
   get token() {
     return this._token;
   }
 }
 
-export function makeUser(Tanker: any, userId: string, userToken: string, trustchainId: string, prefix: string = 'default') {
-  const dbPath = path.join('/tmp', `${prefix}${trustchainId.replace(/[/\\]/g, '_')}/`);
+class UserV2 extends BaseUser {
+  _identity: string;
+
+  constructor(tanker: any, id: string, identity: string) {
+    super(tanker, id);
+    this._identity = identity;
+  }
+
+  async signIn() {
+    await this._tanker.signIn(this._identity, { password });
+  }
+
+  async signOut() {
+    await this._tanker.signOut();
+  }
+
+  get identity() {
+    return this._identity;
+  }
+}
+
+function makeTanker(Tanker: any, userId: string, trustchainId: string, prefix: string) {
+  const dbPath = path.join('/tmp', `${prefix}${userId}${trustchainId.replace(/[/\\]/g, '_')}/`);
   if (!fs.existsSync(dbPath)) {
     fs.mkdirSync(dbPath);
   }
-  const tanker = new Tanker({
+  return new Tanker({
     trustchainId,
     url: tankerUrl,
     sdkType: 'test',
@@ -69,13 +97,18 @@ export function makeUser(Tanker: any, userId: string, userToken: string, trustch
       dbPath,
     },
   });
+}
+
+export function makeV1User(Tanker: any, userId: string, token: string, trustchainId: string, prefix: string = 'default') {
+  const tanker = makeTanker(Tanker, userId, trustchainId, prefix);
   tanker.on('unlockRequired', async () => {
     await tanker.unlockCurrentDevice({ password });
   });
-  return new User(tanker, userId, userToken);
+  return new UserV1(tanker, userId, token);
 }
 
-export function makeCurrentUser(userId: string, userToken: string, trustchainId: string, prefix: string = 'default') {
+export function makeCurrentUser(userId: string, identity: string, trustchainId: string, prefix: string = 'default') {
   const Tanker = require('../../../../packages/client-node').default; // eslint-disable-line global-require
-  return makeUser(Tanker, userId, userToken, trustchainId, prefix);
+  const tanker = makeTanker(Tanker, userId, trustchainId, prefix);
+  return new UserV2(tanker, userId, identity);
 }
