@@ -20,6 +20,12 @@ describe('Tanker', () => {
     userId = 'winnie';
   });
 
+  describe('version', () => {
+    it('Tanker should have a static version attribute', () => {
+      expect(typeof Tanker.version).to.equal('string');
+    });
+  });
+
   describe('init', () => {
     it('constructor should throw with bad config argument', () => {
       [

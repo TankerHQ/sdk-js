@@ -18,7 +18,7 @@ import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOption
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 
-import { TANKER_SDK_VERSION as version } from './version';
+import { TANKER_SDK_VERSION } from './version';
 
 export type { SignInOptions, SignInResult } from './Session/SessionOpener';
 
@@ -63,6 +63,8 @@ export class Tanker extends EventEmitter {
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
 
+  static version = TANKER_SDK_VERSION;
+
   constructor(options: TankerOptions) {
     super();
 
@@ -87,7 +89,7 @@ export class Tanker extends EventEmitter {
 
     const clientOptions: ClientOptions = {
       sdkInfo: {
-        version,
+        version: Tanker.version,
         type: options.sdkType,
         trustchainId: options.trustchainId
       }
