@@ -1,7 +1,7 @@
 // @flow
 
 import { utils } from '@tanker/crypto';
-import { type PublicIdentity } from '@tanker/identity';
+import { type PublicPermanentIdentity } from '@tanker/identity';
 
 import UserStore, { type FindUserParameters, type FindUsersParameters } from './UserStore';
 import { type User } from './User';
@@ -72,7 +72,7 @@ export default class UserAccessor {
     return users;
   }
 
-  async getUsers({ publicIdentities }: { publicIdentities: Array<PublicIdentity> }): Promise<Array<User>> {
+  async getUsers({ publicIdentities }: { publicIdentities: Array<PublicPermanentIdentity> }): Promise<Array<User>> {
     const obfuscatedUserIds = publicIdentities.map(u => {
       if (u.target !== 'user')
         throw new Error(`Assertion error: publicIdentity ${u.target} should be 'user'`);

@@ -1,7 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { _deserializePublicIdentity, InvalidIdentity, type PublicIdentity } from '@tanker/identity';
+import { _deserializePublicIdentity, InvalidIdentity, type PublicPermanentIdentity } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
@@ -13,7 +13,7 @@ import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
 
-function deserializePublicIdentity(publicIdentity: b64string): PublicIdentity {
+function deserializePublicIdentity(publicIdentity: b64string): PublicPermanentIdentity {
   const deserializedIdentity = _deserializePublicIdentity(publicIdentity);
   if (deserializedIdentity.target !== 'user')
     throw new InvalidIdentity('Group members cannot be provisional identities');
