@@ -36,6 +36,9 @@ describe('GroupUpdater', () => {
       tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
     };
     provisionalIdentityPublicKeys = {
+      trustchainId: builder.generator.trustchainId,
+      target: 'email',
+      value: 'bob',
       appSignaturePublicKey: provisionalIdentityPrivateKeys.appSignatureKeyPair.publicKey,
       appEncryptionPublicKey: provisionalIdentityPrivateKeys.appEncryptionKeyPair.publicKey,
       tankerSignaturePublicKey: provisionalIdentityPrivateKeys.tankerSignatureKeyPair.publicKey,

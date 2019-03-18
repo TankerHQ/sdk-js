@@ -16,17 +16,11 @@ import { type EncryptionOptions } from './EncryptionOptions';
 import { type ShareWithOptions } from './ShareWithOptions';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
+import { type FullPublicProvisionalIdentity, fillProvisionalIdentities } from '../ProvisionalIdentity';
 
 export type KeyResourceId = {
   key: Uint8Array,
   resourceId: Uint8Array,
-};
-
-export type ProvisionalIdentityPublicKeys = {
-  appSignaturePublicKey: Uint8Array,
-  appEncryptionPublicKey: Uint8Array,
-  tankerSignaturePublicKey: Uint8Array,
-  tankerEncryptionPublicKey: Uint8Array,
 };
 
 export type ProvisionalIdentityPrivateKeys = {
@@ -75,7 +69,7 @@ export default class DataProtector {
 
   _makeProvisionalIdentityKeyPublishBlocks(
     keyResourceIds: Array<KeyResourceId>,
-    provisionalIdentities: Array<ProvisionalIdentityPublicKeys>
+    provisionalIdentities: Array<FullPublicProvisionalIdentity>
   ): Array<Block> {
     const blocks: Array<Block> = [];
     for (const provisionalIdentity of provisionalIdentities) {
@@ -100,14 +94,8 @@ export default class DataProtector {
     }
 
     if (recipientProvisionalIdentities.length > 0) {
-      const provisionalIds = recipientProvisionalIdentities.map(e => ({ [e.target]: e.value }));
-      const tankerPublicKeys = await this._client.getProvisionalIdentityKeys(provisionalIds);
-      const provisionalIdentities = tankerPublicKeys.map((e, i) => ({
-        ...e,
-        appSignaturePublicKey: utils.fromBase64(recipientProvisionalIdentities[i].public_signature_key),
-        appEncryptionPublicKey: utils.fromBase64(recipientProvisionalIdentities[i].public_encryption_key),
-      }));
-      blocks = blocks.concat(this._makeProvisionalIdentityKeyPublishBlocks(keyResourceIds, provisionalIdentities));
+      const fullProvisionalIdentities = await fillProvisionalIdentities(this._client, recipientProvisionalIdentities);
+      blocks = blocks.concat(this._makeProvisionalIdentityKeyPublishBlocks(keyResourceIds, fullProvisionalIdentities));
     }
 
     if (recipientUsers.length > 0) {

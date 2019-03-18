@@ -22,7 +22,8 @@ import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { InvalidDelegationToken } from '../errors';
 import { concatArrays } from './Serialize';
-import { type ProvisionalIdentityPublicKeys, type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
+import { type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
+import { type FullPublicProvisionalIdentity } from '../ProvisionalIdentity';
 
 export function getUserGroupV1CreationBlockSignData(record: UserGroupCreationRecordV1): Uint8Array {
   return concatArrays(
@@ -236,7 +237,7 @@ export class BlockGenerator {
     return pKeyBlock;
   }
 
-  makeProvisionalIdentityKeyPublishBlock(provisionalIdentityPublicKeys: ProvisionalIdentityPublicKeys, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
+  makeProvisionalIdentityKeyPublishBlock(provisionalIdentityPublicKeys: FullPublicProvisionalIdentity, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
     const preEncryptedKey = tcrypto.sealEncrypt(
       resourceKey,
       provisionalIdentityPublicKeys.appEncryptionPublicKey,
@@ -266,7 +267,7 @@ export class BlockGenerator {
     return pKeyBlock;
   }
 
-  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<ProvisionalIdentityPublicKeys>): Block {
+  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<FullPublicProvisionalIdentity>): Block {
     const encryptedPrivateSignatureKey = tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey);
 
     const keysForUsers = users.map(u => {

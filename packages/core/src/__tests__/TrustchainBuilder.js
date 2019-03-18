@@ -30,7 +30,8 @@ import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
 
 import { userGroupEntryFromBlock, deviceCreationFromBlock, provisionalIdentityClaimFromBlock } from '../Blocks/entries';
 import { type InvitePublicKey } from '../Blocks/payloads';
-import { type ProvisionalIdentityPublicKeys, type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
+import { type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
+import { type FullPublicProvisionalIdentity } from '../ProvisionalIdentity';
 
 export default class TrustchainBuilder {
   dataStore: DataStore<*>;
@@ -132,7 +133,7 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>, provisionalMembers?: Array<ProvisionalIdentityPublicKeys>): Promise<GeneratorUserGroupResult> {
+  async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>, provisionalMembers?: Array<FullPublicProvisionalIdentity>): Promise<GeneratorUserGroupResult> {
     const result = await this.generator.newUserGroupCreation(from.device, members, provisionalMembers || []);
     await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
     return result;
