@@ -6,7 +6,7 @@ import { InvalidBlockError } from '../errors.internal';
 import { findIndex } from '../utils';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
-import { getUserGroupCreationBlockSignDataV1, getUserGroupCreationBlockSignDataV2, getUserGroupAdditionBlockSignDataV1 } from '../Blocks/BlockGenerator';
+import { getUserGroupCreationBlockSignDataV1, getUserGroupCreationBlockSignDataV2, getUserGroupAdditionBlockSignDataV1, getUserGroupAdditionBlockSignDataV2 } from '../Blocks/BlockGenerator';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
@@ -17,6 +17,8 @@ import {
   type UserGroupCreationRecord,
   type UserGroupCreationRecordV1,
   type UserGroupCreationRecordV2,
+  type UserGroupAdditionRecordV1,
+  type UserGroupAdditionRecordV2,
   type UserGroupAdditionRecord,
 } from '../Blocks/payloads';
 
@@ -203,7 +205,11 @@ export function verifyUserGroupAddition(entry: UnverifiedUserGroup, author: Devi
 
   let selfSigBuffer;
   if (entry.nature === NATURE.user_group_addition_v1) {
-    selfSigBuffer = getUserGroupAdditionBlockSignDataV1(currentPayload);
+    const versionedPayload: UserGroupAdditionRecordV1 = (currentPayload: any);
+    selfSigBuffer = getUserGroupAdditionBlockSignDataV1(versionedPayload);
+  } else if (entry.nature === NATURE.user_group_addition_v2) {
+    const versionedPayload: UserGroupAdditionRecordV2 = (currentPayload: any);
+    selfSigBuffer = getUserGroupAdditionBlockSignDataV2(versionedPayload);
   } else {
     throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
   }

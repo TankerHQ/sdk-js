@@ -35,6 +35,18 @@ function assertFailWithNature(verifyFunc: () => any, nature: string) {
     .that.has.property('nature', nature);
 }
 
+function makeProvisionalIdentity() {
+  return {
+    trustchainId: random(tcrypto.HASH_SIZE),
+    target: 'email',
+    value: 'bob@gmail',
+    appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+    tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+  };
+}
+
 describe('BlockVerification', () => {
   let testGenerator: TestGenerator;
 
@@ -411,15 +423,7 @@ describe('BlockVerification', () => {
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
       testGenerator.skipIndex(); // used for faking a revocation
-      const provisionalIdentityPublicKeys = {
-        trustchainId: random(tcrypto.HASH_SIZE),
-        target: 'email',
-        value: 'bob@gmail',
-        appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-        appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-        tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-      };
+      const provisionalIdentityPublicKeys = makeProvisionalIdentity();
       const keyPublish = testGenerator.makeKeyPublishToProvisionalUser(userCreation, provisionalIdentityPublicKeys);
       unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
     });
@@ -448,7 +452,8 @@ describe('BlockVerification', () => {
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      const userGroup = testGenerator.makeUserGroupCreation(userCreation, [user]);
+      const provisionalIdentity = makeProvisionalIdentity();
+      const userGroup = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
       unverifiedUserGroup = userGroup.unverifiedUserGroup;
       externalGroup = userGroup.externalGroup;
     });
@@ -493,7 +498,8 @@ describe('BlockVerification', () => {
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user]);
+      const provisionalIdentity = makeProvisionalIdentity();
+      const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
       externalGroup = userGroupCreation.externalGroup;
 
       // Second user

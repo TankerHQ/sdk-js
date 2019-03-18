@@ -137,8 +137,8 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async addUserGroupAddition(from: GeneratorUserResult, group: GeneratorUserGroupResult, members: Array<string>): Promise<GeneratorUserGroupAdditionResult> {
-    const result = await this.generator.newUserGroupAddition(from.device, group, members);
+  async addUserGroupAddition(from: GeneratorUserResult, group: GeneratorUserGroupResult, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupAdditionResult> {
+    const result = await this.generator.newUserGroupAddition(from.device, group, members, provisionalMembers);
     await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
     return result;
   }

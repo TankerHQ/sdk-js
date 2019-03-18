@@ -111,6 +111,14 @@ export type UserGroupAdditionRecordV1 = {|
   self_signature_with_current_key: Uint8Array,
 |}
 
+export type UserGroupAdditionRecordV2 = {|
+  group_id: Uint8Array,
+  previous_group_block: Uint8Array,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
+  encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
+  self_signature_with_current_key: Uint8Array,
+|}
+
 export type GroupEncryptedKey = GroupEncryptedKeyV1 | GroupEncryptedKeyV2;
 
 // Note: We can't define all those generic types as unions, because unions + spreads *badly* confuse flow. So just manually tell it what the fields are...
@@ -123,7 +131,14 @@ export type UserGroupCreationRecord = {|
   self_signature: Uint8Array,
 |};
 
-export type UserGroupAdditionRecord = UserGroupAdditionRecordV1;
+export type UserGroupAdditionRecord = {|
+  group_id: Uint8Array,
+  previous_group_block: Uint8Array,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKey>,
+  encrypted_group_private_encryption_keys_for_provisional_users?: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
+  self_signature_with_current_key: Uint8Array,
+|};
+
 export type UserGroupRecord = UserGroupCreationRecord | UserGroupAdditionRecord;
 
 export type ProvisionalIdentityClaimRecord = {|
@@ -138,7 +153,8 @@ export type ProvisionalIdentityClaimRecord = {|
 
 export type Record = TrustchainCreationRecord | UserDeviceRecord | DeviceRevocationRecord | ProvisionalIdentityClaimRecord |
                       KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | KeyPublishToProvisionalUserRecord |
-                      UserGroupCreationRecordV1 | UserGroupCreationRecordV2 | UserGroupAdditionRecordV1 | ProvisionalIdentityClaimRecord;
+                      UserGroupCreationRecordV1 | UserGroupCreationRecordV2 | UserGroupAdditionRecordV1 | UserGroupAdditionRecordV2 |
+                      ProvisionalIdentityClaimRecord;
 
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
 const currentVersion = 1;
@@ -551,11 +567,40 @@ export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditio
   );
 }
 
+export function serializeUserGroupAdditionV2(userGroupAddition: UserGroupAdditionRecordV2): Uint8Array {
+  if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
+    throw new Error('Assertion error: invalid user group addition previous group block size');
+  userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group add V2', k));
+  userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.forEach(k => checkProvisionalGroupEncryptedKeyV2('user group creation V2', k));
+  if (userGroupAddition.self_signature_with_current_key.length !== tcrypto.SIGNATURE_SIZE)
+    throw new Error('Assertion error: invalid user group addition group self signature size');
+
+  return utils.concatArrays(
+    userGroupAddition.group_id,
+    userGroupAddition.previous_group_block,
+    encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_users),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV2),
+    encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.map(serializeProvisionalGroupEncryptedKeyV2),
+    userGroupAddition.self_signature_with_current_key,
+  );
+}
+
 export function unserializeUserGroupAdditionV1(src: Uint8Array): UserGroupAdditionRecordV1 {
   return unserializeGeneric(src, [
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'group_id'),
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'previous_group_block'),
     (d, o) => unserializeList(d, unserializeGroupEncryptedKeyV1, o, 'encrypted_group_private_encryption_keys_for_users'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'self_signature_with_current_key'),
+  ]);
+}
+
+export function unserializeUserGroupAdditionV2(src: Uint8Array): UserGroupAdditionRecordV2 {
+  return unserializeGeneric(src, [
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'group_id'),
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'previous_group_block'),
+    (d, o) => unserializeList(d, unserializeGroupEncryptedKeyV2, o, 'encrypted_group_private_encryption_keys_for_users'),
+    (d, o) => unserializeList(d, unserializeProvisionalGroupEncryptedKeyV2, o, 'encrypted_group_private_encryption_keys_for_provisional_users'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'self_signature_with_current_key'),
   ]);
 }
@@ -616,6 +661,7 @@ export function unserializePayload(block: Block): Record {
     case NATURE.user_group_creation_v1: return unserializeUserGroupCreationV1(block.payload);
     case NATURE.user_group_creation_v2: return unserializeUserGroupCreationV2(block.payload);
     case NATURE.user_group_addition_v1: return unserializeUserGroupAdditionV1(block.payload);
+    case NATURE.user_group_addition_v2: return unserializeUserGroupAdditionV2(block.payload);
     case NATURE.provisional_identity_claim: return unserializeProvisionalIdentityClaim(block.payload);
     default: throw new UpgradeRequiredError(`unknown nature: ${block.nature}`);
   }

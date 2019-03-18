@@ -15,6 +15,7 @@ import {
   unserializeUserGroupCreationV1,
   unserializeUserGroupCreationV2,
   unserializeUserGroupAdditionV1,
+  unserializeUserGroupAdditionV2,
   unserializeProvisionalIdentityClaim,
 } from './payloads';
 
@@ -170,6 +171,12 @@ export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
     };
   } else if (block.nature === NATURE.user_group_addition_v1) {
     const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
+    return {
+      ...verificationFields,
+      ...userGroupAction,
+    };
+  } else if (block.nature === NATURE.user_group_addition_v2) {
+    const userGroupAction = unserializeUserGroupAdditionV2(block.payload);
     return {
       ...verificationFields,
       ...userGroupAction,
