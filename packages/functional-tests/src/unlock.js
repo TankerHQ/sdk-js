@@ -1,7 +1,7 @@
 // @flow
 import uuid from 'uuid';
 import find from 'array-find';
-import { errors, SIGN_IN_RESULT } from '@tanker/core';
+import { Tanker, errors } from '@tanker/core';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
@@ -9,7 +9,7 @@ import { type TestArgs } from './TestArgs';
 const expectUnlock = async (tanker, identity, signInOptions) => {
   const signInResult = await tanker.signIn(identity, signInOptions);
   expect(tanker.isOpen).to.be.true;
-  expect(signInResult).to.equal(SIGN_IN_RESULT.OK);
+  expect(signInResult).to.equal(Tanker.signInResult.OK);
 };
 
 const generateUnlockTests = (args: TestArgs) => {
@@ -73,7 +73,7 @@ const generateUnlockTests = (args: TestArgs) => {
     describe('faulty handlers', () => {
       it('rejects opening without verifying the identity', async () => {
         const signInResult = await bobPhone.signIn(bobIdentity);
-        expect(signInResult).to.equal(SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED);
+        expect(signInResult).to.equal(Tanker.signInResult.IDENTITY_VERIFICATION_NEEDED);
       });
     });
 

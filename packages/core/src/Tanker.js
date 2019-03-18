@@ -64,6 +64,7 @@ export class Tanker extends EventEmitter {
   _dataStoreOptions: DataStoreOptions;
 
   static version = TANKER_SDK_VERSION;
+  static signInResult = SIGN_IN_RESULT;
 
   constructor(options: TankerOptions) {
     super();

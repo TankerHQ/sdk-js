@@ -1,5 +1,5 @@
 // @flow
-import { errors, SIGN_IN_RESULT } from '@tanker/core';
+import { Tanker, errors } from '@tanker/core';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
@@ -39,7 +39,7 @@ const generateOpenTests = (args: TestArgs) => {
 
     it('rejects when trying to signIn without signUp beforehand', async () => {
       const signInResult = await args.bobLaptop.signIn(bobIdentity);
-      await expect(signInResult).to.equal(SIGN_IN_RESULT.IDENTITY_NOT_REGISTERED);
+      await expect(signInResult).to.equal(Tanker.signInResult.IDENTITY_NOT_REGISTERED);
     });
 
     it('throws when the session has already been opened', async () => {
@@ -56,7 +56,7 @@ const generateOpenTests = (args: TestArgs) => {
       await args.bobLaptop.signUp(bobIdentity);
       await args.bobLaptop.signOut();
       const signInResult = await args.bobLaptop.signIn(bobIdentity);
-      expect(signInResult).to.equal(SIGN_IN_RESULT.OK);
+      expect(signInResult).to.equal(Tanker.signInResult.OK);
       expect(args.bobLaptop.isOpen).to.be.true;
     });
 
@@ -75,7 +75,7 @@ const generateOpenTests = (args: TestArgs) => {
       await args.bobLaptop.signOut();
 
       const result = await args.bobPhone.signIn(bobIdentity);
-      await expect(result).to.equal(SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED);
+      await expect(result).to.equal(Tanker.signInResult.IDENTITY_VERIFICATION_NEEDED);
 
       expect(args.bobPhone.isOpen).to.be.false;
 
