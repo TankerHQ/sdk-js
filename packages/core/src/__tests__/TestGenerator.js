@@ -406,7 +406,7 @@ class TestGenerator {
     };
   }
 
-  makeUserGroupCreation = (parentDevice: TestDeviceCreation, members: Array<User>): TestUserGroup => {
+  makeUserGroupCreation = (parentDevice: TestDeviceCreation, members: Array<User>, provisionalUsers?: Array<PublicProvisionalUser> = []): TestUserGroup => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
     const blockGenerator = new BlockGenerator(
@@ -415,7 +415,7 @@ class TestGenerator {
       parentDevice.testDevice.id,
     );
     this._trustchainIndex += 1;
-    const block = blockGenerator.createUserGroup(signatureKeyPair, encryptionKeyPair, members);
+    const block = blockGenerator.createUserGroup(signatureKeyPair, encryptionKeyPair, members, provisionalUsers);
     block.index = this._trustchainIndex;
 
     const unverifiedUserGroup = userGroupEntryFromBlock(block);

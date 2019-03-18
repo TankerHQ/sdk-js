@@ -124,7 +124,8 @@ describe('BlockGenerator', () => {
     const block = blockGenerator.createUserGroup(
       groupSignatureKeyPair,
       groupEncryptionKeyPair,
-      [user]
+      [user],
+      []
     );
 
     const entry = blockToEntry(block);

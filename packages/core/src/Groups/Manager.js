@@ -57,6 +57,7 @@ export default class GroupManager {
       groupSignatureKeyPair,
       tcrypto.makeEncryptionKeyPair(),
       fullUsers,
+      []
     );
     await this._client.sendBlock(userGroupCreationBlock);
 

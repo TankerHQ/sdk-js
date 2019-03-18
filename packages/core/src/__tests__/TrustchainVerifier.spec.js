@@ -217,7 +217,7 @@ describe('TrustchainVerifier', () => {
         tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
       };
 
-      const claim = await builder.addProvisionalIdentityClaim({ from: author, provisionalUserKeys });
+      const claim = await builder.addProvisionalIdentityClaim(author, provisionalUserKeys);
       await expect(builder.trustchainVerifier.verifyClaimsForUser(claim.unverifiedProvisionalIdentityClaim.user_id)).to.be.fulfilled;
     });
   });

@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, random, utils } from '@tanker/crypto';
-import { obfuscateUserId, type ProvisionalUserKeys } from '@tanker/identity';
+import { obfuscateUserId, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import BlockGenerator from '../Blocks/BlockGenerator';
@@ -514,7 +514,7 @@ class Generator {
     };
   }
 
-  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>): Promise<GeneratorUserGroupResult> {
+  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupResult> {
     const blockGenerator = new BlockGenerator(
       this.trustchainId,
       from.signKeys.privateKey,
@@ -526,7 +526,7 @@ class Generator {
 
     const fullUsers = members.map(m => generatorUserToUser(this.trustchainId, this.users[m]));
 
-    const block = blockGenerator.createUserGroup(groupSignatureKeyPair, groupEncryptionKeyPair, fullUsers);
+    const block = blockGenerator.createUserGroup(groupSignatureKeyPair, groupEncryptionKeyPair, fullUsers, provisionalMembers);
 
     this.trustchainIndex += 1;
     block.index = this.trustchainIndex;

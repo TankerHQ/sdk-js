@@ -261,7 +261,7 @@ export class BlockGenerator {
     return pKeyBlock;
   }
 
-  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>): Block {
+  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>): Block {
     const encryptedPrivateSignatureKey = tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey);
 
     const keysForUsers = users.map(u => {
@@ -275,12 +275,28 @@ export class BlockGenerator {
       };
     });
 
+    const keysForProvisionalUsers = provisionalUsers.map(u => {
+      const preEncryptedKey = tcrypto.sealEncrypt(
+        encryptionKeyPair.privateKey,
+        u.appEncryptionPublicKey,
+      );
+      const encryptedKey = tcrypto.sealEncrypt(
+        preEncryptedKey,
+        u.tankerEncryptionPublicKey,
+      );
+      return {
+        app_provisional_user_public_signature_key: u.appSignaturePublicKey,
+        tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
+        encrypted_group_private_encryption_key: encryptedKey,
+      };
+    });
+
     const payload = {
       public_signature_key: signatureKeyPair.publicKey,
       public_encryption_key: encryptionKeyPair.publicKey,
       encrypted_group_private_signature_key: encryptedPrivateSignatureKey,
       encrypted_group_private_encryption_keys_for_users: keysForUsers,
-      encrypted_group_private_encryption_keys_for_provisional_users: [],
+      encrypted_group_private_encryption_keys_for_provisional_users: keysForProvisionalUsers,
       self_signature: new Uint8Array(0),
     };
 
