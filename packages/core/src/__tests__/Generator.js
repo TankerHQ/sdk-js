@@ -9,7 +9,7 @@ import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifi
 import { type UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/InviteUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
-import { type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
+import { type ProvisionalIdentityPublicKeys, type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 import { serializeTrustchainCreation,
@@ -525,7 +525,7 @@ class Generator {
     };
   }
 
-  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>): Promise<GeneratorUserGroupResult> {
+  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>, provisionalMembers?: Array<ProvisionalIdentityPublicKeys>): Promise<GeneratorUserGroupResult> {
     const blockGenerator = new BlockGenerator(
       this.trustchainId,
       from.signKeys.privateKey,
@@ -537,7 +537,7 @@ class Generator {
 
     const fullUsers = members.map(m => generatorUserToUser(this.trustchainId, this.users[m]));
 
-    const block = blockGenerator.createUserGroup(groupSignatureKeyPair, groupEncryptionKeyPair, fullUsers);
+    const block = blockGenerator.createUserGroup(groupSignatureKeyPair, groupEncryptionKeyPair, fullUsers, provisionalMembers || []);
 
     this.trustchainIndex += 1;
     block.index = this.trustchainIndex;

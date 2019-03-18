@@ -35,7 +35,7 @@ export default class GroupStoreBuilder {
   }
 
   async newUserGroupCreation(from: GeneratorDevice, userIds: Array<string>) {
-    const result = await this.generator.newUserGroupCreation(from, userIds);
+    const result = await this.generator.newUserGroupCreation(from, userIds, []);
     await this.groupStore.put({
       groupId: result.groupSignatureKeyPair.publicKey,
       signatureKeyPair: {

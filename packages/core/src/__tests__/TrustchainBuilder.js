@@ -7,7 +7,15 @@ import { extractUserData } from '../UserData';
 import LocalUser from '../Session/LocalUser';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
-import Generator, { type GeneratorUserResult, type GeneratorKeyResult, type GeneratorUserGroupResult, type GeneratorUserGroupAdditionResult, type GeneratorDevice, type GeneratorUser } from './Generator';
+import Generator, {
+  type GeneratorUserResult,
+  type GeneratorKeyResult,
+  type GeneratorUserGroupResult,
+  type GeneratorUserGroupAdditionResult,
+  type GeneratorDevice,
+  type GeneratorUser,
+  type GeneratorProvisionalIdentityClaimResult,
+} from './Generator';
 import TrustchainStore from '../Trustchain/TrustchainStore';
 import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
@@ -20,8 +28,9 @@ import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
 import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
 
-import { userGroupEntryFromBlock, deviceCreationFromBlock } from '../Blocks/entries';
+import { userGroupEntryFromBlock, deviceCreationFromBlock, provisionalIdentityClaimFromBlock } from '../Blocks/entries';
 import { type InvitePublicKey } from '../Blocks/payloads';
+import { type ProvisionalIdentityPublicKeys, type ProvisionalIdentityPrivateKeys } from '../DataProtection/DataProtector';
 
 export default class TrustchainBuilder {
   dataStore: DataStore<*>;
@@ -123,8 +132,8 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>): Promise<GeneratorUserGroupResult> {
-    const result = await this.generator.newUserGroupCreation(from.device, members);
+  async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>, provisionalMembers?: Array<ProvisionalIdentityPublicKeys>): Promise<GeneratorUserGroupResult> {
+    const result = await this.generator.newUserGroupCreation(from.device, members, provisionalMembers || []);
     await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
     return result;
   }
@@ -132,6 +141,12 @@ export default class TrustchainBuilder {
   async addUserGroupAddition(from: GeneratorUserResult, group: GeneratorUserGroupResult, members: Array<string>): Promise<GeneratorUserGroupAdditionResult> {
     const result = await this.generator.newUserGroupAddition(from.device, group, members);
     await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
+    return result;
+  }
+
+  async addProvisionalIdentityClaim(from: GeneratorUserResult, provisionalIdentityKeys: ProvisionalIdentityPrivateKeys): Promise<GeneratorProvisionalIdentityClaimResult> {
+    const result = await this.generator.newProvisionalIdentityClaim(from.device, provisionalIdentityKeys);
+    await this.unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries([provisionalIdentityClaimFromBlock(result.block)]);
     return result;
   }
 

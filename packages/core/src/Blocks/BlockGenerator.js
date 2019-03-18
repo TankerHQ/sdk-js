@@ -17,7 +17,6 @@ import {
 } from './payloads';
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 
-import LocalUser from '../Session/LocalUser';
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
@@ -267,7 +266,7 @@ export class BlockGenerator {
     return pKeyBlock;
   }
 
-  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>): Block {
+  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<ProvisionalIdentityPublicKeys>): Block {
     const encryptedPrivateSignatureKey = tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey);
 
     const keysForUsers = users.map(u => {
@@ -281,14 +280,28 @@ export class BlockGenerator {
       };
     });
 
-    // FIXME: Add keys for pre-users. Need to take an array of provisional identities, not just users.
+    const keysForProvisionalUsers = provisionalUsers.map(u => {
+      const preEncryptedKey = tcrypto.sealEncrypt(
+        encryptionKeyPair.privateKey,
+        u.appEncryptionPublicKey,
+      );
+      const encryptedKey = tcrypto.sealEncrypt(
+        preEncryptedKey,
+        u.tankerEncryptionPublicKey,
+      );
+      return {
+        pending_app_public_signature_key: u.appSignaturePublicKey,
+        pending_tanker_public_signature_key: u.tankerSignaturePublicKey,
+        encrypted_group_private_encryption_key: encryptedKey,
+      };
+    });
 
     const payload = {
       public_signature_key: signatureKeyPair.publicKey,
       public_encryption_key: encryptionKeyPair.publicKey,
       encrypted_group_private_signature_key: encryptedPrivateSignatureKey,
       encrypted_group_private_encryption_keys_for_users: keysForUsers,
-      pending_encrypted_group_private_encryption_keys_for_users: [],
+      pending_encrypted_group_private_encryption_keys_for_users: keysForProvisionalUsers,
       self_signature: new Uint8Array(0),
     };
 
@@ -338,7 +351,7 @@ export class BlockGenerator {
     return block;
   }
 
-  makeProvisionalIdentityClaimBlock(user: LocalUser, provisionalIdentityKeys: ProvisionalIdentityPrivateKeys): Block {
+  makeProvisionalIdentityClaimBlock(userId: Uint8Array, userPublicKey: Uint8Array, provisionalIdentityKeys: ProvisionalIdentityPrivateKeys): Block {
     const multiSignedPayload = concatArrays(
       this.deviceId,
       provisionalIdentityKeys.appSignatureKeyPair.publicKey,
@@ -348,15 +361,15 @@ export class BlockGenerator {
     const tankerSignature = tcrypto.sign(multiSignedPayload, provisionalIdentityKeys.tankerSignatureKeyPair.privateKey);
 
     const keysToEncrypt = concatArrays(provisionalIdentityKeys.appEncryptionKeyPair.privateKey, provisionalIdentityKeys.tankerEncryptionKeyPair.privateKey);
-    const encryptedProvisionalIdentityKeys = tcrypto.sealEncrypt(keysToEncrypt, user.currentUserKey.publicKey);
+    const encryptedProvisionalIdentityKeys = tcrypto.sealEncrypt(keysToEncrypt, userPublicKey);
 
     const payload = {
-      user_id: user.userId,
+      user_id: userId,
       app_provisional_identity_signature_public_key: provisionalIdentityKeys.appSignatureKeyPair.publicKey,
       tanker_provisional_identity_signature_public_key: provisionalIdentityKeys.tankerSignatureKeyPair.publicKey,
       author_signature_by_app_key: appSignature,
       author_signature_by_tanker_key: tankerSignature,
-      recipient_user_public_key: user.currentUserKey.publicKey,
+      recipient_user_public_key: userPublicKey,
       encrypted_provisional_identity_private_keys: encryptedProvisionalIdentityKeys,
     };
 
