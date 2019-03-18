@@ -10,6 +10,11 @@ export type DeviceKeys = {|
 |}
 
 export type ProvisionalIdentityKeyPairs = {|
+  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
+  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
+|}
+
+export type ProvisionalIdentityKeyPairsWithId = {|
   id: string,
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
   tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
@@ -20,7 +25,7 @@ type KeySafeObject = {
   userSecret: Uint8Array,
   userKeys: Array<tcrypto.SodiumKeyPair>,
   encryptedUserKeys: Array<UserKeys>,
-  provisionalIdentityKeys: Array<ProvisionalIdentityKeyPairs>,
+  provisionalIdentityKeys: Array<ProvisionalIdentityKeyPairsWithId>,
 }
 
 function startsWith(haystack: string, needle: string) {
@@ -59,7 +64,7 @@ export default class KeySafe {
   encryptionPair: tcrypto.SodiumKeyPair;
   userKeys: Array<tcrypto.SodiumKeyPair>;
   encryptedUserKeys: Array<UserKeys>;
-  provisionalIdentityKeys: Array<ProvisionalIdentityKeyPairs>;
+  provisionalIdentityKeys: Array<ProvisionalIdentityKeyPairsWithId>;
 
   constructor(obj: KeySafeObject) {
     if (!obj || !obj.signaturePair || !obj.encryptionPair)

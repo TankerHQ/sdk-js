@@ -595,7 +595,7 @@ class Generator {
     const encryptedProvisionalIdentityKeys = tcrypto.sealEncrypt(keysToEncrypt, userKeys.publicKey);
 
     const payload = {
-      user_id: utils.fromBase64(userId),
+      user_id: this.userId(userId),
       app_provisional_identity_signature_public_key: provisionalIdentityKeys.appSignatureKeyPair.publicKey,
       tanker_provisional_identity_signature_public_key: provisionalIdentityKeys.tankerSignatureKeyPair.publicKey,
       author_signature_by_app_key: appSignature,

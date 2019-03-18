@@ -32,7 +32,7 @@ class FakeKeyStore {
   takeEncryptedUserKeys = () => this.encryptedUserKeys
   addEncryptedUserKey = (keys: UserKeys) => { this.encryptedUserKeys.push(keys); };
   prependUserKey = (userKey: tcrypto.SodiumKeyPair) => this.userKeys.push(userKey);
-  addProvisionalIdentityKeys = (id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair) => this.provisionalIdentityKeys.push({ id, appEncryptionKeyPair, tankerEncryptionKeyPair });
+  addProvisionalIdentityKeys = (id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair) => this.provisionalIdentityKeys.push({ appEncryptionKeyPair, tankerEncryptionKeyPair });
 }
 
 describe('Local User', () => {

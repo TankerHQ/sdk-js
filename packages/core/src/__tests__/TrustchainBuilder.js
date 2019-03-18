@@ -151,10 +151,12 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async getKeystoreOfDevice(user: GeneratorUser, device: GeneratorDevice): Promise<Keystore> {
-    // $FlowExpectedError we are making a read-only key store for tests, no need for a  real database
+  async getKeystoreOfDevice(user: GeneratorUser, device: GeneratorDevice, provisionalIdentities?: Array<ProvisionalIdentityPrivateKeys>): Promise<Keystore> {
+    /* eslint-disable no-underscore-dangle */
+
+    // $FlowExpectedError we are making a read-only key store for tests, no need for a real database
     const keystore = new Keystore(null);
-    keystore._safe = new KeySafe({ // eslint-disable-line no-underscore-dangle
+    keystore._safe = new KeySafe({
       deviceId: utils.toBase64(device.id),
       signaturePair: device.signKeys,
       encryptionPair: device.encryptionKeys,
@@ -163,10 +165,19 @@ export default class TrustchainBuilder {
       provisionalIdentityKeys: [],
       userSecret: new Uint8Array(32),
     });
-    keystore._userKeys = {}; // eslint-disable-line no-underscore-dangle
+    keystore._userKeys = {};
     if (user.userKeys)
-      keystore._userKeys[utils.toBase64(user.userKeys.publicKey)] = user.userKeys; // eslint-disable-line no-underscore-dangle
+      keystore._userKeys[utils.toBase64(user.userKeys.publicKey)] = user.userKeys;
+    keystore._provisionalIdentityKeys = {};
+    for (const ident of provisionalIdentities || []) {
+      const id = utils.toBase64(utils.concatArrays(ident.appSignatureKeyPair.publicKey, ident.tankerSignatureKeyPair.publicKey));
+      const keys = { appEncryptionKeyPair: ident.appEncryptionKeyPair, tankerEncryptionKeyPair: ident.tankerEncryptionKeyPair };
+      keystore._safe.provisionalIdentityKeys.push({ id, ...keys });
+      keystore._provisionalIdentityKeys[id] = keys;
+    }
     return keystore;
+
+    /* eslint-enable no-underscore-dangle */
   }
 }
 
