@@ -131,8 +131,8 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>, provisionalMembers?: Array<PublicProvisionalUser>): Promise<GeneratorUserGroupResult> {
-    const result = await this.generator.newUserGroupCreation(from.device, members, provisionalMembers || []);
+  async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupResult> {
+    const result = await this.generator.newUserGroupCreation(from.device, members, provisionalMembers);
     await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
     return result;
   }
@@ -149,10 +149,12 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async getKeystoreOfDevice(user: GeneratorUser, device: GeneratorDevice): Promise<Keystore> {
-    // $FlowExpectedError we are making a read-only key store for tests, no need for a  real database
+  async getKeystoreOfDevice(user: GeneratorUser, device: GeneratorDevice, provisionalIdentities: Array<ProvisionalUserKeys> = []): Promise<Keystore> {
+    /* eslint-disable no-underscore-dangle */
+
+    // $FlowExpectedError we are making a read-only key store for tests, no need for a real database
     const keystore = new Keystore(null);
-    keystore._safe = new KeySafe({ // eslint-disable-line no-underscore-dangle
+    keystore._safe = new KeySafe({
       deviceId: utils.toBase64(device.id),
       signaturePair: device.signKeys,
       encryptionPair: device.encryptionKeys,
@@ -161,10 +163,19 @@ export default class TrustchainBuilder {
       provisionalUserKeys: [],
       userSecret: new Uint8Array(32),
     });
-    keystore._userKeys = {}; // eslint-disable-line no-underscore-dangle
+    keystore._userKeys = {};
     if (user.userKeys)
-      keystore._userKeys[utils.toBase64(user.userKeys.publicKey)] = user.userKeys; // eslint-disable-line no-underscore-dangle
+      keystore._userKeys[utils.toBase64(user.userKeys.publicKey)] = user.userKeys;
+    keystore._provisionalUserKeys = {};
+    for (const ident of provisionalIdentities) {
+      const id = utils.toBase64(utils.concatArrays(ident.appSignatureKeyPair.publicKey, ident.tankerSignatureKeyPair.publicKey));
+      const keys = { appEncryptionKeyPair: ident.appEncryptionKeyPair, tankerEncryptionKeyPair: ident.tankerEncryptionKeyPair };
+      keystore._safe.provisionalUserKeys.push({ id, ...keys });
+      keystore._provisionalUserKeys[id] = keys;
+    }
     return keystore;
+
+    /* eslint-enable no-underscore-dangle */
   }
 }
 

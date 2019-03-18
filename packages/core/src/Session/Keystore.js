@@ -13,7 +13,7 @@ export default class Keystore {
   _ds: DataStore<*>;
   _safe: KeySafe;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
-  _provisionalUserKeys: { [string]: { appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair } };
+  _provisionalUserKeys: { [string]: ProvisionalUserKeyPairs };
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE, persistent: true }] },
@@ -95,6 +95,10 @@ export default class Keystore {
 
   findUserKey(userPublicKey: Uint8Array): ?tcrypto.SodiumKeyPair {
     return this._userKeys[utils.toBase64(userPublicKey)];
+  }
+
+  findProvisionalKey(id: string): ProvisionalUserKeyPairs {
+    return this._provisionalUserKeys[id];
   }
 
   async close(): Promise<void> {
@@ -202,9 +206,9 @@ export default class Keystore {
   }
 
   async addProvisionalUserKeys(id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair) {
-    const keys = { appEncryptionKeyPair, tankerEncryptionKeyPair };
-    this._safe.provisionalUserKeys.push({ id, ...keys });
-    this._provisionalUserKeys[id] = keys;
+    const provisionalUserKeyPairs = { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
+    this._safe.provisionalUserKeys.push(provisionalUserKeyPairs);
+    this._provisionalUserKeys[id] = provisionalUserKeyPairs;
     const record = await this._ds.get(TABLE, 'keySafe');
     record.encryptedSafe = await this._safe.serialize();
     return this._ds.put(TABLE, record);
