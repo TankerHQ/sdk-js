@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { type PublicIdentity, type PublicProvisionalIdentity, _deserializePublicIdentity } from '@tanker/identity';
+import { type PublicIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity, _deserializePublicIdentity } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -113,12 +113,12 @@ export default class DataProtector {
   }
 
   _splitProvisionalAndFullIdentities = (identities: Array<PublicIdentity>): * => {
-    const fullUsers: Array<PublicIdentity> = [];
+    const fullUsers: Array<PublicPermanentIdentity> = [];
     // $FlowIKnow This checks that the target is correct, so type refinement is fine
     const provisionalUsers: Array<PublicProvisionalIdentity> = identities.filter(elem => {
       const isFull = elem.target === 'user';
       if (isFull)
-        fullUsers.push(elem);
+        fullUsers.push((elem: any));
       return !isFull;
     });
     return { fullUsers, provisionalUsers };
