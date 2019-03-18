@@ -99,6 +99,23 @@ describe('GroupUpdater', () => {
     expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal(null);
   });
 
+  it('handles a group creation I belong to as a pre-registered user', async () => {
+    const alice = await builder.addUserV3('alice');
+    const group = await builder.addUserGroupCreation(alice, [], [provisionalIdentityPublicKeys]);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device, [provisionalIdentityPrivateKeys]));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal({
+      groupId: group.groupSignatureKeyPair.publicKey,
+      signatureKeyPair: group.groupSignatureKeyPair,
+      encryptionKeyPair: group.groupEncryptionKeyPair,
+      lastGroupBlock: group.entry.hash,
+      index: group.entry.index,
+    });
+  });
+
   it('handles a group addition for a group I do not belong to', async () => {
     const alice = await builder.addUserV3('alice');
     const bob = await builder.addUserV3('bob');

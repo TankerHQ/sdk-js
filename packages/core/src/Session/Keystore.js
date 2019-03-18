@@ -4,7 +4,7 @@ import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { InvalidIdentity } from '@tanker/identity';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import KeySafe from './KeySafe';
+import KeySafe, { type ProvisionalIdentityKeyPairs } from './KeySafe';
 import { type UserKeys } from '../Blocks/payloads';
 
 const TABLE = 'device';
@@ -13,7 +13,7 @@ export default class Keystore {
   _ds: DataStore<*>;
   _safe: KeySafe;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
-  _provisionalIdentityKeys: { [string]: { appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair } };
+  _provisionalIdentityKeys: { [string]: ProvisionalIdentityKeyPairs };
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE, persistent: true }] },
@@ -91,6 +91,10 @@ export default class Keystore {
 
   findUserKey(userPublicKey: Uint8Array): ?tcrypto.SodiumKeyPair {
     return this._userKeys[utils.toBase64(userPublicKey)];
+  }
+
+  findProvisionalKey(id: string): ProvisionalIdentityKeyPairs {
+    return this._provisionalIdentityKeys[id];
   }
 
   async close(): Promise<void> {
