@@ -1,5 +1,6 @@
 // @flow
 import { errors } from '@tanker/core';
+import { utils, tcrypto } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect, expectRejectedWithProperty } from './chai';
 import { type TestArgs } from './TestArgs';
@@ -139,6 +140,28 @@ const generateGroupsTests = (args: TestArgs) => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
       await expect(args.bobLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] }))
         .to.be.rejectedWith(errors.InvalidArgument);
+    });
+
+    it('create a group with a provisional user', async () => {
+      const email = 'alice@tanker-functional-test.io';
+      const sigKeyPair = tcrypto.makeSignKeyPair();
+      const encKeyPair = tcrypto.makeEncryptionKeyPair();
+
+      const provisionalIdentity = utils.toB64Json({
+        trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
+        target: 'email',
+        value: email,
+        public_signature_key: utils.toBase64(sigKeyPair.publicKey),
+        public_encryption_key: utils.toBase64(encKeyPair.publicKey),
+      });
+
+      const groupId = await args.bobLaptop.createGroup([provisionalIdentity]);
+      const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+
+      const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+      await expect(args.aliceLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
+
+      expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
     });
   });
 };

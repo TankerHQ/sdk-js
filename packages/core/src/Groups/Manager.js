@@ -1,7 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { _deserializePublicIdentity, InvalidIdentity, type PublicPermanentIdentity } from '@tanker/identity';
+import { _deserializePublicIdentity, InvalidIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
@@ -10,6 +10,7 @@ import GroupStore from './GroupStore';
 import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
 import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
+import { fillProvisionalIdentities } from '../ProvisionalIdentity';
 
 export const MAX_GROUP_SIZE = 1000;
 
@@ -47,8 +48,12 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
-    const decodedIdentities = publicIdentities.map(deserializePublicIdentity);
-    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: decodedIdentities });
+    const decodedIdentities: Array<PublicPermanentIdentity | PublicProvisionalIdentity> = publicIdentities.map(_deserializePublicIdentity);
+    const permanentIdentities: Array<PublicPermanentIdentity> = (decodedIdentities.filter(i => i.target === 'user'): any);
+    const provisionalIdentities: Array<PublicProvisionalIdentity> = (decodedIdentities.filter(i => i.target === 'email'): any);
+    const fullUsers = await this._userAccessor.getUsers({ publicIdentities: (permanentIdentities: Array<PublicPermanentIdentity>) });
+
+    const fullProvisionalIdentities = await fillProvisionalIdentities(this._client, provisionalIdentities);
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
@@ -57,7 +62,7 @@ export default class GroupManager {
       groupSignatureKeyPair,
       tcrypto.makeEncryptionKeyPair(),
       fullUsers,
-      []
+      fullProvisionalIdentities
     );
     await this._client.sendBlock(userGroupCreationBlock);
 
