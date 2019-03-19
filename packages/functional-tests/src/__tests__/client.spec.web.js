@@ -45,6 +45,9 @@ const generateTestResources = (): TestResources => {
     ],
   };
 
+  if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent))
+    delete result.big;
+
   return result;
 };
 
