@@ -3,7 +3,7 @@
 import varint from 'varint';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
-import { type Group, type ExternalGroup } from './types';
+import { type Group, type ExternalGroup, type ProvisionalEncryptionKeys } from './types';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
 
@@ -219,6 +219,18 @@ export default class GroupStore {
       record.index = args.currentLastGroupIndex;
       await this._ds.put(GROUPS_TABLE, record);
     }
+  }
+
+  async updateProvisionalEncryptionKeys(args: { groupId: Uint8Array, provisionalEncryptionKeys: Array<ProvisionalEncryptionKeys> }): Promise<void> {
+    const record = await this._findDbGroup(args.groupId);
+    if (!record)
+      throw new Error(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
+    await this._ds.bulkPut(GROUPS_PROVISIONAL_ENCRYPTION_KEYS_TABLE, args.provisionalEncryptionKeys.map(provisionalKey => ({
+      _id: utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey, args.groupId)),
+      publicSignatureKeys: utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey)),
+      groupId: utils.toBase64(args.groupId),
+      encryptedGroupPrivateEncryptionKey: provisionalKey.encryptedGroupPrivateEncryptionKey,
+    })));
   }
 
   async putExternal(group: ExternalGroup): Promise<void> {
