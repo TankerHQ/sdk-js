@@ -432,6 +432,7 @@ class TestGenerator {
       publicEncryptionKey: encryptionKeyPair.publicKey,
       lastGroupBlock: unverifiedUserGroup.hash,
       encryptedPrivateSignatureKey: null,
+      provisionalEncryptionKeys: [],
       index: unverifiedUserGroup.index,
     };
     return {

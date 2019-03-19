@@ -10,6 +10,12 @@ export type Group = {|
   index: number,
 |};
 
+export type ProvisionalEncryptionKeys = {|
+  appPublicSignatureKey: Uint8Array,
+  tankerPublicSignatureKey: Uint8Array,
+  encryptedGroupPrivateEncryptionKey: Uint8Array,
+|};
+
 export type ExternalGroup = {|
   groupId: Uint8Array,
   publicSignatureKey: Uint8Array,
@@ -17,6 +23,9 @@ export type ExternalGroup = {|
   // we need to keep this key in case we are added to the group after its
   // creation, to be able to recover the private signature key then
   encryptedPrivateSignatureKey: ?Uint8Array,
+  // we need to keep these keys in case we claim the provisional identity after
+  // the group has been verified
+  provisionalEncryptionKeys: Array<ProvisionalEncryptionKeys>,
   lastGroupBlock: Uint8Array,
   index: number,
 |};

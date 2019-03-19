@@ -79,6 +79,10 @@ export default class UserStore {
       version: 6,
       ...schemaV2
     },
+    {
+      version: 7,
+      ...schemaV2
+    },
   ];
 
   constructor(ds: DataStore<*>) {

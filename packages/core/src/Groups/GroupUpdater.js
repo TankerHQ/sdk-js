@@ -87,6 +87,7 @@ export default class GroupUpdater {
         publicSignatureKey: userGroupCreation.public_signature_key,
         publicEncryptionKey: userGroupCreation.public_encryption_key,
         encryptedPrivateSignatureKey: userGroupCreation.encrypted_group_private_signature_key,
+        provisionalEncryptionKeys: [],
         lastGroupBlock: entry.hash,
         index: entry.index,
       });

@@ -52,7 +52,11 @@ export default class UnverifiedStore {
     {
       version: 6,
       tables: schemaTablesV6,
-    }
+    },
+    {
+      version: 7,
+      tables: schemaTablesV6,
+    },
   ];
 
   static async open(ds: DataStore<*>): Promise<UnverifiedStore> {
