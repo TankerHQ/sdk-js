@@ -138,8 +138,9 @@ check/compat/master:
 
 check/e2e:
   stage: check
-  when: manual
   script:
     - dmenv run -- python run-ci.py e2e
   tags:
     - linux
+  except:
+    - schedules
