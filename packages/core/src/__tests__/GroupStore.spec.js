@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 import { mergeSchemas } from '@tanker/datastore-base';
 import { createUserSecretBinary } from '@tanker/identity';
 
@@ -43,6 +43,12 @@ function groupToExternalGroup(group: Group): ExternalGroup {
     publicEncryptionKey: group.encryptionKeyPair.publicKey,
     // just for tests, use the unencrypted private key
     encryptedPrivateSignatureKey: group.signatureKeyPair.privateKey,
+    // just for tests, fill with random stuff
+    pendingEncryptionKeys: [{
+      appPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      tankerPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      encryptedGroupPrivateEncryptionKey: random(tcrypto.DOUBLY_SEALED_KEY_SIZE),
+    }],
     lastGroupBlock: group.lastGroupBlock,
     index: group.index,
   };
@@ -73,6 +79,7 @@ describe('GroupStore', () => {
     const got = await groupStore.findExternal({ groupId: group.groupId });
     const expected = groupToExternalGroup(group);
     expected.encryptedPrivateSignatureKey = null;
+    expected.pendingEncryptionKeys = [];
     expect(got).to.deep.equal(expected);
   });
 
@@ -81,6 +88,8 @@ describe('GroupStore', () => {
 
     await groupStore.putExternal(externalGroup);
     const got = await groupStore.findExternal({ groupId: externalGroup.groupId });
+    // we do not retrieve pending keys when using findExternal
+    externalGroup.pendingEncryptionKeys = [];
     expect(got).to.deep.equal(externalGroup);
   });
 
@@ -163,5 +172,24 @@ describe('GroupStore', () => {
     const got = await groupStore.findFull({ groupId: group.groupId });
     expect(got.lastGroupBlock).to.deep.equal(newBlockHash);
     expect(got.index).to.deep.equal(newBlockIndex);
+  });
+
+  it('cannot find a group by unknown pending public signature keys', async () => {
+    const got = await groupStore.findExternalsByPendingSignaturePublicKeys({
+      appPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      tankerPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    });
+    expect(got).to.have.lengthOf(0);
+  });
+
+  it('can find a group by pending public signature keys', async () => {
+    const externalGroup = makeExternalGroup();
+    await groupStore.putExternal(externalGroup);
+
+    const got = await groupStore.findExternalsByPendingSignaturePublicKeys({
+      appPublicSignatureKey: externalGroup.pendingEncryptionKeys[0].appPublicSignatureKey,
+      tankerPublicSignatureKey: externalGroup.pendingEncryptionKeys[0].tankerPublicSignatureKey,
+    });
+    expect(got).to.deep.equal([externalGroup]);
   });
 });
