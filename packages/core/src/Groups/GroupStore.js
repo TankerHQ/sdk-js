@@ -22,7 +22,7 @@ type DbGroup = {|
   index: number,
 |};
 
-async function encryptGroupKeys(userSecret: Uint8Array, group: Group): Promise<Uint8Array> {
+function encryptGroupKeys(userSecret: Uint8Array, group: Group): Uint8Array {
   const ad = concatArrays(
     group.groupId,
     group.signatureKeyPair.publicKey,
@@ -55,7 +55,7 @@ async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promi
 }
 
 
-async function groupToDbGroup(userSecret: Uint8Array, group: Group): Promise<DbGroup> {
+function groupToDbGroup(userSecret: Uint8Array, group: Group): DbGroup {
   const dbGroup = {
     _id: utils.toBase64(group.groupId),
     publicSignatureKey: utils.toBase64(group.signatureKeyPair.publicKey),
@@ -64,7 +64,7 @@ async function groupToDbGroup(userSecret: Uint8Array, group: Group): Promise<DbG
     lastGroupBlock: utils.toBase64(group.lastGroupBlock),
     index: group.index,
   };
-  const encryptedPrivateKeys = await encryptGroupKeys(userSecret, group);
+  const encryptedPrivateKeys = encryptGroupKeys(userSecret, group);
   return { ...dbGroup, encryptedPrivateKeys };
 }
 
@@ -174,7 +174,7 @@ export default class GroupStore {
       const group = await dbGroupToGroup(this._userSecret, record);
       group.lastGroupBlock = args.currentLastGroupBlock;
       group.index = args.currentLastGroupIndex;
-      await this._ds.put(GROUPS_TABLE, await groupToDbGroup(this._userSecret, group));
+      await this._ds.put(GROUPS_TABLE, groupToDbGroup(this._userSecret, group));
     } else {
       record.lastGroupBlock = utils.toBase64(args.currentLastGroupBlock);
       record.index = args.currentLastGroupIndex;
@@ -187,7 +187,7 @@ export default class GroupStore {
   }
 
   async put(group: Group): Promise<void> {
-    return this._ds.put(GROUPS_TABLE, await groupToDbGroup(this._userSecret, group));
+    return this._ds.put(GROUPS_TABLE, groupToDbGroup(this._userSecret, group));
   }
 
   async _findDbGroup(groupId: Uint8Array): Promise<?DbGroup> {
