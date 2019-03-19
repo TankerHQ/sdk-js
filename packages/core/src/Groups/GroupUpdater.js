@@ -87,7 +87,11 @@ export default class GroupUpdater {
         publicSignatureKey: userGroupCreation.public_signature_key,
         publicEncryptionKey: userGroupCreation.public_encryption_key,
         encryptedPrivateSignatureKey: userGroupCreation.encrypted_group_private_signature_key,
-        provisionalEncryptionKeys: [],
+        provisionalEncryptionKeys: (userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users || []).map(p => ({
+          appPublicSignatureKey: p.app_provisional_user_public_signature_key,
+          tankerPublicSignatureKey: p.tanker_provisional_user_public_signature_key,
+          encryptedGroupPrivateEncryptionKey: p.encrypted_group_private_encryption_key,
+        })),
         lastGroupBlock: entry.hash,
         index: entry.index,
       });
