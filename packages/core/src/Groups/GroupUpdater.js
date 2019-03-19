@@ -117,12 +117,21 @@ export default class GroupUpdater {
         groupPrivateEncryptionKey = provisionalUnseal(provisionalKeys.groupEncryptedKey, provisionalKeys.provisionalKeyPair);
     }
 
-    if (!groupPrivateEncryptionKey
-    ) return;
-
     // I am already member of this group, ignore
     if (!previousGroup.encryptedPrivateSignatureKey)
       return;
+
+    if (!groupPrivateEncryptionKey) {
+      await this._groupStore.updatePendingEncryptionKeys({
+        groupId: previousGroup.groupId,
+        pendingEncryptionKeys: (userGroupAddition.pending_encrypted_group_private_encryption_keys_for_users || []).map(p => ({
+          appPublicSignatureKey: p.pending_app_public_signature_key,
+          tankerPublicSignatureKey: p.pending_tanker_public_signature_key,
+          encryptedGroupPrivateEncryptionKey: p.encrypted_group_private_encryption_key,
+        })),
+      });
+      return;
+    }
 
     // I've just been added to this group, lets keep the private keys
     const groupPrivateSignatureKey = tcrypto.sealDecrypt(previousGroup.encryptedPrivateSignatureKey, { publicKey: previousGroup.publicEncryptionKey, privateKey: groupPrivateEncryptionKey });

@@ -195,6 +195,10 @@ describe('GroupUpdater', () => {
     await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
 
     expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal(null);
+    expect(await groupStore.findExternalsByPendingSignaturePublicKeys({
+      appPublicSignatureKey: provisionalIdentityPublicKeys.appSignaturePublicKey,
+      tankerPublicSignatureKey: provisionalIdentityPublicKeys.tankerSignaturePublicKey,
+    })).to.have.lengthOf(1);
   });
 
   it('handles a group addition I belong to as a pre-registered user', async () => {
