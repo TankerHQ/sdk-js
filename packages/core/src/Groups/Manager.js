@@ -125,6 +125,7 @@ export default class GroupManager {
           publicSignatureKey: group.signatureKeyPair.publicKey,
           publicEncryptionKey: group.encryptionKeyPair.publicKey,
           encryptedPrivateSignatureKey: null,
+          pendingEncryptionKeys: [],
           lastGroupBlock: group.lastGroupBlock,
           index: group.index,
         });

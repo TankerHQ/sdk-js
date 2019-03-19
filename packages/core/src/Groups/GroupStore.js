@@ -12,6 +12,12 @@ type EncryptedPrivateKeys = {|
   encryptionKey: Uint8Array,
 |};
 
+type DbGroupPendingKey = {|
+  publicSignatureKeys: b64string, // concat(app_public_signature_key, tanker_public_signature_key)
+  groupId: b64string,
+  encryptedGroupPrivateEncryptionKey: Uint8Array,
+|};
+
 type DbGroup = {|
   _id: b64string,
   publicSignatureKey: b64string,
@@ -68,19 +74,28 @@ async function groupToDbGroup(userSecret: Uint8Array, group: Group): Promise<DbG
   return { ...dbGroup, encryptedPrivateKeys };
 }
 
-function externalGroupToDbGroup(group: ExternalGroup): DbGroup {
+function externalGroupToDbGroup(group: ExternalGroup): { dbGroup: DbGroup, dbGroupPendingKeys: Array<DbGroupPendingKey> } {
   if (!group.encryptedPrivateSignatureKey)
     throw new Error('Assertion error: trying to add external group without encrypted private signature key');
+  if (!group.pendingEncryptionKeys)
+    throw new Error('Assertion error: trying to add external group without pending encryption keys');
 
   return {
-    _id: utils.toBase64(group.groupId),
-    publicSignatureKey: utils.toBase64(group.publicSignatureKey),
-    publicEncryptionKey: utils.toBase64(group.publicEncryptionKey),
-    encryptedPrivateKeys: null,
-    // $FlowIKnow already checked for nullity
-    encryptedPrivateSignatureKey: utils.toBase64(group.encryptedPrivateSignatureKey),
-    lastGroupBlock: utils.toBase64(group.lastGroupBlock),
-    index: group.index,
+    dbGroup: {
+      _id: utils.toBase64(group.groupId),
+      publicSignatureKey: utils.toBase64(group.publicSignatureKey),
+      publicEncryptionKey: utils.toBase64(group.publicEncryptionKey),
+      encryptedPrivateKeys: null,
+      // $FlowIKnow already checked for nullity
+      encryptedPrivateSignatureKey: utils.toBase64(group.encryptedPrivateSignatureKey),
+      lastGroupBlock: utils.toBase64(group.lastGroupBlock),
+      index: group.index,
+    },
+    dbGroupPendingKeys: group.pendingEncryptionKeys.map(pendingKey => ({
+      publicSignatureKeys: utils.toBase64(utils.concatArrays(pendingKey.appPublicSignatureKey, pendingKey.tankerPublicSignatureKey)),
+      groupId: utils.toBase64(group.groupId),
+      encryptedGroupPrivateEncryptionKey: pendingKey.encryptedGroupPrivateEncryptionKey,
+    })),
   };
 }
 
@@ -104,23 +119,39 @@ async function dbGroupToGroup(userSecret: Uint8Array, dbGroup: DbGroup): Promise
   };
 }
 
-function dbGroupToExternalGroup(group: DbGroup): ExternalGroup {
+function dbGroupToExternalGroup(group: DbGroup, pendingKeys: Array<DbGroupPendingKey>): ExternalGroup {
   return {
     groupId: utils.fromBase64(group._id), // eslint-disable-line no-underscore-dangle
     publicSignatureKey: utils.fromBase64(group.publicSignatureKey),
     publicEncryptionKey: utils.fromBase64(group.publicEncryptionKey),
     encryptedPrivateSignatureKey: group.encryptedPrivateSignatureKey ? utils.fromBase64(group.encryptedPrivateSignatureKey) : null,
+    pendingEncryptionKeys: pendingKeys.map(pendingKey => {
+      const publicSignatureKeys = utils.fromBase64(pendingKey.publicSignatureKeys);
+      return {
+        appPublicSignatureKey: publicSignatureKeys.subarray(0, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        tankerPublicSignatureKey: publicSignatureKeys.subarray(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        encryptedGroupPrivateEncryptionKey: pendingKey.encryptedGroupPrivateEncryptionKey,
+      };
+    }),
     lastGroupBlock: utils.fromBase64(group.lastGroupBlock),
     index: group.index,
   };
 }
 
 const GROUPS_TABLE = 'groups';
+const GROUPS_PENDING_ENCRYPTION_KEYS_TABLE = 'groups_pending_encryption_keys';
 
 const schemasV3 = {
   tables: [{
     name: GROUPS_TABLE,
     indexes: [['publicEncryptionKey']],
+  }]
+};
+
+const schemasV7 = {
+  tables: [...schemasV3.tables, {
+    name: GROUPS_PENDING_ENCRYPTION_KEYS_TABLE,
+    indexes: [['publicSignatureKeys']],
   }]
 };
 
@@ -147,6 +178,10 @@ export default class GroupStore {
     {
       version: 6,
       ...schemasV3
+    },
+    {
+      version: 7,
+      ...schemasV7
     },
   ];
 
@@ -185,7 +220,9 @@ export default class GroupStore {
   }
 
   async putExternal(group: ExternalGroup): Promise<void> {
-    await this._ds.put(GROUPS_TABLE, externalGroupToDbGroup(group));
+    const { dbGroup, dbGroupPendingKeys } = externalGroupToDbGroup(group);
+    await this._ds.put(GROUPS_TABLE, dbGroup);
+    await this._ds.bulkPut(GROUPS_PENDING_ENCRYPTION_KEYS_TABLE, dbGroupPendingKeys);
   }
 
   async put(group: Group): Promise<void> {
@@ -221,6 +258,8 @@ export default class GroupStore {
     return dbGroupToGroup(this._userSecret, record);
   }
 
+  // This function retrievs an external group, but without its pending keys, use
+  // findExternalsByPendingSignaturePublicKeys to get those
   findExternal = async (args: { groupId?: Uint8Array, groupPublicEncryptionKey?: Uint8Array }): Promise<?ExternalGroup> => {
     const { groupId, groupPublicEncryptionKey } = args;
     if (Object.keys(args).length !== 1)
@@ -230,13 +269,24 @@ export default class GroupStore {
       const record = await this._findDbGroup(groupId);
       if (!record)
         return null;
-      return dbGroupToExternalGroup(record);
+      return dbGroupToExternalGroup(record, []);
     } else if (groupPublicEncryptionKey) {
       const record = await this._ds.first(GROUPS_TABLE, { selector: { publicEncryptionKey: utils.toBase64(groupPublicEncryptionKey) } });
       if (record)
-        return dbGroupToExternalGroup(record);
+        return dbGroupToExternalGroup(record, []);
     } else
       throw new Error('findExternal: invalid argument');
     return null;
+  }
+
+  findExternalsByPendingSignaturePublicKeys = async (args: { appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array }): Promise<Array<ExternalGroup>> => {
+    const requestedId = utils.toBase64(utils.concatArrays(args.appPublicSignatureKey, args.tankerPublicSignatureKey));
+    const pendingKeys = await this._ds.find(GROUPS_PENDING_ENCRYPTION_KEYS_TABLE, { selector: { publicSignatureKeys: requestedId } });
+
+    const groups = (await this._ds.find(GROUPS_TABLE, { selector: { _id: { $in: pendingKeys.map(k => k.groupId) } } })).reduce((map, group) => { // eslint-disable-line no-underscore-dangle
+      map[group._id] = group; // eslint-disable-line no-underscore-dangle,no-param-reassign
+      return map;
+    }, {});
+    return pendingKeys.map(pendingKey => dbGroupToExternalGroup(groups[pendingKey.groupId], [pendingKey]));
   }
 }

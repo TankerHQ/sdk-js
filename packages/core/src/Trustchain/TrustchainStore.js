@@ -75,6 +75,14 @@ export default class TrustchainStore {
         }
       ]
     },
+    {
+      version: 7,
+      tables: [
+        {
+          name: TABLE_METADATA
+        }
+      ]
+    },
   ];
 
   constructor(ds: DataStore<*>) {

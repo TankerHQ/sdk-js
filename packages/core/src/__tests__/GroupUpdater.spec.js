@@ -66,6 +66,7 @@ describe('GroupUpdater', () => {
       publicSignatureKey: group.groupSignatureKeyPair.publicKey,
       publicEncryptionKey: group.groupEncryptionKeyPair.publicKey,
       encryptedPrivateSignatureKey: payload.encrypted_group_private_signature_key,
+      pendingEncryptionKeys: [],
       lastGroupBlock: group.entry.hash,
       index: group.entry.index,
     });
