@@ -1,7 +1,7 @@
 // @flow
 import { errors } from '@tanker/core';
-import { tcrypto, utils, random } from '@tanker/crypto';
-import { getPublicIdentity } from '@tanker/identity';
+import { tcrypto, utils } from '@tanker/crypto';
+import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import FilePonyfill from '@tanker/file-ponyfill';
 import { expect, expectRejectedWithProperty } from './chai';
 
@@ -131,68 +131,24 @@ const generateEncryptTests = (args: TestArgs) => {
           expect(decrypted).to.equal(clearText);
         });
 
-        it('encrypt and share to invitee', async () => {
-          const provisionalIdentity = utils.toB64Json({
-            trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
-            target: 'email',
-            value: 'alice@tanker-functional-test.io',
-            public_signature_key: utils.toBase64(random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)),
-            public_encryption_key: utils.toBase64(random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)),
-          });
-          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.fulfilled;
-        });
-
-        it('claim provisionalIdentity blocks', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const sigKeyPair = tcrypto.makeSignKeyPair();
-          const encKeyPair = tcrypto.makeEncryptionKeyPair();
-          const provisionalIdentity = utils.toB64Json({
-            trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
-            target: 'email',
-            value: email,
-            public_signature_key: utils.toBase64(sigKeyPair.publicKey),
-            public_encryption_key: utils.toBase64(encKeyPair.publicKey),
-          });
-          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
-
-          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(args.aliceLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
-        });
-
         it('decrypt claimed block', async () => {
           const email = 'alice@tanker-functional-test.io';
-          const sigKeyPair = tcrypto.makeSignKeyPair();
-          const encKeyPair = tcrypto.makeEncryptionKeyPair();
-          const provisionalIdentity = utils.toB64Json({
-            trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
-            target: 'email',
-            value: email,
-            public_signature_key: utils.toBase64(sigKeyPair.publicKey),
-            public_encryption_key: utils.toBase64(encKeyPair.publicKey),
-          });
+          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.aliceLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
+          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
           const decrypted = await args.aliceLaptop.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
 
         it('decrypt claimed block on a new device', async () => {
           const email = 'alice@tanker-functional-test.io';
-          const sigKeyPair = tcrypto.makeSignKeyPair();
-          const encKeyPair = tcrypto.makeEncryptionKeyPair();
-          const provisionalIdentity = utils.toB64Json({
-            trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
-            target: 'email',
-            value: email,
-            public_signature_key: utils.toBase64(sigKeyPair.publicKey),
-            public_encryption_key: utils.toBase64(encKeyPair.publicKey),
-          });
-          const cipherText = await args.aliceLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
+          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+          const cipherText = await args.aliceLaptop.encrypt(clearText, { shareWithUsers: [await getPublicIdentity(provisionalIdentity)] });
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.bobLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
+          await args.bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
           const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
 
@@ -285,16 +241,10 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('shares to a pre-registered user for an existing resource', async () => {
-        const provisionalIdentity = utils.toB64Json({
-          trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
-          target: 'email',
-          value: 'alice@tanker-functional-test.io',
-          public_signature_key: utils.toBase64(random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)),
-          public_encryption_key: utils.toBase64(random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)),
-        });
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), 'alice@tanker-functional-test.io');
         const cipherText = await args.bobLaptop.encrypt(clearText);
         const resourceId = await args.bobLaptop.getResourceId(cipherText);
-        await expect(args.bobLaptop.share([resourceId], { shareWithUsers: [provisionalIdentity] })).to.be.fulfilled;
+        await expect(args.bobLaptop.share([resourceId], { shareWithUsers: [await getPublicIdentity(provisionalIdentity)] })).to.be.fulfilled;
       });
     });
   });

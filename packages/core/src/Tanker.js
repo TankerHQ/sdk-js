@@ -1,6 +1,7 @@
 // @flow
 
 import { utils, type b64string } from '@tanker/crypto';
+import { _deserializeProvisionalIdentity } from '@tanker/identity';
 import EventEmitter from 'events';
 
 import { type ClientOptions, type UnlockMethods } from './Network/Client';
@@ -356,12 +357,13 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async claimProvisionalIdentity(provisionalIdentity: { email: string }, verificationCodeNoPad: string, appInvitePrivateSignatureKey: string, appInvitePrivateEncryptionKey: string): Promise<void> {
+  async claimProvisionalIdentity(provisionalIdentity: b64string, verificationCodeNoPad: string): Promise<void> {
     this.assert(this.isOpen, 'claim invite');
 
     const verificationCode = utils.toBase64(utils.fromSafeBase64(verificationCodeNoPad));
+    const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
 
-    return this._session.dataProtector.provisionalIdentityClaim(provisionalIdentity, verificationCode, utils.fromBase64(appInvitePrivateSignatureKey), utils.fromBase64(appInvitePrivateEncryptionKey));
+    return this._session.dataProtector.provisionalIdentityClaim(provisionalIdentityObj, verificationCode, utils.fromBase64(provisionalIdentityObj.private_signature_key), utils.fromBase64(provisionalIdentityObj.private_encryption_key));
   }
 
   async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
