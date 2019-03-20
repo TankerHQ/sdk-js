@@ -187,6 +187,32 @@ const generateGroupsTests = (args: TestArgs) => {
 
       expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
     });
+
+    it('should add a provisional member to a group with a premature verification', async () => {
+      const groupId = await args.bobLaptop.createGroup([bobPublicIdentity]);
+
+      const email = 'alice@tanker-functional-test.io';
+      const sigKeyPair = tcrypto.makeSignKeyPair();
+      const encKeyPair = tcrypto.makeEncryptionKeyPair();
+
+      const provisionalIdentity = utils.toB64Json({
+        trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
+        target: 'email',
+        value: email,
+        public_signature_key: utils.toBase64(sigKeyPair.publicKey),
+        public_encryption_key: utils.toBase64(encKeyPair.publicKey),
+      });
+
+      await expect(args.bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalIdentity] })).to.be.fulfilled;
+      const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+
+      await args.aliceLaptop.encrypt('stuff', { shareWithGroups: [groupId] });
+
+      const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+      await expect(args.aliceLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
+
+      expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+    });
   });
 };
 
