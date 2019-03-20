@@ -3,7 +3,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 
 import GroupStore from './GroupStore';
 import Keystore from '../Session/Keystore';
-import { type ProvisionalIdentityKeyPairs } from '../Session/KeySafe';
+import { type ProvisionalIdentityKeyPairs, type ProvisionalIdentityKeyPairsWithId } from '../Session/KeySafe';
 
 import { type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 import {
@@ -157,5 +157,36 @@ export default class GroupUpdater {
       await this._applyUserGroupAddition(entry);
     else
       throw new Error(`unsupported group update block nature: ${entry.nature}`);
+  }
+
+  applyProvisionalIdentityClaim = async (provisionalIdentity: ProvisionalIdentityKeyPairsWithId) => {
+    const provisionalGroups = await this._groupStore.findExternalsByPendingId({ id: provisionalIdentity.id });
+
+    const groups = provisionalGroups.map(g => {
+      const myKeys = g.pendingEncryptionKeys.filter(pendingKey => {
+        const pendingKeyId = utils.toBase64(utils.concatArrays(pendingKey.appPublicSignatureKey, pendingKey.tankerPublicSignatureKey));
+        return pendingKeyId === provisionalIdentity.id;
+      });
+      if (myKeys.length !== 1)
+        throw new Error('assertion error: findExternals returned groups without my keys');
+      return {
+        privateEncryptionKey: provisionalUnseal(myKeys[0].encryptedGroupPrivateEncryptionKey, provisionalIdentity),
+        ...g,
+      };
+    }).map(g => ({
+      groupId: g.groupId,
+      signatureKeyPair: {
+        publicKey: g.publicSignatureKey,
+        privateKey: tcrypto.sealDecrypt(g.encryptedPrivateSignatureKey, { publicKey: g.publicEncryptionKey, privateKey: g.privateEncryptionKey }),
+      },
+      encryptionKeyPair: {
+        publicKey: g.publicEncryptionKey,
+        privateKey: g.privateEncryptionKey,
+      },
+      lastGroupBlock: g.lastGroupBlock,
+      index: g.index,
+    }));
+
+    await this._groupStore.bulkPut(groups);
   }
 }

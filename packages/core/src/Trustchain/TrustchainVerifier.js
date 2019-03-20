@@ -315,7 +315,9 @@ export default class TrustchainVerifier {
       const unverifiedClaims = await this._storage.unverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
 
       const verifiedClaims = await this._unlockedVerifyClaims(unverifiedClaims);
-      await this._storage.userStore.applyProvisionalIdentityClaims(verifiedClaims);
+      const myProvisionalIdentities = await this._storage.userStore.applyProvisionalIdentityClaims(verifiedClaims);
+      for (const myProvisionalIdentity of myProvisionalIdentities)
+        await this._groupUpdater.applyProvisionalIdentityClaim(myProvisionalIdentity);
       await this._storage.unverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(verifiedClaims);
     });
   }

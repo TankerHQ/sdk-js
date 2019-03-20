@@ -9,10 +9,10 @@ export type DeviceKeys = {|
   encryptionPair: tcrypto.SodiumKeyPair,
 |}
 
-export type ProvisionalIdentityKeyPairs = {|
+export type ProvisionalIdentityKeyPairs = {
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
   tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
-|}
+}
 
 export type ProvisionalIdentityKeyPairsWithId = {|
   id: string,
