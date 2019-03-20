@@ -159,7 +159,7 @@ const generateGroupsTests = (args: TestArgs) => {
       const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-      await expect(args.aliceLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
+      await expect(args.aliceLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
 
       expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
     });
@@ -183,7 +183,7 @@ const generateGroupsTests = (args: TestArgs) => {
       const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-      await expect(args.aliceLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
+      await expect(args.aliceLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
 
       expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
     });
@@ -209,7 +209,7 @@ const generateGroupsTests = (args: TestArgs) => {
       await args.aliceLaptop.encrypt('stuff', { shareWithGroups: [groupId] });
 
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-      await expect(args.aliceLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
+      await expect(args.aliceLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
 
       expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
     });
