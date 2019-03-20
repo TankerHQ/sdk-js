@@ -156,7 +156,7 @@ const generateEncryptTests = (args: TestArgs) => {
           await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(args.aliceLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
+          await expect(args.aliceLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey))).to.be.fulfilled;
         });
 
         it('decrypt claimed block', async () => {
@@ -173,7 +173,7 @@ const generateEncryptTests = (args: TestArgs) => {
           const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.aliceLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
+          await args.aliceLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
           const decrypted = await args.aliceLaptop.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
@@ -192,7 +192,7 @@ const generateEncryptTests = (args: TestArgs) => {
           const cipherText = await args.aliceLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.bobLaptop.provisionalIdentityClaim({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
+          await args.bobLaptop.claimProvisionalIdentity({ email }, verificationCode, utils.toBase64(sigKeyPair.privateKey), utils.toBase64(encKeyPair.privateKey));
 
           const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
 

@@ -356,7 +356,7 @@ export class Tanker extends EventEmitter {
     return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async provisionalIdentityClaim(provisionalIdentity: { email: string }, verificationCodeNoPad: string, appInvitePrivateSignatureKey: string, appInvitePrivateEncryptionKey: string): Promise<void> {
+  async claimProvisionalIdentity(provisionalIdentity: { email: string }, verificationCodeNoPad: string, appInvitePrivateSignatureKey: string, appInvitePrivateEncryptionKey: string): Promise<void> {
     this.assert(this.isOpen, 'claim invite');
 
     const verificationCode = utils.toBase64(utils.fromSafeBase64(verificationCodeNoPad));
