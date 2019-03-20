@@ -11,6 +11,7 @@ import { type UserData } from '../UserData';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/InviteUnverifiedStore';
+import { type ProvisionalIdentityKeyPairsWithId } from './KeySafe';
 
 export type DeviceKeys = {|
   deviceId: ?b64string,
@@ -64,7 +65,7 @@ export default class LocalUser extends EventEmitter {
     this._unlockMethods = unlockMethods;
   }
 
-  applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim) => {
+  applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim): Promise<ProvisionalIdentityKeyPairsWithId> => {
     const userKeyPair = this.findUserKey(provisionalIdentityClaim.recipient_user_public_key);
 
     const provisionalIdentityKeys = tcrypto.sealDecrypt(provisionalIdentityClaim.encrypted_provisional_identity_private_keys, userKeyPair);
@@ -76,6 +77,8 @@ export default class LocalUser extends EventEmitter {
 
     this._provisionalIdentityKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
     await this._keyStore.addProvisionalIdentityKeys(id, appEncryptionKeyPair, tankerEncryptionKeyPair);
+
+    return { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
   }
 
   applyDeviceCreation = async (deviceCreation: VerifiedDeviceCreation) => {
