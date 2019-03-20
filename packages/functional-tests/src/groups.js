@@ -155,6 +155,16 @@ const generateGroupsTests = (args: TestArgs) => {
       expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
     });
 
+    it('throws when creating a group with already claimed identity', async () => {
+      const email = 'alice@tanker-functional-test.io';
+      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+      await args.bobLaptop.encrypt(message, { shareWithUsers: [provisionalIdentity] });
+      const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+      await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+
+      await expect(args.bobLaptop.createGroup([bobPublicIdentity, provisionalIdentity])).to.be.rejectedWith(errors.ServerError);
+    });
+
     it('should add a provisional member to a group', async () => {
       const groupId = await args.bobLaptop.createGroup([bobPublicIdentity]);
 
@@ -185,6 +195,36 @@ const generateGroupsTests = (args: TestArgs) => {
       await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.fulfilled;
 
       expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+    });
+
+    it('throws when adding an already claimed identity', async () => {
+      const groupId = await args.bobLaptop.createGroup([bobPublicIdentity]);
+      const email = 'alice@tanker-functional-test.io';
+      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+      await args.bobLaptop.encrypt(message, { shareWithUsers: [provisionalIdentity] });
+      const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+      await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+
+      await expect(args.bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+    });
+
+    it('should claim a group creation, a group add, and an encrypt', async () => {
+      const email = 'alice@tanker-functional-test.io';
+      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+      const groupId1 = await args.bobLaptop.createGroup([bobPublicIdentity]);
+      const groupId2 = await args.bobLaptop.createGroup([bobPublicIdentity, provisionalIdentity]);
+
+      await expect(args.bobLaptop.updateGroupMembers(groupId1, { usersToAdd: [provisionalIdentity] })).to.be.fulfilled;
+      const encrypted1 = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId1] });
+      const encrypted2 = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId2] });
+      const encrypted3 = await args.bobLaptop.encrypt(message, { shareWithUsers: [provisionalIdentity] });
+
+      const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+      await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.fulfilled;
+
+      expect(await args.aliceLaptop.decrypt(encrypted1)).to.deep.equal(message);
+      expect(await args.aliceLaptop.decrypt(encrypted2)).to.deep.equal(message);
+      expect(await args.aliceLaptop.decrypt(encrypted3)).to.deep.equal(message);
     });
   });
 };

@@ -177,6 +177,46 @@ const generateEncryptTests = (args: TestArgs) => {
           expect(decrypted).to.equal(clearText);
         });
 
+        it('throws when sharing with already claimed identity', async () => {
+          const email = 'alice@tanker-functional-test.io';
+          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+
+          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
+          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+        });
+
+        it('throws when claiming twice the same identity', async () => {
+          const email = 'alice@tanker-functional-test.io';
+          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
+          let verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+
+          verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.ServerError);
+        });
+
+        it('throws when claiming with wrong verification code', async () => {
+          const email = 'alice@tanker-functional-test.io';
+          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
+
+          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, 'wrongCode')).to.be.rejectedWith(errors.ServerError);
+        });
+
+        it('throw when two users claim same provisional identity', async () => {
+          const email = 'alice@tanker-functional-test.io';
+          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
+          let verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+
+          verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          await expect(args.bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.ServerError);
+        });
+
         it('decrypt claimed block on a new device', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
@@ -194,6 +234,17 @@ const generateEncryptTests = (args: TestArgs) => {
 
           const decrypted = await args.bobPhone.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
+        });
+
+        it('throws when sharing with a user that doesn\'t exist', async () => {
+          const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
+
+          await expectRejectedWithProperty({
+            handler: async () => args.bobLaptop.encrypt(clearText, { shareWithUsers: [eveIdentity] }),
+            exception: errors.RecipientsNotFound,
+            property: 'recipientIds',
+            expectedValue: [eveIdentity]
+          });
         });
 
         it('shares even when the recipient is not connected', async () => {
