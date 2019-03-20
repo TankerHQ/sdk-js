@@ -13,6 +13,7 @@ type EncryptedPrivateKeys = {|
 |};
 
 type DbGroupPendingKey = {|
+  _id: b64string,
   publicSignatureKeys: b64string, // concat(app_public_signature_key, tanker_public_signature_key)
   groupId: b64string,
   encryptedGroupPrivateEncryptionKey: Uint8Array,
@@ -92,6 +93,7 @@ function externalGroupToDbGroup(group: ExternalGroup): { dbGroup: DbGroup, dbGro
       index: group.index,
     },
     dbGroupPendingKeys: group.pendingEncryptionKeys.map(pendingKey => ({
+      _id: utils.toBase64(utils.concatArrays(pendingKey.appPublicSignatureKey, pendingKey.tankerPublicSignatureKey, group.groupId)),
       publicSignatureKeys: utils.toBase64(utils.concatArrays(pendingKey.appPublicSignatureKey, pendingKey.tankerPublicSignatureKey)),
       groupId: utils.toBase64(group.groupId),
       encryptedGroupPrivateEncryptionKey: pendingKey.encryptedGroupPrivateEncryptionKey,
@@ -224,6 +226,7 @@ export default class GroupStore {
     if (!record)
       throw new Error(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
     await this._ds.bulkPut(GROUPS_PENDING_ENCRYPTION_KEYS_TABLE, args.pendingEncryptionKeys.map(pendingKey => ({
+      _id: utils.toBase64(utils.concatArrays(pendingKey.appPublicSignatureKey, pendingKey.tankerPublicSignatureKey, args.groupId)),
       publicSignatureKeys: utils.toBase64(utils.concatArrays(pendingKey.appPublicSignatureKey, pendingKey.tankerPublicSignatureKey)),
       groupId: utils.toBase64(args.groupId),
       encryptedGroupPrivateEncryptionKey: pendingKey.encryptedGroupPrivateEncryptionKey,
