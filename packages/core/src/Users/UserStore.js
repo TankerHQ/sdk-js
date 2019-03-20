@@ -96,9 +96,14 @@ export default class UserStore {
   }
 
   async applyProvisionalIdentityClaims(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<Array<ProvisionalUserKeyPairs>> {
-    return Promise.all(entries
-      .filter(e => utils.equalArray(e.user_id, this._localUser.userId))
-      .map(e => this._localUser.applyProvisionalIdentityClaim(e)));
+    const provisionalUserKeyPairs: Array<ProvisionalUserKeyPairs> = [];
+    for (const entry of entries) {
+      if (utils.equalArray(entry.user_id, this._localUser.userId)) {
+        const provisionalUserKeyPair = await this._localUser.applyProvisionalIdentityClaim(entry);
+        provisionalUserKeyPairs.push(provisionalUserKeyPair);
+      }
+    }
+    return provisionalUserKeyPairs;
   }
 
   // all entries are verified

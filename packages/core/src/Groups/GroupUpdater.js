@@ -158,4 +158,33 @@ export default class GroupUpdater {
     else
       throw new Error(`unsupported group update block nature: ${entry.nature}`);
   }
+
+  applyProvisionalIdentityClaim = async (provisionalUserKeys: ProvisionalUserKeyPairs) => {
+    const provisionalGroups = await this._groupStore.findExternalsByProvisionalId({ id: provisionalUserKeys.id });
+
+    const groups = provisionalGroups.map(g => {
+      const myKeys = g.provisionalEncryptionKeys.filter(provisionalKey => {
+        const provisionalKeyId = utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey));
+        return provisionalKeyId === provisionalUserKeys.id;
+      });
+      if (myKeys.length !== 1)
+        throw new Error('assertion error: findExternals returned groups without my keys');
+      const privateEncryptionKey = provisionalUnseal(myKeys[0].encryptedGroupPrivateEncryptionKey, provisionalUserKeys);
+      return {
+        groupId: g.groupId,
+        signatureKeyPair: {
+          publicKey: g.publicSignatureKey,
+          privateKey: tcrypto.sealDecrypt(g.encryptedPrivateSignatureKey, { publicKey: g.publicEncryptionKey, privateKey: privateEncryptionKey }),
+        },
+        encryptionKeyPair: {
+          publicKey: g.publicEncryptionKey,
+          privateKey: privateEncryptionKey,
+        },
+        lastGroupBlock: g.lastGroupBlock,
+        index: g.index,
+      };
+    });
+
+    await this._groupStore.bulkPut(groups);
+  }
 }

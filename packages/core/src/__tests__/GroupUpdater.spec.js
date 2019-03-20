@@ -2,7 +2,7 @@
 
 import { mergeSchemas } from '@tanker/datastore-base';
 import { createUserSecretBinary } from '@tanker/identity';
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { type UserGroupAdditionRecord, type UserGroupCreationRecordV2, type UserGroupCreationRecord } from '../Blocks/payloads';
@@ -222,6 +222,31 @@ describe('GroupUpdater', () => {
       encryptionKeyPair: group.groupEncryptionKeyPair,
       lastGroupBlock: groupAdd.entry.hash,
       index: groupAdd.entry.index,
+    });
+  });
+
+  it('handles a provisional identity claim and decrypts pending group memberships', async () => {
+    const alice = await builder.addUserV3('alice');
+    const group = await builder.addUserGroupCreation(alice, [], [publicProvisionalUser]);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+
+    const provisionalIdentityWithId = {
+      id: utils.toBase64(utils.concatArrays(provisionalUserKeys.appSignatureKeyPair.publicKey, provisionalUserKeys.tankerSignatureKeyPair.publicKey)),
+      appEncryptionKeyPair: provisionalUserKeys.appEncryptionKeyPair,
+      tankerEncryptionKeyPair: provisionalUserKeys.tankerEncryptionKeyPair,
+    };
+
+    await groupUpdater.applyProvisionalIdentityClaim(provisionalIdentityWithId);
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal({
+      groupId: group.groupSignatureKeyPair.publicKey,
+      signatureKeyPair: group.groupSignatureKeyPair,
+      encryptionKeyPair: group.groupEncryptionKeyPair,
+      lastGroupBlock: group.entry.hash,
+      index: group.entry.index,
     });
   });
 });

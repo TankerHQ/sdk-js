@@ -169,6 +169,23 @@ const generateGroupsTests = (args: TestArgs) => {
 
       expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
     });
+
+    it('should add a provisional member to a group with a premature verification', async () => {
+      const groupId = await args.bobLaptop.createGroup([bobPublicIdentity]);
+
+      const email = 'alice@tanker-functional-test.io';
+      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+
+      await expect(args.bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalIdentity] })).to.be.fulfilled;
+      const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+
+      await args.aliceLaptop.encrypt('stuff', { shareWithGroups: [groupId] });
+
+      const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+      await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.fulfilled;
+
+      expect(await args.aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+    });
   });
 };
 
