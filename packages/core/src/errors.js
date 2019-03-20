@@ -144,3 +144,9 @@ export class IdentityAlreadyRegistered extends TankerError {
     super('IdentityAlreadyRegistered', msg);
   }
 }
+
+export class NothingToClaim extends TankerError {
+  constructor(msg: string) {
+    super('NothingToClaim', msg);
+  }
+}

@@ -131,6 +131,13 @@ const generateEncryptTests = (args: TestArgs) => {
           expect(decrypted).to.equal(clearText);
         });
 
+        it('claim without share', async () => {
+          const email = 'alice@tanker-functional-test.io';
+          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.NothingToClaim);
+        });
+
         it('decrypt claimed block', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
