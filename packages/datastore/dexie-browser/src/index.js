@@ -41,7 +41,7 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
 
   // Note: this does NOT support multi-column indexes (yet)
   isIndexed(table: string, field: string): bool {
-    return !!(this._indexes[table] && this._indexes[table][field]);
+    return field === '_id' || !!(this._indexes[table] && this._indexes[table][field]);
   }
 
   async close(): Promise<void> {

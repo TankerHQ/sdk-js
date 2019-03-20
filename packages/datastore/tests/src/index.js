@@ -309,10 +309,12 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         const result2 = await store.find(tableName, { sort: [{ c: 'asc' }], selector: { c: { $gte: 2 } } });
         const result3 = await store.find(tableName, { sort: [{ c: 'asc' }], selector: { c: { $lt: 3 } } });
         const result4 = await store.find(tableName, { sort: [{ c: 'asc' }], selector: { c: { $lte: 2 } } });
+        const result5 = await store.find(tableName, { selector: { _id: { $in: ['key2', 'key3'] } } });
         expect(result1.map(cleanRecord)).to.deep.equal([record3, record1]);
         expect(result2.map(cleanRecord)).to.deep.equal([record3, record1]);
         expect(result3.map(cleanRecord)).to.deep.equal([record2, record3]);
         expect(result4.map(cleanRecord)).to.deep.equal([record2, record3]);
+        expect(result5.map(cleanRecord)).to.deep.equal([record2, record3]);
       });
 
       it('can find records with $in operator', async () => {
