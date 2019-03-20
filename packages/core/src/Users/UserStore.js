@@ -9,6 +9,7 @@ import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
 import LocalUser from '../Session/LocalUser';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 type DeviceToUser = {
   deviceId: b64string,
@@ -94,12 +95,10 @@ export default class UserStore {
     this._localUser = localUser;
   }
 
-  async applyProvisionalIdentityClaims(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<void> {
-    for (const entry of entries) {
-      if (!utils.equalArray(entry.user_id, this._localUser.userId))
-        continue;
-      await this._localUser.applyProvisionalIdentityClaim(entry);
-    }
+  async applyProvisionalIdentityClaims(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<Array<ProvisionalUserKeyPairs>> {
+    return Promise.all(entries
+      .filter(e => utils.equalArray(e.user_id, this._localUser.userId))
+      .map(e => this._localUser.applyProvisionalIdentityClaim(e)));
   }
 
   // all entries are verified

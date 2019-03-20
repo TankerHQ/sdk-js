@@ -11,6 +11,7 @@ import { type UserData } from '../UserData';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import { type ProvisionalUserKeyPairs } from './KeySafe';
 
 export type DeviceKeys = {|
   deviceId: ?b64string,
@@ -67,7 +68,7 @@ export class LocalUser extends EventEmitter {
     this._unlockMethods = unlockMethods;
   }
 
-  applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim) => {
+  applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim): Promise<ProvisionalUserKeyPairs> => {
     if (!utils.equalArray(provisionalIdentityClaim.user_id, this.userId))
       throw new Error('Assertion error: can not apply a claim to another user');
 
@@ -82,6 +83,7 @@ export class LocalUser extends EventEmitter {
 
     this._provisionalUserKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
     await this._keyStore.addProvisionalUserKeys(id, appEncryptionKeyPair, tankerEncryptionKeyPair);
+    return { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
   }
 
   applyDeviceCreation = async (deviceCreation: VerifiedDeviceCreation) => {
