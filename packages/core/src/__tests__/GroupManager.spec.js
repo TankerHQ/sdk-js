@@ -59,14 +59,14 @@ describe('GroupManager', () => {
   });
 
   it('returns a group', async () => {
-    const groups = await groupMan.findGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
+    const groups = await groupMan.getGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
 
     expect(groups.length).to.equal(1);
     expect(groups[0].publicSignatureKey).to.deep.equal(aliceGroup.groupSignatureKeyPair.publicKey);
   });
 
   it('does not fetch a fetched group', async () => {
-    await groupMan.findGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
+    await groupMan.getGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
 
     expect(stubs.sync.notCalled).to.be.true;
     expect(stubs.updateGroupStore.notCalled).to.be.true;
@@ -75,27 +75,27 @@ describe('GroupManager', () => {
   it('fetches a group if not present in the groupStore', async () => {
     const groupId = new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
-    await groupMan.findGroups([groupId]).catch(() => null);
+    await groupMan.getGroups([groupId]).catch(() => null);
 
     expect(stubs.sync.withArgs([], [groupId]).calledOnce).to.be.true;
     expect(stubs.updateGroupStore.withArgs([groupId]).calledOnce).to.be.true;
   });
 
   it('returns a fetched group', async () => {
-    await groupMan.findGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
+    await groupMan.getGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
 
     stubs.updateGroupStore.callsFake(async () => {
       await builder.applyUserGroupCreation(aliceGroup);
     });
 
-    const groups = await groupMan.findGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
+    const groups = await groupMan.getGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
 
     expect(groups.length).to.equal(1);
     expect(groups[0].publicSignatureKey).to.deep.equal(aliceGroup.groupSignatureKeyPair.publicKey);
   });
 
   it('throws when getting a group that does not exist', async () => {
-    await expect(groupMan.findGroups([new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)])).to.be.rejectedWith(RecipientsNotFound);
+    await expect(groupMan.getGroups([new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)])).to.be.rejectedWith(RecipientsNotFound);
   });
 
   it('throws when creating a group with 0 members', async () => {

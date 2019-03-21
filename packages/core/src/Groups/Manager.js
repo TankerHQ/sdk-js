@@ -108,7 +108,7 @@ export default class GroupManager {
     await this._trustchain.updateGroupStore(groupIds);
   }
 
-  async findGroups(groupIds: Array<Uint8Array>): Promise<Array<ExternalGroup>> {
+  async getGroups(groupIds: Array<Uint8Array>): Promise<Array<ExternalGroup>> {
     const groups: Array<ExternalGroup> = [];
     const externalGroups: Array<Uint8Array> = [];
     for (const groupId of groupIds) {

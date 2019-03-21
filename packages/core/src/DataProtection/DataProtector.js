@@ -98,7 +98,7 @@ export default class DataProtector {
 
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWithOptions: ShareWithOptions, shareWithSelf: bool): Promise<void> {
     const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
-    const groups = await this._groupManager.findGroups(groupIds);
+    const groups = await this._groupManager.getGroups(groupIds);
     const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
     const deserializedIdentities = b64UserIdentities.map(i => _deserializePublicIdentity(i));
     const users = await this._userAccessor.getUsers({ publicIdentities: deserializedIdentities });
