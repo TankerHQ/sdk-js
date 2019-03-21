@@ -9,7 +9,7 @@ import { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
 import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
-import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
+import { InvalidArgument, InvalidGroupSize, ServerError, RecipientsNotFound } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
 
@@ -108,7 +108,7 @@ export default class GroupManager {
     await this._trustchain.updateGroupStore(groupIds);
   }
 
-  async findGroups(groupIds: Array<Uint8Array>): Promise<Array<ExternalGroup>> {
+  async getGroups(groupIds: Array<Uint8Array>): Promise<Array<ExternalGroup>> {
     const groups: Array<ExternalGroup> = [];
     const externalGroups: Array<Uint8Array> = [];
     for (const groupId of groupIds) {
@@ -127,13 +127,19 @@ export default class GroupManager {
       }
     }
 
+    const missingGroups = [];
     if (externalGroups.length)
       await this._fetchGroups(externalGroups);
     for (const groupId of externalGroups) {
       const group = await this._groupStore.findExternal({ groupId });
       if (group)
         groups.push(group);
+      else
+        missingGroups.push(groupId);
     }
+
+    if (missingGroups.length > 0)
+      throw new RecipientsNotFound(missingGroups.map(utils.toBase64));
 
     return groups;
   }
