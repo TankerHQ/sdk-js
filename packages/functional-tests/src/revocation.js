@@ -95,28 +95,6 @@ const generateRevocationTests = (args: TestArgs) => {
       await expect(promise).to.be.rejected;
     });
 
-    // TODO: implement code to make this test pass
-    //
-    // it('can\'t open a session on a revoked device with datastores not properly destroyed', async () => {
-    //   // This can happend when a user closes the browser after receiving the latest
-    //   // blocks, but just before the wiping of the dbs (stores and trustchain).
-
-    //   // simulate that the destroys doesn't work in the revocation process
-    //   const noDestroy = () => { throw new Error('simulate broken destroy in test'); };
-    //   // $FlowIKnow Flow won't allow overriding methods (they are read-only)
-    //   args.bobPhone.datastore.destroy = noDestroy;
-
-    //   // wait for args.bobPhone to close (but no revoked event since the revocation failed)
-    //   const args.bobPhoneClosed = new Promise(resolve => args.bobPhone.on('sessionClosed', resolve));
-    //   await revokeBobPhone({ blockReceivedBy: [args.bobLaptop], revokedEvent: false });
-    //   await args.bobPhoneClosed;
-
-    //   // reconnect with datastores that have not been destroyed previously,
-    //   // the device should detect its revocation and self destroy now
-    //   await args.bobPhone.open(bob.userId, bob.userToken);
-    //   expect(args.bobPhone.status).to.eq(args.bobPhone.CLOSED);
-    // });
-
     it('can list a user\'s active and revoked devices', async () => {
       const laptopId = args.bobLaptop.deviceId;
       const phoneId = args.bobPhone.deviceId;
