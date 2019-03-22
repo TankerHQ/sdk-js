@@ -24,7 +24,6 @@ export class UnlockKeys {
     authorDevice: {
       id: this._localUser.deviceId,
       privateSignatureKey: this._localUser.privateSignatureKey,
-      privateEncryptionKey: this._localUser.privateEncryptionKey,
     }
   });
 
