@@ -17,7 +17,7 @@ export type DeviceKeys = {|
   encryptionPair: tcrypto.SodiumKeyPair,
 |}
 
-export default class LocalUser extends EventEmitter {
+export class LocalUser extends EventEmitter {
   _userData: UserData;
   _deviceId: ?Uint8Array;
   _unlockMethods: UnlockMethods;
@@ -34,8 +34,9 @@ export default class LocalUser extends EventEmitter {
   constructor(userData: UserData, keyStore: KeyStore) {
     super();
 
-    this._userData = userData;
     this._keyStore = keyStore;
+    this._unlockMethods = [];
+    this._userData = userData;
     this.loadStoredData();
 
     this._blockGenerator = new BlockGenerator(
@@ -198,3 +199,5 @@ export default class LocalUser extends EventEmitter {
     deviceId: this._deviceId ? utils.toBase64(this._deviceId) : null
   });
 }
+
+export default LocalUser;
