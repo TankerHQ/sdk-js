@@ -149,6 +149,20 @@ const generateEncryptTests = (args: TestArgs) => {
           expect(decrypted).to.equal(clearText);
         });
 
+        it('decrypt claimed block after signing-out and back in', async () => {
+          const email = 'alice@tanker-functional-test.io';
+          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+
+          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
+          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+
+          await args.aliceLaptop.signOut();
+          await args.aliceLaptop.signIn(aliceIdentity);
+          const decrypted = await args.aliceLaptop.decrypt(cipherText);
+          expect(decrypted).to.equal(clearText);
+        });
+
         it('decrypt claimed block on a new device', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);

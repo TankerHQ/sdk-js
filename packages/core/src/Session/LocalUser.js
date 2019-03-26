@@ -55,6 +55,9 @@ export default class LocalUser extends EventEmitter {
       this._userKeys[utils.toBase64(userKey.publicKey)] = userKey;
       this._currentUserKey = userKey;
     }
+    const provisionalIdentityKeys = this._keyStore.provisionalIdentityKeys || [];
+    for (const key of provisionalIdentityKeys)
+      this._provisionalIdentityKeys[key.id] = { ...key };
     this._deviceSignatureKeyPair = this._keyStore.signatureKeyPair;
     this._deviceEncryptionKeyPair = this._keyStore.encryptionKeyPair;
 
