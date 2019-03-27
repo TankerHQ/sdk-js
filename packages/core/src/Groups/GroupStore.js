@@ -4,7 +4,7 @@ import varint from 'varint';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 import { type Group, type ExternalGroup } from './types';
-import { getStaticArray, unserializeGeneric, concatArrays } from '../Blocks/Serialize';
+import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
 
 type EncryptedPrivateKeys = {|
@@ -23,14 +23,14 @@ type DbGroup = {|
 |};
 
 function encryptGroupKeys(userSecret: Uint8Array, group: Group): Uint8Array {
-  const ad = concatArrays(
+  const ad = utils.concatArrays(
     group.groupId,
     group.signatureKeyPair.publicKey,
     group.encryptionKeyPair.publicKey,
     group.lastGroupBlock,
-    varint.encode(group.index)
+    new Uint8Array(varint.encode(group.index)),
   );
-  const data = concatArrays(group.signatureKeyPair.privateKey, group.encryptionKeyPair.privateKey);
+  const data = utils.concatArrays(group.signatureKeyPair.privateKey, group.encryptionKeyPair.privateKey);
   return EncryptorV2.encrypt(userSecret, data, ad);
 }
 
@@ -38,12 +38,12 @@ async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promi
   if (!dbGroup.encryptedPrivateKeys)
     throw new Error('Group not fullgroup');
 
-  const ad = concatArrays(
+  const ad = utils.concatArrays(
     utils.fromBase64(dbGroup._id), // eslint-disable-line no-underscore-dangle
     utils.fromBase64(dbGroup.publicSignatureKey),
     utils.fromBase64(dbGroup.publicEncryptionKey),
     utils.fromBase64(dbGroup.lastGroupBlock),
-    varint.encode(dbGroup.index)
+    new Uint8Array(varint.encode(dbGroup.index)),
   );
 
   // $FlowIKnow already checked for nullity

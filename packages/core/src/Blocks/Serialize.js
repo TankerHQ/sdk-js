@@ -28,21 +28,6 @@ export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0
   return { [name]: arr, newOffset: offset + size };
 }
 
-export function concatArrays(...arrays: Array<Uint8Array | Array<number>>): Uint8Array {
-  const totalSize = arrays.reduce((acc, elem) => acc + elem.length, 0);
-
-  const ret = new Uint8Array(totalSize);
-  let offset = 0;
-  arrays.forEach(elem => {
-    if (elem instanceof Uint8Array)
-      ret.set(elem, offset);
-    else
-      ret.set(new Uint8Array(elem), offset);
-    offset += elem.length;
-  });
-  return ret;
-}
-
 export function unserializeGenericSub(data: Uint8Array, functions: Array<Function>, offset: number, name: string = 'value'): Object {
   let newOffset = offset;
   let result = {};

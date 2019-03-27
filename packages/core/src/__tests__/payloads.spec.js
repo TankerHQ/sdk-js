@@ -5,7 +5,7 @@ import { tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from './chai';
 
 import { signBlock } from '../Blocks/Block';
-import { concatArrays, encodeListLength } from '../Blocks/Serialize';
+import { encodeListLength } from '../Blocks/Serialize';
 import {
   serializeTrustchainCreation,
   unserializeTrustchainCreation,
@@ -81,7 +81,7 @@ describe('payload test vectors', () => {
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
-    const payload = concatArrays(
+    const payload = utils.concatArrays(
       deviceCreation.ephemeral_public_signature_key,
       deviceCreation.user_id,
       deviceCreation.delegation_signature,
@@ -122,7 +122,7 @@ describe('payload test vectors', () => {
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
-    const payload = concatArrays(
+    const payload = utils.concatArrays(
       deviceCreation.last_reset,
       deviceCreation.ephemeral_public_signature_key,
       deviceCreation.user_id,
@@ -211,7 +211,7 @@ describe('payload test vectors', () => {
       ]),
     };
 
-    const payload = concatArrays(
+    const payload = utils.concatArrays(
       keyPublish.recipient,
       keyPublish.resourceId,
       new Uint8Array([keyPublish.key.length]),
@@ -228,7 +228,7 @@ describe('payload test vectors', () => {
       key: new Uint8Array(0),
     };
 
-    const payload = concatArrays(
+    const payload = utils.concatArrays(
       keyPublish.recipient,
       keyPublish.resourceId,
       new Uint8Array([keyPublish.key.length]),
@@ -332,13 +332,13 @@ describe('payload test vectors', () => {
       },
     };
 
-    const payload = concatArrays(
+    const payload = utils.concatArrays(
       deviceRevocation.device_id,
       deviceRevocation.user_keys.public_encryption_key,
       deviceRevocation.user_keys.previous_public_encryption_key,
       deviceRevocation.user_keys.encrypted_previous_encryption_key,
       encodeListLength(deviceRevocation.user_keys.private_keys),
-      ...deviceRevocation.user_keys.private_keys.map((userKey) => concatArrays(userKey.recipient, userKey.key)),
+      ...deviceRevocation.user_keys.private_keys.map((userKey) => utils.concatArrays(userKey.recipient, userKey.key)),
     );
 
     expect(unserializeDeviceRevocationV2(payload)).to.deep.equal(deviceRevocation);

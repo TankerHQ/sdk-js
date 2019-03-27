@@ -19,22 +19,21 @@ import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { InvalidDelegationToken } from '../errors';
-import { concatArrays } from './Serialize';
 
 export function getUserGroupCreationBlockSignData(record: UserGroupCreationRecord): Uint8Array {
-  return concatArrays(
+  return utils.concatArrays(
     record.public_signature_key,
     record.public_encryption_key,
     record.encrypted_group_private_signature_key,
-    ...record.encrypted_group_private_encryption_keys_for_users.map(gek => concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
+    ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
   );
 }
 
 export function getUserGroupAdditionBlockSignData(record: UserGroupAdditionRecord): Uint8Array {
-  return concatArrays(
+  return utils.concatArrays(
     record.group_id,
     record.previous_group_block,
-    ...record.encrypted_group_private_encryption_keys_for_users.map(gek => concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
+    ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
   );
 }
 

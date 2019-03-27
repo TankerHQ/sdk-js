@@ -4,7 +4,6 @@ import sinon from 'sinon';
 import { utils, aead, random, tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
-import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument, NotEnoughData, InvalidEncryptionFormat, DecryptFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 import { currentStreamVersion, serializeHeaderV4 } from '../Resource/ResourceManager';
@@ -35,7 +34,7 @@ describe('Decryptor Stream', () => {
     });
     const ivSeed = random(tcrypto.XCHACHA_IV_SIZE);
     const iv = tcrypto.deriveIV(ivSeed, index);
-    const encrypted = concatArrays(header, ivSeed, aead.encryptAEAD(key, iv, clear));
+    const encrypted = utils.concatArrays(header, ivSeed, aead.encryptAEAD(key, iv, clear));
     return { clear, encrypted };
   };
 
@@ -52,7 +51,7 @@ describe('Decryptor Stream', () => {
     const msg = encryptMsg(0, '1st message');
     const emptyMsg = encryptMsg(1, '');
 
-    stream.write(concatArrays(msg.encrypted, emptyMsg.encrypted));
+    stream.write(utils.concatArrays(msg.encrypted, emptyMsg.encrypted));
     stream.end();
 
     await expect(sync.promise).to.be.fulfilled;
@@ -238,7 +237,7 @@ describe('Decryptor Stream', () => {
 
     expect(mapper.findKey.withArgs(resourceId).calledOnce).to.be.true;
     expect(buffer.length).to.equal(2);
-    expect(utils.toString(concatArrays(...buffer))).to.equal(testMessage);
+    expect(utils.toString(utils.concatArrays(...buffer))).to.equal(testMessage);
 
     spy.restore();
   });

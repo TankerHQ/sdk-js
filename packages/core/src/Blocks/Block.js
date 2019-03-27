@@ -28,7 +28,7 @@ function natureToVarint(nature: number): Uint8Array {
 
 // computes the hash of a raw trustchain block, which we use to identify blocks
 export function hashBlock(block: Block | BlockNoSignature): Uint8Array {
-  const fullPayload = utils.concatArrays(utils.concatArrays(natureToVarint(block.nature), block.author), block.payload);
+  const fullPayload = utils.concatArrays(natureToVarint(block.nature), block.author, block.payload);
   return generichash(fullPayload);
 }
 
