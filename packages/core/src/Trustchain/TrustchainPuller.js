@@ -64,8 +64,6 @@ export default class TrustchainPuller {
     if (this._catchUpInProgress) {
       await this._catchUpInProgress;
     }
-
-    this._donePromises.forEach(d => d.resolve());
   }
 
   // It's safe to await this promise which never rejects
@@ -73,6 +71,8 @@ export default class TrustchainPuller {
 
   scheduleCatchUp = (extraUsers?: Array<Uint8Array>, extraGroups?: Array<Uint8Array>): Promise<void> => {
     if (this._closing) {
+      this._donePromises.forEach(d => d.resolve());
+      this._donePromises = [];
       return Promise.resolve(undefined);
     }
 
