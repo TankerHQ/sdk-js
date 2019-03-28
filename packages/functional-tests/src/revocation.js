@@ -92,7 +92,7 @@ const generateRevocationTests = (args: TestArgs) => {
       await args.bobPhone.signOut();
       await args.bobLaptop.revokeDevice(bobPhoneDeviceId);
       const promise = args.bobPhone.signIn(bobIdentity);
-      await expect(promise).to.be.rejected;
+      await expect(promise).to.be.rejectedWith(errors.OperationCanceled);
     });
 
     it('can list a user\'s active and revoked devices', async () => {
