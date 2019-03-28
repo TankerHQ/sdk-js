@@ -330,30 +330,21 @@ class Generator {
     };
   }
 
-  async newKeyPublishToUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toUser: GeneratorUser, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
-    let { resourceId, symmetricKey } = args;
+  async newCommonKeyPublish(args: { symmetricKey: Uint8Array, encryptedKey: Uint8Array, resourceId?: Uint8Array, fromDevice: GeneratorDevice, toKey: Uint8Array, nature: Nature }) {
+    let { resourceId } = args;
     if (!resourceId)
       resourceId = random(tcrypto.MAC_SIZE);
-    if (!symmetricKey)
-      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    if (!args.toUser.userKeys)
-      throw new Error('Generator: cannot add a keyPublish to user on a user V1');
 
-    const encryptedKey = tcrypto.sealEncrypt(
-      symmetricKey,
-      args.toUser.userKeys.publicKey,
-    );
     const share = {
       resourceId,
-      // $FlowIssue args.toUser.userKeys is not null, I checked for that...
-      recipient: args.toUser.userKeys.publicKey,
-      key: encryptedKey,
+      recipient: args.toKey,
+      key: args.encryptedKey,
     };
     this.trustchainIndex += 1;
     const block = signBlock({
       index: this.trustchainIndex,
       trustchain_id: this.trustchainId,
-      nature: NATURE.key_publish_to_user,
+      nature: args.nature,
       author: args.fromDevice.id,
       payload: serializeKeyPublish(share)
     }, args.fromDevice.signKeys.privateKey);
@@ -364,7 +355,7 @@ class Generator {
       ...entry.payload_unverified,
     };
     return {
-      symmetricKey,
+      symmetricKey: args.symmetricKey,
       resourceId,
       block,
       entry,
@@ -373,44 +364,40 @@ class Generator {
     };
   }
 
-  async newKeyPublishToUserGroup(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toGroup: GeneratorUserGroupResult, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
-    let { resourceId, symmetricKey } = args;
-    if (!resourceId)
-      resourceId = random(tcrypto.MAC_SIZE);
+  async newKeyPublishToUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toUser: GeneratorUser, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+    if (!args.toUser.userKeys)
+      throw new Error('Generator: cannot add a keyPublish to user on a user V1');
+
+    const toKey = args.toUser.userKeys.publicKey;
+
+    let { symmetricKey } = args;
     if (!symmetricKey)
       symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const encryptedKey = tcrypto.sealEncrypt(symmetricKey, toKey);
 
-    const encryptedKey = tcrypto.sealEncrypt(
+    return this.newCommonKeyPublish({
+      ...args,
       symmetricKey,
-      args.toGroup.groupEncryptionKeyPair.publicKey,
-    );
-    const share = {
-      resourceId,
-      recipient: args.toGroup.groupEncryptionKeyPair.publicKey,
-      key: encryptedKey,
-    };
-    this.trustchainIndex += 1;
-    const block = signBlock({
-      index: this.trustchainIndex,
-      trustchain_id: this.trustchainId,
+      encryptedKey,
+      toKey,
+      nature: NATURE.key_publish_to_user,
+    });
+  }
+
+  async newKeyPublishToUserGroup(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toGroup: GeneratorUserGroupResult, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+    let { symmetricKey } = args;
+    if (!symmetricKey)
+      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const encryptedKey = tcrypto.sealEncrypt(symmetricKey, args.toGroup.groupEncryptionKeyPair.publicKey);
+    const toKey = args.toGroup.groupEncryptionKeyPair.publicKey;
+
+    return this.newCommonKeyPublish({
+      ...args,
+      symmetricKey,
+      encryptedKey,
+      toKey,
       nature: NATURE.key_publish_to_user_group,
-      author: args.fromDevice.id,
-      payload: serializeKeyPublish(share)
-    }, args.fromDevice.signKeys.privateKey);
-    this.pushedBlocks.push(block);
-    const entry = blockToEntry(block);
-    const unverifiedKeyPublish = {
-      ...entry,
-      ...entry.payload_unverified,
-    };
-    return {
-      symmetricKey,
-      resourceId,
-      block,
-      entry,
-      unverifiedKeyPublish,
-      blockPrivateSignatureKey: args.fromDevice.signKeys.privateKey,
-    };
+    });
   }
 
   async newDeviceRevocationV1(from: GeneratorDevice, to: { id: Uint8Array }, { unsafe }: { unsafe: bool } = {}): Promise<GeneratorRevocationResult> {
