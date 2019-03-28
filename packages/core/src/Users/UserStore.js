@@ -36,6 +36,21 @@ const USERS_TABLE = 'users';
 const DEVICES_USER_TABLE = 'devices_to_user';
 const USER_KEY_TABLE = 'user_public_key_to_user';
 
+const schemaV2 = {
+  tables: [{
+    name: USERS_TABLE,
+    indexes: [['userId']],
+  },
+  {
+    name: DEVICES_USER_TABLE,
+    indexes: [['deviceId']],
+  },
+  {
+    name: USER_KEY_TABLE,
+    indexes: [['userPublicKey']],
+  }]
+};
+
 export default class UserStore {
   _ds: DataStore<*>;
   _localUser: LocalUser;
@@ -45,63 +60,19 @@ export default class UserStore {
     { version: 1, tables: [] },
     {
       version: 2,
-      tables: [{
-        name: USERS_TABLE,
-        indexes: [['userId']],
-      },
-      {
-        name: DEVICES_USER_TABLE,
-        indexes: [['deviceId']],
-      },
-      {
-        name: USER_KEY_TABLE,
-        indexes: [['userPublicKey']],
-      }]
+      ...schemaV2
     },
     {
       version: 3,
-      tables: [{
-        name: USERS_TABLE,
-        indexes: [['userId']],
-      },
-      {
-        name: DEVICES_USER_TABLE,
-        indexes: [['deviceId']],
-      },
-      {
-        name: USER_KEY_TABLE,
-        indexes: [['userPublicKey']],
-      }]
+      ...schemaV2
     },
     {
       version: 4,
-      tables: [{
-        name: USERS_TABLE,
-        indexes: [['userId']],
-      },
-      {
-        name: DEVICES_USER_TABLE,
-        indexes: [['deviceId']],
-      },
-      {
-        name: USER_KEY_TABLE,
-        indexes: [['userPublicKey']],
-      }]
+      ...schemaV2
     },
     {
       version: 5,
-      tables: [{
-        name: USERS_TABLE,
-        indexes: [['userId']],
-      },
-      {
-        name: DEVICES_USER_TABLE,
-        indexes: [['deviceId']],
-      },
-      {
-        name: USER_KEY_TABLE,
-        indexes: [['userPublicKey']],
-      }]
+      ...schemaV2
     },
   ];
 

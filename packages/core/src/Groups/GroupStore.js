@@ -117,6 +117,13 @@ function dbGroupToExternalGroup(group: DbGroup): ExternalGroup {
 
 const GROUPS_TABLE = 'groups';
 
+const schemaV3 = {
+  tables: [{
+    name: GROUPS_TABLE,
+    indexes: [['publicEncryptionKey']],
+  }]
+};
+
 export default class GroupStore {
   _ds: DataStore<*>;
   _userSecret: Uint8Array;
@@ -127,24 +134,15 @@ export default class GroupStore {
     { version: 2, tables: [] },
     {
       version: 3,
-      tables: [{
-        name: GROUPS_TABLE,
-        indexes: [['publicEncryptionKey']],
-      }]
+      ...schemaV3
     },
     {
       version: 4,
-      tables: [{
-        name: GROUPS_TABLE,
-        indexes: [['publicEncryptionKey']],
-      }]
+      ...schemaV3
     },
     {
       version: 5,
-      tables: [{
-        name: GROUPS_TABLE,
-        indexes: [['publicEncryptionKey']],
-      }]
+      ...schemaV3
     },
   ];
 

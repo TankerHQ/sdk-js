@@ -5,8 +5,12 @@ import KeyPublishUnverifiedStore, { type UnverifiedKeyPublish } from './KeyPubli
 import UserUnverifiedStore, { type UnverifiedDeviceCreation, type VerifiedDeviceCreation, type UnverifiedDeviceRevocation, type VerifiedDeviceRevocation } from './UserUnverifiedStore';
 import UserGroupsUnverifiedStore, { type UnverifiedUserGroup, type VerifiedUserGroup } from './UserGroupsUnverifiedStore';
 
-const schemasTables = [
+const schemaTablesV3 = [
   ...KeyPublishUnverifiedStore.tables,
+];
+
+const schemaTablesV4 = [
+  ...schemaTablesV3,
   ...UserUnverifiedStore.tables,
   ...UserGroupsUnverifiedStore.tables,
 ];
@@ -28,16 +32,16 @@ export default class UnverifiedStore {
     },
     {
       version: 3,
-      tables: [...KeyPublishUnverifiedStore.tables],
+      tables: schemaTablesV3,
     },
     {
       version: 4,
-      tables: schemasTables,
+      tables: schemaTablesV4,
     },
     {
       version: 5,
-      tables: schemasTables,
-    }
+      tables: schemaTablesV4,
+    },
   ];
 
   static async open(ds: DataStore<*>): Promise<UnverifiedStore> {
