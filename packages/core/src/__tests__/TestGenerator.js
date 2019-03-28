@@ -12,7 +12,7 @@ import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifie
 import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import { hashBlock, signBlock, type Block } from '../Blocks/Block';
-import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
+import { encodeArrayLength } from '../Blocks/Serialize';
 
 import { rootBlockAuthor } from '../Trustchain/Verify';
 
@@ -282,7 +282,7 @@ class TestGenerator {
       trustchain_id: this._trustchainId,
       nature: preferredNature(NATURE_KIND.key_publish_to_device),
       author: parentDevice.testDevice.id,
-      payload: concatArrays(
+      payload: utils.concatArrays(
         recipient.devicePublicEncryptionKey,
         resourceId,
         encodeArrayLength(sharedKey), sharedKey

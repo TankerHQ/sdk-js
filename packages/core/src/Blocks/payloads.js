@@ -5,7 +5,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { type Block } from './Block';
 import { NATURE } from './Nature';
 import { UpgradeRequiredError } from '../errors.internal';
-import { getArray, getStaticArray, concatArrays, encodeArrayLength, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from './Serialize';
+import { getArray, getStaticArray, encodeArrayLength, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from './Serialize';
 
 export type TrustchainCreationRecord = {|
   public_signature_key: Uint8Array,
@@ -98,12 +98,13 @@ export function serializeBlock(block: Block): Uint8Array {
   if (block.trustchain_id.length !== trustchainIdSize)
     throw new Error('Assertion error: invalid block trustchain_id size');
 
-  return concatArrays(
-    varint.encode(currentVersion),
-    varint.encode(block.index),
+  return utils.concatArrays(
+    new Uint8Array(varint.encode(currentVersion)),
+    new Uint8Array(varint.encode(block.index)),
     block.trustchain_id,
-    varint.encode(block.nature),
-    encodeArrayLength(block.payload), block.payload,
+    new Uint8Array(varint.encode(block.nature)),
+    encodeArrayLength(block.payload),
+    block.payload,
     block.author,
     block.signature
   );
@@ -146,15 +147,15 @@ export function unserializeTrustchainCreation(src: Uint8Array): TrustchainCreati
 }
 
 function serializePrivateKey(userKey: UserPrivateKey): Uint8Array {
-  return concatArrays(userKey.recipient, userKey.key);
+  return utils.concatArrays(userKey.recipient, userKey.key);
 }
 
 function serializeUserKeyPair(userKeyPair: UserKeyPair): Uint8Array {
-  return concatArrays(userKeyPair.public_encryption_key, userKeyPair.encrypted_private_encryption_key);
+  return utils.concatArrays(userKeyPair.public_encryption_key, userKeyPair.encrypted_private_encryption_key);
 }
 
 function serializeUserKeys(userKeys: UserKeys): Uint8Array {
-  return concatArrays(
+  return utils.concatArrays(
     userKeys.public_encryption_key,
     userKeys.previous_public_encryption_key,
     userKeys.encrypted_previous_encryption_key,
@@ -187,7 +188,7 @@ export function serializeUserDeviceV3(userDevice: UserDeviceRecord): Uint8Array 
   const deviceFlags = new Uint8Array(1);
   deviceFlags[0] = userDevice.is_ghost_device ? 1 : 0;
 
-  return concatArrays(
+  return utils.concatArrays(
     userDevice.ephemeral_public_signature_key,
     userDevice.user_id,
     userDevice.delegation_signature,
@@ -272,7 +273,7 @@ export function serializeKeyPublish(keyPublish: KeyPublishRecord): Uint8Array {
   if (keyPublish.key.length !== tcrypto.SEALED_KEY_SIZE)
     throw new Error('Assertion error: invalid key publish key size');
 
-  return concatArrays(
+  return utils.concatArrays(
     keyPublish.recipient,
     keyPublish.resourceId,
     keyPublish.key,
@@ -324,7 +325,7 @@ export function serializeDeviceRevocationV2(deviceRevocation: DeviceRevocationRe
       throw new Error('Assertion error: invalid user device user encrypted private encryption key size');
   }
 
-  return concatArrays(
+  return utils.concatArrays(
     deviceRevocation.device_id,
     serializeUserKeys(deviceRevocation.user_keys)
   );
@@ -342,7 +343,7 @@ export function unserializeDeviceRevocationV2(src: Uint8Array): DeviceRevocation
 }
 
 function serializeGroupEncryptedKey(gek: GroupEncryptedKey): Uint8Array {
-  return concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key);
+  return utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key);
 }
 
 function unserializeGroupEncryptedKey(src: Uint8Array, offset: number) {
@@ -370,7 +371,7 @@ export function serializeUserGroupCreation(userGroupCreation: UserGroupCreationR
   if (userGroupCreation.self_signature.length !== tcrypto.SIGNATURE_SIZE)
     throw new Error('Assertion error: invalid user group creation group self signature size');
 
-  return concatArrays(
+  return utils.concatArrays(
     userGroupCreation.public_signature_key,
     userGroupCreation.public_encryption_key,
     userGroupCreation.encrypted_group_private_signature_key,
@@ -397,7 +398,7 @@ export function serializeUserGroupAddition(userGroupAddition: UserGroupAdditionR
   if (userGroupAddition.self_signature_with_current_key.length !== tcrypto.SIGNATURE_SIZE)
     throw new Error('Assertion error: invalid user group addition group self signature size');
 
-  return concatArrays(
+  return utils.concatArrays(
     userGroupAddition.group_id,
     userGroupAddition.previous_group_block,
     encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_users),

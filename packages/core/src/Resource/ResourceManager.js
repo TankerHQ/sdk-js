@@ -2,9 +2,8 @@
 
 import varint from 'varint';
 
-import { tcrypto, random, generichash, number, type Key } from '@tanker/crypto';
+import { tcrypto, random, generichash, number, utils, type Key } from '@tanker/crypto';
 import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
-import { concatArrays } from '../Blocks/Serialize';
 import { getEncryptionFormat, encryptData, extractResourceId } from '../DataProtection/Encryptor';
 import Trustchain from '../Trustchain/Trustchain';
 import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
@@ -64,7 +63,7 @@ export const serializeHeaderV4 = (header: HeaderV4): Uint8Array => {
   const version = varint.encode(header.version);
   const encryptedChunkSize = number.toUint32le(header.encryptedChunkSize);
   const resourceId = header.resourceId;
-  return concatArrays(version, encryptedChunkSize, resourceId);
+  return utils.concatArrays(new Uint8Array(version), encryptedChunkSize, resourceId);
 };
 
 export function getResourceId(encryptedData: Uint8Array): Uint8Array {

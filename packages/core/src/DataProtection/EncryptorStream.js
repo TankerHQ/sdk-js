@@ -3,7 +3,6 @@ import { aead, random, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
 import { currentStreamVersion, serializeHeaderV4, type HeaderV4 } from '../Resource/ResourceManager';
-import { concatArrays } from '../Blocks/Serialize';
 import { InvalidArgument } from '../errors';
 
 export const defaultEncryptedChunkSize = 1024 * 1024; // 1MB
@@ -94,7 +93,7 @@ export default class EncryptorStream extends Transform {
     this._state.lastClearChunkSize = clearChunk.length;
 
     const encryptedData = aead.encryptAEAD(this._key, iv, clearChunk);
-    return concatArrays(this._serializedHeader, ivSeed, encryptedData);
+    return utils.concatArrays(this._serializedHeader, ivSeed, encryptedData);
   }
 
   _transform(clearData: Uint8Array, encoding: ?string, done: Function) {

@@ -7,7 +7,7 @@ import BlockGenerator from '../Blocks/BlockGenerator';
 import type { Device, User } from '../Users/User';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { concatArrays, encodeArrayLength } from '../Blocks/Serialize';
+import { encodeArrayLength } from '../Blocks/Serialize';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 import { serializeTrustchainCreation,
@@ -34,7 +34,7 @@ export type GeneratorUser = {
 }
 
 export function serializeUserDeviceV1(userDevice: UserDeviceRecord): Uint8Array {
-  return concatArrays(
+  return utils.concatArrays(
     userDevice.ephemeral_public_signature_key,
     userDevice.user_id,
     userDevice.delegation_signature,
@@ -44,7 +44,7 @@ export function serializeUserDeviceV1(userDevice: UserDeviceRecord): Uint8Array 
 }
 
 export function serializeKeyPublishToDevice(keyPublish: KeyPublishRecord): Uint8Array {
-  return concatArrays(
+  return utils.concatArrays(
     keyPublish.recipient,
     keyPublish.resourceId,
     encodeArrayLength(keyPublish.key), keyPublish.key

@@ -1,11 +1,10 @@
 // @flow
 
-import { tcrypto, random } from '@tanker/crypto';
+import { tcrypto, random, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 import makeUint8Array from './makeUint8Array';
 import { blockToEntry } from '../Blocks/entries';
-import { concatArrays } from '../Blocks/Serialize';
 import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
 import BlockGenerator, { getUserGroupCreationBlockSignData, getUserGroupAdditionBlockSignData } from '../Blocks/BlockGenerator';
 
@@ -43,7 +42,7 @@ describe('BlockGenerator', () => {
       self_signature: new Uint8Array(0),
     };
 
-    const expectedSignData = concatArrays(
+    const expectedSignData = utils.concatArrays(
       record.public_signature_key,
       record.public_encryption_key,
       record.encrypted_group_private_signature_key,
@@ -96,7 +95,7 @@ describe('BlockGenerator', () => {
       self_signature_with_current_key: new Uint8Array(0),
     };
 
-    const expectedSignData = concatArrays(
+    const expectedSignData = utils.concatArrays(
       record.group_id,
       record.previous_group_block,
       record.encrypted_group_private_encryption_keys_for_users[0].public_user_encryption_key,

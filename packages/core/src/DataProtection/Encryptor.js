@@ -1,8 +1,8 @@
 // @flow
 import varint from 'varint';
 
+import { utils } from '@tanker/crypto';
 import { InvalidEncryptionFormat } from '../errors';
-import { concatArrays } from '../Blocks/Serialize';
 
 import * as v1 from './Encryptors/v1';
 import * as v2 from './Encryptors/v2';
@@ -52,7 +52,7 @@ export function getEncryptionFormat(encryptedData: Uint8Array): { version: numbe
 export function encryptData(key: Uint8Array, clearData: Uint8Array): Uint8Array {
   const encryptedData = getEncryptor(currentSimpleVersion).encrypt(key, clearData);
   const encodedVersion = varint.encode(currentSimpleVersion);
-  return concatArrays(encodedVersion, encryptedData);
+  return utils.concatArrays(new Uint8Array(encodedVersion), encryptedData);
 }
 
 export function decryptData(key: Uint8Array, encryptedData: Uint8Array): Uint8Array {

@@ -92,14 +92,16 @@ const generateGroupsTests = (args: TestArgs) => {
     it('should publish keys to group', async () => {
       const groupId = await args.bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
 
-      const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] }); const decrypted = await args.aliceLaptop.decrypt(encrypted);
+      const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+      const decrypted = await args.aliceLaptop.decrypt(encrypted);
       expect(decrypted).to.equal(message);
     });
 
     it('should publish keys to non-local group', async () => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
-      const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] }); const decrypted = await args.aliceLaptop.decrypt(encrypted);
+      const encrypted = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+      const decrypted = await args.aliceLaptop.decrypt(encrypted);
       expect(decrypted).to.equal(message);
     });
 
@@ -118,14 +120,15 @@ const generateGroupsTests = (args: TestArgs) => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
       await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
 
-      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithGroups: [groupId] }); const decrypted = await args.bobLaptop.decrypt(encrypted);
+      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithGroups: [groupId] });
+      const decrypted = await args.bobLaptop.decrypt(encrypted);
       expect(decrypted).to.equal(message);
     });
 
     it('should publish old keys to new group member', async () => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
-      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithGroups: [groupId] }); await expect(args.bobLaptop.decrypt(encrypted))
-        .to.be.rejectedWith(errors.ResourceNotFound);
+      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithGroups: [groupId] });
+      await expect(args.bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
       await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
 
       const decrypted = await args.bobLaptop.decrypt(encrypted);

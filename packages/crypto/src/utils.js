@@ -75,14 +75,19 @@ export function toB64Json(o: Object): b64string {
   return toBase64(fromString(JSON.stringify(o)));
 }
 
-export function concatArrays(a: Uint8Array, b: Uint8Array): Uint8Array {
-  assertArrayTypes(a, b);
+export function concatArrays(...arrays: Array<Uint8Array>): Uint8Array {
+  const totalSize = arrays.reduce((acc, elem) => acc + elem.length, 0);
 
-  const ab = new Uint8Array(a.length + b.length);
-  ab.set(a);
-  ab.set(b, a.length);
-
-  return ab;
+  const ret = new Uint8Array(totalSize);
+  let offset = 0;
+  arrays.forEach(elem => {
+    if (elem instanceof Uint8Array)
+      ret.set(elem, offset);
+    else
+      throw new TypeError(`Expected Uint8Array, got ${typeof elem}`);
+    offset += elem.length;
+  });
+  return ret;
 }
 
 export function equalArray(b1: Uint8Array, b2: Uint8Array): bool {
