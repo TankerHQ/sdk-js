@@ -95,8 +95,12 @@ const generateRevocationTests = (args: TestArgs) => {
       const bobPhoneDeviceId = args.bobPhone.deviceId;
       await args.bobPhone.close();
       await args.bobLaptop.revokeDevice(bobPhoneDeviceId);
-      const promise = args.bobPhone.open(bobId, bobToken);
-      await expect(promise).to.be.rejected;
+
+      let promise = args.bobPhone.open(bobId, bobToken);
+      await expect(promise).to.be.rejectedWith(errors.OperationCanceled);
+
+      promise = args.bobPhone.open(bobId, bobToken);
+      await expect(promise).to.be.rejectedWith(errors.MissingEventHandler);
     });
 
     // TODO: implement code to make this test pass
