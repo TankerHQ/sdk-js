@@ -1,8 +1,6 @@
 import argparse
 import sys
 
-from path import Path
-
 import ci.js
 import ci.mail
 import ci.endtoend
@@ -40,27 +38,29 @@ def main() -> None:
     deploy_parser.add_argument("--git-tag", required=True)
     deploy_parser.add_argument("--env", required=True)
 
-    subparsers.add_parser("compat")
-    subparsers.add_parser("e2e")
+    compat_parser = subparsers.add_parser("compat")
+    compat_parser.add_argument("--env", required=True)
+
+    e2e_parser = subparsers.add_parser("e2e")
+    e2e_parser.add_argument("--env", required=True)
+
+
     subparsers.add_parser("mirror")
 
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
         nightly = args.nightly
-        env = args.env
-        check(runner=runner, env=env, nightly=nightly)
+        check(runner=runner, env=args.env, nightly=nightly)
     elif args.command == "deploy":
-        env = args.env
         git_tag = args.git_tag
-        ci.js.deploy_sdk(env=env, git_tag=git_tag)
+        ci.js.deploy_sdk(env=args.env, git_tag=git_tag)
     elif args.command == "mirror":
         ci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
-        env = args.env
-        compat(env=env)
+        compat(env=args.env)
     elif args.command == "e2e":
-        ci.endtoend.test(env="dev")
+        ci.endtoend.test(env=args.env)
     else:
         parser.print_help()
         sys.exit(1)
