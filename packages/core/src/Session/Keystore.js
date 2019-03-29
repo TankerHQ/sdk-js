@@ -134,7 +134,7 @@ export default class Keystore {
         const record = { _id: 'keySafe', encryptedSafe: await safe.serialize() };
         await this._ds.put(TABLE, record);
       } else {
-        throw new InvalidIdentity(e.message());
+        throw new InvalidIdentity(e.message);
       }
     }
 
