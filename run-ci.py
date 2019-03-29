@@ -8,8 +8,7 @@ import ci.mail
 import ci.endtoend
 
 
-def check(*, runner: str, nightly: bool) -> None:
-    env = "dev"
+def check(*, runner: str, env: str, nightly: bool) -> None:
     ci.js.yarn_install_deps()
     if runner == "linux":
         ci.js.run_linters()
@@ -34,6 +33,7 @@ def main() -> None:
 
     check_parser = subparsers.add_parser("check")
     check_parser.add_argument("--nightly", action="store_true")
+    check_parser.add_argument("--env", default="dev")
     check_parser.add_argument("--runner", required=True)
 
     deploy_parser = subparsers.add_parser("deploy")
@@ -48,7 +48,8 @@ def main() -> None:
     if args.command == "check":
         runner = args.runner
         nightly = args.nightly
-        check(runner=runner, nightly=nightly)
+        env = args.env
+        check(runner=runner, env=env, nightly=nightly)
     elif args.command == "deploy":
         env = args.env
         git_tag = args.git_tag
@@ -56,7 +57,8 @@ def main() -> None:
     elif args.command == "mirror":
         ci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
-        compat(env="dev")
+        env = args.env
+        compat(env=env)
     elif args.command == "e2e":
         ci.endtoend.test(env="dev")
     else:
