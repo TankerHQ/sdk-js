@@ -167,14 +167,14 @@ check/compat/master:
   only:
     - master
   script:
-    - dmenv run -- python run-ci.py compat
+    - dmenv run -- python run-ci.py compat --env "$CHECKS_ENV"
   tags:
     - linux
 
 check/e2e:
-  stage: check
+  extends: .check
   script:
-    - dmenv run -- python run-ci.py e2e
+    - dmenv run -- python run-ci.py e2e --env "$CHECKS_ENV"
   tags:
     - linux
   except:
