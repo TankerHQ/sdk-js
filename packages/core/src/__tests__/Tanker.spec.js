@@ -7,7 +7,7 @@ import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
-import { InvalidArgument, InvalidIdentity } from '../errors';
+import { InvalidArgument, InvalidIdentity, InvalidSessionStatus } from '../errors';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
@@ -107,6 +107,10 @@ describe('Tanker', () => {
         const truncatedIdentity = identity.slice(0, identity.length - 10);
         await expect(tanker.signUp(truncatedIdentity)).to.be.rejectedWith(InvalidIdentity);
       });
+
+      it('should throw when trying to get deviceId', async () => {
+        expect(() => tanker.deviceId).to.throw(InvalidSessionStatus);
+      });
     });
   });
 
@@ -121,7 +125,10 @@ describe('Tanker', () => {
         sdkType: 'test'
       });
       // "open" a session
-      tanker._session = ({ localUser: {} }: any); // eslint-disable-line no-underscore-dangle
+      tanker._session = ({ // eslint-disable-line no-underscore-dangle
+        localUser: {},
+        storage: { keyStore: { deviceId: new Uint8Array([]) } },
+      }: any);
     });
 
     describe('unlock method registration', () => {
@@ -146,6 +153,10 @@ describe('Tanker', () => {
           // $FlowIKnow
           await expect(tanker.registerUnlock(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
         }
+      });
+
+      it('should get deviceId', async () => {
+        expect(() => tanker.deviceId).to.not.throw();
       });
     });
 

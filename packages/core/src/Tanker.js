@@ -162,6 +162,7 @@ export class Tanker extends EventEmitter {
   }
 
   get deviceId(): b64string {
+    this.assert(this.isOpen, 'get device ID');
     if (!this._session.storage.keyStore || !this._session.storage.keyStore.deviceId)
       throw new Error('Tried to get our device hash, but could not find it!');
 
