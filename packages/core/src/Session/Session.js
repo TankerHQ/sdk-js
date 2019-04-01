@@ -79,6 +79,9 @@ export class Session {
   }
 
   async revokeDevice(revokedDeviceId: string): Promise<void> {
+    // sync the trustchain to be sure we have all our devices, in case we just
+    // added one, or generated an unlock key
+    await this._trustchain.sync();
     const user = await this.userAccessor.findUser({ userId: this.localUser.userId });
     if (!user)
       throw new Error('Cannot find the current user in the users');

@@ -4,7 +4,7 @@ import { mergeSchemas } from '@tanker/datastore-base';
 import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
-import { type UserGroupAdditionRecord, type UserGroupCreationRecord } from '../Blocks/payloads';
+import { type UserGroupAdditionRecordV1, type UserGroupCreationRecordV1 } from '../Blocks/payloads';
 import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
@@ -30,7 +30,7 @@ describe('GroupUpdater', () => {
     const groupStore = await makeMemoryGroupStore();
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
 
-    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
 
@@ -50,7 +50,7 @@ describe('GroupUpdater', () => {
 
     const alice = await builder.addUserV3('alice');
     const group = await builder.addUserGroupCreation(alice, ['alice']);
-    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
 
     const groupStore = await makeMemoryGroupStore();
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
@@ -73,10 +73,10 @@ describe('GroupUpdater', () => {
     const bob = await builder.addUserV3('bob');
     await builder.addUserV3('charlie');
     const group = await builder.addUserGroupCreation(bob, ['bob']);
-    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
 
     const groupAdd = await builder.addUserGroupAddition(bob, group, ['charlie']);
-    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
+    const additionPayload: UserGroupAdditionRecordV1 = (groupAdd.entry.payload_unverified: any);
 
     const groupStore = await makeMemoryGroupStore();
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
@@ -94,10 +94,10 @@ describe('GroupUpdater', () => {
     const alice = await builder.addUserV3('alice');
     await builder.addUserV3('charlie');
     const group = await builder.addUserGroupCreation(alice, ['alice']);
-    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
 
     const groupAdd = await builder.addUserGroupAddition(alice, group, ['charlie']);
-    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
+    const additionPayload: UserGroupAdditionRecordV1 = (groupAdd.entry.payload_unverified: any);
 
     const groupStore = await makeMemoryGroupStore();
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
@@ -116,10 +116,10 @@ describe('GroupUpdater', () => {
     const charlie = await builder.addUserV3('charlie');
 
     const group = await builder.addUserGroupCreation(alice, ['alice']);
-    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
 
     const groupAdd = await builder.addUserGroupAddition(alice, group, ['charlie']);
-    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
+    const additionPayload: UserGroupAdditionRecordV1 = (groupAdd.entry.payload_unverified: any);
 
     const groupStore = await makeMemoryGroupStore();
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device));

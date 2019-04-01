@@ -6,12 +6,12 @@ import {
   serializeUserDeviceV3,
   serializeKeyPublish,
   serializeDeviceRevocationV2,
-  serializeUserGroupCreation,
-  serializeUserGroupAddition,
+  serializeUserGroupCreationV1,
+  serializeUserGroupAdditionV1,
   type UserDeviceRecord,
   type UserKeys,
-  type UserGroupCreationRecord,
-  type UserGroupAdditionRecord,
+  type UserGroupCreationRecordV1,
+  type UserGroupAdditionRecordV1,
 } from './payloads';
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 
@@ -20,7 +20,7 @@ import { type DelegationToken } from '../Session/delegation';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { InvalidDelegationToken } from '../errors';
 
-export function getUserGroupCreationBlockSignData(record: UserGroupCreationRecord): Uint8Array {
+export function getUserGroupCreationBlockSignDataV1(record: UserGroupCreationRecordV1): Uint8Array {
   return utils.concatArrays(
     record.public_signature_key,
     record.public_encryption_key,
@@ -29,7 +29,7 @@ export function getUserGroupCreationBlockSignData(record: UserGroupCreationRecor
   );
 }
 
-export function getUserGroupAdditionBlockSignData(record: UserGroupAdditionRecord): Uint8Array {
+export function getUserGroupAdditionBlockSignDataV1(record: UserGroupAdditionRecordV1): Uint8Array {
   return utils.concatArrays(
     record.group_id,
     record.previous_group_block,
@@ -231,7 +231,7 @@ export class BlockGenerator {
       self_signature: new Uint8Array(0),
     };
 
-    const signData = getUserGroupCreationBlockSignData(payload);
+    const signData = getUserGroupCreationBlockSignDataV1(payload);
     payload.self_signature = tcrypto.sign(signData, signatureKeyPair.privateKey);
 
     const block = signBlock({
@@ -239,7 +239,7 @@ export class BlockGenerator {
       trustchain_id: this.trustchainId,
       nature: preferredNature(NATURE_KIND.user_group_creation),
       author: this.deviceId,
-      payload: serializeUserGroupCreation(payload)
+      payload: serializeUserGroupCreationV1(payload)
     }, this.privateSignatureKey);
 
     return block;
@@ -263,7 +263,7 @@ export class BlockGenerator {
       self_signature_with_current_key: new Uint8Array(0),
     };
 
-    const signData = getUserGroupAdditionBlockSignData(payload);
+    const signData = getUserGroupAdditionBlockSignDataV1(payload);
     payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
 
     const block = signBlock({
@@ -271,7 +271,7 @@ export class BlockGenerator {
       trustchain_id: this.trustchainId,
       nature: preferredNature(NATURE_KIND.user_group_addition),
       author: this.deviceId,
-      payload: serializeUserGroupAddition(payload)
+      payload: serializeUserGroupAdditionV1(payload)
     }, this.privateSignatureKey);
 
     return block;
