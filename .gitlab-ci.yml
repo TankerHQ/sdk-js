@@ -89,7 +89,6 @@ check/linux/nightly:
     - schedules
   script:
     - dmenv run -- python run-ci.py check --runner linux --nightly
-    - dmenv run -- python run-ci.py compat
   tags:
     - linux
 
