@@ -49,7 +49,7 @@ export function applyDeviceCreationToUser(deviceCreation: VerifiedDeviceCreation
 
   for (const existingDev of oldDevices) {
     if (existingDev.deviceId === newDevice.deviceId)
-      console.warn('Assertion error: Adding an already existing device.');
+      throw new Error('Assertion error: Adding an already existing device.');
   }
 
   const updatedUser = {

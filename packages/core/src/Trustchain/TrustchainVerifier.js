@@ -55,6 +55,8 @@ export default class TrustchainVerifier {
       } catch (e) {
         if (!(e instanceof InvalidBlockError))
           throw e;
+        else
+          console.error('invalid block', e);
       }
     }
 
@@ -95,9 +97,10 @@ export default class TrustchainVerifier {
         }
         verifiedKeyPublishes.push(verifiedKeyPublish);
       } catch (e) {
-        if (!(e instanceof InvalidBlockError)) {
+        if (!(e instanceof InvalidBlockError))
           throw e;
-        }
+        else
+          console.error('invalid block', e);
         continue;
       }
     }
@@ -173,6 +176,8 @@ export default class TrustchainVerifier {
     } catch (e) {
       if (!(e instanceof InvalidBlockError))
         throw e;
+      else
+        console.error('invalid block', e);
       return null;
     }
   }
