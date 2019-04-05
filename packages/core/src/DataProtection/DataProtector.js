@@ -75,7 +75,7 @@ export default class DataProtector {
       const keys = recipientUsers.map(user => {
         const userPublicKey = getLastUserPublicKey(user);
         if (!userPublicKey)
-          throw new Error('Trying to share to a user without user public key');
+          throw new Error('Trying to share with a user without user public key');
         return userPublicKey;
       });
 
