@@ -1,6 +1,4 @@
 // @flow
-import sinon from 'sinon';
-
 import { utils } from '@tanker/crypto';
 import type { TankerInterface, b64string } from '@tanker/core';
 
@@ -15,16 +13,7 @@ import generateOpenTests from './open';
 import generateRevocationTests from './revocation';
 import generateUnlockTests from './unlock';
 
-const warnings = {
-  _handle: null,
-  silence: function silence(regexp: RegExp = /./) {
-    if (this._handle) return;
-    const warn = console.warn.bind(console);
-    const silencedWarn = (...warnArgs) => !(warnArgs[0].toString() || '').match(regexp) && warn(...warnArgs);
-    this._handle = sinon.stub(console, 'warn').callsFake(silencedWarn);
-  },
-  restore: function restore() { if (this._handle) { this._handle.restore(); this._handle = null; } }
-};
+import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
 
 export function generateFunctionalTests(
   name: string,
@@ -51,7 +40,7 @@ export function generateFunctionalTests(
     args.resources = generateTestResources();
 
     before(async () => {
-      warnings.silence(/deprecated/);
+      silencer.silence('warn', /deprecated/);
 
       args.trustchainHelper = await TrustchainHelper.newTrustchain();
       const b64TrustchainId = utils.toBase64(args.trustchainHelper.trustchainId);
@@ -64,7 +53,7 @@ export function generateFunctionalTests(
     after(async () => {
       await args.trustchainHelper.cleanup();
 
-      warnings.restore();
+      silencer.restore();
     });
 
     generateStreamEncryptor(args);
