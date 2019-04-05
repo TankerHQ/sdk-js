@@ -201,7 +201,7 @@ const generateEncryptTests = (args: TestArgs) => {
         });
       });
 
-      it('shares an existing resource to an existing user', async () => {
+      it('shares an existing resource with an existing user', async () => {
         const encrypted = await args.bobLaptop.encrypt(clearText);
         const resourceId = await args.bobLaptop.getResourceId(encrypted);
         await args.bobLaptop.share([resourceId], { shareWithUsers: [alicePublicIdentity] });
