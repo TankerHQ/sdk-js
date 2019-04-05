@@ -111,7 +111,8 @@ export default class UserUnverifiedStore {
     const entries = await this._ds.find(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, {
       selector: {
         hash: { $in: deviceIds.map(utils.toBase64) },
-      }
+      },
+      sort: [{ index: 'asc' }],
     });
     return entries.map(dbEntryToEntry);
   }
@@ -120,7 +121,8 @@ export default class UserUnverifiedStore {
     const entry = await this._ds.first(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, {
       selector: {
         hash: utils.toBase64(hash),
-      }
+      },
+      sort: [{ index: 'asc' }],
     });
     return entry ? dbEntryToEntry(entry) : null;
   }

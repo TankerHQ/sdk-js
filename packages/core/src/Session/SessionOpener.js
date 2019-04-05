@@ -126,7 +126,7 @@ export class SessionOpener extends EventEmitter {
     if (this._localUser.wasRevoked) {
       await this._client.close();
       await this._trustchain.close();
-      await this._storage.close();
+      await this._storage.nuke();
 
       throw new OperationCanceled('this device was revoked');
     }

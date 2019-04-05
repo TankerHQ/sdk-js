@@ -55,6 +55,8 @@ export default class TrustchainVerifier {
       } catch (e) {
         if (!(e instanceof InvalidBlockError))
           throw e;
+        else
+          console.error('invalid block', e);
       }
     }
 
@@ -95,9 +97,10 @@ export default class TrustchainVerifier {
         }
         verifiedKeyPublishes.push(verifiedKeyPublish);
       } catch (e) {
-        if (!(e instanceof InvalidBlockError)) {
+        if (!(e instanceof InvalidBlockError))
           throw e;
-        }
+        else
+          console.error('invalid block', e);
         continue;
       }
     }
@@ -173,6 +176,8 @@ export default class TrustchainVerifier {
     } catch (e) {
       if (!(e instanceof InvalidBlockError))
         throw e;
+      else
+        console.error('invalid block', e);
       return null;
     }
   }
@@ -259,7 +264,13 @@ export default class TrustchainVerifier {
       let nextDevicesToVerify = await this._storage.unverifiedStore.findUnverifiedUserEntries(userIds);
 
       // We want to batch the first device of every user, then the 2nd of every user, then the 3rd..., so sort by user first
-      nextDevicesToVerify.sort((a, b) => compareSameSizeUint8Arrays(a.user_id, b.user_id));
+      // And sort() is not stable so keep stuff sorted by index
+      nextDevicesToVerify.sort((a, b) => {
+        const userIdRes = compareSameSizeUint8Arrays(a.user_id, b.user_id);
+        if (userIdRes !== 0)
+          return userIdRes;
+        return a.index - b.index;
+      });
 
       let currentDevicesToVerify = [];
       do {
