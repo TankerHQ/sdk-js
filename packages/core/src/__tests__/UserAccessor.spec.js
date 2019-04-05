@@ -1,7 +1,7 @@
 // @flow
 import sinon from 'sinon';
 import { utils } from '@tanker/crypto';
-import { createIdentity, getPublicIdentity, _deserializePublicIdentity, type PublicIdentity } from '@tanker/identity';
+import { createIdentity, getPublicIdentity, _deserializePublicIdentity, type PublicPermanentIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import { makeUserStoreBuilder } from './UserStoreBuilder';
@@ -131,11 +131,11 @@ describe('Users', () => {
   });
 
   describe('getUsers', () => {
-    const toPublicIdentity = async (identity): Promise<PublicIdentity> => {
+    const toPublicIdentity = async (identity): Promise<PublicPermanentIdentity> => {
       const publicIdentity = await getPublicIdentity(identity);
-      return _deserializePublicIdentity(publicIdentity);
+      return (_deserializePublicIdentity(publicIdentity): any);
     };
-    const toPublicIdentities = (list): Promise<Array<PublicIdentity>> => Promise.all(list.map(toPublicIdentity));
+    const toPublicIdentities = (list): Promise<Array<PublicPermanentIdentity>> => Promise.all(list.map(toPublicIdentity));
 
     it('returns users', async () => {
       const { users, builder, generator } = await makeTestUsers();

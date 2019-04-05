@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import { type PublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
+import { type PublicIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity, _deserializePublicIdentity, type PublicProvisionalUser } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -59,9 +59,23 @@ export default class DataProtector {
     return blocks;
   }
 
+  _makeKeyPublishToProvisionalIdentityBlocks(
+    keyResourceIds: Array<KeyResourceId>,
+    provisionalUsers: Array<PublicProvisionalUser>
+  ): Array<Block> {
+    const blocks: Array<Block> = [];
+    for (const provisionalUser of provisionalUsers) {
+      for (const { key, resourceId } of keyResourceIds) {
+        blocks.push(this._localUser.blockGenerator.makeKeyPublishToProvisionalUserBlock(provisionalUser, key, resourceId));
+      }
+    }
+    return blocks;
+  }
+
   async _publishKeys(
     keyResourceIds: Array<KeyResourceId>,
     recipientUsers: Array<User>,
+    recipientProvisionalUsers: Array<PublicProvisionalUser>,
     recipientGroups: Array<ExternalGroup>
   ): Promise<void> {
     let blocks: Array<Block> = [];
@@ -69,6 +83,10 @@ export default class DataProtector {
       const keys = recipientGroups.map(group => group.publicEncryptionKey);
 
       blocks = blocks.concat(this._makeKeyPublishBlocks(keyResourceIds, keys, NATURE_KIND.key_publish_to_user_group));
+    }
+
+    if (recipientProvisionalUsers.length > 0) {
+      blocks = blocks.concat(this._makeKeyPublishToProvisionalIdentityBlocks(keyResourceIds, recipientProvisionalUsers));
     }
 
     if (recipientUsers.length > 0) {
@@ -86,11 +104,12 @@ export default class DataProtector {
   }
 
   _splitProvisionalAndPermanentIdentities = (identities: Array<PublicIdentity>): * => {
-    const permanentIdentities: Array<PublicIdentity> = [];
-    const provisionalIdentities: Array<PublicIdentity> = identities.filter(elem => {
+    const permanentIdentities: Array<PublicPermanentIdentity> = [];
+    // $FlowIKnow This checks that the target is correct, so type refinement is fine
+    const provisionalIdentities: Array<PublicProvisionalIdentity> = identities.filter(elem => {
       const isPermanent = elem.target === 'user';
       if (isPermanent)
-        permanentIdentities.push(elem);
+        permanentIdentities.push((elem: any));
       return !isPermanent;
     });
     return { permanentIdentities, provisionalIdentities };
@@ -114,16 +133,14 @@ export default class DataProtector {
     const deserializedIdentities = b64UserIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = this._splitProvisionalAndPermanentIdentities(deserializedIdentities);
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
+    const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;
       await this._resourceManager.saveResourceKey(resourceId, key);
     }
 
-    if (provisionalIdentities.length)
-      throw new Error('Sharing with provisional users not implemented yet');
-
-    return this._publishKeys(keys, users, groups);
+    return this._publishKeys(keys, users, provisionalUsers, groups);
   }
 
   async decryptData(protectedData: Uint8Array): Promise<Uint8Array> {

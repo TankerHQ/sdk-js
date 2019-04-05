@@ -1,6 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
+import { type PublicProvisionalUser } from '@tanker/identity';
 
 import {
   serializeUserDeviceV3,
@@ -201,6 +202,36 @@ export class BlockGenerator {
         index: 0,
         trustchain_id: this.trustchainId,
         nature: preferredNature(nature),
+        author: this.deviceId,
+        payload: serializeKeyPublish(payload)
+      },
+      this.privateSignatureKey
+    );
+
+    return pKeyBlock;
+  }
+
+  makeKeyPublishToProvisionalUserBlock(publicProvisionalUser: PublicProvisionalUser, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
+    const preEncryptedKey = tcrypto.sealEncrypt(
+      resourceKey,
+      publicProvisionalUser.appEncryptionPublicKey,
+    );
+    const encryptedKey = tcrypto.sealEncrypt(
+      preEncryptedKey,
+      publicProvisionalUser.tankerEncryptionPublicKey,
+    );
+
+    const payload = {
+      recipient: utils.concatArrays(publicProvisionalUser.appSignaturePublicKey, publicProvisionalUser.tankerSignaturePublicKey),
+      resourceId,
+      key: encryptedKey,
+    };
+
+    const pKeyBlock = signBlock(
+      {
+        index: 0,
+        trustchain_id: this.trustchainId,
+        nature: preferredNature(NATURE_KIND.key_publish_to_provisional_user),
         author: this.deviceId,
         payload: serializeKeyPublish(payload)
       },

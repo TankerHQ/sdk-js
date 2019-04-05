@@ -4,7 +4,7 @@ export { InvalidIdentity } from './InvalidIdentity';
 export type {
   PublicPermanentIdentity, SecretPermanentIdentity,
   PublicProvisionalIdentity, SecretProvisionalIdentity,
-  PublicIdentity, SecretIdentity,
+  PublicIdentity, SecretIdentity, PublicProvisionalUser,
 } from './identity';
 
 export {

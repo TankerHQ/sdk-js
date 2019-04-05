@@ -401,7 +401,6 @@ describe('BlockVerification', () => {
 
   describe('key publish to provisional user', () => {
     let user: User;
-    let targetPreRegistrationPublicKey: Uint8Array;
     let unverifiedKeyPublish: UnverifiedKeyPublish;
 
     beforeEach(() => {
@@ -409,9 +408,17 @@ describe('BlockVerification', () => {
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      targetPreRegistrationPublicKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
       testGenerator.skipIndex(); // used for faking a revocation
-      const keyPublish = testGenerator.makeKeyPublishToProvisionalUser(userCreation, targetPreRegistrationPublicKey);
+      const provisionalIdentityPublicKeys = {
+        trustchainId: random(tcrypto.HASH_SIZE),
+        target: 'email',
+        value: 'bob@gmail',
+        appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+        tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      };
+      const keyPublish = testGenerator.makeKeyPublishToProvisionalUser(userCreation, provisionalIdentityPublicKeys);
       unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
     });
 

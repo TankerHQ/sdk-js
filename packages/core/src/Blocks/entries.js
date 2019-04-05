@@ -6,6 +6,7 @@ import {
   unserializePayload,
   unserializeKeyPublish,
   unserializeKeyPublishToDevice,
+  unserializeKeyPublishToProvisionalUser,
   unserializeUserDeviceV1,
   unserializeUserDeviceV2,
   unserializeUserDeviceV3,
@@ -133,9 +134,11 @@ export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
     case NATURE.key_publish_to_device:
       keyPublishAction = unserializeKeyPublishToDevice(block.payload);
       break;
+    case NATURE.key_publish_to_provisional_user:
+      keyPublishAction = unserializeKeyPublishToProvisionalUser(block.payload);
+      break;
     case NATURE.key_publish_to_user:
     case NATURE.key_publish_to_user_group:
-    case NATURE.key_publish_to_provisional_user:
       keyPublishAction = unserializeKeyPublish(block.payload);
       break;
     default: throw new Error('Assertion error: wrong type for keyPublishFromBlock');

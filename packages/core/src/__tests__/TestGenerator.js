@@ -1,6 +1,7 @@
 // @flow
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
+import { type PublicProvisionalUser } from '@tanker/identity';
 
 import { deviceCreationFromBlock, deviceRevocationFromBlock, keyPublishFromBlock, userGroupEntryFromBlock } from '../Blocks/entries';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
@@ -350,7 +351,7 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToProvisionalUser = (parentDevice: TestDeviceCreation, recipient: Uint8Array): TestKeyPublish => {
+  makeKeyPublishToProvisionalUser = (parentDevice: TestDeviceCreation, recipient: PublicProvisionalUser): TestKeyPublish => {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = random(tcrypto.MAC_SIZE);
 
@@ -361,7 +362,7 @@ class TestGenerator {
     );
     this._trustchainIndex += 1;
 
-    const block = blockGenerator.makeKeyPublishBlock(recipient, resourceKey, resourceId, NATURE_KIND.key_publish_to_provisional_user);
+    const block = blockGenerator.makeKeyPublishToProvisionalUserBlock(recipient, resourceKey, resourceId);
     block.index = this._trustchainIndex;
 
     return {

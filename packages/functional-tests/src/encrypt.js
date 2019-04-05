@@ -1,7 +1,7 @@
 // @flow
 import { errors } from '@tanker/core';
-import { tcrypto, utils } from '@tanker/crypto';
-import { getPublicIdentity } from '@tanker/identity';
+import { tcrypto, utils, random } from '@tanker/crypto';
+import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import FilePonyfill from '@tanker/file-ponyfill';
 import { expect, expectRejectedWithProperty } from './chai';
 
@@ -64,6 +64,7 @@ const generateEncryptTests = (args: TestArgs) => {
       await Promise.all([
         args.aliceLaptop.signOut(),
         args.bobLaptop.signOut(),
+        args.bobPhone.signOut(),
       ]);
     });
 
@@ -128,6 +129,17 @@ const generateEncryptTests = (args: TestArgs) => {
           const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
           const decrypted = await args.aliceLaptop.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
+        });
+
+        it('encrypt and share with provisional users', async () => {
+          const provisionalIdentity = utils.toB64Json({
+            trustchain_id: utils.toBase64(args.trustchainHelper.trustchainId),
+            target: 'email',
+            value: 'alice@tanker-functional-test.io',
+            public_signature_key: utils.toBase64(random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)),
+            public_encryption_key: utils.toBase64(random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)),
+          });
+          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.fulfilled;
         });
 
         it('shares even when the recipient is not connected', async () => {
@@ -208,6 +220,14 @@ const generateEncryptTests = (args: TestArgs) => {
 
         const decrypted = await args.aliceLaptop.decrypt(encrypted);
         expect(decrypted).to.equal(clearText);
+      });
+
+      it('shares an existing resource with a provisional user', async () => {
+        const email = 'alice@tanker-functional-test.io';
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+        const cipherText = await args.bobLaptop.encrypt(clearText);
+        const resourceId = await args.bobLaptop.getResourceId(cipherText);
+        await expect(args.bobLaptop.share([resourceId], { shareWithUsers: [provisionalIdentity] })).to.be.fulfilled;
       });
     });
   });
