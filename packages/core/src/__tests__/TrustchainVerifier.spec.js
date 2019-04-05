@@ -4,6 +4,7 @@
 import { tcrypto } from '@tanker/crypto';
 
 import { expect, assert } from './chai';
+import { silencer } from './ConsoleSilencer';
 import { InvalidBlockError } from '../errors.internal';
 import { type UnverifiedEntry, blockToEntry, deviceCreationFromBlock } from '../Blocks/entries';
 import { type GeneratorKeyResult, type GeneratorUserResult } from './Generator';
@@ -150,6 +151,8 @@ describe('TrustchainVerifier', () => {
     });
 
     it('fails to verify keypublishes with bad authors', async () => {
+      silencer.silence('error', /invalid block/);
+
       const keyPublish = await builder.addKeyPublishToUser({ from: author, to: user });
       const keyPublish2 = await builder.addKeyPublishToUser({ from: author2, to: user });
       const alteredKP2 = setKeyPublishAuthor(keyPublish2, keyPublish.entry.hash);
@@ -159,6 +162,8 @@ describe('TrustchainVerifier', () => {
       expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
       expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
       expect(await userStore.findDevice({ deviceId: author2.entry.hash })).to.be.null;
+
+      silencer.restore();
     });
 
     it('verified group block', async () => {
@@ -178,6 +183,8 @@ describe('TrustchainVerifier', () => {
     });
 
     it('fails to verify key publishes with bad groups', async () => {
+      silencer.silence('error', /invalid block/);
+
       const group = await builder.addUserGroupCreation(author, ['alice']);
 
       const keyPublishToGroup = await builder.addKeyPublishToUserGroup({ from: author2, to: group });
@@ -185,6 +192,8 @@ describe('TrustchainVerifier', () => {
 
       const result = await builder.trustchainVerifier.verifyKeyPublishes([alteredKP.unverifiedKeyPublish]);
       expect(result.length).to.equal(0);
+
+      silencer.restore();
     });
   });
 });
