@@ -105,7 +105,7 @@ const generateGroupsTests = (args: TestArgs) => {
       expect(decrypted).to.equal(message);
     });
 
-    it('should share keys to group', async () => {
+    it('should share keys with original group members', async () => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
 
       const encrypted = await args.bobLaptop.encrypt(message);
@@ -116,7 +116,7 @@ const generateGroupsTests = (args: TestArgs) => {
       expect(decrypted).to.equal(message);
     });
 
-    it('should publish keys to updated group', async () => {
+    it('should share new keys with added group members', async () => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
       await args.aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
 
@@ -125,7 +125,7 @@ const generateGroupsTests = (args: TestArgs) => {
       expect(decrypted).to.equal(message);
     });
 
-    it('should publish old keys to new group member', async () => {
+    it('should share old keys with added group members', async () => {
       const groupId = await args.aliceLaptop.createGroup([alicePublicIdentity]);
       const encrypted = await args.aliceLaptop.encrypt(message, { shareWithGroups: [groupId] });
       await expect(args.bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);

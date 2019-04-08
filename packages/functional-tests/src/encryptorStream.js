@@ -140,7 +140,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         await expect(args.aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
       });
 
-      it('throws ResourceNotFound when resource was not shared to user', async () => {
+      it('throws ResourceNotFound when resource was not shared with user', async () => {
         const encryptor = await args.aliceLaptop.makeEncryptorStream();
         encryptor.end();
 
