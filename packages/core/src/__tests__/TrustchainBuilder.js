@@ -21,6 +21,7 @@ import GroupUpdater from '../Groups/GroupUpdater';
 import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
 
 import { userGroupEntryFromBlock, deviceCreationFromBlock } from '../Blocks/entries';
+import { type ProvisionalPublicKey } from '../Blocks/payloads';
 
 export default class TrustchainBuilder {
   dataStore: DataStore<*>;
@@ -111,6 +112,13 @@ export default class TrustchainBuilder {
   async addKeyPublishToUserGroup(args: {from: GeneratorUserResult, to: GeneratorUserGroupResult, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
     const { symmetricKey, to, from, resourceId } = args;
     const result = await this.generator.newKeyPublishToUserGroup({ symmetricKey, toGroup: to, fromDevice: from.device, resourceId });
+    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
+    return result;
+  }
+
+  async addKeyPublishToProvisionalUser(args: {from: GeneratorUserResult, to: ProvisionalPublicKey, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
+    const { symmetricKey, to, from, resourceId } = args;
+    const result = await this.generator.newKeyPublishToProvisionalUser({ symmetricKey, toProvisionalUserPublicKey: to, fromDevice: from.device, resourceId });
     await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
     return result;
   }

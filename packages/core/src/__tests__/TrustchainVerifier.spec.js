@@ -1,7 +1,7 @@
 // @flow
 /* eslint-disable no-underscore-dangle */
 
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 
 import { expect, assert } from './chai';
 import { silencer } from './ConsoleSilencer';
@@ -194,6 +194,19 @@ describe('TrustchainVerifier', () => {
       expect(result.length).to.equal(0);
 
       silencer.restore();
+    });
+
+    it('verifies key publishes to provisional users', async () => {
+      const provisionalUserPublicKeys = {
+        app_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+        tanker_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      };
+      const keyPublish = await builder.addKeyPublishToProvisionalUser({ from: author, to: provisionalUserPublicKeys });
+      const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish]);
+      expect(result.length).to.equal(1);
+
+      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
+      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
     });
   });
 });

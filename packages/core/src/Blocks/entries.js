@@ -135,9 +135,10 @@ export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
       break;
     case NATURE.key_publish_to_user:
     case NATURE.key_publish_to_user_group:
+    case NATURE.key_publish_to_provisional_user:
       keyPublishAction = unserializeKeyPublish(block.payload);
       break;
-    default: throw new Error('Assertion error: wrong type for deviceCreationFromBlock');
+    default: throw new Error('Assertion error: wrong type for keyPublishFromBlock');
   }
   return {
     ...verificationFields,

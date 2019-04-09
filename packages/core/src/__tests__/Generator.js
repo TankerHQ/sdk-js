@@ -15,8 +15,10 @@ import { serializeTrustchainCreation,
   serializeKeyPublish,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
+  type ProvisionalPublicKey,
   type UserDeviceRecord,
-  type KeyPublishRecord } from '../Blocks/payloads';
+  type KeyPublishRecord,
+  SEALED_KEY_SIZE } from '../Blocks/payloads';
 
 import { preferredNature, NATURE, NATURE_KIND, type Nature } from '../Blocks/Nature';
 
@@ -172,7 +174,7 @@ class Generator {
     if (args.nature === NATURE.device_creation_v3) {
       userKeyPair = {
         public_encryption_key: args.userKeys.publicKey,
-        encrypted_private_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+        encrypted_private_encryption_key: new Uint8Array(SEALED_KEY_SIZE),
       };
     }
     const payload: UserDeviceRecord = {
@@ -367,7 +369,6 @@ class Generator {
   async newKeyPublishToUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toUser: GeneratorUser, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
     if (!args.toUser.userKeys)
       throw new Error('Generator: cannot add a keyPublish to user on a user V1');
-
     const toKey = args.toUser.userKeys.publicKey;
 
     let { symmetricKey } = args;
@@ -397,6 +398,23 @@ class Generator {
       encryptedKey,
       toKey,
       nature: NATURE.key_publish_to_user_group,
+    });
+  }
+
+  async newKeyPublishToProvisionalUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toProvisionalUserPublicKey: ProvisionalPublicKey, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+    let { symmetricKey } = args;
+    if (!symmetricKey)
+      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+
+    const preEncryptedKey = tcrypto.sealEncrypt(symmetricKey, args.toProvisionalUserPublicKey.app_public_encryption_key);
+    const encryptedKey = tcrypto.sealEncrypt(preEncryptedKey, args.toProvisionalUserPublicKey.tanker_public_encryption_key);
+
+    return this.newCommonKeyPublish({
+      ...args,
+      symmetricKey,
+      encryptedKey,
+      toKey: utils.concatArrays(args.toProvisionalUserPublicKey.app_public_encryption_key, args.toProvisionalUserPublicKey.tanker_public_encryption_key),
+      nature: NATURE.key_publish_to_provisional_user,
     });
   }
 
@@ -453,7 +471,7 @@ class Generator {
 
     let encryptedPreviousEncryptionKey = tcrypto.sealEncrypt(userKeys.privateKey, newUserKey.publicKey);
     if (!this.users[userId].userKeys)
-      encryptedPreviousEncryptionKey = new Uint8Array(tcrypto.SEALED_KEY_SIZE);
+      encryptedPreviousEncryptionKey = new Uint8Array(SEALED_KEY_SIZE);
     const payload = {
       device_id: to.id,
       user_keys: {

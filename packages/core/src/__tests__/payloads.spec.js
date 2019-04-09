@@ -16,6 +16,7 @@ import {
   serializeKeyPublish,
   unserializeKeyPublish,
   unserializeKeyPublishToDevice,
+  unserializeKeyPublishToProvisionalUser,
   serializeDeviceRevocationV2,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
@@ -25,6 +26,8 @@ import {
   unserializeUserGroupAdditionV1,
   serializeBlock,
   unserializeBlock,
+  SEALED_KEY_SIZE,
+  TWO_TIMES_SEALED_KEY_SIZE,
 } from '../Blocks/payloads';
 
 import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
@@ -184,7 +187,7 @@ describe('payload test vectors', () => {
       public_encryption_key: makeUint8Array('public enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
       user_key_pair: {
         public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeUint8Array('user enc key', tcrypto.SEALED_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc key', SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       revoked: Number.MAX_SAFE_INTEGER,
@@ -241,7 +244,7 @@ describe('payload test vectors', () => {
     const keyPublish = {
       recipient: makeUint8Array('recipient user', tcrypto.HASH_SIZE),
       resourceId: makeUint8Array('resource mac', tcrypto.MAC_SIZE),
-      key: makeUint8Array('encrypted key...', tcrypto.SEALED_KEY_SIZE),
+      key: makeUint8Array('encrypted key...', SEALED_KEY_SIZE),
     };
 
     const payload = new Uint8Array([
@@ -256,27 +259,34 @@ describe('payload test vectors', () => {
     ]);
 
     expect(unserializeKeyPublish(payload)).to.deep.equal(keyPublish);
+    expect(serializeKeyPublish(keyPublish)).to.deep.equal(payload);
   });
 
-  it('correctly deserializes a KeyPublish to usert est vector', async () => {
+  it('correctly serializes/deserializes a KeyPublish to provisional user test vector', async () => {
     const keyPublish = {
-      recipient: makeUint8Array('recipient group', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+      recipient: makeUint8Array('recipient user', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE * 2),
       resourceId: makeUint8Array('resource mac', tcrypto.MAC_SIZE),
-      key: makeUint8Array('encrypted key...', tcrypto.SEALED_KEY_SIZE),
+      key: makeUint8Array('encrypted key...', TWO_TIMES_SEALED_KEY_SIZE),
     };
 
     const payload = new Uint8Array([
-      0x72, 0x65, 0x63, 0x69, 0x70, 0x69, 0x65, 0x6e, 0x74, 0x20, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x00,
+      0x72, 0x65, 0x63, 0x69, 0x70, 0x69, 0x65, 0x6e, 0x74, 0x20, 0x75, 0x73, 0x65, 0x72, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x20, 0x6d, 0x61, 0x63, 0x00, 0x00, 0x00, 0x00,
       0x65, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x65, 0x64, 0x20, 0x6b, 0x65, 0x79, 0x2e, 0x2e, 0x2e,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ]);
 
-    expect(unserializeKeyPublish(payload)).to.deep.equal(keyPublish);
+    expect(serializeKeyPublish(keyPublish)).to.deep.equal(payload);
+    expect(unserializeKeyPublishToProvisionalUser(payload)).to.deep.equal(keyPublish);
   });
 
   it('correctly deserializes a DeviceRevocationV1 test vector', async () => {
@@ -601,7 +611,7 @@ describe('payloads', () => {
       public_encryption_key: encryptionKeys.publicKey,
       user_key_pair: {
         public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeUint8Array('user enc priv key', tcrypto.SEALED_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc priv key', SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       revoked: Number.MAX_SAFE_INTEGER,
@@ -614,7 +624,7 @@ describe('payloads', () => {
     const keyPublish = {
       resourceId: random(tcrypto.MAC_SIZE),
       recipient: random(tcrypto.HASH_SIZE),
-      key: random(tcrypto.SEALED_KEY_SIZE),
+      key: random(SEALED_KEY_SIZE),
     };
 
     expect(unserializeKeyPublish(serializeKeyPublish(keyPublish))).to.deep.equal(keyPublish);
@@ -624,7 +634,7 @@ describe('payloads', () => {
     const keyPublish = {
       resourceId: random(tcrypto.MAC_SIZE),
       recipient: random(tcrypto.HASH_SIZE),
-      key: random(tcrypto.SEALED_KEY_SIZE),
+      key: random(SEALED_KEY_SIZE),
     };
 
     expect(unserializeKeyPublish(serializeKeyPublish(keyPublish))).to.deep.equal(keyPublish);
@@ -636,7 +646,7 @@ describe('payloads', () => {
       user_keys: {
         public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
         previous_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_previous_encryption_key: random(tcrypto.SEALED_KEY_SIZE),
+        encrypted_previous_encryption_key: random(SEALED_KEY_SIZE),
         private_keys: [],
       },
     };
@@ -650,10 +660,10 @@ describe('payloads', () => {
       user_keys: {
         public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
         previous_public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_previous_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+        encrypted_previous_encryption_key: new Uint8Array(SEALED_KEY_SIZE),
         private_keys: [{
           recipient: new Uint8Array(tcrypto.HASH_SIZE),
-          key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+          key: new Uint8Array(SEALED_KEY_SIZE),
         }],
       },
     });
@@ -717,24 +727,11 @@ describe('payloads', () => {
     expect(() => unserializeBlock(serializedBlock)).to.throw(UpgradeRequiredError);
   });
 
-  fields = ['recipient', 'resourceId', 'key'];
-  fields.forEach(field => {
-    it(`should thow when serializing key publish with invalid ${field}`, async () => {
-      const keyPublish = {
-        recipient: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        resourceId: new Uint8Array(tcrypto.MAC_SIZE),
-        key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
-      };
-      keyPublish[field] = new Uint8Array(0);
-      expect(() => serializeKeyPublish(keyPublish)).to.throw();
-    });
-  });
-
   it('should serialize/unserialize a Block', async () => {
     const keyPublish = {
       resourceId: random(tcrypto.MAC_SIZE),
       recipient: random(tcrypto.HASH_SIZE),
-      key: random(tcrypto.SEALED_KEY_SIZE),
+      key: random(SEALED_KEY_SIZE),
     };
 
     const signatureKeys = tcrypto.makeSignKeyPair();
@@ -763,7 +760,7 @@ describe('payloads', () => {
       public_encryption_key: encryptionKeys.publicKey,
       user_key_pair: {
         public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeUint8Array('user enc priv key', tcrypto.SEALED_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc priv key', SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       revoked: Number.MAX_SAFE_INTEGER,
@@ -785,7 +782,7 @@ describe('payloads', () => {
         public_encryption_key: new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
         user_key_pair: {
           public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_private_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+          encrypted_private_encryption_key: new Uint8Array(SEALED_KEY_SIZE),
         },
         is_ghost_device: true,
         revoked: Number.MAX_SAFE_INTEGER,
