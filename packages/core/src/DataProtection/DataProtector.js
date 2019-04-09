@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import { _deserializePublicIdentity } from '@tanker/identity';
+import { type PublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -85,6 +85,17 @@ export default class DataProtector {
     await this._client.sendKeyPublishBlocks(blocks);
   }
 
+  _splitProvisionalAndPermanentIdentities = (identities: Array<PublicIdentity>): * => {
+    const permanentIdentities: Array<PublicIdentity> = [];
+    const provisionalIdentities: Array<PublicIdentity> = identities.filter(elem => {
+      const isPermanent = elem.target === 'user';
+      if (isPermanent)
+        permanentIdentities.push(elem);
+      return !isPermanent;
+    });
+    return { permanentIdentities, provisionalIdentities };
+  }
+
   _handleShareWithSelf = (identities: Array<b64string>, shareWithSelf: bool): Array<string> => {
     if (shareWithSelf) {
       const selfUserIdentity = utils.toB64Json(this._localUser.publicIdentity);
@@ -101,12 +112,16 @@ export default class DataProtector {
     const groups = await this._groupManager.getGroups(groupIds);
     const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
     const deserializedIdentities = b64UserIdentities.map(i => _deserializePublicIdentity(i));
-    const users = await this._userAccessor.getUsers({ publicIdentities: deserializedIdentities });
+    const { permanentIdentities, provisionalIdentities } = this._splitProvisionalAndPermanentIdentities(deserializedIdentities);
+    const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;
       await this._resourceManager.saveResourceKey(resourceId, key);
     }
+
+    if (provisionalIdentities.length)
+      throw new Error('Sharing with provisional users not implemented yet');
 
     return this._publishKeys(keys, users, groups);
   }

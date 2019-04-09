@@ -350,6 +350,26 @@ class TestGenerator {
     };
   }
 
+  makeKeyPublishToProvisionalUser = (parentDevice: TestDeviceCreation, recipient: Uint8Array): TestKeyPublish => {
+    const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const resourceId = random(tcrypto.MAC_SIZE);
+
+    const blockGenerator = new BlockGenerator(
+      this._trustchainId,
+      parentDevice.testDevice.signKeys.privateKey,
+      parentDevice.testDevice.id,
+    );
+    this._trustchainIndex += 1;
+
+    const block = blockGenerator.makeKeyPublishBlock(recipient, resourceKey, resourceId, NATURE_KIND.key_publish_to_provisional_user);
+    block.index = this._trustchainIndex;
+
+    return {
+      unverifiedKeyPublish: keyPublishFromBlock(block),
+      block,
+      resourceId
+    };
+  }
 
   makeUserGroupCreation = (parentDevice: TestDeviceCreation, members: Array<User>): TestUserGroup => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
