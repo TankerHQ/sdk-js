@@ -6,12 +6,26 @@ import { PromiseWrapper } from '../PromiseWrapper';
 import TrustchainStore, { type UnverifiedTrustchainCreation } from './TrustchainStore';
 import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
 
-import { blockToEntry, keyPublishFromBlock, userGroupEntryFromBlock, deviceCreationFromBlock, deviceRevocationFromBlock } from '../Blocks/entries';
+import {
+  blockToEntry,
+  keyPublishFromBlock,
+  userGroupEntryFromBlock,
+  deviceCreationFromBlock,
+  deviceRevocationFromBlock,
+  provisionalIdentityClaimFromBlock,
+} from '../Blocks/entries';
 import TrustchainVerifier from './TrustchainVerifier';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 
 
-import { isKeyPublish, isUserGroup, isDeviceCreation, isDeviceRevocation, isTrustchainCreation } from '../Blocks/Nature';
+import {
+  isKeyPublish,
+  isUserGroup,
+  isDeviceCreation,
+  isDeviceRevocation,
+  isTrustchainCreation,
+  isProvisionalIdentityClaim,
+} from '../Blocks/Nature';
 import { unserializeBlock } from '../Blocks/payloads';
 import { type Block } from '../Blocks/Block';
 
@@ -131,6 +145,7 @@ export default class TrustchainPuller {
     const keyPublishes = [];
     const userEntries = [];
     const userGroups = [];
+    const claims = [];
     let trustchainCreationEntry = null;
     let maxBlockIndex = 0;
 
@@ -160,6 +175,8 @@ export default class TrustchainPuller {
         if (utils.equalArray(this._userId, userEntry.user_id)) {
           mustUpdateOurselves = true;
         }
+      } else if (isProvisionalIdentityClaim(block.nature)) {
+        claims.push(provisionalIdentityClaimFromBlock(block));
       } else if (isTrustchainCreation(block.nature)) {
         trustchainCreationEntry = blockToEntry(block);
       } else {
@@ -176,10 +193,14 @@ export default class TrustchainPuller {
     await this._unverifiedStore.addUnverifiedUserEntries(userEntries);
     await this._unverifiedStore.addUnverifiedKeyPublishes(keyPublishes);
     await this._unverifiedStore.addUnverifiedUserGroups(userGroups);
+    await this._unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries(claims);
     await this._trustchainStore.updateLastBlockIndex(maxBlockIndex);
 
     if (mustUpdateOurselves) {
       await this._trustchainVerifier.updateUserStore([this._userId]);
+    }
+    if (claims.length) {
+      await this._trustchainVerifier.verifyClaimsForUser(this._userId);
     }
   };
 

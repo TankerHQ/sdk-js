@@ -9,6 +9,7 @@ import GroupUpdater from '../Groups/GroupUpdater';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim, type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import { type UnverifiedTrustchainCreation } from './TrustchainStore';
 
 import {
@@ -29,6 +30,7 @@ import {
   verifyKeyPublish,
   verifyUserGroupCreation,
   verifyUserGroupAddition,
+  verifyProvisionalIdentityClaim,
 } from './Verify';
 
 export default class TrustchainVerifier {
@@ -240,6 +242,30 @@ export default class TrustchainVerifier {
     return this._unlockedProcessUserGroups(unverifiedEntries);
   }
 
+  async _unlockedVerifyClaims(claims: Array<UnverifiedProvisionalIdentityClaim>): Promise<Array<VerifiedProvisionalIdentityClaim>> {
+    const verifiedClaims = [];
+    for (const claim of claims) {
+      try {
+        const authorUser = await this._storage.userStore.findUser({ deviceId: claim.author });
+        if (!authorUser)
+          throw new InvalidBlockError('author_not_found', 'author not found', { claim });
+
+        const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(claim.author));
+        const authorDevice = authorUser.devices[deviceIndex];
+
+        verifiedClaims.push(verifyProvisionalIdentityClaim(claim, authorDevice, utils.fromBase64(authorUser.userId)));
+      } catch (e) {
+        if (!(e instanceof InvalidBlockError)) {
+          throw e;
+        } else {
+          console.error('invalid block', e);
+        }
+        continue;
+      }
+    }
+    return verifiedClaims;
+  }
+
   async verifyTrustchainCreation(unverifiedTrustchainCreation: UnverifiedTrustchainCreation) {
     return this._verifyQueue.enqueue(async () => {
       verifyTrustchainCreation(unverifiedTrustchainCreation, this._trustchainId);
@@ -294,6 +320,16 @@ export default class TrustchainVerifier {
       for (const groupId of groupIds) {
         await this._unlockedProcessUserGroup(groupId);
       }
+    });
+  }
+
+  async verifyClaimsForUser(userId: Uint8Array) {
+    await this._verifyQueue.enqueue(async () => {
+      const unverifiedClaims = await this._storage.unverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
+
+      const verifiedClaims = await this._unlockedVerifyClaims(unverifiedClaims);
+      await this._storage.userStore.applyProvisionalIdentityClaims(verifiedClaims);
+      await this._storage.unverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(verifiedClaims);
     });
   }
 }
