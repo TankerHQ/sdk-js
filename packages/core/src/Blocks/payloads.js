@@ -291,7 +291,7 @@ export function unserializeKeyPublishToDevice(src: Uint8Array): KeyPublishRecord
   return result;
 }
 
-export function unserializeKeyPublish(src: Uint8Array): KeyPublishToUserGroupRecord {
+export function unserializeKeyPublish(src: Uint8Array): KeyPublishToUserGroupRecord | KeyPublishToUserRecord {
   return unserializeGeneric(src, [
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient'),
     (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
