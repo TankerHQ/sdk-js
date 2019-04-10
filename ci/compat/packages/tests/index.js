@@ -8,7 +8,7 @@ import { upgradeUserToken } from '../../../../packages/identity';
 import { TrustchainHelper } from '../../../../packages/functional-tests/src/Helpers';
 import { makeCurrentUser, makeV1User } from './helpers';
 
-function generateEncryptTest(args: any) {
+function generateEncryptTest(args) {
   it(`encrypts in ${args.version} and decrypts with current code`, async () => {
     const message = 'secret message';
     const encryptedData = await args.versionAlice.encrypt(message, [args.versionBob.id], []);
@@ -21,7 +21,7 @@ function generateEncryptTest(args: any) {
   });
 }
 
-function generateGroupTest(args: any) {
+function generateGroupTest(args) {
   it(`encrypts and shares with a group in ${args.version} and decrypts with current code`, async () => {
     let message = 'secret message for a group';
     const groupId = await args.versionAlice.createGroup([args.versionBob.id, args.versionAlice.id]);
@@ -40,7 +40,7 @@ function generateGroupTest(args: any) {
   });
 }
 
-function generateUnlockTest(args: any) {
+function generateUnlockTest(args) {
   it(`registers unlock with ${args.version} and unlocks with current code`, async () => {
     const phone = makeCurrentUser(args.currentBob.id, args.currentBob.identity, args.trustchainId, 'phone');
     await phone.signIn();
@@ -48,7 +48,7 @@ function generateUnlockTest(args: any) {
   });
 }
 
-function generateRevocationTest(args: any) {
+function generateRevocationTest(args) {
   it(`creates a device with ${args.version} and revokes it with current code`, async () => {
     const phone = makeV1User(args.Tanker, args.versionBob.id, args.versionBob.token, args.trustchainId);
     await phone.open();
@@ -67,7 +67,7 @@ const generatorMap = {
   revocation: generateRevocationTest,
 };
 
-function generateTests(opts: any) {
+function generateTests(opts) {
   describe(opts.version, function () { // eslint-disable-line func-names
     this.timeout(30000);
     const args = {

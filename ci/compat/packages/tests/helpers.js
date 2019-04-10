@@ -13,24 +13,24 @@ class BaseUser {
   _tanker: any;
   _id: string;
 
-  constructor(tanker: any, id: string) {
+  constructor(tanker, id) {
     this._tanker = tanker;
     this._id = id;
   }
 
-  async encrypt(message: string, userIds: Array<string>, groupIds: Array<string>) {
+  async encrypt(message, userIds, groupIds) {
     return toBase64(await this._tanker.encrypt(message, { shareWithUsers: userIds, shareWithGroups: groupIds }));
   }
 
-  async decrypt(encryptedData: string) {
+  async decrypt(encryptedData) {
     return this._tanker.decrypt(fromBase64(encryptedData));
   }
 
-  async createGroup(ids: Array<string>) {
+  async createGroup(ids) {
     return this._tanker.createGroup(ids);
   }
 
-  async revokeDevice(deviceId: string) {
+  async revokeDevice(deviceId) {
     return this._tanker.revokeDevice(deviceId);
   }
 
@@ -50,7 +50,7 @@ class BaseUser {
 class UserV1 extends BaseUser {
   _token: string;
 
-  constructor(tanker: any, id: string, token: string) {
+  constructor(tanker, id, token) {
     super(tanker, id);
     this._token = token;
   }
@@ -78,7 +78,7 @@ class UserV1 extends BaseUser {
 class UserV2 extends BaseUser {
   _identity: string;
 
-  constructor(tanker: any, id: string, identity: string) {
+  constructor(tanker, id, identity) {
     super(tanker, id);
     this._identity = identity;
   }
@@ -96,7 +96,7 @@ class UserV2 extends BaseUser {
   }
 }
 
-function makeTanker(Tanker: any, userId: string, trustchainId: string, prefix: string) {
+function makeTanker(Tanker, userId, trustchainId, prefix) {
   const dbPath = path.join('/tmp', `${prefix}${userId}${trustchainId.replace(/[/\\]/g, '_')}/`);
   if (!fs.existsSync(dbPath)) {
     fs.mkdirSync(dbPath);
@@ -111,7 +111,7 @@ function makeTanker(Tanker: any, userId: string, trustchainId: string, prefix: s
   });
 }
 
-export function makeV1User(Tanker: any, userId: string, token: string, trustchainId: string, prefix: string = 'default') {
+export function makeV1User(Tanker, userId, token, trustchainId, prefix = 'default') {
   const tanker = makeTanker(Tanker, userId, trustchainId, prefix);
   tanker.on('unlockRequired', async () => {
     await tanker.unlockCurrentDevice({ password });
@@ -119,7 +119,7 @@ export function makeV1User(Tanker: any, userId: string, token: string, trustchai
   return new UserV1(tanker, userId, token);
 }
 
-export function makeCurrentUser(userId: string, identity: string, trustchainId: string, prefix: string = 'default') {
+export function makeCurrentUser(userId, identity, trustchainId, prefix = 'default') {
   const Tanker = require('../../../../packages/client-node').default; // eslint-disable-line global-require
   const tanker = makeTanker(Tanker, userId, trustchainId, prefix);
   return new UserV2(tanker, userId, identity);
