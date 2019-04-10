@@ -1,11 +1,11 @@
 {
-  "name": "1.9.2",
+  "name": "1.10.4",
   "version": "0.0.1",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@tanker/client-node": "1.9.2",
-    "@tanker/user-token": "^1.4.2",
+    "@tanker/client-node": "1.10.4",
+    "@tanker/user-token": "1.4.2",
     "tests": "0.0.1-local"
   }
 }
