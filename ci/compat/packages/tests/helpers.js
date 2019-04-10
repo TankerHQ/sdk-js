@@ -30,8 +30,20 @@ class BaseUser {
     return this._tanker.createGroup(ids);
   }
 
+  async revokeDevice(deviceId: string) {
+    return this._tanker.revokeDevice(deviceId);
+  }
+
   get id() {
     return this._id;
+  }
+
+  get deviceId() {
+    return this._tanker.deviceId;
+  }
+
+  getRevocationPromise () {
+    return new Promise(resolve => this._tanker.once('revoked', resolve));
   }
 }
 

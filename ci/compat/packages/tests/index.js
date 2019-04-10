@@ -48,16 +48,32 @@ function generateUnlockTest(args: any) {
   });
 }
 
+function generateRevocationTest(args: any) {
+  it(`creates a device with ${args.version} and revokes it with current code`, async () => {
+    const phone = makeV1User(args.Tanker, args.versionBob.id, args.versionBob.token, args.trustchainId);
+    await phone.open();
+    const deviceRevoked = phone.getRevocationPromise();
+
+    await args.currentBob.revokeDevice(phone.deviceId);
+    await deviceRevoked;
+    expect(phone.status).to.equal(args.Tanker.CLOSED);
+  });
+}
+
 const generatorMap = {
   encrypt: generateEncryptTest,
   group: generateGroupTest,
   unlock: generateUnlockTest,
+  revocation: generateRevocationTest,
 };
 
 function generateTests(opts: any) {
   describe(opts.version, function () { // eslint-disable-line func-names
     this.timeout(30000);
-    const args = { version: opts.version };
+    const args = {
+      version: opts.version,
+      Tanker: opts.Tanker,
+    };
 
     before(async () => {
       args.trustchainHelper = await TrustchainHelper.newTrustchain();

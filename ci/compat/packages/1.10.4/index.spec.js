@@ -8,5 +8,5 @@ generateTests({
   version: getTankerVersion(),
   Tanker,
   generateUserToken,
-  tests: ['encrypt', 'group', 'unlock']
+  tests: ['encrypt', 'group', 'unlock', 'revocation']
 });
