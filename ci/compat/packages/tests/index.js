@@ -42,7 +42,12 @@ function generateGroupTest(args) {
 
 function generateUnlockTest(args) {
   it(`registers unlock with ${args.version} and unlocks with current code`, async () => {
-    const phone = makeCurrentUser(args.currentBob.id, args.currentBob.identity, args.trustchainId, 'phone');
+    const phone = makeCurrentUser({
+      adapter: args.adapter,
+      identity: args.currentBob.identity,
+      trustchainId: args.trustchainId,
+      prefix: 'phone',
+    });
     await phone.signIn();
     await phone.signOut();
   });
@@ -50,7 +55,14 @@ function generateUnlockTest(args) {
 
 function generateRevocationTest(args) {
   it(`creates a device with ${args.version} and revokes it with current code`, async () => {
-    const phone = makeV1User(args.Tanker, args.versionBob.id, args.versionBob.token, args.trustchainId);
+    const phone = makeV1User({
+      Tanker: args.Tanker,
+      adapter: args.adapter,
+      userId: args.versionBob.id,
+      token: args.versionBob.token,
+      trustchainId: args.trustchainId,
+      prefix: 'phone',
+    });
     await phone.open();
     const deviceRevoked = phone.getRevocationPromise();
 
@@ -73,8 +85,8 @@ function generateTests(opts) {
     const args = {
       version: opts.version,
       Tanker: opts.Tanker,
+      adapter: opts.adapter,
     };
-
     before(async () => {
       args.trustchainHelper = await TrustchainHelper.newTrustchain();
       args.trustchainId = toBase64(args.trustchainHelper.trustchainId);
@@ -85,10 +97,34 @@ function generateTests(opts) {
       const bobToken = opts.generateUserToken(args.trustchainId, trustchainPrivateKey, bobId);
       const aliceIdentity = await upgradeUserToken(args.trustchainId, aliceId, aliceToken);
       const bobIdentity = await upgradeUserToken(args.trustchainId, bobId, bobToken);
-      args.currentBob = makeCurrentUser(bobId, bobIdentity, args.trustchainId);
-      args.versionBob = makeV1User(opts.Tanker, bobId, bobToken, args.trustchainId);
-      args.currentAlice = makeCurrentUser(aliceId, aliceIdentity, args.trustchainId);
-      args.versionAlice = makeV1User(opts.Tanker, aliceId, aliceToken, args.trustchainId);
+
+      args.versionBob = makeV1User({
+        Tanker: opts.Tanker,
+        adapter: opts.adapter,
+        trustchainId: args.trustchainId,
+        userId: bobId,
+        token: bobToken,
+        prefix: 'bob1',
+      });
+      args.versionAlice = makeV1User({
+        Tanker: opts.Tanker,
+        adapter: opts.adapter,
+        trustchainId: args.trustchainId,
+        userId: aliceId,
+        token: aliceToken,
+        prefix: 'alice1',
+      });
+      args.currentBob = makeCurrentUser({
+        trustchainId: args.trustchainId,
+        identity: bobIdentity,
+        prefix: 'bob2',
+      });
+      args.currentAlice = makeCurrentUser({
+        trustchainId: args.trustchainId,
+        identity: aliceIdentity,
+        prefix: 'alice2',
+      });
+
       await args.versionBob.create();
       await args.versionAlice.create();
       await args.currentBob.signIn();
