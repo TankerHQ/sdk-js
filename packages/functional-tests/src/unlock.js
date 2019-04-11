@@ -16,7 +16,6 @@ const generateUnlockTests = (args: TestArgs) => {
   describe('unlock', () => {
     let bobLaptop;
     let bobPhone;
-    let bobId;
     let bobIdentity;
     let trustchainHelper;
 
@@ -25,7 +24,7 @@ const generateUnlockTests = (args: TestArgs) => {
     });
 
     beforeEach(async () => {
-      bobId = uuid.v4();
+      const bobId = uuid.v4();
       bobIdentity = await trustchainHelper.generateIdentity(bobId);
       await bobLaptop.signUp(bobIdentity);
     });
@@ -159,6 +158,40 @@ const generateUnlockTests = (args: TestArgs) => {
         await expect(bobPhone.signIn(bobIdentity, { verificationCode })).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
         expect(bobPhone.isOpen).to.be.false;
       });
+    });
+  });
+
+  describe('unlock methods in signUp', () => {
+    let bobLaptop;
+    let bobPhone;
+    let bobIdentity;
+    let trustchainHelper;
+
+    before(() => {
+      ({ bobLaptop, bobPhone, trustchainHelper } = args);
+    });
+
+    beforeEach(async () => {
+      const bobId = uuid.v4();
+      bobIdentity = await trustchainHelper.generateIdentity(bobId);
+    });
+
+    afterEach(async () => {
+      await Promise.all([
+        bobLaptop.signOut(),
+        bobPhone.signOut(),
+      ]);
+    });
+
+    it('should unlock by password', async () => {
+      await expect(bobLaptop.signUp(bobIdentity, { password: 'my pass' })).to.be.fulfilled;
+      await expect(expectUnlock(bobPhone, bobIdentity, { password: 'my pass' })).to.be.fulfilled;
+    });
+
+    it('should unlock by email', async () => {
+      await expect(bobLaptop.signUp(bobIdentity, { email: 'john@doe.com' })).to.be.fulfilled;
+      const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+      await expect(expectUnlock(bobPhone, bobIdentity, { verificationCode })).to.be.fulfilled;
     });
   });
 };

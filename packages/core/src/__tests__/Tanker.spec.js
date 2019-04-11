@@ -44,6 +44,7 @@ describe('Tanker', () => {
         { trustchainId: 'ok', dataStore: {} },
         // wrong adapter type
         { trustchainId: 'ok', dataStore: { adapter: 'not a function' } },
+        { trustchainId: 'ok', dataStore: { adapter: () => {} }, sdkType: undefined }
       ].forEach((invalidOptions, i) => {
         // $FlowExpectedError
         expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
@@ -74,18 +75,27 @@ describe('Tanker', () => {
       const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
       expect(mergedOptions).to.deep.equal(expectedOptions);
     });
+
+    it('should thow when using optionsWithDefaults with bad arguments', () => {
+      // $FlowExpectedError
+      expect(() => optionsWithDefaults('not an object', { a: 1 })).to.throw(InvalidArgument);
+      // $FlowExpectedError
+      expect(() => optionsWithDefaults({ a: 1 }, 'not an object')).to.throw(InvalidArgument);
+    });
   });
 
   describe('closed session', () => {
     let tanker;
+    let options;
 
     beforeEach(async () => {
-      tanker = new Tanker({
+      options = {
         trustchainId: utils.toBase64(trustchainId),
         socket: ({}: any),
         dataStore: { ...dataStoreConfig, prefix: makePrefix() },
         sdkType: 'test'
-      });
+      };
+      tanker = new Tanker(options);
     });
 
     describe('signUp', () => {
@@ -96,6 +106,15 @@ describe('Tanker', () => {
 
       it('should throw when identity is not base64', async () => {
         await expect(tanker.signUp('not b64')).to.be.rejectedWith(InvalidIdentity);
+      });
+
+      it('should throw when identity has invalid trustchain', async () => {
+        const identity = await createIdentity(
+          'zz',
+          utils.toBase64(trustchainKeyPair.privateKey),
+          userId,
+        );
+        await expect(tanker.signUp(identity)).to.be.rejectedWith(InvalidArgument);
       });
 
       it('should throw when identity is valid but truncated', async () => {
@@ -111,6 +130,15 @@ describe('Tanker', () => {
       it('should throw when trying to get deviceId', async () => {
         expect(() => tanker.deviceId).to.throw(InvalidSessionStatus);
       });
+    });
+
+    it('get options', async () => {
+      expect(tanker.options).to.deep.equal(options);
+    });
+
+    it('should throw if EncryptionOptions is invalid', async () => {
+      // $FlowExpectedError
+      expect(() => tanker._parseEncryptionOptions('not an object')).to.throw(InvalidArgument); // eslint-disable-line no-underscore-dangle
     });
   });
 
@@ -158,6 +186,23 @@ describe('Tanker', () => {
       it('should get deviceId', async () => {
         expect(() => tanker.deviceId).to.not.throw();
       });
+
+      it('should throw if revokeDevice has bad device ID', async () => {
+        // $FlowExpectedError
+        await expect(tanker.revokeDevice(null)).to.be.rejectedWith(InvalidArgument);
+      });
+
+      it('should throw if createGroup has bad users', async () => {
+        // $FlowExpectedError
+        await expect(tanker.createGroup(null)).to.be.rejectedWith(InvalidArgument);
+      });
+
+      it('should throw if updateGroupMembers has bad argments', async () => {
+        // $FlowExpectedError
+        await expect(tanker.updateGroupMembers('', { usersToAdd: null })).to.be.rejectedWith(InvalidArgument);
+        // $FlowExpectedError
+        await expect(tanker.updateGroupMembers(null, { usersToAdd: ['user1'] })).to.be.rejectedWith(InvalidArgument);
+      });
     });
 
     describe('getResourceId', () => {
@@ -192,6 +237,13 @@ describe('Tanker', () => {
           // $FlowExpectedError
           await expect(tanker.share([resourceId], v), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
         }
+      });
+    });
+
+    describe('unlock methods', () => {
+      it('should throw if hasRegisteredUnlockMethod asked for a wrong method', async () => {
+        // $FlowExpectedError
+        expect(() => tanker.hasRegisteredUnlockMethod('footRecognition')).to.throw(InvalidArgument);
       });
     });
   });
