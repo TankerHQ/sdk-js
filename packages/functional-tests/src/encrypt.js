@@ -178,7 +178,7 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('throws when sharing a resource that doesn\'t exist', async () => {
-        const badResourceId = 'AAAAAAAAAAAAAAAAAAAA';
+        const badResourceId = 'AAAAAAAAAAAAAAAAAAAAAA==';
 
         await expectRejectedWithProperty({
           handler: async () => args.bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] }),
