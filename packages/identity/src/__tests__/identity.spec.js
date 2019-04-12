@@ -101,13 +101,13 @@ describe('Identity', () => {
       checkDelegationSignature(identity, trustchain.pk);
     });
 
-    it('returns a tanker public identity from a tanker permanent indentity', async () => {
+    it('returns a tanker public identity from a tanker permanent identity', async () => {
       const b64PublicIdentity = await getPublicIdentity(b64Identity);
 
       const { trustchain_id, target, value, ...trail } = _deserializePublicIdentity(b64PublicIdentity); // eslint-disable-line camelcase
       expect(trustchain_id).to.equal(trustchain.id);
       expect(target).to.equal('user');
-      expect(utils.fromBase64(value)).to.have.lengthOf(tcrypto.HASH_SIZE);
+      expect(value).to.equal(obfuscatedUserId);
 
       expect(trail).to.be.empty;
     });
@@ -131,7 +131,7 @@ describe('Identity', () => {
       expect(private_signature_key).to.be.a('string').that.is.not.empty;
     });
 
-    it('returns a tanker public identity from a tanker provisional indentity', async () => {
+    it('returns a tanker public identity from a tanker provisional identity', async () => {
       const b64PublicIdentity = await getPublicIdentity(b64Identity);
 
       const provisionalIdentity = _deserializeProvisionalIdentity(b64Identity);
