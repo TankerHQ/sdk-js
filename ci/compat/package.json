@@ -5,8 +5,7 @@
   "scripts": {
     "test": "../../node_modules/.bin/mocha \"packages/**/index.spec.js\" --exit --recursive --full-trace --trace-warnings --reporter=spec --require ../../config/tests/babel.setup.js",
     "lint:js": "../../node_modules/.bin/eslint \"packages/*/*.js\"",
-    "lint:flow": "../../node_modules/.bin/flow check",
-    "proof": "yarn lint:js && yarn lint:flow && yarn test"
+    "proof": "yarn lint:js && yarn test"
   },
   "workspaces": {
     "packages": [

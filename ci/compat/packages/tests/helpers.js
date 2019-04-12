@@ -1,46 +1,49 @@
 // @flow
 
-import fs from 'fs';
-import path from 'path';
-
 import { tankerUrl } from '../../../../packages/functional-tests/src/Helpers';
 import { fromBase64, toBase64 } from '../../../../packages/client-node';
-
 
 const password = 'plop';
 
 class BaseUser {
-  _tanker: any;
-  _id: string;
-
-  constructor(tanker: any, id: string) {
+  constructor(tanker) {
     this._tanker = tanker;
-    this._id = id;
   }
 
-  async encrypt(message: string, userIds: Array<string>, groupIds: Array<string>) {
+  async encrypt(message, userIds, groupIds) {
     return toBase64(await this._tanker.encrypt(message, { shareWithUsers: userIds, shareWithGroups: groupIds }));
   }
 
-  async decrypt(encryptedData: string) {
+  async decrypt(encryptedData) {
     return this._tanker.decrypt(fromBase64(encryptedData));
   }
 
-  async createGroup(ids: Array<string>) {
+  async createGroup(ids) {
     return this._tanker.createGroup(ids);
   }
 
-  get id() {
-    return this._id;
+  async revokeDevice(deviceId) {
+    return this._tanker.revokeDevice(deviceId);
+  }
+
+  get deviceId() {
+    return this._tanker.deviceId;
+  }
+
+  getRevocationPromise () {
+    return new Promise(resolve => this._tanker.once('revoked', resolve));
   }
 }
 
 class UserV1 extends BaseUser {
-  _token: string;
-
-  constructor(tanker: any, id: string, token: string) {
-    super(tanker, id);
+  constructor(tanker, id, token) {
+    super(tanker);
     this._token = token;
+    this._id = id;
+  }
+
+  get id() {
+    return this._id;
   }
 
   async open() {
@@ -64,10 +67,8 @@ class UserV1 extends BaseUser {
 }
 
 class UserV2 extends BaseUser {
-  _identity: string;
-
-  constructor(tanker: any, id: string, identity: string) {
-    super(tanker, id);
+  constructor(tanker, identity) {
+    super(tanker);
     this._identity = identity;
   }
 
@@ -84,31 +85,29 @@ class UserV2 extends BaseUser {
   }
 }
 
-function makeTanker(Tanker: any, userId: string, trustchainId: string, prefix: string) {
-  const dbPath = path.join('/tmp', `${prefix}${userId}${trustchainId.replace(/[/\\]/g, '_')}/`);
-  if (!fs.existsSync(dbPath)) {
-    fs.mkdirSync(dbPath);
-  }
+function makeTanker(Tanker, adapter, trustchainId, prefix) {
   return new Tanker({
     trustchainId,
     url: tankerUrl,
     sdkType: 'test',
     dataStore: {
-      dbPath,
+      adapter,
+      prefix,
     },
   });
 }
 
-export function makeV1User(Tanker: any, userId: string, token: string, trustchainId: string, prefix: string = 'default') {
-  const tanker = makeTanker(Tanker, userId, trustchainId, prefix);
+export function makeV1User(opts) {
+  const tanker = makeTanker(opts.Tanker, opts.adapter, opts.trustchainId, opts.prefix);
   tanker.on('unlockRequired', async () => {
     await tanker.unlockCurrentDevice({ password });
   });
-  return new UserV1(tanker, userId, token);
+  return new UserV1(tanker, opts.userId, opts.token);
 }
 
-export function makeCurrentUser(userId: string, identity: string, trustchainId: string, prefix: string = 'default') {
+export function makeCurrentUser(opts) {
   const Tanker = require('../../../../packages/client-node').default; // eslint-disable-line global-require
-  const tanker = makeTanker(Tanker, userId, trustchainId, prefix);
-  return new UserV2(tanker, userId, identity);
+  const adapter = require('../../../../packages/datastore/pouchdb-memory').default; // eslint-disable-line global-require
+  const tanker = makeTanker(Tanker, adapter, opts.trustchainId, opts.prefix);
+  return new UserV2(tanker, opts.identity);
 }
