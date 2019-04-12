@@ -1,6 +1,6 @@
 // @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { type SecretProvisionalIdentity, type PublicIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser, _deserializePublicIdentity } from '@tanker/identity';
+import { utils, type b64string } from '@tanker/crypto';
+import { type PublicIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser, _deserializePublicIdentity } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -186,21 +186,5 @@ export default class DataProtector {
       findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId, true)
     };
     return new DecryptorStream(resourceIdKeyMapper);
-  }
-
-  async provisionalIdentityClaim(provisionalIdentity: SecretProvisionalIdentity, verificationCode: string, appInvitePrivateSignatureKey: Uint8Array, appInvitePrivateEncryptionKey: Uint8Array): Promise<void> {
-    if (provisionalIdentity.target !== 'email')
-      throw new Error(`unsupported provisional identity target ${provisionalIdentity.target}`);
-
-    const tankerKeys = await this._client.getProvisionalIdentityKeys({ email: provisionalIdentity.value }, verificationCode);
-    const provisionalUserKeys = {
-      ...tankerKeys,
-      appEncryptionKeyPair: tcrypto.getEncryptionKeyPairFromPrivateKey(appInvitePrivateEncryptionKey),
-      appSignatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(appInvitePrivateSignatureKey),
-    };
-    const userPubKey = this._localUser.currentUserKey.publicKey;
-    const block = this._localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this._localUser.userId, userPubKey, provisionalUserKeys);
-
-    await this._client.sendBlock(block);
   }
 }

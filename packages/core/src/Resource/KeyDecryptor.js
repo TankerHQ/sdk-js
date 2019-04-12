@@ -2,7 +2,7 @@
 
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 
-import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup } from '../Blocks/Nature';
+import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from '../Blocks/Nature';
 import GroupStore from '../Groups/GroupStore';
 import LocalUser from '../Session/LocalUser';
 import UserAccessor from '../Users/UserAccessor';
@@ -47,6 +47,15 @@ export class KeyDecryptor {
     return tcrypto.sealDecrypt(keyPublishEntry.key, group.encryptionKeyPair);
   }
 
+  async decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
+    const keys = this._localUser.findProvisionalUserKey(keyPublishEntry.recipient);
+    if (!keys)
+      return null;
+    const d1 = tcrypto.sealDecrypt(keyPublishEntry.key, keys.tankerEncryptionKeyPair);
+    const d2 = tcrypto.sealDecrypt(d1, keys.appEncryptionKeyPair);
+    return d2;
+  }
+
   async keyFromKeyPublish(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
     let resourceKey: Promise<?Key>;
 
@@ -57,6 +66,8 @@ export class KeyDecryptor {
         resourceKey = this.decryptResourceKeyPublishedToUser(keyPublishEntry);
       } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
         resourceKey = this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
+      } else if (isKeyPublishToProvisionalUser(keyPublishEntry.nature)) {
+        resourceKey = this.decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry);
       } else {
         resourceKey = Promise.resolve(null);
       }

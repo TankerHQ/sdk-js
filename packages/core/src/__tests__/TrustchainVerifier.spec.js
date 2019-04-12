@@ -208,5 +208,17 @@ describe('TrustchainVerifier', () => {
       expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
       expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
     });
+
+    it('verifies claim provisional identity', async () => {
+      const provisionalUserKeys = {
+        appSignatureKeyPair: tcrypto.makeSignKeyPair(),
+        appEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+        tankerSignatureKeyPair: tcrypto.makeSignKeyPair(),
+        tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+      };
+
+      const claim = await builder.addProvisionalIdentityClaim({ from: author, provisionalUserKeys });
+      await expect(builder.trustchainVerifier.verifyClaimsForUser(claim.unverifiedProvisionalIdentityClaim.user_id)).to.be.fulfilled;
+    });
   });
 });

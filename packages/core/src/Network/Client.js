@@ -7,7 +7,7 @@ import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tan
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { ServerError, AuthenticationError } from '../errors';
+import { NothingToClaim, ServerError, AuthenticationError } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 import { UnlockKeyAnswer, type UnlockKeyMessage, type UnlockClaims, type UnlockKeyRequest } from '../Unlock/unlock';
 
@@ -306,6 +306,8 @@ export class Client extends EventEmitter {
       email: provisionalIdentity.email,
       verificationCode,
     });
+    if (!result)
+      throw new NothingToClaim('nothing to claim');
     if (result.error)
       throw new ServerError(result.error, this.trustchainId);
 

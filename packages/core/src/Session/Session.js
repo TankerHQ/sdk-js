@@ -1,5 +1,8 @@
 // @flow
 
+import { tcrypto, utils } from '@tanker/crypto';
+import { type SecretProvisionalIdentity } from '@tanker/identity';
+
 import Trustchain from '../Trustchain/Trustchain';
 import UserAccessor from '../Users/UserAccessor';
 import Storage from './Storage';
@@ -89,5 +92,23 @@ export class Session {
     const revokeDeviceBlock = this.localUser.blockGenerator.makeDeviceRevocationBlock(user, this.storage.keyStore.currentUserKey, revokedDeviceId);
     await this._client.sendBlock(revokeDeviceBlock);
     await this._trustchain.sync();
+  }
+
+  async claimProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity, verificationCode: string): Promise<void> {
+    if (provisionalIdentity.target !== 'email')
+      throw new Error(`unsupported provisional identity target ${provisionalIdentity.target}`);
+
+    const appProvisionalUserPrivateSignatureKey = utils.fromBase64(provisionalIdentity.private_signature_key);
+    const appProvisionalUserPrivateEncryptionKey = utils.fromBase64(provisionalIdentity.private_encryption_key);
+    const tankerKeys = await this._client.getProvisionalIdentityKeys({ email: provisionalIdentity.value }, verificationCode);
+    const provisionalUserKeys = {
+      ...tankerKeys,
+      appEncryptionKeyPair: tcrypto.getEncryptionKeyPairFromPrivateKey(appProvisionalUserPrivateEncryptionKey),
+      appSignatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(appProvisionalUserPrivateSignatureKey),
+    };
+    const userPubKey = this.localUser.currentUserKey.publicKey;
+    const block = this.localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this.localUser.userId, userPubKey, provisionalUserKeys);
+
+    await this._client.sendBlock(block);
   }
 }

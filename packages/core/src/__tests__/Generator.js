@@ -1,11 +1,12 @@
 // @flow
 import { tcrypto, random, utils } from '@tanker/crypto';
-import { obfuscateUserId } from '@tanker/identity';
+import { obfuscateUserId, type ProvisionalUserKeys } from '@tanker/identity';
 
 import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { Device, User } from '../Users/User';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { encodeArrayLength } from '../Blocks/Serialize';
 
@@ -16,6 +17,7 @@ import { serializeTrustchainCreation,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
   type ProvisionalPublicKey,
+  serializeProvisionalIdentityClaim,
   type UserDeviceRecord,
   type KeyPublishRecord,
   SEALED_KEY_SIZE } from '../Blocks/payloads';
@@ -110,6 +112,13 @@ export type GeneratorUserGroupAdditionResult = {
   entry: UnverifiedEntry,
   block: Block,
   blockPrivateSignatureKey: Uint8Array,
+}
+
+export type GeneratorProvisionalIdentityClaimResult = {
+  entry: UnverifiedEntry,
+  block: Block,
+  provisionalUserKeys: ProvisionalUserKeys,
+  unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim,
 }
 
 type CreateUserResult = {
@@ -555,6 +564,53 @@ class Generator {
     };
   }
 
+  async newProvisionalIdentityClaim(from: GeneratorDevice, provisionalUserKeys: ProvisionalUserKeys): Promise<GeneratorProvisionalIdentityClaimResult> {
+    const deviceId = utils.toBase64(from.id);
+    const userId = this.usersDevices[deviceId];
+    const { userKeys } = this.users[userId];
+    if (!userKeys)
+      throw new Error('Generator: cannot add a ProvisionalIdentityClaim on a device pre-V3');
+
+    const multiSignedPayload = utils.concatArrays(
+      from.id,
+      provisionalUserKeys.appSignatureKeyPair.publicKey,
+      provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+    );
+    const appSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.appSignatureKeyPair.privateKey);
+    const tankerSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.tankerSignatureKeyPair.privateKey);
+
+    const keysToEncrypt = utils.concatArrays(provisionalUserKeys.appEncryptionKeyPair.privateKey, provisionalUserKeys.tankerEncryptionKeyPair.privateKey);
+    const encryptedprovisionalUserKeys = tcrypto.sealEncrypt(keysToEncrypt, userKeys.publicKey);
+
+    const obfuscatedUserId = obfuscateUserId(this.trustchainId, userId);
+    const payload = {
+      user_id: obfuscatedUserId,
+      app_provisional_identity_signature_public_key: provisionalUserKeys.appSignatureKeyPair.publicKey,
+      tanker_provisional_identity_signature_public_key: provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+      author_signature_by_app_key: appSignature,
+      author_signature_by_tanker_key: tankerSignature,
+      recipient_user_public_key: userKeys.publicKey,
+      encrypted_provisional_identity_private_keys: encryptedprovisionalUserKeys,
+    };
+    this.trustchainIndex += 1;
+    const block = signBlock({
+      index: this.trustchainIndex,
+      trustchain_id: this.trustchainId,
+      nature: NATURE.provisional_identity_claim,
+      author: from.id,
+      payload: serializeProvisionalIdentityClaim(payload)
+    }, from.signKeys.privateKey);
+    this.pushedBlocks.push(block);
+
+    const entry: UnverifiedEntry = { ...blockToEntry(block) };
+    const unverifiedProvisionalIdentityClaim = { ...entry, ...entry.payload_unverified };
+    return {
+      block,
+      entry,
+      unverifiedProvisionalIdentityClaim,
+      provisionalUserKeys,
+    };
+  }
 
   userId(userName: string): Uint8Array {
     return obfuscateUserId(this.trustchainId, userName);
