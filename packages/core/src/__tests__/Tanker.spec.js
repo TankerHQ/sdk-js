@@ -108,10 +108,12 @@ describe('Tanker', () => {
         await expect(tanker.signUp('not b64')).to.be.rejectedWith(InvalidIdentity);
       });
 
-      it('should throw when identity has invalid trustchain', async () => {
+      it('should throw when identity\'s trustchain does not match tanker\'s', async () => {
+        const otherTrustchainKeyPair = tcrypto.makeSignKeyPair();
+        const otherTrustchainId = random(tcrypto.HASH_SIZE);
         const identity = await createIdentity(
-          'zz',
-          utils.toBase64(trustchainKeyPair.privateKey),
+          utils.toBase64(otherTrustchainId),
+          utils.toBase64(otherTrustchainKeyPair.privateKey),
           userId,
         );
         await expect(tanker.signUp(identity)).to.be.rejectedWith(InvalidArgument);
