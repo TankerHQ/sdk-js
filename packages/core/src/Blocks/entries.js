@@ -14,6 +14,7 @@ import {
   unserializeDeviceRevocationV2,
   unserializeUserGroupCreationV1,
   unserializeUserGroupAdditionV1,
+  unserializeProvisionalIdentityClaim,
 } from './payloads';
 
 import { type Nature, NATURE } from './Nature';
@@ -22,6 +23,7 @@ import { type Block, hashBlock } from './Block';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { type UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 import { type UnverifiedDeviceCreation, type UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 
 
 export type VerificationFields = {|
@@ -208,5 +210,21 @@ export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): Unv
     ...verificationFields,
     ...userEntry,
     user_id: userId
+  };
+}
+
+export function provisionalIdentityClaimFromBlock(block: Block): UnverifiedProvisionalIdentityClaim {
+  const verificationFields = verificationFieldsFromBlock(block);
+  let userEntry;
+
+  switch (block.nature) {
+    case NATURE.provisional_identity_claim:
+      userEntry = unserializeProvisionalIdentityClaim(block.payload);
+      break;
+    default: throw new Error('Assertion error: wrong type for provisionalIdentityClaimFromBlock');
+  }
+  return {
+    ...verificationFields,
+    ...userEntry,
   };
 }

@@ -89,9 +89,22 @@ export type UserGroupAdditionRecordV1 = {|
   encrypted_group_private_encryption_keys_for_users: Array<GroupEncryptedKeyV1>,
   self_signature_with_current_key: Uint8Array,
 |}
+
 export type UserGroupRecord = UserGroupCreationRecordV1 | UserGroupAdditionRecordV1
 
-export type Record = TrustchainCreationRecord | UserDeviceRecord | KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | KeyPublishToProvisionalUserRecord | DeviceRevocationRecord | UserGroupRecord;
+export type ProvisionalIdentityClaimRecord = {|
+  user_id: Uint8Array,
+  app_provisional_identity_signature_public_key: Uint8Array,
+  tanker_provisional_identity_signature_public_key: Uint8Array,
+  author_signature_by_app_key: Uint8Array,
+  author_signature_by_tanker_key: Uint8Array,
+  recipient_user_public_key: Uint8Array,
+  encrypted_provisional_identity_private_keys: Uint8Array,
+|}
+
+export type Record = TrustchainCreationRecord | UserDeviceRecord | DeviceRevocationRecord |
+                      KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | KeyPublishToProvisionalUserRecord |
+                      UserGroupRecord | ProvisionalIdentityClaimRecord
 
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
 const currentVersion = 1;
@@ -428,6 +441,47 @@ export function unserializeUserGroupAdditionV1(src: Uint8Array): UserGroupAdditi
   ]);
 }
 
+export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: ProvisionalIdentityClaimRecord): Uint8Array {
+  if (provisionalIdentityClaim.user_id.length !== tcrypto.HASH_SIZE)
+    throw new Error('Assertion error: invalid claim provisional user id size');
+  if (provisionalIdentityClaim.app_provisional_identity_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid claim provisional app public key size');
+  if (provisionalIdentityClaim.tanker_provisional_identity_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid claim provisional tanker public key size');
+  if (provisionalIdentityClaim.author_signature_by_app_key.length !== tcrypto.SIGNATURE_SIZE)
+    throw new Error('Assertion error: invalid claim provisional app signature size');
+  if (provisionalIdentityClaim.author_signature_by_tanker_key.length !== tcrypto.SIGNATURE_SIZE)
+    throw new Error('Assertion error: invalid claim provisional tanker signature size');
+  if (provisionalIdentityClaim.recipient_user_public_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid claim provisional recipient key size');
+  if (provisionalIdentityClaim.encrypted_provisional_identity_private_keys.length !== tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
+                                                            + tcrypto.SEAL_OVERHEAD)
+    throw new Error('Assertion error: invalid claim provisional encrypted keys size');
+
+  return utils.concatArrays(
+    provisionalIdentityClaim.user_id,
+    provisionalIdentityClaim.app_provisional_identity_signature_public_key,
+    provisionalIdentityClaim.tanker_provisional_identity_signature_public_key,
+    provisionalIdentityClaim.author_signature_by_app_key,
+    provisionalIdentityClaim.author_signature_by_tanker_key,
+    provisionalIdentityClaim.recipient_user_public_key,
+    provisionalIdentityClaim.encrypted_provisional_identity_private_keys,
+  );
+}
+
+export function unserializeProvisionalIdentityClaim(src: Uint8Array): ProvisionalIdentityClaimRecord {
+  return unserializeGeneric(src, [
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'user_id'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'app_provisional_identity_signature_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_provisional_identity_signature_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'author_signature_by_app_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'author_signature_by_tanker_key'),
+    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient_user_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
+                                + tcrypto.SEAL_OVERHEAD, o, 'encrypted_provisional_identity_private_keys'),
+  ]);
+}
+
 export function unserializePayload(block: Block): Record {
   switch (block.nature) {
     case NATURE.trustchain_creation: return unserializeTrustchainCreation(block.payload);
@@ -442,6 +496,7 @@ export function unserializePayload(block: Block): Record {
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
     case NATURE.user_group_creation_v1: return unserializeUserGroupCreationV1(block.payload);
     case NATURE.user_group_addition_v1: return unserializeUserGroupAdditionV1(block.payload);
+    case NATURE.provisional_identity_claim: return unserializeProvisionalIdentityClaim(block.payload);
     default: throw new UpgradeRequiredError(`unknown nature: ${block.nature}`);
   }
 }
