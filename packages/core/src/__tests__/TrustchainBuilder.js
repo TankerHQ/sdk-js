@@ -144,6 +144,7 @@ export default class TrustchainBuilder {
       encryptionPair: device.encryptionKeys,
       userKeys: user.userKeys ? [user.userKeys] : [],
       encryptedUserKeys: [],
+      provisionalUserKeys: [],
       userSecret: new Uint8Array(32),
     });
     keystore._userKeys = {}; // eslint-disable-line no-underscore-dangle

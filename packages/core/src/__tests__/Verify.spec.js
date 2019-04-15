@@ -12,7 +12,8 @@ import {
   verifyDeviceRevocation,
   verifyKeyPublish,
   verifyUserGroupCreation,
-  verifyUserGroupAddition
+  verifyUserGroupAddition,
+  verifyProvisionalIdentityClaim,
 } from '../Trustchain/Verify';
 
 import { type User } from '../Users/User';
@@ -22,6 +23,7 @@ import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../Un
 import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
+import type { UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 
 import { NATURE } from '../Blocks/Nature';
 
@@ -573,6 +575,59 @@ describe('BlockVerification', () => {
       assertFailWithNature(
         () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, null),
         'invalid_recipient'
+      );
+    });
+  });
+
+  describe('claim provisional identity', () => {
+    let user: User;
+    let unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim;
+    let userId: Uint8Array;
+
+    beforeEach(() => {
+      testGenerator.makeTrustchainCreation();
+      userId = random(tcrypto.HASH_SIZE);
+      const userCreation = testGenerator.makeUserCreation(userId);
+      user = userCreation.user;
+      const userPublicKey = userCreation.testUser.userKeys.slice(-1)[0].publicKey;
+      const claim = testGenerator.makeProvisionalIdentityClaim(userCreation, userId, userPublicKey);
+      unverifiedProvisionalIdentityClaim = claim.unverifiedProvisionalIdentityClaim;
+    });
+
+    it('should accept a valid claim', async () => {
+      expect(() => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId))
+        .to.not.throw();
+    });
+
+    it('should reject a claim with an invalid author', async () => {
+      unverifiedProvisionalIdentityClaim.user_id[0] += 1;
+      assertFailWithNature(
+        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
+        'invalid_author'
+      );
+    });
+
+    it('should reject a claim with an invalid signature', async () => {
+      unverifiedProvisionalIdentityClaim.signature[0] += 1;
+      assertFailWithNature(
+        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
+        'invalid_signature'
+      );
+    });
+
+    it('should reject a claim with an invalid app signature', async () => {
+      unverifiedProvisionalIdentityClaim.author_signature_by_app_key[0] += 1;
+      assertFailWithNature(
+        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
+        'invalid_signature'
+      );
+    });
+
+    it('should reject a claim with an invalid tanker signature', async () => {
+      unverifiedProvisionalIdentityClaim.author_signature_by_tanker_key[0] += 1;
+      assertFailWithNature(
+        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
+        'invalid_signature'
       );
     });
   });

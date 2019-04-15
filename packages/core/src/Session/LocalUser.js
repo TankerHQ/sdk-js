@@ -55,9 +55,11 @@ export class LocalUser extends EventEmitter {
       this._userKeys[utils.toBase64(userKey.publicKey)] = userKey;
       this._currentUserKey = userKey;
     }
+    const provisionalUserKeys = this._keyStore.provisionalUserKeys || [];
+    for (const key of provisionalUserKeys)
+      this._provisionalUserKeys[key.id] = { ...key };
     this._deviceSignatureKeyPair = this._keyStore.signatureKeyPair;
     this._deviceEncryptionKeyPair = this._keyStore.encryptionKeyPair;
-
     this._deviceId = this._keyStore.deviceId;
   }
 
@@ -79,8 +81,7 @@ export class LocalUser extends EventEmitter {
     const id = utils.toBase64(utils.concatArrays(provisionalIdentityClaim.app_provisional_identity_signature_public_key, provisionalIdentityClaim.tanker_provisional_identity_signature_public_key));
 
     this._provisionalUserKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
-
-    // TODO store them
+    await this._keyStore.addProvisionalUserKeys(id, appEncryptionKeyPair, tankerEncryptionKeyPair);
   }
 
   applyDeviceCreation = async (deviceCreation: VerifiedDeviceCreation) => {

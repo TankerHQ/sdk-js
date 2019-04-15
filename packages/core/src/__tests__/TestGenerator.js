@@ -3,13 +3,20 @@ import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
 import { type PublicProvisionalUser } from '@tanker/identity';
 
-import { deviceCreationFromBlock, deviceRevocationFromBlock, keyPublishFromBlock, userGroupEntryFromBlock } from '../Blocks/entries';
+import {
+  deviceCreationFromBlock,
+  deviceRevocationFromBlock,
+  keyPublishFromBlock,
+  userGroupEntryFromBlock,
+  provisionalIdentityClaimFromBlock,
+} from '../Blocks/entries';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import type { UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import { hashBlock, signBlock, type Block } from '../Blocks/Block';
@@ -76,6 +83,11 @@ export type TestUserGroup = {
   block: Block,
   group: Group,
   externalGroup: ExternalGroup
+};
+
+export type TestIdentityClaim = {
+  unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim,
+  block: Block,
 };
 
 function createDelegationToken(userId: Uint8Array, trustchainPrivateKey: Uint8Array): DelegationToken {
@@ -369,6 +381,28 @@ class TestGenerator {
       unverifiedKeyPublish: keyPublishFromBlock(block),
       block,
       resourceId
+    };
+  }
+
+  makeProvisionalIdentityClaim = (parentDevice: TestDeviceCreation, userId: Uint8Array, userPublicKey: Uint8Array): TestIdentityClaim => {
+    const provisionalIdentityPrivateKeys = {
+      appSignatureKeyPair: tcrypto.makeSignKeyPair(),
+      appEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+      tankerSignatureKeyPair: tcrypto.makeSignKeyPair(),
+      tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+    };
+    const blockGenerator = new BlockGenerator(
+      this._trustchainId,
+      parentDevice.testDevice.signKeys.privateKey,
+      parentDevice.testDevice.id,
+    );
+    this._trustchainIndex += 1;
+    const block = blockGenerator.makeProvisionalIdentityClaimBlock(userId, userPublicKey, provisionalIdentityPrivateKeys);
+    block.index = this._trustchainIndex;
+
+    return {
+      unverifiedProvisionalIdentityClaim: provisionalIdentityClaimFromBlock(block),
+      block,
     };
   }
 

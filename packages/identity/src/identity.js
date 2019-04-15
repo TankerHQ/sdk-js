@@ -46,6 +46,13 @@ export type PublicProvisionalUser = {|
   tankerEncryptionPublicKey: Uint8Array,
 |};
 
+export type ProvisionalUserKeys = {|
+  appSignatureKeyPair: tcrypto.SodiumKeyPair,
+  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
+  tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
+  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
+|};
+
 export type SecretIdentity = SecretPermanentIdentity | SecretProvisionalIdentity;
 export type PublicIdentity = PublicPermanentIdentity | PublicProvisionalIdentity;
 

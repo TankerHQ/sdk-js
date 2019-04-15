@@ -9,11 +9,18 @@ export type DeviceKeys = {|
   encryptionPair: tcrypto.SodiumKeyPair,
 |}
 
+export type ProvisionalUserKeyPairs = {|
+  id: string,
+  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
+  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
+|}
+
 type KeySafeObject = {
   ...DeviceKeys,
   userSecret: Uint8Array,
   userKeys: Array<tcrypto.SodiumKeyPair>,
   encryptedUserKeys: Array<UserKeys>,
+  provisionalUserKeys: Array<ProvisionalUserKeyPairs>,
 }
 
 function startsWith(haystack: string, needle: string) {
@@ -52,6 +59,7 @@ export default class KeySafe {
   encryptionPair: tcrypto.SodiumKeyPair;
   userKeys: Array<tcrypto.SodiumKeyPair>;
   encryptedUserKeys: Array<UserKeys>;
+  provisionalUserKeys: Array<ProvisionalUserKeyPairs>;
 
   constructor(obj: KeySafeObject) {
     if (!obj || !obj.signaturePair || !obj.encryptionPair)
@@ -61,13 +69,14 @@ export default class KeySafe {
   }
 
   fromObject = (obj: KeySafeObject) => {
-    const { deviceId, userSecret, signaturePair, encryptionPair, userKeys, encryptedUserKeys } = obj;
+    const { deviceId, userSecret, signaturePair, encryptionPair, userKeys, encryptedUserKeys, provisionalUserKeys } = obj;
     this.deviceId = deviceId;
     this.userSecret = userSecret;
     this.signaturePair = signaturePair;
     this.encryptionPair = encryptionPair;
     this.userKeys = userKeys;
     this.encryptedUserKeys = encryptedUserKeys;
+    this.provisionalUserKeys = provisionalUserKeys;
   };
 
   asObject = (): KeySafeObject => ({
@@ -77,6 +86,7 @@ export default class KeySafe {
     userKeys: this.userKeys,
     deviceId: this.deviceId,
     encryptedUserKeys: this.encryptedUserKeys,
+    provisionalUserKeys: this.provisionalUserKeys,
   });
 
   deviceKeys = (): DeviceKeys => ({
@@ -98,6 +108,7 @@ export default class KeySafe {
       encryptionPair: tcrypto.makeEncryptionKeyPair(),
       userKeys: [],
       encryptedUserKeys: [],
+      provisionalUserKeys: [],
     });
   }
 

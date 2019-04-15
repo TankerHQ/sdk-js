@@ -9,12 +9,14 @@ import TestGenerator from './TestGenerator';
 import { type UserKeys } from '../Blocks/payloads';
 import LocalUser from '../Session/LocalUser';
 import { extractUserData } from '../UserData';
+import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 class FakeKeyStore {
   signatureKeyPair: tcrypto.SodiumKeyPair;
   encryptionKeyPair: tcrypto.SodiumKeyPair;
   userKeys: Array<tcrypto.SodiumKeyPair>;
   encryptedUserKeys: Array<UserKeys>;
+  provisionalUserKeys: Array<ProvisionalUserKeyPairs>;
   deviceId: Uint8Array;
 
   constructor(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair) {
@@ -22,6 +24,7 @@ class FakeKeyStore {
     this.encryptionKeyPair = encryptionKeyPair;
     this.userKeys = [];
     this.encryptedUserKeys = [];
+    this.provisionalUserKeys = [];
   }
 
   setDeviceId = (deviceId: Uint8Array) => { this.deviceId = deviceId; }
@@ -29,6 +32,7 @@ class FakeKeyStore {
   takeEncryptedUserKeys = () => this.encryptedUserKeys
   addEncryptedUserKey = (keys: UserKeys) => { this.encryptedUserKeys.push(keys); };
   prependUserKey = (userKey: tcrypto.SodiumKeyPair) => this.userKeys.push(userKey);
+  addProvisionalUserKeys = (id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair) => this.provisionalUserKeys.push({ id, appEncryptionKeyPair, tankerEncryptionKeyPair });
 }
 
 describe('Local User', () => {
@@ -100,6 +104,13 @@ describe('Local User', () => {
       await localUser.applyDeviceCreation(deviceCreation2.unverifiedDeviceCreation);
       expect([deviceRevocation.testUser.userKeys[1], deviceRevocation.testUser.userKeys[0]]).excluding('index').to.deep.equal(keyStore.userKeys);
       expect(deviceRevocation.testUser.userKeys[1]).excluding('index').to.deep.equal(localUser.currentUserKey);
+    });
+
+    it('stores provisional identity keys', async () => {
+      await localUser.applyDeviceCreation(deviceCreation2.unverifiedDeviceCreation);
+      const claim = testGenerator.makeProvisionalIdentityClaim(deviceCreation1, localUser.userId, localUser.currentUserKey.publicKey);
+      await localUser.applyProvisionalIdentityClaim(claim.unverifiedProvisionalIdentityClaim);
+      expect(keyStore.provisionalUserKeys.length).to.equal(1);
     });
   });
 

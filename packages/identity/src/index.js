@@ -5,6 +5,7 @@ export type {
   PublicPermanentIdentity, SecretPermanentIdentity,
   PublicProvisionalIdentity, SecretProvisionalIdentity,
   PublicIdentity, SecretIdentity, PublicProvisionalUser,
+  ProvisionalUserKeys,
 } from './identity';
 
 export {
