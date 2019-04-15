@@ -13,6 +13,7 @@ export default class Keystore {
   _ds: DataStore<*>;
   _safe: KeySafe;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
+  _provisionalUserKeys: { [string]: { appPrivateKey: Uint8Array, tankerPrivateKey: Uint8Array } };
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE, persistent: true }] },
@@ -20,8 +21,9 @@ export default class Keystore {
     { version: 3, tables: [{ name: TABLE, persistent: true }] },
     { version: 4, tables: [{ name: TABLE, persistent: true }] },
     { version: 5, tables: [{ name: TABLE, persistent: true }] },
+    { version: 6, tables: [{ name: TABLE, persistent: true }] },
     // {
-    //   version: 5,
+    //   version: 7,
     //   tables: [{
     //     name: TABLE,
     //     persistent: true,

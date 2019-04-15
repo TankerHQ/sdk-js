@@ -144,6 +144,10 @@ export default class GroupStore {
       version: 5,
       ...schemaV3
     },
+    {
+      version: 6,
+      ...schemaV3
+    },
   ];
 
   constructor(ds: DataStore<*>, userSecret: Uint8Array) {

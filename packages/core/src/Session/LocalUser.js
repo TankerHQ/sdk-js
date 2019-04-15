@@ -10,6 +10,7 @@ import BlockGenerator from '../Blocks/BlockGenerator';
 import { type UserData } from '../UserData';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 
 export type DeviceKeys = {|
   deviceId: ?b64string,
@@ -28,6 +29,7 @@ export class LocalUser extends EventEmitter {
   _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
   _currentUserKey: tcrypto.SodiumKeyPair;
+  _provisionalUserKeys: { [string]: { appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair } } = {};
 
   _keyStore: KeyStore;
 
@@ -61,6 +63,24 @@ export class LocalUser extends EventEmitter {
 
   setUnlockMethods = (unlockMethods: UnlockMethods) => {
     this._unlockMethods = unlockMethods;
+  }
+
+  applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim) => {
+    if (!utils.equalArray(provisionalIdentityClaim.user_id, this.userId))
+      throw new Error('Assertion error: can not apply a claim to another user');
+
+    const userKeyPair = this.findUserKey(provisionalIdentityClaim.recipient_user_public_key);
+
+    const provisionalUserPrivateKeys = tcrypto.sealDecrypt(provisionalIdentityClaim.encrypted_provisional_identity_private_keys, userKeyPair);
+
+    const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
+    const tankerEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
+
+    const id = utils.toBase64(utils.concatArrays(provisionalIdentityClaim.app_provisional_identity_signature_public_key, provisionalIdentityClaim.tanker_provisional_identity_signature_public_key));
+
+    this._provisionalUserKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
+
+    // TODO store them
   }
 
   applyDeviceCreation = async (deviceCreation: VerifiedDeviceCreation) => {
@@ -192,6 +212,8 @@ export class LocalUser extends EventEmitter {
 
 
   findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
+
+  findProvisionalUserKey = (recipient: Uint8Array) => this._provisionalUserKeys[utils.toBase64(recipient)]
 
   deviceKeys = (): DeviceKeys => ({
     signaturePair: this._deviceSignatureKeyPair,
