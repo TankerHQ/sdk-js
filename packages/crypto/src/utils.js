@@ -1,6 +1,8 @@
 // @flow
-import { InvalidArgument } from '@tanker/errors';
+/* eslint-disable no-bitwise */
 import sodium from 'libsodium-wrappers';
+import { InvalidArgument } from '@tanker/errors';
+
 import { type b64string, type safeb64string } from './aliases';
 import { generichash } from './hash';
 
@@ -12,18 +14,100 @@ function assertArrayTypes(a: Uint8Array, b: Uint8Array) {
   }
 }
 
+function uint6ToB64(uint6) {
+  if (uint6 < 26)
+    return uint6 + 65;
+  if (uint6 < 52)
+    return uint6 + 71;
+  if (uint6 < 62)
+    return uint6 - 4;
+  if (uint6 === 62)
+    return 43;
+  if (uint6 === 63)
+    return 47;
+  return 65;
+}
+
 export function toBase64(bytes: Uint8Array): b64string {
   if (!(bytes instanceof Uint8Array))
     throw new TypeError('"bytes" is not a Uint8Array');
 
-  return sodium.to_base64(bytes, sodium.base64_variants.ORIGINAL);
+  let mod3 = 2;
+  let uint24 = 0;
+  let output = '';
+  const len = bytes.length;
+
+  for (let pos = 0; pos < len; pos++) {
+    mod3 = pos % 3;
+
+    uint24 |= bytes[pos] << (16 >>> mod3 & 24);
+    if (mod3 === 2) {
+      output += String.fromCharCode(uint6ToB64(uint24 >>> 18 & 63),
+        uint6ToB64(uint24 >>> 12 & 63),
+        uint6ToB64(uint24 >>> 6 & 63),
+        uint6ToB64(uint24 & 63));
+      uint24 = 0;
+    }
+  }
+
+  // padding
+  if (mod3 !== 2) {
+    output += String.fromCharCode(uint6ToB64(uint24 >>> 18 & 63),
+      uint6ToB64(uint24 >>> 12 & 63),
+      mod3 === 0 ? 61 : uint6ToB64(uint24 >>> 6 & 63),
+      61);
+  }
+
+  return output;
 }
+
+function b64ToUint6(charCode) {
+  if (charCode > 64 && charCode < 91)
+    return charCode - 65;
+  if (charCode > 96 && charCode < 123)
+    return charCode - 71;
+  if (charCode > 47 && charCode < 58)
+    return charCode + 4;
+  if (charCode === 43)
+    return 62;
+  if (charCode === 47)
+    return 63;
+  return 0;
+}
+
+const base64RegExp = /^[A-Za-z0-9+/]*={0,2}$/;
+const paddingRegExp = /=+$/;
 
 export function fromBase64(str: b64string): Uint8Array {
   if (typeof str !== 'string')
     throw new TypeError('"str" is not a string');
 
-  return sodium.from_base64(str, sodium.base64_variants.ORIGINAL);
+  if (!str.match(base64RegExp))
+    throw new TypeError('"str" is not a valid base64 string');
+
+  const strNoPadding = str.replace(paddingRegExp, '');
+  const inLen = strNoPadding.length;
+  const outLen = inLen * 3 + 1 >> 2;
+  const output = new Uint8Array(outLen);
+
+  for (let mod3, mod4, uint24 = 0, outIndex = 0, inIndex = 0; inIndex < inLen; inIndex++) {
+    mod4 = inIndex & 3;
+    uint24 |= b64ToUint6(strNoPadding.charCodeAt(inIndex)) << 18 - 6 * mod4;
+    if (mod4 === 3 || inLen - inIndex === 1) {
+      for (mod3 = 0; mod3 < 3 && outIndex < outLen; mod3 += 1, outIndex += 1) {
+        output[outIndex] = uint24 >>> (16 >>> mod3 & 24) & 255;
+      }
+      uint24 = 0;
+    }
+  }
+  return output;
+}
+
+// Note: use /[=/+]/g regex to strip padding, /[/+]/g otherwise
+function base64ToUrlsafeReplacer(char: string) {
+  if (char === '/') return '_';
+  if (char === '+') return '-';
+  return '';
 }
 
 // Base 64 encoding with URL and Filename Safe Alphabet
@@ -32,22 +116,20 @@ export function toSafeBase64(bytes: Uint8Array): safeb64string {
   if (!(bytes instanceof Uint8Array))
     throw new TypeError('"bytes" is not a Uint8Array');
 
-  return sodium.to_base64(bytes, sodium.base64_variants.URLSAFE);
+  return toBase64(bytes).replace(/[/+]/g, base64ToUrlsafeReplacer);
 }
 
-const toUrlSafeNoPaddingRegExp = /[+/=]/g;
-const toUrlSafeNoPaddingReplacer = (char: string): string => {
-  if (char === '/') return '_';
-  if (char === '+') return '-';
+function base64FromUrlsafeReplacer(char: string) {
+  if (char === '_') return '/';
+  if (char === '-') return '+';
   return '';
-};
+}
 
 export function fromSafeBase64(str: safeb64string): Uint8Array {
   if (typeof str !== 'string')
     throw new TypeError('"str" is not a string');
 
-  const safeStr = str.replace(toUrlSafeNoPaddingRegExp, toUrlSafeNoPaddingReplacer);
-  return sodium.from_base64(safeStr, sodium.base64_variants.URLSAFE_NO_PADDING);
+  return fromBase64(str.replace(/[-_]/g, base64FromUrlsafeReplacer));
 }
 
 export function toString(bytes: Uint8Array): string {
