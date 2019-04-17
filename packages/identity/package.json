@@ -6,10 +6,12 @@
   "license": "Apache-2.0",
   "main": "src/index.js",
   "module": "es.js",
+  "browser": "browser.js",
   "scripts": {
     "test": "cd ../..; yarn test:identity"
   },
   "dependencies": {
+    "@babel/runtime-corejs2": "7.3.1",
     "@tanker/crypto": "0.0.1",
     "@tanker/errors": "0.0.1"
   },

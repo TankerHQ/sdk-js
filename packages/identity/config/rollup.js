@@ -5,6 +5,7 @@ const baseConfig = require('../../../config/rollup.config');
 module.exports = baseConfig({
   input: path.resolve(__dirname, '..', 'src', 'index.js'),
   outputs: [
+    { target: 'browser', path: path.resolve(__dirname, '..', 'dist', 'browser.js') },
     { target: 'es', path: path.resolve(__dirname, '..', 'dist', 'es.js') },
     { target: 'node', path: path.resolve(__dirname, '..', 'dist', 'index.js') },
   ],
