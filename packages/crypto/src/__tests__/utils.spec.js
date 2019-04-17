@@ -1,6 +1,7 @@
 // @flow
 import { expect } from '@tanker/test-utils';
 import { InvalidArgument } from '@tanker/errors';
+import sodium from 'libsodium-wrappers';
 
 import { ready } from '../ready';
 import {
@@ -42,6 +43,16 @@ describe('utils', () => {
   describe('bytes <-> base64', () => {
     it('can convert bytes to a base64 string', () => {
       expect(toBase64(bytes)).to.equal(base64);
+    });
+
+    it('can convert huge byte arrays to a base64 string', () => {
+      const arrayLength = 1500;
+      const byteArray = new Uint8Array(arrayLength);
+      for (let index = 0; index < arrayLength; index++) {
+        byteArray[index] = index % 256;
+      }
+      const expected = sodium.to_base64(byteArray, sodium.base64_variants.ORIGINAL);
+      expect(toBase64(byteArray)).to.equal(expected);
     });
 
     it('can convert a base64 string to bytes', () => {

@@ -32,33 +32,40 @@ export function toBase64(bytes: Uint8Array): b64string {
   if (!(bytes instanceof Uint8Array))
     throw new TypeError('"bytes" is not a Uint8Array');
 
+  // Each triplet of bytes from the source (i.e. an uint24 value) is eventually
+  // converted to 4 base64 char codes (i.e. 4 bytes). We're buffering them to
+  // reduce the number of calls to the slow `String.fromCharCode` method.
+  const byteLength = bytes.length;
+  const paddingLength = (3 - byteLength % 3) % 3;
+  const resultLength = (byteLength + paddingLength) * 4 / 3;
+  const bufferMaxLength = 1000; // must be a multiple of 4
+  const bufferLength = Math.min(bufferMaxLength, resultLength);
+  const buffer = new Uint8Array(bufferLength);
+
+  let result = '';
   let mod3 = 2;
   let uint24 = 0;
-  let output = '';
-  const len = bytes.length;
+  let bufferIndex = 0;
 
-  for (let pos = 0; pos < len; pos++) {
-    mod3 = pos % 3;
+  for (let byteIndex = 0; byteIndex < byteLength; byteIndex++) {
+    mod3 = byteIndex % 3;
 
-    uint24 |= bytes[pos] << (16 >>> mod3 & 24);
-    if (mod3 === 2) {
-      output += String.fromCharCode(uint6ToB64(uint24 >>> 18 & 63),
-        uint6ToB64(uint24 >>> 12 & 63),
-        uint6ToB64(uint24 >>> 6 & 63),
-        uint6ToB64(uint24 & 63));
+    uint24 |= bytes[byteIndex] << (16 >>> mod3 & 24);
+    if (mod3 === 2 || byteLength - byteIndex === 1) {
+      buffer[bufferIndex] = uint6ToB64(uint24 >>> 18 & 63);
+      buffer[bufferIndex + 1] = uint6ToB64(uint24 >>> 12 & 63);
+      buffer[bufferIndex + 2] = uint6ToB64(uint24 >>> 6 & 63);
+      buffer[bufferIndex + 3] = uint6ToB64(uint24 & 63);
+      bufferIndex += 4;
       uint24 = 0;
+
+      if (bufferIndex === bufferLength || byteLength - byteIndex === 1) {
+        result += String.fromCharCode.apply(null, buffer.subarray(0, bufferIndex));
+        bufferIndex = 0;
+      }
     }
   }
-
-  // padding
-  if (mod3 !== 2) {
-    output += String.fromCharCode(uint6ToB64(uint24 >>> 18 & 63),
-      uint6ToB64(uint24 >>> 12 & 63),
-      mod3 === 0 ? 61 : uint6ToB64(uint24 >>> 6 & 63),
-      61);
-  }
-
-  return output;
+  return result.substr(0, result.length - 2 + mod3) + ['==', '=', ''][mod3];
 }
 
 function b64ToUint6(charCode) {
