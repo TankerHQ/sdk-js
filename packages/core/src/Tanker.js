@@ -231,7 +231,7 @@ export class Tanker extends EventEmitter {
     if (session) {
       await session.nuke();
     }
-    this.emit('revoked');
+    this.emit('deviceRevoked');
   }
 
   get registeredUnlockMethods(): UnlockMethods {

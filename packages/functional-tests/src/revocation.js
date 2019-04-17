@@ -33,7 +33,7 @@ const generateRevocationTests = (args: TestArgs) => {
 
     const revokeBobPhone = async () => {
       if (!isIE) {
-        const waitForPhoneRevoked = new Promise(resolve => args.bobPhone.once('revoked', resolve));
+        const waitForPhoneRevoked = new Promise(resolve => args.bobPhone.once('deviceRevoked', resolve));
 
         await args.bobLaptop.revokeDevice(args.bobPhone.deviceId);
         const waitForLaptopRevoked = args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
@@ -50,7 +50,7 @@ const generateRevocationTests = (args: TestArgs) => {
 
     const expectRevokedEvent = (opts) => new Promise((resolve, reject) => {
       const device = opts.on;
-      device.on('revoked', () => {
+      device.on('deviceRevoked', () => {
         if (opts.to_be_received) {
           resolve();
         } else {
