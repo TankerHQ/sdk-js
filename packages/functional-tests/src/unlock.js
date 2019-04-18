@@ -1,6 +1,5 @@
 // @flow
 import uuid from 'uuid';
-import find from 'array-find';
 import { Tanker, errors } from '@tanker/core';
 
 import { expect } from './chai';
@@ -127,18 +126,6 @@ const generateUnlockTests = (args: TestArgs) => {
         await bobLaptop._session._trustchain.sync(); // eslint-disable-line no-underscore-dangle
 
         await expect(bobLaptop.isUnlockAlreadySetUp()).to.be.eventually.true;
-      });
-
-      it('can test if unlock is setup on a revoked ghostDevice', async () => {
-        // synchronously wait for the ghost device creation block
-        await bobLaptop._session._trustchain.sync(); // eslint-disable-line no-underscore-dangle
-
-        const devices = await bobLaptop._session.userAccessor.findUserDevices({ userId: bobLaptop._session.localUser.userId }); // eslint-disable-line no-underscore-dangle
-        const ghost = find(devices, device => device.isGhostDevice === true);
-        await bobLaptop.revokeDevice(ghost.id);
-
-        const isSetup = await bobLaptop.isUnlockAlreadySetUp();
-        expect(isSetup).to.be.false;
       });
 
       it('should throw a nice error when password is not set', async () => {
