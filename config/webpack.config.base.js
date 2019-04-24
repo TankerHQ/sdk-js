@@ -45,7 +45,7 @@ const getBabelLoaders = (env) => {
         presets: [['@babel/preset-env', {
           modules: 'umd',
           useBuiltIns: 'usage',
-          targets: { browsers: ['last 2 versions', 'not ie < 11'] },
+          targets: { browsers: ['last 2 versions', 'Firefox ESR', 'not ie < 11', 'not dead'] },
         }]],
       },
       include: [

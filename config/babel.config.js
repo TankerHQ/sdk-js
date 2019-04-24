@@ -12,7 +12,7 @@ const getBabelConfig = ({ target, coverage }) => {
     config.presets.push(['@babel/preset-env', { targets: { node: 8 } }]);
   } else if (target === 'web') {
     config.presets.push(['@babel/preset-env', {
-      targets: { browsers: ['last 2 versions', 'not ie < 11'] }
+      targets: { browsers: ['last 2 versions', 'Firefox ESR', 'not ie < 11', 'not dead'] }
     }]);
     config.plugins.push(['@babel/plugin-transform-runtime', { corejs: 2 }]);
   }
