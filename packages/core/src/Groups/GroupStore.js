@@ -243,6 +243,10 @@ export default class GroupStore {
     return this._ds.put(GROUPS_TABLE, groupToDbGroup(this._userSecret, group));
   }
 
+  async bulkPut(groups: Array<Group>): Promise<void> {
+    return this._ds.bulkPut(GROUPS_TABLE, groups.map(g => groupToDbGroup(this._userSecret, g)));
+  }
+
   async _findDbGroup(groupId: Uint8Array): Promise<?DbGroup> {
     try {
       return await this._ds.get(GROUPS_TABLE, utils.toBase64(groupId));
@@ -293,8 +297,8 @@ export default class GroupStore {
     return null;
   }
 
-  findExternalsByProvisionalSignaturePublicKeys = async (args: { appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array }): Promise<Array<ExternalGroup>> => {
-    const requestedId = utils.toBase64(utils.concatArrays(args.appPublicSignatureKey, args.tankerPublicSignatureKey));
+  findExternalsByProvisionalId = async (args: { id: string }): Promise<Array<ExternalGroup>> => {
+    const requestedId = args.id;
     const provisionalKeys = await this._ds.find(GROUPS_PROVISIONAL_ENCRYPTION_KEYS_TABLE, { selector: { publicSignatureKeys: requestedId } });
 
     const groups = (await this._ds.find(GROUPS_TABLE, { selector: { _id: { $in: provisionalKeys.map(k => k.groupId) } } })).reduce((map, group) => { // eslint-disable-line no-underscore-dangle
@@ -302,5 +306,10 @@ export default class GroupStore {
       return map;
     }, {});
     return provisionalKeys.map(provisionalKey => dbGroupToExternalGroup(groups[provisionalKey.groupId], [provisionalKey]));
+  }
+
+  findExternalsByProvisionalSignaturePublicKeys = async (args: { appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array }): Promise<Array<ExternalGroup>> => {
+    const requestedId = utils.toBase64(utils.concatArrays(args.appPublicSignatureKey, args.tankerPublicSignatureKey));
+    return this.findExternalsByProvisionalId({ id: requestedId });
   }
 }
