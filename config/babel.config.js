@@ -11,7 +11,9 @@ const getBabelConfig = ({ target, coverage }) => {
   if (target === 'node') {
     config.presets.push(['@babel/preset-env', { targets: { node: 8 } }]);
   } else if (target === 'web') {
-    config.presets.push(['@babel/preset-env', { targets: { browsers: ['last 2 versions', 'ie >= 11'] } }]);
+    config.presets.push(['@babel/preset-env', {
+      targets: { browsers: ['last 2 versions', 'not ie < 11'] }
+    }]);
     config.plugins.push(['@babel/plugin-transform-runtime', { corejs: 2 }]);
   }
 
