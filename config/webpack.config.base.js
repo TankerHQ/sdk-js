@@ -73,7 +73,7 @@ const makeBaseConfig = ({ mode, target }) => {
 
     module: {
       rules: [
-        ...getBabelLoaders({ prod: mode === 'production', target }),
+        ...getBabelLoaders({ target }),
         {
           test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
           loader: 'url-loader',
