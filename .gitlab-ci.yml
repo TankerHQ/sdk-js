@@ -172,6 +172,7 @@ check/compat/master:
 
 check/e2e:
   extends: .check
+  when: manual
   script:
     - dmenv run -- python run-ci.py e2e --env "$CHECKS_ENV"
   tags:
