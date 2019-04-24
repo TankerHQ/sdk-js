@@ -2,13 +2,15 @@
 
 import { mergeSchemas } from '@tanker/datastore-base';
 import { createUserSecretBinary } from '@tanker/identity';
+import { tcrypto, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-import { type UserGroupAdditionRecordV1, type UserGroupCreationRecordV1 } from '../Blocks/payloads';
+import { type UserGroupAdditionRecord, type UserGroupCreationRecordV2, type UserGroupCreationRecord } from '../Blocks/payloads';
 import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
+import { type UnverifiedUserGroupCreation } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 
 async function makeMemoryGroupStore(): Promise<GroupStore> {
   const schemas = mergeSchemas(GroupStore.schemas);
@@ -20,25 +22,52 @@ async function makeMemoryGroupStore(): Promise<GroupStore> {
 }
 
 describe('GroupUpdater', () => {
-  it('handles a group creation I do not belong to', async () => {
-    const builder = await makeTrustchainBuilder();
+  let builder;
+  let groupStore;
+  let provisionalUserKeys;
+  let publicProvisionalUser;
 
+  beforeEach(async () => {
+    builder = await makeTrustchainBuilder();
+    groupStore = await makeMemoryGroupStore();
+
+    provisionalUserKeys = {
+      appSignatureKeyPair: tcrypto.makeSignKeyPair(),
+      appEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+      tankerSignatureKeyPair: tcrypto.makeSignKeyPair(),
+      tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+    };
+    publicProvisionalUser = {
+      trustchainId: builder.generator.trustchainId,
+      target: 'email',
+      value: 'bob@mail.com',
+      appSignaturePublicKey: provisionalUserKeys.appSignatureKeyPair.publicKey,
+      appEncryptionPublicKey: provisionalUserKeys.appEncryptionKeyPair.publicKey,
+      tankerSignaturePublicKey: provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+      tankerEncryptionPublicKey: provisionalUserKeys.tankerEncryptionKeyPair.publicKey,
+    };
+  });
+
+  it('handles a group creation I do not belong to', async () => {
     const alice = await builder.addUserV3('alice');
     const bob = await builder.addUserV3('bob');
     const group = await builder.addUserGroupCreation(bob, ['bob']);
-
-    const groupStore = await makeMemoryGroupStore();
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
 
-    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecordV2 = (group.entry.payload_unverified: any);
+    const entry: UnverifiedUserGroupCreation = {
+      ...group.entry,
+      ...payload,
+    };
 
-    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+    await groupUpdater.applyEntry(entry);
 
     expect(await groupStore.findExternal({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal({
       groupId: group.groupSignatureKeyPair.publicKey,
       publicSignatureKey: group.groupSignatureKeyPair.publicKey,
       publicEncryptionKey: group.groupEncryptionKeyPair.publicKey,
       encryptedPrivateSignatureKey: payload.encrypted_group_private_signature_key,
+      provisionalEncryptionKeys: [],
       lastGroupBlock: group.entry.hash,
       index: group.entry.index,
     });
@@ -46,14 +75,42 @@ describe('GroupUpdater', () => {
   });
 
   it('handles a group creation I do belong to', async () => {
-    const builder = await makeTrustchainBuilder();
-
     const alice = await builder.addUserV3('alice');
     const group = await builder.addUserGroupCreation(alice, ['alice']);
-    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
-
-    const groupStore = await makeMemoryGroupStore();
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal({
+      groupId: group.groupSignatureKeyPair.publicKey,
+      signatureKeyPair: group.groupSignatureKeyPair,
+      encryptionKeyPair: group.groupEncryptionKeyPair,
+      lastGroupBlock: group.entry.hash,
+      index: group.entry.index,
+    });
+  });
+
+  it('handles a group creation I do not belong to as a provisional user', async () => {
+    const alice = await builder.addUserV3('alice');
+    const group = await builder.addUserGroupCreation(alice, [], [publicProvisionalUser]);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal(null);
+    expect(await groupStore.findExternalsByProvisionalSignaturePublicKeys({
+      appPublicSignatureKey: publicProvisionalUser.appSignaturePublicKey,
+      tankerPublicSignatureKey: publicProvisionalUser.tankerSignaturePublicKey,
+    })).to.have.lengthOf(1);
+  });
+
+  it('handles a group creation I belong to as a provisional user', async () => {
+    const alice = await builder.addUserV3('alice');
+    const group = await builder.addUserGroupCreation(alice, [], [publicProvisionalUser]);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device, [provisionalUserKeys]));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
 
@@ -67,18 +124,14 @@ describe('GroupUpdater', () => {
   });
 
   it('handles a group addition for a group I do not belong to', async () => {
-    const builder = await makeTrustchainBuilder();
-
     const alice = await builder.addUserV3('alice');
     const bob = await builder.addUserV3('bob');
     await builder.addUserV3('charlie');
     const group = await builder.addUserGroupCreation(bob, ['bob']);
-    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
 
     const groupAdd = await builder.addUserGroupAddition(bob, group, ['charlie']);
-    const additionPayload: UserGroupAdditionRecordV1 = (groupAdd.entry.payload_unverified: any);
-
-    const groupStore = await makeMemoryGroupStore();
+    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
@@ -89,17 +142,13 @@ describe('GroupUpdater', () => {
   });
 
   it('handles a group addition I always belonged to', async () => {
-    const builder = await makeTrustchainBuilder();
-
     const alice = await builder.addUserV3('alice');
     await builder.addUserV3('charlie');
     const group = await builder.addUserGroupCreation(alice, ['alice']);
-    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
 
     const groupAdd = await builder.addUserGroupAddition(alice, group, ['charlie']);
-    const additionPayload: UserGroupAdditionRecordV1 = (groupAdd.entry.payload_unverified: any);
-
-    const groupStore = await makeMemoryGroupStore();
+    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
@@ -110,18 +159,14 @@ describe('GroupUpdater', () => {
   });
 
   it('handles a group addition which adds me', async () => {
-    const builder = await makeTrustchainBuilder();
-
     const alice = await builder.addUserV3('alice');
     const charlie = await builder.addUserV3('charlie');
 
     const group = await builder.addUserGroupCreation(alice, ['alice']);
-    const payload: UserGroupCreationRecordV1 = (group.entry.payload_unverified: any);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
 
     const groupAdd = await builder.addUserGroupAddition(alice, group, ['charlie']);
-    const additionPayload: UserGroupAdditionRecordV1 = (groupAdd.entry.payload_unverified: any);
-
-    const groupStore = await makeMemoryGroupStore();
+    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
     const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
@@ -133,6 +178,75 @@ describe('GroupUpdater', () => {
       encryptionKeyPair: group.groupEncryptionKeyPair,
       lastGroupBlock: groupAdd.entry.hash,
       index: groupAdd.entry.index,
+    });
+  });
+
+  it('handles a group addition I do not belong to as a provisional user', async () => {
+    const alice = await builder.addUserV3('alice');
+    const charlie = await builder.addUserV3('charlie');
+
+    const group = await builder.addUserGroupCreation(alice, ['alice']);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+
+    const groupAdd = await builder.addUserGroupAddition(alice, group, [], [publicProvisionalUser]);
+    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+    await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal(null);
+    expect(await groupStore.findExternalsByProvisionalSignaturePublicKeys({
+      appPublicSignatureKey: publicProvisionalUser.appSignaturePublicKey,
+      tankerPublicSignatureKey: publicProvisionalUser.tankerSignaturePublicKey,
+    })).to.have.lengthOf(1);
+  });
+
+  it('handles a group addition I belong to as a provisional user', async () => {
+    const alice = await builder.addUserV3('alice');
+    const charlie = await builder.addUserV3('charlie');
+
+    const group = await builder.addUserGroupCreation(alice, ['alice']);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+
+    const groupAdd = await builder.addUserGroupAddition(alice, group, [], [publicProvisionalUser]);
+    const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device, [provisionalUserKeys]));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+    await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal({
+      groupId: group.groupSignatureKeyPair.publicKey,
+      signatureKeyPair: group.groupSignatureKeyPair,
+      encryptionKeyPair: group.groupEncryptionKeyPair,
+      lastGroupBlock: groupAdd.entry.hash,
+      index: groupAdd.entry.index,
+    });
+  });
+
+  it('handles a provisional identity claim and decrypts pending group memberships', async () => {
+    const alice = await builder.addUserV3('alice');
+    const group = await builder.addUserGroupCreation(alice, [], [publicProvisionalUser]);
+    const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+
+    await groupUpdater.applyEntry({ ...group.entry, ...payload });
+
+    const provisionalIdentityWithId = {
+      id: utils.toBase64(utils.concatArrays(provisionalUserKeys.appSignatureKeyPair.publicKey, provisionalUserKeys.tankerSignatureKeyPair.publicKey)),
+      appEncryptionKeyPair: provisionalUserKeys.appEncryptionKeyPair,
+      tankerEncryptionKeyPair: provisionalUserKeys.tankerEncryptionKeyPair,
+    };
+
+    await groupUpdater.applyProvisionalIdentityClaim(provisionalIdentityWithId);
+
+    expect(await groupStore.findFull({ groupId: group.groupSignatureKeyPair.publicKey })).to.deep.equal({
+      groupId: group.groupSignatureKeyPair.publicKey,
+      signatureKeyPair: group.groupSignatureKeyPair,
+      encryptionKeyPair: group.groupEncryptionKeyPair,
+      lastGroupBlock: group.entry.hash,
+      index: group.entry.index,
     });
   });
 });

@@ -7,6 +7,9 @@ import { NATURE } from './Nature';
 import { UpgradeRequiredError } from '../errors.internal';
 import { getArray, getStaticArray, encodeArrayLength, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from './Serialize';
 
+export const SEALED_KEY_SIZE = tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
+export const TWO_TIMES_SEALED_KEY_SIZE = SEALED_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
+
 export type TrustchainCreationRecord = {|
   public_signature_key: Uint8Array,
 |}
@@ -26,6 +29,11 @@ export type UserKeys = {|
   previous_public_encryption_key: Uint8Array,
   encrypted_previous_encryption_key: Uint8Array,
   private_keys: Array<UserPrivateKey>,
+|}
+
+export type ProvisionalPublicKey = {|
+  app_public_encryption_key: Uint8Array,
+  tanker_public_encryption_key: Uint8Array,
 |}
 
 export type UserDeviceRecord = {|
@@ -54,6 +62,9 @@ export type KeyPublishToUserRecord = KeyPublishRecord;
 // the recipient is a Group Public Key
 export type KeyPublishToUserGroupRecord = KeyPublishRecord;
 
+// the recipient is an provisional Public Key
+export type KeyPublishToProvisionalUserRecord = KeyPublishRecord;
+
 export type DeviceRevocationRecord = {|
   device_id: Uint8Array,
   user_keys?: UserKeys,
@@ -64,23 +75,86 @@ export type GroupEncryptedKeyV1 = {|
   encrypted_group_private_encryption_key: Uint8Array,
 |}
 
+export type GroupEncryptedKeyV2 = {|
+  user_id: Uint8Array,
+  public_user_encryption_key: Uint8Array,
+  encrypted_group_private_encryption_key: Uint8Array,
+|}
+
+export type ProvisionalGroupEncryptedKeyV2 = {|
+  app_provisional_user_public_signature_key: Uint8Array,
+  tanker_provisional_user_public_signature_key: Uint8Array,
+  encrypted_group_private_encryption_key: Uint8Array,
+|}
+
 export type UserGroupCreationRecordV1 = {|
   public_encryption_key: Uint8Array,
   public_signature_key: Uint8Array,
   encrypted_group_private_signature_key: Uint8Array,
-  encrypted_group_private_encryption_keys_for_users: Array<GroupEncryptedKeyV1>,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV1>,
+  self_signature: Uint8Array,
+|}
+
+export type UserGroupCreationRecordV2 = {|
+  public_encryption_key: Uint8Array,
+  public_signature_key: Uint8Array,
+  encrypted_group_private_signature_key: Uint8Array,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
+  encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
   self_signature: Uint8Array,
 |}
 
 export type UserGroupAdditionRecordV1 = {|
   group_id: Uint8Array,
   previous_group_block: Uint8Array,
-  encrypted_group_private_encryption_keys_for_users: Array<GroupEncryptedKeyV1>,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV1>,
   self_signature_with_current_key: Uint8Array,
 |}
-export type UserGroupRecord = UserGroupCreationRecordV1 | UserGroupAdditionRecordV1
 
-export type Record = TrustchainCreationRecord | UserDeviceRecord | KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | DeviceRevocationRecord | UserGroupRecord;
+export type UserGroupAdditionRecordV2 = {|
+  group_id: Uint8Array,
+  previous_group_block: Uint8Array,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
+  encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
+  self_signature_with_current_key: Uint8Array,
+|}
+
+export type GroupEncryptedKey = GroupEncryptedKeyV1 | GroupEncryptedKeyV2;
+
+// Note: We can't define all those generic types as unions, because unions + spreads *badly* confuse flow. So just manually tell it what the fields are...
+export type UserGroupCreationRecord = {|
+  public_encryption_key: Uint8Array,
+  public_signature_key: Uint8Array,
+  encrypted_group_private_signature_key: Uint8Array,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKey>,
+  encrypted_group_private_encryption_keys_for_provisional_users?: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
+  self_signature: Uint8Array,
+|};
+
+export type UserGroupAdditionRecord = {|
+  group_id: Uint8Array,
+  previous_group_block: Uint8Array,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKey>,
+  encrypted_group_private_encryption_keys_for_provisional_users?: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
+  self_signature_with_current_key: Uint8Array,
+|};
+
+export type UserGroupRecord = UserGroupCreationRecord | UserGroupAdditionRecord;
+
+export type ProvisionalIdentityClaimRecord = {|
+  user_id: Uint8Array,
+  app_provisional_identity_signature_public_key: Uint8Array,
+  tanker_provisional_identity_signature_public_key: Uint8Array,
+  author_signature_by_app_key: Uint8Array,
+  author_signature_by_tanker_key: Uint8Array,
+  recipient_user_public_key: Uint8Array,
+  encrypted_provisional_identity_private_keys: Uint8Array,
+|}
+
+export type Record = TrustchainCreationRecord | UserDeviceRecord | DeviceRevocationRecord | ProvisionalIdentityClaimRecord |
+                      KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | KeyPublishToProvisionalUserRecord |
+                      UserGroupCreationRecordV1 | UserGroupCreationRecordV2 | UserGroupAdditionRecordV1 | UserGroupAdditionRecordV2 |
+                      ProvisionalIdentityClaimRecord;
 
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
 const currentVersion = 1;
@@ -181,7 +255,7 @@ export function serializeUserDeviceV3(userDevice: UserDeviceRecord): Uint8Array 
     throw new Error('Assertion error: invalid user device user key pair');
   if (userDevice.user_key_pair.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
     throw new Error('Assertion error: invalid user device user public encryption key size');
-  if (userDevice.user_key_pair.encrypted_private_encryption_key.length !== tcrypto.SEALED_KEY_SIZE)
+  if (userDevice.user_key_pair.encrypted_private_encryption_key.length !== SEALED_KEY_SIZE)
     throw new Error('Assertion error: invalid user device user encrypted private encryption key size');
 
   const deviceFlags = new Uint8Array(1);
@@ -202,14 +276,14 @@ export function serializeUserDeviceV3(userDevice: UserDeviceRecord): Uint8Array 
 function unserializePrivateKey(src: Uint8Array, offset: number) {
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'recipient'),
-    (d, o) => getStaticArray(d, tcrypto.SEALED_KEY_SIZE, o, 'key'),
+    (d, o) => getStaticArray(d, SEALED_KEY_SIZE, o, 'key'),
   ], offset);
 }
 
 function unserializeUserKeyPair(src: Uint8Array, offset: number) {
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
-    (d, o) => getStaticArray(d, tcrypto.SEALED_KEY_SIZE, o, 'encrypted_private_encryption_key'),
+    (d, o) => getStaticArray(d, SEALED_KEY_SIZE, o, 'encrypted_private_encryption_key'),
   ], offset, 'user_key_pair');
 }
 
@@ -217,7 +291,7 @@ function unserializeUserKeys(src: Uint8Array, offset: number) {
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'previous_public_encryption_key'),
-    (d, o) => getStaticArray(d, tcrypto.SEALED_KEY_SIZE, o, 'encrypted_previous_encryption_key'),
+    (d, o) => getStaticArray(d, SEALED_KEY_SIZE, o, 'encrypted_previous_encryption_key'),
     (d, o) => unserializeList(d, unserializePrivateKey, o, 'private_keys'),
   ], offset, 'user_keys');
 }
@@ -265,13 +339,6 @@ export function unserializeUserDeviceV3(src: Uint8Array): UserDeviceRecord {
 }
 
 export function serializeKeyPublish(keyPublish: KeyPublishRecord): Uint8Array {
-  if (keyPublish.recipient.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid key publish recipient size');
-  if (keyPublish.resourceId.length !== tcrypto.MAC_SIZE)
-    throw new Error('Assertion error: invalid key publish MAC size');
-  if (keyPublish.key.length !== tcrypto.SEALED_KEY_SIZE)
-    throw new Error('Assertion error: invalid key publish key size');
-
   return utils.concatArrays(
     keyPublish.recipient,
     keyPublish.resourceId,
@@ -291,11 +358,20 @@ export function unserializeKeyPublishToDevice(src: Uint8Array): KeyPublishRecord
   return result;
 }
 
+export function unserializeKeyPublishToProvisionalUser(src: Uint8Array): KeyPublishRecord {
+  // NOTE: We concatenate the public signature keys of the app and tanker as a single recipient field, since we don't use them separately
+  return unserializeGeneric(src, [
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE * 2, o, 'recipient'),
+    (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
+    (d, o) => getStaticArray(d, TWO_TIMES_SEALED_KEY_SIZE, o, 'key'),
+  ]);
+}
+
 export function unserializeKeyPublish(src: Uint8Array): KeyPublishToUserGroupRecord | KeyPublishToUserRecord {
   return unserializeGeneric(src, [
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient'),
     (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
-    (d, o) => getStaticArray(d, tcrypto.SEALED_KEY_SIZE, o, 'key'),
+    (d, o) => getStaticArray(d, SEALED_KEY_SIZE, o, 'key'),
   ]);
 }
 
@@ -315,12 +391,12 @@ export function serializeDeviceRevocationV2(deviceRevocation: DeviceRevocationRe
     throw new Error('Assertion error: invalid user device user public encryption key size');
   if (deviceRevocation.user_keys.previous_public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
     throw new Error('Assertion error: invalid user device user previous public encryption key size');
-  if (deviceRevocation.user_keys.encrypted_previous_encryption_key.length !== tcrypto.SEALED_KEY_SIZE)
+  if (deviceRevocation.user_keys.encrypted_previous_encryption_key.length !== SEALED_KEY_SIZE)
     throw new Error('Assertion error: invalid user device user previous encrypted private encryption key size');
   for (const key of deviceRevocation.user_keys.private_keys) {
     if (key.recipient.length !== tcrypto.HASH_SIZE)
       throw new Error('Assertion error: invalid user device encrypted key recipient size');
-    if (key.key.length !== tcrypto.SEALED_KEY_SIZE)
+    if (key.key.length !== SEALED_KEY_SIZE)
       throw new Error('Assertion error: invalid user device user encrypted private encryption key size');
   }
 
@@ -345,10 +421,42 @@ function serializeGroupEncryptedKeyV1(gek: GroupEncryptedKeyV1): Uint8Array {
   return utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key);
 }
 
+function serializeGroupEncryptedKeyV2(gek: GroupEncryptedKeyV2): Uint8Array {
+  return utils.concatArrays(
+    gek.user_id,
+    gek.public_user_encryption_key,
+    gek.encrypted_group_private_encryption_key
+  );
+}
+
+function serializeProvisionalGroupEncryptedKeyV2(gek: ProvisionalGroupEncryptedKeyV2): Uint8Array {
+  return utils.concatArrays(
+    gek.app_provisional_user_public_signature_key,
+    gek.tanker_provisional_user_public_signature_key,
+    gek.encrypted_group_private_encryption_key
+  );
+}
+
 function unserializeGroupEncryptedKeyV1(src: Uint8Array, offset: number) {
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_user_encryption_key'),
     (d, o) => getStaticArray(d, tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE, o, 'encrypted_group_private_encryption_key'),
+  ], offset);
+}
+
+function unserializeGroupEncryptedKeyV2(src: Uint8Array, offset: number) {
+  return unserializeGenericSub(src, [
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'user_id'),
+    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_user_encryption_key'),
+    (d, o) => getStaticArray(d, tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE, o, 'encrypted_group_private_encryption_key'),
+  ], offset);
+}
+
+function unserializeProvisionalGroupEncryptedKeyV2(src: Uint8Array, offset: number) {
+  return unserializeGenericSub(src, [
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'app_provisional_user_public_signature_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_provisional_user_public_signature_key'),
+    (d, o) => getStaticArray(d, TWO_TIMES_SEALED_KEY_SIZE, o, 'encrypted_group_private_encryption_key'),
   ], offset);
 }
 
@@ -359,6 +467,24 @@ function checkGroupEncryptedKeyV1(blockType: string, key: GroupEncryptedKeyV1): 
     throw new Error(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
 }
 
+function checkGroupEncryptedKeyV2(blockType: string, key: GroupEncryptedKeyV2): void {
+  if (key.user_id.length !== tcrypto.HASH_SIZE)
+    throw new Error(`Assertion error: invalid ${blockType} recipient user id size`);
+  if (key.public_user_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
+    throw new Error(`Assertion error: invalid ${blockType} recipient user public key size`);
+  if (key.encrypted_group_private_encryption_key.length !== tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE)
+    throw new Error(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
+}
+
+function checkProvisionalGroupEncryptedKeyV2(blockType: string, key: ProvisionalGroupEncryptedKeyV2): void {
+  if (key.app_provisional_user_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new Error(`Assertion error: invalid ${blockType} app signature public key size`);
+  if (key.tanker_provisional_user_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new Error(`Assertion error: invalid ${blockType} tanker signature public key size`);
+  if (key.encrypted_group_private_encryption_key.length !== TWO_TIMES_SEALED_KEY_SIZE)
+    throw new Error(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
+}
+
 export function serializeUserGroupCreationV1(userGroupCreation: UserGroupCreationRecordV1): Uint8Array {
   if (userGroupCreation.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
     throw new Error('Assertion error: invalid user group creation group public signature key size');
@@ -366,7 +492,7 @@ export function serializeUserGroupCreationV1(userGroupCreation: UserGroupCreatio
     throw new Error('Assertion error: invalid user group creation group public encryption key size');
   if (userGroupCreation.encrypted_group_private_signature_key.length !== tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE)
     throw new Error('Assertion error: invalid user group creation encrypted group private signature key size');
-  userGroupCreation.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV1('user group creation', k));
+  userGroupCreation.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV1('user group creation V1', k));
   if (userGroupCreation.self_signature.length !== tcrypto.SIGNATURE_SIZE)
     throw new Error('Assertion error: invalid user group creation group self signature size');
 
@@ -390,10 +516,45 @@ export function unserializeUserGroupCreationV1(src: Uint8Array): UserGroupCreati
   ]);
 }
 
+export function serializeUserGroupCreationV2(userGroupCreation: UserGroupCreationRecordV2): Uint8Array {
+  if (userGroupCreation.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid user group creation group public signature key size');
+  if (userGroupCreation.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid user group creation group public encryption key size');
+  if (userGroupCreation.encrypted_group_private_signature_key.length !== tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE)
+    throw new Error('Assertion error: invalid user group creation encrypted group private signature key size');
+  userGroupCreation.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group creation V2', k));
+  userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users.forEach(k => checkProvisionalGroupEncryptedKeyV2('user group creation V2', k));
+  if (userGroupCreation.self_signature.length !== tcrypto.SIGNATURE_SIZE)
+    throw new Error('Assertion error: invalid user group creation group self signature size');
+
+  return utils.concatArrays(
+    userGroupCreation.public_signature_key,
+    userGroupCreation.public_encryption_key,
+    userGroupCreation.encrypted_group_private_signature_key,
+    encodeListLength(userGroupCreation.encrypted_group_private_encryption_keys_for_users),
+    ...userGroupCreation.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV2),
+    encodeListLength(userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users),
+    ...userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users.map(serializeProvisionalGroupEncryptedKeyV2),
+    userGroupCreation.self_signature,
+  );
+}
+
+export function unserializeUserGroupCreationV2(src: Uint8Array): UserGroupCreationRecordV2 {
+  return unserializeGeneric(src, [
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
+    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
+    (d, o) => getStaticArray(d, tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE, o, 'encrypted_group_private_signature_key'),
+    (d, o) => unserializeList(d, unserializeGroupEncryptedKeyV2, o, 'encrypted_group_private_encryption_keys_for_users'),
+    (d, o) => unserializeList(d, unserializeProvisionalGroupEncryptedKeyV2, o, 'encrypted_group_private_encryption_keys_for_provisional_users'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'self_signature'),
+  ]);
+}
+
 export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditionRecordV1): Uint8Array {
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
     throw new Error('Assertion error: invalid user group addition previous group block size');
-  userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV1('user group add', k));
+  userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV1('user group add V1', k));
   if (userGroupAddition.self_signature_with_current_key.length !== tcrypto.SIGNATURE_SIZE)
     throw new Error('Assertion error: invalid user group addition group self signature size');
 
@@ -402,6 +563,25 @@ export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditio
     userGroupAddition.previous_group_block,
     encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_users),
     ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV1),
+    userGroupAddition.self_signature_with_current_key,
+  );
+}
+
+export function serializeUserGroupAdditionV2(userGroupAddition: UserGroupAdditionRecordV2): Uint8Array {
+  if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
+    throw new Error('Assertion error: invalid user group addition previous group block size');
+  userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group add V2', k));
+  userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.forEach(k => checkProvisionalGroupEncryptedKeyV2('user group creation V2', k));
+  if (userGroupAddition.self_signature_with_current_key.length !== tcrypto.SIGNATURE_SIZE)
+    throw new Error('Assertion error: invalid user group addition group self signature size');
+
+  return utils.concatArrays(
+    userGroupAddition.group_id,
+    userGroupAddition.previous_group_block,
+    encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_users),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV2),
+    encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.map(serializeProvisionalGroupEncryptedKeyV2),
     userGroupAddition.self_signature_with_current_key,
   );
 }
@@ -415,6 +595,57 @@ export function unserializeUserGroupAdditionV1(src: Uint8Array): UserGroupAdditi
   ]);
 }
 
+export function unserializeUserGroupAdditionV2(src: Uint8Array): UserGroupAdditionRecordV2 {
+  return unserializeGeneric(src, [
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'group_id'),
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'previous_group_block'),
+    (d, o) => unserializeList(d, unserializeGroupEncryptedKeyV2, o, 'encrypted_group_private_encryption_keys_for_users'),
+    (d, o) => unserializeList(d, unserializeProvisionalGroupEncryptedKeyV2, o, 'encrypted_group_private_encryption_keys_for_provisional_users'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'self_signature_with_current_key'),
+  ]);
+}
+
+export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: ProvisionalIdentityClaimRecord): Uint8Array {
+  if (provisionalIdentityClaim.user_id.length !== tcrypto.HASH_SIZE)
+    throw new Error('Assertion error: invalid claim provisional user id size');
+  if (provisionalIdentityClaim.app_provisional_identity_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid claim provisional app public key size');
+  if (provisionalIdentityClaim.tanker_provisional_identity_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid claim provisional tanker public key size');
+  if (provisionalIdentityClaim.author_signature_by_app_key.length !== tcrypto.SIGNATURE_SIZE)
+    throw new Error('Assertion error: invalid claim provisional app signature size');
+  if (provisionalIdentityClaim.author_signature_by_tanker_key.length !== tcrypto.SIGNATURE_SIZE)
+    throw new Error('Assertion error: invalid claim provisional tanker signature size');
+  if (provisionalIdentityClaim.recipient_user_public_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
+    throw new Error('Assertion error: invalid claim provisional recipient key size');
+  if (provisionalIdentityClaim.encrypted_provisional_identity_private_keys.length !== tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
+                                                            + tcrypto.SEAL_OVERHEAD)
+    throw new Error('Assertion error: invalid claim provisional encrypted keys size');
+
+  return utils.concatArrays(
+    provisionalIdentityClaim.user_id,
+    provisionalIdentityClaim.app_provisional_identity_signature_public_key,
+    provisionalIdentityClaim.tanker_provisional_identity_signature_public_key,
+    provisionalIdentityClaim.author_signature_by_app_key,
+    provisionalIdentityClaim.author_signature_by_tanker_key,
+    provisionalIdentityClaim.recipient_user_public_key,
+    provisionalIdentityClaim.encrypted_provisional_identity_private_keys,
+  );
+}
+
+export function unserializeProvisionalIdentityClaim(src: Uint8Array): ProvisionalIdentityClaimRecord {
+  return unserializeGeneric(src, [
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'user_id'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'app_provisional_identity_signature_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_provisional_identity_signature_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'author_signature_by_app_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'author_signature_by_tanker_key'),
+    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient_user_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
+                                + tcrypto.SEAL_OVERHEAD, o, 'encrypted_provisional_identity_private_keys'),
+  ]);
+}
+
 export function unserializePayload(block: Block): Record {
   switch (block.nature) {
     case NATURE.trustchain_creation: return unserializeTrustchainCreation(block.payload);
@@ -424,10 +655,14 @@ export function unserializePayload(block: Block): Record {
     case NATURE.key_publish_to_device: return unserializeKeyPublishToDevice(block.payload);
     case NATURE.key_publish_to_user: return unserializeKeyPublish(block.payload);
     case NATURE.key_publish_to_user_group: return unserializeKeyPublish(block.payload);
+    case NATURE.key_publish_to_provisional_user: return unserializeKeyPublishToProvisionalUser(block.payload);
     case NATURE.device_revocation_v1: return unserializeDeviceRevocationV1(block.payload);
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
     case NATURE.user_group_creation_v1: return unserializeUserGroupCreationV1(block.payload);
+    case NATURE.user_group_creation_v2: return unserializeUserGroupCreationV2(block.payload);
     case NATURE.user_group_addition_v1: return unserializeUserGroupAdditionV1(block.payload);
+    case NATURE.user_group_addition_v2: return unserializeUserGroupAdditionV2(block.payload);
+    case NATURE.provisional_identity_claim: return unserializeProvisionalIdentityClaim(block.payload);
     default: throw new UpgradeRequiredError(`unknown nature: ${block.nature}`);
   }
 }

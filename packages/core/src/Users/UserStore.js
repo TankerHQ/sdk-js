@@ -8,6 +8,8 @@ import { findIndex } from '../utils';
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
 import LocalUser from '../Session/LocalUser';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 type DeviceToUser = {
   deviceId: b64string,
@@ -74,6 +76,14 @@ export default class UserStore {
       version: 5,
       ...schemaV2
     },
+    {
+      version: 6,
+      ...schemaV2
+    },
+    {
+      version: 7,
+      ...schemaV2
+    },
   ];
 
   constructor(ds: DataStore<*>) {
@@ -84,6 +94,18 @@ export default class UserStore {
   setLocalUser = (localUser: LocalUser) => {
     this._localUser = localUser;
   }
+
+  async applyProvisionalIdentityClaims(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<Array<ProvisionalUserKeyPairs>> {
+    const provisionalUserKeyPairs: Array<ProvisionalUserKeyPairs> = [];
+    for (const entry of entries) {
+      if (utils.equalArray(entry.user_id, this._localUser.userId)) {
+        const provisionalUserKeyPair = await this._localUser.applyProvisionalIdentityClaim(entry);
+        provisionalUserKeyPairs.push(provisionalUserKeyPair);
+      }
+    }
+    return provisionalUserKeyPairs;
+  }
+
   // all entries are verified
   async applyEntry(entry: VerifiedDeviceCreation | VerifiedDeviceRevocation): Promise<User> {
     const updatedUsers = await this.applyEntries([entry]);

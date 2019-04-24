@@ -6,15 +6,20 @@ import { InvalidBlockError } from '../errors.internal';
 import { findIndex } from '../utils';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
-import { getUserGroupCreationBlockSignDataV1, getUserGroupAdditionBlockSignDataV1 } from '../Blocks/BlockGenerator';
+import { getUserGroupCreationBlockSignDataV1, getUserGroupCreationBlockSignDataV2, getUserGroupAdditionBlockSignDataV1, getUserGroupAdditionBlockSignDataV2 } from '../Blocks/BlockGenerator';
 import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim, type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import { type UnverifiedTrustchainCreation } from './TrustchainStore';
 
 import {
+  type UserGroupCreationRecord,
   type UserGroupCreationRecordV1,
+  type UserGroupCreationRecordV2,
   type UserGroupAdditionRecordV1,
+  type UserGroupAdditionRecordV2,
+  type UserGroupAdditionRecord,
 } from '../Blocks/payloads';
 
 import {
@@ -23,6 +28,7 @@ import {
   isKeyPublishToDevice,
   isKeyPublishToUser,
   isKeyPublishToUserGroup,
+  isKeyPublishToProvisionalUser,
 } from '../Blocks/Nature';
 
 export const rootBlockAuthor = new Uint8Array(32);
@@ -152,13 +158,15 @@ export function verifyKeyPublish(keyPublish: UnverifiedKeyPublish, author: Devic
     verifyKeyPublishToUser(keyPublish, author, recipientUser);
   } else if (isKeyPublishToUserGroup(keyPublish.nature)) {
     verifyKeyPublishToUserGroup(keyPublish, author, recipientGroup);
+  } else if (isKeyPublishToProvisionalUser(keyPublish.nature)) {
+    // Nothing to verify beyond the signature
   }
 
   return keyPublish;
 }
 
 export function verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Device, existingGroup: ?ExternalGroup): VerifiedUserGroup {
-  const currentPayload: UserGroupCreationRecordV1 = (entry: any);
+  const currentPayload: UserGroupCreationRecord = (entry: any);
 
   if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
@@ -167,7 +175,16 @@ export function verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Devi
     throw new InvalidBlockError('group_already_exists', 'a group with the same public signature key already exists', { entry, author });
   }
 
-  const selfSigBuffer = getUserGroupCreationBlockSignDataV1(currentPayload);
+  let selfSigBuffer;
+  if (entry.nature === NATURE.user_group_creation_v1) {
+    const versionedPayload: UserGroupCreationRecordV1 = (currentPayload: any);
+    selfSigBuffer = getUserGroupCreationBlockSignDataV1(versionedPayload);
+  } else if (entry.nature === NATURE.user_group_creation_v2) {
+    const versionedPayload: UserGroupCreationRecordV2 = (currentPayload: any);
+    selfSigBuffer = getUserGroupCreationBlockSignDataV2(versionedPayload);
+  } else {
+    throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
+  }
   if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature, currentPayload.public_signature_key))
     throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
 
@@ -175,7 +192,7 @@ export function verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Devi
 }
 
 export function verifyUserGroupAddition(entry: UnverifiedUserGroup, author: Device, currentGroup: ?ExternalGroup): VerifiedUserGroup {
-  const currentPayload: UserGroupAdditionRecordV1 = (entry: any);
+  const currentPayload: UserGroupAdditionRecord = (entry: any);
 
   if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
@@ -186,9 +203,39 @@ export function verifyUserGroupAddition(entry: UnverifiedUserGroup, author: Devi
   if (!utils.equalArray(currentPayload.previous_group_block, currentGroup.lastGroupBlock))
     throw new InvalidBlockError('invalid_previous_group_block', 'previous group block does not match for this group id', { entry, author, currentGroup });
 
-  const selfSigBuffer = getUserGroupAdditionBlockSignDataV1(currentPayload);
+  let selfSigBuffer;
+  if (entry.nature === NATURE.user_group_addition_v1) {
+    const versionedPayload: UserGroupAdditionRecordV1 = (currentPayload: any);
+    selfSigBuffer = getUserGroupAdditionBlockSignDataV1(versionedPayload);
+  } else if (entry.nature === NATURE.user_group_addition_v2) {
+    const versionedPayload: UserGroupAdditionRecordV2 = (currentPayload: any);
+    selfSigBuffer = getUserGroupAdditionBlockSignDataV2(versionedPayload);
+  } else {
+    throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
+  }
   if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentGroup.publicSignatureKey))
     throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
 
   return (entry: VerifiedUserGroup);
+}
+
+export function verifyProvisionalIdentityClaim(entry: UnverifiedProvisionalIdentityClaim, author: Device, authorUserId: Uint8Array): VerifiedProvisionalIdentityClaim {
+  if (!utils.equalArray(entry.user_id, authorUserId))
+    throw new InvalidBlockError('invalid_author', 'Claim provisional identity author does not match claimed user ID', { entry, authorUserId });
+
+  if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
+    throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
+
+  const multiSignedPayload = utils.concatArrays(
+    utils.fromBase64(author.deviceId),
+    entry.app_provisional_identity_signature_public_key,
+    entry.tanker_provisional_identity_signature_public_key,
+  );
+  if (!tcrypto.verifySignature(multiSignedPayload, entry.author_signature_by_app_key, entry.app_provisional_identity_signature_public_key))
+    throw new InvalidBlockError('invalid_signature', 'app signature is invalid', { entry, author });
+
+  if (!tcrypto.verifySignature(multiSignedPayload, entry.author_signature_by_tanker_key, entry.tanker_provisional_identity_signature_public_key))
+    throw new InvalidBlockError('invalid_signature', 'tanker signature is invalid', { entry, author });
+
+  return (entry: VerifiedProvisionalIdentityClaim);
 }

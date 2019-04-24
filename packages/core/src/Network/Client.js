@@ -3,10 +3,11 @@
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
 import { utils, type b64string, type Key } from '@tanker/crypto';
+import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { ServerError, AuthenticationError } from '../errors';
+import { NothingToClaim, ServerError, AuthenticationError } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 import { UnlockKeyAnswer, type UnlockKeyMessage, type UnlockClaims, type UnlockKeyRequest } from '../Unlock/unlock';
 
@@ -287,5 +288,55 @@ export class Client extends EventEmitter {
     });
 
     await this._send('push keys', serializedBlocks);
+  }
+
+  getProvisionalIdentityPublicKeys = async (emails: Array<{ email: string }>): Promise<Array<*>> => {
+    const result = await this._send('get public provisional identities', emails);
+    if (result.error)
+      throw new ServerError(result.error, this.trustchainId);
+
+    return result.map(e => ({
+      tankerSignaturePublicKey: utils.fromBase64(e.SignaturePublicKey),
+      tankerEncryptionPublicKey: utils.fromBase64(e.EncryptionPublicKey),
+    }));
+  }
+
+  getProvisionalIdentityKeys = async (provisionalIdentity: { email: string }, verificationCode: string): Promise<*> => {
+    const result = await this._send('get provisional identity', {
+      email: provisionalIdentity.email,
+      verificationCode,
+    });
+    if (!result)
+      throw new NothingToClaim('nothing to claim');
+    if (result.error)
+      throw new ServerError(result.error, this.trustchainId);
+
+    return {
+      tankerSignatureKeyPair: {
+        privateKey: utils.fromBase64(result.SignaturePrivateKey),
+        publicKey: utils.fromBase64(result.SignaturePublicKey),
+      },
+      tankerEncryptionKeyPair: {
+        privateKey: utils.fromBase64(result.EncryptionPrivateKey),
+        publicKey: utils.fromBase64(result.EncryptionPublicKey),
+      }
+    };
+  }
+
+  getProvisionalUsers = async (provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> => {
+    if (provisionalIdentities.length === 0)
+      return [];
+
+    const provisionalIds = provisionalIdentities.map(e => ({ [e.target]: e.value }));
+    const tankerPublicKeys = await this.getProvisionalIdentityPublicKeys(provisionalIds);
+
+    return tankerPublicKeys.map((e, i) => ({
+      trustchainId: utils.fromBase64(provisionalIdentities[i].trustchain_id),
+      target: provisionalIdentities[i].target,
+      value: provisionalIdentities[i].value,
+      ...e,
+      appSignaturePublicKey: utils.fromBase64(provisionalIdentities[i].public_signature_key),
+      appEncryptionPublicKey: utils.fromBase64(provisionalIdentities[i].public_encryption_key),
+    }));
   }
 }

@@ -36,6 +36,23 @@ export type SecretProvisionalIdentity = {|
   private_signature_key: b64string,
 |};
 
+export type PublicProvisionalUser = {|
+  trustchainId: Uint8Array,
+  target: string,
+  value: string,
+  appSignaturePublicKey: Uint8Array,
+  appEncryptionPublicKey: Uint8Array,
+  tankerSignaturePublicKey: Uint8Array,
+  tankerEncryptionPublicKey: Uint8Array,
+|};
+
+export type ProvisionalUserKeys = {|
+  appSignatureKeyPair: tcrypto.SodiumKeyPair,
+  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
+  tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
+  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
+|};
+
 export type SecretIdentity = SecretPermanentIdentity | SecretProvisionalIdentity;
 export type PublicIdentity = PublicPermanentIdentity | PublicProvisionalIdentity;
 

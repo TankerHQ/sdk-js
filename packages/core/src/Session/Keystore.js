@@ -4,7 +4,7 @@ import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { InvalidIdentity } from '@tanker/identity';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import KeySafe from './KeySafe';
+import KeySafe, { type ProvisionalUserKeyPairs } from './KeySafe';
 import { type UserKeys } from '../Blocks/payloads';
 
 const TABLE = 'device';
@@ -13,6 +13,7 @@ export default class Keystore {
   _ds: DataStore<*>;
   _safe: KeySafe;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
+  _provisionalUserKeys: { [string]: ProvisionalUserKeyPairs };
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE, persistent: true }] },
@@ -20,8 +21,10 @@ export default class Keystore {
     { version: 3, tables: [{ name: TABLE, persistent: true }] },
     { version: 4, tables: [{ name: TABLE, persistent: true }] },
     { version: 5, tables: [{ name: TABLE, persistent: true }] },
+    { version: 6, tables: [{ name: TABLE, persistent: true }] },
+    { version: 7, tables: [{ name: TABLE, persistent: true }] },
     // {
-    //   version: 5,
+    //   version: 8,
     //   tables: [{
     //     name: TABLE,
     //     persistent: true,
@@ -75,11 +78,16 @@ export default class Keystore {
     return utils.fromBase64(this._safe.deviceId);
   }
 
+  get provisionalUserKeys(): Array<ProvisionalUserKeyPairs> {
+    return this._safe.provisionalUserKeys;
+  }
+
   // remove everything except private device keys.
   async clearCache() {
     delete this._safe.deviceId;
     this._safe.userKeys = [];
     this._safe.encryptedUserKeys = [];
+    this._safe.provisionalUserKeys = [];
     this._userKeys = {};
     const record = await this._ds.get(TABLE, 'keySafe');
     record.encryptedSafe = await this._safe.serialize();
@@ -88,6 +96,10 @@ export default class Keystore {
 
   findUserKey(userPublicKey: Uint8Array): ?tcrypto.SodiumKeyPair {
     return this._userKeys[utils.toBase64(userPublicKey)];
+  }
+
+  findProvisionalKey(id: string): ProvisionalUserKeyPairs {
+    return this._provisionalUserKeys[id];
   }
 
   async close(): Promise<void> {
@@ -135,10 +147,16 @@ export default class Keystore {
     // This allows migration from SDK < 1.7.0 (userKeys did not exist before DC3):
     if (!safe.userKeys)
       safe.userKeys = [];
+    if (!safe.provisionalUserKeys)
+      safe.provisionalUserKeys = [];
 
     const userKeys = {};
     for (const userKey of safe.userKeys) {
       userKeys[utils.toBase64(userKey.publicKey)] = userKey;
+    }
+    const provisionalUserKeys = {};
+    for (const ident of safe.provisionalUserKeys) {
+      provisionalUserKeys[ident.id] = ident;
     }
 
     // Read-only (non writable, non enumerable, non reconfigurable)
@@ -146,6 +164,7 @@ export default class Keystore {
       value: safe,
     });
     this._userKeys = userKeys;
+    this._provisionalUserKeys = provisionalUserKeys;
   }
 
   async setDeviceId(hash: Uint8Array) {
@@ -182,6 +201,15 @@ export default class Keystore {
   async prependUserKey(keyPair: tcrypto.SodiumKeyPair) {
     this._safe.userKeys.unshift(keyPair);
     this._userKeys[utils.toBase64(keyPair.publicKey)] = keyPair;
+    const record = await this._ds.get(TABLE, 'keySafe');
+    record.encryptedSafe = await this._safe.serialize();
+    return this._ds.put(TABLE, record);
+  }
+
+  async addProvisionalUserKeys(id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair) {
+    const provisionalUserKeyPairs = { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
+    this._safe.provisionalUserKeys.push(provisionalUserKeyPairs);
+    this._provisionalUserKeys[id] = provisionalUserKeyPairs;
     const record = await this._ds.get(TABLE, 'keySafe');
     record.encryptedSafe = await this._safe.serialize();
     return this._ds.put(TABLE, record);

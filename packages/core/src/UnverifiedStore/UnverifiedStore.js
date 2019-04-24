@@ -4,6 +4,7 @@ import { type DataStore } from '@tanker/datastore-base';
 import KeyPublishUnverifiedStore, { type UnverifiedKeyPublish } from './KeyPublishUnverifiedStore';
 import UserUnverifiedStore, { type UnverifiedDeviceCreation, type VerifiedDeviceCreation, type UnverifiedDeviceRevocation, type VerifiedDeviceRevocation } from './UserUnverifiedStore';
 import UserGroupsUnverifiedStore, { type UnverifiedUserGroup, type VerifiedUserGroup } from './UserGroupsUnverifiedStore';
+import ProvisionalIdentityClaimUnverifiedStore, { type UnverifiedProvisionalIdentityClaim, type VerifiedProvisionalIdentityClaim } from './ProvisionalIdentityClaimUnverifiedStore';
 
 const schemaTablesV3 = [
   ...KeyPublishUnverifiedStore.tables,
@@ -15,11 +16,17 @@ const schemaTablesV4 = [
   ...UserGroupsUnverifiedStore.tables,
 ];
 
+const schemaTablesV6 = [
+  ...schemaTablesV4,
+  ...ProvisionalIdentityClaimUnverifiedStore.tables,
+];
+
 // Storage for unverified blocks of different natures
 export default class UnverifiedStore {
   keyPublishUnverifiedStore: KeyPublishUnverifiedStore;
   userUnverifiedStore: UserUnverifiedStore;
   userGroupsUnverifiedStore: UserGroupsUnverifiedStore;
+  provisionalIdentityClaimUnverifiedStore: ProvisionalIdentityClaimUnverifiedStore;
 
   static schemas = [
     {
@@ -42,6 +49,14 @@ export default class UnverifiedStore {
       version: 5,
       tables: schemaTablesV4,
     },
+    {
+      version: 6,
+      tables: schemaTablesV6,
+    },
+    {
+      version: 7,
+      tables: schemaTablesV6,
+    },
   ];
 
   static async open(ds: DataStore<*>): Promise<UnverifiedStore> {
@@ -49,6 +64,7 @@ export default class UnverifiedStore {
     store.keyPublishUnverifiedStore = await KeyPublishUnverifiedStore.open(ds);
     store.userUnverifiedStore = await UserUnverifiedStore.open(ds);
     store.userGroupsUnverifiedStore = await UserGroupsUnverifiedStore.open(ds);
+    store.provisionalIdentityClaimUnverifiedStore = await ProvisionalIdentityClaimUnverifiedStore.open(ds);
     return store;
   }
 
@@ -56,6 +72,7 @@ export default class UnverifiedStore {
     await this.keyPublishUnverifiedStore.close();
     await this.userUnverifiedStore.close();
     await this.userGroupsUnverifiedStore.close();
+    await this.provisionalIdentityClaimUnverifiedStore.close();
   }
 
   async addUnverifiedKeyPublishes(entries: Array<UnverifiedKeyPublish>) {
@@ -111,5 +128,17 @@ export default class UnverifiedStore {
 
   async getUserIdFromDeviceId(deviceId: Uint8Array) {
     return this.userUnverifiedStore.getUserIdFromDeviceId(deviceId);
+  }
+
+  async addUnverifiedProvisionalIdentityClaimEntries(entries: Array<UnverifiedProvisionalIdentityClaim>): Promise<void> {
+    return this.provisionalIdentityClaimUnverifiedStore.addUnverifiedProvisionalIdentityClaimEntries(entries);
+  }
+
+  async removeVerifiedProvisionalIdentityClaimEntries(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<void> {
+    return this.provisionalIdentityClaimUnverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(entries);
+  }
+
+  async findUnverifiedProvisionalIdentityClaims(userId: Uint8Array): Promise<Array<UnverifiedProvisionalIdentityClaim>> {
+    return this.provisionalIdentityClaimUnverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
   }
 }

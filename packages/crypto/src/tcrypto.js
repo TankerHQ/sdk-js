@@ -8,17 +8,18 @@ import type { Key } from './aliases';
 
 export const XCHACHA_IV_SIZE = 24;
 
+const SIGNATURE_SEEDBYTES = 32;
 export const SYMMETRIC_KEY_SIZE = 32;
 export const SIGNATURE_PUBLIC_KEY_SIZE = 32;
 export const SIGNATURE_PRIVATE_KEY_SIZE = 64;
 export const ENCRYPTION_PUBLIC_KEY_SIZE = 32;
 export const ENCRYPTION_PRIVATE_KEY_SIZE = 32;
-
 export const SIGNATURE_SIZE = 64;
 export const MAC_SIZE = 16;
 export const SYMMETRIC_ENCRYPTION_OVERHEAD = XCHACHA_IV_SIZE + MAC_SIZE;
 export const HASH_SIZE = 32;
-export const SEALED_KEY_SIZE = 80;
+export const SEAL_OVERHEAD = MAC_SIZE + ENCRYPTION_PUBLIC_KEY_SIZE;
+
 export const SEALED_ENCRYPTION_PRIVATE_KEY_SIZE = 80;
 export const SEALED_SIGNATURE_PRIVATE_KEY_SIZE = 112;
 
@@ -41,6 +42,11 @@ export function makeEncryptionKeyPair(): SodiumKeyPair {
 
 export function getEncryptionKeyPairFromPrivateKey(privKey: Uint8Array): SodiumKeyPair {
   return { privateKey: privKey, publicKey: sodium.crypto_scalarmult_base(privKey) };
+}
+
+export function getSignatureKeyPairFromPrivateKey(privateKey: Uint8Array): SodiumKeyPair {
+  const publicKey = privateKey.subarray(SIGNATURE_SEEDBYTES);
+  return { privateKey, publicKey };
 }
 
 export function asymEncrypt(msg: Uint8Array, publicKey: Uint8Array, privKey: Uint8Array): Uint8Array {

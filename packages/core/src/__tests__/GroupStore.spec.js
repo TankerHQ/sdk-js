@@ -1,12 +1,13 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 import { mergeSchemas } from '@tanker/datastore-base';
 import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
 import GroupStore from '../Groups/GroupStore';
 import { type Group, type ExternalGroup } from '../Groups/types';
+import { TWO_TIMES_SEALED_KEY_SIZE } from '../Blocks/payloads';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import makeUint8Array from './makeUint8Array';
@@ -43,6 +44,12 @@ function groupToExternalGroup(group: Group): ExternalGroup {
     publicEncryptionKey: group.encryptionKeyPair.publicKey,
     // just for tests, use the unencrypted private key
     encryptedPrivateSignatureKey: group.signatureKeyPair.privateKey,
+    // just for tests, fill with random stuff
+    provisionalEncryptionKeys: [{
+      appPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      tankerPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      encryptedGroupPrivateEncryptionKey: random(TWO_TIMES_SEALED_KEY_SIZE),
+    }],
     lastGroupBlock: group.lastGroupBlock,
     index: group.index,
   };
@@ -73,6 +80,7 @@ describe('GroupStore', () => {
     const got = await groupStore.findExternal({ groupId: group.groupId });
     const expected = groupToExternalGroup(group);
     expected.encryptedPrivateSignatureKey = null;
+    expected.provisionalEncryptionKeys = [];
     expect(got).to.deep.equal(expected);
   });
 
@@ -81,6 +89,8 @@ describe('GroupStore', () => {
 
     await groupStore.putExternal(externalGroup);
     const got = await groupStore.findExternal({ groupId: externalGroup.groupId });
+    // we do not retrieve provisional keys when using findExternal
+    externalGroup.provisionalEncryptionKeys = [];
     expect(got).to.deep.equal(externalGroup);
   });
 
@@ -163,5 +173,24 @@ describe('GroupStore', () => {
     const got = await groupStore.findFull({ groupId: group.groupId });
     expect(got.lastGroupBlock).to.deep.equal(newBlockHash);
     expect(got.index).to.deep.equal(newBlockIndex);
+  });
+
+  it('cannot find a group by unknown provisional public signature keys', async () => {
+    const got = await groupStore.findExternalsByProvisionalSignaturePublicKeys({
+      appPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+      tankerPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    });
+    expect(got).to.have.lengthOf(0);
+  });
+
+  it('can find a group by provisional public signature keys', async () => {
+    const externalGroup = makeExternalGroup();
+    await groupStore.putExternal(externalGroup);
+
+    const got = await groupStore.findExternalsByProvisionalSignaturePublicKeys({
+      appPublicSignatureKey: externalGroup.provisionalEncryptionKeys[0].appPublicSignatureKey,
+      tankerPublicSignatureKey: externalGroup.provisionalEncryptionKeys[0].tankerPublicSignatureKey,
+    });
+    expect(got).to.deep.equal([externalGroup]);
   });
 });

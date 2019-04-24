@@ -12,7 +12,8 @@ import {
   verifyDeviceRevocation,
   verifyKeyPublish,
   verifyUserGroupCreation,
-  verifyUserGroupAddition
+  verifyUserGroupAddition,
+  verifyProvisionalIdentityClaim,
 } from '../Trustchain/Verify';
 
 import { type User } from '../Users/User';
@@ -22,6 +23,7 @@ import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../Un
 import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
+import type { UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 
 import { NATURE } from '../Blocks/Nature';
 
@@ -31,6 +33,18 @@ function assertFailWithNature(verifyFunc: () => any, nature: string) {
   expect(verifyFunc)
     .to.throw(InvalidBlockError)
     .that.has.property('nature', nature);
+}
+
+function makeProvisionalIdentity() {
+  return {
+    trustchainId: random(tcrypto.HASH_SIZE),
+    target: 'email',
+    value: 'bob@gmail',
+    appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+    tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+  };
 }
 
 describe('BlockVerification', () => {
@@ -399,6 +413,35 @@ describe('BlockVerification', () => {
     });
   });
 
+  describe('key publish to provisional user', () => {
+    let user: User;
+    let unverifiedKeyPublish: UnverifiedKeyPublish;
+
+    beforeEach(() => {
+      testGenerator.makeTrustchainCreation();
+      const userId = random(tcrypto.HASH_SIZE);
+      const userCreation = testGenerator.makeUserCreation(userId);
+      user = userCreation.user;
+      testGenerator.skipIndex(); // used for faking a revocation
+      const provisionalIdentityPublicKeys = makeProvisionalIdentity();
+      const keyPublish = testGenerator.makeKeyPublishToProvisionalUser(userCreation, provisionalIdentityPublicKeys);
+      unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
+    });
+
+    it('should accept a correct key publish to provisional user', () => {
+      expect(() => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null))
+        .to.not.throw();
+    });
+
+    it('should reject a key publish to provisional user with an invalid signature', () => {
+      unverifiedKeyPublish.signature[0] += 1;
+      assertFailWithNature(
+        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null),
+        'invalid_signature'
+      );
+    });
+  });
+
   describe('group creation', () => {
     let user: User;
     let externalGroup: ExternalGroup;
@@ -409,7 +452,8 @@ describe('BlockVerification', () => {
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      const userGroup = testGenerator.makeUserGroupCreation(userCreation, [user]);
+      const provisionalIdentity = makeProvisionalIdentity();
+      const userGroup = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
       unverifiedUserGroup = userGroup.unverifiedUserGroup;
       externalGroup = userGroup.externalGroup;
     });
@@ -454,7 +498,8 @@ describe('BlockVerification', () => {
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user]);
+      const provisionalIdentity = makeProvisionalIdentity();
+      const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
       externalGroup = userGroupCreation.externalGroup;
 
       // Second user
@@ -536,6 +581,59 @@ describe('BlockVerification', () => {
       assertFailWithNature(
         () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, null),
         'invalid_recipient'
+      );
+    });
+  });
+
+  describe('claim provisional identity', () => {
+    let user: User;
+    let unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim;
+    let userId: Uint8Array;
+
+    beforeEach(() => {
+      testGenerator.makeTrustchainCreation();
+      userId = random(tcrypto.HASH_SIZE);
+      const userCreation = testGenerator.makeUserCreation(userId);
+      user = userCreation.user;
+      const userPublicKey = userCreation.testUser.userKeys.slice(-1)[0].publicKey;
+      const claim = testGenerator.makeProvisionalIdentityClaim(userCreation, userId, userPublicKey);
+      unverifiedProvisionalIdentityClaim = claim.unverifiedProvisionalIdentityClaim;
+    });
+
+    it('should accept a valid claim', async () => {
+      expect(() => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId))
+        .to.not.throw();
+    });
+
+    it('should reject a claim with an invalid author', async () => {
+      unverifiedProvisionalIdentityClaim.user_id[0] += 1;
+      assertFailWithNature(
+        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
+        'invalid_author'
+      );
+    });
+
+    it('should reject a claim with an invalid signature', async () => {
+      unverifiedProvisionalIdentityClaim.signature[0] += 1;
+      assertFailWithNature(
+        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
+        'invalid_signature'
+      );
+    });
+
+    it('should reject a claim with an invalid app signature', async () => {
+      unverifiedProvisionalIdentityClaim.author_signature_by_app_key[0] += 1;
+      assertFailWithNature(
+        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
+        'invalid_signature'
+      );
+    });
+
+    it('should reject a claim with an invalid tanker signature', async () => {
+      unverifiedProvisionalIdentityClaim.author_signature_by_tanker_key[0] += 1;
+      assertFailWithNature(
+        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
+        'invalid_signature'
       );
     });
   });

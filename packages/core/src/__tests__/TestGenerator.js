@@ -1,14 +1,22 @@
 // @flow
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
+import { type PublicProvisionalUser } from '@tanker/identity';
 
-import { deviceCreationFromBlock, deviceRevocationFromBlock, keyPublishFromBlock, userGroupEntryFromBlock } from '../Blocks/entries';
+import {
+  deviceCreationFromBlock,
+  deviceRevocationFromBlock,
+  keyPublishFromBlock,
+  userGroupEntryFromBlock,
+  provisionalIdentityClaimFromBlock,
+} from '../Blocks/entries';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import type { UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import { hashBlock, signBlock, type Block } from '../Blocks/Block';
@@ -75,6 +83,11 @@ export type TestUserGroup = {
   block: Block,
   group: Group,
   externalGroup: ExternalGroup
+};
+
+export type TestIdentityClaim = {
+  unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim,
+  block: Block,
 };
 
 function createDelegationToken(userId: Uint8Array, trustchainPrivateKey: Uint8Array): DelegationToken {
@@ -350,8 +363,50 @@ class TestGenerator {
     };
   }
 
+  makeKeyPublishToProvisionalUser = (parentDevice: TestDeviceCreation, recipient: PublicProvisionalUser): TestKeyPublish => {
+    const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const resourceId = random(tcrypto.MAC_SIZE);
 
-  makeUserGroupCreation = (parentDevice: TestDeviceCreation, members: Array<User>): TestUserGroup => {
+    const blockGenerator = new BlockGenerator(
+      this._trustchainId,
+      parentDevice.testDevice.signKeys.privateKey,
+      parentDevice.testDevice.id,
+    );
+    this._trustchainIndex += 1;
+
+    const block = blockGenerator.makeKeyPublishToProvisionalUserBlock(recipient, resourceKey, resourceId);
+    block.index = this._trustchainIndex;
+
+    return {
+      unverifiedKeyPublish: keyPublishFromBlock(block),
+      block,
+      resourceId
+    };
+  }
+
+  makeProvisionalIdentityClaim = (parentDevice: TestDeviceCreation, userId: Uint8Array, userPublicKey: Uint8Array): TestIdentityClaim => {
+    const provisionalIdentityPrivateKeys = {
+      appSignatureKeyPair: tcrypto.makeSignKeyPair(),
+      appEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+      tankerSignatureKeyPair: tcrypto.makeSignKeyPair(),
+      tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+    };
+    const blockGenerator = new BlockGenerator(
+      this._trustchainId,
+      parentDevice.testDevice.signKeys.privateKey,
+      parentDevice.testDevice.id,
+    );
+    this._trustchainIndex += 1;
+    const block = blockGenerator.makeProvisionalIdentityClaimBlock(userId, userPublicKey, provisionalIdentityPrivateKeys);
+    block.index = this._trustchainIndex;
+
+    return {
+      unverifiedProvisionalIdentityClaim: provisionalIdentityClaimFromBlock(block),
+      block,
+    };
+  }
+
+  makeUserGroupCreation = (parentDevice: TestDeviceCreation, members: Array<User>, provisionalUsers?: Array<PublicProvisionalUser> = []): TestUserGroup => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
     const blockGenerator = new BlockGenerator(
@@ -360,7 +415,7 @@ class TestGenerator {
       parentDevice.testDevice.id,
     );
     this._trustchainIndex += 1;
-    const block = blockGenerator.createUserGroup(signatureKeyPair, encryptionKeyPair, members);
+    const block = blockGenerator.createUserGroup(signatureKeyPair, encryptionKeyPair, members, provisionalUsers);
     block.index = this._trustchainIndex;
 
     const unverifiedUserGroup = userGroupEntryFromBlock(block);
@@ -377,6 +432,7 @@ class TestGenerator {
       publicEncryptionKey: encryptionKeyPair.publicKey,
       lastGroupBlock: unverifiedUserGroup.hash,
       encryptedPrivateSignatureKey: null,
+      provisionalEncryptionKeys: [],
       index: unverifiedUserGroup.index,
     };
     return {
@@ -387,7 +443,7 @@ class TestGenerator {
     };
   }
 
-  makeUserGroupAddition = (parentDevice: TestDeviceCreation, previousGroup: TestUserGroup, newMembers: Array<User>): TestUserGroup => {
+  makeUserGroupAddition = (parentDevice: TestDeviceCreation, previousGroup: TestUserGroup, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
     const blockGenerator = new BlockGenerator(
       this._trustchainId,
       parentDevice.testDevice.signKeys.privateKey,
@@ -399,7 +455,8 @@ class TestGenerator {
       previousGroup.group.signatureKeyPair.privateKey,
       previousGroup.group.lastGroupBlock,
       previousGroup.group.encryptionKeyPair.privateKey,
-      newMembers
+      newMembers,
+      provisionalUsers
     );
     block.index = this._trustchainIndex;
 
@@ -420,7 +477,6 @@ class TestGenerator {
       externalGroup
     };
   }
-
 
   _testDeviceToDevice = (testDevice: TestDevice): Device => ({
     deviceId: utils.toBase64(testDevice.id),

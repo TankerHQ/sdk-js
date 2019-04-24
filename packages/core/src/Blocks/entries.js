@@ -6,13 +6,17 @@ import {
   unserializePayload,
   unserializeKeyPublish,
   unserializeKeyPublishToDevice,
+  unserializeKeyPublishToProvisionalUser,
   unserializeUserDeviceV1,
   unserializeUserDeviceV2,
   unserializeUserDeviceV3,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
   unserializeUserGroupCreationV1,
+  unserializeUserGroupCreationV2,
   unserializeUserGroupAdditionV1,
+  unserializeUserGroupAdditionV2,
+  unserializeProvisionalIdentityClaim,
 } from './payloads';
 
 import { type Nature, NATURE } from './Nature';
@@ -21,6 +25,7 @@ import { type Block, hashBlock } from './Block';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
 import { type UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
 import { type UnverifiedDeviceCreation, type UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 
 
 export type VerificationFields = {|
@@ -133,11 +138,14 @@ export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
     case NATURE.key_publish_to_device:
       keyPublishAction = unserializeKeyPublishToDevice(block.payload);
       break;
+    case NATURE.key_publish_to_provisional_user:
+      keyPublishAction = unserializeKeyPublishToProvisionalUser(block.payload);
+      break;
     case NATURE.key_publish_to_user:
     case NATURE.key_publish_to_user_group:
       keyPublishAction = unserializeKeyPublish(block.payload);
       break;
-    default: throw new Error('Assertion error: wrong type for deviceCreationFromBlock');
+    default: throw new Error('Assertion error: wrong type for keyPublishFromBlock');
   }
   return {
     ...verificationFields,
@@ -154,8 +162,21 @@ export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
       ...userGroupAction,
       group_id: userGroupAction.public_signature_key
     };
+  } else if (block.nature === NATURE.user_group_creation_v2) {
+    const userGroupAction = unserializeUserGroupCreationV2(block.payload);
+    return {
+      ...verificationFields,
+      ...userGroupAction,
+      group_id: userGroupAction.public_signature_key
+    };
   } else if (block.nature === NATURE.user_group_addition_v1) {
     const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
+    return {
+      ...verificationFields,
+      ...userGroupAction,
+    };
+  } else if (block.nature === NATURE.user_group_addition_v2) {
+    const userGroupAction = unserializeUserGroupAdditionV2(block.payload);
     return {
       ...verificationFields,
       ...userGroupAction,
@@ -204,5 +225,21 @@ export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): Unv
     ...verificationFields,
     ...userEntry,
     user_id: userId
+  };
+}
+
+export function provisionalIdentityClaimFromBlock(block: Block): UnverifiedProvisionalIdentityClaim {
+  const verificationFields = verificationFieldsFromBlock(block);
+  let userEntry;
+
+  switch (block.nature) {
+    case NATURE.provisional_identity_claim:
+      userEntry = unserializeProvisionalIdentityClaim(block.payload);
+      break;
+    default: throw new Error('Assertion error: wrong type for provisionalIdentityClaimFromBlock');
+  }
+  return {
+    ...verificationFields,
+    ...userEntry,
   };
 }

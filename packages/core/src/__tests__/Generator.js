@@ -1,11 +1,12 @@
 // @flow
 import { tcrypto, random, utils } from '@tanker/crypto';
-import { obfuscateUserId } from '@tanker/identity';
+import { obfuscateUserId, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { Device, User } from '../Users/User';
 import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
 import { encodeArrayLength } from '../Blocks/Serialize';
 
@@ -15,8 +16,11 @@ import { serializeTrustchainCreation,
   serializeKeyPublish,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
+  type ProvisionalPublicKey,
+  serializeProvisionalIdentityClaim,
   type UserDeviceRecord,
-  type KeyPublishRecord } from '../Blocks/payloads';
+  type KeyPublishRecord,
+  SEALED_KEY_SIZE } from '../Blocks/payloads';
 
 import { preferredNature, NATURE, NATURE_KIND, type Nature } from '../Blocks/Nature';
 
@@ -110,6 +114,13 @@ export type GeneratorUserGroupAdditionResult = {
   blockPrivateSignatureKey: Uint8Array,
 }
 
+export type GeneratorProvisionalIdentityClaimResult = {
+  entry: UnverifiedEntry,
+  block: Block,
+  provisionalUserKeys: ProvisionalUserKeys,
+  unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim,
+}
+
 type CreateUserResult = {
   block: Block,
   entry: UnverifiedEntry,
@@ -172,7 +183,7 @@ class Generator {
     if (args.nature === NATURE.device_creation_v3) {
       userKeyPair = {
         public_encryption_key: args.userKeys.publicKey,
-        encrypted_private_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
+        encrypted_private_encryption_key: new Uint8Array(SEALED_KEY_SIZE),
       };
     }
     const payload: UserDeviceRecord = {
@@ -367,7 +378,6 @@ class Generator {
   async newKeyPublishToUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toUser: GeneratorUser, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
     if (!args.toUser.userKeys)
       throw new Error('Generator: cannot add a keyPublish to user on a user V1');
-
     const toKey = args.toUser.userKeys.publicKey;
 
     let { symmetricKey } = args;
@@ -397,6 +407,23 @@ class Generator {
       encryptedKey,
       toKey,
       nature: NATURE.key_publish_to_user_group,
+    });
+  }
+
+  async newKeyPublishToProvisionalUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toProvisionalUserPublicKey: ProvisionalPublicKey, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
+    let { symmetricKey } = args;
+    if (!symmetricKey)
+      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+
+    const preEncryptedKey = tcrypto.sealEncrypt(symmetricKey, args.toProvisionalUserPublicKey.app_public_encryption_key);
+    const encryptedKey = tcrypto.sealEncrypt(preEncryptedKey, args.toProvisionalUserPublicKey.tanker_public_encryption_key);
+
+    return this.newCommonKeyPublish({
+      ...args,
+      symmetricKey,
+      encryptedKey,
+      toKey: utils.concatArrays(args.toProvisionalUserPublicKey.app_public_encryption_key, args.toProvisionalUserPublicKey.tanker_public_encryption_key),
+      nature: NATURE.key_publish_to_provisional_user,
     });
   }
 
@@ -453,7 +480,7 @@ class Generator {
 
     let encryptedPreviousEncryptionKey = tcrypto.sealEncrypt(userKeys.privateKey, newUserKey.publicKey);
     if (!this.users[userId].userKeys)
-      encryptedPreviousEncryptionKey = new Uint8Array(tcrypto.SEALED_KEY_SIZE);
+      encryptedPreviousEncryptionKey = new Uint8Array(SEALED_KEY_SIZE);
     const payload = {
       device_id: to.id,
       user_keys: {
@@ -487,7 +514,7 @@ class Generator {
     };
   }
 
-  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>): Promise<GeneratorUserGroupResult> {
+  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupResult> {
     const blockGenerator = new BlockGenerator(
       this.trustchainId,
       from.signKeys.privateKey,
@@ -499,7 +526,7 @@ class Generator {
 
     const fullUsers = members.map(m => generatorUserToUser(this.trustchainId, this.users[m]));
 
-    const block = blockGenerator.createUserGroup(groupSignatureKeyPair, groupEncryptionKeyPair, fullUsers);
+    const block = blockGenerator.createUserGroup(groupSignatureKeyPair, groupEncryptionKeyPair, fullUsers, provisionalMembers);
 
     this.trustchainIndex += 1;
     block.index = this.trustchainIndex;
@@ -515,7 +542,7 @@ class Generator {
     };
   }
 
-  async newUserGroupAddition(from: GeneratorDevice, group: GeneratorUserGroupResult, members: Array<string>): Promise<GeneratorUserGroupAdditionResult> {
+  async newUserGroupAddition(from: GeneratorDevice, group: GeneratorUserGroupResult, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupAdditionResult> {
     const blockGenerator = new BlockGenerator(
       this.trustchainId,
       from.signKeys.privateKey,
@@ -523,7 +550,7 @@ class Generator {
     );
 
     const fullUsers = members.map(m => generatorUserToUser(this.trustchainId, this.users[m]));
-    const block = blockGenerator.addToUserGroup(group.groupSignatureKeyPair.publicKey, group.groupSignatureKeyPair.privateKey, hashBlock(group.block), group.groupEncryptionKeyPair.privateKey, fullUsers);
+    const block = blockGenerator.addToUserGroup(group.groupSignatureKeyPair.publicKey, group.groupSignatureKeyPair.privateKey, hashBlock(group.block), group.groupEncryptionKeyPair.privateKey, fullUsers, provisionalMembers);
 
     this.trustchainIndex += 1;
     block.index = this.trustchainIndex;
@@ -537,6 +564,53 @@ class Generator {
     };
   }
 
+  async newProvisionalIdentityClaim(from: GeneratorDevice, provisionalUserKeys: ProvisionalUserKeys): Promise<GeneratorProvisionalIdentityClaimResult> {
+    const deviceId = utils.toBase64(from.id);
+    const userId = this.usersDevices[deviceId];
+    const { userKeys } = this.users[userId];
+    if (!userKeys)
+      throw new Error('Generator: cannot add a ProvisionalIdentityClaim on a device pre-V3');
+
+    const multiSignedPayload = utils.concatArrays(
+      from.id,
+      provisionalUserKeys.appSignatureKeyPair.publicKey,
+      provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+    );
+    const appSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.appSignatureKeyPair.privateKey);
+    const tankerSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.tankerSignatureKeyPair.privateKey);
+
+    const keysToEncrypt = utils.concatArrays(provisionalUserKeys.appEncryptionKeyPair.privateKey, provisionalUserKeys.tankerEncryptionKeyPair.privateKey);
+    const encryptedprovisionalUserKeys = tcrypto.sealEncrypt(keysToEncrypt, userKeys.publicKey);
+
+    const obfuscatedUserId = obfuscateUserId(this.trustchainId, userId);
+    const payload = {
+      user_id: obfuscatedUserId,
+      app_provisional_identity_signature_public_key: provisionalUserKeys.appSignatureKeyPair.publicKey,
+      tanker_provisional_identity_signature_public_key: provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+      author_signature_by_app_key: appSignature,
+      author_signature_by_tanker_key: tankerSignature,
+      recipient_user_public_key: userKeys.publicKey,
+      encrypted_provisional_identity_private_keys: encryptedprovisionalUserKeys,
+    };
+    this.trustchainIndex += 1;
+    const block = signBlock({
+      index: this.trustchainIndex,
+      trustchain_id: this.trustchainId,
+      nature: NATURE.provisional_identity_claim,
+      author: from.id,
+      payload: serializeProvisionalIdentityClaim(payload)
+    }, from.signKeys.privateKey);
+    this.pushedBlocks.push(block);
+
+    const entry: UnverifiedEntry = { ...blockToEntry(block) };
+    const unverifiedProvisionalIdentityClaim = { ...entry, ...entry.payload_unverified };
+    return {
+      block,
+      entry,
+      unverifiedProvisionalIdentityClaim,
+      provisionalUserKeys,
+    };
+  }
 
   userId(userName: string): Uint8Array {
     return obfuscateUserId(this.trustchainId, userName);

@@ -1,17 +1,21 @@
 // @flow
 
 import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
+import { type PublicProvisionalUser, type ProvisionalUserKeys } from '@tanker/identity';
 
 import {
   serializeUserDeviceV3,
   serializeKeyPublish,
   serializeDeviceRevocationV2,
-  serializeUserGroupCreationV1,
-  serializeUserGroupAdditionV1,
+  serializeUserGroupCreationV2,
+  serializeUserGroupAdditionV2,
+  serializeProvisionalIdentityClaim,
   type UserDeviceRecord,
   type UserKeys,
   type UserGroupCreationRecordV1,
+  type UserGroupCreationRecordV2,
   type UserGroupAdditionRecordV1,
+  type UserGroupAdditionRecordV2,
 } from './payloads';
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 
@@ -29,11 +33,46 @@ export function getUserGroupCreationBlockSignDataV1(record: UserGroupCreationRec
   );
 }
 
+export function getUserGroupCreationBlockSignDataV2(record: UserGroupCreationRecordV2): Uint8Array {
+  return utils.concatArrays(
+    record.public_signature_key,
+    record.public_encryption_key,
+    record.encrypted_group_private_signature_key,
+    ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
+      gek.user_id,
+      gek.public_user_encryption_key,
+      gek.encrypted_group_private_encryption_key
+    )),
+    ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
+      gek.app_provisional_user_public_signature_key,
+      gek.tanker_provisional_user_public_signature_key,
+      gek.encrypted_group_private_encryption_key
+    ))
+  );
+}
+
 export function getUserGroupAdditionBlockSignDataV1(record: UserGroupAdditionRecordV1): Uint8Array {
   return utils.concatArrays(
     record.group_id,
     record.previous_group_block,
     ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
+  );
+}
+
+export function getUserGroupAdditionBlockSignDataV2(record: UserGroupAdditionRecordV2): Uint8Array {
+  return utils.concatArrays(
+    record.group_id,
+    record.previous_group_block,
+    ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
+      gek.user_id,
+      gek.public_user_encryption_key,
+      gek.encrypted_group_private_encryption_key
+    )),
+    ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
+      gek.app_provisional_user_public_signature_key,
+      gek.tanker_provisional_user_public_signature_key,
+      gek.encrypted_group_private_encryption_key
+    ))
   );
 }
 
@@ -210,7 +249,37 @@ export class BlockGenerator {
     return pKeyBlock;
   }
 
-  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>): Block {
+  makeKeyPublishToProvisionalUserBlock(publicProvisionalUser: PublicProvisionalUser, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
+    const preEncryptedKey = tcrypto.sealEncrypt(
+      resourceKey,
+      publicProvisionalUser.appEncryptionPublicKey,
+    );
+    const encryptedKey = tcrypto.sealEncrypt(
+      preEncryptedKey,
+      publicProvisionalUser.tankerEncryptionPublicKey,
+    );
+
+    const payload = {
+      recipient: utils.concatArrays(publicProvisionalUser.appSignaturePublicKey, publicProvisionalUser.tankerSignaturePublicKey),
+      resourceId,
+      key: encryptedKey,
+    };
+
+    const pKeyBlock = signBlock(
+      {
+        index: 0,
+        trustchain_id: this.trustchainId,
+        nature: preferredNature(NATURE_KIND.key_publish_to_provisional_user),
+        author: this.deviceId,
+        payload: serializeKeyPublish(payload)
+      },
+      this.privateSignatureKey
+    );
+
+    return pKeyBlock;
+  }
+
+  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>): Block {
     const encryptedPrivateSignatureKey = tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey);
 
     const keysForUsers = users.map(u => {
@@ -218,8 +287,25 @@ export class BlockGenerator {
       if (!userPublicKey)
         throw new Error('createUserGroup: user does not have user keys');
       return {
+        user_id: utils.fromBase64(u.userId),
         public_user_encryption_key: userPublicKey,
         encrypted_group_private_encryption_key: tcrypto.sealEncrypt(encryptionKeyPair.privateKey, userPublicKey),
+      };
+    });
+
+    const keysForProvisionalUsers = provisionalUsers.map(u => {
+      const preEncryptedKey = tcrypto.sealEncrypt(
+        encryptionKeyPair.privateKey,
+        u.appEncryptionPublicKey,
+      );
+      const encryptedKey = tcrypto.sealEncrypt(
+        preEncryptedKey,
+        u.tankerEncryptionPublicKey,
+      );
+      return {
+        app_provisional_user_public_signature_key: u.appSignaturePublicKey,
+        tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
+        encrypted_group_private_encryption_key: encryptedKey,
       };
     });
 
@@ -228,10 +314,11 @@ export class BlockGenerator {
       public_encryption_key: encryptionKeyPair.publicKey,
       encrypted_group_private_signature_key: encryptedPrivateSignatureKey,
       encrypted_group_private_encryption_keys_for_users: keysForUsers,
+      encrypted_group_private_encryption_keys_for_provisional_users: keysForProvisionalUsers,
       self_signature: new Uint8Array(0),
     };
 
-    const signData = getUserGroupCreationBlockSignDataV1(payload);
+    const signData = getUserGroupCreationBlockSignDataV2(payload);
     payload.self_signature = tcrypto.sign(signData, signatureKeyPair.privateKey);
 
     const block = signBlock({
@@ -239,20 +326,37 @@ export class BlockGenerator {
       trustchain_id: this.trustchainId,
       nature: preferredNature(NATURE_KIND.user_group_creation),
       author: this.deviceId,
-      payload: serializeUserGroupCreationV1(payload)
+      payload: serializeUserGroupCreationV2(payload)
     }, this.privateSignatureKey);
 
     return block;
   }
 
-  addToUserGroup(groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>): Block {
+  addToUserGroup(groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>): Block {
     const keysForUsers = users.map(u => {
       const userPublicKey = getLastUserPublicKey(u);
       if (!userPublicKey)
         throw new Error('addToUserGroup: user does not have user keys');
       return {
+        user_id: utils.fromBase64(u.userId),
         public_user_encryption_key: userPublicKey,
         encrypted_group_private_encryption_key: tcrypto.sealEncrypt(privateEncryptionKey, userPublicKey),
+      };
+    });
+
+    const keysForProvisionalUsers = provisionalUsers.map(u => {
+      const preEncryptedKey = tcrypto.sealEncrypt(
+        privateEncryptionKey,
+        u.appEncryptionPublicKey,
+      );
+      const encryptedKey = tcrypto.sealEncrypt(
+        preEncryptedKey,
+        u.tankerEncryptionPublicKey,
+      );
+      return {
+        app_provisional_user_public_signature_key: u.appSignaturePublicKey,
+        tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
+        encrypted_group_private_encryption_key: encryptedKey,
       };
     });
 
@@ -260,10 +364,11 @@ export class BlockGenerator {
       group_id: groupId,
       previous_group_block: previousGroupBlock,
       encrypted_group_private_encryption_keys_for_users: keysForUsers,
+      encrypted_group_private_encryption_keys_for_provisional_users: keysForProvisionalUsers,
       self_signature_with_current_key: new Uint8Array(0),
     };
 
-    const signData = getUserGroupAdditionBlockSignDataV1(payload);
+    const signData = getUserGroupAdditionBlockSignDataV2(payload);
     payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
 
     const block = signBlock({
@@ -271,9 +376,41 @@ export class BlockGenerator {
       trustchain_id: this.trustchainId,
       nature: preferredNature(NATURE_KIND.user_group_addition),
       author: this.deviceId,
-      payload: serializeUserGroupAdditionV1(payload)
+      payload: serializeUserGroupAdditionV2(payload)
     }, this.privateSignatureKey);
 
+    return block;
+  }
+
+  makeProvisionalIdentityClaimBlock(userId: Uint8Array, userPublicKey: Uint8Array, provisionalUserKeys: ProvisionalUserKeys): Block {
+    const multiSignedPayload = utils.concatArrays(
+      this.deviceId,
+      provisionalUserKeys.appSignatureKeyPair.publicKey,
+      provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+    );
+    const appSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.appSignatureKeyPair.privateKey);
+    const tankerSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.tankerSignatureKeyPair.privateKey);
+
+    const keysToEncrypt = utils.concatArrays(provisionalUserKeys.appEncryptionKeyPair.privateKey, provisionalUserKeys.tankerEncryptionKeyPair.privateKey);
+    const encryptedprovisionalUserKeys = tcrypto.sealEncrypt(keysToEncrypt, userPublicKey);
+
+    const payload = {
+      user_id: userId,
+      app_provisional_identity_signature_public_key: provisionalUserKeys.appSignatureKeyPair.publicKey,
+      tanker_provisional_identity_signature_public_key: provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+      author_signature_by_app_key: appSignature,
+      author_signature_by_tanker_key: tankerSignature,
+      recipient_user_public_key: userPublicKey,
+      encrypted_provisional_identity_private_keys: encryptedprovisionalUserKeys,
+    };
+
+    const block = signBlock({
+      index: 0,
+      trustchain_id: this.trustchainId,
+      nature: preferredNature(NATURE_KIND.provisional_identity_claim),
+      author: this.deviceId,
+      payload: serializeProvisionalIdentityClaim(payload)
+    }, this.privateSignatureKey);
     return block;
   }
 }
