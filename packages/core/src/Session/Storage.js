@@ -13,12 +13,12 @@ import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
 const STORAGE_VERSION_KEY = 'storageVersion';
 const CURRENT_STORAGE_VERSION = 1;
 
-export type DataStoreOptions = {
-  adapter: Function,
+export type DataStoreOptions = $Exact<{
+  adapter: () => Class<DataStore<any>>,
   prefix?: string,
   dbPath?: string,
   url?: string
-}
+}>;
 
 export default class Storage {
   _options: DataStoreOptions;
@@ -72,6 +72,7 @@ export default class Storage {
     );
 
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
+    // $FlowIKnow DataStore is a flow interface, which does not support static methods
     this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
     this._schemas = schemas;
 

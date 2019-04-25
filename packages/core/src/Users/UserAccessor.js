@@ -3,7 +3,7 @@
 import { utils } from '@tanker/crypto';
 import { type PublicPermanentIdentity } from '@tanker/identity';
 
-import UserStore, { type FindUserParameters, type FindUsersParameters } from './UserStore';
+import UserStore, { type FindUsersParameters } from './UserStore';
 import { type User } from './User';
 import Trustchain from '../Trustchain/Trustchain';
 import { InvalidArgument, RecipientsNotFound } from '../errors';
@@ -35,8 +35,9 @@ export default class UserAccessor {
     await this._trustchain.updateUserStore(userIdsWithoutMe);
   }
 
-  async findUser(args: FindUserParameters): Promise<?User> {
+  async findUser(args: $Exact<{ userId: Uint8Array }>): Promise<?User> {
     const { userId } = args;
+
     if (!(userId instanceof Uint8Array))
       throw new InvalidArgument('userId', 'Uint8Array', userId);
 
@@ -45,8 +46,9 @@ export default class UserAccessor {
     return user;
   }
 
-  async findUserDevices(args: FindUserParameters): Promise<Array<UserDevice>> {
+  async findUserDevices(args: $Exact<{ userId: Uint8Array }>): Promise<Array<UserDevice>> {
     const { userId } = args;
+
     if (!(userId instanceof Uint8Array))
       throw new InvalidArgument('userId', 'Uint8Array', userId);
 

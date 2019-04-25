@@ -16,23 +16,10 @@ type DeviceToUser = {
   userId: b64string,
 };
 
-export type FindUserParameters = {|
-  userId?: Uint8Array,
-  deviceId?: Uint8Array,
-  userPublicKey?: Uint8Array
-|}
-
-export type FindUsersParameters = {|
-  hashedUserIds?: Array<Uint8Array>,
-|}
-
-export type FindDeviceParameters = {|
-  deviceId?: Uint8Array,
-|}
-
-export type FindDevicesParameters = {|
-  hashedDeviceIds?: Array<Uint8Array>,
-|}
+export type FindUserParameters = $Exact<{ deviceId: Uint8Array }> | $Exact<{ userId: Uint8Array }> | $Exact<{ userPublicKey: Uint8Array }>;
+export type FindUsersParameters = $Exact<{ hashedUserIds: Array<Uint8Array> }>;
+export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
+export type FindDevicesParameters = $Exact<{ hashedDeviceIds: Array<Uint8Array> }>;
 
 const USERS_TABLE = 'users';
 const DEVICES_USER_TABLE = 'devices_to_user';
@@ -226,28 +213,27 @@ export default class UserStore {
   }
 
   async findUser(args: FindUserParameters): Promise<?User> {
-    const { userId, deviceId, userPublicKey } = args;
     if (Object.keys(args).length !== 1)
       throw new Error(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
-    if (userId) {
+    if (args.userId) {
       const record = await this._ds.first(USERS_TABLE, {
-        selector: { userId: utils.toBase64(userId) },
+        selector: { userId: utils.toBase64(args.userId) },
       });
       return record;
     }
 
-    if (deviceId) {
-      const deviceToUser = await this._findDeviceToUser({ deviceId });
+    if (args.deviceId) {
+      const deviceToUser = await this._findDeviceToUser({ deviceId: args.deviceId });
       if (!deviceToUser)
         return null;
       const deviceUserId = deviceToUser.userId;
       return this.findUser({ userId: utils.fromBase64(deviceUserId) });
     }
 
-    if (userPublicKey) {
+    if (args.userPublicKey) {
       const publicKeyToUser = await this._ds.first(USER_KEY_TABLE, {
-        selector: { userPublicKey: utils.toBase64(userPublicKey) },
+        selector: { userPublicKey: utils.toBase64(args.userPublicKey) },
       });
       if (!publicKeyToUser)
         return null;

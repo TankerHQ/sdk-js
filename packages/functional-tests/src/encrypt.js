@@ -216,17 +216,15 @@ const generateEncryptTests = (args: TestArgs) => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
 
-          const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
-
-          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+          const cipherText = await args.aliceLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
 
           const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
 
-          await args.bobLaptop.revokeDevice(args.bobLaptop.deviceId);
+          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+          await args.bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+          await args.bobLaptop.signOut();
 
           await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
-
           const decrypted = await args.bobPhone.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
