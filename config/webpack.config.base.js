@@ -45,7 +45,7 @@ const getBabelLoaders = (env) => {
         presets: [['@babel/preset-env', {
           modules: 'umd',
           useBuiltIns: 'usage',
-          targets: { browsers: ['last 2 versions', 'ie >= 11'] },
+          targets: { browsers: ['last 2 versions', 'Firefox ESR', 'not ie < 11', 'not dead'] },
         }]],
       },
       include: [
@@ -73,7 +73,7 @@ const makeBaseConfig = ({ mode, target }) => {
 
     module: {
       rules: [
-        ...getBabelLoaders({ prod: mode === 'production', target }),
+        ...getBabelLoaders({ target }),
         {
           test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
           loader: 'url-loader',
