@@ -1,7 +1,7 @@
 // @flow
 import { type ShareWithOptions, validateShareWithOptions } from './ShareWithOptions';
 
-export type EncryptionOptions = ShareWithOptions & { shareWithSelf?: bool };
+export type EncryptionOptions = ShareWithOptions;
 
 export const validateEncryptionOptions = (value: any): bool => {
   if (typeof value === 'undefined')
@@ -10,7 +10,5 @@ export const validateEncryptionOptions = (value: any): bool => {
   if (typeof value !== 'object' || value === null)
     return false;
 
-  const { shareWithSelf, ...shareWithOptions } = value;
-
-  return validateShareWithOptions(shareWithOptions);
+  return validateShareWithOptions(value);
 };

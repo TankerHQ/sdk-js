@@ -15,7 +15,7 @@ import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
 import { SessionOpener, type OpenMode, type SignInResult, type SignInOptions, SIGN_IN_RESULT, OPEN_MODE } from './Session/SessionOpener';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
-import { type ShareWithOptions, isShareWithOptionsEmpty, validateShareWithOptions } from './DataProtection/ShareWithOptions';
+import { type ShareWithOptions, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 
@@ -298,12 +298,7 @@ export class Tanker extends EventEmitter {
     if (!validateEncryptionOptions(options))
       throw new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<String> }', options);
 
-    const opts = { shareWithSelf: true, ...options };
-
-    if (opts.shareWithSelf === false && isShareWithOptionsEmpty(options))
-      throw new InvalidArgument('options.shareWith*', 'options.shareWithUsers or options.shareWithGroups must contain recipients when options.shareWithSelf === false', opts);
-
-    return opts;
+    return options;
   }
 
   async share(resourceIds: Array<b64string>, shareWithOptions: ShareWithOptions): Promise<void> {

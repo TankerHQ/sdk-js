@@ -155,7 +155,7 @@ export default class DataProtector {
 
   async encryptAndShareData(data: Uint8Array, options: EncryptionOptions = {}): Promise<Uint8Array> {
     const { key, resourceId, encryptedData } = this._resourceManager.makeSimpleResource(data);
-    await this._shareResources([{ resourceId, key }], options, options.shareWithSelf || false);
+    await this._shareResources([{ resourceId, key }], options, true);
     return encryptedData;
   }
 
@@ -176,7 +176,7 @@ export default class DataProtector {
     const streamResource = this._resourceManager.makeStreamResource();
     const encryptorStream = new EncryptorStream(streamResource.resourceId, streamResource.key);
 
-    await this._shareResources([streamResource], options, options.shareWithSelf || false);
+    await this._shareResources([streamResource], options, true);
 
     return encryptorStream;
   }

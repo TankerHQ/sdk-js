@@ -74,11 +74,6 @@ const generateEncryptTests = (args: TestArgs) => {
         await expect(args.bobLaptop.encrypt()).to.be.rejectedWith(errors.InvalidArgument);
       });
 
-      it('throws when shareWithSelf = false and no userId is provided', async () => {
-        const promise = args.bobLaptop.encrypt(clearText, { shareWithSelf: false });
-        await expect(promise).to.be.rejectedWith(errors.InvalidArgument);
-      });
-
       it('throws when decrypting an invalid type', async () => {
         const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'str'];
         for (let i = 0; i < notUint8ArrayTypes.length; i++) {
@@ -267,17 +262,6 @@ const generateEncryptTests = (args: TestArgs) => {
           expect(decrypted).to.equal(clearText);
           await args.bobPhone.signOut();
         });
-
-        it('can\'t decrypt if shareWithSelf = false', async () => {
-          const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithSelf: false, shareWithUsers: [alicePublicIdentity] });
-          await expect(args.bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
-          await expect(args.aliceLaptop.decrypt(encrypted)).to.be.fulfilled;
-        });
-
-        it('can decrypt if shareWithSelf = false but explicitely shared with self at encryption', async () => {
-          const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithSelf: false, shareWithUsers: [bobPublicIdentity] });
-          await expect(args.bobLaptop.decrypt(encrypted)).to.be.fulfilled;
-        });
       });
     });
 
@@ -338,11 +322,8 @@ const generateEncryptTests = (args: TestArgs) => {
   });
 
   describe('text resource encryption and sharing with multiple devices', () => {
-    let alicePublicIdentity;
-
     before(async () => {
       const aliceIdentity = await args.trustchainHelper.generateIdentity();
-      alicePublicIdentity = await getPublicIdentity(aliceIdentity);
       const bobIdentity = await args.trustchainHelper.generateIdentity();
       await args.bobLaptop.signUp(bobIdentity);
       await args.aliceLaptop.signUp(aliceIdentity);
@@ -363,11 +344,6 @@ const generateEncryptTests = (args: TestArgs) => {
       const encrypted = await args.bobLaptop.encrypt(clearText);
       const decrypted = await args.bobPhone.decrypt(encrypted);
       expect(decrypted).to.equal(clearText);
-    });
-
-    it('can\'t decrypt from another device if encrypted with shareWithSelf = false', async () => {
-      const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithSelf: false, shareWithUsers: [alicePublicIdentity] });
-      await expect(args.bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
     });
 
     it('can access a resource encrypted and shared from a device that was then revoked', async () => {
