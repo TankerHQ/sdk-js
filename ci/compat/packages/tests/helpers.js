@@ -31,7 +31,7 @@ class BaseUser {
   }
 
   getRevocationPromise() {
-    return new Promise(resolve => this._tanker.once('revoked', resolve));
+    return new Promise(resolve => this._tanker.once('deviceRevoked', resolve));
   }
 }
 

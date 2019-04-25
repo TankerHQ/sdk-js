@@ -1,6 +1,5 @@
 // @flow
 
-import EventEmitter from 'events';
 import Trustchain from '../Trustchain/Trustchain';
 import Storage, { type DataStoreOptions } from './Storage';
 import { Unlocker } from '../Unlock/Unlocker';
@@ -41,7 +40,7 @@ export type SignInOptions = {|
   password?: string,
 |};
 
-export class SessionOpener extends EventEmitter {
+export class SessionOpener {
   _storage: Storage;
   _trustchain: Trustchain;
   _client: Client;
@@ -51,8 +50,6 @@ export class SessionOpener extends EventEmitter {
   unlocker: Unlocker;
 
   constructor(userData: UserData, storage: Storage, trustchain: Trustchain, client: Client) {
-    super();
-
     const localUser = new LocalUser(userData, storage.keyStore);
     storage.userStore.setLocalUser(localUser);
 

@@ -141,10 +141,6 @@ export class Tanker extends EventEmitter {
   _setSessionOpener = (opener: ?SessionOpener) => {
     if (opener) {
       this._sessionOpener = opener;
-      this._sessionOpener.on('unlockRequired', () => {
-        this.emit('unlockRequired');
-        this.emit('statusChange', this.isOpen);
-      });
     } else {
       delete this._sessionOpener;
     }
@@ -235,7 +231,7 @@ export class Tanker extends EventEmitter {
     if (session) {
       await session.nuke();
     }
-    this.emit('revoked');
+    this.emit('deviceRevoked');
   }
 
   get registeredUnlockMethods(): UnlockMethods {
