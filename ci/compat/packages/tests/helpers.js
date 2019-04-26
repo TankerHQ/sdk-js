@@ -29,10 +29,6 @@ class BaseUser {
   get deviceId() {
     return this._tanker.deviceId;
   }
-
-  getRevocationPromise() {
-    return new Promise(resolve => this._tanker.once('deviceRevoked', resolve));
-  }
 }
 
 class UserV1 extends BaseUser {
@@ -64,6 +60,10 @@ class UserV1 extends BaseUser {
   get token() {
     return this._token;
   }
+
+  getRevocationPromise() {
+    return new Promise(resolve => this._tanker.once('revoked', resolve));
+  }
 }
 
 class UserV2 extends BaseUser {
@@ -82,6 +82,10 @@ class UserV2 extends BaseUser {
 
   get identity() {
     return this._identity;
+  }
+
+  getRevocationPromise() {
+    return new Promise(resolve => this._tanker.once('deviceRevoked', resolve));
   }
 }
 
