@@ -7,7 +7,7 @@ import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tan
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { NothingToClaim, ServerError, AuthenticationError } from '../errors';
+import { NothingToClaim, ServerError, AuthenticationError, InvalidIdentityVerificationCode } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 import { UnlockKeyAnswer, type UnlockKeyMessage, type UnlockClaims, type UnlockKeyRequest } from '../Unlock/unlock';
 
@@ -302,14 +302,23 @@ export class Client extends EventEmitter {
   }
 
   getProvisionalIdentityKeys = async (provisionalIdentity: { email: string }, verificationCode: string): Promise<*> => {
-    const result = await this._send('get provisional identity', {
-      email: provisionalIdentity.email,
-      verificationCode,
-    });
+    let result;
+    try {
+      result = await this._send('get provisional identity', {
+        email: provisionalIdentity.email,
+        verificationCode,
+      });
+    } catch (e) {
+      const error = e.error;
+      if (error.code && error.code === 'invalid_verification_code' || error.code === 'authentication_failed') {
+        throw new InvalidIdentityVerificationCode(error);
+      } else {
+        throw new ServerError(e, this.trustchainId);
+      }
+    }
+
     if (!result)
       throw new NothingToClaim('nothing to claim');
-    if (result.error)
-      throw new ServerError(result.error, this.trustchainId);
 
     return {
       tankerSignatureKeyPair: {
