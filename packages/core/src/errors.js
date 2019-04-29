@@ -150,3 +150,12 @@ export class NothingToClaim extends TankerError {
     super('NothingToClaim', msg);
   }
 }
+
+export class InvalidIdentityVerificationCode extends TankerError {
+  next: Error;
+
+  constructor(e: any) {
+    super('InvalidIdentityVerificationCode', 'invalid verification code');
+    this.next = e;
+  }
+}
