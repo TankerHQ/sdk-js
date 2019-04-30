@@ -38,9 +38,9 @@ describe('UserStore', () => {
     userStore = await makeUserStore(userId);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     userId = random(tcrypto.HASH_SIZE);
-    testUserCreation = testGenerator.makeUserCreation(userId);
+    testUserCreation = await testGenerator.makeUserCreation(userId);
     deviceCreation = testUserCreation.unverifiedDeviceCreation;
     deviceCreationV1 = testUserCreation.unverifiedDeviceCreationV1;
     user = testUserCreation.user;

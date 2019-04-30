@@ -30,7 +30,7 @@ describe('UnverifiedStore', () => {
 
     before(async () => {
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       keyPublish = testGenerator.makeKeyPublishToUser(userCreation, userCreation.user);
 
       await unverifiedStore.addUnverifiedKeyPublishes([keyPublish.unverifiedKeyPublish]);
@@ -55,7 +55,7 @@ describe('UnverifiedStore', () => {
 
     before(async () => {
       userId = random(tcrypto.HASH_SIZE);
-      userCreation = testGenerator.makeUserCreation(userId);
+      userCreation = await testGenerator.makeUserCreation(userId);
       deviceCreation = testGenerator.makeDeviceCreation(userCreation);
       deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation, deviceCreation.testDevice.id);
 
@@ -113,12 +113,12 @@ describe('UnverifiedStore', () => {
     beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user]);
 
       // Second user
       const userId2 = random(tcrypto.HASH_SIZE);
-      const userCreation2 = testGenerator.makeUserCreation(userId2);
+      const userCreation2 = await testGenerator.makeUserCreation(userId2);
       userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroupCreation, [userCreation2.user]);
 
       await unverifiedStore.addUnverifiedUserGroups([userGroupCreation.unverifiedUserGroup, userGroupAddition.unverifiedUserGroup]);
@@ -163,7 +163,7 @@ describe('UnverifiedStore', () => {
 
     before(async () => {
       userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       claim = testGenerator.makeProvisionalIdentityClaim(userCreation, userId, random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE));
 
       await unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries([claim.unverifiedProvisionalIdentityClaim]);

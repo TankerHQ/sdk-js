@@ -35,18 +35,6 @@ function assertFailWithNature(verifyFunc: () => any, nature: string) {
     .that.has.property('nature', nature);
 }
 
-function makeProvisionalIdentity() {
-  return {
-    trustchainId: random(tcrypto.HASH_SIZE),
-    target: 'email',
-    value: 'bob@gmail',
-    appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-    appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-    tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-    tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-  };
-}
-
 describe('BlockVerification', () => {
   let testGenerator: TestGenerator;
 
@@ -107,12 +95,12 @@ describe('BlockVerification', () => {
     let unverifiedDeviceCreation: UnverifiedDeviceCreation;
     let trustchainKeys: tcrypto.SodiumKeyPair;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       const trustchainCreation = testGenerator.makeTrustchainCreation();
       trustchainKeys = trustchainCreation.trustchainKeys;
 
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       const deviceCreation = testGenerator.makeDeviceCreation(userCreation);
       unverifiedUserCreation = userCreation.unverifiedDeviceCreation;
       unverifiedDeviceCreation = deviceCreation.unverifiedDeviceCreation;
@@ -202,10 +190,10 @@ describe('BlockVerification', () => {
     let user: User;
     let unverifiedDeviceRevocation: UnverifiedDeviceRevocation;
     let authorKey: Uint8Array;
-    beforeEach(() => {
+    beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       const deviceCreation = testGenerator.makeDeviceCreation(userCreation);
       user = deviceCreation.user;
       const deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation, deviceCreation.testDevice.id);
@@ -322,10 +310,10 @@ describe('BlockVerification', () => {
   describe('key publish to device', () => {
     let user: User;
     let unverifiedKeyPublish: UnverifiedKeyPublish;
-    beforeEach(() => {
+    beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       const deviceCreation = testGenerator.makeDeviceCreation(userCreation);
       user = deviceCreation.user;
       user.userPublicKeys = [];
@@ -368,10 +356,10 @@ describe('BlockVerification', () => {
   describe('key publish to user', () => {
     let user: User;
     let unverifiedKeyPublish: UnverifiedKeyPublish;
-    beforeEach(() => {
+    beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       user = userCreation.user;
       testGenerator.skipIndex(); // used for faking a revocation
       const keyPublish = testGenerator.makeKeyPublishToUser(userCreation, user);
@@ -417,13 +405,13 @@ describe('BlockVerification', () => {
     let user: User;
     let unverifiedKeyPublish: UnverifiedKeyPublish;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       user = userCreation.user;
       testGenerator.skipIndex(); // used for faking a revocation
-      const provisionalIdentityPublicKeys = makeProvisionalIdentity();
+      const provisionalIdentityPublicKeys = testGenerator.makeProvisionalUser();
       const keyPublish = testGenerator.makeKeyPublishToProvisionalUser(userCreation, provisionalIdentityPublicKeys);
       unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
     });
@@ -447,12 +435,12 @@ describe('BlockVerification', () => {
     let externalGroup: ExternalGroup;
     let unverifiedUserGroup: UnverifiedUserGroup;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      const provisionalIdentity = makeProvisionalIdentity();
+      const provisionalIdentity = testGenerator.makeProvisionalUser();
       const userGroup = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
       unverifiedUserGroup = userGroup.unverifiedUserGroup;
       externalGroup = userGroup.externalGroup;
@@ -493,18 +481,18 @@ describe('BlockVerification', () => {
     let externalGroup: ExternalGroup;
     let unverifiedUserGroup: UnverifiedUserGroup;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      const provisionalIdentity = makeProvisionalIdentity();
+      const provisionalIdentity = testGenerator.makeProvisionalUser();
       const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
       externalGroup = userGroupCreation.externalGroup;
 
       // Second user
       const userId2 = random(tcrypto.HASH_SIZE);
-      const userCreation2 = testGenerator.makeUserCreation(userId2);
+      const userCreation2 = await testGenerator.makeUserCreation(userId2);
       const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroupCreation, [userCreation2.user]);
 
       unverifiedUserGroup = userGroupAddition.unverifiedUserGroup;
@@ -552,10 +540,10 @@ describe('BlockVerification', () => {
     let user: User;
     let externalGroup: ExternalGroup;
     let unverifiedKeyPublish: UnverifiedKeyPublish;
-    beforeEach(() => {
+    beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       user = userCreation.user;
       const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user]);
       externalGroup = userGroupCreation.externalGroup;
@@ -590,10 +578,10 @@ describe('BlockVerification', () => {
     let unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim;
     let userId: Uint8Array;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       userId = random(tcrypto.HASH_SIZE);
-      const userCreation = testGenerator.makeUserCreation(userId);
+      const userCreation = await testGenerator.makeUserCreation(userId);
       user = userCreation.user;
       const userPublicKey = userCreation.testUser.userKeys.slice(-1)[0].publicKey;
       const claim = testGenerator.makeProvisionalIdentityClaim(userCreation, userId, userPublicKey);
