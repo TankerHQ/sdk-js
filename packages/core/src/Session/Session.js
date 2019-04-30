@@ -110,5 +110,6 @@ export class Session {
     const block = this.localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this.localUser.userId, userPubKey, provisionalUserKeys);
 
     await this._client.sendBlock(block);
+    await this._trustchain.sync();
   }
 }
