@@ -24,13 +24,13 @@ class Tanker extends TankerCore {
 
   async _simpleEncryptData<T: Data>(clearData: Data, options: EncryptionOptions, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
     const castClearData = await castData(clearData, { type: Uint8Array });
-    const encryptedData = await this._session.dataProtector.encryptAndShareData(castClearData, options);
+    const encryptedData = await this._session.apis.dataProtector.encryptAndShareData(castClearData, options);
     return castData(encryptedData, outputOptions);
   }
 
   async _streamEncryptData<T: Data>(clearData: Data, options: EncryptionOptions, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
-    const encryptor = await this._session.dataProtector.makeEncryptorStream(options);
+    const encryptor = await this._session.apis.dataProtector.makeEncryptorStream(options);
     const merger = new MergerStream(outputOptions);
 
     return new Promise((resolve, reject) => {
@@ -54,13 +54,13 @@ class Tanker extends TankerCore {
 
   async _simpleDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array });
-    const clearData = await this._session.dataProtector.decryptData(castEncryptedData);
+    const clearData = await this._session.apis.dataProtector.decryptData(castEncryptedData);
     return castData(clearData, outputOptions);
   }
 
   async _streamDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T> & { type: Class<T> }): Promise<T> {
     const slicer = new SlicerStream({ source: encryptedData });
-    const decryptor = await this._session.dataProtector.makeDecryptorStream();
+    const decryptor = await this._session.apis.dataProtector.makeDecryptorStream();
     const merger = new MergerStream(outputOptions);
 
     return new Promise((resolve, reject) => {
