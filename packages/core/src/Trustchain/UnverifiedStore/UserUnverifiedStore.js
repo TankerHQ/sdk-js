@@ -2,9 +2,9 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
-import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
-import { type UserDeviceRecord, type DeviceRevocationRecord } from '../Blocks/payloads';
-import { type Nature, isDeviceCreation } from '../Blocks/Nature';
+import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../../Blocks/entries';
+import { type UserDeviceRecord, type DeviceRevocationRecord } from '../../Blocks/payloads';
+import { type Nature, isDeviceCreation } from '../../Blocks/Nature';
 
 const TABLE_USER_BLOCKS = 0; // Contains both user devices & revocations
 const TABLE_DEVICE_TO_USER = 1; // Maps deviceId to userId, for revocation targets

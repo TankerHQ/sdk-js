@@ -9,8 +9,8 @@ import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import { type UserData } from '../UserData';
 import { findIndex } from '../utils';
-import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import { type ProvisionalUserKeyPairs } from './KeySafe';
 
 export type DeviceKeys = {|

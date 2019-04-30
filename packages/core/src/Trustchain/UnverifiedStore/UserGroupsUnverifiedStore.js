@@ -3,9 +3,9 @@
 import { utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
-import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../Blocks/payloads';
-import { natureKind, NATURE_KIND } from '../Blocks/Nature';
+import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../../Blocks/entries';
+import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../../Blocks/payloads';
+import { natureKind, NATURE_KIND } from '../../Blocks/Nature';
 
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';

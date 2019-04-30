@@ -3,7 +3,7 @@
 import { tcrypto, random } from '@tanker/crypto';
 
 import { expect } from './chai';
-import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import TestGenerator from './TestGenerator';
 

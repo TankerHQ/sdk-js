@@ -6,9 +6,9 @@ import { Client } from '../Network/Client';
 import TrustchainStore from './TrustchainStore';
 import Storage from '../Session/Storage';
 import GroupUpdater from '../Groups/GroupUpdater';
-import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
-import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
-import type { VerifiedDeviceCreation } from '../UnverifiedStore/UserUnverifiedStore';
+import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
+import { type VerifiedKeyPublish } from './UnverifiedStore/KeyPublishUnverifiedStore';
+import type { VerifiedDeviceCreation } from './UnverifiedStore/UserUnverifiedStore';
 
 export default class Trustchain {
   _trustchainStore: TrustchainStore;

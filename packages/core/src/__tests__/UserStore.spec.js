@@ -7,7 +7,7 @@ import { type User } from '../Users/User';
 
 import { NATURE } from '../Blocks/Nature';
 
-import { type VerifiedDeviceCreation } from '../UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedDeviceCreation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
 
 import { makeMemoryDataStore } from './TestDataStore';
 import TestGenerator, { type TestDeviceCreation } from './TestGenerator';

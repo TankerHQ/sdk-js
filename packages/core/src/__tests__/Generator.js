@@ -5,9 +5,9 @@ import { obfuscateUserId, type ProvisionalUserKeys, type PublicProvisionalUser }
 import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { Device, User } from '../Users/User';
-import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
-import { type UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
-import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
+import { type UnverifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
 import { encodeArrayLength } from '../Blocks/Serialize';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';

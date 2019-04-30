@@ -8,7 +8,7 @@ import ResourceStore from '../Resource/ResourceStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import TrustchainStore, { TABLE_METADATA } from '../Trustchain/TrustchainStore';
-import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 
 const STORAGE_VERSION_KEY = 'storageVersion';
 const CURRENT_STORAGE_VERSION = 1;

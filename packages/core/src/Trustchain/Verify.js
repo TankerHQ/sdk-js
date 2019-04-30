@@ -7,10 +7,10 @@ import { findIndex } from '../utils';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { getUserGroupCreationBlockSignDataV1, getUserGroupCreationBlockSignDataV2, getUserGroupAdditionBlockSignDataV1, getUserGroupAdditionBlockSignDataV2 } from '../Blocks/BlockGenerator';
-import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
-import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type UnverifiedUserGroup, type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import { type UnverifiedProvisionalIdentityClaim, type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from './UnverifiedStore/KeyPublishUnverifiedStore';
+import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from './UnverifiedStore/UserUnverifiedStore';
+import { type UnverifiedUserGroup, type VerifiedUserGroup } from './UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim, type VerifiedProvisionalIdentityClaim } from './UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import { type UnverifiedTrustchainCreation } from './TrustchainStore';
 
 import {

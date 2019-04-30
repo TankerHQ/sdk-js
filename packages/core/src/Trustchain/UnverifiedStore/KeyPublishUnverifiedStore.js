@@ -2,10 +2,10 @@
 import { utils } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 
-import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
-import { type KeyPublishRecord } from '../Blocks/payloads';
+import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../../Blocks/entries';
+import { type KeyPublishRecord } from '../../Blocks/payloads';
 
-import { type Nature } from '../Blocks/Nature';
+import { type Nature } from '../../Blocks/Nature';
 
 const TABLE_BLOCKS = 0; // Table that stores our unverified blocks
 

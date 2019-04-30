@@ -25,7 +25,7 @@ import Keystore from '../Session/Keystore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
-import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 
 import { userGroupEntryFromBlock, deviceCreationFromBlock, provisionalIdentityClaimFromBlock } from '../Blocks/entries';
 import { type ProvisionalPublicKey } from '../Blocks/payloads';

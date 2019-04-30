@@ -4,7 +4,7 @@ import { utils, type b64string } from '@tanker/crypto';
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
 import TrustchainStore, { type UnverifiedTrustchainCreation } from './TrustchainStore';
-import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 
 import {
   blockToEntry,

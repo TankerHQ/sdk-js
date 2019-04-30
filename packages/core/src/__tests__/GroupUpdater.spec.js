@@ -10,7 +10,7 @@ import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
-import { type UnverifiedUserGroupCreation } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedUserGroupCreation } from '../Trustchain/UnverifiedStore/UserGroupsUnverifiedStore';
 
 async function makeMemoryGroupStore(): Promise<GroupStore> {
   const schemas = mergeSchemas(GroupStore.schemas);

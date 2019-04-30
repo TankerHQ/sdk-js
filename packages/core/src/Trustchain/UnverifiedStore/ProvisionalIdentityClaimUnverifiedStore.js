@@ -3,8 +3,8 @@
 import { utils } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 
-import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../Blocks/entries';
-import { type ProvisionalIdentityClaimRecord } from '../Blocks/payloads';
+import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../../Blocks/entries';
+import { type ProvisionalIdentityClaimRecord } from '../../Blocks/payloads';
 
 const UNVERIFIED_CLAIMS_TABLE = 'unverified_invite_claims'; // Table that stores our unverified claim blocks
 

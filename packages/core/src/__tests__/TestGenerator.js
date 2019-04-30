@@ -13,10 +13,10 @@ import {
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
-import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
-import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import type { UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
+import type { UnverifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
+import type { UnverifiedUserGroup } from '../Trustchain/UnverifiedStore/UserGroupsUnverifiedStore';
+import type { UnverifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import { hashBlock, signBlock, type Block } from '../Blocks/Block';

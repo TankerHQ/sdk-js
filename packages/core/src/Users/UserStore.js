@@ -7,8 +7,8 @@ import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocatio
 import { findIndex } from '../utils';
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
 
-import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 type DeviceToUser = {
