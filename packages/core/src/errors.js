@@ -55,11 +55,11 @@ export class InvalidUnlockPassword extends TankerError {
   }
 }
 
-export class InvalidUnlockVerificationCode extends TankerError {
+export class InvalidVerificationCode extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('InvalidUnlockVerificationCode');
+    super('InvalidVerificationCode');
     this.next = e;
   }
 }
