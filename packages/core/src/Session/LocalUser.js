@@ -7,7 +7,7 @@ import { type PublicIdentity } from '@tanker/identity';
 import { type UnlockMethods } from '../Network/Client';
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import { type UserData } from '../UserData';
+import { type UserData } from './types';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
 import { type VerifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';

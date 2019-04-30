@@ -26,7 +26,7 @@ import { rootBlockAuthor } from '../Trustchain/Verify';
 
 import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
-import { type DelegationToken } from '../Session/delegation';
+import { type DelegationToken } from '../Session/types';
 
 
 export type TestDevice = {
