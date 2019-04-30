@@ -111,7 +111,7 @@ const generateUnlockTests = (args: TestArgs) => {
         const correctVerificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         // introduce a typo on the first digit
         const wrongVerificationCode = (parseInt(correctVerificationCode[0], 10) + 1) % 10 + correctVerificationCode.substring(1);
-        await expect(expectUnlock(bobPhone, bobIdentity, { verificationCode: wrongVerificationCode })).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
+        await expect(expectUnlock(bobPhone, bobIdentity, { verificationCode: wrongVerificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
       });
     });
 
@@ -142,7 +142,7 @@ const generateUnlockTests = (args: TestArgs) => {
       it('should throw a nice error when email is not set and password is set', async () => {
         await expect(bobLaptop.registerUnlock({ password: 'noEmail' })).to.be.fulfilled;
         const verificationCode = 'ZW1haWwgbm90IHNldA=='; // any b64 value, will be ignored
-        await expect(bobPhone.signIn(bobIdentity, { verificationCode })).to.be.rejectedWith(errors.InvalidUnlockVerificationCode);
+        await expect(bobPhone.signIn(bobIdentity, { verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
         expect(bobPhone.isOpen).to.be.false;
       });
     });

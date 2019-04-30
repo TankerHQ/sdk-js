@@ -198,7 +198,7 @@ const generateEncryptTests = (args: TestArgs) => {
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           await args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] });
 
-          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, 'wrongCode')).to.be.rejectedWith(errors.InvalidIdentityVerificationCode);
+          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, 'wrongCode')).to.be.rejectedWith(errors.InvalidVerificationCode);
         });
 
         it('throw when two users claim same provisional identity', async () => {

@@ -55,11 +55,11 @@ export class InvalidUnlockPassword extends TankerError {
   }
 }
 
-export class InvalidUnlockVerificationCode extends TankerError {
+export class InvalidVerificationCode extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('InvalidUnlockVerificationCode');
+    super('InvalidVerificationCode');
     this.next = e;
   }
 }
@@ -148,14 +148,5 @@ export class IdentityAlreadyRegistered extends TankerError {
 export class NothingToClaim extends TankerError {
   constructor(msg: string) {
     super('NothingToClaim', msg);
-  }
-}
-
-export class InvalidIdentityVerificationCode extends TankerError {
-  next: Error;
-
-  constructor(e: any) {
-    super('InvalidIdentityVerificationCode', 'invalid verification code');
-    this.next = e;
   }
 }
