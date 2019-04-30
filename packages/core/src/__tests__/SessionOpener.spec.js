@@ -30,7 +30,7 @@ class MockStorage {
       userKeys: [userKeyPair]
     };
     this.userStore = {
-      setLocalUser: () => {},
+      setCallbacks: () => {},
     };
   }
   hasLocalDevice = () => true;

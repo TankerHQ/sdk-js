@@ -30,8 +30,8 @@ export default class UserStoreBuilder {
   static async open() {
     const { generator } = await makeGenerator();
     const dataStore = await makeMemoryDataStore();
-    const userStore = new UserStore(dataStore);
-    userStore.setLocalUser(({ userId: makeUint8Array('userID', 32), applyDeviceCreation: () => {} }: any));
+    const userStore = new UserStore(dataStore, makeUint8Array('userID', 32));
+    userStore.setCallbacks(({ applyDeviceCreation: () => {} }: any));
     return new UserStoreBuilder(userStore, generator);
   }
 

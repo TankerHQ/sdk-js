@@ -51,7 +51,11 @@ export class SessionOpener {
 
   constructor(userData: UserData, storage: Storage, trustchain: Trustchain, client: Client) {
     const localUser = new LocalUser(userData, storage.keyStore);
-    storage.userStore.setLocalUser(localUser);
+    storage.userStore.setCallbacks({
+      deviceCreation: localUser.applyDeviceCreation,
+      deviceRevocation: localUser.applyDeviceRevocation,
+      claim: localUser.applyProvisionalIdentityClaim,
+    });
 
     this._storage = storage;
     this._localUser = localUser;
