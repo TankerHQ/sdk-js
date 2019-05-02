@@ -158,7 +158,8 @@ const generateGroupsTests = (args: TestArgs) => {
     it('throws when creating a group with already claimed identity', async () => {
       const email = 'alice@tanker-functional-test.io';
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-      await args.bobLaptop.encrypt(message, { shareWithUsers: [provisionalIdentity] });
+      const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
+      await args.bobLaptop.encrypt(message, { shareWithUsers: [publicProvisionalIdentity] });
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
       await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
@@ -201,7 +202,8 @@ const generateGroupsTests = (args: TestArgs) => {
       const groupId = await args.bobLaptop.createGroup([bobPublicIdentity]);
       const email = 'alice@tanker-functional-test.io';
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-      await args.bobLaptop.encrypt(message, { shareWithUsers: [provisionalIdentity] });
+      const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
+      await args.bobLaptop.encrypt(message, { shareWithUsers: [publicProvisionalIdentity] });
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
       await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
@@ -211,6 +213,7 @@ const generateGroupsTests = (args: TestArgs) => {
     it('should claim a group creation, a group add, and an encrypt', async () => {
       const email = 'alice@tanker-functional-test.io';
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+      const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
       const groupIds = await Promise.all([
         args.bobLaptop.createGroup([bobPublicIdentity]),
         args.bobLaptop.createGroup([bobPublicIdentity, provisionalIdentity]),
@@ -220,7 +223,7 @@ const generateGroupsTests = (args: TestArgs) => {
       const encrypted = await Promise.all([
         args.bobLaptop.encrypt(message, { shareWithGroups: [groupIds[0]] }),
         args.bobLaptop.encrypt(message, { shareWithGroups: [groupIds[1]] }),
-        args.bobLaptop.encrypt(message, { shareWithUsers: [provisionalIdentity] }),
+        args.bobLaptop.encrypt(message, { shareWithUsers: [publicProvisionalIdentity] }),
       ]);
 
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
