@@ -211,20 +211,29 @@ const generateGroupsTests = (args: TestArgs) => {
     it('should claim a group creation, a group add, and an encrypt', async () => {
       const email = 'alice@tanker-functional-test.io';
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-      const groupId1 = await args.bobLaptop.createGroup([bobPublicIdentity]);
-      const groupId2 = await args.bobLaptop.createGroup([bobPublicIdentity, provisionalIdentity]);
+      const groupIds = await Promise.all([
+        args.bobLaptop.createGroup([bobPublicIdentity]),
+        args.bobLaptop.createGroup([bobPublicIdentity, provisionalIdentity]),
+      ]);
 
-      await expect(args.bobLaptop.updateGroupMembers(groupId1, { usersToAdd: [provisionalIdentity] })).to.be.fulfilled;
-      const encrypted1 = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId1] });
-      const encrypted2 = await args.bobLaptop.encrypt(message, { shareWithGroups: [groupId2] });
-      const encrypted3 = await args.bobLaptop.encrypt(message, { shareWithUsers: [provisionalIdentity] });
+      await expect(args.bobLaptop.updateGroupMembers(groupIds[0], { usersToAdd: [provisionalIdentity] })).to.be.fulfilled;
+      const encrypted = await Promise.all([
+        args.bobLaptop.encrypt(message, { shareWithGroups: [groupIds[0]] }),
+        args.bobLaptop.encrypt(message, { shareWithGroups: [groupIds[1]] }),
+        args.bobLaptop.encrypt(message, { shareWithUsers: [provisionalIdentity] }),
+      ]);
 
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
       await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.fulfilled;
 
-      expect(await args.aliceLaptop.decrypt(encrypted1)).to.deep.equal(message);
-      expect(await args.aliceLaptop.decrypt(encrypted2)).to.deep.equal(message);
-      expect(await args.aliceLaptop.decrypt(encrypted3)).to.deep.equal(message);
+      const promises = [];
+      encrypted.forEach(element => {
+        promises.push(args.aliceLaptop.decrypt(element));
+      });
+      const decrypted = await Promise.all(promises);
+      decrypted.forEach(element => {
+        expect(element).to.deep.equal(message);
+      });
     });
   });
 };
