@@ -1,7 +1,7 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 import { type PublicIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser, _deserializePublicIdentity } from '@tanker/identity';
-import { ResourceNotFound, DecryptFailed } from '../errors';
+import { ResourceNotFound, DecryptFailed, InvalidArgument } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
@@ -103,15 +103,32 @@ export default class DataProtector {
     await this._client.sendKeyPublishBlocks(blocks);
   }
 
-  _splitProvisionalAndPermanentIdentities = (identities: Array<PublicIdentity>): * => {
+  _splitProvisionalAndPermanentPublicIdentities = (identities: Array<PublicIdentity>): * => {
     const permanentIdentities: Array<PublicPermanentIdentity> = [];
-    // $FlowIKnow This checks that the target is correct, so type refinement is fine
-    const provisionalIdentities: Array<PublicProvisionalIdentity> = identities.filter(elem => {
-      const isPermanent = elem.target === 'user';
-      if (isPermanent)
-        permanentIdentities.push((elem: any));
-      return !isPermanent;
-    });
+    const provisionalIdentities: Array<PublicProvisionalIdentity> = [];
+
+    for (const identity of identities) {
+      const isPermanent = identity.target === 'user';
+
+      if (isPermanent) {
+        // Check that the permanent identities are not secret permanent identities
+        if ('user_secret' in identity) {
+          throw new InvalidArgument('Cannot share with secret permanent identity');
+        }
+
+        const publicIdentity: PublicPermanentIdentity = (identity: any);
+        permanentIdentities.push(publicIdentity);
+      } else {
+        // Check that the provisional identities are not secret provisional identities
+        if ('private_encryption_key' in identity) {
+          throw new InvalidArgument('Cannot share with secret provisional identity');
+        }
+
+        const publicIdentity: PublicProvisionalIdentity = (identity: any);
+        provisionalIdentities.push(publicIdentity);
+      }
+    }
+
     return { permanentIdentities, provisionalIdentities };
   }
 
@@ -131,7 +148,7 @@ export default class DataProtector {
     const groups = await this._groupManager.getGroups(groupIds);
     const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
     const deserializedIdentities = b64UserIdentities.map(i => _deserializePublicIdentity(i));
-    const { permanentIdentities, provisionalIdentities } = this._splitProvisionalAndPermanentIdentities(deserializedIdentities);
+    const { permanentIdentities, provisionalIdentities } = this._splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
