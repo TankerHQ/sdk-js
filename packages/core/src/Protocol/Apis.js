@@ -3,7 +3,6 @@
 import Trustchain from '../Trustchain/Trustchain';
 import UserAccessor from '../Users/UserAccessor';
 import Storage from '../Session/Storage';
-import { UnlockKeys } from '../Unlock/UnlockKeys';
 
 import LocalUser from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
@@ -18,7 +17,6 @@ import DeviceManager from './DeviceManager';
 export class Apis {
   userAccessor: UserAccessor;
   groupManager: GroupManager;
-  unlockKeys: UnlockKeys;
 
   resourceManager: ResourceManager;
   dataProtector: DataProtector;
@@ -31,11 +29,6 @@ export class Apis {
       trustchain,
       storage.groupStore,
       this.userAccessor,
-      client,
-    );
-
-    this.unlockKeys = new UnlockKeys(
-      localUser,
       client,
     );
 

@@ -2,14 +2,13 @@
 
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
-import { utils, type b64string, type Key } from '@tanker/crypto';
+import { utils, type b64string } from '@tanker/crypto';
 import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 import { NothingToClaim, ServerError, AuthenticationError, InvalidVerificationCode } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
-import { UnlockKeyAnswer, type UnlockKeyMessage, type UnlockClaims, type UnlockKeyRequest } from '../Unlock/unlock';
 
 export type AuthDeviceParams = {
   signature: Uint8Array,
@@ -17,12 +16,6 @@ export type AuthDeviceParams = {
   trustchainId: Uint8Array,
   userId: Uint8Array,
 }
-
-export type UnlockMethod = {
-  type: "password" | "email"
-}
-
-export type UnlockMethods = Array<UnlockMethod>
 
 export type DeviceCreatedCb = () => void;
 
@@ -34,21 +27,20 @@ export type ClientOptions = {
   sdkInfo: SdkInfo,
 }
 
-/**
- * Our public and private user key encrypted for this device
- */
-export type EncryptedUserKey = {
-  public_user_key: Key,
-  encrypted_private_user_key: Uint8Array,
-}
-
-// We force the translation of the wire object, to protect the public API
-function toUnlockMethods(deviceAuthResponse: Object): UnlockMethods {
-  let ret: UnlockMethods = [];
-  if (!deviceAuthResponse || !deviceAuthResponse.unlock_methods)
-    return ret;
-  ret = deviceAuthResponse.unlock_methods.map(item => ({ type: item.type }));
-  return ret;
+export function b64RequestObject(requestObject: any): any {
+  const result = {};
+  Object.entries(requestObject).forEach(elem => {
+    if (elem[1] instanceof Uint8Array) {
+      result[elem[0]] = utils.toBase64(elem[1]);
+    } else if (Array.isArray(elem[1])) {
+      result[elem[0]] = elem[1].map(b64RequestObject);
+    } else if (elem[1] && typeof elem[1] === 'object') {
+      result[elem[0]] = b64RequestObject(elem[1]);
+    } else {
+      result[elem[0]] = elem[1]; // eslint-disable-line prefer-destructuring
+    }
+  });
+  return result;
 }
 
 export type Authenticator = (string) => AuthDeviceParams;
@@ -88,7 +80,7 @@ export class Client extends EventEmitter {
     });
   }
 
-  setAuthenticator = async (authenticator: Authenticator): Promise<UnlockMethods> => {
+  setAuthenticator = async (authenticator: Authenticator) => {
     if (this._authenticator)
       throw new Error('authenticator has already been set');
 
@@ -96,7 +88,7 @@ export class Client extends EventEmitter {
     return this.authenticate();
   }
 
-  authenticate = async (): Promise<UnlockMethods> => {
+  authenticate = async () => {
     const authenticator = this._authenticator;
     if (!authenticator)
       throw new Error('no authenticator has been set');
@@ -125,11 +117,11 @@ export class Client extends EventEmitter {
   }
 
   async requestAuthChallenge(): Promise<string> {
-    const { challenge } = await this._send('request auth challenge');
+    const { challenge } = await this.send('request auth challenge');
     return challenge;
   }
 
-  async authenticateDevice({ userId, trustchainId, publicSignatureKey, signature }: AuthDeviceParams): Promise<UnlockMethods> {
+  async authenticateDevice({ userId, trustchainId, publicSignatureKey, signature }: AuthDeviceParams) {
     const authDeviceRequest = {
       signature: utils.toBase64(signature),
       public_signature_key: utils.toBase64(publicSignatureKey),
@@ -138,80 +130,25 @@ export class Client extends EventEmitter {
     };
 
     try {
-      const result = await this._send('authenticate device', authDeviceRequest);
-      return toUnlockMethods(result);
+      return this.send('authenticate device', authDeviceRequest);
     } catch (e) {
       throw new AuthenticationError(e);
     }
   }
 
-  async userExists(trustchainId: Uint8Array, userId: Uint8Array, publicSignatureKey: Uint8Array) {
+  async remoteStatus(trustchainId: Uint8Array, userId: Uint8Array, publicSignatureKey: Uint8Array) {
     const request = {
       trustchain_id: utils.toBase64(trustchainId),
       user_id: utils.toBase64(userId),
       device_public_signature_key: utils.toBase64(publicSignatureKey),
     };
 
-    const reply = await this._send('get user status', request);
-
-    return reply.user_exists === true;
-  }
-
-  async getLastUserKey(trustchainId: Uint8Array, deviceId: b64string): Promise<?EncryptedUserKey> {
-    const request = {
-      trustchain_id: utils.toBase64(trustchainId),
-      device_id: deviceId,
-    };
-
-    const reply = await this._send('last user key', request);
-
-    if (!reply.public_user_key || !reply.encrypted_private_user_key)
-      return;
+    const reply = await this.send('get user status', request);
 
     return {
-      public_user_key: utils.fromBase64(reply.public_user_key),
-      encrypted_private_user_key: utils.fromBase64(reply.encrypted_private_user_key),
+      deviceExists: reply.device_exists,
+      userExists: reply.user_exists,
     };
-  }
-
-  async fetchUnlockKey(request: UnlockKeyRequest): Promise<UnlockKeyAnswer> {
-    const req = {
-      trustchain_id: utils.toBase64(request.trustchainId),
-      user_id: utils.toBase64(request.userId),
-      type: request.type,
-      value: utils.toBase64(request.value),
-    };
-    const reply = await this._send('get unlock key', req);
-    return new UnlockKeyAnswer(utils.fromBase64(reply.encrypted_unlock_key));
-  }
-
-  makeClaims({ password, unlockKey, email }: UnlockClaims): Object {
-    const claims = {};
-    if (email)
-      claims.email = utils.toBase64(email);
-    if (password)
-      claims.password = utils.toBase64(password);
-    if (unlockKey)
-      claims.unlock_key = utils.toBase64(unlockKey);
-    return claims;
-  }
-
-  makeUnlockRequest(message: UnlockKeyMessage): Object {
-    const request = {
-      trustchain_id: message.trustchainId,
-      device_id: message.deviceId,
-      claims: this.makeClaims(message.claims),
-      signature: utils.toBase64(message.signature),
-    };
-    return request;
-  }
-
-  async createUnlockKey(message: UnlockKeyMessage): Promise<void> {
-    await this._send('create unlock key', this.makeUnlockRequest(message));
-  }
-
-  async updateUnlockKey(message: UnlockKeyMessage): Promise<void> {
-    await this._send('update unlock key', this.makeUnlockRequest(message));
   }
 
   async open(): Promise<void> {
@@ -251,9 +188,8 @@ export class Client extends EventEmitter {
     await this.socket.close();
   }
 
-  async _send(eventName: string, payload: any): Promise<any> {
+  async send(eventName: string, payload: any): Promise<any> {
     const jdata = eventName !== 'push block' ? JSON.stringify(payload) : payload;
-
     const jresult = await this.socket.emit(eventName, jdata);
     const result = JSON.parse(jresult);
     if (result && result.error) {
@@ -268,7 +204,7 @@ export class Client extends EventEmitter {
       deviceCreatedCb();
     });
 
-    await this._send('subscribe to creation', {
+    await this.send('subscribe to creation', {
       trustchain_id: utils.toBase64(this.trustchainId),
       public_signature_key: utils.toBase64(publicSignatureKey),
       signature: utils.toBase64(publicSignatureKeySignature),
@@ -277,7 +213,7 @@ export class Client extends EventEmitter {
 
   sendBlock = async (block: Block): Promise<void> => {
     const b2 = { index: 0, ...block };
-    await this._send('push block', utils.toBase64(serializeBlock(b2)));
+    await this.send('push block', utils.toBase64(serializeBlock(b2)));
   }
 
   sendKeyPublishBlocks = async (blocks: Array<Block>): Promise<void> => {
@@ -287,11 +223,11 @@ export class Client extends EventEmitter {
       serializedBlocks.push(utils.toBase64(serializeBlock(b2)));
     });
 
-    await this._send('push keys', serializedBlocks);
+    await this.send('push keys', serializedBlocks);
   }
 
   getProvisionalIdentityPublicKeys = async (emails: Array<{ email: string }>): Promise<Array<*>> => {
-    const result = await this._send('get public provisional identities', emails);
+    const result = await this.send('get public provisional identities', emails);
     if (result.error)
       throw new ServerError(result.error, this.trustchainId);
 
@@ -304,7 +240,7 @@ export class Client extends EventEmitter {
   getProvisionalIdentityKeys = async (provisionalIdentity: { email: string }, verificationCode: string): Promise<*> => {
     let result;
     try {
-      result = await this._send('get provisional identity', {
+      result = await this.send('get provisional identity', {
         email: provisionalIdentity.email,
         verificationCode,
       });
@@ -312,9 +248,8 @@ export class Client extends EventEmitter {
       const error = e.error;
       if (error.code && error.code === 'invalid_verification_code' || error.code === 'authentication_failed') {
         throw new InvalidVerificationCode(error);
-      } else {
-        throw new ServerError(e, this.trustchainId);
       }
+      throw e;
     }
 
     if (!result)

@@ -1,9 +1,11 @@
 // @flow
-import { Tanker as TankerCore, errors, optionsWithDefaults, getEncryptionFormat, fromString, toString, type TankerOptions, type EncryptionOptions, type b64string } from '@tanker/core';
+import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, type TankerOptions, type EncryptionOptions, type b64string } from '@tanker/core';
 import { MergerStream, SlicerStream } from '@tanker/stream-node';
 import PouchDB from '@tanker/datastore-pouchdb-node';
 
 import { getConstructor, assertDataType, castData, type Data } from './dataHelpers';
+
+const { READY } = statuses;
 
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
 
@@ -37,7 +39,7 @@ class Tanker extends TankerCore {
   }
 
   async encryptData<T: Data>(clearData: Data, options?: ExtendedEncryptionOptions<T> = {}): Promise<T> {
-    this.assert(this.isOpen, 'encrypt data');
+    this.assert(READY, 'encrypt data');
     assertDataType(clearData, 'encryptedData');
 
     const castClearData = castData(clearData, Uint8Array);
@@ -67,7 +69,7 @@ class Tanker extends TankerCore {
   }
 
   async decryptData<T: Data>(encryptedData: Data, options?: OutputOptions<T> = {}): Promise<T> {
-    this.assert(this.isOpen, 'decrypt data');
+    this.assert(READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
     const castEncryptedData = castData(encryptedData, Uint8Array);
@@ -81,7 +83,7 @@ class Tanker extends TankerCore {
   }
 
   async encrypt<T: Data>(plain: string, options?: ExtendedEncryptionOptions<T>): Promise<T> {
-    this.assert(this.isOpen, 'encrypt');
+    this.assert(READY, 'encrypt');
 
     if (typeof plain !== 'string')
       throw new errors.InvalidArgument('plain', 'string', plain);

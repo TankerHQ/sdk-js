@@ -22,16 +22,17 @@ const generateRevocationTests = (args: TestArgs) => {
       bobLaptop = args.makeTanker();
       bobPhone = args.makeTanker();
 
-      await bobLaptop.signUp(bobIdentity);
-      const bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-      await bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
+      await bobPhone.start(bobIdentity);
+      await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
     });
 
     afterEach(async () => {
       await Promise.all([
-        bobLaptop.signOut(),
-        bobPhone.signOut(),
+        bobLaptop.stop(),
+        bobPhone.stop(),
       ]);
     });
 
@@ -45,10 +46,10 @@ const generateRevocationTests = (args: TestArgs) => {
         await Promise.all([waitForPhoneRevoked, waitForLaptopRevoked]);
       } else {
         const bobPhoneId = bobPhone.deviceId;
-        await bobPhone.signOut();
+        await bobPhone.stop();
         await bobLaptop.revokeDevice(bobPhoneId);
         await bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
-        await expect(bobPhone.signIn(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
+        await expect(bobPhone.start(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
       }
     };
 
@@ -93,9 +94,9 @@ const generateRevocationTests = (args: TestArgs) => {
 
     it('can\'t open a session on a device revoked while closed', async () => {
       const bobPhoneDeviceId = bobPhone.deviceId;
-      await bobPhone.signOut();
+      await bobPhone.stop();
       await bobLaptop.revokeDevice(bobPhoneDeviceId);
-      await expect(bobPhone.signIn(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
+      await expect(bobPhone.start(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
     });
 
     it('can list a User\'s active and revoked devices', async () => {
@@ -132,7 +133,8 @@ const generateRevocationTests = (args: TestArgs) => {
     it('Alice can share with Bob who has a revoked device', async () => {
       const aliceIdentity = await args.trustchainHelper.generateIdentity();
       const aliceLaptop = args.makeTanker();
-      await aliceLaptop.signUp(aliceIdentity);
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
       await revokeBobPhone();
 
@@ -145,7 +147,7 @@ const generateRevocationTests = (args: TestArgs) => {
       expect(clear).to.eq(message);
 
       await expect(bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidSessionStatus);
-      await aliceLaptop.signOut();
+      await aliceLaptop.stop();
     });
   });
 };

@@ -5,43 +5,44 @@ import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
 import { takeChallenge } from './ClientAuthenticator';
-import { OperationCanceled, IdentityAlreadyRegistered } from '../errors';
-import { type DelegationToken, type UserData } from './types';
+import { OperationCanceled } from '../errors';
+import { type UserData, type Status, type Verification, type VerificationMethod, type EmailVerification, type PassphraseVerification, statuses, extractVerificationMethods } from './types';
 import { Apis } from '../Protocol/Apis';
 
-import { fetchUnlockKey, getLastUserKey } from './requests';
-import { extractGhostDevice, createDeviceBlockFromGhostDevice } from './unlock';
+import { fetchUnlockKey, getLastUserKey, sendUserCreation, sendUnlockUpdate } from './requests';
 
-export type SignInOptions = {|
-  unlockKey?: string,
-  verificationCode?: string,
-  password?: string,
-|};
-
-export const SIGN_IN_RESULT = Object.freeze({
-  OK: 1,
-  IDENTITY_VERIFICATION_NEEDED: 2,
-  IDENTITY_NOT_REGISTERED: 3,
-});
-
-export type SignInResult = $Values<typeof SIGN_IN_RESULT>;
+import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './ghostDevice';
+import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCreation';
 
 export class Session {
   localUser: LocalUser;
+  _verificationMethods: Map<string, VerificationMethod>;
 
   storage: Storage;
   _trustchain: Trustchain;
   _client: Client;
 
+  _status: Status;
+
   apis: Apis;
 
-  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client) {
+  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client, status: ?Status) {
     this.storage = storage;
     this._trustchain = trustchain;
     this.localUser = localUser;
     this._client = client;
+    this._status = status || statuses.STOPPED;
+    this._verificationMethods = new Map();
 
     this.apis = new Apis(localUser, storage, trustchain, client);
+  }
+
+  get status(): Status {
+    return this._status;
+  }
+
+  get verificationMethods(): Map<string, VerificationMethod> {
+    return this._verificationMethods;
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
@@ -59,70 +60,107 @@ export class Session {
 
     const trustchain = await Trustchain.open(client, userData.trustchainId, userData.userId, storage);
 
-    return new Session(localUser, storage, trustchain, client);
-  }
+    if (!storage.hasLocalDevice()) {
+      const { deviceExists, userExists } = await client.remoteStatus(localUser.trustchainId, localUser.userId, localUser.publicSignatureKey);
 
-  signIn = async (signInOptions: ?SignInOptions) => {
-    if (!this.storage.hasLocalDevice()) {
-      const userExists = await this._client.userExists(this.localUser.trustchainId, this.localUser.userId, this.localUser.publicSignatureKey);
       if (!userExists) {
-        return SIGN_IN_RESULT.IDENTITY_NOT_REGISTERED;
-      } else if (!signInOptions) {
-        return SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED;
+        return new Session(localUser, storage, trustchain, client, statuses.IDENTITY_REGISTRATION_NEEDED);
       }
-      await this._unlockExistingUser(signInOptions);
+
+      if (!deviceExists) {
+        return new Session(localUser, storage, trustchain, client, statuses.IDENTITY_VERIFICATION_NEEDED);
+      }
+
+      // Device registered on the trustchain, but device creation block not pulled yet...
+      // Just start the session normally and wait for the pull to catch missing blocks.
     }
 
-    await this._authenticate();
+    const session = new Session(localUser, storage, trustchain, client);
+    await session.authenticate();
+    return session;
+  }
+
+  authenticate = async () => {
+    const authData = await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
+    this._verificationMethods = extractVerificationMethods(authData);
+    await this._trustchain.ready();
 
     if (this.localUser.wasRevoked) {
-      await this._client.close();
-      await this._trustchain.close();
-      await this.storage.nuke();
-
+      await this.nuke();
       throw new OperationCanceled('this device was revoked');
     }
-    return SIGN_IN_RESULT.OK;
+    this._status = statuses.READY;
   }
 
-  signUp = async (delegationToken: DelegationToken) => {
-    if (this.storage.hasLocalDevice() || await this._client.userExists(this.localUser.trustchainId, this.localUser.userId, this.localUser.publicSignatureKey)) {
-      throw new IdentityAlreadyRegistered('This identity has already been registered');
+  createUser = async (verification: Verification) => {
+    let ghostDeviceKeys;
+    if (verification.verificationKey) {
+      ghostDeviceKeys = ghostDeviceKeysFromUnlockKey(verification.verificationKey);
+    } else {
+      ghostDeviceKeys = generateGhostDeviceKeys();
     }
-    const newUserBlock = this.localUser.blockGenerator.makeNewUserBlock({
-      userId: this.localUser.userId,
-      delegationToken,
-      publicSignatureKey: this.localUser.publicSignatureKey,
-      publicEncryptionKey: this.localUser.publicEncryptionKey
-    });
-    await this._client.sendBlock(newUserBlock);
 
-    await this._authenticate();
-    return SIGN_IN_RESULT.OK;
-  };
+    const userCreation = generateUserCreation(
+      this.localUser.trustchainId,
+      this.localUser.userId,
+      this.localUser.delegationToken,
+      ghostDeviceKeys
+    );
 
-  _authenticate = async () => {
-    const unlockMethods = await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
-    this.localUser.setUnlockMethods(unlockMethods);
-    await this._trustchain.ready();
+    const firstDevice = generateDeviceFromGhostDevice(
+      this.localUser.trustchainId,
+      this.localUser.userId,
+      this.localUser.deviceKeys(),
+      userCreation.ghostDevice,
+      userCreation.encryptedUserKey,
+    );
+
+    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(userCreation.ghostDevice, this.localUser.userSecret);
+
+    await sendUserCreation(this._client, this.localUser, userCreation, firstDevice.deviceBlock, verification, encryptedUnlockKey);
+    await this.authenticate();
   }
 
-  _unlockExistingUser = async (signInOptions: SignInOptions) => {
-    let unlockKey = signInOptions.unlockKey;
-    if (!unlockKey) {
-      unlockKey = await fetchUnlockKey(this.localUser, this._client, signInOptions.password, signInOptions.verificationCode);
+  unlockUser = async (verification: Verification) => {
+    let unlockKey;
+    if (verification.verificationKey) {
+      unlockKey = verification.verificationKey;
+    } else {
+      const encryptedUnlockKey = await fetchUnlockKey(this.localUser, this._client, verification);
+      unlockKey = decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
     }
+
     const ghostDevice = extractGhostDevice(unlockKey);
-    const userKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice.deviceId);
+    const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
 
-    const newDeviceBlock = createDeviceBlockFromGhostDevice(
+    const newDevice = generateDeviceFromGhostDevice(
       this.localUser.trustchainId,
       this.localUser.userId,
       this.localUser.deviceKeys(),
       ghostDevice,
-      userKey,
+      encryptedUserKey,
     );
-    await this._client.sendBlock(newDeviceBlock);
+    await this._client.sendBlock(newDevice.deviceBlock);
+    await this.authenticate();
+  }
+
+  updateUnlock = async (verification: EmailVerification | PassphraseVerification): Promise<void> => {
+    await sendUnlockUpdate(this._client, this.localUser, verification);
+    if (verification.passphrase) {
+      this._verificationMethods.set('passphrase', { type: 'passphrase' });
+    }
+    if (verification.email) {
+      this._verificationMethods.set('email', { type: 'email', email: verification.email });
+    }
+  }
+
+  generateVerificationKey = async () => {
+    const ghostDeviceKeys = generateGhostDeviceKeys();
+
+    return ghostDeviceToUnlockKey({
+      privateSignatureKey: ghostDeviceKeys.signatureKeyPair.privateKey,
+      privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
+    });
   }
 
   close = async () => {

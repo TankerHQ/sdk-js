@@ -64,14 +64,16 @@ const generateEncryptTests = (args: TestArgs) => {
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
       aliceLaptop = args.makeTanker();
       bobLaptop = args.makeTanker();
-      await aliceLaptop.signUp(aliceIdentity);
-      await bobLaptop.signUp(bobIdentity);
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
     });
 
     after(async () => {
       await Promise.all([
-        aliceLaptop.signOut(),
-        bobLaptop.signOut(),
+        aliceLaptop.stop(),
+        bobLaptop.stop(),
       ]);
     });
 
@@ -180,15 +182,15 @@ const generateEncryptTests = (args: TestArgs) => {
           expect(decrypted).to.equal(clearText);
         });
 
-        it('decrypt claimed block after signing-out and back in', async () => {
+        it('decrypt claimed block after stop and start again', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
           const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
           await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-          await aliceLaptop.signOut();
-          await aliceLaptop.signIn(aliceIdentity);
+          await aliceLaptop.stop();
+          await aliceLaptop.start(aliceIdentity);
           const decrypted = await aliceLaptop.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
@@ -243,13 +245,13 @@ const generateEncryptTests = (args: TestArgs) => {
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
           const cipherText = await aliceLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-          const bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
           await bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
           const bobPhone = args.makeTanker();
-          await bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
+          await bobPhone.start(bobIdentity);
+          await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
           const decrypted = await bobPhone.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
@@ -266,23 +268,23 @@ const generateEncryptTests = (args: TestArgs) => {
         });
 
         it('shares even when the recipient is not connected', async () => {
-          await aliceLaptop.signOut();
+          await aliceLaptop.stop();
           const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
 
-          await aliceLaptop.signIn(aliceIdentity);
+          await aliceLaptop.start(aliceIdentity);
           const decrypted = await aliceLaptop.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
         });
 
         it('shares with a device created after sharing', async () => {
-          const bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
           const encrypted = await aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
           const bobPhone = args.makeTanker();
-          await bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
+          await bobPhone.start(bobIdentity);
+          await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
 
           const decrypted = await bobPhone.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
-          await bobPhone.signOut();
+          await bobPhone.stop();
         });
       });
     });
@@ -357,18 +359,20 @@ const generateEncryptTests = (args: TestArgs) => {
       aliceLaptop = args.makeTanker();
       bobLaptop = args.makeTanker();
       bobPhone = args.makeTanker();
-      await bobLaptop.signUp(bobIdentity);
-      await aliceLaptop.signUp(aliceIdentity);
-      const bobUnlockPassword = 'my password';
-      await bobLaptop.registerUnlock({ password: bobUnlockPassword });
-      await bobPhone.signIn(bobIdentity, { password: bobUnlockPassword });
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+      await bobPhone.start(bobIdentity);
+      await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
     });
 
     afterEach(async () => {
       await Promise.all([
-        bobPhone.signOut(),
-        bobLaptop.signOut(),
-        aliceLaptop.signOut(),
+        bobPhone.stop(),
+        bobLaptop.stop(),
+        aliceLaptop.stop(),
       ]);
     });
 
@@ -395,7 +399,7 @@ const generateEncryptTests = (args: TestArgs) => {
     return type === 'FilePonyfill' ? File : type;
   };
   // In Edge and IE11, accessing the webkitRelativePath property (though defined) triggers
-  // a TypeError: Invalid calling object. We avoid this by comparing only startful props.
+  // a TypeError: Invalid calling object. We avoid this by comparing only useful props.
   const fileProps = (obj: Object) => {
     const { name, size, type, lastModified } = obj;
     return { name, size, type, lastModified };
@@ -420,11 +424,12 @@ const generateEncryptTests = (args: TestArgs) => {
       before(async () => {
         aliceIdentity = await args.trustchainHelper.generateIdentity();
         aliceLaptop = args.makeTanker();
-        await aliceLaptop.signUp(aliceIdentity);
+        await aliceLaptop.start(aliceIdentity);
+        await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
       });
 
       after(async () => {
-        await aliceLaptop.signOut();
+        await aliceLaptop.stop();
       });
 
       args.resources[size].forEach(({ type, resource: clear }) => {
