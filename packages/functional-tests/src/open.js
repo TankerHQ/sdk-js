@@ -1,89 +1,92 @@
 // @flow
-import { Tanker, errors } from '@tanker/core';
+import { errors, statuses } from '@tanker/core';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
+const { STOPPED, READY, IDENTITY_REGISTRATION_NEEDED, IDENTITY_VERIFICATION_NEEDED } = statuses;
+
 const generateOpenTests = (args: TestArgs) => {
-  describe('signIn/signUp', () => {
+  describe('create', () => {
     let bobIdentity;
     let bobLaptop;
-    let bobPhone;
 
     beforeEach(async () => {
       bobIdentity = await args.trustchainHelper.generateIdentity();
       bobLaptop = args.makeTanker();
-      bobPhone = args.makeTanker();
     });
 
     afterEach(async () => {
-      await Promise.all([
-        bobLaptop.signOut(),
-        bobPhone.signOut(),
-      ]);
+      bobLaptop.stop();
+    });
+
+    it('default status to be STOPPED', async () => {
+      expect(bobLaptop.status).to.equal(STOPPED);
     });
 
     it('throws when giving invalid arguments', async () => {
       // $FlowExpectedError
-      await expect(bobLaptop.signIn()).to.be.rejectedWith(errors.InvalidArgument);
-      // $FlowExpectedError
-      await expect(bobLaptop.signUp()).to.be.rejectedWith(errors.InvalidArgument);
+      await expect(bobLaptop.start()).to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('throws when giving an invalid identity', async () => {
-      await expect(bobLaptop.signIn('secret')).to.be.rejectedWith(errors.InvalidIdentity);
-      await expect(bobLaptop.signUp('secret')).to.be.rejectedWith(errors.InvalidIdentity);
+      await expect(bobLaptop.start('secret')).to.be.rejectedWith(errors.InvalidIdentity);
     });
 
-    it('throws when trying to signUp twice', async () => {
-      await bobLaptop.signUp(bobIdentity);
-      await expect(bobPhone.signUp(bobIdentity)).to.be.rejectedWith(errors.IdentityAlreadyRegistered);
+    it('returns IDENTITY_REGISTRATION_NEEDED status if new identity provided', async () => {
+      await bobLaptop.start(bobIdentity);
+      await expect(bobLaptop.status).to.equal(IDENTITY_REGISTRATION_NEEDED);
     });
 
-    it('rejects when trying to signIn without signUp beforehand', async () => {
-      const signInResult = await bobLaptop.signIn(bobIdentity);
-      await expect(signInResult).to.equal(Tanker.signInResult.IDENTITY_NOT_REGISTERED);
+    it('returns IDENTITY_VERIFICATION_NEEDED status if new identity of existing user provided', async () => {
+      const bobPhone = args.makeTanker();
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+      await bobPhone.start(bobIdentity);
+      await expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+    });
+  });
+
+  describe('registerIdentity', () => {
+    let bobIdentity;
+    let bobLaptop;
+
+    beforeEach(async () => {
+      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobLaptop = args.makeTanker();
     });
 
-    it('throws when the session has already been opened', async () => {
-      await bobLaptop.signUp(bobIdentity);
-      await expect(bobLaptop.signIn(bobIdentity)).to.be.rejectedWith(errors.InvalidSessionStatus);
+    afterEach(async () => {
+      await bobLaptop.stop();
     });
 
-    it('creates an account', async () => {
-      await bobLaptop.signUp(bobIdentity);
-      expect(bobLaptop.isOpen).to.be.true;
+    it('throws when giving invalid arguments', async () => {
+      await bobLaptop.start(bobIdentity);
+
+      await Promise.all([undefined, 'none', ['none'], [{ none: true }], { none: 'none' }].map(arg => { /* eslint-disable-line arrow-body-style */
+        // $FlowExpectedError
+        return expect(bobLaptop.registerIdentity(arg)).to.be.rejectedWith(errors.InvalidArgument);
+      }));
     });
 
-    it('re-opens a session', async () => {
-      await bobLaptop.signUp(bobIdentity);
-      await bobLaptop.signOut();
-      const signInResult = await bobLaptop.signIn(bobIdentity);
-      expect(signInResult).to.equal(Tanker.signInResult.OK);
-      expect(bobLaptop.isOpen).to.be.true;
+    it('throws when registering before having started a session', async () => {
+      await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.InvalidSessionStatus);
     });
 
-    it('adds multiple devices to a user', async () => {
-      await bobLaptop.signUp(bobIdentity);
-      const bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
-      await bobLaptop.signOut();
-
-      await bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
-      expect(bobPhone.isOpen).to.be.true;
+    it('creates the first device with the passphrase method', async () => {
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+      await expect(bobLaptop.status).to.equal(READY);
     });
 
-    it('adds multiple devices to a user after cancelling once', async () => {
-      await bobLaptop.signUp(bobIdentity);
-      const bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
-      await bobLaptop.signOut();
-
-      const result = await bobPhone.signIn(bobIdentity);
-      await expect(result).to.equal(Tanker.signInResult.IDENTITY_VERIFICATION_NEEDED);
-
-      expect(bobPhone.isOpen).to.be.false;
-
-      await bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
-      expect(bobPhone.isOpen).to.be.true;
+    it('reopen the first device created with the passphrase method', async () => {
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+      await expect(bobLaptop.status).to.equal(READY);
+      await bobLaptop.stop();
+      await expect(bobLaptop.status).to.equal(STOPPED);
+      await bobLaptop.start(bobIdentity);
+      await expect(bobLaptop.status).to.equal(READY);
     });
   });
 };

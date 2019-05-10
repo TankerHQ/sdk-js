@@ -5,26 +5,14 @@ import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
 import { takeChallenge } from './ClientAuthenticator';
-import { OperationCanceled, IdentityAlreadyRegistered } from '../errors';
-import { type DelegationToken, type UserData } from './types';
+import { OperationCanceled } from '../errors';
+import { type UserData, type Status, type VerificationMethod, type EmailVerificationMethod, type PassphraseVerificationMethod, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
 
-import { fetchUnlockKey, getLastUserKey } from './requests';
-import { extractGhostDevice, createDeviceBlockFromGhostDevice } from './unlock';
+import { fetchUnlockKey, getLastUserKey, sendUserCreation, sendUnlockUpdate } from './requests';
 
-export type SignInOptions = {|
-  unlockKey?: string,
-  verificationCode?: string,
-  password?: string,
-|};
-
-export const SIGN_IN_RESULT = Object.freeze({
-  OK: 1,
-  IDENTITY_VERIFICATION_NEEDED: 2,
-  IDENTITY_NOT_REGISTERED: 3,
-});
-
-export type SignInResult = $Values<typeof SIGN_IN_RESULT>;
+import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './ghostDevice';
+import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCreation';
 
 export class Session {
   localUser: LocalUser;
@@ -33,15 +21,22 @@ export class Session {
   _trustchain: Trustchain;
   _client: Client;
 
+  _status: Status;
+
   apis: Apis;
 
-  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client) {
+  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client, status: ?Status) {
     this.storage = storage;
     this._trustchain = trustchain;
     this.localUser = localUser;
     this._client = client;
+    this._status = status || statuses.STOPPED;
 
     this.apis = new Apis(localUser, storage, trustchain, client);
+  }
+
+  get status(): Status {
+    return this._status;
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
@@ -59,70 +54,99 @@ export class Session {
 
     const trustchain = await Trustchain.open(client, userData.trustchainId, userData.userId, storage);
 
-    return new Session(localUser, storage, trustchain, client);
+    if (!storage.hasLocalDevice()) {
+      const userExists = await client.userExists(localUser.trustchainId, localUser.userId, localUser.publicSignatureKey);
+      if (userExists)
+        return new Session(localUser, storage, trustchain, client, statuses.IDENTITY_VERIFICATION_NEEDED);
+      return new Session(localUser, storage, trustchain, client, statuses.IDENTITY_REGISTRATION_NEEDED);
+    }
+
+    const session = new Session(localUser, storage, trustchain, client);
+    await session.authenticate();
+    return session;
   }
 
-  signIn = async (signInOptions: ?SignInOptions) => {
-    if (!this.storage.hasLocalDevice()) {
-      const userExists = await this._client.userExists(this.localUser.trustchainId, this.localUser.userId, this.localUser.publicSignatureKey);
-      if (!userExists) {
-        return SIGN_IN_RESULT.IDENTITY_NOT_REGISTERED;
-      } else if (!signInOptions) {
-        return SIGN_IN_RESULT.IDENTITY_VERIFICATION_NEEDED;
-      }
-      await this._unlockExistingUser(signInOptions);
-    }
-
-    await this._authenticate();
-
-    if (this.localUser.wasRevoked) {
-      await this._client.close();
-      await this._trustchain.close();
-      await this.storage.nuke();
-
-      throw new OperationCanceled('this device was revoked');
-    }
-    return SIGN_IN_RESULT.OK;
-  }
-
-  signUp = async (delegationToken: DelegationToken) => {
-    if (this.storage.hasLocalDevice() || await this._client.userExists(this.localUser.trustchainId, this.localUser.userId, this.localUser.publicSignatureKey)) {
-      throw new IdentityAlreadyRegistered('This identity has already been registered');
-    }
-    const newUserBlock = this.localUser.blockGenerator.makeNewUserBlock({
-      userId: this.localUser.userId,
-      delegationToken,
-      publicSignatureKey: this.localUser.publicSignatureKey,
-      publicEncryptionKey: this.localUser.publicEncryptionKey
-    });
-    await this._client.sendBlock(newUserBlock);
-
-    await this._authenticate();
-    return SIGN_IN_RESULT.OK;
-  };
-
-  _authenticate = async () => {
+  authenticate = async () => {
     const unlockMethods = await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
     this.localUser.setUnlockMethods(unlockMethods);
     await this._trustchain.ready();
+
+    if (this.localUser.wasRevoked) {
+      await this.nuke();
+      throw new OperationCanceled('this device was revoked');
+    }
+    this._status = statuses.READY;
   }
 
-  _unlockExistingUser = async (signInOptions: SignInOptions) => {
-    let unlockKey = signInOptions.unlockKey;
-    if (!unlockKey) {
-      unlockKey = await fetchUnlockKey(this.localUser, this._client, signInOptions.password, signInOptions.verificationCode);
+  createUser = async (verificationMethod: VerificationMethod) => {
+    let ghostDeviceKeys;
+    if (verificationMethod.verificationKey) {
+      ghostDeviceKeys = ghostDeviceKeysFromUnlockKey(verificationMethod.verificationKey);
+    } else {
+      ghostDeviceKeys = generateGhostDeviceKeys();
     }
-    const ghostDevice = extractGhostDevice(unlockKey);
-    const userKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice.deviceId);
 
-    const newDeviceBlock = createDeviceBlockFromGhostDevice(
+    const userCreation = generateUserCreation(
+      this.localUser.trustchainId,
+      this.localUser.userId,
+      this.localUser.delegationToken,
+      ghostDeviceKeys
+    );
+
+    const firstDevice = generateDeviceFromGhostDevice(
+      this.localUser.trustchainId,
+      this.localUser.userId,
+      this.localUser.deviceKeys(),
+      userCreation.ghostDevice,
+      userCreation.encryptedUserKey,
+    );
+
+    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(userCreation.ghostDevice, this.localUser.userSecret);
+
+    await sendUserCreation(this._client, this.localUser, userCreation, firstDevice.deviceBlock, verificationMethod, encryptedUnlockKey);
+    await this.authenticate();
+  }
+
+  unlockUser = async (verificationMethod: VerificationMethod) => {
+    let unlockKey;
+    if (verificationMethod.verificationKey) {
+      unlockKey = verificationMethod.verificationKey;
+    } else {
+      const encryptedUnlockKey = await fetchUnlockKey(this.localUser, this._client, verificationMethod);
+      unlockKey = decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
+    }
+
+    const ghostDevice = extractGhostDevice(unlockKey);
+    const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
+
+    const newDevice = generateDeviceFromGhostDevice(
       this.localUser.trustchainId,
       this.localUser.userId,
       this.localUser.deviceKeys(),
       ghostDevice,
-      userKey,
+      encryptedUserKey,
     );
-    await this._client.sendBlock(newDeviceBlock);
+    await this._client.sendBlock(newDevice.deviceBlock);
+    await this.authenticate();
+  }
+
+  updateUnlock = async (verificationMethod: EmailVerificationMethod | PassphraseVerificationMethod): Promise<void> => {
+    await sendUnlockUpdate(this._client, this.localUser, verificationMethod);
+    if (verificationMethod.passphrase && !this.localUser.unlockMethods.some((m) => m.type === 'passphrase')) {
+      this.localUser.unlockMethods.push({ type: 'passphrase' });
+    }
+    if (verificationMethod.email && !this.localUser.unlockMethods.some((m) => m.type === 'email')) {
+      this.localUser.unlockMethods.push({ type: 'email' });
+    }
+  }
+
+  generateVerificationKey = async () => {
+    const ghostDeviceKeys = generateGhostDeviceKeys();
+
+    return ghostDeviceToUnlockKey({
+      privateSignatureKey: ghostDeviceKeys.signatureKeyPair.privateKey,
+      privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
+    });
   }
 
   close = async () => {

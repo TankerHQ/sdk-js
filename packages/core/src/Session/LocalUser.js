@@ -7,7 +7,7 @@ import { type PublicIdentity } from '@tanker/identity';
 import { type UnlockMethods } from '../Network/Client';
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import { type UserData } from './types';
+import { type UserData, type DelegationToken } from './types';
 import { findIndex } from '../utils';
 import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
 import { type VerifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
@@ -199,6 +199,9 @@ export class LocalUser extends EventEmitter {
   }
   get trustchainId(): Uint8Array {
     return this._userData.trustchainId;
+  }
+  get delegationToken(): DelegationToken {
+    return this._userData.delegationToken;
   }
   get userSecret(): Uint8Array {
     return this._userData.userSecret;

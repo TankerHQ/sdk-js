@@ -18,20 +18,22 @@ const generateGroupsTests = (args: TestArgs) => {
       const aliceIdentity = await args.trustchainHelper.generateIdentity();
       alicePublicIdentity = await getPublicIdentity(aliceIdentity);
       aliceLaptop = args.makeTanker();
-      await aliceLaptop.signUp(aliceIdentity);
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
       const bobIdentity = await args.trustchainHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
       bobLaptop = args.makeTanker();
-      await bobLaptop.signUp(bobIdentity);
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
       unknownUsers = [await getPublicIdentity(await args.trustchainHelper.generateIdentity('galette'))];
     });
 
     after(async () => {
       await Promise.all([
-        aliceLaptop.signOut(),
-        bobLaptop.signOut(),
+        aliceLaptop.stop(),
+        bobLaptop.stop(),
       ]);
     });
 

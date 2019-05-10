@@ -81,7 +81,7 @@ describe('GroupManager', () => {
   });
 
   it('throws when updating a group with 0 members', async () => {
-    await expect(groupManager.updateGroupMembers(groupId, [])).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.updateGroupMembers(utils.toBase64(groupId), [])).to.be.rejectedWith(InvalidGroupSize);
   });
 
   it('throws when creating a group with 1001 members', async () => {
@@ -91,7 +91,7 @@ describe('GroupManager', () => {
 
   it('throws when updating a group with 1001 members', async () => {
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
-    await expect(groupManager.updateGroupMembers(groupId, users)).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.updateGroupMembers(utils.toBase64(groupId), users)).to.be.rejectedWith(InvalidGroupSize);
   });
 
   it('throws when updating a non existent group', async () => {

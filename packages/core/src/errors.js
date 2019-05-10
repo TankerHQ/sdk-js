@@ -46,11 +46,11 @@ export class InvalidUnlockKey extends TankerError {
   }
 }
 
-export class InvalidUnlockPassword extends TankerError {
+export class InvalidPassphrase extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('InvalidUnlockPassword');
+    super('InvalidPassphrase');
     this.next = e;
   }
 }
@@ -74,12 +74,11 @@ export class MaxVerificationAttemptsReached extends TankerError {
 }
 
 export class InvalidSessionStatus extends TankerError {
-  isOpen: bool;
+  status: number;
 
-  // $FlowIKnow
-  constructor(isOpen: bool, message: string = `isOpen: ${isOpen}`) {
+  constructor(status: number, message: string = `status: ${status}`) {
     super('InvalidSessionStatus', message);
-    this.isOpen = isOpen;
+    this.status = status;
   }
 }
 

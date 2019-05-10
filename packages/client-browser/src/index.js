@@ -1,10 +1,12 @@
 // @flow
-import { Tanker as TankerCore, errors, optionsWithDefaults, getEncryptionFormat, fromString, toString, type TankerOptions, type EncryptionOptions, type b64string } from '@tanker/core';
+import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, type TankerOptions, type EncryptionOptions, type b64string } from '@tanker/core';
 import { MergerStream, SlicerStream } from '@tanker/stream-browser';
 import Dexie from '@tanker/datastore-dexie-browser';
 
 import { assertDataType, getDataLength, castData, type Data } from './dataHelpers';
 import { makeOutputOptions, type OutputOptions } from './outputOptions';
+
+const { READY } = statuses;
 
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
 const MAX_FORMAT_HEADER_SIZE = 1 + 24;
@@ -40,7 +42,7 @@ class Tanker extends TankerCore {
   }
 
   async encryptData<T: Data>(clearData: Data, options?: ExtendedEncryptionOptions<T> = {}): Promise<T> {
-    this.assert(this.isOpen, 'encrypt data');
+    this.assert(READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = makeOutputOptions(clearData, options);
@@ -70,7 +72,7 @@ class Tanker extends TankerCore {
   }
 
   async decryptData<T: Data>(encryptedData: Data, options?: OutputOptions<T> = {}): Promise<T> {
-    this.assert(this.isOpen, 'decrypt data');
+    this.assert(READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
     const outputOptions = makeOutputOptions(encryptedData, options);
@@ -85,7 +87,7 @@ class Tanker extends TankerCore {
   }
 
   async encrypt<T: Data>(plain: string, options?: ExtendedEncryptionOptions<T>): Promise<T> {
-    this.assert(this.isOpen, 'encrypt');
+    this.assert(READY, 'encrypt');
 
     if (typeof plain !== 'string')
       throw new errors.InvalidArgument('plain', 'string', plain);
