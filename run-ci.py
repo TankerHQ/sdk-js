@@ -4,6 +4,10 @@ import sys
 import ci.js
 import ci.mail
 import ci.endtoend
+import ci.conan
+import ci.cpp
+
+from path import Path
 
 
 def check(*, runner: str, env: str, nightly: bool) -> None:
@@ -25,6 +29,23 @@ def compat(*, env: str) -> None:
         ci.js.run_sdk_compat_tests(env=env)
 
 
+def e2e(args) -> None:
+    if args.use_local_sources:
+        base_path = Path.getcwd().parent
+    else:
+        base_path = ci.git.prepare_sources(
+            repos=["sdk-native", "sdk-python", "sdk-js", "qa-python-js"]
+        )
+    ci.cpp.update_conan_config()
+    ci.conan.export(src_path=base_path / "sdk-native", ref_or_channel="tanker/dev")
+    ci.endtoend.test(
+        tanker_conan_ref="tanker/dev@tanker/dev",
+        profile="gcc8-release",
+        base_path=base_path,
+        project_config=args.env,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
@@ -43,6 +64,7 @@ def main() -> None:
 
     e2e_parser = subparsers.add_parser("e2e")
     e2e_parser.add_argument("--env", required=True)
+    e2e_parser.add_argument("--use-local-sources", action="store_true", default=False)
 
 
     subparsers.add_parser("mirror")
@@ -60,7 +82,7 @@ def main() -> None:
     elif args.command == "compat":
         compat(env=args.env)
     elif args.command == "e2e":
-        ci.endtoend.test(env=args.env)
+        e2e(args)
     else:
         parser.print_help()
         sys.exit(1)
