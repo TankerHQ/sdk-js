@@ -4,4 +4,3 @@ packages/*/public
 packages/*/coverage
 packages/*/build
 packages/**/dist
-packages/**/dist-standalone
