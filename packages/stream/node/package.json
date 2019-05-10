@@ -14,7 +14,7 @@
   },
   "main": "src/index.js",
   "dependencies": {
-    "@babel/runtime-corejs2": "7.3.1",
+    "@babel/runtime-corejs2": "7.4.4",
     "@tanker/errors": "0.0.1",
     "@tanker/stream-base": "0.0.1"
   },
