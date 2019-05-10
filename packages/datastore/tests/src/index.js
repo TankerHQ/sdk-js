@@ -4,6 +4,7 @@ import { utils } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore, type BaseConfig } from '@tanker/datastore-base';
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import uuid from 'uuid';
 
 chai.use(chaiAsPromised);
 
@@ -22,20 +23,22 @@ type TestRecord = {|
 
 // Keep only the original properties, e.g. strip PouchDB private
 // property '_rev' representing the record's current revision.
-function cleanRecord(record: Object): TestRecord {
+const cleanRecord = (record: Object): TestRecord => {
   const { _id, a, b, c, d } = record;
   if ('e' in record) { // optional field
     return { _id, a, b, c, d, e: record.e };
   }
   return { _id, a, b, c, d };
-}
+};
 
+const makeDBName = () => `test-db-${uuid.v4().replace('-', '').slice(0, 12)}`;
 
 export type DataStoreGenerator = (baseConfig: BaseConfig) => Promise<DataStore<*>>;
+
 export const generateDataStoreTests = (dataStoreName: string, generator: DataStoreGenerator) => describe(`DataStore generic tests: ${dataStoreName}`, () => {
   // Here are a few useful test constants
   const tableName = 'test-table';
-  const dbName = 'test-db';
+
   const schemas = [{
     version: 1,
     tables: [{
@@ -43,7 +46,6 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       indexes: [['a'], ['b'], ['c']]
     }]
   }];
-  const storeConfig = { dbName, schemas };
 
   const binary = new Uint8Array(32);
   binary[0] = 42;
@@ -55,71 +57,66 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
   const record2 = { _id: 'key2', a: '2', b: 'b', c: 1, d: null, e: 'e' };
   const record3 = { _id: 'key3', a: '3', b: 'z', c: 2, d: binary, e: 'e' };
 
-  it('persists data after reopening', async () => {
-    const store1 = await generator(storeConfig);
-    await store1.put(tableName, record1);
-    await store1.close();
-    const store2 = await generator(storeConfig);
-    const result = await store2.get(tableName, record1._id);
-    expect(cleanRecord(result)).to.deep.equal(record1);
-    await store2.close();
-  });
+  describe('admin operations', () => {
+    let storeConfig;
 
-  it('can be destroyed', async () => {
-    const store1 = await generator(storeConfig);
-    await store1.put(tableName, record1);
-    await store1.destroy();
-    const store2 = await generator(storeConfig);
-    const actual = await store2.getAll(tableName);
-    expect(actual).to.be.an('array').that.is.empty;
-    await store2.close();
-  });
+    beforeEach(() => {
+      storeConfig = { dbName: makeDBName(), schemas };
+    });
 
+    it('persists data after reopening', async () => {
+      const store1 = await generator(storeConfig);
+      await store1.put(tableName, record1);
+      await store1.close();
+      const store2 = await generator(storeConfig);
+      const result = await store2.get(tableName, record1._id);
+      expect(cleanRecord(result)).to.deep.equal(record1);
+      await store2.close();
+    });
 
-  describe('schemas', () => {
+    it('can be destroyed and re-created empty', async () => {
+      const store1 = await generator(storeConfig);
+      await store1.put(tableName, record1);
+      await store1.destroy();
+      const store2 = await generator(storeConfig);
+      const actual = await store2.getAll(tableName);
+      expect(actual).to.be.an('array').that.is.empty;
+      await store2.close();
+    });
+
     it('can add new indexes with a new schema', async () => {
-      const testSchemasdbName = 'datastore-test-schemas';
-      const customConfig = {
-        ...storeConfig,
-        dbName: testSchemasdbName,
-        schemas: [
-          {
-            version: 1,
-            tables: [{
-              name: tableName,
-              indexes: [['a']]
-            }]
-          }
-        ]
-      };
+      // Populate store
+      const store = await generator(storeConfig);
+      await store.put(tableName, record1);
+      await store.put(tableName, record2);
+      await store.put(tableName, record3);
+      // const res = await store.find(tableName, { selector: { e: record2.e } });
+      // expect(res.map(cleanRecord)).to.deep.equal([record2, record3]);
+      await store.close();
 
-      const storeWithOldSchema = await generator(customConfig);
-
-      await storeWithOldSchema.put(tableName, record1);
-      await storeWithOldSchema.put(tableName, record2);
-      await storeWithOldSchema.put(tableName, record3);
-      await storeWithOldSchema.close();
-
-      customConfig.schemas.push({
+      // Upgrade the schema
+      storeConfig.schemas.push({
         version: 2,
         tables: [{
           name: tableName,
-          indexes: [['b'], ['c']]
+          indexes: [['a'], ['b'], ['c'], ['e']] // add index on 'e'
         }]
       });
 
-      const storeWithNewSchema = await generator(customConfig);
-      const result = await storeWithNewSchema.find(tableName, { selector: { b: record1.b } });
-      expect(result.map(cleanRecord)).to.deep.equal([record1, record2]);
-      await storeWithNewSchema.destroy();
+      const storeWithNewSchema = await generator(storeConfig);
+
+      // Check new index on 'e' is usable
+      const result = await storeWithNewSchema.find(tableName, { selector: { e: record2.e } });
+      expect(result.map(cleanRecord)).to.deep.equal([record2, record3]);
       await storeWithNewSchema.close();
     });
   });
 
-  describe('with one store', () => {
+  describe('regular operations', () => {
     let store;
+
     before(async () => {
-      store = await generator(storeConfig);
+      store = await generator({ dbName: makeDBName(), schemas });
     });
 
     beforeEach(async () => {
@@ -131,8 +128,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await store.close();
     });
 
-
-    describe('basic operations', () => {
+    describe('basic queries', () => {
       it('can clear records', async () => {
         await store.put(tableName, record1);
         await store.put(tableName, record2);
@@ -210,7 +206,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       });
     });
 
-    describe('bulk operations', () => {
+    describe('bulk queries', () => {
       it('can bulk add some records', async () => {
         await store.bulkAdd(tableName, [record1, record2]);
         const result1 = await store.getAll(tableName);
@@ -276,7 +272,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       });
     });
 
-    describe('queries', () => {
+    describe('advanced queries', () => {
       beforeEach(async () => {
         await store.bulkAdd(tableName, [record1, record2, record3]);
       });
