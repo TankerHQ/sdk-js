@@ -74,7 +74,7 @@
     "karma-safarinative-launcher": "^1.1.0",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^4.0.0-rc.6",
-    "mocha": "^6.0.1",
+    "mocha": "^6.1.4",
     "nyc": "^14.1.1",
     "rollup": "^1.0.2",
     "rollup-plugin-babel": "^4.2.0",
