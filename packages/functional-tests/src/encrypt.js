@@ -36,111 +36,118 @@ const getConstructorName = (constructor: Object): string => {
 const generateEncryptTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
   describe('text resource encryption and sharing - no session', () => {
+    let bobLaptop;
+
+    before(() => { bobLaptop = args.makeTanker(); });
+
     it('throws when using a session in an invalid state', async () => {
-      await expect(args.bobLaptop.encrypt(clearText)).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.encrypt(clearText)).to.be.rejectedWith(errors.InvalidSessionStatus);
     });
 
     it('throws when decrypting using a session in an invalid state', async () => {
-      await expect(args.bobLaptop.decrypt(utils.fromString('test'))).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.decrypt(utils.fromString('test'))).to.be.rejectedWith(errors.InvalidSessionStatus);
     });
   });
 
   describe('text resource encryption and sharing', () => {
+    let aliceLaptop;
     let aliceIdentity;
     let alicePublicIdentity;
+    let bobLaptop;
     let bobIdentity;
     let bobPublicIdentity;
 
-    beforeEach(async () => {
+    before(async () => {
       aliceIdentity = await args.trustchainHelper.generateIdentity();
       alicePublicIdentity = await getPublicIdentity(aliceIdentity);
       bobIdentity = await args.trustchainHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
-      await args.aliceLaptop.signUp(aliceIdentity);
-      await args.bobLaptop.signUp(bobIdentity);
+      aliceLaptop = args.makeTanker();
+      bobLaptop = args.makeTanker();
+      await aliceLaptop.signUp(aliceIdentity);
+      await bobLaptop.signUp(bobIdentity);
     });
 
-    afterEach(async () => {
+    after(async () => {
       await Promise.all([
-        args.aliceLaptop.signOut(),
-        args.bobLaptop.signOut(),
-        args.bobPhone.signOut(),
+        aliceLaptop.signOut(),
+        bobLaptop.signOut(),
       ]);
     });
 
     describe('encrypt and decrypt a text resource', () => {
       it('throws when calling encrypt of undefined', async () => {
         // $FlowExpectedError Testing invalid argument
-        await expect(args.bobLaptop.encrypt()).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.encrypt()).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when decrypting an invalid type', async () => {
         const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'str'];
         for (let i = 0; i < notUint8ArrayTypes.length; i++) {
           // $FlowExpectedError Testing invalid types
-          await expect(args.bobLaptop.decrypt(notUint8ArrayTypes[i]), `bad decryption #${i}`).to.be.rejectedWith(errors.InvalidArgument);
+          await expect(bobLaptop.decrypt(notUint8ArrayTypes[i]), `bad decryption #${i}`).to.be.rejectedWith(errors.InvalidArgument);
         }
       });
 
       it('throws when decrypting data with an unknow encryption format', async () => {
         const invalidEncrypted = new Uint8Array([127]);
-        await expect(args.bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
       });
 
       it('throws when decrypting data with an invalid encryption format', async () => {
         const invalidEncrypted = new Uint8Array([255]); // not a varint
-        await expect(args.bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
       });
 
       it('throws when decrypting truncated encrypted resource', async () => {
-        const encrypted = await args.bobLaptop.encrypt(clearText);
+        const encrypted = await bobLaptop.encrypt(clearText);
         // shorter than version + resource ID: should not even try to decrypt
         const invalidEncrypted = encrypted.subarray(0, tcrypto.MAC_SIZE - 4);
-        await expect(args.bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when calling decrypt with a corrupted buffer (resource id)', async () => {
-        const encrypted = await args.bobLaptop.encrypt(clearText);
+        const encrypted = await bobLaptop.encrypt(clearText);
         const corruptPos = encrypted.length - 4;
         encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
-        await expect(args.bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
+        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
       });
 
       it('throws when calling decrypt with a corrupted buffer (data)', async () => {
-        const encrypted = await args.bobLaptop.encrypt(clearText);
+        const encrypted = await bobLaptop.encrypt(clearText);
         const corruptPos = 4;
         encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
-        await expect(args.bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptFailed);
+        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptFailed);
       });
 
       it('can encrypt and decrypt a text resource', async () => {
-        const encrypted = await args.bobLaptop.encrypt(clearText);
-        const decrypted = await args.bobLaptop.decrypt(encrypted);
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const decrypted = await bobLaptop.decrypt(encrypted);
         expect(decrypted).to.equal(clearText);
       });
 
       describe('share at encryption time', () => {
         it('shares with the recipient', async () => {
-          const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
-          const decrypted = await args.aliceLaptop.decrypt(encrypted);
+          const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
+          const decrypted = await aliceLaptop.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
         });
 
         it('throws when sharing with secret permanent identities', async () => {
-          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [aliceIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+          await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [aliceIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
         });
 
         it('throws when sharing with secret provisional identities', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+          await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
         });
 
         it('encrypt and share with provisional users', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
+          await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
         });
 
         it('cannot claim without share', async () => {
@@ -148,28 +155,28 @@ const generateEncryptTests = (args: TestArgs) => {
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.NothingToClaim);
+          await expect(aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.NothingToClaim);
         });
 
         it('claim provisionalIdentity blocks', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.fulfilled;
+          await expect(aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.fulfilled;
         });
 
         it('decrypt claimed block', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+          const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-          const decrypted = await args.aliceLaptop.decrypt(cipherText);
+          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+          const decrypted = await aliceLaptop.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
 
@@ -178,11 +185,11 @@ const generateEncryptTests = (args: TestArgs) => {
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          const cipherText = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-          await args.aliceLaptop.signOut();
-          await args.aliceLaptop.signIn(aliceIdentity);
-          const decrypted = await args.aliceLaptop.decrypt(cipherText);
+          const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+          await aliceLaptop.signOut();
+          await aliceLaptop.signIn(aliceIdentity);
+          const decrypted = await aliceLaptop.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
 
@@ -191,43 +198,43 @@ const generateEncryptTests = (args: TestArgs) => {
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
-          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-          await expect(args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+          await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
         });
 
         it('throws when claiming twice the same identity', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
           let verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
           verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.ServerError);
+          await expect(aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.ServerError);
         });
 
         it('throws when claiming with wrong verification code', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-          await expect(args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, 'wrongCode')).to.be.rejectedWith(errors.InvalidVerificationCode);
+          await expect(aliceLaptop.claimProvisionalIdentity(provisionalIdentity, 'wrongCode')).to.be.rejectedWith(errors.InvalidVerificationCode);
         });
 
-        it('throw when two users claim same provisional identity', async () => {
+        it('throw when two Users claim same provisional identity', async () => {
           const email = 'alice@tanker-functional-test.io';
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await args.bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
           let verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
+          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
           verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(args.bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.ServerError);
+          await expect(bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.ServerError);
         });
 
         it('decrypt claimed block on a new device', async () => {
@@ -235,24 +242,23 @@ const generateEncryptTests = (args: TestArgs) => {
           const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
           const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
-          const cipherText = await args.aliceLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-
-          const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
+          const cipherText = await aliceLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+          const bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
 
           const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await args.bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-          await args.bobLaptop.signOut();
+          await bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
-          await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
-          const decrypted = await args.bobPhone.decrypt(cipherText);
+          const bobPhone = args.makeTanker();
+          await bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
+          const decrypted = await bobPhone.decrypt(cipherText);
           expect(decrypted).to.equal(clearText);
         });
 
-        it('throws when sharing with a user that doesn\'t exist', async () => {
+        it('throws when sharing with a user that does not exist', async () => {
           const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
 
           await expectRejectedWithProperty({
-            handler: async () => args.bobLaptop.encrypt(clearText, { shareWithUsers: [eveIdentity] }),
+            handler: async () => bobLaptop.encrypt(clearText, { shareWithUsers: [eveIdentity] }),
             exception: errors.RecipientsNotFound,
             property: 'recipientIds',
             expectedValue: [eveIdentity]
@@ -260,24 +266,23 @@ const generateEncryptTests = (args: TestArgs) => {
         });
 
         it('shares even when the recipient is not connected', async () => {
-          await args.aliceLaptop.signOut();
-          const encrypted = await args.bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
+          await aliceLaptop.signOut();
+          const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
 
-          await args.aliceLaptop.signIn(aliceIdentity);
-          const decrypted = await args.aliceLaptop.decrypt(encrypted);
+          await aliceLaptop.signIn(aliceIdentity);
+          const decrypted = await aliceLaptop.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
         });
 
         it('shares with a device created after sharing', async () => {
-          const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
+          const bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
+          const encrypted = await aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
+          const bobPhone = args.makeTanker();
+          await bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
 
-          const encrypted = await args.aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
-
-          await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
-
-          const decrypted = await args.bobPhone.decrypt(encrypted);
+          const decrypted = await bobPhone.decrypt(encrypted);
           expect(decrypted).to.equal(clearText);
-          await args.bobPhone.signOut();
+          await bobPhone.signOut();
         });
       });
     });
@@ -285,21 +290,21 @@ const generateEncryptTests = (args: TestArgs) => {
     describe('share after encryption (reshare)', () => {
       it('throws when sharing an invalid resource id', async () => {
         // $FlowExpectedError
-        await expect(args.bobLaptop.share(null, { shareWithUsers: [alicePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.share(null, { shareWithUsers: [alicePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when sharing with an invalid recipient list', async () => {
-        const encrypted = await args.bobLaptop.encrypt(clearText);
-        const resourceId = await args.bobLaptop.getResourceId(encrypted);
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(encrypted);
         // $FlowExpectedError
-        await expect(args.bobLaptop.share([resourceId])).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.share([resourceId])).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when sharing a resource that doesn\'t exist', async () => {
         const badResourceId = 'AAAAAAAAAAAAAAAAAAAAAA==';
 
         await expectRejectedWithProperty({
-          handler: async () => args.bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] }),
+          handler: async () => bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] }),
           exception: errors.ResourceNotFound,
           property: 'b64ResourceId',
           expectedValue: badResourceId
@@ -307,71 +312,79 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('throws when sharing with a user that doesn\'t exist', async () => {
-        const edata = await args.bobLaptop.encrypt(clearText);
-        const resourceId = await args.bobLaptop.getResourceId(edata);
+        const edata = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(edata);
         const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
 
         await expectRejectedWithProperty({
-          handler: async () => args.bobLaptop.share([resourceId], { shareWithUsers: [eveIdentity] }),
+          handler: async () => bobLaptop.share([resourceId], { shareWithUsers: [eveIdentity] }),
           exception: errors.RecipientsNotFound,
           property: 'recipientIds',
           expectedValue: [eveIdentity]
         });
       });
 
-      it('shares an existing resource with an existing user', async () => {
-        const encrypted = await args.bobLaptop.encrypt(clearText);
-        const resourceId = await args.bobLaptop.getResourceId(encrypted);
-        await args.bobLaptop.share([resourceId], { shareWithUsers: [alicePublicIdentity] });
+      it('shares an existing resource with an existing User', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+        await bobLaptop.share([resourceId], { shareWithUsers: [alicePublicIdentity] });
 
-        const decrypted = await args.aliceLaptop.decrypt(encrypted);
+        const decrypted = await aliceLaptop.decrypt(encrypted);
         expect(decrypted).to.equal(clearText);
       });
 
-      it('shares an existing resource with a provisional user', async () => {
+      it('shares an existing resource with a provisional User', async () => {
         const email = 'alice@tanker-functional-test.io';
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-        const cipherText = await args.bobLaptop.encrypt(clearText);
-        const resourceId = await args.bobLaptop.getResourceId(cipherText);
-        await expect(args.bobLaptop.share([resourceId], { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
+        const cipherText = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(cipherText);
+        await expect(bobLaptop.share([resourceId], { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
       });
     });
   });
 
   describe('text resource encryption and sharing with multiple devices', () => {
-    before(async () => {
-      const aliceIdentity = await args.trustchainHelper.generateIdentity();
-      const bobIdentity = await args.trustchainHelper.generateIdentity();
-      await args.bobLaptop.signUp(bobIdentity);
-      await args.aliceLaptop.signUp(aliceIdentity);
+    let aliceLaptop;
+    let aliceIdentity;
+    let bobLaptop;
+    let bobPhone;
+    let bobIdentity;
+
+    beforeEach(async () => {
+      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      bobIdentity = await args.trustchainHelper.generateIdentity();
+      aliceLaptop = args.makeTanker();
+      bobLaptop = args.makeTanker();
+      bobPhone = args.makeTanker();
+      await bobLaptop.signUp(bobIdentity);
+      await aliceLaptop.signUp(aliceIdentity);
       const bobUnlockPassword = 'my password';
-      await args.bobLaptop.registerUnlock({ password: bobUnlockPassword });
-      await args.bobPhone.signIn(bobIdentity, { password: bobUnlockPassword });
+      await bobLaptop.registerUnlock({ password: bobUnlockPassword });
+      await bobPhone.signIn(bobIdentity, { password: bobUnlockPassword });
     });
 
-    after(async () => {
+    afterEach(async () => {
       await Promise.all([
-        args.bobPhone.signOut(),
-        args.bobLaptop.signOut(),
-        args.aliceLaptop.signOut(),
+        bobPhone.signOut(),
+        bobLaptop.signOut(),
+        aliceLaptop.signOut(),
       ]);
     });
 
     it('can decrypt a resource encrypted from another device', async () => {
-      const encrypted = await args.bobLaptop.encrypt(clearText);
-      const decrypted = await args.bobPhone.decrypt(encrypted);
+      const encrypted = await bobLaptop.encrypt(clearText);
+      const decrypted = await bobPhone.decrypt(encrypted);
       expect(decrypted).to.equal(clearText);
     });
 
     it('can access a resource encrypted and shared from a device that was then revoked', async () => {
-      const encrypted = await args.bobLaptop.encrypt(clearText);
+      const encrypted = await bobLaptop.encrypt(clearText);
 
-      // revoke args.bobLaptop
-      await args.bobLaptop.revokeDevice(args.bobLaptop.deviceId);
-      await args.bobLaptop.signOut(); // NOTE: This shouldn't be necessary, but see revocation.spec.js:120 @ da06447e3
+      // revoke bobLaptop
+      await bobPhone.revokeDevice(bobLaptop.deviceId);
 
-      const decrypted = await args.bobPhone.decrypt(encrypted);
+      const decrypted = await bobPhone.decrypt(encrypted);
       expect(decrypted).to.equal(clearText);
     });
   });
@@ -382,7 +395,7 @@ const generateEncryptTests = (args: TestArgs) => {
     return type === 'FilePonyfill' ? File : type;
   };
   // In Edge and IE11, accessing the webkitRelativePath property (though defined) triggers
-  // a TypeError: Invalid calling object. We avoid this by comparing only useful props.
+  // a TypeError: Invalid calling object. We avoid this by comparing only startful props.
   const fileProps = (obj: Object) => {
     const { name, size, type, lastModified } = obj;
     return { name, size, type, lastModified };
@@ -401,21 +414,25 @@ const generateEncryptTests = (args: TestArgs) => {
 
   sizes.forEach(size => {
     describe(`${size} binary resource encryption`, () => {
+      let aliceLaptop;
+      let aliceIdentity;
+
       before(async () => {
-        const aliceIdentity = await args.trustchainHelper.generateIdentity();
-        await args.aliceLaptop.signUp(aliceIdentity);
+        aliceIdentity = await args.trustchainHelper.generateIdentity();
+        aliceLaptop = args.makeTanker();
+        await aliceLaptop.signUp(aliceIdentity);
       });
 
       after(async () => {
-        await args.aliceLaptop.signOut();
+        await aliceLaptop.signOut();
       });
 
       args.resources[size].forEach(({ type, resource: clear }) => {
         it(`can encrypt and decrypt keeping input type (${getConstructorName(type)}) by default`, async () => {
-          const encrypted = await args.aliceLaptop.encryptData(clear);
+          const encrypted = await aliceLaptop.encryptData(clear);
           expectSameType(encrypted, clear);
 
-          const decrypted = await args.aliceLaptop.decryptData(encrypted);
+          const decrypted = await aliceLaptop.decryptData(encrypted);
           expectSameType(decrypted, clear);
 
           expectDeepEqual(decrypted, clear);
@@ -428,7 +445,7 @@ const generateEncryptTests = (args: TestArgs) => {
       args.resources[size].forEach(({ type: originalType, resource: clear }) => {
         args.resources[size].forEach(({ type: transientType }) => {
           it(`can encrypt a ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
-            const encrypted = await args.aliceLaptop.encryptData(clear, { type: transientType });
+            const encrypted = await aliceLaptop.encryptData(clear, { type: transientType });
             expectType(encrypted, transientType);
 
             const outputOptions = {};
@@ -443,7 +460,7 @@ const generateEncryptTests = (args: TestArgs) => {
               outputOptions.lastModified = clear.lastModified;
             }
 
-            const decrypted = await args.aliceLaptop.decryptData(encrypted, outputOptions);
+            const decrypted = await aliceLaptop.decryptData(encrypted, outputOptions);
             expectType(decrypted, originalType);
 
             expectDeepEqual(decrypted, clear);

@@ -13,38 +13,42 @@ const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
     let bobIdentity;
     let bobPublicIdentity;
+    let bobLaptop;
+    let bobPhone;
 
     beforeEach(async () => {
       bobIdentity = await args.trustchainHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
+      bobLaptop = args.makeTanker();
+      bobPhone = args.makeTanker();
 
-      await args.bobLaptop.signUp(bobIdentity);
-      const bobUnlockKey = await args.bobLaptop.generateAndRegisterUnlockKey();
+      await bobLaptop.signUp(bobIdentity);
+      const bobUnlockKey = await bobLaptop.generateAndRegisterUnlockKey();
 
-      await args.bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
+      await bobPhone.signIn(bobIdentity, { unlockKey: bobUnlockKey });
     });
 
     afterEach(async () => {
       await Promise.all([
-        args.bobLaptop.signOut(),
-        args.bobPhone.signOut(),
+        bobLaptop.signOut(),
+        bobPhone.signOut(),
       ]);
     });
 
     const revokeBobPhone = async () => {
       if (!isIE) {
-        const waitForPhoneRevoked = new Promise(resolve => args.bobPhone.once('deviceRevoked', resolve));
+        const waitForPhoneRevoked = new Promise(resolve => bobPhone.once('deviceRevoked', resolve));
 
-        await args.bobLaptop.revokeDevice(args.bobPhone.deviceId);
-        const waitForLaptopRevoked = args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
+        await bobLaptop.revokeDevice(bobPhone.deviceId);
+        const waitForLaptopRevoked = bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
 
         await Promise.all([waitForPhoneRevoked, waitForLaptopRevoked]);
       } else {
-        const bobPhoneId = args.bobPhone.deviceId;
-        await args.bobPhone.signOut();
-        await args.bobLaptop.revokeDevice(bobPhoneId);
-        await args.bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
-        await expect(args.bobPhone.signIn(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
+        const bobPhoneId = bobPhone.deviceId;
+        await bobPhone.signOut();
+        await bobLaptop.revokeDevice(bobPhoneId);
+        await bobLaptop._session._trustchain.sync([], []); // eslint-disable-line no-underscore-dangle
+        await expect(bobPhone.signIn(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
       }
     };
 
@@ -63,21 +67,21 @@ const generateRevocationTests = (args: TestArgs) => {
       const timeoutPromise = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
 
       const testPromise = Promise.all([
-        expectRevokedEvent({ to_be_received: true, on: args.bobPhone }),
+        expectRevokedEvent({ to_be_received: true, on: bobPhone }),
         Promise.race([
-          expectRevokedEvent({ to_be_received: false, on: args.bobLaptop }),
+          expectRevokedEvent({ to_be_received: false, on: bobLaptop }),
           timeoutPromise(1000),
         ])
       ]);
 
-      args.bobLaptop.revokeDevice(args.bobPhone.deviceId);
+      bobLaptop.revokeDevice(bobPhone.deviceId);
 
       await expect(testPromise).to.be.fulfilled;
     });
 
     if (!isIE) {
       it('wipes the storage of the revoked device', async () => {
-        const destroy = sinon.spy(args.bobPhone._session.storage, 'nuke'); //eslint-disable-line no-underscore-dangle
+        const destroy = sinon.spy(bobPhone._session.storage, 'nuke'); //eslint-disable-line no-underscore-dangle
         try {
           await revokeBobPhone();
           expect(destroy.calledOnce).to.be.true;
@@ -88,20 +92,19 @@ const generateRevocationTests = (args: TestArgs) => {
     }
 
     it('can\'t open a session on a device revoked while closed', async () => {
-      const bobPhoneDeviceId = args.bobPhone.deviceId;
-      await args.bobPhone.signOut();
-      await args.bobLaptop.revokeDevice(bobPhoneDeviceId);
-      const promise = args.bobPhone.signIn(bobIdentity);
-      await expect(promise).to.be.rejectedWith(errors.OperationCanceled);
+      const bobPhoneDeviceId = bobPhone.deviceId;
+      await bobPhone.signOut();
+      await bobLaptop.revokeDevice(bobPhoneDeviceId);
+      await expect(bobPhone.signIn(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
     });
 
-    it('can list a user\'s active and revoked devices', async () => {
-      const laptopId = args.bobLaptop.deviceId;
-      const phoneId = args.bobPhone.deviceId;
+    it('can list a User\'s active and revoked devices', async () => {
+      const laptopId = bobLaptop.deviceId;
+      const phoneId = bobPhone.deviceId;
 
       await revokeBobPhone();
 
-      let devices = await args.bobLaptop.getDeviceList();
+      let devices = await bobLaptop.getDeviceList();
       expect(devices.length).to.equal(2);
 
       // order: laptop first, phone second
@@ -121,27 +124,28 @@ const generateRevocationTests = (args: TestArgs) => {
     it('can access encrypted resources when having another revoked device', async () => {
       await revokeBobPhone();
       const message = 'test';
-      const encrypted = await args.bobLaptop.encrypt(message);
-      const clear = await args.bobLaptop.decrypt(encrypted);
+      const encrypted = await bobLaptop.encrypt(message);
+      const clear = await bobLaptop.decrypt(encrypted);
       expect(clear).to.eq(message);
     });
 
     it('Alice can share with Bob who has a revoked device', async () => {
       const aliceIdentity = await args.trustchainHelper.generateIdentity();
-      await args.aliceLaptop.signUp(aliceIdentity);
+      const aliceLaptop = args.makeTanker();
+      await aliceLaptop.signUp(aliceIdentity);
 
       await revokeBobPhone();
 
-      await syncTankers(args.aliceLaptop, args.bobLaptop);
+      await syncTankers(aliceLaptop, bobLaptop);
 
       const message = 'I love you';
-      const encrypted = await args.aliceLaptop.encrypt(message, { shareWithUsers: [bobPublicIdentity] });
+      const encrypted = await aliceLaptop.encrypt(message, { shareWithUsers: [bobPublicIdentity] });
 
-      const clear = await args.bobLaptop.decrypt(encrypted);
+      const clear = await bobLaptop.decrypt(encrypted);
       expect(clear).to.eq(message);
 
-      await expect(args.bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidSessionStatus);
-      await args.aliceLaptop.signOut();
+      await expect(bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await aliceLaptop.signOut();
     });
   });
 };
