@@ -21,10 +21,7 @@ module.exports = {
   plugins: [
     ...webpackBaseConfig.plugins,
 
-    // Clean previous build
-    new CleanWebpackPlugin(['umd/'], {
-      root: path.resolve(__dirname, '..', 'dist'),
-      verbose: true,
-    }),
+    // Clean previous umd build (wipes output.path folder content)
+    new CleanWebpackPlugin({ verbose: true }),
   ],
 };

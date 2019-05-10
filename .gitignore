@@ -2,7 +2,6 @@
 
 build
 dist
-dist-standalone
 coverage
 node_modules
 report
