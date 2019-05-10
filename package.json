@@ -62,8 +62,8 @@
     "eslint-plugin-react": "^7.13.0",
     "flow-bin": "0.93.0",
     "fs-extra": "^7.0.1",
-    "karma": "4.0.0",
-    "karma-browserstack-launcher": "^1.4.0",
+    "karma": "4.1.0",
+    "karma-browserstack-launcher": "1.4.0",
     "karma-chrome-launcher": "^2.2.0",
     "karma-edge-launcher": "^0.4.2",
     "karma-firefox-launcher": "^1.1.0",
@@ -73,7 +73,7 @@
     "karma-opera-launcher": "^1.0.0",
     "karma-safarinative-launcher": "^1.1.0",
     "karma-sourcemap-loader": "^0.3.7",
-    "karma-webpack": "^4.0.0-rc.3",
+    "karma-webpack": "^4.0.0-rc.6",
     "mocha": "^6.0.1",
     "nyc": "^14.1.1",
     "rollup": "^1.0.2",
@@ -82,8 +82,8 @@
     "rollup-plugin-local-resolve": "1.0.7",
     "rollup-plugin-terser": "^4.0.1",
     "sinon": "^4.5.0",
-    "webpack": "^4.29.5",
-    "webpack-cli": "^3.2.3"
+    "webpack": "^4.31.0",
+    "webpack-cli": "^3.3.2"
   },
   "workspaces": [
     "packages/*",
