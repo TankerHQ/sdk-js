@@ -48,20 +48,14 @@ const generateUnlockTests = (args: TestArgs) => {
       it('can test that passphrase unlock method has been registered', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-        expect(bobLaptop.hasRegisteredVerificationMethods()).to.be.true;
-        expect(bobLaptop.hasRegisteredVerificationMethod('passphrase')).to.be.true;
-        expect(bobLaptop.hasRegisteredVerificationMethod('email')).to.be.false;
-        expect(bobLaptop.registeredVerificationMethods).to.deep.have.members([{ type: 'passphrase' }]);
+        expect(await bobLaptop.getRegisteredVerificationMethods()).to.deep.have.members(['passphrase']);
       });
 
       it('can test that email unlock method has been registered', async () => {
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
-        expect(bobLaptop.hasRegisteredVerificationMethods()).to.be.true;
-        expect(bobLaptop.hasRegisteredVerificationMethod('passphrase')).to.be.false;
-        expect(bobLaptop.hasRegisteredVerificationMethod('email')).to.be.true;
-        expect(bobLaptop.registeredVerificationMethods).to.deep.have.members([{ type: 'email' }]);
+        expect(await bobLaptop.getRegisteredVerificationMethods()).to.deep.have.members(['email']);
       });
 
       it('can test that both unlock methods have been registered', async () => {
@@ -69,10 +63,7 @@ const generateUnlockTests = (args: TestArgs) => {
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         await bobLaptop.updateVerificationMethod({ passphrase: 'passphrase' });
-        expect(bobLaptop.hasRegisteredVerificationMethods()).to.be.true;
-        expect(bobLaptop.hasRegisteredVerificationMethod('passphrase')).to.be.true;
-        expect(bobLaptop.hasRegisteredVerificationMethod('email')).to.be.true;
-        expect(bobLaptop.registeredVerificationMethods).to.deep.have.members([{ type: 'email' }, { type: 'passphrase' }]);
+        expect(await bobLaptop.getRegisteredVerificationMethods()).to.deep.have.members(['email', 'passphrase']);
       });
     });
 
@@ -140,7 +131,7 @@ const generateUnlockTests = (args: TestArgs) => {
       });
 
       it('does not list the verification key as a verification method', async () => {
-        expect(await bobLaptop.hasRegisteredVerificationMethods()).to.be.false;
+        expect(await bobLaptop.getRegisteredVerificationMethods()).to.deep.have.members([]);
       });
 
       it('can generate a verification key and unlock a new device with it', async () => {

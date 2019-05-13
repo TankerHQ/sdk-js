@@ -4,12 +4,12 @@ import { utils, type b64string } from '@tanker/crypto';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
 import EventEmitter from 'events';
 
-import { type ClientOptions, type UnlockMethods } from './Network/Client';
+import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
 import { InvalidSessionStatus, InvalidArgument } from './errors';
-import { statusDefs, statuses, type Status, type VerificationMethod, assertVerificationMethod } from './Session/types';
+import { statusDefs, statuses, type Status, type VerificationMethod, type VerificationType, assertVerificationMethod } from './Session/types';
 
 import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
@@ -208,6 +208,16 @@ export class Tanker extends EventEmitter {
     }
   }
 
+  async getRegisteredVerificationMethods(): Promise<Array<VerificationType>> {
+    this.assert(statuses.READY, 'get registered verification methods');
+    return this._session.verificationTypes;
+  }
+
+  async generateVerificationKey(): Promise<string> {
+    this.assert(statuses.IDENTITY_REGISTRATION_NEEDED, 'generate a verification key');
+    return this._session.generateVerificationKey();
+  }
+
   _parseIdentity(identityB64: b64string) {
     // Type verif arguments
     if (!identityB64 || typeof identityB64 !== 'string')
@@ -236,29 +246,6 @@ export class Tanker extends EventEmitter {
       await session.nuke();
     }
     this.emit('deviceRevoked');
-  }
-
-  get registeredVerificationMethods(): UnlockMethods {
-    this.assert(statuses.READY, 'has registered unlock methods');
-    return this._session.localUser.unlockMethods;
-  }
-
-  hasRegisteredVerificationMethods(): bool {
-    this.assert(statuses.READY, 'has registered unlock methods');
-    return this.registeredVerificationMethods.length !== 0;
-  }
-
-  hasRegisteredVerificationMethod(method: "passphrase" | "email"): bool {
-    this.assert(statuses.READY, 'has registered unlock method');
-    if (['passphrase', 'email'].indexOf(method) === -1) {
-      throw new InvalidArgument('method', 'passphrase or email', method);
-    }
-    return this.registeredVerificationMethods.some(item => method === item.type);
-  }
-
-  async generateVerificationKey(): Promise<string> {
-    this.assert(statuses.IDENTITY_REGISTRATION_NEEDED, 'generate a verification key');
-    return this._session.generateVerificationKey();
   }
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {

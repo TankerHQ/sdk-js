@@ -6,7 +6,7 @@ import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
 import { takeChallenge } from './ClientAuthenticator';
 import { OperationCanceled } from '../errors';
-import { type UserData, type Status, type VerificationMethod, type EmailVerificationMethod, type PassphraseVerificationMethod, statuses } from './types';
+import { type UserData, type Status, type VerificationMethod, type VerificationType, type EmailVerificationMethod, type PassphraseVerificationMethod, statuses, extractVerificationTypes } from './types';
 import { Apis } from '../Protocol/Apis';
 
 import { fetchUnlockKey, getLastUserKey, sendUserCreation, sendUnlockUpdate } from './requests';
@@ -16,6 +16,7 @@ import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCre
 
 export class Session {
   localUser: LocalUser;
+  _verificationTypes: Set<VerificationType>
 
   storage: Storage;
   _trustchain: Trustchain;
@@ -31,12 +32,16 @@ export class Session {
     this.localUser = localUser;
     this._client = client;
     this._status = status || statuses.STOPPED;
+    this._verificationTypes = new Set();
 
     this.apis = new Apis(localUser, storage, trustchain, client);
   }
 
   get status(): Status {
     return this._status;
+  }
+  get verificationTypes(): Array<VerificationType> {
+    return [...this._verificationTypes];
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
@@ -67,8 +72,8 @@ export class Session {
   }
 
   authenticate = async () => {
-    const unlockMethods = await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
-    this.localUser.setUnlockMethods(unlockMethods);
+    const authData = await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
+    this._verificationTypes = extractVerificationTypes(authData);
     await this._trustchain.ready();
 
     if (this.localUser.wasRevoked) {
@@ -132,11 +137,11 @@ export class Session {
 
   updateUnlock = async (verificationMethod: EmailVerificationMethod | PassphraseVerificationMethod): Promise<void> => {
     await sendUnlockUpdate(this._client, this.localUser, verificationMethod);
-    if (verificationMethod.passphrase && !this.localUser.unlockMethods.some((m) => m.type === 'passphrase')) {
-      this.localUser.unlockMethods.push({ type: 'passphrase' });
+    if (verificationMethod.passphrase) {
+      this._verificationTypes.add('passphrase');
     }
-    if (verificationMethod.email && !this.localUser.unlockMethods.some((m) => m.type === 'email')) {
-      this.localUser.unlockMethods.push({ type: 'email' });
+    if (verificationMethod.email) {
+      this._verificationTypes.add('email');
     }
   }
 

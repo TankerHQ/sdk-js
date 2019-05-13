@@ -17,12 +17,6 @@ export type AuthDeviceParams = {
   userId: Uint8Array,
 }
 
-export type UnlockMethod = {
-  type: "passphrase" | "email"
-}
-
-export type UnlockMethods = Array<UnlockMethod>
-
 export type DeviceCreatedCb = () => void;
 
 const defaultApiAddress = 'https://api.tanker.io';
@@ -31,19 +25,6 @@ export type ClientOptions = {
   socket?: Socket,
   url?: string,
   sdkInfo: SdkInfo,
-}
-
-// We force the translation of the wire object, to protect the public API
-function toUnlockMethods(deviceAuthResponse: Object): UnlockMethods {
-  let ret: UnlockMethods = [];
-  if (!deviceAuthResponse || !deviceAuthResponse.unlock_methods)
-    return ret;
-  ret = deviceAuthResponse.unlock_methods.map(item => {
-    if (item.type === 'password')
-      return ({ type: 'passphrase' });
-    return { type: item.type };
-  });
-  return ret;
 }
 
 export function b64RequestObject(requestObject: any): any {
@@ -99,7 +80,7 @@ export class Client extends EventEmitter {
     });
   }
 
-  setAuthenticator = async (authenticator: Authenticator): Promise<UnlockMethods> => {
+  setAuthenticator = async (authenticator: Authenticator) => {
     if (this._authenticator)
       throw new Error('authenticator has already been set');
 
@@ -107,7 +88,7 @@ export class Client extends EventEmitter {
     return this.authenticate();
   }
 
-  authenticate = async (): Promise<UnlockMethods> => {
+  authenticate = async () => {
     const authenticator = this._authenticator;
     if (!authenticator)
       throw new Error('no authenticator has been set');
@@ -140,7 +121,7 @@ export class Client extends EventEmitter {
     return challenge;
   }
 
-  async authenticateDevice({ userId, trustchainId, publicSignatureKey, signature }: AuthDeviceParams): Promise<UnlockMethods> {
+  async authenticateDevice({ userId, trustchainId, publicSignatureKey, signature }: AuthDeviceParams) {
     const authDeviceRequest = {
       signature: utils.toBase64(signature),
       public_signature_key: utils.toBase64(publicSignatureKey),
@@ -149,8 +130,7 @@ export class Client extends EventEmitter {
     };
 
     try {
-      const result = await this.send('authenticate device', authDeviceRequest);
-      return toUnlockMethods(result);
+      return this.send('authenticate device', authDeviceRequest);
     } catch (e) {
       throw new AuthenticationError(e);
     }

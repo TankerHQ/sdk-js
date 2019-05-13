@@ -4,7 +4,6 @@ import EventEmitter from 'events';
 import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
 import { type PublicIdentity } from '@tanker/identity';
 
-import { type UnlockMethods } from '../Network/Client';
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import { type UserData, type DelegationToken } from './types';
@@ -22,7 +21,6 @@ export type DeviceKeys = {|
 export class LocalUser extends EventEmitter {
   _userData: UserData;
   _deviceId: ?Uint8Array;
-  _unlockMethods: UnlockMethods;
   _blockGenerator: BlockGenerator;
   _wasRevoked: bool;
 
@@ -38,7 +36,6 @@ export class LocalUser extends EventEmitter {
     super();
 
     this._keyStore = keyStore;
-    this._unlockMethods = [];
     this._userData = userData;
     this.loadStoredData();
 
@@ -62,10 +59,6 @@ export class LocalUser extends EventEmitter {
     this._deviceSignatureKeyPair = this._keyStore.signatureKeyPair;
     this._deviceEncryptionKeyPair = this._keyStore.encryptionKeyPair;
     this._deviceId = this._keyStore.deviceId;
-  }
-
-  setUnlockMethods = (unlockMethods: UnlockMethods) => {
-    this._unlockMethods = unlockMethods;
   }
 
   applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim): Promise<ProvisionalUserKeyPairs> => {
@@ -205,9 +198,6 @@ export class LocalUser extends EventEmitter {
   }
   get userSecret(): Uint8Array {
     return this._userData.userSecret;
-  }
-  get unlockMethods(): UnlockMethods {
-    return this._unlockMethods;
   }
   get wasRevoked(): bool {
     return this._wasRevoked;

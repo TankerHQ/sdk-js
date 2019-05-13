@@ -265,12 +265,5 @@ describe('Tanker', () => {
         }
       });
     });
-
-    describe('unlock methods', () => {
-      it('should throw if hasRegisteredUnlockMethod asked for a wrong method', async () => {
-        const arg = (('badMethod': any): 'passphrase' | 'email');
-        expect(() => tanker.hasRegisteredVerificationMethod(arg)).to.throw(InvalidArgument);
-      });
-    });
   });
 });

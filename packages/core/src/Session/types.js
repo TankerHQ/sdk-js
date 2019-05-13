@@ -34,6 +34,8 @@ export type UserData = {
   delegationToken: DelegationToken,
 };
 
+export type VerificationType = 'email' | 'passphrase';
+
 export type EmailVerificationMethod = {|
   email: string,
   verificationCode: string
@@ -48,6 +50,19 @@ type KeyVerificationMethod = {|
 |};
 
 export type VerificationMethod = EmailVerificationMethod | PassphraseVerificationMethod | KeyVerificationMethod;
+
+export const extractVerificationTypes = (authData: any): Set<VerificationType> => {
+  if (!authData.unlock_methods)
+    return new Set();
+  if (!Array.isArray(authData.unlock_methods))
+    throw new Error('Assertion error: invalid response from server');
+
+  return new Set(authData.unlock_methods.map(item => {
+    if (item.type === 'password')
+      return 'passphrase';
+    return item.type;
+  }));
+};
 
 export const assertVerificationMethod = (verificationMethod: VerificationMethod) => {
   if (!verificationMethod || typeof verificationMethod !== 'object' || verificationMethod instanceof Array)
