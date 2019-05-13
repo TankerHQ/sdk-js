@@ -22,10 +22,10 @@ import {
 import { type Nature, NATURE } from './Nature';
 import { type Block, hashBlock } from './Block';
 
-import { type UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
-import { type UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import { type UnverifiedDeviceCreation, type UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import { type UnverifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
+import { type UnverifiedUserGroup } from '../Trustchain/UnverifiedStore/UserGroupsUnverifiedStore';
+import { type UnverifiedDeviceCreation, type UnverifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
+import { type UnverifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 
 
 export type VerificationFields = {|

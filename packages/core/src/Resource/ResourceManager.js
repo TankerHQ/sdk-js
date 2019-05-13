@@ -6,7 +6,7 @@ import { tcrypto, random, generichash, number, utils, type Key } from '@tanker/c
 import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
 import { getEncryptionFormat, encryptData, extractResourceId } from '../DataProtection/Encryptor';
 import Trustchain from '../Trustchain/Trustchain';
-import { type VerifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
+import { type VerifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
 import { KeyDecryptor } from './KeyDecryptor';
 import ResourceStore from './ResourceStore';
 

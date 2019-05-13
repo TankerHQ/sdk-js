@@ -1,7 +1,7 @@
 // @flow
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
-import { type PublicProvisionalUser } from '@tanker/identity';
+import { type PublicProvisionalUser, createIdentity, getPublicIdentity } from '@tanker/identity';
 
 import {
   deviceCreationFromBlock,
@@ -10,13 +10,14 @@ import {
   userGroupEntryFromBlock,
   provisionalIdentityClaimFromBlock,
 } from '../Blocks/entries';
+
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
 
-import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import type { UnverifiedKeyPublish } from '../UnverifiedStore/KeyPublishUnverifiedStore';
-import type { UnverifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
-import type { UnverifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
+import type { UnverifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
+import type { UnverifiedUserGroup } from '../Trustchain/UnverifiedStore/UserGroupsUnverifiedStore';
+import type { UnverifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
 
 import { hashBlock, signBlock, type Block } from '../Blocks/Block';
@@ -26,7 +27,7 @@ import { rootBlockAuthor } from '../Trustchain/Verify';
 
 import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
-import { type DelegationToken } from '../Session/delegation';
+import { type DelegationToken } from '../Session/types';
 
 
 export type TestDevice = {
@@ -35,6 +36,16 @@ export type TestDevice = {
   encryptionKeys: tcrypto.SodiumKeyPair,
   createdAt: number;
   revokedAt: number;
+}
+
+export type TestProvisionalUser = {
+    trustchainId: Uint8Array,
+    target: string,
+    value: string,
+    appSignaturePublicKey: Uint8Array,
+    appEncryptionPublicKey: Uint8Array,
+    tankerSignaturePublicKey: Uint8Array,
+    tankerEncryptionPublicKey: Uint8Array,
 }
 
 type TestUserKeys = {
@@ -47,6 +58,8 @@ export type TestUser = {
   id: Uint8Array,
   userKeys: Array<TestUserKeys>,
   devices: Array<TestDevice>,
+  identity: string,
+  publicIdentity: string,
 }
 
 export type TestTrustchainCreation = {
@@ -137,7 +150,17 @@ class TestGenerator {
     this._trustchainIndex += 1;
   }
 
-  makeUserCreation = (userId: Uint8Array): TestDeviceCreation => {
+  makeProvisionalUser = () => ({
+    trustchainId: random(tcrypto.HASH_SIZE),
+    target: 'email',
+    value: 'email@example.com',
+    appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+    tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+  });
+
+  makeUserCreation = async (userId: Uint8Array): Promise<TestDeviceCreation> => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
 
@@ -172,6 +195,9 @@ class TestGenerator {
       revokedAt: Number.MAX_SAFE_INTEGER
     };
 
+    const identity = await createIdentity(utils.toBase64(this._trustchainId), utils.toBase64(this._trustchainKeys.privateKey), utils.toBase64(userId));
+    const publicIdentity = await getPublicIdentity(identity);
+
     const testUser = {
       id: userId,
       userKeys: [{
@@ -179,7 +205,9 @@ class TestGenerator {
         privateKey: privateUserKey,
         index: unverifiedDeviceCreation.index
       }],
-      devices: [testDevice]
+      devices: [testDevice],
+      identity,
+      publicIdentity,
     };
 
     return {
@@ -426,13 +454,23 @@ class TestGenerator {
       lastGroupBlock: unverifiedUserGroup.hash,
       index: unverifiedUserGroup.index,
     };
+
+    const provisionalEncryptionKeys = [];
+    provisionalUsers.forEach((user) => {
+      provisionalEncryptionKeys.push({
+        appPublicSignatureKey: user.appSignaturePublicKey,
+        tankerPublicSignatureKey: user.tankerSignaturePublicKey,
+        encryptedGroupPrivateEncryptionKey: random(tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD + tcrypto.SEAL_OVERHEAD),
+      });
+    });
+
     const externalGroup = {
       groupId: signatureKeyPair.publicKey,
       publicSignatureKey: signatureKeyPair.publicKey,
       publicEncryptionKey: encryptionKeyPair.publicKey,
       lastGroupBlock: unverifiedUserGroup.hash,
-      encryptedPrivateSignatureKey: null,
-      provisionalEncryptionKeys: [],
+      encryptedPrivateSignatureKey: tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey),
+      provisionalEncryptionKeys,
       index: unverifiedUserGroup.index,
     };
     return {

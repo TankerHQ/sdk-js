@@ -2,123 +2,100 @@
 
 import sinon from 'sinon';
 
-import { tcrypto, utils } from '@tanker/crypto';
-import { createIdentity, getPublicIdentity } from '@tanker/identity';
+import { tcrypto, utils, random } from '@tanker/crypto';
 import { expect } from './chai';
-import { makeGroupStoreBuilder } from './GroupStoreBuilder';
 import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
 import { InvalidGroupSize, InvalidArgument, RecipientsNotFound } from '../errors';
+
+
+import { makeMemoryGroupStore } from './GroupStore.spec';
+import TestGenerator, { type TestUserGroup, type TestDeviceCreation } from './TestGenerator';
 
 class StubTrustchain {
   sync = () => null;
   updateGroupStore = () => null;
 }
 
-async function makeTestUsers({ onUpdateGroupStore } = {}) {
-  const trustchainAPI = new StubTrustchain();
-
-  const { builder, generator, groupStore } = await makeGroupStoreBuilder();
-
-  if (onUpdateGroupStore)
-    trustchainAPI.updateGroupStore = onUpdateGroupStore({ builder, generator, groupStore });
-
-  const stubs = {
-    sync: sinon.stub(trustchainAPI, 'sync'),
-    updateGroupStore: sinon.stub(trustchainAPI, 'updateGroupStore'),
-  };
-
-  // $FlowExpectedError
-  const groupMan = new GroupManager(null, trustchainAPI, groupStore, null, null, null);
-  // add a user just in case... (can catch bugs)
-  await generator.newUserCreationV3('germaine');
-
-  return {
-    builder,
-    generator,
-    groupStore,
-    groupMan,
-    trustchainAPI,
-    stubs,
-  };
-}
-
 describe('GroupManager', () => {
-  let groupMan;
-  let builder;
-  let generator;
+  let groupManager;
+  let groupStore;
   let stubs;
-  let alice;
-  let aliceGroup;
-  let aliceGroupId;
+  let trustchainAPI;
+
+  let testGenerator;
+
+  let groupId: Uint8Array;
+  let testUserCreation: TestDeviceCreation;
+  let testGroup: TestUserGroup;
+
+  before(async () => {
+    trustchainAPI = new StubTrustchain();
+    stubs = {
+      sync: sinon.stub(trustchainAPI, 'sync'),
+      updateGroupStore: sinon.stub(trustchainAPI, 'updateGroupStore'),
+    };
+    groupStore = await makeMemoryGroupStore();
+    // $FlowExpectedError
+    groupManager = new GroupManager(null, trustchainAPI, groupStore, null, null, null);
+
+    testGenerator = new TestGenerator();
+    testGenerator.makeTrustchainCreation();
+  });
 
   beforeEach(async () => {
-    ({ groupMan, builder, generator, stubs } = await makeTestUsers());
-    alice = await generator.newUserCreationV3('alice');
-    aliceGroup = await builder.newUserGroupCreation(alice.device, ['alice']);
-    aliceGroupId = utils.toBase64(aliceGroup.groupSignatureKeyPair.publicKey);
+    testUserCreation = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+    testGroup = testGenerator.makeUserGroupCreation(testUserCreation, [testUserCreation.user]);
+    await groupStore.put(testGroup.group);
+    groupId = testGroup.group.groupId;
   });
 
   it('returns a group', async () => {
-    const groups = await groupMan.getGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
+    const groups = await groupManager.getGroups([groupId]);
 
     expect(groups.length).to.equal(1);
-    expect(groups[0].publicSignatureKey).to.deep.equal(aliceGroup.groupSignatureKeyPair.publicKey);
+    expect(groups[0]).excluding(['encryptedPrivateSignatureKey']).to.deep.equal(testGroup.externalGroup);
   });
 
   it('does not fetch a fetched group', async () => {
-    await groupMan.getGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
+    await groupManager.getGroups([groupId]);
 
     expect(stubs.sync.notCalled).to.be.true;
     expect(stubs.updateGroupStore.notCalled).to.be.true;
   });
 
   it('fetches a group if not present in the groupStore', async () => {
-    const groupId = new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    const badGroupId = new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
-    await groupMan.getGroups([groupId]).catch(() => null);
+    await groupManager.getGroups([badGroupId]).catch(() => null);
 
-    expect(stubs.sync.withArgs([], [groupId]).calledOnce).to.be.true;
-    expect(stubs.updateGroupStore.withArgs([groupId]).calledOnce).to.be.true;
-  });
-
-  it('returns a fetched group', async () => {
-    await groupMan.getGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
-
-    stubs.updateGroupStore.callsFake(async () => {
-      await builder.applyUserGroupCreation(aliceGroup);
-    });
-
-    const groups = await groupMan.getGroups([aliceGroup.groupSignatureKeyPair.publicKey]);
-
-    expect(groups.length).to.equal(1);
-    expect(groups[0].publicSignatureKey).to.deep.equal(aliceGroup.groupSignatureKeyPair.publicKey);
+    expect(stubs.sync.withArgs([], [badGroupId]).calledOnce).to.be.true;
+    expect(stubs.updateGroupStore.withArgs([badGroupId]).calledOnce).to.be.true;
   });
 
   it('throws when getting a group that does not exist', async () => {
-    await expect(groupMan.getGroups([new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)])).to.be.rejectedWith(RecipientsNotFound);
+    await expect(groupManager.getGroups([new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)])).to.be.rejectedWith(RecipientsNotFound);
   });
 
   it('throws when creating a group with 0 members', async () => {
-    await expect(groupMan.createGroup([])).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.createGroup([])).to.be.rejectedWith(InvalidGroupSize);
   });
 
   it('throws when updating a group with 0 members', async () => {
-    await expect(groupMan.updateGroupMembers(aliceGroupId, [])).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.updateGroupMembers(groupId, [])).to.be.rejectedWith(InvalidGroupSize);
   });
 
   it('throws when creating a group with 1001 members', async () => {
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
-    await expect(groupMan.createGroup(users)).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.createGroup(users)).to.be.rejectedWith(InvalidGroupSize);
   });
 
   it('throws when updating a group with 1001 members', async () => {
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
-    await expect(groupMan.updateGroupMembers(aliceGroupId, users)).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.updateGroupMembers(groupId, users)).to.be.rejectedWith(InvalidGroupSize);
   });
 
   it('throws when updating a non existent group', async () => {
     const fakeGroupId = utils.toBase64(new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE));
-    const users = [await getPublicIdentity(await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'alice'))];
-    await expect(groupMan.updateGroupMembers(fakeGroupId, users)).to.be.rejectedWith(InvalidArgument);
+    await expect(groupManager.updateGroupMembers(fakeGroupId, [testUserCreation.testUser.publicIdentity])).to.be.rejectedWith(InvalidArgument);
   });
 });

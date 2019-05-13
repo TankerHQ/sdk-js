@@ -1,12 +1,9 @@
 // @flow
 
 import { generichash, tcrypto, utils, type b64string, type safeb64string, type Key } from '@tanker/crypto';
-import { InvalidUnlockKey } from '../errors';
 import { type Block, hashBlock } from '../Blocks/Block';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
-import type { EncryptedUserKey } from '../Network/Client';
-import { type DeviceKeys } from '../Session/KeySafe';
 
 export type UnlockKey = b64string;
 
@@ -149,27 +146,6 @@ export async function createUnlockKeyMessage({
   return message;
 }
 
-export function extractUnlockKey(unlockKey: b64string): GhostDevice {
-  try {
-    const decoded = utils.fromB64Json(unlockKey);
-    return {
-      deviceId: utils.fromBase64(decoded.deviceId),
-      privateSignatureKey: utils.fromBase64(decoded.privateSignatureKey),
-      privateEncryptionKey: utils.fromBase64(decoded.privateEncryptionKey),
-    };
-  } catch (e) {
-    throw new InvalidUnlockKey(e);
-  }
-}
-
-type CreateDevUnlockArgV3 = {
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-  deviceKeys: DeviceKeys,
-  ghostDevice: GhostDevice,
-  encryptedUserKey: EncryptedUserKey,
-}
-
 type AuthorDevice = {
   id: Uint8Array,
   privateSignatureKey: Key,
@@ -181,39 +157,6 @@ type GenerateUnlockKeyRegistrationArg = {
   userKeys: tcrypto.SodiumKeyPair,
   authorDevice: AuthorDevice,
 };
-
-export function createDeviceFromUnlockKey({
-  trustchainId,
-  userId,
-  deviceKeys,
-  ghostDevice,
-  encryptedUserKey,
-}: CreateDevUnlockArgV3): Block {
-  const ghostDeviceEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey);
-
-  const decryptedUserPrivateKey = tcrypto.sealDecrypt(
-    encryptedUserKey.encrypted_private_user_key,
-    ghostDeviceEncryptionKeyPair
-  );
-
-  const userKeys = {
-    publicKey: encryptedUserKey.public_user_key,
-    privateKey: decryptedUserPrivateKey
-  };
-
-  const blockGenerator = new BlockGenerator(
-    trustchainId,
-    ghostDevice.privateSignatureKey,
-    ghostDevice.deviceId
-  );
-  return blockGenerator.makeNewDeviceBlock({
-    userId,
-    userKeys,
-    publicSignatureKey: deviceKeys.signaturePair.publicKey,
-    publicEncryptionKey: deviceKeys.encryptionPair.publicKey,
-    isGhost: false,
-  });
-}
 
 export function generateUnlockKeyRegistration({
   trustchainId,

@@ -6,13 +6,13 @@ import { createUserSecretBinary } from '@tanker/identity';
 
 import { expect } from './chai';
 import GroupStore from '../Groups/GroupStore';
-import { type Group, type ExternalGroup } from '../Groups/types';
-import { TWO_TIMES_SEALED_KEY_SIZE } from '../Blocks/payloads';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
+import TestGenerator, { type TestUserGroup, type TestDeviceCreation } from './TestGenerator';
+
 import makeUint8Array from './makeUint8Array';
 
-async function makeMemoryGroupStore(): Promise<GroupStore> {
+export async function makeMemoryGroupStore(): Promise<GroupStore> {
   const schemas = mergeSchemas(GroupStore.schemas);
   const userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
 
@@ -21,77 +21,39 @@ async function makeMemoryGroupStore(): Promise<GroupStore> {
   return GroupStore.open(await openDataStore(config), userSecret);
 }
 
-function makeFullGroup(): Group {
-  return {
-    groupId: makeUint8Array('group id', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-    signatureKeyPair: {
-      publicKey: makeUint8Array('pub sig key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      privateKey: makeUint8Array('priv sig key', tcrypto.SIGNATURE_PRIVATE_KEY_SIZE),
-    },
-    encryptionKeyPair: {
-      publicKey: makeUint8Array('pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-      privateKey: makeUint8Array('priv enc key', tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
-    },
-    lastGroupBlock: makeUint8Array('last group block', tcrypto.HASH_SIZE),
-    index: 18,
-  };
-}
-
-function groupToExternalGroup(group: Group): ExternalGroup {
-  return {
-    groupId: group.groupId,
-    publicSignatureKey: group.signatureKeyPair.publicKey,
-    publicEncryptionKey: group.encryptionKeyPair.publicKey,
-    // just for tests, use the unencrypted private key
-    encryptedPrivateSignatureKey: group.signatureKeyPair.privateKey,
-    // just for tests, fill with random stuff
-    provisionalEncryptionKeys: [{
-      appPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      tankerPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      encryptedGroupPrivateEncryptionKey: random(TWO_TIMES_SEALED_KEY_SIZE),
-    }],
-    lastGroupBlock: group.lastGroupBlock,
-    index: group.index,
-  };
-}
-
-function makeExternalGroup(): ExternalGroup {
-  return groupToExternalGroup(makeFullGroup());
-}
-
 describe('GroupStore', () => {
   let groupStore;
+  let testGenerator;
 
-  beforeEach(async () => {
+  let groupId: Uint8Array;
+  let testUserCreation: TestDeviceCreation;
+  let testGroup: TestUserGroup;
+
+  before(async () => {
+    testGenerator = new TestGenerator();
+    testGenerator.makeTrustchainCreation();
     groupStore = await makeMemoryGroupStore();
   });
 
-  it('can add a full group', async () => {
-    const group = makeFullGroup();
-    await expect(groupStore.put(group)).to.be.fulfilled;
+  beforeEach(async () => {
+    testUserCreation = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+    testGroup = testGenerator.makeUserGroupCreation(testUserCreation, [testUserCreation.user]);
+    groupId = testGroup.group.groupId;
+  });
 
-    await expect(groupStore.findFull({ groupId: group.groupId })).to.eventually.deep.equal(group);
+  it('can add a full group', async () => {
+    await expect(groupStore.put(testGroup.group)).to.be.fulfilled;
+    expect(await groupStore.findFull({ groupId })).to.deep.equal(testGroup.group);
   });
 
   it('can add a full group and get an external group', async () => {
-    const group = makeFullGroup();
-    await groupStore.put(group);
-
-    const got = await groupStore.findExternal({ groupId: group.groupId });
-    const expected = groupToExternalGroup(group);
-    expected.encryptedPrivateSignatureKey = null;
-    expected.provisionalEncryptionKeys = [];
-    expect(got).to.deep.equal(expected);
+    await expect(groupStore.put(testGroup.group)).to.be.fulfilled;
+    expect(await groupStore.findExternal({ groupId })).excluding(['encryptedPrivateSignatureKey']).to.deep.equal(testGroup.externalGroup);
   });
 
   it('can add an external group', async () => {
-    const externalGroup = makeExternalGroup();
-
-    await groupStore.putExternal(externalGroup);
-    const got = await groupStore.findExternal({ groupId: externalGroup.groupId });
-    // we do not retrieve provisional keys when using findExternal
-    externalGroup.provisionalEncryptionKeys = [];
-    expect(got).to.deep.equal(externalGroup);
+    await groupStore.putExternal(testGroup.externalGroup);
+    expect(await groupStore.findExternal({ groupId })).to.deep.equal(testGroup.externalGroup);
   });
 
   it('cannot find a group that was not added', async () => {
@@ -100,77 +62,55 @@ describe('GroupStore', () => {
   });
 
   it('cannot find a full group if we only have an external group', async () => {
-    const externalGroup = makeExternalGroup();
-
-    await groupStore.putExternal(externalGroup);
-    const got = await groupStore.findFull({ groupId: externalGroup.groupId });
-    expect(got).to.equal(null);
+    await groupStore.putExternal(testGroup.externalGroup);
+    expect(await groupStore.findFull({ groupId })).to.equal(null);
   });
 
   it('can find a group by public encryption key', async () => {
-    const group = makeFullGroup();
-    await groupStore.put(group);
-
-    const got = await groupStore.findFull({ groupPublicEncryptionKey: group.encryptionKeyPair.publicKey });
-    expect(got).to.deep.equal(group);
+    await groupStore.put(testGroup.group);
+    expect(await groupStore.findFull({ groupPublicEncryptionKey: testGroup.group.encryptionKeyPair.publicKey })).to.deep.equal(testGroup.group);
   });
 
   it('cannot find an external group by public encryption key', async () => {
-    const group = makeExternalGroup();
-    await groupStore.putExternal(group);
-
-    const got = await groupStore.findFull({ groupPublicEncryptionKey: group.publicEncryptionKey });
-    expect(got).to.deep.equal(null);
+    await groupStore.putExternal(testGroup.externalGroup);
+    expect(await groupStore.findFull({ groupPublicEncryptionKey: testGroup.group.encryptionKeyPair.publicKey })).to.deep.equal(null);
   });
 
   it('can extend a group from external to normal', async () => {
-    const group = makeFullGroup();
-    const externalGroup = groupToExternalGroup(group);
+    await groupStore.putExternal(testGroup.externalGroup);
+    await groupStore.put(testGroup.group);
 
-    await groupStore.putExternal(externalGroup);
-    await groupStore.put(group);
-
-    const got = await groupStore.findFull({ groupId: externalGroup.groupId });
-    expect(got).to.deep.equal(group);
+    expect(await groupStore.findFull({ groupId })).to.deep.equal(testGroup.group);
   });
 
   it('can override groups', async () => {
-    const group = makeFullGroup();
-    const group2 = makeFullGroup();
-    group2.signatureKeyPair.publicKey[0] += 1;
-    group2.signatureKeyPair.privateKey[0] += 1;
-    group2.encryptionKeyPair.publicKey[0] += 1;
-    group2.encryptionKeyPair.privateKey[0] += 1;
+    const testGroup2 = testGenerator.makeUserGroupAddition(testUserCreation, testGroup, []);
+    await groupStore.put(testGroup.group);
+    await groupStore.put(testGroup2.group);
 
-    await groupStore.put(group);
-    await groupStore.put(group2);
-
-    const got = await groupStore.findFull({ groupId: group.groupId });
-    expect(got).to.deep.equal(group2);
+    expect(await groupStore.findFull({ groupId })).to.deep.equal(testGroup2.group);
   });
 
   it('can update the last group block of an external group', async () => {
-    const group = makeExternalGroup();
-    await groupStore.putExternal(group);
+    await groupStore.putExternal(testGroup.externalGroup);
 
     const newBlockHash = makeUint8Array('new hash', tcrypto.HASH_SIZE);
     const newBlockIndex = 1337;
-    await groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex });
+    await groupStore.updateLastGroupBlock({ groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex });
 
-    const got = await groupStore.findExternal({ groupId: group.groupId });
+    const got = await groupStore.findExternal({ groupId });
     expect(got.lastGroupBlock).to.deep.equal(newBlockHash);
     expect(got.index).to.deep.equal(newBlockIndex);
   });
 
   it('can update the last group block of a full group', async () => {
-    const group = makeFullGroup();
-    await groupStore.put(group);
+    await groupStore.put(testGroup.group);
 
     const newBlockHash = makeUint8Array('new hash', tcrypto.HASH_SIZE);
     const newBlockIndex = 1337;
-    await expect(groupStore.updateLastGroupBlock({ groupId: group.groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex })).to.be.fulfilled;
+    await expect(groupStore.updateLastGroupBlock({ groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex })).to.be.fulfilled;
 
-    const got = await groupStore.findFull({ groupId: group.groupId });
+    const got = await groupStore.findFull({ groupId });
     expect(got.lastGroupBlock).to.deep.equal(newBlockHash);
     expect(got.index).to.deep.equal(newBlockIndex);
   });
@@ -184,13 +124,14 @@ describe('GroupStore', () => {
   });
 
   it('can find a group by provisional public signature keys', async () => {
-    const externalGroup = makeExternalGroup();
-    await groupStore.putExternal(externalGroup);
+    const provisionalUser = testGenerator.makeProvisionalUser();
+    const groupWithProvisional = testGenerator.makeUserGroupCreation(testUserCreation, [], [provisionalUser]);
+    await groupStore.putExternal(groupWithProvisional.externalGroup);
 
     const got = await groupStore.findExternalsByProvisionalSignaturePublicKeys({
-      appPublicSignatureKey: externalGroup.provisionalEncryptionKeys[0].appPublicSignatureKey,
-      tankerPublicSignatureKey: externalGroup.provisionalEncryptionKeys[0].tankerPublicSignatureKey,
+      appPublicSignatureKey: provisionalUser.appSignaturePublicKey,
+      tankerPublicSignatureKey: provisionalUser.tankerSignaturePublicKey,
     });
-    expect(got).to.deep.equal([externalGroup]);
+    expect(got).to.deep.equal([groupWithProvisional.externalGroup]);
   });
 });

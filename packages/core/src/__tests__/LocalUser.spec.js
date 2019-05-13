@@ -58,7 +58,7 @@ describe('Local User', () => {
   beforeEach(async () => {
     testGenerator = new TestGenerator();
     testGenerator.makeTrustchainCreation();
-    deviceCreation1 = testGenerator.makeUserCreation(userData.userId);
+    deviceCreation1 = await testGenerator.makeUserCreation(userData.userId);
     deviceCreation2 = testGenerator.makeDeviceCreation(deviceCreation1);
     keyStore = new FakeKeyStore(deviceCreation2.testDevice.signKeys, deviceCreation2.testDevice.encryptionKeys);
     localUser = new LocalUser(userData, (keyStore: any));

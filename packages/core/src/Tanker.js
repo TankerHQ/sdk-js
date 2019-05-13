@@ -13,7 +13,7 @@ import { type UnlockKey, type RegisterUnlockParams } from './Unlock/unlock';
 
 import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
-import { SessionOpener, type OpenMode, type SignInResult, type SignInOptions, SIGN_IN_RESULT, OPEN_MODE } from './Session/SessionOpener';
+import { type SignInResult, type SignInOptions, SIGN_IN_RESULT, } from './Session/types';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, validateShareWithOptions } from './DataProtection/ShareWithOptions';
 import EncryptorStream from './DataProtection/EncryptorStream';
@@ -21,7 +21,7 @@ import DecryptorStream from './DataProtection/DecryptorStream';
 
 import { TANKER_SDK_VERSION } from './version';
 
-export type { SignInOptions, SignInResult } from './Session/SessionOpener';
+export type { SignInOptions, SignInResult } from './Session/types';
 
 type TankerDefaultOptions = $Exact<{
   trustchainId?: b64string,
@@ -70,7 +70,6 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefa
 
 export class Tanker extends EventEmitter {
   _session: Session;
-  _sessionOpener: SessionOpener;
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
@@ -149,19 +148,10 @@ export class Tanker extends EventEmitter {
     return super.once(eventName, listener);
   }
 
-  _setSessionOpener = (opener: ?SessionOpener) => {
-    if (opener) {
-      this._sessionOpener = opener;
-    } else {
-      delete this._sessionOpener;
-    }
-  }
-
   _setSession = (session: ?Session) => {
     if (session) {
       session.localUser.on('device_revoked', this._nuke);
       this._session = session;
-      delete this._sessionOpener;
     } else {
       delete this._session;
       this.emit('sessionClosed');
@@ -186,18 +176,33 @@ export class Tanker extends EventEmitter {
   }
 
   async signUp(identityB64: b64string, authenticationMethods?: AuthenticationMethods): Promise<void> {
-    await this._open(identityB64, OPEN_MODE.SIGN_UP);
+    this.assert(!this.isOpen, 'open a session');
+    const userData = this._parseIdentity(identityB64);
+
+    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
+    await session.signUp(userData.delegationToken);
+    this._setSession(session);
+
     if (authenticationMethods) {
       await this.registerUnlock(authenticationMethods);
     }
   }
 
-  async signIn(identityB64: b64string, signInOptions?: SignInOptions): Promise<SignInResult> {
-    return this._open(identityB64, OPEN_MODE.SIGN_IN, signInOptions);
+  async signIn(identityB64: b64string, signInOptions: ?SignInOptions): Promise<SignInResult> {
+    this.assert(!this.isOpen, 'open a session');
+    const userData = this._parseIdentity(identityB64);
+
+    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
+    const result = await session.signIn(signInOptions);
+
+    if (result === SIGN_IN_RESULT.OK) {
+      this._setSession(session);
+    }
+
+    return result;
   }
 
-  async _open(identityB64: b64string, openMode: OpenMode, signInOptions?: SignInOptions): Promise<SignInResult> {
-    this.assert(!this.isOpen, 'open a session');
+  _parseIdentity(identityB64: b64string) {
     // Type verif arguments
     if (!identityB64 || typeof identityB64 !== 'string')
       throw new InvalidArgument('identity', 'b64string', identityB64);
@@ -206,33 +211,15 @@ export class Tanker extends EventEmitter {
 
     if (this.trustchainId !== utils.toBase64(userData.trustchainId))
       throw new InvalidArgument('identity', 'b64string', identityB64);
-
-    const sessionOpener = await SessionOpener.create(userData, this._dataStoreOptions, this._clientOptions);
-    this._setSessionOpener(sessionOpener);
-
-    const openResult = await this._sessionOpener.openSession(openMode, signInOptions);
-
-    if (openResult.signInResult === SIGN_IN_RESULT.OK) {
-      if (!openResult.session)
-        throw new Error('Assertion error: Session should be opened');
-      this._setSession(openResult.session);
-    }
-
-    return openResult.signInResult;
+    return userData;
   }
 
   async signOut(): Promise<void> {
-    const sessionOpener = this._sessionOpener;
-    this._setSessionOpener(null);
-
     const session = this._session;
     this._setSession(null);
 
     if (session) {
       await session.close();
-    }
-    if (sessionOpener) {
-      await sessionOpener.cancel();
     }
   }
 
@@ -265,7 +252,7 @@ export class Tanker extends EventEmitter {
 
   async generateAndRegisterUnlockKey(): Promise<UnlockKey> {
     this.assert(this.isOpen, 'generate an unlock key');
-    return this._session.unlockKeys.generateAndRegisterUnlockKey();
+    return this._session.apis.unlockKeys.generateAndRegisterUnlockKey();
   }
 
   async registerUnlock(params: RegisterUnlockParams): Promise<void> {
@@ -290,18 +277,18 @@ export class Tanker extends EventEmitter {
     if (password && typeof password !== 'string') {
       throw new InvalidArgument('register unlock options', 'password should be a string', password);
     }
-    return this._session.unlockKeys.registerUnlock(password, email);
+    return this._session.apis.unlockKeys.registerUnlock(password, email);
   }
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
     this.assert(this.isOpen, 'get the device list');
-    const allDevices = await this._session.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
+    const allDevices = await this._session.apis.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
     return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
   }
 
   async isUnlockAlreadySetUp(): Promise<bool> {
     this.assert(this.isOpen, 'is unlock already setup');
-    const devices = await this._session.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
+    const devices = await this._session.apis.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
     return devices.some(device => device.isGhostDevice === true && device.isRevoked === false);
   }
 
@@ -321,7 +308,7 @@ export class Tanker extends EventEmitter {
     if (!validateShareWithOptions(shareWithOptions))
       throw new InvalidArgument('shareWithOptions', '{ shareWithUsers: Array<b64string>, shareWithGroups: Array<string> }', shareWithOptions);
 
-    return this._session.dataProtector.share(resourceIds, shareWithOptions);
+    return this._session.apis.dataProtector.share(resourceIds, shareWithOptions);
   }
 
   async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
@@ -336,7 +323,7 @@ export class Tanker extends EventEmitter {
 
     if (typeof deviceId !== 'string')
       throw new InvalidArgument('deviceId', 'string', deviceId);
-    return this._session.revokeDevice(deviceId);
+    return this._session.apis.deviceManager.revokeDevice(deviceId);
   }
 
   async createGroup(users: Array<b64string>): Promise<b64string> {
@@ -345,7 +332,7 @@ export class Tanker extends EventEmitter {
     if (!(users instanceof Array))
       throw new InvalidArgument('users', 'Array<string>', users);
 
-    return this._session.groupManager.createGroup(users);
+    return this._session.apis.groupManager.createGroup(users);
   }
 
   async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd: Array<string> }>): Promise<void> {
@@ -359,7 +346,7 @@ export class Tanker extends EventEmitter {
     if (typeof groupId !== 'string')
       throw new InvalidArgument('groupId', 'string', groupId);
 
-    return this._session.groupManager.updateGroupMembers(groupId, usersToAdd);
+    return this._session.apis.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
   async claimProvisionalIdentity(provisionalIdentity: b64string, verificationCodeNoPad: string): Promise<void> {
@@ -368,7 +355,7 @@ export class Tanker extends EventEmitter {
     const verificationCode = utils.toBase64(utils.fromSafeBase64(verificationCodeNoPad));
     const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
 
-    return this._session.claimProvisionalIdentity(provisionalIdentityObj, verificationCode);
+    return this._session.apis.deviceManager.claimProvisionalIdentity(provisionalIdentityObj, verificationCode);
   }
 
   async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
@@ -376,13 +363,13 @@ export class Tanker extends EventEmitter {
 
     const opts = this._parseEncryptionOptions(options);
 
-    return this._session.dataProtector.makeEncryptorStream(opts);
+    return this._session.apis.dataProtector.makeEncryptorStream(opts);
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
     this.assert(this.isOpen, 'make a stream decryptor');
 
-    return this._session.dataProtector.makeDecryptorStream();
+    return this._session.apis.dataProtector.makeDecryptorStream();
   }
 }
 

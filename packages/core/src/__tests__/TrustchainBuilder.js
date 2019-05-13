@@ -4,7 +4,6 @@ import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
 import { createIdentity, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
 
 import { extractUserData } from '../UserData';
-import LocalUser from '../Session/LocalUser';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 import Generator, {
@@ -26,7 +25,7 @@ import Keystore from '../Session/Keystore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
-import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 
 import { userGroupEntryFromBlock, deviceCreationFromBlock, provisionalIdentityClaimFromBlock } from '../Blocks/entries';
 import { type ProvisionalPublicKey } from '../Blocks/payloads';
@@ -68,7 +67,15 @@ export default class TrustchainBuilder {
 
     const storage = new Storage(this.dataStoreConfig);
     await storage.open(userData.userId, userData.userSecret);
-    storage.userStore.setLocalUser(new LocalUser(userData, storage.keyStore));
+    storage.userStore.setCallbacks({
+      deviceCreation: async () => {},
+      deviceRevocation: async () => {},
+      claim: async () => ({
+        id: '',
+        appEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+        tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair()
+      })
+    });
 
     this.dataStore = storage._datastore; // eslint-disable-line no-underscore-dangle
     this.keyStore = storage.keyStore;

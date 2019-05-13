@@ -7,8 +7,6 @@ export type TestResources = { [string]: Array<TestResource<any>> };
 
 export type TestArgs = {
   trustchainHelper: TrustchainHelper,
-  aliceLaptop: TankerInterface,
-  bobLaptop: TankerInterface,
-  bobPhone: TankerInterface,
   resources: TestResources,
+  makeTanker: () => TankerInterface,
 };

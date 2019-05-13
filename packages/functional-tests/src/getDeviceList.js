@@ -9,45 +9,47 @@ const generateGetDeviceListTests = (args: TestArgs) => {
   describe('getDeviceList', () => {
     let bobId;
     let bobIdentity;
+    let bobLaptop;
+    let bobPhone;
 
     beforeEach(async () => {
       bobId = uuid.v4();
       bobIdentity = await args.trustchainHelper.generateIdentity(bobId);
-      await args.bobLaptop.signUp(bobIdentity);
+      bobLaptop = args.makeTanker();
+      bobPhone = args.makeTanker();
+      await bobLaptop.signUp(bobIdentity);
     });
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.signOut(),
-        args.bobLaptop.signOut(),
-        args.bobPhone.signOut(),
+        bobLaptop.signOut(),
+        bobPhone.signOut(),
       ]);
     });
 
     it('should throw when using a session in an invalid state', async () => {
-      await args.bobLaptop.signOut();
-      await expect(args.bobLaptop.getDeviceList()).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await bobLaptop.signOut();
+      await expect(bobLaptop.getDeviceList()).to.be.rejectedWith(errors.InvalidSessionStatus);
     });
 
     it('can list the devices of a user', async () => {
-      await args.bobLaptop.registerUnlock({ password: 'password' });
+      await bobLaptop.registerUnlock({ password: 'password' });
+      await bobPhone.signIn(bobIdentity, { password: 'password' });
 
-      await args.bobPhone.signIn(bobIdentity, { password: 'password' });
-
-      const list1 = await args.bobLaptop.getDeviceList();
-      const list2 = await args.bobPhone.getDeviceList();
+      const list1 = await bobLaptop.getDeviceList();
+      const list2 = await bobPhone.getDeviceList();
 
       expect(list1).to.deep.equal(list2);
-      expect(list1.filter(({ id }) => id === args.bobLaptop.deviceId)).to.have.lengthOf(1);
-      expect(list1.filter(({ id }) => id === args.bobPhone.deviceId)).to.have.lengthOf(1);
+      expect(list1.filter(({ id }) => id === bobLaptop.deviceId)).to.have.lengthOf(1);
+      expect(list1.filter(({ id }) => id === bobPhone.deviceId)).to.have.lengthOf(1);
     });
 
     it('does not expose ghostDevices in device list', async () => {
-      await args.bobLaptop.registerUnlock({ password: 'my password' });
-      await args.bobLaptop.signOut();
-      await args.bobLaptop.signIn(bobIdentity);
+      await bobLaptop.registerUnlock({ password: 'my password' });
+      await bobLaptop.signOut();
+      await bobLaptop.signIn(bobIdentity);
 
-      expect(await args.bobLaptop.getDeviceList()).to.have.length(1);
+      expect(await bobLaptop.getDeviceList()).to.have.length(1);
     });
   });
 };

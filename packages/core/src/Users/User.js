@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import type { VerifiedDeviceCreation, VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
+import type { VerifiedDeviceCreation, VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
 import { findIndex } from '../utils';
 import { NATURE } from '../Blocks/Nature';
 

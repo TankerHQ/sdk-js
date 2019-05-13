@@ -8,7 +8,7 @@ import ResourceStore from '../Resource/ResourceStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import TrustchainStore, { TABLE_METADATA } from '../Trustchain/TrustchainStore';
-import UnverifiedStore from '../UnverifiedStore/UnverifiedStore';
+import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 
 const STORAGE_VERSION_KEY = 'storageVersion';
 const CURRENT_STORAGE_VERSION = 1;
@@ -78,7 +78,7 @@ export default class Storage {
 
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
-    this._userStore = new UserStore(this._datastore);
+    this._userStore = new UserStore(this._datastore, userId);
     this._groupStore = await GroupStore.open(this._datastore, userSecret);
     this._trustchainStore = await TrustchainStore.open(this._datastore);
     this._unverifiedStore = await UnverifiedStore.open(this._datastore);

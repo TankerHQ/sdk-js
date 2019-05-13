@@ -7,15 +7,15 @@ import { type User } from '../Users/User';
 
 import { NATURE } from '../Blocks/Nature';
 
-import { type VerifiedDeviceCreation } from '../UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedDeviceCreation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
 
 import { makeMemoryDataStore } from './TestDataStore';
 import TestGenerator, { type TestDeviceCreation } from './TestGenerator';
 
 async function makeUserStore(userId: Uint8Array): Promise<UserStore> {
   const dataStore = await makeMemoryDataStore(UserStore.schemas, 'user-store-test');
-  const userStore = new UserStore(dataStore);
-  userStore.setLocalUser(({ userId, applyDeviceCreation: () => {} }: any));
+  const userStore = new UserStore(dataStore, userId);
+  userStore.setCallbacks(({ userId, applyDeviceCreation: () => {} }: any));
   return userStore;
 }
 
@@ -38,9 +38,9 @@ describe('UserStore', () => {
     userStore = await makeUserStore(userId);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     userId = random(tcrypto.HASH_SIZE);
-    testUserCreation = testGenerator.makeUserCreation(userId);
+    testUserCreation = await testGenerator.makeUserCreation(userId);
     deviceCreation = testUserCreation.unverifiedDeviceCreation;
     deviceCreationV1 = testUserCreation.unverifiedDeviceCreationV1;
     user = testUserCreation.user;

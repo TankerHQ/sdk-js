@@ -8,7 +8,11 @@ import { type TestArgs } from './TestArgs';
 
 const generateEncryptorStreamTests = (args: TestArgs) => {
   describe('EncryptorStream', () => {
+    let aliceIdentity;
+    let aliceLaptop;
+    let bobIdentity;
     let bobPublicIdentity;
+    let bobLaptop;
 
     const watchStream = (stream) => {
       const sync = {};
@@ -23,18 +27,19 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
     };
 
     beforeEach(async () => {
-      const aliceIdentity = await args.trustchainHelper.generateIdentity();
-      const bobIdentity = await args.trustchainHelper.generateIdentity();
+      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      bobIdentity = await args.trustchainHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
-      await args.aliceLaptop.signUp(aliceIdentity);
-      await args.bobLaptop.signUp(bobIdentity);
+      aliceLaptop = args.makeTanker();
+      bobLaptop = args.makeTanker();
+      await aliceLaptop.signUp(aliceIdentity);
+      await bobLaptop.signUp(bobIdentity);
     });
 
     afterEach(async () => {
       await Promise.all([
-        args.aliceLaptop.signOut(),
-        args.bobLaptop.signOut(),
-        args.bobPhone.signOut(),
+        aliceLaptop.signOut(),
+        bobLaptop.signOut(),
       ]);
     });
 
@@ -43,8 +48,8 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         const letterContents = 'Secret message';
         let decryptedData = '';
 
-        const encryptor = await args.aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity] });
-        const decryptor = await args.bobLaptop.makeDecryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity] });
+        const decryptor = await bobLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => {
           decryptedData = `${decryptedData}${utils.toString(data)}`;
@@ -63,8 +68,8 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         const letterContents = 'Secret message';
         let decryptedData = '';
 
-        const encryptor = await args.aliceLaptop.makeEncryptorStream();
-        const decryptor = await args.bobLaptop.makeDecryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptorStream();
+        const decryptor = await bobLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => {
           decryptedData = `${decryptedData}${utils.toString(data)}`;
@@ -74,7 +79,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         encryptor.end();
 
         const resourceId = encryptor.resourceId();
-        await args.aliceLaptop.share([resourceId], { shareWithUsers: [bobPublicIdentity] });
+        await aliceLaptop.share([resourceId], { shareWithUsers: [bobPublicIdentity] });
 
         encryptor.pipe(decryptor);
         await expect(sync.promise).to.be.fulfilled;
@@ -88,13 +93,13 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         const letterContents = ['Harder', 'Better', 'Faster', 'Stronger'];
         let decryptedData = '';
 
-        const encryptor = await args.aliceLaptop.makeEncryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptorStream();
 
         for (const word of letterContents)
           encryptor.write(utils.fromString(word));
         encryptor.end();
 
-        const decryptor = await args.aliceLaptop.makeDecryptorStream();
+        const decryptor = await aliceLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => {
           decryptedData = `${decryptedData}${utils.toString(data)}`;
@@ -114,11 +119,11 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
 
         const decryptedData = [];
 
-        const encryptor = await args.aliceLaptop.makeEncryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptorStream();
         encryptor.write(clearData);
         encryptor.end();
 
-        const decryptor = await args.aliceLaptop.makeDecryptorStream();
+        const decryptor = await aliceLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
         decryptor.on('data', (data) => decryptedData.push(data));
 
@@ -135,16 +140,16 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
 
     describe('Error Handling', () => {
       it('cannot makeEncryptorStream and makeDecryptorStream when session has ended', async () => {
-        await args.aliceLaptop.signOut();
-        await expect(args.aliceLaptop.makeEncryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
-        await expect(args.aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
+        await aliceLaptop.signOut();
+        await expect(aliceLaptop.makeEncryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
+        await expect(aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
       });
 
       it('throws ResourceNotFound when resource was not shared with user', async () => {
-        const encryptor = await args.aliceLaptop.makeEncryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptorStream();
         encryptor.end();
 
-        const decryptor = await args.bobLaptop.makeDecryptorStream();
+        const decryptor = await bobLaptop.makeDecryptorStream();
         const sync = watchStream(decryptor);
 
         encryptor.pipe(decryptor);

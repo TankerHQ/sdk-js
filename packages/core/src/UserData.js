@@ -2,14 +2,7 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { _deserializePermanentIdentity, assertUserSecret } from '@tanker/identity';
-import { type DelegationToken } from './Session/delegation';
-
-export type UserData = {
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-  userSecret: Uint8Array,
-  delegationToken: DelegationToken,
-}
+import { type DelegationToken, type UserData } from './Session/types';
 
 export function extractUserData(identityB64: b64string): UserData {
   const identity = _deserializePermanentIdentity(identityB64);

@@ -45,9 +45,7 @@ export function generateFunctionalTests(
       args.trustchainHelper = await TrustchainHelper.newTrustchain();
       const b64TrustchainId = utils.toBase64(args.trustchainHelper.trustchainId);
 
-      args.bobLaptop = makeTanker(b64TrustchainId);
-      args.bobPhone = makeTanker(b64TrustchainId);
-      args.aliceLaptop = makeTanker(b64TrustchainId);
+      args.makeTanker = () => makeTanker(b64TrustchainId);
     });
 
     after(async () => {

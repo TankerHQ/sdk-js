@@ -6,9 +6,9 @@ import { type DataStore } from '@tanker/datastore-base';
 import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
-import LocalUser from '../Session/LocalUser';
-import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../UnverifiedStore/UserUnverifiedStore';
-import { type VerifiedProvisionalIdentityClaim } from '../UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
+
+import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 type DeviceToUser = {
@@ -20,6 +20,12 @@ export type FindUserParameters = $Exact<{ deviceId: Uint8Array }> | $Exact<{ use
 export type FindUsersParameters = $Exact<{ hashedUserIds: Array<Uint8Array> }>;
 export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
 export type FindDevicesParameters = $Exact<{ hashedDeviceIds: Array<Uint8Array> }>;
+
+export type Callbacks = {
+  deviceCreation: (entry: VerifiedDeviceCreation) => Promise<void>,
+  deviceRevocation: (entry: VerifiedDeviceRevocation) => Promise<void>,
+  claim: (entry: VerifiedProvisionalIdentityClaim) => Promise<ProvisionalUserKeyPairs>,
+};
 
 const USERS_TABLE = 'users';
 const DEVICES_USER_TABLE = 'devices_to_user';
@@ -42,7 +48,8 @@ const schemaV2 = {
 
 export default class UserStore {
   _ds: DataStore<*>;
-  _localUser: LocalUser;
+  _callbacks: Callbacks;
+  _userId: Uint8Array;
 
   static schemas = [
     // this store didn't exist in schema version 1
@@ -73,20 +80,21 @@ export default class UserStore {
     },
   ];
 
-  constructor(ds: DataStore<*>) {
+  constructor(ds: DataStore<*>, userId: Uint8Array) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
+    this._userId = userId;
   }
 
-  setLocalUser = (localUser: LocalUser) => {
-    this._localUser = localUser;
+  setCallbacks = (callbacks: Callbacks) => {
+    this._callbacks = callbacks;
   }
 
   async applyProvisionalIdentityClaims(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<Array<ProvisionalUserKeyPairs>> {
     const provisionalUserKeyPairs: Array<ProvisionalUserKeyPairs> = [];
     for (const entry of entries) {
-      if (utils.equalArray(entry.user_id, this._localUser.userId)) {
-        const provisionalUserKeyPair = await this._localUser.applyProvisionalIdentityClaim(entry);
+      if (utils.equalArray(entry.user_id, this._userId)) {
+        const provisionalUserKeyPair = await this._callbacks.claim(entry);
         provisionalUserKeyPairs.push(provisionalUserKeyPair);
       }
     }
@@ -110,15 +118,15 @@ export default class UserStore {
     for (const entry of entries) {
       const storeableEntry = await this._prepareEntry(entry);
 
-      if (utils.equalArray(entry.user_id, this._localUser.userId)) {
+      if (utils.equalArray(entry.user_id, this._userId)) {
         if (natureKind(entry.nature) === NATURE_KIND.device_creation) {
         // $FlowIKnow Type is checked by the switch
           const deviceEntry: VerifiedDeviceCreation = entry;
-          await this._localUser.applyDeviceCreation(deviceEntry);
+          await this._callbacks.deviceCreation(deviceEntry);
         } else if (entry.user_keys) {
         // $FlowIKnow Type is checked by the switch
           const deviceEntry: VerifiedDeviceRevocation = entry;
-          await this._localUser.applyDeviceRevocation(deviceEntry);
+          await this._callbacks.deviceRevocation(deviceEntry);
         }
       }
 

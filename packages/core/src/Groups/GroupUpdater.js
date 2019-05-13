@@ -5,7 +5,7 @@ import GroupStore from './GroupStore';
 import Keystore from '../Session/Keystore';
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
-import { type VerifiedUserGroup } from '../UnverifiedStore/UserGroupsUnverifiedStore';
+import { type VerifiedUserGroup } from '../Trustchain/UnverifiedStore/UserGroupsUnverifiedStore';
 import {
   type GroupEncryptedKey,
   type ProvisionalGroupEncryptedKeyV2,

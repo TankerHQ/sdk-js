@@ -19,12 +19,14 @@ const generateUnlockTests = (args: TestArgs) => {
     let trustchainHelper;
 
     before(() => {
-      ({ bobLaptop, bobPhone, trustchainHelper } = args);
+      ({ trustchainHelper } = args);
     });
 
     beforeEach(async () => {
       const bobId = uuid.v4();
       bobIdentity = await trustchainHelper.generateIdentity(bobId);
+      bobLaptop = args.makeTanker();
+      bobPhone = args.makeTanker();
       await bobLaptop.signUp(bobIdentity);
     });
 
@@ -155,12 +157,14 @@ const generateUnlockTests = (args: TestArgs) => {
     let trustchainHelper;
 
     before(() => {
-      ({ bobLaptop, bobPhone, trustchainHelper } = args);
+      ({ trustchainHelper } = args);
     });
 
     beforeEach(async () => {
       const bobId = uuid.v4();
       bobIdentity = await trustchainHelper.generateIdentity(bobId);
+      bobLaptop = args.makeTanker();
+      bobPhone = args.makeTanker();
     });
 
     afterEach(async () => {
