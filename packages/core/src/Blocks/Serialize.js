@@ -33,7 +33,7 @@ export function unserializeGenericSub(data: Uint8Array, functions: Array<Functio
   let result = {};
   for (const f of functions) {
     let value;
-    ({ newOffset, ...value } = f(data, newOffset)); // eslint-disable-line prefer-const
+    ({ newOffset, ...value } = f(data, newOffset));
     result = { ...result, ...value };
   }
 
@@ -58,7 +58,7 @@ export function unserializeList(data: Uint8Array, f: Function, offset: number, n
   const result = [];
   for (let i = 0; i < len; ++i) {
     let value;
-    ({ value, newOffset } = f(data, newOffset)); // eslint-disable-line prefer-const
+    ({ value, newOffset } = f(data, newOffset));
     result.push(value);
   }
 
