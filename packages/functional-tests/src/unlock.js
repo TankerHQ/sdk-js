@@ -70,16 +70,24 @@ const generateUnlockTests = (args: TestArgs) => {
         ]);
       });
 
-      it('can test that email verification method has been updated', async () => {
+      it('can test that email verification method has been updated and use it', async () => {
         let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
+        // update email
         verificationCode = await trustchainHelper.getVerificationCode('elton@doe.com');
         await bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode });
 
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([
-          { type: 'email', email: 'elton@doe.com' },
-        ]);
+        // check email is updated in cache
+        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'email', email: 'elton@doe.com' }]);
+
+        // check email can be used on new device
+        await bobPhone.start(bobIdentity);
+        verificationCode = await trustchainHelper.getVerificationCode('elton@doe.com');
+        await bobPhone.verifyIdentity({ email: 'elton@doe.com', verificationCode });
+
+        // check received email is the updated one on new device
+        expect(await bobPhone.getVerificationMethods()).to.deep.have.members([{ type: 'email', email: 'elton@doe.com' }]);
       });
     });
 

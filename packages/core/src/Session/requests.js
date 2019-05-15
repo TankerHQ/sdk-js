@@ -123,7 +123,10 @@ export const sendUnlockUpdate = async (client: Client, localUser: LocalUser, ver
   if (verification.email) {
     const emailArray = utils.fromString(verification.email);
     signatureBuffer = utils.concatArrays(signatureBuffer, emailArray);
-    claims = { email: emailArray };
+    claims = {
+      email: emailArray,
+      encrypted_email: encrypt(localUser.userSecret, emailArray),
+    };
   } else if (verification.passphrase) {
     const hashedPassphrase = generichash(utils.fromString(verification.passphrase));
     signatureBuffer = utils.concatArrays(signatureBuffer, hashedPassphrase);
