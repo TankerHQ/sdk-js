@@ -1,5 +1,4 @@
 // @flow
-
 import { InvalidArgument } from '../errors';
 
 export const statusDefs = [
@@ -44,30 +43,6 @@ export type PassphraseVerification = $Exact<{ passphrase: string }>;
 export type KeyVerification = $Exact<{ verificationKey: string }>;
 
 export type Verification = EmailVerification | PassphraseVerification | KeyVerification;
-
-export const extractVerificationMethods = (authData: any): Map<string, VerificationMethod> => {
-  const map = new Map();
-
-  if (!authData.unlock_methods)
-    return map;
-
-  if (!Array.isArray(authData.unlock_methods))
-    throw new Error('Assertion error: invalid response from server');
-
-  authData.unlock_methods.forEach(verificationMethod => {
-    // $FlowIssue Flow believes that VerificationMethod is any...
-    const method: VerificationMethod = { ...verificationMethod };
-
-    // $FlowExpectedError We receive 'password' instead of 'passphrase' to be backward compatible with SDK < 2.0
-    if (method.type === 'password') {
-      method.type = 'passphrase';
-    }
-
-    map.set(method.type, method);
-  });
-
-  return map;
-};
 
 export const assertVerification = (verification: Verification) => {
   if (!verification || typeof verification !== 'object' || verification instanceof Array)

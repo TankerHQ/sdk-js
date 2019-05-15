@@ -1,12 +1,14 @@
 // @flow
+import { utils } from '@tanker/crypto';
 
 import Trustchain from '../Trustchain/Trustchain';
 import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
 import { takeChallenge } from './ClientAuthenticator';
+import { decrypt } from '../DataProtection/Encryptors/v2';
 import { OperationCanceled } from '../errors';
-import { type UserData, type Status, type Verification, type VerificationMethod, type EmailVerification, type PassphraseVerification, statuses, extractVerificationMethods } from './types';
+import { type UserData, type Status, type Verification, type VerificationMethod, type EmailVerification, type PassphraseVerification, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
 
 import { fetchUnlockKey, getLastUserKey, sendUserCreation, sendUnlockUpdate } from './requests';
@@ -82,7 +84,14 @@ export class Session {
 
   authenticate = async () => {
     const authData = await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
-    this._verificationMethods = extractVerificationMethods(authData);
+
+    if (authData.unlock_methods) {
+      if (!Array.isArray(authData.unlock_methods))
+        throw new Error('Assertion error: invalid response from server');
+
+      this.setVerificationMethods(authData.unlock_methods);
+    }
+
     await this._trustchain.ready();
 
     if (this.localUser.wasRevoked) {
@@ -90,6 +99,24 @@ export class Session {
       throw new OperationCanceled('this device was revoked');
     }
     this._status = statuses.READY;
+  }
+
+  setVerificationMethods = (verificationMethods: Array<VerificationMethod>) => {
+    verificationMethods.forEach(verificationMethod => {
+      // $FlowIssue Flow believes that VerificationMethod is any...
+      const method: VerificationMethod = { ...verificationMethod };
+
+      // $FlowExpectedError We receive 'password' instead of 'passphrase' to be backward compatible with SDK < 2.0
+      if (method.type === 'password') {
+        method.type = 'passphrase';
+      }
+
+      if (method.type === 'email') {
+        method.email = utils.toString(decrypt(this.localUser.userSecret, utils.fromBase64(method.email)));
+      }
+
+      this._verificationMethods.set(method.type, method);
+    });
   }
 
   createUser = async (verification: Verification) => {
@@ -118,6 +145,7 @@ export class Session {
     const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(userCreation.ghostDevice, this.localUser.userSecret);
 
     await sendUserCreation(this._client, this.localUser, userCreation, firstDevice.deviceBlock, verification, encryptedUnlockKey);
+
     await this.authenticate();
   }
 

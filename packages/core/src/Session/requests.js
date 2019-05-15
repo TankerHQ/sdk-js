@@ -2,6 +2,8 @@
 
 import { generichash, utils, tcrypto } from '@tanker/crypto';
 
+import { encrypt } from '../DataProtection/Encryptors/v2';
+
 import { type Block } from '../Blocks/Block';
 import { Client, b64RequestObject } from '../Network/Client';
 
@@ -14,11 +16,10 @@ import { type GhostDevice } from './ghostDevice';
 import { InvalidPassphrase, InvalidUnlockKey, InvalidVerificationCode, MaxVerificationAttemptsReached, ServerError } from '../errors';
 
 type VerificationRequest = {|
-  encrypted_unlock_key: Uint8Array,
   passphrase: Uint8Array,
 |} | {|
-  encrypted_unlock_key: Uint8Array,
   email: string,
+  encrypted_email: Uint8Array,
   verification_code: string,
 |};
 
@@ -27,7 +28,8 @@ type UserCreationRequest = {|
   user_id: Uint8Array,
   user_creation_block: Block,
   first_device_block: Block,
-  verification_method?: VerificationRequest
+  encrypted_unlock_key?: Uint8Array,
+  verification?: VerificationRequest
 |};
 
 export const fetchUnlockKey = async (localUser: LocalUser, client: Client, verification: Verification): Promise<Uint8Array> => {
@@ -98,14 +100,15 @@ export const sendUserCreation = async (client: Client, localUser: LocalUser, use
   };
 
   if (verification.email) {
-    userCreationRequest.verification_method = {
-      encrypted_unlock_key: encryptedUnlockKey,
+    userCreationRequest.encrypted_unlock_key = encryptedUnlockKey;
+    userCreationRequest.verification = {
       email: verification.email,
+      encrypted_email: encrypt(localUser.userSecret, utils.fromString(verification.email)),
       verification_code: verification.verificationCode
     };
   } else if (verification.passphrase) {
-    userCreationRequest.verification_method = {
-      encrypted_unlock_key: encryptedUnlockKey,
+    userCreationRequest.encrypted_unlock_key = encryptedUnlockKey;
+    userCreationRequest.verification = {
       passphrase: generichash(utils.fromString(verification.passphrase)),
     };
   }
