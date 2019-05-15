@@ -7,9 +7,9 @@ import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
-import { InvalidArgument, InvalidIdentity, InvalidSessionStatus } from '../errors';
+import { InvalidArgument, InvalidIdentity, InvalidSessionStatus, OperationCanceled } from '../errors';
 
-import { type Verification, statuses } from '../Session/types';
+import { type EmailVerification, type PassphraseVerification, statuses } from '../Session/types';
 import { type ShareWithOptions } from '../DataProtection/ShareWithOptions';
 
 describe('Tanker', () => {
@@ -161,11 +161,15 @@ describe('Tanker', () => {
         dataStore: { ...dataStoreConfig, prefix: makePrefix() },
         sdkType: 'test'
       });
+    });
+
+    beforeEach(() => {
       // "open" a session
       tanker._session = ({ // eslint-disable-line no-underscore-dangle
         localUser: {},
         storage: { keyStore: { deviceId: new Uint8Array([]) } },
         status: statuses.READY,
+        verificationMethods: new Map([['passphrase', { type: 'passphrase' }]]),
       }: any);
     });
 
@@ -186,9 +190,19 @@ describe('Tanker', () => {
 
       it('should throw if invalid argument given', async () => {
         for (let i = 0; i < badArgs.length; i++) {
-          const arg = ((badArgs[i]: any): Verification);
+          const arg = ((badArgs[i]: any): EmailVerification | PassphraseVerification);
           await expect(tanker.setVerificationMethod(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
         }
+      });
+
+      it('should throw if setting another verification method after verification key has been used', async () => {
+        // $FlowExpectedError Assigning a readonly property for test purpose
+        tanker._session.verificationMethods = new Map([['verificationKey', { type: 'verificationKey' }]]); // eslint-disable-line no-underscore-dangle
+        await expect(tanker.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(OperationCanceled);
+      });
+
+      it('should throw if generating verification key after registration', async () => {
+        await expect(tanker.generateVerificationKey()).to.be.rejectedWith(InvalidSessionStatus);
       });
     });
 

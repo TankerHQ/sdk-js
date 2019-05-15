@@ -90,6 +90,8 @@ export class Session {
         throw new Error('Assertion error: invalid response from server');
 
       this.setVerificationMethods(authData.unlock_methods);
+    } else {
+      this.setVerificationMethods([{ type: 'verificationKey' }]);
     }
 
     await this._trustchain.ready();
@@ -102,6 +104,8 @@ export class Session {
   }
 
   setVerificationMethods = (verificationMethods: Array<VerificationMethod>) => {
+    this._verificationMethods = new Map();
+
     verificationMethods.forEach(verificationMethod => {
       // $FlowIssue Flow believes that VerificationMethod is any...
       const method: VerificationMethod = { ...verificationMethod };

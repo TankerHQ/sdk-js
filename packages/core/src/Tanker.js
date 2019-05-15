@@ -8,8 +8,8 @@ import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
-import { InvalidSessionStatus, InvalidArgument } from './errors';
-import { statusDefs, statuses, type Status, type Verification, type VerificationMethod, assertVerification } from './Session/types';
+import { InvalidSessionStatus, InvalidArgument, OperationCanceled } from './errors';
+import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type PassphraseVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './UserData';
 import { Session } from './Session/Session';
@@ -198,14 +198,17 @@ export class Tanker extends EventEmitter {
     this.emit('statusChange', this.status);
   }
 
-  async setVerificationMethod(verification: Verification): Promise<void> {
+  async setVerificationMethod(verification: EmailVerification | PassphraseVerification): Promise<void> {
     this.assert(statuses.READY, 'update a verification method');
     assertVerification(verification);
-    if (verification.email || verification.passphrase) {
-      return this._session.updateUnlock(verification);
-    } else {
+
+    if (this._session.verificationMethods.has('verificationKey'))
+      throw new OperationCanceled('Cannot call setVerificationMethod() after a verification key has been used');
+
+    if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
-    }
+
+    return this._session.updateUnlock(verification);
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {

@@ -154,12 +154,16 @@ const generateUnlockTests = (args: TestArgs) => {
         await bobLaptop.registerIdentity({ verificationKey });
       });
 
-      it('does not list the verification key as a verification method', async () => {
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([]);
+      it('does list the verification key as a verification method', async () => {
+        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'verificationKey' }]);
       });
 
       it('can generate a verification key and unlock a new device with it', async () => {
         await expect(expectUnlock(bobPhone, bobIdentity, { verificationKey })).to.be.fulfilled;
+      });
+
+      it('should throw if setting another verification method after verification key has been used', async () => {
+        await expect(bobLaptop.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.OperationCanceled);
       });
     });
   });

@@ -35,8 +35,9 @@ export type UserData = {
 
 type EmailVerificationMethod = $Exact<{ type: 'email', email: string }>;
 type PassphraseVerificationMethod = $Exact<{ type: 'passphrase' }>;
+type KeyVerificationMethod = $Exact<{ type: 'verificationKey' }>;
 
-export type VerificationMethod = EmailVerificationMethod | PassphraseVerificationMethod;
+export type VerificationMethod = EmailVerificationMethod | PassphraseVerificationMethod | KeyVerificationMethod;
 
 export type EmailVerification = $Exact<{ email: string, verificationCode: string }>;
 export type PassphraseVerification = $Exact<{ passphrase: string }>;
