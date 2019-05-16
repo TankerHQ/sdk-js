@@ -1,4 +1,5 @@
 // @flow
+import uuid from 'uuid';
 import { errors } from '@tanker/core';
 import { tcrypto, utils } from '@tanker/crypto';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
@@ -35,6 +36,7 @@ const getConstructorName = (constructor: Object): string => {
 
 const generateEncryptTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
+
   describe('text resource encryption and sharing - no session', () => {
     let bobLaptop;
 
@@ -127,165 +129,61 @@ const generateEncryptTests = (args: TestArgs) => {
         const decrypted = await bobLaptop.decrypt(encrypted);
         expect(decrypted).to.equal(clearText);
       });
+    });
 
-      describe('share at encryption time', () => {
-        it('shares with the recipient', async () => {
-          const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
-          const decrypted = await aliceLaptop.decrypt(encrypted);
-          expect(decrypted).to.equal(clearText);
+    describe('share at encryption time', () => {
+      it('encrypt and share with a permanent identity', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
+        const decrypted = await aliceLaptop.decrypt(encrypted);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('encrypt and share with a provisional identity', async () => {
+        const email = 'alice@tanker-functional-test.io';
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+        const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
+      });
+
+      it('throws when sharing with secret permanent identities', async () => {
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [aliceIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('throws when sharing with secret provisional identities', async () => {
+        const email = 'alice@tanker-functional-test.io';
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('throws when sharing with a permanent identity that is not registered', async () => {
+        const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
+
+        await expectRejectedWithProperty({
+          handler: async () => bobLaptop.encrypt(clearText, { shareWithUsers: [eveIdentity] }),
+          exception: errors.RecipientsNotFound,
+          property: 'recipientIds',
+          expectedValue: [eveIdentity]
         });
+      });
 
-        it('throws when sharing with secret permanent identities', async () => {
-          await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [aliceIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
-        });
+      it('shares even when the recipient is not connected', async () => {
+        await aliceLaptop.stop();
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
 
-        it('throws when sharing with secret provisional identities', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
-        });
+        await aliceLaptop.start(aliceIdentity);
+        const decrypted = await aliceLaptop.decrypt(encrypted);
+        expect(decrypted).to.equal(clearText);
+      });
 
-        it('encrypt and share with provisional users', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
-        });
+      it('shares with a device created after sharing', async () => {
+        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
+        const bobPhone = args.makeTanker();
+        await bobPhone.start(bobIdentity);
+        await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
 
-        it('cannot claim without share', async () => {
-          const email = 'unique@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-
-          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.NothingToClaim);
-        });
-
-        it('claim provisionalIdentity blocks', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-
-          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.fulfilled;
-        });
-
-        it('decrypt claimed block', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-
-          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-          const decrypted = await aliceLaptop.decrypt(cipherText);
-          expect(decrypted).to.equal(clearText);
-        });
-
-        it('decrypt claimed block after stop and start again', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-          await aliceLaptop.stop();
-          await aliceLaptop.start(aliceIdentity);
-          const decrypted = await aliceLaptop.decrypt(cipherText);
-          expect(decrypted).to.equal(clearText);
-        });
-
-        it('throws when sharing with already claimed identity', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-
-          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-          await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
-        });
-
-        it('throws when claiming twice the same identity', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-          let verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-
-          verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.ServerError);
-        });
-
-        it('throws when claiming with wrong verification code', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-
-          await expect(aliceLaptop.claimProvisionalIdentity(provisionalIdentity, 'wrongCode')).to.be.rejectedWith(errors.InvalidVerificationCode);
-        });
-
-        it('throw when two Users claim same provisional identity', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-          await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-          let verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-
-          verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await expect(bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode)).to.be.rejectedWith(errors.ServerError);
-        });
-
-        it('decrypt claimed block on a new device', async () => {
-          const email = 'alice@tanker-functional-test.io';
-          const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
-          const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-
-          const cipherText = await aliceLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
-
-          const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-          await bobLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
-
-          const bobPhone = args.makeTanker();
-          await bobPhone.start(bobIdentity);
-          await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
-          const decrypted = await bobPhone.decrypt(cipherText);
-          expect(decrypted).to.equal(clearText);
-        });
-
-        it('throws when sharing with a user that does not exist', async () => {
-          const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
-
-          await expectRejectedWithProperty({
-            handler: async () => bobLaptop.encrypt(clearText, { shareWithUsers: [eveIdentity] }),
-            exception: errors.RecipientsNotFound,
-            property: 'recipientIds',
-            expectedValue: [eveIdentity]
-          });
-        });
-
-        it('shares even when the recipient is not connected', async () => {
-          await aliceLaptop.stop();
-          const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
-
-          await aliceLaptop.start(aliceIdentity);
-          const decrypted = await aliceLaptop.decrypt(encrypted);
-          expect(decrypted).to.equal(clearText);
-        });
-
-        it('shares with a device created after sharing', async () => {
-          const encrypted = await aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
-          const bobPhone = args.makeTanker();
-          await bobPhone.start(bobIdentity);
-          await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
-
-          const decrypted = await bobPhone.decrypt(encrypted);
-          expect(decrypted).to.equal(clearText);
-          await bobPhone.stop();
-        });
+        const decrypted = await bobPhone.decrypt(encrypted);
+        expect(decrypted).to.equal(clearText);
+        await bobPhone.stop();
       });
     });
 
@@ -313,7 +211,7 @@ const generateEncryptTests = (args: TestArgs) => {
         });
       });
 
-      it('throws when sharing with a user that doesn\'t exist', async () => {
+      it('throws when sharing with a permanent identity that is not registered', async () => {
         const edata = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(edata);
         const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
@@ -326,7 +224,7 @@ const generateEncryptTests = (args: TestArgs) => {
         });
       });
 
-      it('shares an existing resource with an existing User', async () => {
+      it('shares an existing resource with a permanent identity', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(encrypted);
         await bobLaptop.share([resourceId], { shareWithUsers: [alicePublicIdentity] });
@@ -335,13 +233,128 @@ const generateEncryptTests = (args: TestArgs) => {
         expect(decrypted).to.equal(clearText);
       });
 
-      it('shares an existing resource with a provisional User', async () => {
+      it('shares an existing resource with a provisional identity', async () => {
         const email = 'alice@tanker-functional-test.io';
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
         const cipherText = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(cipherText);
         await expect(bobLaptop.share([resourceId], { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
+      });
+    });
+
+    describe('decrypt resources shared with provisional identities', () => {
+      let email;
+      let provisionalIdentity;
+      let publicProvisionalIdentity;
+
+      beforeEach(async () => {
+        email = `${uuid.v4()}@tanker-functional-test.io`;
+        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+        publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
+
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({
+          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'email', email },
+        });
+      });
+
+      it('does not throw if nothing to claim', async () => {
+        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.fulfilled;
+      });
+
+      it('decrypt data shared with an attached provisional identity', async () => {
+        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
+
+        const decrypted = await aliceLaptop.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('decrypt data shared with an attached provisional identity after session restart', async () => {
+        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
+        await aliceLaptop.stop();
+
+        await aliceLaptop.start(aliceIdentity);
+        const decrypted = await aliceLaptop.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('throws when sharing with already claimed identity', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
+
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+      });
+
+      it('gracefully rejects attaching a provisional identity twice', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
+
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({ status: aliceLaptop.constructor.statuses.READY });
+      });
+
+      it('attach a provisional identity without requesting verification if email already verified', async () => {
+        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const eveIdentity = await args.trustchainHelper.generateIdentity();
+        const eveLaptop = args.makeTanker();
+
+        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+
+        await eveLaptop.start(eveIdentity);
+        await eveLaptop.registerIdentity({ email, verificationCode });
+
+        const attachResult = await eveLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({ status: eveLaptop.constructor.statuses.READY });
+
+        const decrypted = await eveLaptop.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('throws when verifying provisional identity with wrong verification code', async () => {
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerificationCode);
+      });
+
+      it('throws when verifying provisional identity without attaching first', async () => {
+        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidProvisionalIdentityStatus);
+      });
+
+      it('throw when two users attach the same provisional identity', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        let verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
+
+        verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.ServerError);
+      });
+
+      it('decrypt resource on a new device', async () => {
+        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
+
+        const alicePhone = args.makeTanker();
+        await alicePhone.start(aliceIdentity);
+        await alicePhone.verifyIdentity({ passphrase: 'passphrase' });
+        const decrypted = await alicePhone.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
       });
     });
   });

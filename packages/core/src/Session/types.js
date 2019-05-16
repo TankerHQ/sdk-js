@@ -33,7 +33,7 @@ export type UserData = {
   delegationToken: DelegationToken,
 };
 
-type EmailVerificationMethod = $Exact<{ type: 'email', email: string }>;
+export type EmailVerificationMethod = $Exact<{ type: 'email', email: string }>;
 type PassphraseVerificationMethod = $Exact<{ type: 'passphrase' }>;
 type KeyVerificationMethod = $Exact<{ type: 'verificationKey' }>;
 

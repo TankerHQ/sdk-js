@@ -221,6 +221,20 @@ export class Tanker extends EventEmitter {
     return this._session.generateVerificationKey();
   }
 
+  async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<*> {
+    this.assert(statuses.READY, 'attach a provisional identity');
+
+    const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
+
+    return this._session.apis.deviceManager.attachProvisionalIdentity(provisionalIdentityObj);
+  }
+
+  async verifyProvisionalIdentity(verification: EmailVerification): Promise<void> {
+    this.assert(statuses.READY, 'verify a provisional identity');
+
+    return this._session.apis.deviceManager.verifyProvisionalIdentity(verification);
+  }
+
   _parseIdentity(identityB64: b64string) {
     // Type verif arguments
     if (!identityB64 || typeof identityB64 !== 'string')
@@ -312,15 +326,6 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('groupId', 'string', groupId);
 
     return this._session.apis.groupManager.updateGroupMembers(groupId, usersToAdd);
-  }
-
-  async claimProvisionalIdentity(provisionalIdentity: b64string, verificationCodeNoPad: string): Promise<void> {
-    this.assert(statuses.READY, 'claim invite');
-
-    const verificationCode = utils.toBase64(utils.fromSafeBase64(verificationCodeNoPad));
-    const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
-
-    return this._session.apis.deviceManager.claimProvisionalIdentity(provisionalIdentityObj, verificationCode);
   }
 
   async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {

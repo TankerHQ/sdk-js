@@ -7,7 +7,7 @@ import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tan
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { NothingToClaim, ServerError, AuthenticationError, InvalidVerificationCode } from '../errors';
+import { ServerError, AuthenticationError } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -235,36 +235,6 @@ export class Client extends EventEmitter {
       tankerSignaturePublicKey: utils.fromBase64(e.SignaturePublicKey),
       tankerEncryptionPublicKey: utils.fromBase64(e.EncryptionPublicKey),
     }));
-  }
-
-  getProvisionalIdentityKeys = async (provisionalIdentity: { email: string }, verificationCode: string): Promise<*> => {
-    let result;
-    try {
-      result = await this.send('get provisional identity', {
-        email: provisionalIdentity.email,
-        verificationCode,
-      });
-    } catch (e) {
-      const error = e.error;
-      if (error.code && error.code === 'invalid_verification_code' || error.code === 'authentication_failed') {
-        throw new InvalidVerificationCode(error);
-      }
-      throw e;
-    }
-
-    if (!result)
-      throw new NothingToClaim('nothing to claim');
-
-    return {
-      tankerSignatureKeyPair: {
-        privateKey: utils.fromBase64(result.SignaturePrivateKey),
-        publicKey: utils.fromBase64(result.SignaturePublicKey),
-      },
-      tankerEncryptionKeyPair: {
-        privateKey: utils.fromBase64(result.EncryptionPrivateKey),
-        publicKey: utils.fromBase64(result.EncryptionPublicKey),
-      }
-    };
   }
 
   getProvisionalUsers = async (provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> => {

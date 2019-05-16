@@ -88,6 +88,12 @@ export class OperationCanceled extends TankerError {
   }
 }
 
+export class InvalidProvisionalIdentityStatus extends TankerError {
+  constructor(message: string) {
+    super('InvalidProvisionalIdentityStatus', message);
+  }
+}
+
 export class InvalidEncryptionFormat extends TankerError {
   constructor(message: string) {
     super('InvalidEncryptionFormat', message);
@@ -141,11 +147,5 @@ export class InvalidGroupSize extends TankerError {
 export class IdentityAlreadyRegistered extends TankerError {
   constructor(msg: string) {
     super('IdentityAlreadyRegistered', msg);
-  }
-}
-
-export class NothingToClaim extends TankerError {
-  constructor(msg: string) {
-    super('NothingToClaim', msg);
   }
 }

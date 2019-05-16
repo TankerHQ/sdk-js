@@ -2,7 +2,7 @@
 
 import EventEmitter from 'events';
 import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
-import { type PublicIdentity } from '@tanker/identity';
+import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/identity';
 
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
@@ -206,10 +206,21 @@ export class LocalUser extends EventEmitter {
     return { trustchain_id: utils.toBase64(this._userData.trustchainId), target: 'user', value: utils.toBase64(this._userData.userId) };
   }
 
-
   findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
 
   findProvisionalUserKey = (recipient: Uint8Array) => this._provisionalUserKeys[utils.toBase64(recipient)]
+
+  hasClaimedProvisionalIdentity = (provisionalIdentity: SecretProvisionalIdentity) => {
+    const appPublicEncryptionKey = provisionalIdentity.public_encryption_key;
+
+    for (const puk of this._keyStore.provisionalUserKeys) {
+      if (utils.toBase64(puk.appEncryptionKeyPair.publicKey) === appPublicEncryptionKey) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   deviceKeys = (): DeviceKeys => ({
     signaturePair: this._deviceSignatureKeyPair,
