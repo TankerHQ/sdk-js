@@ -15,6 +15,9 @@ export const MAX_GROUP_SIZE = 1000;
 
 function splitUsersAndProvisionalUsers(publicIdentities: Array<b64string>): { permanentIdentities: Array<PublicPermanentIdentity>, provisionalIdentities: Array<PublicProvisionalIdentity> } {
   const decodedIdentities: Array<PublicPermanentIdentity | PublicProvisionalIdentity> = publicIdentities.map(_deserializePublicIdentity);
+  const hasSecretIdentities = decodedIdentities.some(x => 'user_secret' in x || 'private_encryption_key' in x);
+  if (hasSecretIdentities)
+    throw new InvalidArgument('Cannot share with secret identities');
   const permanentIdentities: Array<PublicPermanentIdentity> = (decodedIdentities.filter(i => i.target === 'user'): any);
   const provisionalIdentities: Array<PublicProvisionalIdentity> = (decodedIdentities.filter(i => i.target === 'email'): any);
   return { permanentIdentities, provisionalIdentities };
