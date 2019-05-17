@@ -1,7 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { _deserializePublicIdentity, type PublicPermanentIdentity, type PublicProvisionalIdentity } from '@tanker/identity';
+import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
@@ -12,16 +12,6 @@ import Trustchain from '../Trustchain/Trustchain';
 import { InvalidArgument, InvalidGroupSize, ServerError, RecipientsNotFound } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
-
-function splitUsersAndProvisionalUsers(publicIdentities: Array<b64string>): { permanentIdentities: Array<PublicPermanentIdentity>, provisionalIdentities: Array<PublicProvisionalIdentity> } {
-  const decodedIdentities: Array<PublicPermanentIdentity | PublicProvisionalIdentity> = publicIdentities.map(_deserializePublicIdentity);
-  const hasSecretIdentities = decodedIdentities.some(x => 'user_secret' in x || 'private_encryption_key' in x);
-  if (hasSecretIdentities)
-    throw new InvalidArgument('Cannot share with secret identities');
-  const permanentIdentities: Array<PublicPermanentIdentity> = (decodedIdentities.filter(i => i.target === 'user'): any);
-  const provisionalIdentities: Array<PublicProvisionalIdentity> = (decodedIdentities.filter(i => i.target === 'email'): any);
-  return { permanentIdentities, provisionalIdentities };
-}
 
 export default class GroupManager {
   _localUser: LocalUser
@@ -50,7 +40,8 @@ export default class GroupManager {
     if (publicIdentities.length > MAX_GROUP_SIZE)
       throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
-    const { permanentIdentities, provisionalIdentities } = splitUsersAndProvisionalUsers(publicIdentities);
+    const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
+    const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
@@ -85,7 +76,8 @@ export default class GroupManager {
       throw new InvalidArgument('groupId', 'string', groupId);
     }
 
-    const { permanentIdentities, provisionalIdentities } = splitUsersAndProvisionalUsers(publicIdentities);
+    const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
+    const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
