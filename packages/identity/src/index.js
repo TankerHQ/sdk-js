@@ -9,7 +9,7 @@ export type {
 } from './identity';
 
 export {
-  _deserializeIdentity, _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
+  _deserializeIdentity, _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
   createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken,
 } from './identity';
 

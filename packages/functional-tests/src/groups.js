@@ -149,7 +149,7 @@ const generateGroupsTests = (args: TestArgs) => {
       const email = 'alice@tanker-functional-test.io';
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
 
-      const groupId = await bobLaptop.createGroup([provisionalIdentity]);
+      const groupId = await bobLaptop.createGroup([await getPublicIdentity(provisionalIdentity)]);
       const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
@@ -166,7 +166,7 @@ const generateGroupsTests = (args: TestArgs) => {
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
       await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
-      await expect(bobLaptop.createGroup([bobPublicIdentity, provisionalIdentity])).to.be.rejectedWith(errors.ServerError);
+      await expect(bobLaptop.createGroup([bobPublicIdentity, publicProvisionalIdentity])).to.be.rejectedWith(errors.ServerError);
     });
 
     it('should add a provisional member to a group', async () => {
@@ -175,7 +175,7 @@ const generateGroupsTests = (args: TestArgs) => {
       const email = 'alice@tanker-functional-test.io';
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
 
-      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalIdentity] })).to.be.fulfilled;
+      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [await getPublicIdentity(provisionalIdentity)] })).to.be.fulfilled;
       const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
@@ -190,7 +190,7 @@ const generateGroupsTests = (args: TestArgs) => {
       const email = 'alice@tanker-functional-test.io';
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
 
-      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalIdentity] })).to.be.fulfilled;
+      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [await getPublicIdentity(provisionalIdentity)] })).to.be.fulfilled;
       const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
       await aliceLaptop.encrypt('stuff', { shareWithGroups: [groupId] });
@@ -210,7 +210,7 @@ const generateGroupsTests = (args: TestArgs) => {
       const verificationCode = await args.trustchainHelper.getVerificationCode(email);
       await aliceLaptop.claimProvisionalIdentity(provisionalIdentity, verificationCode);
 
-      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
     });
 
     it('should claim a group creation, a group add, and an encrypt', async () => {
@@ -218,9 +218,9 @@ const generateGroupsTests = (args: TestArgs) => {
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
       const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
       const groupId1 = await bobLaptop.createGroup([bobPublicIdentity]);
-      const groupId2 = await bobLaptop.createGroup([bobPublicIdentity, provisionalIdentity]);
+      const groupId2 = await bobLaptop.createGroup([bobPublicIdentity, publicProvisionalIdentity]);
 
-      await expect(bobLaptop.updateGroupMembers(groupId1, { usersToAdd: [provisionalIdentity] })).to.be.fulfilled;
+      await expect(bobLaptop.updateGroupMembers(groupId1, { usersToAdd: [publicProvisionalIdentity] })).to.be.fulfilled;
       const encrypted1 = await bobLaptop.encrypt(message, { shareWithGroups: [groupId1] });
       const encrypted2 = await bobLaptop.encrypt(message, { shareWithGroups: [groupId2] });
       const encrypted3 = await bobLaptop.encrypt(message, { shareWithUsers: [publicProvisionalIdentity] });

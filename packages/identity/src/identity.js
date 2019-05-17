@@ -1,5 +1,6 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
 
 import { InvalidIdentity } from './InvalidIdentity';
 import { obfuscateUserId } from './userId';
@@ -104,6 +105,35 @@ export function _deserializePublicIdentity(identity: b64string): PublicIdentity 
   } catch (e) {
     throw new InvalidIdentity(e);
   }
+}
+
+export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<PublicIdentity>): * { // eslint-disable-line no-underscore-dangle
+  const permanentIdentities: Array<PublicPermanentIdentity> = [];
+  const provisionalIdentities: Array<PublicProvisionalIdentity> = [];
+
+  for (const identity of identities) {
+    const isPermanent = identity.target === 'user';
+
+    if (isPermanent) {
+      // Check that the permanent identities are not secret permanent identities
+      if ('user_secret' in identity) {
+        throw new InvalidArgument('unexpected secret identity, only public identities are allowed');
+      }
+
+      const publicIdentity: PublicPermanentIdentity = (identity: any);
+      permanentIdentities.push(publicIdentity);
+    } else {
+      // Check that the provisional identities are not secret provisional identities
+      if ('private_encryption_key' in identity) {
+        throw new InvalidArgument('unexpected secret identity, only public identities are allowed');
+      }
+
+      const publicIdentity: PublicProvisionalIdentity = (identity: any);
+      provisionalIdentities.push(publicIdentity);
+    }
+  }
+
+  return { permanentIdentities, provisionalIdentities };
 }
 
 export async function createIdentity(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): Promise<b64string> {
