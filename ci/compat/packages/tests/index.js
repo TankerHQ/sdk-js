@@ -48,8 +48,8 @@ function generateUnlockTest(args) {
       trustchainId: args.trustchainId,
       prefix: 'phone',
     });
-    await phone.signIn();
-    await phone.signOut();
+    await phone.start();
+    await phone.stop();
   });
 }
 
@@ -127,15 +127,15 @@ function generateTests(opts) {
 
       await args.versionBob.create();
       await args.versionAlice.create();
-      await args.currentBob.signIn();
-      await args.currentAlice.signIn();
+      await args.currentBob.start();
+      await args.currentAlice.start();
     });
 
     after(async () => {
       await args.versionBob.close();
       await args.versionAlice.close();
-      await args.currentBob.signOut();
-      await args.currentAlice.signOut();
+      await args.currentBob.stop();
+      await args.currentAlice.stop();
       await args.trustchainHelper.cleanup();
     });
 
