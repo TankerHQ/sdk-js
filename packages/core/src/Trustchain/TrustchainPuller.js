@@ -126,7 +126,7 @@ export default class TrustchainPuller {
 
   _catchUp = async (extraUsers: Array<Uint8Array>, extraGroups: Array<Uint8Array>): Promise<void> => {
     try {
-      const blocks = await this.client._send('get blocks 2', { // eslint-disable-line no-underscore-dangle
+      const blocks = await this.client.send('get blocks 2', {
         index: this._trustchainStore.lastBlockIndex,
         trustchain_id: utils.toBase64(this.client.trustchainId),
         extra_users: extraUsers,

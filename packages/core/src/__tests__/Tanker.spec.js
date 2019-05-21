@@ -1,13 +1,16 @@
 // @flow
 
-import { tcrypto, utils, random } from '@tanker/crypto';
+import { tcrypto, utils, random, type b64string } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
-import { InvalidArgument, InvalidIdentity, InvalidSessionStatus } from '../errors';
+import { InvalidArgument, InvalidIdentity, InvalidSessionStatus, OperationCanceled } from '../errors';
+
+import { type EmailVerification, type PassphraseVerification, statuses } from '../Session/types';
+import { type ShareWithOptions } from '../DataProtection/ShareWithOptions';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
@@ -102,14 +105,14 @@ describe('Tanker', () => {
       tanker = new Tanker(options);
     });
 
-    describe('signUp', () => {
+    describe('start', () => {
       it('should throw when identity is undefined', async () => {
         // $FlowExpectedError
-        await expect(tanker.signUp(undefined)).to.be.rejectedWith(InvalidArgument);
+        await expect(tanker.start(undefined)).to.be.rejectedWith(InvalidArgument);
       });
 
       it('should throw when identity is not base64', async () => {
-        await expect(tanker.signUp('not b64')).to.be.rejectedWith(InvalidIdentity);
+        await expect(tanker.start('not b64')).to.be.rejectedWith(InvalidIdentity);
       });
 
       it('should throw when identity\'s trustchain does not match tanker\'s', async () => {
@@ -120,7 +123,7 @@ describe('Tanker', () => {
           utils.toBase64(otherTrustchainKeyPair.privateKey),
           userId,
         );
-        await expect(tanker.signUp(identity)).to.be.rejectedWith(InvalidArgument);
+        await expect(tanker.start(identity)).to.be.rejectedWith(InvalidArgument);
       });
 
       it('should throw when identity is valid but truncated', async () => {
@@ -130,7 +133,7 @@ describe('Tanker', () => {
           userId,
         );
         const truncatedIdentity = identity.slice(0, identity.length - 10);
-        await expect(tanker.signUp(truncatedIdentity)).to.be.rejectedWith(InvalidIdentity);
+        await expect(tanker.start(truncatedIdentity)).to.be.rejectedWith(InvalidIdentity);
       });
 
       it('should throw when trying to get deviceId', async () => {
@@ -158,52 +161,85 @@ describe('Tanker', () => {
         dataStore: { ...dataStoreConfig, prefix: makePrefix() },
         sdkType: 'test'
       });
+    });
+
+    beforeEach(() => {
       // "open" a session
       tanker._session = ({ // eslint-disable-line no-underscore-dangle
         localUser: {},
         storage: { keyStore: { deviceId: new Uint8Array([]) } },
+        status: statuses.READY,
+        verificationMethods: new Map([['passphrase', { type: 'passphrase' }]]),
       }: any);
     });
 
-    describe('unlock method registration', () => {
+    describe('verification method update', () => {
       const badArgs = [
         undefined,
         null,
         'valid@email.com',
         [],
         {},
-        { email: null, password: false },
-        { email: ['valid@email.com'] },
-        { email: 'valid@email.com', not_a_valid_key: 'test' },
-        { password: 12 },
-        { password: new Uint8Array(12) },
-        { email: 12, password: 'valid_password' },
-        { email: 'valid@email.com', password: () => 'fun is not a password' },
+        { email: null, verificationCode: '12345678' },
+        { email: ['valid@email.com'], verificationCode: '12345678' },
+        { email: 'valid@email.com', verificationCode: '12345678', extra_invalid_key: 'test' },
+        { passphrase: 12 },
+        { passphrase: new Uint8Array(12) },
+        { email: 'valid@email.com', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // update only one method at a time!
       ];
 
       it('should throw if invalid argument given', async () => {
         for (let i = 0; i < badArgs.length; i++) {
-          const arg = badArgs[i];
-          // $FlowIKnow
-          await expect(tanker.registerUnlock(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
+          const arg = ((badArgs[i]: any): EmailVerification | PassphraseVerification);
+          await expect(tanker.setVerificationMethod(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
 
+      it('should throw if setting another verification method after verification key has been used', async () => {
+        // $FlowExpectedError Assigning a readonly property for test purpose
+        tanker._session.verificationMethods = new Map([['verificationKey', { type: 'verificationKey' }]]); // eslint-disable-line no-underscore-dangle
+        await expect(tanker.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(OperationCanceled);
+      });
+
+      it('should throw if generating verification key after registration', async () => {
+        await expect(tanker.generateVerificationKey()).to.be.rejectedWith(InvalidSessionStatus);
+      });
+    });
+
+    describe('Other methods', () => {
       it('should get deviceId', async () => {
         expect(() => tanker.deviceId).to.not.throw();
       });
 
       it('should throw if revokeDevice has bad device ID', async () => {
-        // $FlowExpectedError
-        await expect(tanker.revokeDevice(null)).to.be.rejectedWith(InvalidArgument);
+        const badArgs = [
+          undefined,
+          null,
+          [],
+          {},
+        ];
+
+        for (let i = 0; i < badArgs.length; i++) {
+          const arg = ((badArgs[i]: any): b64string);
+          await expect(tanker.revokeDevice(arg), `revoke test n°${i}`).to.be.rejectedWith(InvalidArgument);
+        }
       });
 
       it('should throw if createGroup has bad users', async () => {
-        // $FlowExpectedError
-        await expect(tanker.createGroup(null)).to.be.rejectedWith(InvalidArgument);
+        const badArgs = [
+          undefined,
+          null,
+          {},
+          'random string'
+        ];
+
+        for (let i = 0; i < badArgs.length; i++) {
+          const arg = ((badArgs[i]: any): Array<string>);
+          await expect(tanker.createGroup(arg), `createGroup test n°${i}`).to.be.rejectedWith(InvalidArgument);
+        }
       });
 
-      it('should throw if updateGroupMembers has bad argments', async () => {
+      it('should throw if updateGroupMembers has bad arguments', async () => {
         // $FlowExpectedError
         await expect(tanker.updateGroupMembers('', { usersToAdd: null })).to.be.rejectedWith(InvalidArgument);
         // $FlowExpectedError
@@ -215,10 +251,10 @@ describe('Tanker', () => {
       const notUint8ArrayValues = [undefined, null, 0, {}, [], 'str'];
 
       it('should throw when given an invalid argument', async () => {
-        Promise.all(notUint8ArrayValues.map(async (v, i) => {
-          // $FlowExpectedError
-          await expect(tanker.getResourceId(v), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
-        }));
+        for (let i = 0; i < notUint8ArrayValues.length; i++) {
+          const arg = ((notUint8ArrayValues[i]: any): Uint8Array);
+          await expect(tanker.getResourceId(arg), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
       });
     });
 
@@ -236,20 +272,11 @@ describe('Tanker', () => {
       it('share() should throw when given an invalid option', async () => {
         notShareWithValues.push(undefined);
         notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
-        const resourceId = random(tcrypto.MAC_SIZE);
 
         for (let i = 0; i < notShareWithValues.length; i++) {
-          const v = notShareWithValues[i];
-          // $FlowExpectedError
-          await expect(tanker.share([resourceId], v), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
+          const arg = ((notShareWithValues[i]: any): ShareWithOptions);
+          await expect(tanker.share(['resourceId'], arg), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
         }
-      });
-    });
-
-    describe('unlock methods', () => {
-      it('should throw if hasRegisteredUnlockMethod asked for a wrong method', async () => {
-        // $FlowExpectedError
-        expect(() => tanker.hasRegisteredUnlockMethod('footRecognition')).to.throw(InvalidArgument);
       });
     });
   });
