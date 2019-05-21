@@ -130,6 +130,14 @@ const generateRevocationTests = (args: TestArgs) => {
       expect(clear).to.eq(message);
     });
 
+    it('can create a device after revoking', async () => {
+      await revokeBobPhone();
+
+      const bobNewPhone = args.makeTanker();
+      await bobNewPhone.start(bobIdentity);
+      await expect(bobNewPhone.verifyIdentity({ passphrase: 'passphrase' })).to.be.fulfilled;
+    });
+
     it('Alice can share with Bob who has a revoked device', async () => {
       const aliceIdentity = await args.trustchainHelper.generateIdentity();
       const aliceLaptop = args.makeTanker();
