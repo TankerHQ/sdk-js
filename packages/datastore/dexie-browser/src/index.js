@@ -33,6 +33,8 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
     } else {
       this.fromDB = transform.identity;
     }
+
+    return this;
   }
 
   get className(): string {
@@ -195,7 +197,7 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
     }
   }
 
-  get = async (table, id: string) => {
+  get = async (table: string, id: string) => {
     let record;
     try {
       record = this.fromDB(await this._db.table(table).get(id));
@@ -275,7 +277,7 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
     return results[0];
   }
 
-  delete = async (table, id: string) => {
+  delete = async (table: string, id: string) => {
     try {
       await this._db.table(table).delete(id);
     } catch (e) {
