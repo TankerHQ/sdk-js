@@ -2,11 +2,11 @@
 
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 
+import type { VerifiedKeyPublish } from '../Blocks/entries';
 import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from '../Blocks/Nature';
 import GroupStore from '../Groups/GroupStore';
 import LocalUser from '../Session/LocalUser';
 import UserAccessor from '../Users/UserAccessor';
-import { type VerifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
 
 export class KeyDecryptor {
   _localUser: LocalUser;

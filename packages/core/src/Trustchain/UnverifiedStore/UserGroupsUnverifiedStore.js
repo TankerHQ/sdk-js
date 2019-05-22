@@ -3,26 +3,12 @@
 import { utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../../Blocks/entries';
-import { type UserGroupCreationRecord, type UserGroupAdditionRecord } from '../../Blocks/payloads';
+import type { UnverifiedUserGroup, UnverifiedUserGroupCreation, UnverifiedUserGroupAddition, VerifiedUserGroup } from '../../Blocks/entries';
+import { entryToDbEntry, dbEntryToEntry } from '../../Blocks/entries';
 import { natureKind, NATURE_KIND } from '../../Blocks/Nature';
 
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';
-
-export type UnverifiedUserGroupCreation = {
-  ...VerificationFields,
-  ...UserGroupCreationRecord,
-  group_id: Uint8Array
-};
-
-export type UnverifiedUserGroupAddition = {
-  ...VerificationFields,
-  ...UserGroupAdditionRecord,
-};
-
-export type UnverifiedUserGroup = UnverifiedUserGroupCreation | UnverifiedUserGroupAddition
-export type VerifiedUserGroup = UnverifiedUserGroup
 
 export default class UserGroupsUnverifiedStore {
   _ds: DataStore<*>;

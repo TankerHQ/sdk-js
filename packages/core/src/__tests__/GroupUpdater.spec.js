@@ -5,12 +5,13 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { tcrypto, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-import { type UserGroupAdditionRecord, type UserGroupCreationRecordV2, type UserGroupCreationRecord } from '../Blocks/payloads';
 import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
-import { type UnverifiedUserGroupCreation } from '../Trustchain/UnverifiedStore/UserGroupsUnverifiedStore';
+
+import type { UserGroupAdditionRecord, UserGroupCreationRecord, UserGroupCreationRecordV2 } from '../Blocks/payloads';
+import type { UnverifiedUserGroupCreation } from '../Blocks/entries';
 
 async function makeMemoryGroupStore(): Promise<GroupStore> {
   const schemas = mergeSchemas(GroupStore.schemas);

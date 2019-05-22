@@ -3,7 +3,7 @@ import { utils, type b64string } from '@tanker/crypto';
 
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
-import TrustchainStore, { type UnverifiedTrustchainCreation } from './TrustchainStore';
+import TrustchainStore from './TrustchainStore';
 import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 
 import {
@@ -13,10 +13,8 @@ import {
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
   provisionalIdentityClaimFromBlock,
+  type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
-import TrustchainVerifier from './TrustchainVerifier';
-import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
-
 
 import {
   isKeyPublish,
@@ -26,9 +24,12 @@ import {
   isTrustchainCreation,
   isProvisionalIdentityClaim,
 } from '../Blocks/Nature';
+
 import { unserializeBlock } from '../Blocks/payloads';
 import { type Block } from '../Blocks/Block';
 
+import TrustchainVerifier from './TrustchainVerifier';
+import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 
 const uniq = (array: Array<any>): Array<any> => [...new Set(array)];
 

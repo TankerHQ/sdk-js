@@ -1,12 +1,11 @@
 // @flow
-
 import varint from 'varint';
-
 import { tcrypto, random, generichash, number, utils, type Key } from '@tanker/crypto';
+
 import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
+import type { VerifiedKeyPublish } from '../Blocks/entries';
 import { getEncryptionFormat, encryptData, extractResourceId } from '../DataProtection/Encryptor';
 import Trustchain from '../Trustchain/Trustchain';
-import { type VerifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
 import { KeyDecryptor } from './KeyDecryptor';
 import ResourceStore from './ResourceStore';
 

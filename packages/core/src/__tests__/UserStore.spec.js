@@ -6,8 +6,7 @@ import UserStore from '../Users/UserStore';
 import { type User } from '../Users/User';
 
 import { NATURE } from '../Blocks/Nature';
-
-import { type VerifiedDeviceCreation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
+import { type VerifiedDeviceCreation } from '../Blocks/entries';
 
 import { makeMemoryDataStore } from './TestDataStore';
 import TestGenerator, { type TestDeviceCreation } from './TestGenerator';
