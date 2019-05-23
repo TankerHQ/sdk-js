@@ -21,7 +21,6 @@ export class LocalUser extends EventEmitter {
   _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
   _currentUserKey: tcrypto.SodiumKeyPair;
-  _provisionalUserKeys: { [string]: { appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair } } = {};
 
   _keyStore: KeyStore;
 
@@ -46,9 +45,6 @@ export class LocalUser extends EventEmitter {
       this._userKeys[utils.toBase64(userKey.publicKey)] = userKey;
       this._currentUserKey = userKey;
     }
-    const provisionalUserKeys = this._keyStore.provisionalUserKeys || [];
-    for (const key of provisionalUserKeys)
-      this._provisionalUserKeys[key.id] = { ...key };
     this._deviceSignatureKeyPair = this._keyStore.signatureKeyPair;
     this._deviceEncryptionKeyPair = this._keyStore.encryptionKeyPair;
     this._deviceId = this._keyStore.deviceId;
@@ -67,7 +63,6 @@ export class LocalUser extends EventEmitter {
 
     const id = utils.toBase64(utils.concatArrays(provisionalIdentityClaim.app_provisional_identity_signature_public_key, provisionalIdentityClaim.tanker_provisional_identity_signature_public_key));
 
-    this._provisionalUserKeys[id] = { appEncryptionKeyPair, tankerEncryptionKeyPair };
     await this._keyStore.addProvisionalUserKeys(id, appEncryptionKeyPair, tankerEncryptionKeyPair);
     return { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
   }
@@ -201,17 +196,16 @@ export class LocalUser extends EventEmitter {
 
   findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
 
-  findProvisionalUserKey = (recipient: Uint8Array) => this._provisionalUserKeys[utils.toBase64(recipient)]
+  findProvisionalUserKey = (recipient: Uint8Array) => this._keyStore.provisionalUserKeys[utils.toBase64(recipient)]
 
   hasClaimedProvisionalIdentity = (provisionalIdentity: SecretProvisionalIdentity) => {
     const appPublicEncryptionKey = provisionalIdentity.public_encryption_key;
-
-    for (const puk of this._keyStore.provisionalUserKeys) {
+    const puks: Array<ProvisionalUserKeyPairs> = (Object.values(this._keyStore.provisionalUserKeys): any);
+    for (const puk of puks) {
       if (utils.toBase64(puk.appEncryptionKeyPair.publicKey) === appPublicEncryptionKey) {
         return true;
       }
     }
-
     return false;
   }
 

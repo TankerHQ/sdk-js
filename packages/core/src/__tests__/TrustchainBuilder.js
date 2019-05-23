@@ -167,18 +167,16 @@ export default class TrustchainBuilder {
       encryptionPair: device.encryptionKeys,
       userKeys: user.userKeys ? [user.userKeys] : [],
       encryptedUserKeys: [],
-      provisionalUserKeys: [],
+      provisionalUserKeys: {},
       userSecret: new Uint8Array(32),
     });
     keystore._userKeys = {};
     if (user.userKeys)
       keystore._userKeys[utils.toBase64(user.userKeys.publicKey)] = user.userKeys;
-    keystore._provisionalUserKeys = {};
     for (const ident of provisionalIdentities) {
       const id = utils.toBase64(utils.concatArrays(ident.appSignatureKeyPair.publicKey, ident.tankerSignatureKeyPair.publicKey));
       const keys = { id, appEncryptionKeyPair: ident.appEncryptionKeyPair, tankerEncryptionKeyPair: ident.tankerEncryptionKeyPair };
-      keystore._safe.provisionalUserKeys.push(keys);
-      keystore._provisionalUserKeys[id] = keys;
+      keystore._safe.provisionalUserKeys[id] = keys;
     }
     return keystore;
 

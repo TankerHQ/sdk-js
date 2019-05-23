@@ -9,6 +9,8 @@ export type ProvisionalUserKeyPairs = {|
   tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
 |};
 
+export type IndexedProvisionalUserKeyPairs = { [id: string]: ProvisionalUserKeyPairs };
+
 export type DeviceKeys = {|
   deviceId: ?b64string,
   signaturePair: tcrypto.SodiumKeyPair,
@@ -20,7 +22,7 @@ type KeySafeObject = {
   userSecret: Uint8Array,
   userKeys: Array<tcrypto.SodiumKeyPair>,
   encryptedUserKeys: Array<UserKeys>,
-  provisionalUserKeys: Array<ProvisionalUserKeyPairs>,
+  provisionalUserKeys: IndexedProvisionalUserKeyPairs,
 };
 
 function startsWith(haystack: string, needle: string) {
@@ -59,7 +61,7 @@ export default class KeySafe {
   encryptionPair: tcrypto.SodiumKeyPair;
   userKeys: Array<tcrypto.SodiumKeyPair>;
   encryptedUserKeys: Array<UserKeys>;
-  provisionalUserKeys: Array<ProvisionalUserKeyPairs>;
+  provisionalUserKeys: IndexedProvisionalUserKeyPairs;
 
   constructor(obj: KeySafeObject) {
     if (!obj || !obj.signaturePair || !obj.encryptionPair)
@@ -76,7 +78,16 @@ export default class KeySafe {
     this.encryptionPair = encryptionPair;
     this.userKeys = userKeys;
     this.encryptedUserKeys = encryptedUserKeys;
-    this.provisionalUserKeys = provisionalUserKeys;
+
+    if (provisionalUserKeys instanceof Array) {
+      // Format migration for device created with SDKs in the v2.0.0-alpha series:
+      for (const puk of provisionalUserKeys) {
+        this.provisionalUserKeys[puk.id] = puk;
+      }
+    } else {
+      // Add an empty default for devices created before SDK v2
+      this.provisionalUserKeys = provisionalUserKeys || {};
+    }
   };
 
   asObject = (): KeySafeObject => ({
@@ -102,7 +113,7 @@ export default class KeySafe {
       encryptionPair: tcrypto.makeEncryptionKeyPair(),
       userKeys: [],
       encryptedUserKeys: [],
-      provisionalUserKeys: [],
+      provisionalUserKeys: {},
     });
   }
 
