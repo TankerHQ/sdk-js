@@ -3,17 +3,17 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { type UserKeys } from '../Blocks/payloads';
 import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
 
-export type DeviceKeys = {|
-  deviceId: ?b64string,
-  signaturePair: tcrypto.SodiumKeyPair,
-  encryptionPair: tcrypto.SodiumKeyPair,
-|}
-
 export type ProvisionalUserKeyPairs = {|
   id: string,
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
   tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
-|}
+|};
+
+export type DeviceKeys = {|
+  deviceId: ?b64string,
+  signaturePair: tcrypto.SodiumKeyPair,
+  encryptionPair: tcrypto.SodiumKeyPair,
+|};
 
 type KeySafeObject = {
   ...DeviceKeys,
@@ -21,7 +21,7 @@ type KeySafeObject = {
   userKeys: Array<tcrypto.SodiumKeyPair>,
   encryptedUserKeys: Array<UserKeys>,
   provisionalUserKeys: Array<ProvisionalUserKeyPairs>,
-}
+};
 
 function startsWith(haystack: string, needle: string) {
   if (String.prototype.startsWith)

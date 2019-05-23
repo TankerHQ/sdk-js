@@ -1,21 +1,15 @@
 // @flow
 
 import EventEmitter from 'events';
-import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/identity';
 
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
-import { type UserData, type DelegationToken } from './types';
+import type { UserData, DelegationToken } from './types';
+import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../utils';
-import { type ProvisionalUserKeyPairs } from './KeySafe';
-
-export type DeviceKeys = {|
-  deviceId: ?b64string,
-  signaturePair: tcrypto.SodiumKeyPair,
-  encryptionPair: tcrypto.SodiumKeyPair,
-|}
 
 export class LocalUser extends EventEmitter {
   _userData: UserData;

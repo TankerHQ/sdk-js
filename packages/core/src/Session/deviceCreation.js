@@ -11,7 +11,7 @@ import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 import { type DelegationToken } from './types';
 
-import { type DeviceKeys } from './LocalUser';
+import { type DeviceKeys } from './KeySafe';
 import { type GhostDevice, type GhostDeviceKeys } from './ghostDevice';
 
 export type EncryptedUserKeyForGhostDevice = {
