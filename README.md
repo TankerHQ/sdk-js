@@ -44,6 +44,10 @@ It leverages powerful **client-side encryption** of any type of data, textual or
 | [@tanker/client-browser][browser_npm-link] | [![browser_npm-badge]][browser_npm-link] | Client SDK for **Web applications** |
 | [@tanker/client-node][browser_npm-link]    | [![nodejs_npm-badge]][nodejs_npm-link]   | Client SDK for Node.js client applications |
 
+### Other platforms
+
+Tanker can be integrated in cross-platform applications, all sharing the same Trustchain.
+
 To use Tanker in your **mobile applications**, use our open-source **[iOS](https://github.com/TankerHQ/sdk-ios)** and **[Android](https://github.com/TankerHQ/sdk-android)** SDKs.
 
 ## Usage example
