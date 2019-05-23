@@ -89,16 +89,10 @@ export default class KeySafe {
     provisionalUserKeys: this.provisionalUserKeys,
   });
 
-  deviceKeys = (): DeviceKeys => ({
-    signaturePair: this.signaturePair,
-    encryptionPair: this.encryptionPair,
-    deviceId: this.deviceId
-  });
-
-
-  encrypt = async (): Promise<Uint8Array> => encryptObject(this.userSecret, this.asObject());
-
-  serialize = async (): Promise<b64string> => utils.toBase64(await this.encrypt());
+  serialize = async (): Promise<b64string> => {
+    const encrypted = await encryptObject(this.userSecret, this.asObject());
+    return utils.toBase64(encrypted);
+  };
 
   static create(userSecret: Uint8Array): KeySafe {
     return new KeySafe({

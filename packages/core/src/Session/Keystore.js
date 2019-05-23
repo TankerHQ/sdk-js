@@ -67,9 +67,10 @@ export default class Keystore {
   }
 
   get currentUserKey(): tcrypto.SodiumKeyPair {
-    if (this.userKeys.length < 1)
+    const index = this.userKeys.length - 1;
+    if (index < 0)
       throw new Error('No user key for this user');
-    return this.userKeys.slice(-1)[0];
+    return this.userKeys[index];
   }
 
   get deviceId(): ?Uint8Array {
