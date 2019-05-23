@@ -3,6 +3,12 @@ import { utils } from '@tanker/crypto';
 
 import {
   type Record,
+  type KeyPublishRecord,
+  type UserGroupCreationRecord,
+  type UserGroupAdditionRecord,
+  type UserDeviceRecord,
+  type DeviceRevocationRecord,
+  type ProvisionalIdentityClaimRecord,
   unserializePayload,
   unserializeKeyPublish,
   unserializeKeyPublishToDevice,
@@ -22,19 +28,13 @@ import {
 import { type Nature, NATURE } from './Nature';
 import { type Block, hashBlock } from './Block';
 
-import { type UnverifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
-import { type UnverifiedUserGroup } from '../Trustchain/UnverifiedStore/UserGroupsUnverifiedStore';
-import { type UnverifiedDeviceCreation, type UnverifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
-import { type UnverifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
-
-
 export type VerificationFields = {|
   index: number,
   nature: Nature,
   author: Uint8Array,
   hash: Uint8Array,
   signature: Uint8Array
-|}
+|};
 
 type BaseEntry = {|
   ...VerificationFields,
@@ -45,17 +45,17 @@ type BaseEntry = {|
   user_public_key?: Uint8Array,
   group_public_encryption_key?: Uint8Array,
   group_id?: Uint8Array,
-|}
+|};
 
 export type Entry = {|
   ...BaseEntry,
   payload_verified: Record,
-|}
+|};
 
 export type UnverifiedEntry = {|
   ...BaseEntry,
   payload_unverified: Record,
-|}
+|};
 
 function internalEntryToDbEntry(entry: any): any {
   let result = {};
@@ -131,6 +131,22 @@ export function blockToEntry(block: Block): UnverifiedEntry { /* eslint-disable 
   };
 }
 
+export type UnverifiedTrustchainCreation = {
+  ...VerificationFields,
+  public_signature_key: Uint8Array,
+};
+
+export type UnverifiedKeyPublish = {
+  ...VerificationFields,
+  ...KeyPublishRecord,
+};
+
+export type VerifiedKeyPublish = {
+  ...KeyPublishRecord,
+  author: Uint8Array,
+  nature: Nature,
+};
+
 export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
   const verificationFields = verificationFieldsFromBlock(block);
   let keyPublishAction;
@@ -152,6 +168,20 @@ export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
     ...keyPublishAction
   };
 }
+
+export type UnverifiedUserGroupCreation = {
+  ...VerificationFields,
+  ...UserGroupCreationRecord,
+  group_id: Uint8Array
+};
+
+export type UnverifiedUserGroupAddition = {
+  ...VerificationFields,
+  ...UserGroupAdditionRecord,
+};
+
+export type UnverifiedUserGroup = UnverifiedUserGroupCreation | UnverifiedUserGroupAddition;
+export type VerifiedUserGroup = UnverifiedUserGroup;
 
 export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
   const verificationFields = verificationFieldsFromBlock(block);
@@ -186,6 +216,18 @@ export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
   }
 }
 
+export type UnverifiedDeviceCreation = {
+  ...VerificationFields,
+  ...UserDeviceRecord,
+};
+
+export type VerifiedDeviceCreation = {
+  ...UserDeviceRecord,
+  hash: Uint8Array,
+  nature: Nature,
+  index: number,
+};
+
 export function deviceCreationFromBlock(block: Block): UnverifiedDeviceCreation {
   const verificationFields = verificationFieldsFromBlock(block);
   let userEntry;
@@ -208,6 +250,14 @@ export function deviceCreationFromBlock(block: Block): UnverifiedDeviceCreation 
   };
 }
 
+export type UnverifiedDeviceRevocation = {
+  ...VerificationFields,
+  ...DeviceRevocationRecord,
+  user_id: Uint8Array
+};
+
+export type VerifiedDeviceRevocation = UnverifiedDeviceRevocation;
+
 export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): UnverifiedDeviceRevocation {
   const verificationFields = verificationFieldsFromBlock(block);
   let userEntry;
@@ -227,6 +277,14 @@ export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): Unv
     user_id: userId
   };
 }
+
+
+export type UnverifiedProvisionalIdentityClaim = {
+  ...VerificationFields,
+  ...ProvisionalIdentityClaimRecord,
+};
+
+export type VerifiedProvisionalIdentityClaim = UnverifiedProvisionalIdentityClaim;
 
 export function provisionalIdentityClaimFromBlock(block: Block): UnverifiedProvisionalIdentityClaim {
   const verificationFields = verificationFieldsFromBlock(block);

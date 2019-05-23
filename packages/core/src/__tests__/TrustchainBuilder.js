@@ -176,8 +176,8 @@ export default class TrustchainBuilder {
     keystore._provisionalUserKeys = {};
     for (const ident of provisionalIdentities) {
       const id = utils.toBase64(utils.concatArrays(ident.appSignatureKeyPair.publicKey, ident.tankerSignatureKeyPair.publicKey));
-      const keys = { appEncryptionKeyPair: ident.appEncryptionKeyPair, tankerEncryptionKeyPair: ident.tankerEncryptionKeyPair };
-      keystore._safe.provisionalUserKeys.push({ id, ...keys });
+      const keys = { id, appEncryptionKeyPair: ident.appEncryptionKeyPair, tankerEncryptionKeyPair: ident.tankerEncryptionKeyPair };
+      keystore._safe.provisionalUserKeys.push(keys);
       keystore._provisionalUserKeys[id] = keys;
     }
     return keystore;

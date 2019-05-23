@@ -1,8 +1,9 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import type { VerifiedDeviceCreation, VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
+
 import { findIndex } from '../utils';
 import { NATURE } from '../Blocks/Nature';
+import type { VerifiedDeviceCreation, VerifiedDeviceRevocation } from '../Blocks/entries';
 
 export type IndexUserKey = {|
   userPublicKey: Uint8Array,

@@ -5,11 +5,10 @@ import { type DataStore } from '@tanker/datastore-base';
 
 import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
-import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
 
-import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
-import { type VerifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
-import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
+import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
+import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import type { ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 type DeviceToUser = {
   deviceId: b64string,

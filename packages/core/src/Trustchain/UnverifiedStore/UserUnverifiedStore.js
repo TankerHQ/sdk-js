@@ -2,33 +2,13 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
-import { entryToDbEntry, dbEntryToEntry, type VerificationFields } from '../../Blocks/entries';
-import { type UserDeviceRecord, type DeviceRevocationRecord } from '../../Blocks/payloads';
-import { type Nature, isDeviceCreation } from '../../Blocks/Nature';
+import { entryToDbEntry, dbEntryToEntry } from '../../Blocks/entries';
+import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from '../../Blocks/entries';
+import { isDeviceCreation } from '../../Blocks/Nature';
 
 const TABLE_USER_BLOCKS = 0; // Contains both user devices & revocations
 const TABLE_DEVICE_TO_USER = 1; // Maps deviceId to userId, for revocation targets
 const TABLE_LAST_INDEXES = 2; // Maps userId to last fetched index, to filter on insert
-
-export type UnverifiedDeviceCreation = {
-  ...VerificationFields,
-  ...UserDeviceRecord,
-};
-
-export type VerifiedDeviceCreation = {
-  ...UserDeviceRecord,
-  hash: Uint8Array,
-  nature: Nature,
-  index: number,
-};
-
-export type UnverifiedDeviceRevocation = {
-  ...VerificationFields,
-  ...DeviceRevocationRecord,
-  user_id: Uint8Array
-};
-
-export type VerifiedDeviceRevocation = UnverifiedDeviceRevocation;
 
 export default class UserUnverifiedStore {
   _ds: DataStore<*>;

@@ -1,10 +1,17 @@
 // @flow
 import { type DataStore } from '@tanker/datastore-base';
 
-import KeyPublishUnverifiedStore, { type UnverifiedKeyPublish } from './KeyPublishUnverifiedStore';
-import UserUnverifiedStore, { type UnverifiedDeviceCreation, type VerifiedDeviceCreation, type UnverifiedDeviceRevocation, type VerifiedDeviceRevocation } from './UserUnverifiedStore';
-import UserGroupsUnverifiedStore, { type UnverifiedUserGroup, type VerifiedUserGroup } from './UserGroupsUnverifiedStore';
-import ProvisionalIdentityClaimUnverifiedStore, { type UnverifiedProvisionalIdentityClaim, type VerifiedProvisionalIdentityClaim } from './ProvisionalIdentityClaimUnverifiedStore';
+import type {
+  UnverifiedKeyPublish,
+  UnverifiedUserGroup, VerifiedUserGroup,
+  UnverifiedDeviceCreation, VerifiedDeviceCreation,
+  UnverifiedDeviceRevocation, VerifiedDeviceRevocation,
+  UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
+} from '../../Blocks/entries';
+import KeyPublishUnverifiedStore from './KeyPublishUnverifiedStore';
+import ProvisionalIdentityClaimUnverifiedStore from './ProvisionalIdentityClaimUnverifiedStore';
+import UserUnverifiedStore from './UserUnverifiedStore';
+import UserGroupsUnverifiedStore from './UserGroupsUnverifiedStore';
 
 const schemaTablesV3 = [
   ...KeyPublishUnverifiedStore.tables,

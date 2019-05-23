@@ -2,12 +2,9 @@
 import { tcrypto, random, utils } from '@tanker/crypto';
 import { obfuscateUserId, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
 
-import { type UnverifiedEntry, blockToEntry } from '../Blocks/entries';
+import { blockToEntry } from '../Blocks/entries';
+import type { UnverifiedEntry, UnverifiedKeyPublish, UnverifiedDeviceCreation, UnverifiedDeviceRevocation, UnverifiedProvisionalIdentityClaim } from '../Blocks/entries';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import type { Device, User } from '../Users/User';
-import { type UnverifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
-import { type UnverifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
-import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
 import { encodeArrayLength } from '../Blocks/Serialize';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
@@ -24,6 +21,7 @@ import { serializeTrustchainCreation,
 
 import { preferredNature, NATURE, NATURE_KIND, type Nature } from '../Blocks/Nature';
 
+import type { Device, User } from '../Users/User';
 
 export type GeneratorDevice = {
   id: Uint8Array,
@@ -216,7 +214,7 @@ class Generator {
 
     const entry = blockToEntry(block);
     const device = { id: entry.hash, signKeys, encryptionKeys };
-    const unverifiedDeviceCreation = { ...entry, ...entry.payload_unverified };
+    const unverifiedDeviceCreation: UnverifiedDeviceCreation = ({ ...entry, ...entry.payload_unverified }: any);
     return { block, entry, device, blockPrivateSignatureKey: ephemeralKeys.privateKey, unverifiedDeviceCreation };
   }
 
@@ -327,10 +325,10 @@ class Generator {
     }, args.fromDevice.signKeys.privateKey);
     this.pushedBlocks.push(block);
     const entry = blockToEntry(block);
-    const unverifiedKeyPublish = {
+    const unverifiedKeyPublish: UnverifiedKeyPublish = ({
       ...entry,
       ...entry.payload_unverified,
-    };
+    }: any);
     return {
       symmetricKey,
       resourceId,
@@ -361,10 +359,10 @@ class Generator {
     }, args.fromDevice.signKeys.privateKey);
     this.pushedBlocks.push(block);
     const entry = blockToEntry(block);
-    const unverifiedKeyPublish = {
+    const unverifiedKeyPublish: UnverifiedKeyPublish = ({
       ...entry,
       ...entry.payload_unverified,
-    };
+    }: any);
     return {
       symmetricKey: args.symmetricKey,
       resourceId,

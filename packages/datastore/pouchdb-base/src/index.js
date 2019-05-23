@@ -43,6 +43,8 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
       this.fromDB = transform.deserializeBinary;
       this.toDB = transform.serializeBinary;
     }
+
+    return this;
   }
 
   get className(): string {

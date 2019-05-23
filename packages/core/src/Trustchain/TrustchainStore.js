@@ -1,12 +1,6 @@
 // @flow
 
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
-import { type VerificationFields } from '../Blocks/entries';
-
-export type UnverifiedTrustchainCreation = {
-  ...VerificationFields,
-  public_signature_key: Uint8Array,
-}
 
 export const TABLE_METADATA = 'trustchain_metadata';
 

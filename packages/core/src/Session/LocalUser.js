@@ -6,10 +6,9 @@ import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/ide
 
 import KeyStore from './Keystore';
 import BlockGenerator from '../Blocks/BlockGenerator';
+import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
 import { type UserData, type DelegationToken } from './types';
 import { findIndex } from '../utils';
-import { type VerifiedDeviceCreation, type VerifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
-import { type VerifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
 import { type ProvisionalUserKeyPairs } from './KeySafe';
 
 export type DeviceKeys = {|

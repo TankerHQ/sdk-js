@@ -19,12 +19,10 @@ import {
 import { type User } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 
-import type { UnverifiedDeviceCreation, UnverifiedDeviceRevocation } from '../Trustchain/UnverifiedStore/UserUnverifiedStore';
-import type { UnverifiedKeyPublish } from '../Trustchain/UnverifiedStore/KeyPublishUnverifiedStore';
-import type { UnverifiedUserGroup } from '../Trustchain/UnverifiedStore/UserGroupsUnverifiedStore';
-import type { UnverifiedTrustchainCreation } from '../Trustchain/TrustchainStore';
-import type { UnverifiedProvisionalIdentityClaim } from '../Trustchain/UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
-
+import type {
+  UnverifiedTrustchainCreation, UnverifiedKeyPublish, UnverifiedUserGroup,
+  UnverifiedDeviceCreation, UnverifiedDeviceRevocation, UnverifiedProvisionalIdentityClaim,
+} from '../Blocks/entries';
 import { NATURE } from '../Blocks/Nature';
 
 import TestGenerator from './TestGenerator';

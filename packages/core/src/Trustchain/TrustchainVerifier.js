@@ -6,11 +6,14 @@ import { findIndex, compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
 import { type User, type Device } from '../Users/User';
 import GroupUpdater from '../Groups/GroupUpdater';
-import { type UnverifiedKeyPublish, type VerifiedKeyPublish } from './UnverifiedStore/KeyPublishUnverifiedStore';
-import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from './UnverifiedStore/UserUnverifiedStore';
-import { type UnverifiedUserGroup, type VerifiedUserGroup } from './UnverifiedStore/UserGroupsUnverifiedStore';
-import { type UnverifiedProvisionalIdentityClaim, type VerifiedProvisionalIdentityClaim } from './UnverifiedStore/ProvisionalIdentityClaimUnverifiedStore';
-import { type UnverifiedTrustchainCreation } from './TrustchainStore';
+import type {
+  UnverifiedTrustchainCreation,
+  UnverifiedKeyPublish, VerifiedKeyPublish,
+  UnverifiedUserGroup, VerifiedUserGroup,
+  UnverifiedDeviceCreation, VerifiedDeviceCreation,
+  UnverifiedDeviceRevocation, VerifiedDeviceRevocation,
+  UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
+} from '../Blocks/entries';
 
 import {
   NATURE,
