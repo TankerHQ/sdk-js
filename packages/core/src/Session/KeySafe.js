@@ -1,5 +1,6 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+
 import { type UserKeys } from '../Blocks/payloads';
 import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
 
@@ -118,12 +119,22 @@ export default class KeySafe {
   }
 
   static async open(userSecret: Uint8Array, serializedSafe: b64string): Promise<KeySafe> {
+    let obj;
+
     try {
       const encryptedSafe = utils.fromBase64(serializedSafe);
-      const obj = await decryptObject(userSecret, encryptedSafe);
-      return new KeySafe(obj);
+      obj = await decryptObject(userSecret, encryptedSafe);
     } catch (error) {
       throw new Error(`Error when decrypting the local KeySafe: ${error}`);
     }
+
+    if (!obj.signaturePair)
+      throw new Error(`Invalid sign key: ${obj.signaturePair}`);
+    if (!obj.encryptionPair)
+      throw new Error(`Invalid crypt key: ${obj.encryptionPair}`);
+    if (!obj.userSecret)
+      throw new Error('Invalid user secret');
+
+    return new KeySafe(obj);
   }
 }

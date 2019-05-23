@@ -1,7 +1,6 @@
 // @flow
 
 import { tcrypto, utils, type Key } from '@tanker/crypto';
-import { InvalidIdentity } from '@tanker/identity';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import KeySafe, { type IndexedProvisionalUserKeyPairs, type ProvisionalUserKeyPairs } from './KeySafe';
@@ -82,24 +81,28 @@ export default class Keystore {
     return this._safe.provisionalUserKeys;
   }
 
-  // remove everything except private device keys.
-  async clearCache() {
-    delete this._safe.deviceId;
-    this._safe.userKeys = [];
-    this._safe.encryptedUserKeys = [];
-    this._safe.provisionalUserKeys = {};
-    this._userKeys = {};
-    const record = await this._ds.get(TABLE, 'keySafe');
-    record.encryptedSafe = await this._safe.serialize();
-    return this._ds.put(TABLE, record);
-  }
-
   findUserKey(userPublicKey: Uint8Array): ?tcrypto.SodiumKeyPair {
     return this._userKeys[utils.toBase64(userPublicKey)];
   }
 
   findProvisionalKey(id: string): ProvisionalUserKeyPairs {
     return this._safe.provisionalUserKeys[id];
+  }
+
+  async saveSafe(): Promise<void> {
+    const encryptedSafe = await this._safe.serialize();
+    const record = { _id: 'keySafe', encryptedSafe };
+    return this._ds.put(TABLE, record);
+  }
+
+  // remove everything except private device keys.
+  clearCache(): Promise<void> {
+    delete this._safe.deviceId;
+    this._safe.userKeys = [];
+    this._safe.encryptedUserKeys = [];
+    this._safe.provisionalUserKeys = {};
+    this._userKeys = {};
+    return this.saveSafe();
   }
 
   async close(): Promise<void> {
@@ -124,7 +127,7 @@ export default class Keystore {
   async initData(userSecret: Uint8Array) {
     let safe: ?KeySafe;
 
-    // Try to get safe from the storage, create a new one if not exists.
+    // Try to get safe from the storage, create a new one if it does not exist
     try {
       const record = await this._ds.get(TABLE, 'keySafe');
       safe = await KeySafe.open(userSecret, record.encryptedSafe);
@@ -134,70 +137,51 @@ export default class Keystore {
         const record = { _id: 'keySafe', encryptedSafe: await safe.serialize() };
         await this._ds.put(TABLE, record);
       } else {
-        throw new InvalidIdentity(e.message);
+        throw e;
       }
     }
 
-    if (!safe.signaturePair)
-      throw new Error(`Invalid sign key: ${safe.signaturePair}`);
-    if (!safe.encryptionPair)
-      throw new Error(`Invalid crypt key: ${safe.encryptionPair}`);
-    if (!safe.userSecret)
-      throw new Error('Invalid user secret');
+    // Read-only (non writable, non enumerable, non reconfigurable)
+    Object.defineProperty(this, '_safe', { value: safe });
 
     const userKeys = {};
     for (const userKey of safe.userKeys) {
       userKeys[utils.toBase64(userKey.publicKey)] = userKey;
     }
     this._userKeys = userKeys;
-
-    // Read-only (non writable, non enumerable, non reconfigurable)
-    Object.defineProperty(this, '_safe', { value: safe });
   }
 
-  async setDeviceId(hash: Uint8Array) {
+  setDeviceId(hash: Uint8Array): Promise<void> {
     this._safe.deviceId = utils.toBase64(hash);
-    const record = await this._ds.get(TABLE, 'keySafe');
-    record.encryptedSafe = await this._safe.serialize();
-    return this._ds.put(TABLE, record);
+    return this.saveSafe();
   }
 
-  async addUserKey(keyPair: tcrypto.SodiumKeyPair) {
+  addProvisionalUserKeys(id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair): Promise<void> {
+    this._safe.provisionalUserKeys[id] = { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
+    return this.saveSafe();
+  }
+
+  addUserKey(keyPair: tcrypto.SodiumKeyPair): Promise<void> {
     this._safe.userKeys.push(keyPair);
     this._userKeys[utils.toBase64(keyPair.publicKey)] = keyPair;
-    const record = await this._ds.get(TABLE, 'keySafe');
-    record.encryptedSafe = await this._safe.serialize();
-    return this._ds.put(TABLE, record);
+    return this.saveSafe();
   }
 
-  async addEncryptedUserKey(keys: UserKeys) {
+  prependUserKey(keyPair: tcrypto.SodiumKeyPair): Promise<void> {
+    this._safe.userKeys.unshift(keyPair);
+    this._userKeys[utils.toBase64(keyPair.publicKey)] = keyPair;
+    return this.saveSafe();
+  }
+
+  addEncryptedUserKey(keys: UserKeys): Promise<void> {
     this._safe.encryptedUserKeys.unshift(keys);
-    const record = await this._ds.get(TABLE, 'keySafe');
-    record.encryptedSafe = await this._safe.serialize();
-    return this._ds.put(TABLE, record);
+    return this.saveSafe();
   }
 
   async takeEncryptedUserKeys(): Promise<Array<UserKeys>> {
     const keys = this._safe.encryptedUserKeys;
     this._safe.encryptedUserKeys = [];
-    const record = await this._ds.get(TABLE, 'keySafe');
-    record.encryptedSafe = await this._safe.serialize();
-    await this._ds.put(TABLE, record);
+    await this.saveSafe();
     return keys;
-  }
-
-  async prependUserKey(keyPair: tcrypto.SodiumKeyPair) {
-    this._safe.userKeys.unshift(keyPair);
-    this._userKeys[utils.toBase64(keyPair.publicKey)] = keyPair;
-    const record = await this._ds.get(TABLE, 'keySafe');
-    record.encryptedSafe = await this._safe.serialize();
-    return this._ds.put(TABLE, record);
-  }
-
-  async addProvisionalUserKeys(id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair) {
-    this._safe.provisionalUserKeys[id] = { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
-    const record = await this._ds.get(TABLE, 'keySafe');
-    record.encryptedSafe = await this._safe.serialize();
-    return this._ds.put(TABLE, record);
   }
 }
