@@ -18,13 +18,13 @@ export type DeviceKeys = {|
   encryptionPair: tcrypto.SodiumKeyPair,
 |};
 
-type KeySafeObject = {
+export type KeySafe = {|
   ...DeviceKeys,
   userSecret: Uint8Array,
   userKeys: Array<tcrypto.SodiumKeyPair>,
   encryptedUserKeys: Array<UserKeys>,
   provisionalUserKeys: IndexedProvisionalUserKeyPairs,
-};
+|};
 
 function startsWith(haystack: string, needle: string) {
   if (String.prototype.startsWith)
@@ -54,87 +54,47 @@ async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<O
   });
 }
 
-// Note: this class is not responsible for the storage
-export default class KeySafe {
-  deviceId: ?b64string;
-  userSecret: Uint8Array;
-  signaturePair: tcrypto.SodiumKeyPair;
-  encryptionPair: tcrypto.SodiumKeyPair;
-  userKeys: Array<tcrypto.SodiumKeyPair>;
-  encryptedUserKeys: Array<UserKeys>;
-  provisionalUserKeys: IndexedProvisionalUserKeyPairs;
-
-  constructor(obj: KeySafeObject) {
-    if (!obj || !obj.signaturePair || !obj.encryptionPair)
-      throw new Error('Invalid KeySafeObject provided to the KeySafe constructor');
-
-    this.fromObject(obj);
-  }
-
-  fromObject = (obj: KeySafeObject) => {
-    const { deviceId, userSecret, signaturePair, encryptionPair, userKeys, encryptedUserKeys, provisionalUserKeys } = obj;
-    this.deviceId = deviceId;
-    this.userSecret = userSecret;
-    this.signaturePair = signaturePair;
-    this.encryptionPair = encryptionPair;
-    this.userKeys = userKeys;
-    this.encryptedUserKeys = encryptedUserKeys;
-
-    if (provisionalUserKeys instanceof Array) {
-      // Format migration for device created with SDKs in the v2.0.0-alpha series:
-      for (const puk of provisionalUserKeys) {
-        this.provisionalUserKeys[puk.id] = puk;
-      }
-    } else {
-      // Add an empty default for devices created before SDK v2
-      this.provisionalUserKeys = provisionalUserKeys || {};
-    }
+export function generateKeySafe(userSecret: Uint8Array): KeySafe {
+  return {
+    deviceId: null,
+    userSecret,
+    signaturePair: tcrypto.makeSignKeyPair(),
+    encryptionPair: tcrypto.makeEncryptionKeyPair(),
+    userKeys: [],
+    encryptedUserKeys: [],
+    provisionalUserKeys: {},
   };
+}
 
-  asObject = (): KeySafeObject => ({
-    userSecret: this.userSecret,
-    signaturePair: this.signaturePair,
-    encryptionPair: this.encryptionPair,
-    userKeys: this.userKeys,
-    deviceId: this.deviceId,
-    encryptedUserKeys: this.encryptedUserKeys,
-    provisionalUserKeys: this.provisionalUserKeys,
-  });
+export async function serializeKeySafe(keySafe: KeySafe): Promise<b64string> {
+  const encrypted = await encryptObject(keySafe.userSecret, keySafe);
+  return utils.toBase64(encrypted);
+}
 
-  serialize = async (): Promise<b64string> => {
-    const encrypted = await encryptObject(this.userSecret, this.asObject());
-    return utils.toBase64(encrypted);
-  };
+export async function deserializeKeySafe(serializedSafe: b64string, userSecret: Uint8Array): Promise<KeySafe> {
+  const encryptedSafe = utils.fromBase64(serializedSafe);
+  const safe = await decryptObject(userSecret, encryptedSafe);
 
-  static create(userSecret: Uint8Array): KeySafe {
-    return new KeySafe({
-      deviceId: null,
-      userSecret,
-      signaturePair: tcrypto.makeSignKeyPair(),
-      encryptionPair: tcrypto.makeEncryptionKeyPair(),
-      userKeys: [],
-      encryptedUserKeys: [],
-      provisionalUserKeys: {},
-    });
+  // Validation
+  if (!safe || typeof safe !== 'object') {
+    throw new Error('Invalid key safe');
   }
 
-  static async open(userSecret: Uint8Array, serializedSafe: b64string): Promise<KeySafe> {
-    let obj;
-
-    try {
-      const encryptedSafe = utils.fromBase64(serializedSafe);
-      obj = await decryptObject(userSecret, encryptedSafe);
-    } catch (error) {
-      throw new Error(`Error when decrypting the local KeySafe: ${error}`);
+  // Migrations
+  if (safe.provisionalUserKeys instanceof Array) {
+    // Format migration for device created with SDKs in the v2.0.0-alpha series:
+    for (const puk of safe.provisionalUserKeys) {
+      safe.provisionalUserKeys[puk.id] = puk;
     }
-
-    if (!obj.signaturePair)
-      throw new Error(`Invalid sign key: ${obj.signaturePair}`);
-    if (!obj.encryptionPair)
-      throw new Error(`Invalid crypt key: ${obj.encryptionPair}`);
-    if (!obj.userSecret)
-      throw new Error('Invalid user secret');
-
-    return new KeySafe(obj);
+  } else if (!safe.provisionalUserKeys) {
+    // Add an empty default for devices created before SDK v2.0.0
+    safe.provisionalUserKeys = {};
   }
+
+  // Validation of keys
+  if (!safe.signaturePair || !safe.encryptionPair || !safe.userSecret || !safe.userKeys || !safe.encryptedUserKeys || !safe.provisionalUserKeys) {
+    throw new Error('Invalid key safe');
+  }
+
+  return safe;
 }

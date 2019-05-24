@@ -20,7 +20,6 @@ import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
 
 import Storage from '../Session/Storage';
-import KeySafe from '../Session/KeySafe';
 import Keystore from '../Session/Keystore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
@@ -161,7 +160,7 @@ export default class TrustchainBuilder {
 
     // $FlowExpectedError we are making a read-only key store for tests, no need for a real database
     const keystore = new Keystore(null);
-    keystore._safe = new KeySafe({
+    keystore._safe = {
       deviceId: utils.toBase64(device.id),
       signaturePair: device.signKeys,
       encryptionPair: device.encryptionKeys,
@@ -169,7 +168,7 @@ export default class TrustchainBuilder {
       encryptedUserKeys: [],
       provisionalUserKeys: {},
       userSecret: new Uint8Array(32),
-    });
+    };
     keystore._userKeys = {};
     if (user.userKeys)
       keystore._userKeys[utils.toBase64(user.userKeys.publicKey)] = user.userKeys;

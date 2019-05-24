@@ -3,8 +3,9 @@
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import KeySafe, { type IndexedProvisionalUserKeyPairs, type ProvisionalUserKeyPairs } from './KeySafe';
-import { type UserKeys } from '../Blocks/payloads';
+import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
+import type { KeySafe, IndexedProvisionalUserKeyPairs, ProvisionalUserKeyPairs } from './KeySafe';
+import type { UserKeys } from '../Blocks/payloads';
 
 const TABLE = 'device';
 
@@ -90,7 +91,7 @@ export default class Keystore {
   }
 
   async saveSafe(): Promise<void> {
-    const encryptedSafe = await this._safe.serialize();
+    const encryptedSafe = await serializeKeySafe(this._safe);
     const record = { _id: 'keySafe', encryptedSafe };
     return this._ds.put(TABLE, record);
   }
@@ -125,20 +126,38 @@ export default class Keystore {
   }
 
   async initData(userSecret: Uint8Array) {
+    let record: Object;
     let safe: ?KeySafe;
 
-    // Try to get safe from the storage, create a new one if it does not exist
+    // Try to get safe from the storage, might not exist yet
     try {
-      const record = await this._ds.get(TABLE, 'keySafe');
-      safe = await KeySafe.open(userSecret, record.encryptedSafe);
+      record = await this._ds.get(TABLE, 'keySafe');
     } catch (e) {
-      if (e instanceof dbErrors.RecordNotFound) {
-        safe = KeySafe.create(userSecret);
-        const record = { _id: 'keySafe', encryptedSafe: await safe.serialize() };
-        await this._ds.put(TABLE, record);
-      } else {
+      // Stop if any real db error
+      if (!(e instanceof dbErrors.RecordNotFound)) {
+        console.error('Could not read keysafe from keystore');
         throw e;
       }
+    }
+
+    // Try to deserialize the safe
+    try {
+      if (record) {
+        safe = await deserializeKeySafe(record.encryptedSafe, userSecret);
+      }
+    } catch (e) {
+      // Log unexpected error. That said, there's not much that can be done...
+      // Just override with a new key safe not to lock the user out.
+      // They'll need to verify identity to create a new device.
+      console.error('Could not deserialize an existing keysafe');
+      console.error(e);
+    }
+
+    // New device or broken device: create a new safe
+    if (!safe) {
+      safe = generateKeySafe(userSecret);
+      record = { _id: 'keySafe', encryptedSafe: await serializeKeySafe(safe) };
+      await this._ds.put(TABLE, record);
     }
 
     // Read-only (non writable, non enumerable, non reconfigurable)
