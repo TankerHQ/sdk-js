@@ -7,14 +7,14 @@ import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import type { UserKeys } from '../Blocks/payloads';
-import Keystore from '../Session/Keystore';
+import KeyStore from '../Session/KeyStore';
 
-describe('Keystore', () => {
+describe('KeyStore', () => {
   let dbName;
   let keystoreConfig;
   let datastore;
   let secret;
-  const { schemas } = Keystore;
+  const { schemas } = KeyStore;
 
   beforeEach(async () => {
     dbName = `keystore-test-${makePrefix()}`;
@@ -31,27 +31,27 @@ describe('Keystore', () => {
       publicEncryptionKey: k.publicEncryptionKey
     });
 
-    const keystore1 = await Keystore.open(datastore, secret);
+    const keystore1 = await KeyStore.open(datastore, secret);
     const keys1 = getAllKeys(keystore1);
 
     await datastore.close();
     datastore = await openDataStore(keystoreConfig);
 
-    const keystore2 = await Keystore.open(datastore, secret);
+    const keystore2 = await KeyStore.open(datastore, secret);
     const keys2 = getAllKeys(keystore2);
 
     expect(keys1).to.deep.equal(keys2);
   });
 
   it('can set the device ID', async () => {
-    const keystore = await Keystore.open(datastore, secret);
+    const keystore = await KeyStore.open(datastore, secret);
     await keystore.setDeviceId(utils.fromString('bob-laptop-hash'));
     // $FlowIKnow
     expect(utils.toString(keystore.deviceId)).to.eq('bob-laptop-hash');
   });
 
   it('can insert user keys in the right order', async () => {
-    const keystore = await Keystore.open(datastore, secret);
+    const keystore = await KeyStore.open(datastore, secret);
 
     const key1 = tcrypto.makeEncryptionKeyPair();
     const key2 = tcrypto.makeEncryptionKeyPair();
@@ -65,7 +65,7 @@ describe('Keystore', () => {
   });
 
   it('can prepend then take all encrypted user keys', async () => {
-    const keystore = await Keystore.open(datastore, secret);
+    const keystore = await KeyStore.open(datastore, secret);
 
     const key1: UserKeys = ('key1': any);
     const key2: UserKeys = ('key2': any);
@@ -81,7 +81,7 @@ describe('Keystore', () => {
   });
 
   it('can find a user key', async () => {
-    const keystore = await Keystore.open(datastore, secret);
+    const keystore = await KeyStore.open(datastore, secret);
 
     const key1 = tcrypto.makeEncryptionKeyPair();
     const key2 = tcrypto.makeEncryptionKeyPair();

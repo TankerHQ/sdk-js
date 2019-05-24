@@ -53,7 +53,7 @@ describe('GroupUpdater', () => {
     const alice = await builder.addUserV3('alice');
     const bob = await builder.addUserV3('bob');
     const group = await builder.addUserGroupCreation(bob, ['bob']);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(alice.user, alice.device));
 
     const payload: UserGroupCreationRecordV2 = (group.entry.payload_unverified: any);
     const entry: UnverifiedUserGroupCreation = {
@@ -79,7 +79,7 @@ describe('GroupUpdater', () => {
     const alice = await builder.addUserV3('alice');
     const group = await builder.addUserGroupCreation(alice, ['alice']);
     const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(alice.user, alice.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
 
@@ -96,7 +96,7 @@ describe('GroupUpdater', () => {
     const alice = await builder.addUserV3('alice');
     const group = await builder.addUserGroupCreation(alice, [], [publicProvisionalUser]);
     const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(alice.user, alice.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
 
@@ -111,7 +111,7 @@ describe('GroupUpdater', () => {
     const alice = await builder.addUserV3('alice');
     const group = await builder.addUserGroupCreation(alice, [], [publicProvisionalUser]);
     const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device, [provisionalUserKeys]));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(alice.user, alice.device, [provisionalUserKeys]));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
 
@@ -133,7 +133,7 @@ describe('GroupUpdater', () => {
 
     const groupAdd = await builder.addUserGroupAddition(bob, group, ['charlie']);
     const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(alice.user, alice.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
     await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
@@ -150,7 +150,7 @@ describe('GroupUpdater', () => {
 
     const groupAdd = await builder.addUserGroupAddition(alice, group, ['charlie']);
     const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(alice.user, alice.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
     await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
@@ -168,7 +168,7 @@ describe('GroupUpdater', () => {
 
     const groupAdd = await builder.addUserGroupAddition(alice, group, ['charlie']);
     const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(charlie.user, charlie.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
     await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
@@ -191,7 +191,7 @@ describe('GroupUpdater', () => {
 
     const groupAdd = await builder.addUserGroupAddition(alice, group, [], [publicProvisionalUser]);
     const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(charlie.user, charlie.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
     await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
@@ -212,7 +212,7 @@ describe('GroupUpdater', () => {
 
     const groupAdd = await builder.addUserGroupAddition(alice, group, [], [publicProvisionalUser]);
     const additionPayload: UserGroupAdditionRecord = (groupAdd.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(charlie.user, charlie.device, [provisionalUserKeys]));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(charlie.user, charlie.device, [provisionalUserKeys]));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
     await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
@@ -230,7 +230,7 @@ describe('GroupUpdater', () => {
     const alice = await builder.addUserV3('alice');
     const group = await builder.addUserGroupCreation(alice, [], [publicProvisionalUser]);
     const payload: UserGroupCreationRecord = (group.entry.payload_unverified: any);
-    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeystoreOfDevice(alice.user, alice.device));
+    const groupUpdater = new GroupUpdater(groupStore, await builder.getKeyStoreOfDevice(alice.user, alice.device));
 
     await groupUpdater.applyEntry({ ...group.entry, ...payload });
 

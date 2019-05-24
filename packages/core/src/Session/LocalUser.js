@@ -4,7 +4,7 @@ import EventEmitter from 'events';
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/identity';
 
-import KeyStore from './Keystore';
+import KeyStore from './KeyStore';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
 import type { UserData, DelegationToken } from './types';

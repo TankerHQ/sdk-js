@@ -5,12 +5,12 @@ import { mergeSchemas } from '@tanker/datastore-base';
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
-import Keystore from '../Session/Keystore';
+import KeyStore from '../Session/KeyStore';
 import UserStore from '../Users/UserStore';
 import TrustchainStore from '../Trustchain/TrustchainStore';
 
 const schemas = mergeSchemas(
-  Keystore.schemas,
+  KeyStore.schemas,
   UserStore.schemas,
   TrustchainStore.schemas,
 );

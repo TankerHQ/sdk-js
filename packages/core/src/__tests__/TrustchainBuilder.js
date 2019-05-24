@@ -20,7 +20,7 @@ import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
 
 import Storage from '../Session/Storage';
-import Keystore from '../Session/Keystore';
+import KeyStore from '../Session/KeyStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
@@ -35,7 +35,7 @@ export default class TrustchainBuilder {
   trustchainStore: TrustchainStore;
   trustchainVerifier: TrustchainVerifier;
   trustchain: Trustchain;
-  keyStore: Keystore;
+  keyStore: KeyStore;
   userStore: UserStore;
   groupStore: GroupStore;
   groupUpdater: GroupUpdater;
@@ -45,7 +45,7 @@ export default class TrustchainBuilder {
 
   async init(skipRootBlock?: bool) {
     const schemas = mergeSchemas(
-      Keystore.schemas,
+      KeyStore.schemas,
       UserStore.schemas,
       TrustchainStore.schemas,
       GroupStore.schemas,
@@ -155,11 +155,11 @@ export default class TrustchainBuilder {
     return result;
   }
 
-  async getKeystoreOfDevice(user: GeneratorUser, device: GeneratorDevice, provisionalIdentities: Array<ProvisionalUserKeys> = []): Promise<Keystore> {
+  async getKeyStoreOfDevice(user: GeneratorUser, device: GeneratorDevice, provisionalIdentities: Array<ProvisionalUserKeys> = []): Promise<KeyStore> {
     /* eslint-disable no-underscore-dangle */
 
     // $FlowExpectedError we are making a read-only key store for tests, no need for a real database
-    const keystore = new Keystore(null);
+    const keystore = new KeyStore(null);
     keystore._safe = {
       deviceId: utils.toBase64(device.id),
       signaturePair: device.signKeys,

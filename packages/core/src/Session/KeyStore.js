@@ -9,7 +9,7 @@ import type { UserKeys } from '../Blocks/payloads';
 
 const TABLE = 'device';
 
-export default class Keystore {
+export default class KeyStore {
   _ds: DataStore<*>;
   _safe: KeySafe;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
@@ -119,8 +119,8 @@ export default class Keystore {
     delete this._ds;
   }
 
-  static async open(ds: DataStore<*>, userSecret: Uint8Array): Promise<Keystore> {
-    const keystore = new Keystore(ds);
+  static async open(ds: DataStore<*>, userSecret: Uint8Array): Promise<KeyStore> {
+    const keystore = new KeyStore(ds);
     await keystore.initData(userSecret);
     return keystore;
   }
