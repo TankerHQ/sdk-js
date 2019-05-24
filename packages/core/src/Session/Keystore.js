@@ -173,7 +173,7 @@ export default class Keystore {
     return this.saveSafe();
   }
 
-  addEncryptedUserKey(keys: UserKeys): Promise<void> {
+  prependEncryptedUserKey(keys: UserKeys): Promise<void> {
     this._safe.encryptedUserKeys.unshift(keys);
     return this.saveSafe();
   }

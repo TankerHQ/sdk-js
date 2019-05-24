@@ -135,7 +135,7 @@ export class LocalUser extends EventEmitter {
 
     // Store encrypted keys for future recovery
     if (!deviceId) {
-      await this._keyStore.addEncryptedUserKey(userKeys);
+      await this._keyStore.prependEncryptedUserKey(userKeys);
       return;
     }
 
