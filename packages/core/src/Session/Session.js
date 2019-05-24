@@ -115,7 +115,8 @@ export class Session {
         method.type = 'passphrase';
       }
 
-      if (method.type === 'email') {
+      // Compat: email value might be missing if unlock method registered with SDK < 2.0.0
+      if (method.type === 'email' && method.email) {
         method.email = utils.toString(decrypt(this.localUser.userSecret, utils.fromBase64(method.email)));
       }
 
