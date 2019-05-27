@@ -11,7 +11,7 @@ import { OperationCanceled } from '../errors';
 import { type UserData, type Status, type Verification, type VerificationMethod, type EmailVerification, type PassphraseVerification, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
 
-import { fetchUnlockKey, getLastUserKey, sendUserCreation, sendUnlockUpdate } from './requests';
+import { fetchUnlockKey, getLastUserKey, sendUserCreation, sendUpdateVerificationMethod } from './requests';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './ghostDevice';
 import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCreation';
@@ -177,8 +177,8 @@ export class Session {
     await this.authenticate();
   }
 
-  updateUnlock = async (verification: EmailVerification | PassphraseVerification): Promise<void> => {
-    await sendUnlockUpdate(this._client, this.localUser, verification);
+  updateVerificationMethod = async (verification: EmailVerification | PassphraseVerification): Promise<void> => {
+    await sendUpdateVerificationMethod(this._client, this.localUser, verification);
     if (verification.passphrase) {
       this._verificationMethods.set('passphrase', { type: 'passphrase' });
     }

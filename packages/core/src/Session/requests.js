@@ -116,31 +116,35 @@ export const sendUserCreation = async (client: Client, localUser: LocalUser, use
   await client.send('create user', b64RequestObject(userCreationRequest));
 };
 
-export const sendUnlockUpdate = async (client: Client, localUser: LocalUser, verification: Verification) => {
-  let signatureBuffer = utils.concatArrays(localUser.trustchainId, localUser.deviceId);
-  let claims;
+export const sendUpdateVerificationMethod = async (client: Client, localUser: LocalUser, verification: Verification) => { // eslint-disable-line no-underscore-dangle
+  const request = {};
 
   if (verification.email) {
-    const emailArray = utils.fromString(verification.email);
-    signatureBuffer = utils.concatArrays(signatureBuffer, emailArray);
-    claims = {
-      email: emailArray,
-      encrypted_email: encrypt(localUser.userSecret, emailArray),
+    request.verification = {
+      email: verification.email,
+      encrypted_email: encrypt(localUser.userSecret, utils.fromString(verification.email)),
+      verification_code: verification.verificationCode,
     };
   } else if (verification.passphrase) {
-    const hashedPassphrase = generichash(utils.fromString(verification.passphrase));
-    signatureBuffer = utils.concatArrays(signatureBuffer, hashedPassphrase);
-    claims = { password: hashedPassphrase };
-  } else {
-    throw new Error('Invalid verification method for createUnlockKeyRequest');
+    request.verification = {
+      passphrase: generichash(utils.fromString(verification.passphrase)),
+    };
   }
 
-  const signature = tcrypto.sign(signatureBuffer, localUser.privateSignatureKey);
-  const request = {
-    trustchain_id: localUser.trustchainId,
-    device_id: localUser.deviceId,
-    claims,
-    signature,
-  };
-  await client.send('update unlock key', b64RequestObject(request));
+  try {
+    await client.send('update verification method', b64RequestObject(request));
+  } catch (e) {
+    if (e instanceof ServerError) {
+      if (e.error.code === 'invalid_verification_method') {
+        if (verification.passphrase) {
+          throw new InvalidPassphrase(e);
+        } else {
+          throw new InvalidVerificationCode(e);
+        }
+      } else if (e.error.code === 'max_attempts_reached') {
+        throw new MaxVerificationAttemptsReached(e);
+      }
+    }
+    throw e;
+  }
 };

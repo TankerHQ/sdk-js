@@ -89,6 +89,24 @@ const generateUnlockTests = (args: TestArgs) => {
         // check received email is the updated one on new device
         expect(await bobPhone.getVerificationMethods()).to.deep.have.members([{ type: 'email', email: 'elton@doe.com' }]);
       });
+
+      it('should fail to update the email verification method if the verification code is wrong', async () => {
+        let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
+
+        // try to update email with a code containing a typo
+        verificationCode = await trustchainHelper.getWrongVerificationCode('elton@doe.com');
+        await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+      });
+
+      it('should fail to update the email verification method if the verification code is not for the targeted email', async () => {
+        let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
+
+        // try to update email with a code for another email address
+        verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+      });
     });
 
     describe('device unlocking by passphrase', () => {
