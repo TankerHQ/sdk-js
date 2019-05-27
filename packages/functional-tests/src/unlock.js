@@ -130,13 +130,11 @@ const generateUnlockTests = (args: TestArgs) => {
       });
 
       it('fails to unlock a new device with a wrong verification code', async () => {
-        const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
-        const correctVerificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
-        // introduce a typo on the first digit
-        const wrongVerificationCode = (parseInt(correctVerificationCode[0], 10) + 1) % 10 + correctVerificationCode.substring(1);
-        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode: wrongVerificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        verificationCode = await trustchainHelper.getWrongVerificationCode('john@doe.com');
+        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
       });
 
       it('fails to unlock a new device without having registered an email address', async () => {
