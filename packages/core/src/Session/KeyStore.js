@@ -116,7 +116,8 @@ export default class KeyStore {
     this._safe.deviceId = '';
 
     // Then let GC do its job
-    delete this._ds;
+    // $FlowIKnow
+    this._ds = null;
   }
 
   static async open(ds: DataStore<*>, userSecret: Uint8Array): Promise<KeyStore> {
