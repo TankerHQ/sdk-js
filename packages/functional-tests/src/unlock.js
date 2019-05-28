@@ -58,6 +58,16 @@ const generateUnlockTests = (args: TestArgs) => {
         expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'email', email: 'john@doe.com' }]);
       });
 
+      it('should fail to register an email verification method if the verification code is wrong', async () => {
+        const verificationCode = await trustchainHelper.getWrongVerificationCode('john@doe.com');
+        await expect(bobLaptop.registerIdentity({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+      });
+
+      it('should fail to register an email verification method if the verification code is not for the targeted email', async () => {
+        const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        await expect(bobLaptop.registerIdentity({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+      });
+
       it('can test that both verification methods have been registered', async () => {
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
