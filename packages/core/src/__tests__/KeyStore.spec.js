@@ -6,65 +6,52 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
-import KeySafe from '../Session/KeySafe';
-import Keystore from '../Session/Keystore';
+import type { UserKeys } from '../Blocks/payloads';
+import KeyStore from '../Session/KeyStore';
 
-describe('Keystore', () => {
+describe('KeyStore', () => {
   let dbName;
   let keystoreConfig;
   let datastore;
-  const { schemas } = Keystore;
+  let secret;
+  const { schemas } = KeyStore;
 
   beforeEach(async () => {
     dbName = `keystore-test-${makePrefix()}`;
     keystoreConfig = { ...dataStoreConfig, dbName, schemas };
     datastore = await openDataStore(keystoreConfig);
+    secret = createUserSecretBinary('trustchainid', 'bob');
   });
 
-  it('has always a "keySafe" record', async () => {
-    const secret = createUserSecretBinary('trustchainid', 'user-id');
-    const store = await Keystore.open(datastore, secret);
-    expect(store._safe instanceof KeySafe).to.be.true; // eslint-disable-line no-underscore-dangle
-  });
-
-  it('should keep our keys between two sessions', async () => {
-    const userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
+  it('creates a safe when first opened that can be re-opened later', async () => {
     const getAllKeys = (k) => ({
       privateSignatureKey: k.privateSignatureKey,
       publicSignatureKey: k.publicSignatureKey,
       privateEncryptionKey: k.privateEncryptionKey,
       publicEncryptionKey: k.publicEncryptionKey
     });
-    let keystore = await Keystore.open(datastore, userSecret);
-    const before = getAllKeys(keystore);
+
+    const keystore1 = await KeyStore.open(datastore, secret);
+    const keys1 = getAllKeys(keystore1);
+
     await datastore.close();
     datastore = await openDataStore(keystoreConfig);
-    keystore = await Keystore.open(datastore, userSecret);
-    const after = getAllKeys(keystore);
-    expect(after).to.deep.equal(before);
-  });
 
+    const keystore2 = await KeyStore.open(datastore, secret);
+    const keys2 = getAllKeys(keystore2);
 
-  it('creates a safe when first opened that can be re-opened later', async () => {
-    const secret = createUserSecretBinary('trustchainid', 'user-id');
-    const keystore1 = await Keystore.open(datastore, secret);
-    const generatedKey = keystore1.privateEncryptionKey;
-    const keystore2 = await Keystore.open(datastore, secret);
-    const savedKey = keystore2.privateEncryptionKey;
-    expect(generatedKey).to.deep.equal(savedKey);
+    expect(keys1).to.deep.equal(keys2);
   });
 
   it('can set the device ID', async () => {
-    const secret = createUserSecretBinary('trustchainid', 'bob');
-    const keystore = await Keystore.open(datastore, secret);
+    const keystore = await KeyStore.open(datastore, secret);
     await keystore.setDeviceId(utils.fromString('bob-laptop-hash'));
     // $FlowIKnow
     expect(utils.toString(keystore.deviceId)).to.eq('bob-laptop-hash');
   });
 
   it('can insert user keys in the right order', async () => {
-    const secret = createUserSecretBinary('trustchainid', 'bob');
-    const keystore = await Keystore.open(datastore, secret);
+    const keystore = await KeyStore.open(datastore, secret);
 
     const key1 = tcrypto.makeEncryptionKeyPair();
     const key2 = tcrypto.makeEncryptionKeyPair();
@@ -77,9 +64,24 @@ describe('Keystore', () => {
     expect(keystore.userKeys).to.deep.eq([key1, key2, key3]);
   });
 
+  it('can prepend then take all encrypted user keys', async () => {
+    const keystore = await KeyStore.open(datastore, secret);
+
+    const key1: UserKeys = ('key1': any);
+    const key2: UserKeys = ('key2': any);
+
+    await keystore.prependEncryptedUserKey(key2);
+    await keystore.prependEncryptedUserKey(key1);
+
+    let keys = await keystore.takeEncryptedUserKeys();
+    expect(keys).to.deep.eq([key1, key2]);
+
+    keys = await keystore.takeEncryptedUserKeys();
+    expect(keys).to.deep.eq([]);
+  });
+
   it('can find a user key', async () => {
-    const secret = createUserSecretBinary('trustchainid', 'bob');
-    const keystore = await Keystore.open(datastore, secret);
+    const keystore = await KeyStore.open(datastore, secret);
 
     const key1 = tcrypto.makeEncryptionKeyPair();
     const key2 = tcrypto.makeEncryptionKeyPair();

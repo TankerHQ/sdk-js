@@ -2,7 +2,7 @@
 import { tcrypto, utils } from '@tanker/crypto';
 
 import GroupStore from './GroupStore';
-import Keystore from '../Session/Keystore';
+import KeyStore from '../Session/KeyStore';
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 import type { VerifiedUserGroup } from '../Blocks/entries';
@@ -14,7 +14,7 @@ import {
 } from '../Blocks/payloads';
 import { NATURE_KIND, natureKind } from '../Blocks/Nature';
 
-function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: Keystore): ?Object {
+function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: KeyStore): ?Object {
   for (const gek of groupKeys) {
     const correspondingPair = keystore.findUserKey(gek.public_user_encryption_key);
     if (correspondingPair)
@@ -26,7 +26,7 @@ function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: 
   return null;
 }
 
-function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>, keystore: Keystore): ?Object {
+function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>, keystore: KeyStore): ?Object {
   for (const gek of groupKeys) {
     const id = utils.toBase64(utils.concatArrays(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key));
     const correspondingPair = keystore.findProvisionalKey(id);
@@ -46,9 +46,9 @@ function provisionalUnseal(ciphertext: Uint8Array, keys: ProvisionalUserKeyPairs
 
 export default class GroupUpdater {
   _groupStore: GroupStore;
-  _keystore: Keystore;
+  _keystore: KeyStore;
 
-  constructor(groupStore: GroupStore, keystore: Keystore) {
+  constructor(groupStore: GroupStore, keystore: KeyStore) {
     this._groupStore = groupStore;
     this._keystore = keystore;
   }
