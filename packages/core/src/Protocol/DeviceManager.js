@@ -3,7 +3,7 @@
 import { tcrypto, utils } from '@tanker/crypto';
 import { type SecretProvisionalIdentity, InvalidIdentity } from '@tanker/identity';
 
-import { InvalidVerificationCode, InvalidProvisionalIdentityStatus } from '../errors';
+import { InvalidVerificationCode, InvalidProvisionalIdentityStatus, MaxVerificationAttemptsReached } from '../errors';
 
 import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
@@ -136,8 +136,12 @@ export default class DeviceManager {
       res = await this._client.send('get provisional identity', { email: provisionalIdentity.value, verification_code: verification.verificationCode });
     } catch (e) {
       const error = e.error;
-      if (error.code && error.code === 'invalid_verification_code' || error.code === 'authentication_failed') {
-        throw new InvalidVerificationCode(error);
+      if (error.code) {
+        if (error.code === 'invalid_verification_code') {
+          throw new InvalidVerificationCode(error);
+        } else if (error.code === 'max_attempts_reached') {
+          throw new MaxVerificationAttemptsReached(e);
+        }
       }
       throw e;
     }

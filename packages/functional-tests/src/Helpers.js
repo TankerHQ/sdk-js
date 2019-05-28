@@ -116,6 +116,15 @@ export class TrustchainHelper {
     return answer.verification_code;
   }
 
+  async getWrongVerificationCode(email: string): Promise<string> {
+    const code: string = await this.getVerificationCode(email);
+    const digits: Array<string> = code.split('');
+    const wrongDigitIndex = Math.floor(Math.random() * digits.length);
+    const wrongDigit = (parseInt(code[wrongDigitIndex], 10) + 1) % 10;
+    digits[wrongDigitIndex] = `${wrongDigit}`;
+    return digits.join();
+  }
+
   async cleanup(): Promise<void> {
     await this.deleteRemoteTrustchain();
   }

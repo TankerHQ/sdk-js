@@ -208,7 +208,7 @@ export class Tanker extends EventEmitter {
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
 
-    return this._session.updateUnlock(verification);
+    return this._session.updateVerificationMethod(verification);
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {
