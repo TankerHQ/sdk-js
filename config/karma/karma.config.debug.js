@@ -1,14 +1,12 @@
 // @noflow
 const karmaConfig = require('./karma.config.base');
+const { makeBaseConfig } = require('../webpack.config.base');
 
 module.exports = (config) => {
   config.set({
     ...karmaConfig,
 
-    webpack: {
-      ...karmaConfig.webpack,
-      mode: 'development',
-    },
+    webpack: makeBaseConfig({ mode: 'development', target: 'web' }),
 
     // level of logging
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
