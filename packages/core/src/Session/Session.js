@@ -18,7 +18,6 @@ import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCre
 
 export class Session {
   localUser: LocalUser;
-  _verificationMethods: Map<string, VerificationMethod>;
 
   storage: Storage;
   _trustchain: Trustchain;
@@ -34,17 +33,12 @@ export class Session {
     this.localUser = localUser;
     this._client = client;
     this._status = status || statuses.STOPPED;
-    this._verificationMethods = new Map();
 
     this.apis = new Apis(localUser, storage, trustchain, client);
   }
 
   get status(): Status {
     return this._status;
-  }
-
-  get verificationMethods(): Map<string, VerificationMethod> {
-    return this._verificationMethods;
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
@@ -83,45 +77,39 @@ export class Session {
   }
 
   authenticate = async () => {
-    const authData = await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
-
-    if (authData.unlock_methods) {
-      if (!Array.isArray(authData.unlock_methods))
-        throw new Error('Assertion error: invalid response from server');
-
-      this.setVerificationMethods(authData.unlock_methods);
-    } else {
-      this.setVerificationMethods([{ type: 'verificationKey' }]);
-    }
-
+    await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
     await this._trustchain.ready();
 
     if (this.localUser.wasRevoked) {
       await this.nuke();
       throw new OperationCanceled('this device was revoked');
     }
+
     this._status = statuses.READY;
   }
 
-  setVerificationMethods = (verificationMethods: Array<VerificationMethod>) => {
-    this._verificationMethods = new Map();
+  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => {
+    const request = {
+      trustchain_id: utils.toBase64(this.localUser.trustchainId),
+      user_id: utils.toBase64(this.localUser.userId),
+    };
 
-    verificationMethods.forEach(verificationMethod => {
-      // $FlowIssue Flow believes that VerificationMethod is any...
-      const method: VerificationMethod = { ...verificationMethod };
+    const res = await this._client.send('get verification methods', request);
 
-      // $FlowExpectedError We receive 'password' instead of 'passphrase' to be backward compatible with SDK < 2.0
-      if (method.type === 'password') {
-        method.type = 'passphrase';
-      }
+    return res.verification_methods.map(verificationMethod => {
+      const method = { ...verificationMethod };
 
       // Compat: email value might be missing if unlock method registered with SDK < 2.0.0
       if (method.type === 'email' && method.email) {
         method.email = utils.toString(decrypt(this.localUser.userSecret, utils.fromBase64(method.email)));
       }
 
-      this._verificationMethods.set(method.type, method);
+      return method;
     });
+  }
+
+  setVerificationMethod = async (verification: EmailVerification | PassphraseVerification): Promise<void> => {
+    await sendUpdateVerificationMethod(this._client, this.localUser, verification);
   }
 
   createUser = async (verification: Verification) => {
@@ -175,16 +163,6 @@ export class Session {
     );
     await this._client.sendBlock(newDevice.deviceBlock);
     await this.authenticate();
-  }
-
-  updateVerificationMethod = async (verification: EmailVerification | PassphraseVerification): Promise<void> => {
-    await sendUpdateVerificationMethod(this._client, this.localUser, verification);
-    if (verification.passphrase) {
-      this._verificationMethods.set('passphrase', { type: 'passphrase' });
-    }
-    if (verification.email) {
-      this._verificationMethods.set('email', { type: 'email', email: verification.email });
-    }
   }
 
   generateVerificationKey = async () => {

@@ -169,7 +169,7 @@ describe('Tanker', () => {
         localUser: {},
         storage: { keyStore: { deviceId: new Uint8Array([]) } },
         status: statuses.READY,
-        verificationMethods: new Map([['passphrase', { type: 'passphrase' }]]),
+        getVerificationMethods: async () => [{ type: 'passphrase' }],
       }: any);
     });
 
@@ -196,8 +196,7 @@ describe('Tanker', () => {
       });
 
       it('should throw if setting another verification method after verification key has been used', async () => {
-        // $FlowExpectedError Assigning a readonly property for test purpose
-        tanker._session.verificationMethods = new Map([['verificationKey', { type: 'verificationKey' }]]); // eslint-disable-line no-underscore-dangle
+        tanker._session.getVerificationMethods = async () => [{ type: 'verificationKey' }]; // eslint-disable-line no-underscore-dangle
         await expect(tanker.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(OperationCanceled);
       });
 

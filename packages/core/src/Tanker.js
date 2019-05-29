@@ -199,21 +199,23 @@ export class Tanker extends EventEmitter {
   }
 
   async setVerificationMethod(verification: EmailVerification | PassphraseVerification): Promise<void> {
-    this.assert(statuses.READY, 'update a verification method');
+    this.assert(statuses.READY, 'set a verification method');
+
     assertVerification(verification);
-
-    if (this._session.verificationMethods.has('verificationKey'))
-      throw new OperationCanceled('Cannot call setVerificationMethod() after a verification key has been used');
-
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
 
-    return this._session.updateVerificationMethod(verification);
+    const verificationMethods = await this._session.getVerificationMethods();
+
+    if (verificationMethods.some(vm => vm.type === 'verificationKey'))
+      throw new OperationCanceled('Cannot call setVerificationMethod() after a verification key has been used');
+
+    return this._session.setVerificationMethod(verification);
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {
     this.assert(statuses.READY, 'get registered verification methods');
-    return [...this._session.verificationMethods.values()];
+    return this._session.getVerificationMethods();
   }
 
   async generateVerificationKey(): Promise<string> {
