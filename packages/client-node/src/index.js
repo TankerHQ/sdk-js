@@ -102,6 +102,6 @@ class Tanker extends TankerCore {
 }
 
 export type { b64string } from '@tanker/core';
-export { errors, fromBase64, fromString, toBase64, toString } from '@tanker/core';
+export { errors, fromBase64, toBase64 } from '@tanker/core';
 export { Tanker };
 export default Tanker;
