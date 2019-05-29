@@ -118,6 +118,10 @@ describe('Tanker', () => {
       expect(() => tanker.deviceId).to.throw(InvalidSessionStatus);
     });
 
+    it('should throw when trying to get verification methods', async () => {
+      await expect(tanker.getVerificationMethods()).to.be.rejectedWith(InvalidSessionStatus);
+    });
+
     describe('start', () => {
       it('should throw when identity is undefined', async () => {
         // $FlowExpectedError

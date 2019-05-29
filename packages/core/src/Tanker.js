@@ -214,7 +214,14 @@ export class Tanker extends EventEmitter {
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {
-    this.assert(statuses.READY, 'get registered verification methods');
+    // Note: sadly this.assert() does not assert "one in a list"
+    if ([statuses.READY, statuses.IDENTITY_VERIFICATION_NEEDED].indexOf(this.status) === -1) {
+      const { name: ready } = statusDefs[statuses.READY];
+      const { name: verification } = statusDefs[statuses.IDENTITY_VERIFICATION_NEEDED];
+      const message = `Expected status ${ready} or ${verification} but got ${this.statusName} trying to get verification methods.`;
+      throw new InvalidSessionStatus(this.status, message);
+    }
+
     return this._session.getVerificationMethods();
   }
 
