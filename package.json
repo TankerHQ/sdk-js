@@ -74,11 +74,11 @@
     "karma-webpack": "^4.0.0-rc.6",
     "mocha": "^6.1.4",
     "nyc": "^14.1.1",
-    "rollup": "^1.11.3",
+    "rollup": "^1.12.5",
     "rollup-plugin-babel": "^4.3.2",
     "rollup-plugin-flow": "^1.1.1",
     "rollup-plugin-local-resolve": "1.0.7",
-    "rollup-plugin-terser": "^4.0.4",
+    "rollup-plugin-terser": "^5.0.0",
     "sinon": "^4.5.0",
     "webpack": "^4.32.2",
     "webpack-cli": "^3.3.2"
