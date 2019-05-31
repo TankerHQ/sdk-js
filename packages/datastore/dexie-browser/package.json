@@ -16,7 +16,7 @@
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
-    "@babel/runtime-corejs2": "7.4.4",
+    "@babel/runtime-corejs2": "7.4.5",
     "dexie": "^2.0.4"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 // @noflow
 const path = require('path');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const { makeBaseConfig } = require('../../../config/webpack.config.base');
 
 const webpackBaseConfig = makeBaseConfig({ mode: 'production', target: 'web' });
