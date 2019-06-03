@@ -199,21 +199,30 @@ export class Tanker extends EventEmitter {
   }
 
   async setVerificationMethod(verification: EmailVerification | PassphraseVerification): Promise<void> {
-    this.assert(statuses.READY, 'update a verification method');
+    this.assert(statuses.READY, 'set a verification method');
+
     assertVerification(verification);
-
-    if (this._session.verificationMethods.has('verificationKey'))
-      throw new OperationCanceled('Cannot call setVerificationMethod() after a verification key has been used');
-
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
 
-    return this._session.updateVerificationMethod(verification);
+    const verificationMethods = await this._session.getVerificationMethods();
+
+    if (verificationMethods.some(vm => vm.type === 'verificationKey'))
+      throw new OperationCanceled('Cannot call setVerificationMethod() after a verification key has been used');
+
+    return this._session.setVerificationMethod(verification);
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {
-    this.assert(statuses.READY, 'get registered verification methods');
-    return [...this._session.verificationMethods.values()];
+    // Note: sadly this.assert() does not assert "one in a list"
+    if ([statuses.READY, statuses.IDENTITY_VERIFICATION_NEEDED].indexOf(this.status) === -1) {
+      const { name: ready } = statusDefs[statuses.READY];
+      const { name: verification } = statusDefs[statuses.IDENTITY_VERIFICATION_NEEDED];
+      const message = `Expected status ${ready} or ${verification} but got ${this.statusName} trying to get verification methods.`;
+      throw new InvalidSessionStatus(this.status, message);
+    }
+
+    return this._session.getVerificationMethods();
   }
 
   async generateVerificationKey(): Promise<string> {

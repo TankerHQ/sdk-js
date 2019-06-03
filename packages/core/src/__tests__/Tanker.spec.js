@@ -91,7 +91,7 @@ describe('Tanker', () => {
     });
   });
 
-  describe('closed session', () => {
+  describe('session stopped', () => {
     let tanker;
     let options;
 
@@ -103,6 +103,23 @@ describe('Tanker', () => {
         sdkType: 'test'
       };
       tanker = new Tanker(options);
+    });
+
+    it('get options', async () => {
+      expect(tanker.options).to.deep.equal(options);
+    });
+
+    it('should throw if EncryptionOptions is invalid', async () => {
+      // $FlowExpectedError
+      expect(() => tanker._parseEncryptionOptions('not an object')).to.throw(InvalidArgument); // eslint-disable-line no-underscore-dangle
+    });
+
+    it('should throw when trying to get deviceId', async () => {
+      expect(() => tanker.deviceId).to.throw(InvalidSessionStatus);
+    });
+
+    it('should throw when trying to get verification methods', async () => {
+      await expect(tanker.getVerificationMethods()).to.be.rejectedWith(InvalidSessionStatus);
     });
 
     describe('start', () => {
@@ -135,23 +152,10 @@ describe('Tanker', () => {
         const truncatedIdentity = identity.slice(0, identity.length - 10);
         await expect(tanker.start(truncatedIdentity)).to.be.rejectedWith(InvalidIdentity);
       });
-
-      it('should throw when trying to get deviceId', async () => {
-        expect(() => tanker.deviceId).to.throw(InvalidSessionStatus);
-      });
-    });
-
-    it('get options', async () => {
-      expect(tanker.options).to.deep.equal(options);
-    });
-
-    it('should throw if EncryptionOptions is invalid', async () => {
-      // $FlowExpectedError
-      expect(() => tanker._parseEncryptionOptions('not an object')).to.throw(InvalidArgument); // eslint-disable-line no-underscore-dangle
     });
   });
 
-  describe('opened session', () => {
+  describe('session ready', () => {
     let tanker;
 
     before(() => {
@@ -164,16 +168,16 @@ describe('Tanker', () => {
     });
 
     beforeEach(() => {
-      // "open" a session
+      // forge a "ready" session
       tanker._session = ({ // eslint-disable-line no-underscore-dangle
         localUser: {},
         storage: { keyStore: { deviceId: new Uint8Array([]) } },
         status: statuses.READY,
-        verificationMethods: new Map([['passphrase', { type: 'passphrase' }]]),
+        getVerificationMethods: async () => [{ type: 'passphrase' }],
       }: any);
     });
 
-    describe('verification method update', () => {
+    describe('set verification method', () => {
       const badArgs = [
         undefined,
         null,
@@ -196,8 +200,7 @@ describe('Tanker', () => {
       });
 
       it('should throw if setting another verification method after verification key has been used', async () => {
-        // $FlowExpectedError Assigning a readonly property for test purpose
-        tanker._session.verificationMethods = new Map([['verificationKey', { type: 'verificationKey' }]]); // eslint-disable-line no-underscore-dangle
+        tanker._session.getVerificationMethods = async () => [{ type: 'verificationKey' }]; // eslint-disable-line no-underscore-dangle
         await expect(tanker.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(OperationCanceled);
       });
 
@@ -206,9 +209,18 @@ describe('Tanker', () => {
       });
     });
 
-    describe('Other methods', () => {
+    describe('other methods', () => {
       it('should get deviceId', async () => {
         expect(() => tanker.deviceId).to.not.throw();
+      });
+
+      it('should throw getResourceId has invalid argument', async () => {
+        const notUint8ArrayValues = [undefined, null, 0, {}, [], 'str'];
+
+        for (let i = 0; i < notUint8ArrayValues.length; i++) {
+          const arg = ((notUint8ArrayValues[i]: any): Uint8Array);
+          await expect(tanker.getResourceId(arg), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
       });
 
       it('should throw if revokeDevice has bad device ID', async () => {
@@ -244,17 +256,6 @@ describe('Tanker', () => {
         await expect(tanker.updateGroupMembers('', { usersToAdd: null })).to.be.rejectedWith(InvalidArgument);
         // $FlowExpectedError
         await expect(tanker.updateGroupMembers(null, { usersToAdd: ['user1'] })).to.be.rejectedWith(InvalidArgument);
-      });
-    });
-
-    describe('getResourceId', () => {
-      const notUint8ArrayValues = [undefined, null, 0, {}, [], 'str'];
-
-      it('should throw when given an invalid argument', async () => {
-        for (let i = 0; i < notUint8ArrayValues.length; i++) {
-          const arg = ((notUint8ArrayValues[i]: any): Uint8Array);
-          await expect(tanker.getResourceId(arg), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
-        }
       });
     });
 

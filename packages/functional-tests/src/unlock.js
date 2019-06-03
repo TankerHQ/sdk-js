@@ -1,17 +1,36 @@
 // @flow
 import uuid from 'uuid';
-import { errors, statuses, type TankerInterface, type Verification } from '@tanker/core';
+import { errors, statuses, type TankerInterface, type Verification, type VerificationMethod } from '@tanker/core';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
+const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod) => {
+  // $FlowExpectedError email might not be defined
+  const { type, email } = method;
+  expect(type in verification).to.be.true;
+
+  if (type === 'email') {
+    // $FlowIKnow I tested the 'email' type already
+    expect(email).to.equal(verification.email);
+  }
+};
+
 const expectUnlock = async (tanker: TankerInterface, identity: string, verification: Verification) => {
   await tanker.start(identity);
   expect(tanker.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+
+  // Remember for later testing
+  const [method, ...otherMethods] = await tanker.getVerificationMethods();
+
   await tanker.verifyIdentity(verification);
   expect(tanker.status).to.equal(READY);
+
+  // Test after verifyIdentity() to allow tests on unregistered verification types
+  expect(otherMethods).to.be.an('array').that.is.empty;
+  expectVerificationToMatchMethod(verification, method);
 };
 
 const generateUnlockTests = (args: TestArgs) => {
