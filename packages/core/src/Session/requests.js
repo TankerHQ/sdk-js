@@ -18,7 +18,7 @@ import { InvalidPassphrase, InvalidUnlockKey, InvalidVerificationCode, MaxVerifi
 type VerificationRequest = {|
   passphrase: Uint8Array,
 |} | {|
-  email: string,
+  email: Uint8Array,
   encrypted_email: Uint8Array,
   verification_code: string,
 |};
@@ -112,7 +112,7 @@ const doSendUserCreation = async (client: Client, localUser: LocalUser, userCrea
   if (verification.email) {
     request.encrypted_unlock_key = encryptedUnlockKey;
     request.verification = {
-      email: verification.email,
+      email: generichash(utils.fromString(verification.email)),
       encrypted_email: encrypt(localUser.userSecret, utils.fromString(verification.email)),
       verification_code: verification.verificationCode
     };
@@ -136,7 +136,7 @@ const doSendUpdateVerificationMethod = async (client: Client, localUser: LocalUs
 
   if (verification.email) {
     request.verification = {
-      email: verification.email,
+      email: generichash(utils.fromString(verification.email)),
       encrypted_email: encrypt(localUser.userSecret, utils.fromString(verification.email)),
       verification_code: verification.verificationCode,
     };
