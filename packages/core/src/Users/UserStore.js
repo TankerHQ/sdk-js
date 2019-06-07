@@ -46,7 +46,7 @@ const schemaV2 = {
 };
 
 export default class UserStore {
-  _ds: DataStore<*>;
+  /*:: _ds: DataStore<*>; */
   _callbacks: Callbacks;
   _userId: Uint8Array;
 

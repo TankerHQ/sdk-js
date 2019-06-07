@@ -18,7 +18,7 @@ function extractSortKey(sort: SortParams): string {
 /* eslint-disable no-underscore-dangle */
 
 export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase implements DataStore<PouchDB> {
-  _dbs: { [name: string]: PouchDB };
+  /*:: _dbs: { [name: string]: PouchDB }; */
   fromDB: Function;
   toDB: Function;
 

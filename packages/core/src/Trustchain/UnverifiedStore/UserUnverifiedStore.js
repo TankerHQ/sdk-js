@@ -11,7 +11,7 @@ const TABLE_DEVICE_TO_USER = 1; // Maps deviceId to userId, for revocation targe
 const TABLE_LAST_INDEXES = 2; // Maps userId to last fetched index, to filter on insert
 
 export default class UserUnverifiedStore {
-  _ds: DataStore<*>;
+  /*:: _ds: DataStore<*>; */
 
   static tables = [{
     name: 'unverified_user_entries',

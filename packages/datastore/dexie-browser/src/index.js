@@ -17,8 +17,8 @@ class UnsupportedTypeError extends Error {
 Dexie.dataStoreName = 'DexieBrowser';
 
 export default () => class DexieBrowserStore implements DataStore<Dexie> {
-  _db: Dexie;
-  _indexes: { [table: string]: { [field: string]: bool } };
+  /*:: _db: Dexie; */
+  /*:: _indexes: { [table: string]: { [field: string]: bool } }; */
   fromDB: Function;
 
   constructor(db: Dexie) {
