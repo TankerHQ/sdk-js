@@ -8,10 +8,10 @@ import { Client, type ClientOptions } from '../Network/Client';
 import { takeChallenge } from './ClientAuthenticator';
 import { decrypt } from '../DataProtection/Encryptors/v2';
 import { OperationCanceled } from '../errors';
-import { type UserData, type Status, type Verification, type VerificationMethod, type EmailVerification, type PassphraseVerification, statuses } from './types';
+import { type UserData, type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
 
-import { fetchUnlockKey, getLastUserKey, sendUserCreation, sendUpdateVerificationMethod } from './requests';
+import { sendGetVerificationKey, getLastUserKey, sendUserCreation, sendSetVerificationMethod } from './requests';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './ghostDevice';
 import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCreation';
@@ -108,8 +108,8 @@ export class Session {
     });
   }
 
-  setVerificationMethod = async (verification: EmailVerification | PassphraseVerification): Promise<void> => {
-    await sendUpdateVerificationMethod(this._client, this.localUser, verification);
+  setVerificationMethod = async (verification: RemoteVerification): Promise<void> => {
+    await sendSetVerificationMethod(this._client, this.localUser, verification);
   }
 
   createUser = async (verification: Verification) => {
@@ -147,7 +147,8 @@ export class Session {
     if (verification.verificationKey) {
       unlockKey = verification.verificationKey;
     } else {
-      const encryptedUnlockKey = await fetchUnlockKey(this.localUser, this._client, verification);
+      const remoteVerification = ((verification: any): RemoteVerification);
+      const encryptedUnlockKey = await sendGetVerificationKey(this.localUser, this._client, remoteVerification);
       unlockKey = decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
     }
 

@@ -9,7 +9,7 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 import { Tanker, optionsWithDefaults } from '..';
 import { InvalidArgument, InvalidIdentity, InvalidSessionStatus, OperationCanceled } from '../errors';
 
-import { type EmailVerification, type PassphraseVerification, statuses } from '../Session/types';
+import { type RemoteVerification, statuses } from '../Session/types';
 import { type ShareWithOptions } from '../DataProtection/ShareWithOptions';
 
 describe('Tanker', () => {
@@ -194,7 +194,7 @@ describe('Tanker', () => {
 
       it('should throw if invalid argument given', async () => {
         for (let i = 0; i < badArgs.length; i++) {
-          const arg = ((badArgs[i]: any): EmailVerification | PassphraseVerification);
+          const arg = ((badArgs[i]: any): RemoteVerification);
           await expect(tanker.setVerificationMethod(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });

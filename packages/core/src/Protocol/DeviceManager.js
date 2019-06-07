@@ -1,14 +1,15 @@
 // @flow
 
-import { tcrypto, utils } from '@tanker/crypto';
+import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { type SecretProvisionalIdentity, InvalidIdentity } from '@tanker/identity';
 
-import { InvalidVerificationCode, InvalidProvisionalIdentityStatus, MaxVerificationAttemptsReached } from '../errors';
+import { InvalidProvisionalIdentityStatus } from '../errors';
 
-import { Client } from '../Network/Client';
+import { Client, b64RequestObject } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
 import Trustchain from '../Trustchain/Trustchain';
 import Storage from '../Session/Storage';
+import { formatVerificationRequest } from '../Session/requests';
 import { statuses, type EmailVerificationMethod, type Status, type EmailVerification } from '../Session/types';
 import UserAccessor from '../Users/UserAccessor';
 
@@ -109,7 +110,7 @@ export default class DeviceManager {
     if (this._provisionalIdentity.value !== verification.email)
       throw new InvalidProvisionalIdentityStatus('Verification email does not match provisional identity');
 
-    const tankerKeys = await this._verifyAndGetProvisionalIdentityKeys(this._provisionalIdentity, verification);
+    const tankerKeys = await this._verifyAndGetProvisionalIdentityKeys(verification);
     if (tankerKeys)
       await this._claimProvisionalIdentity(this._provisionalIdentity, tankerKeys);
 
@@ -117,9 +118,14 @@ export default class DeviceManager {
   }
 
   async _getProvisionalIdentityKeys(email: string): Promise<?TankerProvisionalKeys> {
-    let res;
+    let result;
     try {
-      res = await this._client.send('get provisional identity', { email });
+      result = await this._client.send('get verified provisional identity', b64RequestObject({
+        verification_method: {
+          type: 'email',
+          email: generichash(utils.fromString(email)),
+        },
+      }));
     } catch (e) {
       const error = e.error;
       if (error.code && error.code === 'verification_needed') {
@@ -127,25 +133,14 @@ export default class DeviceManager {
       }
       throw e;
     }
-    return tankerProvisionalKeys(res);
+    return tankerProvisionalKeys(result);
   }
 
-  async _verifyAndGetProvisionalIdentityKeys(provisionalIdentity: SecretProvisionalIdentity, verification: EmailVerification): Promise<?TankerProvisionalKeys> {
-    let res;
-    try {
-      res = await this._client.send('get provisional identity', { email: provisionalIdentity.value, verification_code: verification.verificationCode });
-    } catch (e) {
-      const error = e.error;
-      if (error.code) {
-        if (error.code === 'invalid_verification_code') {
-          throw new InvalidVerificationCode(error);
-        } else if (error.code === 'max_attempts_reached') {
-          throw new MaxVerificationAttemptsReached(e);
-        }
-      }
-      throw e;
-    }
-    return tankerProvisionalKeys(res);
+  async _verifyAndGetProvisionalIdentityKeys(verification: EmailVerification): Promise<?TankerProvisionalKeys> {
+    const result = await this._client.send('get provisional identity', b64RequestObject({
+      verification: formatVerificationRequest(verification, this._localUser),
+    }));
+    return tankerProvisionalKeys(result);
   }
 
   async _claimProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity, tankerKeys: TankerProvisionalKeys): Promise<void> {

@@ -37,39 +37,42 @@ export class DecryptFailed extends TankerError {
   }
 }
 
-export class InvalidUnlockKey extends TankerError {
+export class InvalidVerificationKey extends TankerError {
   next: Error;
 
   constructor(e: Error) {
-    super('InvalidUnlockKey');
+    super('InvalidVerificationKey');
     this.next = e;
   }
 }
 
 export class InvalidPassphrase extends TankerError {
-  next: Error;
-
-  constructor(e: Error) {
-    super('InvalidPassphrase');
-    this.next = e;
+  constructor(message: string) {
+    super('InvalidPassphrase', message);
   }
 }
 
 export class InvalidVerificationCode extends TankerError {
-  next: Error;
+  constructor(message: string) {
+    super('InvalidVerificationCode', message);
+  }
+}
 
-  constructor(e: Error) {
-    super('InvalidVerificationCode');
-    this.next = e;
+export class ExpiredVerificationCode extends TankerError {
+  constructor(message: string) {
+    super('ExpiredVerificationCode', message);
+  }
+}
+
+export class VerificationMethodNotSet extends TankerError {
+  constructor(message: string) {
+    super('VerificationMethodNotSet', message);
   }
 }
 
 export class MaxVerificationAttemptsReached extends TankerError {
-  next: Error;
-
-  constructor(e: Error) {
-    super('MaxVerificationAttemptsReached');
-    this.next = e;
+  constructor(message: string) {
+    super('MaxVerificationAttemptsReached', message);
   }
 }
 
