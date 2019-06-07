@@ -16,7 +16,7 @@ export { tankerUrl, idToken };
 
 const socket = new Socket(tankerUrl, { transports: ['websocket', 'polling'] });
 
-async function sendMessage(eventName: string, message: Object | string) {
+async function send(eventName: string, message: Object | string) {
   const jdata = eventName !== 'push block' ? JSON.stringify(message) : message;
   return new Promise((resolve, reject) => {
     socket.emit(
@@ -35,6 +35,38 @@ async function sendMessage(eventName: string, message: Object | string) {
       }
     );
   });
+}
+
+class AuthenticatedRequester {
+  _reopenPromise: ?Promise<*>;
+
+  static open = async () => {
+    await send('authenticate customer', { idToken });
+    return new AuthenticatedRequester();
+  }
+
+  _reopenSession = async () => {
+    if (!this._reopenPromise) {
+      this._reopenPromise = send('authenticate customer', { idToken });
+      await this._reopenPromise;
+      this._reopenPromise = null;
+    } else {
+      await this._reopenPromise;
+    }
+  }
+
+  send = async (eventName: string, data: ?Object = null): Promise<*> => {
+    try {
+      const ret = await send(eventName, data);
+      return ret;
+    } catch (e) {
+      if (e.code === 'no_session') {
+        await this._reopenSession();
+        return send(eventName, data); // retry only once
+      }
+      throw e;
+    }
+  }
 }
 
 export async function syncTankers(...tankers: Array<TankerInterface>): Promise<void> {
@@ -74,10 +106,12 @@ export function makeRootBlock(trustchainKeyPair: Object) {
 }
 
 export class TrustchainHelper {
+  _requester: AuthenticatedRequester;
   trustchainId: Uint8Array;
   trustchainKeyPair: Object;
 
-  constructor(trustchainId: Uint8Array, trustchainKeyPair: Object) {
+  constructor(requester: AuthenticatedRequester, trustchainId: Uint8Array, trustchainKeyPair: Object) {
+    this._requester = requester;
     this.trustchainId = trustchainId;
     this.trustchainKeyPair = trustchainKeyPair;
   }
@@ -90,12 +124,12 @@ export class TrustchainHelper {
       name: `functest-${uuid.v4()}`,
       is_test: true,
     };
-    await sendMessage('authenticate customer', { idToken });
-    await sendMessage('create trustchain', message);
+    const requester = await AuthenticatedRequester.open();
+    await requester.send('create trustchain', message);
 
     const trustchainId = rootBlock.trustchain_id;
 
-    return new TrustchainHelper(trustchainId, trustchainKeyPair);
+    return new TrustchainHelper(requester, trustchainId, trustchainKeyPair);
   }
 
   generateIdentity(userId?: string): Promise<b64string> {
@@ -108,8 +142,7 @@ export class TrustchainHelper {
       trustchain_id: utils.toBase64(this.trustchainId),
       email,
     };
-    await sendMessage('authenticate customer', { idToken });
-    const answer = await sendMessage('get verification code', msg);
+    const answer = await this._requester.send('get verification code', msg);
     if (!answer.verification_code) {
       throw new Error('Invalid response');
     }
@@ -130,7 +163,6 @@ export class TrustchainHelper {
   }
 
   async deleteRemoteTrustchain(): Promise<void> {
-    await sendMessage('authenticate customer', { idToken });
-    return sendMessage('delete trustchain', { id: utils.toBase64(this.trustchainId) });
+    return this._requester.send('delete trustchain', { id: utils.toBase64(this.trustchainId) });
   }
 }
