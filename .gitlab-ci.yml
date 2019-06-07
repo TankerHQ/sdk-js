@@ -127,6 +127,8 @@ mirror:
   only:
     - /\Av[0-9.]+\z/   # public release tags only
     - master
+    - /\Afeat\/.+\z/   # feat/ branches
+
   except:
     - schedules
   before_script:
