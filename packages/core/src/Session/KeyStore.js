@@ -10,8 +10,8 @@ import type { UserKeys } from '../Blocks/payloads';
 const TABLE = 'device';
 
 export default class KeyStore {
-  _ds: DataStore<*>;
-  _safe: KeySafe;
+  /*:: _ds: DataStore<*>; */
+  /*:: _safe: KeySafe; */
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
 
   static schemas = [

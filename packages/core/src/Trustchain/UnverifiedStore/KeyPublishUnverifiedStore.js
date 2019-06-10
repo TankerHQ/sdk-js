@@ -7,7 +7,7 @@ import { entryToDbEntry, dbEntryToEntry, type UnverifiedKeyPublish } from '../..
 const TABLE_BLOCKS = 0; // Table that stores our unverified blocks
 
 export default class KeyPublishUnverifiedStore {
-  _ds: DataStore<*>;
+  /*:: _ds: DataStore<*>; */
 
   static tables = [{
     name: 'unverified_key_publishes',

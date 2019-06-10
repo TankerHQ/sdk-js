@@ -9,7 +9,7 @@ import type { UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityCla
 const UNVERIFIED_CLAIMS_TABLE = 'unverified_invite_claims'; // Table that stores our unverified claim blocks
 
 export default class ProvisionalIdentityClaimUnverifiedStore {
-  _ds: DataStore<*>;
+  /*:: _ds: DataStore<*>; */
 
   static tables = [{
     name: UNVERIFIED_CLAIMS_TABLE,

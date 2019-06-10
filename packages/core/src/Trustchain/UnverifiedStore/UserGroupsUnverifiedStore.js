@@ -11,7 +11,7 @@ const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores o
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';
 
 export default class UserGroupsUnverifiedStore {
-  _ds: DataStore<*>;
+  /*:: _ds: DataStore<*>; */
 
   static tables = [{
     name: UNVERIFIED_GROUPS_TABLE,

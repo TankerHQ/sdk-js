@@ -10,8 +10,8 @@ const TRUSTCHAIN_PUBLIC_KEY = 'trustchainPublicKey';
 
 // basic local trustchain storage
 export default class TrustchainStore {
-  _ds: DataStore<*>;
-  _lastBlockIndex: number;
+  /*:: _ds: DataStore<*>; */
+  /*:: _lastBlockIndex: number; */
   _trustchainPublicKey: ?Uint8Array;
 
   static schemas = [

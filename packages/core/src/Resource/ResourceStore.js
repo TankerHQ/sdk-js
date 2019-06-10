@@ -12,8 +12,8 @@ export type SharedKeyRecord = {
 }
 
 export default class ResourceStore {
-  _ds: DataStore<*>;
-  _userSecret: Uint8Array;
+  /*:: _ds: DataStore<*>; */
+  /*:: _userSecret: Uint8Array; */
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE }] },
