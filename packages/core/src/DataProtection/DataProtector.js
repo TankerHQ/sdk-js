@@ -105,9 +105,11 @@ export default class DataProtector {
 
   _handleShareWithSelf = (identities: Array<b64string>, shareWithSelf: bool): Array<string> => {
     if (shareWithSelf) {
-      const selfUserIdentity = utils.toB64Json(this._localUser.publicIdentity);
-      if (identities.indexOf(selfUserIdentity) === -1) {
-        return identities.concat([selfUserIdentity]);
+      const selfUserIdentity = this._localUser.publicIdentity;
+      if (!identities.map(utils.fromB64Json).some(identity => identity.target === 'user'
+                                                              && identity.value === selfUserIdentity.value
+                                                              && identity.trustchain_id === selfUserIdentity.trustchain_id)) {
+        return identities.concat([utils.toB64Json(selfUserIdentity)]);
       }
     }
 
