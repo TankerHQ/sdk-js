@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import { type PublicProvisionalUser, _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
+import { type PublicIdentity, type PublicProvisionalUser, _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 import { ResourceNotFound, DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
@@ -103,13 +103,13 @@ export default class DataProtector {
     await this._client.sendKeyPublishBlocks(blocks);
   }
 
-  _handleShareWithSelf = (identities: Array<b64string>, shareWithSelf: bool): Array<string> => {
+  _handleShareWithSelf = (identities: Array<PublicIdentity>, shareWithSelf: bool): Array<PublicIdentity> => {
     if (shareWithSelf) {
       const selfUserIdentity = this._localUser.publicIdentity;
-      if (!identities.map(utils.fromB64Json).some(identity => identity.target === 'user'
-                                                              && identity.value === selfUserIdentity.value
-                                                              && identity.trustchain_id === selfUserIdentity.trustchain_id)) {
-        return identities.concat([utils.toB64Json(selfUserIdentity)]);
+      if (!identities.some(identity => identity.target === 'user'
+                                    && identity.value === selfUserIdentity.value
+                                    && identity.trustchain_id === selfUserIdentity.trustchain_id)) {
+        return identities.concat([selfUserIdentity]);
       }
     }
 
@@ -119,9 +119,9 @@ export default class DataProtector {
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, shareWithOptions: ShareWithOptions, shareWithSelf: bool): Promise<void> {
     const groupIds = (shareWithOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
     const groups = await this._groupManager.getGroups(groupIds);
-    const b64UserIdentities = this._handleShareWithSelf(shareWithOptions.shareWithUsers || [], shareWithSelf);
-    const deserializedIdentities = b64UserIdentities.map(i => _deserializePublicIdentity(i));
-    const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
+    const deserializedIdentities = (shareWithOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
+    const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, shareWithSelf);
+    const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesWithSelf);
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
