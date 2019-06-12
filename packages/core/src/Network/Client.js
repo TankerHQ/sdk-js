@@ -212,19 +212,6 @@ export class Client extends EventEmitter {
     return result;
   }
 
-  async subscribeToCreation(publicSignatureKey: Uint8Array, publicSignatureKeySignature: Uint8Array, deviceCreatedCb: DeviceCreatedCb) {
-    const listenerId = this.registerListener('device created', () => {
-      this.unregisterListener(listenerId);
-      deviceCreatedCb();
-    });
-
-    await this.send('subscribe to creation', {
-      trustchain_id: utils.toBase64(this.trustchainId),
-      public_signature_key: utils.toBase64(publicSignatureKey),
-      signature: utils.toBase64(publicSignatureKeySignature),
-    });
-  }
-
   sendBlock = async (block: Block): Promise<void> => {
     const b2 = { index: 0, ...block };
     await this.send('push block', utils.toBase64(serializeBlock(b2)));
