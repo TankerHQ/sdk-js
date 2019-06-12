@@ -7,7 +7,7 @@ import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tan
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { ServerError, AuthenticationError } from '../errors';
+import { AuthenticationError, ExpiredVerificationCode, InvalidPassphrase, InvalidVerificationCode, MaxVerificationAttemptsReached, ServerError, VerificationMethodNotSet } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -42,6 +42,16 @@ export function b64RequestObject(requestObject: any): any {
   });
   return result;
 }
+
+const serverErrorMap = {
+  invalid_passphrase: InvalidPassphrase,
+  invalid_verification_code: InvalidVerificationCode,
+  max_attempts_reached: MaxVerificationAttemptsReached,
+  verification_code_expired: ExpiredVerificationCode,
+  verification_code_not_found: InvalidVerificationCode,
+  verification_method_not_set: VerificationMethodNotSet,
+  verification_key_not_found: VerificationMethodNotSet,
+};
 
 export type Authenticator = (string) => AuthDeviceParams;
 
@@ -193,6 +203,10 @@ export class Client extends EventEmitter {
     const jresult = await this.socket.emit(eventName, jdata);
     const result = JSON.parse(jresult);
     if (result && result.error) {
+      const SpecificError = serverErrorMap[result.error.code];
+      if (SpecificError) {
+        throw new SpecificError(result.error.message);
+      }
       throw new ServerError(result.error, this.trustchainId);
     }
     return result;
@@ -228,8 +242,6 @@ export class Client extends EventEmitter {
 
   getProvisionalIdentityPublicKeys = async (emails: Array<{ email: string }>): Promise<Array<*>> => {
     const result = await this.send('get public provisional identities', emails);
-    if (result.error)
-      throw new ServerError(result.error, this.trustchainId);
 
     return result.map(e => ({
       tankerSignaturePublicKey: utils.fromBase64(e.SignaturePublicKey),

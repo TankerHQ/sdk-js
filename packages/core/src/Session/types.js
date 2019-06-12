@@ -44,6 +44,7 @@ export type PassphraseVerification = $Exact<{ passphrase: string }>;
 export type KeyVerification = $Exact<{ verificationKey: string }>;
 
 export type Verification = EmailVerification | PassphraseVerification | KeyVerification;
+export type RemoteVerification = EmailVerification | PassphraseVerification;
 
 export const assertVerification = (verification: Verification) => {
   if (!verification || typeof verification !== 'object' || verification instanceof Array)

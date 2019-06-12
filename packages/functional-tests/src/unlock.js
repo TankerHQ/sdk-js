@@ -153,7 +153,7 @@ const generateUnlockTests = (args: TestArgs) => {
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.InvalidPassphrase);
+        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.VerificationMethodNotSet);
       });
 
       it('can register an unlock passphrase, update it, and unlock a new device with the new passphrase only', async () => {
@@ -187,7 +187,7 @@ const generateUnlockTests = (args: TestArgs) => {
       it('fails to unlock a new device without having registered an email address', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
-        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.VerificationMethodNotSet);
       });
     });
 
