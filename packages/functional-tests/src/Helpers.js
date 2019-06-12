@@ -25,7 +25,7 @@ async function send(eventName: string, message: Object | string) {
         try {
           const result = JSON.parse(jresult);
           if (result && result.error) {
-            reject(new Error(JSON.stringify(result.error)));
+            reject(new Error(result.error.code));
           } else {
             resolve(result);
           }
@@ -39,6 +39,7 @@ async function send(eventName: string, message: Object | string) {
 
 class AuthenticatedRequester {
   _reopenPromise: ?Promise<*>;
+  _tries: number = 0;
 
   static open = async () => {
     await send('authenticate customer', { idToken });
@@ -56,16 +57,19 @@ class AuthenticatedRequester {
   }
 
   send = async (eventName: string, data: ?Object = null): Promise<*> => {
+    let ret;
     try {
-      const ret = await send(eventName, data);
-      return ret;
+      ret = await send(eventName, data);
     } catch (e) {
-      if (e.code === 'no_session') {
-        await this._reopenSession();
-        return send(eventName, data); // retry only once
+      if (this._tries > 5 || e.message !== 'no_session') {
+        throw e;
       }
-      throw e;
+      this._tries += 1;
+      await this._reopenSession();
+      return this.send(eventName, data);
     }
+    this._tries = 0;
+    return ret;
   }
 }
 
