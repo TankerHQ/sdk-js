@@ -95,12 +95,12 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when decrypting data with an unknow encryption format', async () => {
         const invalidEncrypted = new Uint8Array([127]);
-        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
       it('throws when decrypting data with an invalid encryption format', async () => {
         const invalidEncrypted = new Uint8Array([255]); // not a varint
-        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
       it('throws when decrypting truncated encrypted resource', async () => {

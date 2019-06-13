@@ -101,12 +101,6 @@ export class InvalidProvisionalIdentityStatus extends TankerError {
   }
 }
 
-export class InvalidEncryptionFormat extends TankerError {
-  constructor(message: string) {
-    super('InvalidEncryptionFormat', message);
-  }
-}
-
 export class ServerError extends TankerError {
   error: Object;
   b64TrustchainId: b64string;

@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { utils, aead, random, tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
-import { InvalidArgument, NotEnoughData, InvalidEncryptionFormat, DecryptionFailed } from '../errors';
+import { InvalidArgument, NotEnoughData, DecryptionFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 import { currentStreamVersion, serializeHeaderV4 } from '../Resource/ResourceManager';
 
@@ -274,10 +274,10 @@ describe('Decryptor Stream', () => {
       await expect(sync.promise).to.be.rejectedWith(NotEnoughData);
     });
 
-    it('throws InvalidEncryptionFormat when the header is corrupted', async () => {
+    it('throws DecryptionFailed when the header is corrupted', async () => {
       chunks[0][0] += 1;
       stream.write(chunks[0]);
-      await expect(sync.promise).to.be.rejectedWith(InvalidEncryptionFormat);
+      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
     it('throws DecryptionFailed when data is written in wrong order', async () => {

@@ -2,7 +2,7 @@
 import varint from 'varint';
 
 import { utils } from '@tanker/crypto';
-import { InvalidEncryptionFormat } from '../errors';
+import { DecryptionFailed } from '../errors';
 
 import * as v1 from './Encryptors/v1';
 import * as v2 from './Encryptors/v2';
@@ -13,7 +13,7 @@ const currentSimpleVersion = 3;
 
 const assertVersion = (version: number) => {
   if (allVersions.indexOf(version) === -1)
-    throw new InvalidEncryptionFormat(`unhandled format version: ${version}`);
+    throw new DecryptionFailed({ message: `unhandled format version: ${version}` });
 };
 
 const getEncryptor = (version: number) => {
@@ -38,7 +38,7 @@ export function getEncryptionFormat(encryptedData: Uint8Array): { version: numbe
     versionLength = varint.decode.bytes;
   } catch (err) {
     if (err instanceof RangeError) {
-      throw new InvalidEncryptionFormat('invalid format version in getEncryptionFormat (bad varint)');
+      throw new DecryptionFailed({ message: 'invalid format version in getEncryptionFormat (bad varint)' });
     } else {
       throw err;
     }

@@ -2,7 +2,7 @@
 import varint from 'varint';
 import { tcrypto, random, generichash, number, utils, type Key } from '@tanker/crypto';
 
-import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
+import { DecryptionFailed, InvalidArgument, NotEnoughData, ResourceNotFound } from '../errors';
 import type { VerifiedKeyPublish } from '../Blocks/entries';
 import { getEncryptionFormat, encryptData, extractResourceId } from '../DataProtection/Encryptor';
 import Trustchain from '../Trustchain/Trustchain';
@@ -31,7 +31,7 @@ export const extractHeaderV4 = (encryptedData: Uint8Array): { data: Uint8Array, 
   const { version, versionLength } = getEncryptionFormat(encryptedData);
 
   if (version !== 4)
-    throw new InvalidEncryptionFormat(`unhandled format version in extractHeaderV4: '${version}'`);
+    throw new DecryptionFailed({ message: `unhandled format version in extractHeaderV4: '${version}'` });
 
   const uint32Length = 4;
 
