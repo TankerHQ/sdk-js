@@ -121,7 +121,7 @@ const generateEncryptTests = (args: TestArgs) => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const corruptPos = 4;
         encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptFailed);
+        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
       it('can encrypt and decrypt a text resource', async () => {

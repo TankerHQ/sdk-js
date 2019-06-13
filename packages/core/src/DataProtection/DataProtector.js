@@ -1,7 +1,7 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 import { type PublicIdentity, type PublicProvisionalUser, _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
-import { DecryptFailed } from '../errors';
+import { DecryptionFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
@@ -138,8 +138,8 @@ export default class DataProtector {
     const key = await this._resourceManager.findKeyFromResourceId(resourceId, true);
     try {
       return decryptData(key, protectedData);
-    } catch (e) {
-      throw new DecryptFailed(e, resourceId);
+    } catch (error) {
+      throw new DecryptionFailed({ error, resourceId });
     }
   }
 

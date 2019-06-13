@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { utils, aead, random, tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
-import { InvalidArgument, NotEnoughData, InvalidEncryptionFormat, DecryptFailed } from '../errors';
+import { InvalidArgument, NotEnoughData, InvalidEncryptionFormat, DecryptionFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 import { currentStreamVersion, serializeHeaderV4 } from '../Resource/ResourceManager';
 
@@ -256,16 +256,16 @@ describe('Decryptor Stream', () => {
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
-    it('throws DecryptFailed when missing empty chunk after only maximum size chunks', async () => {
+    it('throws DecryptionFailed when missing empty chunk after only maximum size chunks', async () => {
       stream.write(chunks[0]); // valid chunk of the maximum size
       stream.end();
-      await expect(sync.promise).to.be.rejectedWith(DecryptFailed);
+      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
-    it('throws DecryptFailed when data is corrupted', async () => {
+    it('throws DecryptionFailed when data is corrupted', async () => {
       chunks[0][61] += 1;
       stream.write(chunks[0]); // corrupted chunk
-      await expect(sync.promise).to.be.rejectedWith(DecryptFailed);
+      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
     it('throws NotEnoughData when the header is not fully given during first write', async () => {
@@ -280,9 +280,9 @@ describe('Decryptor Stream', () => {
       await expect(sync.promise).to.be.rejectedWith(InvalidEncryptionFormat);
     });
 
-    it('throws DecryptFailed when data is written in wrong order', async () => {
+    it('throws DecryptionFailed when data is written in wrong order', async () => {
       stream.write(chunks[1]);
-      await expect(sync.promise).to.be.rejectedWith(DecryptFailed);
+      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
   });
 });

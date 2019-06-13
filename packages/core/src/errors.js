@@ -16,23 +16,27 @@ export class ResourceNotFound extends TankerError {
   }
 }
 
-export class DecryptFailed extends TankerError {
-  b64ResourceId: b64string;
-  next: Error;
+export class DecryptionFailed extends TankerError {
+  b64ResourceId: ?b64string;
+  next: ?Error;
 
-  constructor(e: Error, resourceId: Uint8Array) {
-    const b64ResourceId = utils.toBase64(resourceId);
-    let message;
+  constructor(args: { error?: Error, message?: string, resourceId?: Uint8Array }) {
+    const { error, resourceId } = args;
+    let message = args.message;
+    let b64ResourceId;
 
-    try {
-      message = `resource ${b64ResourceId} decryption failed with: ${e.toString()}`;
-    } catch (err) {
-      message = `resource ${b64ResourceId} decryption failed`;
+    if (resourceId) {
+      b64ResourceId = utils.toBase64(resourceId);
+
+      if (!message) {
+        message = `resource ${b64ResourceId} decryption failed`;
+        if (error) message += `with: ${error.toString()}`;
+      }
     }
 
-    super('DecryptFailed', message);
+    super('DecryptionFailed', message);
 
-    this.next = e;
+    this.next = error;
     this.b64ResourceId = b64ResourceId;
   }
 }
