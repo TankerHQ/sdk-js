@@ -146,9 +146,3 @@ export class InvalidGroupSize extends TankerError {
     super('InvalidGroupSize', msg);
   }
 }
-
-export class IdentityAlreadyRegistered extends TankerError {
-  constructor(msg: string) {
-    super('IdentityAlreadyRegistered', msg);
-  }
-}
