@@ -70,9 +70,9 @@ export class VerificationMethodNotSet extends TankerError {
   }
 }
 
-export class MaxVerificationAttemptsReached extends TankerError {
+export class TooManyAttempts extends TankerError {
   constructor(message: string) {
-    super('MaxVerificationAttemptsReached', message);
+    super('TooManyAttempts', message);
   }
 }
 

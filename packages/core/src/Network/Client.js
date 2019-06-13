@@ -7,7 +7,7 @@ import { InvalidIdentity, type PublicProvisionalIdentity, type PublicProvisional
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { ExpiredVerificationCode, InvalidPassphrase, InvalidVerificationCode, MaxVerificationAttemptsReached, ServerError, VerificationMethodNotSet } from '../errors';
+import { ExpiredVerificationCode, InvalidPassphrase, InvalidVerificationCode, TooManyAttempts, ServerError, VerificationMethodNotSet } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -52,7 +52,7 @@ export function b64RequestObject(requestObject: any): any {
 const serverErrorMap = {
   invalid_passphrase: InvalidPassphrase,
   invalid_verification_code: InvalidVerificationCode,
-  max_attempts_reached: MaxVerificationAttemptsReached,
+  too_many_attempts: TooManyAttempts,
   verification_code_expired: ExpiredVerificationCode,
   verification_code_not_found: InvalidVerificationCode,
   verification_method_not_set: VerificationMethodNotSet,
