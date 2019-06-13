@@ -3,7 +3,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
 import { createIdentity, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
 
-import { extractUserData } from '../UserData';
+import { extractUserData } from '../Session/UserData';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 import Generator, {

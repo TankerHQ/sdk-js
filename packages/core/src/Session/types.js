@@ -18,21 +18,6 @@ export const statuses: { [name: string]: number } = (() => {
 
 export type Status = $Values<typeof statuses>;
 
-export type DelegationToken = {
-  ephemeral_public_signature_key: Uint8Array,
-  ephemeral_private_signature_key: Uint8Array,
-  user_id: Uint8Array,
-  delegation_signature: Uint8Array,
-  last_reset: Uint8Array,
-}
-
-export type UserData = {
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-  userSecret: Uint8Array,
-  delegationToken: DelegationToken,
-};
-
 export type EmailVerificationMethod = $Exact<{ type: 'email', email: string }>;
 type PassphraseVerificationMethod = $Exact<{ type: 'passphrase' }>;
 type KeyVerificationMethod = $Exact<{ type: 'verificationKey' }>;

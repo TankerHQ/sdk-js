@@ -20,7 +20,7 @@ import {
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 
 import { signBlock, type Block } from './Block';
-import { type DelegationToken } from '../Session/types';
+import { type DelegationToken } from '../Session/UserData';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 
 export function getUserGroupCreationBlockSignDataV1(record: UserGroupCreationRecordV1): Uint8Array {

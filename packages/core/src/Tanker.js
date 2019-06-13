@@ -11,7 +11,7 @@ import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 import { InvalidSessionStatus, InvalidArgument, OperationCanceled } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
-import { extractUserData } from './UserData';
+import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
 import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
 import { type ShareWithOptions, validateShareWithOptions } from './DataProtection/ShareWithOptions';

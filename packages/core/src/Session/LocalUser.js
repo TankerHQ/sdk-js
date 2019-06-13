@@ -7,9 +7,9 @@ import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/ide
 import KeyStore from './KeyStore';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
-import type { UserData, DelegationToken } from './types';
 import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../utils';
+import type { UserData, DelegationToken } from './UserData';
 
 export class LocalUser extends EventEmitter {
   _userData: UserData;

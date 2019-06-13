@@ -8,8 +8,9 @@ import { Client, type ClientOptions } from '../Network/Client';
 import { takeChallenge } from './ClientAuthenticator';
 import { decrypt } from '../DataProtection/Encryptors/v2';
 import { OperationCanceled } from '../errors';
-import { type UserData, type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
+import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
+import { type UserData } from './UserData';
 
 import { sendGetVerificationKey, getLastUserKey, sendUserCreation, sendSetVerificationMethod } from './requests';
 
