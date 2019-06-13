@@ -1,7 +1,7 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 import { type PublicIdentity, type PublicProvisionalUser, _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
-import { ResourceNotFound, DecryptFailed } from '../errors';
+import { DecryptFailed } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
@@ -154,8 +154,6 @@ export default class DataProtector {
     const keys = await Promise.all(resourceIds.map(async (b64ResourceId) => {
       const resourceId = utils.fromBase64(b64ResourceId);
       const key = await this._resourceManager.findKeyFromResourceId(resourceId);
-      if (!key)
-        throw new ResourceNotFound(resourceId);
       return { resourceId, key };
     }));
 
