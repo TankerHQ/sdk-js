@@ -1,19 +1,19 @@
 // @flow
-import { NotEnoughData } from '@tanker/errors';
+import { InvalidArgument } from '@tanker/errors';
 
 import { expect } from './chai';
 import Uint8Buffer from '../Uint8Buffer';
 
 describe('Uint8Buffer', () => {
-  it('throws NotEnoughData when consuming more than stored data', () => {
+  it('throws InvalidArgument when consuming more than stored data', () => {
     const buffer = new Uint8Buffer();
 
-    expect(() => buffer.consume(30)).to.throw(NotEnoughData);
+    expect(() => buffer.consume(30)).to.throw(InvalidArgument);
 
     buffer.push(new Uint8Array(40));
 
     expect(() => buffer.consume(11)).to.not.throw();
-    expect(() => buffer.consume(30)).to.throw(NotEnoughData);
+    expect(() => buffer.consume(30)).to.throw(InvalidArgument);
   });
 
   it('can store/consume data and keeps track of stored size', () => {

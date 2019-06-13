@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { utils, aead, random, tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
-import { InvalidArgument, NotEnoughData, DecryptionFailed } from '../errors';
+import { InvalidArgument, DecryptionFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 import { currentStreamVersion, serializeHeaderV4 } from '../Resource/ResourceManager';
 
@@ -268,10 +268,10 @@ describe('Decryptor Stream', () => {
       await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
-    it('throws NotEnoughData when the header is not fully given during first write', async () => {
+    it('throws InvalidArgument when the header is not fully given during first write', async () => {
       const incompleteHeader = chunks[0].subarray(0, 1);
       stream.write(incompleteHeader);
-      await expect(sync.promise).to.be.rejectedWith(NotEnoughData);
+      await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
     it('throws DecryptionFailed when the header is corrupted', async () => {
