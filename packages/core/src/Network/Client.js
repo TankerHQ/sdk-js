@@ -7,7 +7,7 @@ import { InvalidIdentity, type PublicProvisionalIdentity, type PublicProvisional
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { AuthenticationError, ExpiredVerificationCode, InvalidPassphrase, InvalidVerificationCode, MaxVerificationAttemptsReached, ServerError, VerificationMethodNotSet } from '../errors';
+import { ExpiredVerificationCode, InvalidPassphrase, InvalidVerificationCode, MaxVerificationAttemptsReached, ServerError, VerificationMethodNotSet } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -145,11 +145,7 @@ export class Client extends EventEmitter {
       user_id: utils.toBase64(userId),
     };
 
-    try {
-      return this.send('authenticate device', authDeviceRequest);
-    } catch (e) {
-      throw new AuthenticationError(e);
-    }
+    return this.send('authenticate device', authDeviceRequest);
   }
 
   async remoteStatus(trustchainId: Uint8Array, userId: Uint8Array, publicSignatureKey: Uint8Array) {

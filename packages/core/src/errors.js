@@ -116,15 +116,6 @@ export class ServerError extends TankerError {
   }
 }
 
-export class AuthenticationError extends TankerError {
-  next: Error;
-
-  constructor(e: any) {
-    super('AuthenticationError', `couldn't authenticate: ${e.message}`);
-    this.next = e;
-  }
-}
-
 export class RecipientsNotFound extends TankerError {
   recipientIds: Array<string>;
 
