@@ -116,12 +116,6 @@ export class ServerError extends TankerError {
   }
 }
 
-export class InvalidDelegationToken extends TankerError {
-  constructor(message: string) {
-    super('InvalidDelegationToken', message);
-  }
-}
-
 export class AuthenticationError extends TankerError {
   next: Error;
 

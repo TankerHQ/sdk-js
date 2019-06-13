@@ -22,7 +22,6 @@ import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/types';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
-import { InvalidDelegationToken } from '../errors';
 
 export function getUserGroupCreationBlockSignDataV1(record: UserGroupCreationRecordV1): Uint8Array {
   return utils.concatArrays(
@@ -151,8 +150,6 @@ export class BlockGenerator {
   }
 
   makeNewUserBlock(args: NewUserParams) {
-    if (!utils.equalArray(args.delegationToken.user_id, args.userId))
-      throw new InvalidDelegationToken(`delegation token for user ${utils.toBase64(args.delegationToken.user_id)}, but we are ${utils.toBase64(args.userId)}`);
     const userKeys = tcrypto.makeEncryptionKeyPair();
 
     return this._makeDeviceBlock({
