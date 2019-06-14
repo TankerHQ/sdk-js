@@ -114,7 +114,7 @@ const generateEncryptTests = (args: TestArgs) => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const corruptPos = encrypted.length - 4;
         encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
+        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when calling decrypt with a corrupted buffer (data)', async () => {
@@ -202,13 +202,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when sharing a resource that doesn\'t exist', async () => {
         const badResourceId = 'AAAAAAAAAAAAAAAAAAAAAA==';
-
-        await expectRejectedWithProperty({
-          handler: async () => bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] }),
-          exception: errors.ResourceNotFound,
-          property: 'b64ResourceId',
-          expectedValue: badResourceId
-        });
+        await expect(bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, badResourceId);
       });
 
       it('throws when sharing with a permanent identity that is not registered', async () => {

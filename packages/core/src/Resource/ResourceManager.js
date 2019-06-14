@@ -2,7 +2,7 @@
 import varint from 'varint';
 import { tcrypto, random, generichash, number, utils, type Key } from '@tanker/crypto';
 
-import { DecryptionFailed, InvalidArgument, ResourceNotFound } from '../errors';
+import { DecryptionFailed, InvalidArgument } from '../errors';
 import type { VerifiedKeyPublish } from '../Blocks/entries';
 import { getEncryptionFormat, encryptData, extractResourceId } from '../DataProtection/Encryptor';
 import Trustchain from '../Trustchain/Trustchain';
@@ -130,7 +130,7 @@ export class ResourceManager {
       await this._trustchain.sync();
       return this.findKeyFromResourceId(resourceId);
     }
-    throw new ResourceNotFound(resourceId);
+    throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
   }
 
   async extractAndSaveResourceKey(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {

@@ -6,16 +6,6 @@ import { TankerError } from '@tanker/errors';
 export { TankerError, InvalidArgument } from '@tanker/errors';
 export { InvalidIdentity } from '@tanker/identity';
 
-export class ResourceNotFound extends TankerError {
-  b64ResourceId: b64string;
-
-  constructor(resourceId: Uint8Array) {
-    const b64ResourceId = utils.toBase64(resourceId);
-    super('ResourceNotFound', b64ResourceId);
-    this.b64ResourceId = b64ResourceId;
-  }
-}
-
 export class DecryptionFailed extends TankerError {
   b64ResourceId: ?b64string;
   next: ?Error;

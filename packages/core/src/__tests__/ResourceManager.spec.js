@@ -3,7 +3,7 @@
 import sinon from 'sinon';
 
 import { expect } from './chai';
-import { ResourceNotFound } from '../errors';
+import { InvalidArgument } from '../errors';
 import { ResourceManager } from '../Resource/ResourceManager';
 import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 
@@ -51,23 +51,23 @@ describe('ResourceManager', () => {
   });
 
   describe('FindKeyFromResourceId', () => {
-    it('throws ResourceNotFound after a single try when it cannot find the resource', async () => {
+    it('throws InvalidArgument after a single try when it cannot find the resource', async () => {
       const { trustchain, resourceStore, manager } = makeManager();
 
       const id = new Uint8Array([0]);
 
-      await expect(manager.findKeyFromResourceId(id)).to.be.rejectedWith(ResourceNotFound);
+      await expect(manager.findKeyFromResourceId(id)).to.be.rejectedWith(InvalidArgument);
       expect(resourceStore.findResourceKey.calledOnce).to.be.true;
       expect(trustchain.findKeyPublish.calledOnce).to.be.true;
       expect(trustchain.sync.notCalled).to.be.true;
     });
 
-    it('throws ResourceNotFound on second try when it cannot find the resource and retry is one', async () => {
+    it('throws InvalidArgument on second try when it cannot find the resource and retry is one', async () => {
       const { trustchain, resourceStore, manager } = makeManager();
 
       const id = new Uint8Array([0]);
 
-      await expect(manager.findKeyFromResourceId(id, true)).to.be.rejectedWith(ResourceNotFound);
+      await expect(manager.findKeyFromResourceId(id, true)).to.be.rejectedWith(InvalidArgument);
       expect(resourceStore.findResourceKey.calledTwice).to.be.true;
       expect(trustchain.findKeyPublish.calledTwice).to.be.true;
       expect(trustchain.sync.calledOnce).to.be.true;

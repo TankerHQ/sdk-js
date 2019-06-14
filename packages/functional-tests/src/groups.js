@@ -136,7 +136,7 @@ const generateGroupsTests = (args: TestArgs) => {
     it('should share old keys with added group members', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
       const encrypted = await aliceLaptop.encrypt(message, { shareWithGroups: [groupId] });
-      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
+      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
 
       const decrypted = await bobLaptop.decrypt(encrypted);
