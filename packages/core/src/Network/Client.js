@@ -101,7 +101,7 @@ export class Client extends EventEmitter {
 
   setAuthenticator = async (authenticator: Authenticator) => {
     if (this._authenticator)
-      throw new Error('authenticator has already been set');
+      throw new InternalError('authenticator has already been set');
 
     this._authenticator = authenticator;
     return this.authenticate();
@@ -110,7 +110,7 @@ export class Client extends EventEmitter {
   authenticate = async () => {
     const authenticator = this._authenticator;
     if (!authenticator)
-      throw new Error('no authenticator has been set');
+      throw new InternalError('no authenticator has been set');
     const challenge = await this.requestAuthChallenge();
     return this.authenticateDevice(authenticator(challenge));
   }
@@ -168,7 +168,7 @@ export class Client extends EventEmitter {
 
   async open(): Promise<void> {
     if (this._abortOpen) {
-      throw new Error('open already in progress');
+      throw new InternalError('open already in progress');
     }
     return new Promise((resolve, reject) => {
       let connectListener;
@@ -180,7 +180,7 @@ export class Client extends EventEmitter {
         this._abortOpen = null;
       };
 
-      this._abortOpen = () => { cleanup(); reject(new Error('aborted')); };
+      this._abortOpen = () => { cleanup(); reject(new InternalError('aborted')); };
 
       connectListener = this.registerListener('connect', () => { cleanup(); resolve(); });
       errorListener = this.registerListener('connect_error', (e) => { cleanup(); reject(e); });

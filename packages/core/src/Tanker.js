@@ -8,7 +8,7 @@ import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
-import { InvalidArgument, OperationCanceled, PreconditionFailed } from './errors';
+import { InternalError, InvalidArgument, OperationCanceled, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
@@ -162,7 +162,7 @@ export class Tanker extends EventEmitter {
   get deviceId(): b64string {
     this.assert(statuses.READY, 'get device ID');
     if (!this._session.storage.keyStore || !this._session.storage.keyStore.deviceId)
-      throw new Error('Tried to get our device hash, but could not find it!');
+      throw new InternalError('Tried to get our device hash, but could not find it!');
 
     return utils.toBase64(this._session.storage.keyStore.deviceId);
   }

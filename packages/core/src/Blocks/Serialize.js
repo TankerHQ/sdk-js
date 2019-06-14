@@ -2,6 +2,8 @@
 
 import varint from 'varint';
 
+import { InternalError } from '../errors';
+
 export type ParseResult<T> = {
   value: T,
   newOffset: number,
@@ -23,7 +25,7 @@ export function setStaticArray(src: Uint8Array, dest: Uint8Array, offset: number
 
 export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: string = 'value'): Object {
   if (offset + size > buf.length)
-    throw new Error('Out of bounds read in getStaticArray');
+    throw new InternalError('Out of bounds read in getStaticArray');
   const arr = new Uint8Array(buf.subarray(offset, offset + size)); // don't use slice, doesn't work on IE11
   return { [name]: arr, newOffset: offset + size };
 }
@@ -44,7 +46,7 @@ export function unserializeGeneric<T>(data: Uint8Array, functions: Array<Functio
   const result = unserializeGenericSub(data, functions, 0);
 
   if (result.newOffset !== data.length)
-    throw new Error(`deserialization error: trailing garbage data (unserialized cursor: ${result.newOffset}, buffer length: ${data.length})`);
+    throw new InternalError(`deserialization error: trailing garbage data (unserialized cursor: ${result.newOffset}, buffer length: ${data.length})`);
 
   return ((result.value: any): T);
 }

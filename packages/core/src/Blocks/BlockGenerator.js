@@ -20,6 +20,7 @@ import {
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 
 import { signBlock, type Block } from './Block';
+import { InternalError } from '../errors';
 import { type DelegationToken } from '../Session/UserData';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 
@@ -282,7 +283,7 @@ export class BlockGenerator {
     const keysForUsers = users.map(u => {
       const userPublicKey = getLastUserPublicKey(u);
       if (!userPublicKey)
-        throw new Error('createUserGroup: user does not have user keys');
+        throw new InternalError('createUserGroup: user does not have user keys');
       return {
         user_id: utils.fromBase64(u.userId),
         public_user_encryption_key: userPublicKey,
@@ -333,7 +334,7 @@ export class BlockGenerator {
     const keysForUsers = users.map(u => {
       const userPublicKey = getLastUserPublicKey(u);
       if (!userPublicKey)
-        throw new Error('addToUserGroup: user does not have user keys');
+        throw new InternalError('addToUserGroup: user does not have user keys');
       return {
         user_id: utils.fromBase64(u.userId),
         public_user_encryption_key: userPublicKey,

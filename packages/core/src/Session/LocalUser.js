@@ -7,6 +7,7 @@ import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/ide
 import KeyStore from './KeyStore';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import { InternalError } from '../errors';
 import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../utils';
 import type { UserData, DelegationToken } from './UserData';
@@ -52,7 +53,7 @@ export class LocalUser extends EventEmitter {
 
   applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim): Promise<ProvisionalUserKeyPairs> => {
     if (!utils.equalArray(provisionalIdentityClaim.user_id, this.userId))
-      throw new Error('Assertion error: can not apply a claim to another user');
+      throw new InternalError('Assertion error: can not apply a claim to another user');
 
     const userKeyPair = this.findUserKey(provisionalIdentityClaim.recipient_user_public_key);
 
@@ -106,7 +107,7 @@ export class LocalUser extends EventEmitter {
 
       const keyPair = this.findUserKey(encryptedUserKey.public_encryption_key);
       if (!keyPair) {
-        throw new Error('Assertion error: missing key to decrypt previous user key');
+        throw new InternalError('Assertion error: missing key to decrypt previous user key');
       }
       const userKey = {
         privateKey: tcrypto.sealDecrypt(encryptedUserKey.encrypted_previous_encryption_key, keyPair),
@@ -141,7 +142,7 @@ export class LocalUser extends EventEmitter {
 
     const privKeyIndex = findIndex(userKeys.private_keys, k => utils.equalArray(k.recipient, deviceId));
     if (privKeyIndex === -1)
-      throw new Error('Assertion error: Couldn\'t decrypt revocation keys, even tho we know our device ID!');
+      throw new InternalError('Assertion error: Couldn\'t decrypt revocation keys, even tho we know our device ID!');
 
     const userKey = {
       privateKey: tcrypto.sealDecrypt(userKeys.private_keys[privKeyIndex].key, this._deviceEncryptionKeyPair),
@@ -172,7 +173,7 @@ export class LocalUser extends EventEmitter {
   }
   get deviceId(): Uint8Array {
     if (!this._deviceId)
-      throw new Error('Assertion error: device ID not set');
+      throw new InternalError('Assertion error: device ID not set');
     return this._deviceId;
   }
   get userId(): Uint8Array {

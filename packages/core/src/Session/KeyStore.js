@@ -6,6 +6,7 @@ import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
 import type { KeySafe, IndexedProvisionalUserKeyPairs, ProvisionalUserKeyPairs } from './KeySafe';
 import type { UserKeys } from '../Blocks/payloads';
+import { InternalError } from '../errors';
 
 const TABLE = 'device';
 
@@ -68,7 +69,7 @@ export default class KeyStore {
   get currentUserKey(): tcrypto.SodiumKeyPair {
     const index = this.userKeys.length - 1;
     if (index < 0)
-      throw new Error('No user key for this user');
+      throw new InternalError('No user key for this user');
     return this.userKeys[index];
   }
 

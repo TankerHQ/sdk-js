@@ -73,7 +73,7 @@ export default class DecryptorStream extends Transform {
 
       flush: (done) => {
         if (this._state.lastEncryptedChunkSize % encryptedChunkSize === 0) {
-          done(new DecryptionFailed({ error: new Error('Data has been truncated'), resourceId }));
+          done(new DecryptionFailed({ message: 'Data has been truncated', resourceId }));
           return;
         }
 

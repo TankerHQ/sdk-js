@@ -11,6 +11,8 @@ import LocalUser from './LocalUser';
 import { type UserCreation } from './deviceCreation';
 import { type Verification, type RemoteVerification } from './types';
 import { type GhostDevice } from './ghostDevice';
+import { InternalError } from '../errors';
+
 
 type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,
@@ -48,7 +50,7 @@ export const formatVerificationRequest = (verification: RemoteVerification, loca
       hashed_passphrase: generichash(utils.fromString(verification.passphrase)),
     };
   }
-  throw new Error('Assertion error: invalid remote verification in formatVerificationRequest');
+  throw new InternalError('Assertion error: invalid remote verification in formatVerificationRequest');
 };
 
 export const sendGetVerificationKey = async (localUser: LocalUser, client: Client, verification: RemoteVerification): Promise<Uint8Array> => {

@@ -1,6 +1,7 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 
+import { InternalError } from '../errors';
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
 import TrustchainStore from './TrustchainStore';
@@ -181,7 +182,7 @@ export default class TrustchainPuller {
       } else if (isTrustchainCreation(block.nature)) {
         trustchainCreationEntry = blockToEntry(block);
       } else {
-        throw new Error('Assertion error: Unexpected nature in trustchain puller callback');
+        throw new InternalError('Assertion error: Unexpected nature in trustchain puller callback');
       }
     }
 
@@ -213,7 +214,7 @@ export default class TrustchainPuller {
     else
       userId = utils.fromBase64(userIdString);
     if (!userId) {
-      throw new Error('Assertion error: Unknown user for device revocation');
+      throw new InternalError('Assertion error: Unknown user for device revocation');
     }
     return deviceRevocationFromBlock(block, userId);
   }

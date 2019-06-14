@@ -3,6 +3,7 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 
 import { type UserKeys } from '../Blocks/payloads';
 import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
+import { InternalError } from '../errors';
 
 export type ProvisionalUserKeyPairs = {|
   id: string,
@@ -77,7 +78,7 @@ export async function deserializeKeySafe(serializedSafe: b64string, userSecret: 
 
   // Validation
   if (!safe || typeof safe !== 'object') {
-    throw new Error('Invalid key safe');
+    throw new InternalError('Invalid key safe');
   }
 
   // Migrations
@@ -93,7 +94,7 @@ export async function deserializeKeySafe(serializedSafe: b64string, userSecret: 
 
   // Validation of keys
   if (!safe.signaturePair || !safe.encryptionPair || !safe.userSecret || !safe.userKeys || !safe.encryptedUserKeys || !safe.provisionalUserKeys) {
-    throw new Error('Invalid key safe');
+    throw new InternalError('Invalid key safe');
   }
 
   return safe;

@@ -3,7 +3,7 @@
 import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { type SecretProvisionalIdentity } from '@tanker/identity';
 
-import { InvalidArgument, PreconditionFailed } from '../errors';
+import { InternalError, InvalidArgument, PreconditionFailed } from '../errors';
 import { VerificationNeeded } from '../errors.internal';
 
 import { Client, b64RequestObject } from '../Network/Client';
@@ -69,7 +69,7 @@ export default class DeviceManager {
     await this._trustchain.sync();
     const user = await this._userAccessor.findUser({ userId: this._localUser.userId });
     if (!user)
-      throw new Error('Cannot find the current user in the users');
+      throw new InternalError('Cannot find the current user in the users');
 
     const revokeDeviceBlock = this._localUser.blockGenerator.makeDeviceRevocationBlock(user, this._storage.keyStore.currentUserKey, revokedDeviceId);
     await this._client.sendBlock(revokeDeviceBlock);
@@ -100,12 +100,12 @@ export default class DeviceManager {
     }
 
     // Target is already checked when deserializing the provisional identity
-    throw new Error(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
+    throw new InternalError(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
   }
 
   async verifyProvisionalIdentity(verification: EmailVerification) {
     if (!('email' in verification))
-      throw new Error(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
+      throw new InternalError(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
 
     if (!this._provisionalIdentity)
       throw new PreconditionFailed('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');

@@ -1,4 +1,5 @@
 // @flow
+import { InternalError } from '../errors';
 
 export const NATURE = Object.freeze({
   trustchain_creation: 1,
@@ -48,7 +49,7 @@ export function preferredNature(kind: NatureKind): Nature {
     case NATURE_KIND.user_group_creation: return NATURE.user_group_creation_v2;
     case NATURE_KIND.user_group_addition: return NATURE.user_group_addition_v2;
     case NATURE_KIND.provisional_identity_claim: return NATURE.provisional_identity_claim;
-    default: throw new Error(`invalid kind: ${kind}`);
+    default: throw new InternalError(`invalid kind: ${kind}`);
   }
 }
 
@@ -70,7 +71,7 @@ export function natureKind(val: Nature): NatureKind {
     case NATURE.user_group_addition_v1: return NATURE_KIND.user_group_addition;
     case NATURE.user_group_addition_v2: return NATURE_KIND.user_group_addition;
     case NATURE.provisional_identity_claim: return NATURE_KIND.provisional_identity_claim;
-    default: throw new Error(`invalid nature: ${val}`);
+    default: throw new InternalError(`invalid nature: ${val}`);
   }
 }
 

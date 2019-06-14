@@ -1,6 +1,7 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 
+import { InternalError } from '../errors';
 import { findIndex } from '../utils';
 import { NATURE } from '../Blocks/Nature';
 import type { VerifiedDeviceCreation, VerifiedDeviceRevocation } from '../Blocks/entries';
@@ -50,7 +51,7 @@ export function applyDeviceCreationToUser(deviceCreation: VerifiedDeviceCreation
 
   for (const existingDev of oldDevices) {
     if (existingDev.deviceId === newDevice.deviceId)
-      throw new Error('Assertion error: Adding an already existing device.');
+      throw new InternalError('Assertion error: Adding an already existing device.');
   }
 
   const updatedUser = {
@@ -67,14 +68,14 @@ export function applyDeviceRevocationToUser(deviceRevocation: VerifiedDeviceRevo
   const b64DevId = utils.toBase64(deviceRevocation.device_id);
   const deviceIndex = findIndex(user.devices, (d) => d.deviceId === b64DevId);
   if (deviceIndex === -1)
-    throw new Error('Device not found!');
+    throw new InternalError('Device not found!');
   const updatedUser = { ...user };
   updatedUser.devices[deviceIndex].revokedAt = deviceRevocation.index;
 
   let userPublicKey;
   if (deviceRevocation.nature !== NATURE.device_revocation_v1) {
     if (!deviceRevocation.user_keys)
-      throw new Error('Somehow we have a DR2 without a new user key?');
+      throw new InternalError('Somehow we have a DR2 without a new user key?');
     userPublicKey = deviceRevocation.user_keys.public_encryption_key;
     user.userPublicKeys.push({ userPublicKey, index: deviceRevocation.index });
   }

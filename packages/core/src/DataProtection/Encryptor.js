@@ -2,7 +2,7 @@
 import varint from 'varint';
 
 import { utils } from '@tanker/crypto';
-import { DecryptionFailed } from '../errors';
+import { DecryptionFailed, InternalError } from '../errors';
 
 import * as v1 from './Encryptors/v1';
 import * as v2 from './Encryptors/v2';
@@ -25,7 +25,7 @@ const getEncryptor = (version: number) => {
     case 3:
       return v3;
     default:
-      throw new Error(`Assertion error: requested simple encryptor with unhandled version ${version}`);
+      throw new InternalError(`Assertion error: requested simple encryptor with unhandled version ${version}`);
   }
 };
 

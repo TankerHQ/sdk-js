@@ -1,7 +1,7 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 import { type PublicIdentity, type PublicProvisionalUser, _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
-import { DecryptionFailed } from '../errors';
+import { DecryptionFailed, InternalError } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
@@ -93,7 +93,7 @@ export default class DataProtector {
       const keys = recipientUsers.map(user => {
         const userPublicKey = getLastUserPublicKey(user);
         if (!userPublicKey)
-          throw new Error('Trying to share with a user without user public key');
+          throw new InternalError('Trying to share with a user without user public key');
         return userPublicKey;
       });
 

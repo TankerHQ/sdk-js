@@ -3,7 +3,9 @@
 import varint from 'varint';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
+
 import { type Group, type ExternalGroup, type ProvisionalEncryptionKeys } from './types';
+import { InternalError } from '../errors';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
 
@@ -43,7 +45,7 @@ function encryptGroupKeys(userSecret: Uint8Array, group: Group): Uint8Array {
 
 async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promise<EncryptedPrivateKeys> {
   if (!dbGroup.encryptedPrivateKeys)
-    throw new Error('Group not fullgroup');
+    throw new InternalError('Group not fullgroup');
 
   const ad = utils.concatArrays(
     utils.fromBase64(dbGroup._id), // eslint-disable-line no-underscore-dangle
@@ -77,9 +79,9 @@ function groupToDbGroup(userSecret: Uint8Array, group: Group): DbGroup {
 
 function externalGroupToDbGroup(group: ExternalGroup): { dbGroup: DbGroup, dbGroupProvisionalKeys: Array<DbGroupProvisionalKey> } {
   if (!group.encryptedPrivateSignatureKey)
-    throw new Error('Assertion error: trying to add external group without encrypted private signature key');
+    throw new InternalError('Assertion error: trying to add external group without encrypted private signature key');
   if (!group.provisionalEncryptionKeys)
-    throw new Error('Assertion error: trying to add external group without provisional encryption keys');
+    throw new InternalError('Assertion error: trying to add external group without provisional encryption keys');
 
   return {
     dbGroup: {
@@ -103,7 +105,7 @@ function externalGroupToDbGroup(group: ExternalGroup): { dbGroup: DbGroup, dbGro
 
 async function dbGroupToGroup(userSecret: Uint8Array, dbGroup: DbGroup): Promise<Group> {
   if (!dbGroup.encryptedPrivateKeys)
-    throw new Error(`no private key found for group ${dbGroup.publicSignatureKey}`);
+    throw new InternalError(`no private key found for group ${dbGroup.publicSignatureKey}`);
 
   const encryptedPrivateKeys = await decryptGroupKeys(userSecret, dbGroup);
   return {
@@ -189,7 +191,7 @@ export default class GroupStore {
 
   constructor(ds: DataStore<*>, userSecret: Uint8Array) {
     if (!userSecret)
-      throw new Error('Invalid user secret');
+      throw new InternalError('Invalid user secret');
 
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
@@ -208,7 +210,7 @@ export default class GroupStore {
   async updateLastGroupBlock(args: { groupId: Uint8Array, currentLastGroupBlock: Uint8Array, currentLastGroupIndex: number }): Promise<void> {
     const record = await this._findDbGroup(args.groupId);
     if (!record)
-      throw new Error(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
+      throw new InternalError(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
     if (record.encryptedPrivateKeys) {
       const group = await dbGroupToGroup(this._userSecret, record);
       group.lastGroupBlock = args.currentLastGroupBlock;
@@ -224,7 +226,7 @@ export default class GroupStore {
   async updateProvisionalEncryptionKeys(args: { groupId: Uint8Array, provisionalEncryptionKeys: Array<ProvisionalEncryptionKeys> }): Promise<void> {
     const record = await this._findDbGroup(args.groupId);
     if (!record)
-      throw new Error(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
+      throw new InternalError(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
     await this._ds.bulkPut(GROUPS_PROVISIONAL_ENCRYPTION_KEYS_TABLE, args.provisionalEncryptionKeys.map(provisionalKey => ({
       _id: utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey, args.groupId)),
       publicSignatureKeys: utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey)),
@@ -261,7 +263,7 @@ export default class GroupStore {
   findFull = async (args: { groupId?: Uint8Array, groupPublicEncryptionKey?: Uint8Array }): Promise<?Group> => {
     const { groupId, groupPublicEncryptionKey } = args;
     if (Object.keys(args).length !== 1)
-      throw new Error(`findFull: expected exactly one argument, got ${Object.keys(args).length}`);
+      throw new InternalError(`findFull: expected exactly one argument, got ${Object.keys(args).length}`);
 
     let record;
     if (groupId) {
@@ -269,7 +271,7 @@ export default class GroupStore {
     } else if (groupPublicEncryptionKey) {
       record = await this._ds.first(GROUPS_TABLE, { selector: { publicEncryptionKey: utils.toBase64(groupPublicEncryptionKey) } });
     } else
-      throw new Error('Assertion failed: findFull: both selectors are null');
+      throw new InternalError('Assertion failed: findFull: both selectors are null');
 
     if (!record || !record.encryptedPrivateKeys)
       return null;
@@ -281,7 +283,7 @@ export default class GroupStore {
   findExternal = async (args: { groupId?: Uint8Array, groupPublicEncryptionKey?: Uint8Array }): Promise<?ExternalGroup> => {
     const { groupId, groupPublicEncryptionKey } = args;
     if (Object.keys(args).length !== 1)
-      throw new Error(`findExternal: expected exactly one argument, got ${Object.keys(args).length}`);
+      throw new InternalError(`findExternal: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (groupId) {
       const record = await this._findDbGroup(groupId);
@@ -293,7 +295,7 @@ export default class GroupStore {
       if (record)
         return dbGroupToExternalGroup(record, []);
     } else
-      throw new Error('findExternal: invalid argument');
+      throw new InternalError('findExternal: invalid argument');
     return null;
   }
 
