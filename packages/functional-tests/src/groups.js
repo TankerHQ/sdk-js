@@ -4,7 +4,7 @@ import uuid from 'uuid';
 import { errors } from '@tanker/core';
 import { utils } from '@tanker/crypto';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
-import { expect, expectRejectedWithProperty } from './chai';
+import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const generateGroupsTests = (args: TestArgs) => {
@@ -13,7 +13,7 @@ const generateGroupsTests = (args: TestArgs) => {
     let alicePublicIdentity;
     let bobLaptop;
     let bobPublicIdentity;
-    let unknownUsers;
+    let unknownPublicIdentity;
     const message = "Two's company, three's a crowd";
 
     before(async () => {
@@ -29,7 +29,7 @@ const generateGroupsTests = (args: TestArgs) => {
       await bobLaptop.start(bobIdentity);
       await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-      unknownUsers = [await getPublicIdentity(await args.trustchainHelper.generateIdentity('galette'))];
+      unknownPublicIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('galette'));
     });
 
     after(async () => {
@@ -55,34 +55,20 @@ const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('throws on groupCreation with invalid user', async () => {
-      await expectRejectedWithProperty({
-        handler: async () => aliceLaptop.createGroup([alicePublicIdentity, ...unknownUsers]),
-        exception: errors.RecipientsNotFound,
-        property: 'recipientIds',
-        expectedValue: unknownUsers
-      });
+      await expect(aliceLaptop.createGroup([alicePublicIdentity, unknownPublicIdentity]))
+        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
     });
 
     it('throws on groupUpdate with invalid users', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-
-      await expectRejectedWithProperty({
-        handler: async () => aliceLaptop.updateGroupMembers(groupId, { usersToAdd: unknownUsers }),
-        exception: errors.RecipientsNotFound,
-        property: 'recipientIds',
-        expectedValue: unknownUsers
-      });
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [unknownPublicIdentity] }))
+        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
     });
 
     it('throws on groupUpdate with mix valid/invalid users', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-
-      await expectRejectedWithProperty({
-        handler: async () => aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, ...unknownUsers] }),
-        exception: errors.RecipientsNotFound,
-        property: 'recipientIds',
-        expectedValue: unknownUsers
-      });
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, unknownPublicIdentity] }))
+        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
     });
 
     it('throws on groupCreation with empty users', async () => {

@@ -9,7 +9,7 @@ import { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
 import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
-import { InvalidArgument, InvalidGroupSize, ServerError, RecipientsNotFound } from '../errors';
+import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
 
@@ -127,7 +127,7 @@ export default class GroupManager {
       }
     }
 
-    const missingGroups = [];
+    const missingGroupIds = [];
     if (externalGroups.length)
       await this._fetchGroups(externalGroups);
     for (const groupId of externalGroups) {
@@ -135,11 +135,13 @@ export default class GroupManager {
       if (group)
         groups.push(group);
       else
-        missingGroups.push(groupId);
+        missingGroupIds.push(utils.toBase64(groupId));
     }
 
-    if (missingGroups.length > 0)
-      throw new RecipientsNotFound(missingGroups.map(utils.toBase64));
+    if (missingGroupIds.length > 0) {
+      const message = `The following groups do not exist on the trustchain: "${missingGroupIds.join('", "')}"`;
+      throw new InvalidArgument(message);
+    }
 
     return groups;
   }

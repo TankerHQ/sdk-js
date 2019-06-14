@@ -104,16 +104,6 @@ export class ServerError extends TankerError {
   }
 }
 
-export class RecipientsNotFound extends TankerError {
-  recipientIds: Array<string>;
-
-  constructor(recipientIds: Array<string>) {
-    super('RecipientsNotFound', `Recipient(s) '${recipientIds.join(', ')}' not found`);
-
-    this.recipientIds = recipientIds;
-  }
-}
-
 export class InvalidGroupSize extends TankerError {
   constructor(msg: string) {
     super('InvalidGroupSize', msg);

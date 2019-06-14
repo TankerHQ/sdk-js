@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { tcrypto, utils, random } from '@tanker/crypto';
 import { expect } from './chai';
 import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
-import { InvalidGroupSize, InvalidArgument, RecipientsNotFound } from '../errors';
+import { InvalidArgument, InvalidGroupSize } from '../errors';
 
 
 import { makeMemoryGroupStore } from './GroupStore.spec';
@@ -73,7 +73,7 @@ describe('GroupManager', () => {
   });
 
   it('throws when getting a group that does not exist', async () => {
-    await expect(groupManager.getGroups([new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)])).to.be.rejectedWith(RecipientsNotFound);
+    await expect(groupManager.getGroups([new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)])).to.be.rejectedWith(InvalidArgument);
   });
 
   it('throws when creating a group with 0 members', async () => {

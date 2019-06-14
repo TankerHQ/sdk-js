@@ -4,7 +4,7 @@ import { errors } from '@tanker/core';
 import { tcrypto, utils } from '@tanker/crypto';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import FilePonyfill from '@tanker/file-ponyfill';
-import { expect, expectRejectedWithProperty } from './chai';
+import { expect } from './chai';
 
 import { type TestArgs } from './TestArgs';
 
@@ -156,14 +156,8 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('throws when sharing with a permanent identity that is not registered', async () => {
-        const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
-
-        await expectRejectedWithProperty({
-          handler: async () => bobLaptop.encrypt(clearText, { shareWithUsers: [eveIdentity] }),
-          exception: errors.RecipientsNotFound,
-          property: 'recipientIds',
-          expectedValue: [eveIdentity]
-        });
+        const evePublicIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [evePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, evePublicIdentity);
       });
 
       it('shares even when the recipient is not connected', async () => {
@@ -208,14 +202,10 @@ const generateEncryptTests = (args: TestArgs) => {
       it('throws when sharing with a permanent identity that is not registered', async () => {
         const edata = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(edata);
-        const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
+        const evePublicIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
 
-        await expectRejectedWithProperty({
-          handler: async () => bobLaptop.share([resourceId], { shareWithUsers: [eveIdentity] }),
-          exception: errors.RecipientsNotFound,
-          property: 'recipientIds',
-          expectedValue: [eveIdentity]
-        });
+        await expect(bobLaptop.share([resourceId], { shareWithUsers: [evePublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, evePublicIdentity);
       });
 
       it('shares an existing resource with a permanent identity', async () => {

@@ -6,7 +6,7 @@ import { type PublicPermanentIdentity } from '@tanker/identity';
 import UserStore, { type FindUsersParameters } from './UserStore';
 import { type User } from './User';
 import Trustchain from '../Trustchain/Trustchain';
-import { InvalidArgument, RecipientsNotFound } from '../errors';
+import { InvalidArgument } from '../errors';
 
 export type UserDevice = {|
     id: string,
@@ -86,13 +86,15 @@ export default class UserAccessor {
     if (fullUsers.length === obfuscatedUserIds.length)
       return fullUsers;
 
-    const missingIds = [];
+    const invalidPublicIdentities = [];
     for (const publicIdentity of publicIdentities) {
       const found = fullUsers.some(user => user.userId === publicIdentity.value);
       if (!found)
-        missingIds.push(utils.toB64Json(publicIdentity));
+        invalidPublicIdentities.push(utils.toB64Json(publicIdentity));
     }
-    throw new RecipientsNotFound(missingIds);
+
+    const message = `The following identities are invalid or do not exist on the trustchain: "${invalidPublicIdentities.join('", "')}"`;
+    throw new InvalidArgument(message);
   }
 
   async getDevicePublicEncryptionKey(deviceId: Uint8Array): Promise<?Uint8Array> {
@@ -104,6 +106,6 @@ export default class UserAccessor {
     if (newlyVerifiedDevice)
       return newlyVerifiedDevice.public_encryption_key;
 
-    throw new RecipientsNotFound([utils.toBase64(deviceId)]);
+    return null;
   }
 }
