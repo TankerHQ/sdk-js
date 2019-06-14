@@ -7,7 +7,7 @@ import { InvalidIdentity, type PublicProvisionalIdentity, type PublicProvisional
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { ExpiredVerificationCode, InvalidPassphrase, InvalidVerificationCode, TooManyAttempts, ServerError, VerificationMethodNotSet } from '../errors';
+import { ExpiredVerification, InvalidVerification, PreconditionFailed, ServerError, TooManyAttempts } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -50,13 +50,13 @@ export function b64RequestObject(requestObject: any): any {
 }
 
 const serverErrorMap = {
-  invalid_passphrase: InvalidPassphrase,
-  invalid_verification_code: InvalidVerificationCode,
+  invalid_passphrase: InvalidVerification,
+  invalid_verification_code: InvalidVerification,
   too_many_attempts: TooManyAttempts,
-  verification_code_expired: ExpiredVerificationCode,
-  verification_code_not_found: InvalidVerificationCode,
-  verification_method_not_set: VerificationMethodNotSet,
-  verification_key_not_found: VerificationMethodNotSet,
+  verification_code_expired: ExpiredVerification,
+  verification_code_not_found: InvalidVerification,
+  verification_method_not_set: PreconditionFailed,
+  verification_key_not_found: PreconditionFailed,
 };
 
 export type Authenticator = (string) => AuthDeviceParams;

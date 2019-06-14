@@ -31,42 +31,21 @@ export class DecryptionFailed extends TankerError {
   }
 }
 
-export class InvalidVerificationKey extends TankerError {
-  next: Error;
-
-  constructor(e: Error) {
-    super('InvalidVerificationKey');
-    this.next = e;
+export class ExpiredVerification extends TankerError {
+  constructor(message: string) {
+    super('ExpiredVerification', message);
   }
 }
 
-export class InvalidPassphrase extends TankerError {
-  constructor(message: string) {
-    super('InvalidPassphrase', message);
+export class InvalidGroupSize extends TankerError {
+  constructor(msg: string) {
+    super('InvalidGroupSize', msg);
   }
 }
 
-export class InvalidVerificationCode extends TankerError {
+export class InvalidVerification extends TankerError {
   constructor(message: string) {
-    super('InvalidVerificationCode', message);
-  }
-}
-
-export class ExpiredVerificationCode extends TankerError {
-  constructor(message: string) {
-    super('ExpiredVerificationCode', message);
-  }
-}
-
-export class VerificationMethodNotSet extends TankerError {
-  constructor(message: string) {
-    super('VerificationMethodNotSet', message);
-  }
-}
-
-export class TooManyAttempts extends TankerError {
-  constructor(message: string) {
-    super('TooManyAttempts', message);
+    super('InvalidVerification', message);
   }
 }
 
@@ -95,8 +74,8 @@ export class ServerError extends TankerError {
   }
 }
 
-export class InvalidGroupSize extends TankerError {
-  constructor(msg: string) {
-    super('InvalidGroupSize', msg);
+export class TooManyAttempts extends TankerError {
+  constructor(message: string) {
+    super('TooManyAttempts', message);
   }
 }

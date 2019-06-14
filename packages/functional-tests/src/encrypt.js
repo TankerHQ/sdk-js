@@ -309,7 +309,7 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('throws when verifying provisional identity with wrong verification code', async () => {
-        await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('throws when verifying an email that does not match the provisional identity', async () => {
