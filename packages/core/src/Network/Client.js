@@ -7,7 +7,8 @@ import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tan
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { ExpiredVerification, InvalidArgument, GroupTooBig, InvalidVerification, PreconditionFailed, ServerError, TooManyAttempts } from '../errors';
+import { VerificationNeeded } from '../errors.internal';
+import { ExpiredVerification, InvalidArgument, InternalError, GroupTooBig, InvalidVerification, PreconditionFailed, TooManyAttempts } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -57,6 +58,7 @@ const serverErrorMap = {
   verification_code_expired: ExpiredVerification,
   verification_code_not_found: InvalidVerification,
   verification_method_not_set: PreconditionFailed,
+  verification_needed: VerificationNeeded,
   verification_key_not_found: PreconditionFailed,
 };
 
@@ -206,11 +208,12 @@ export class Client extends EventEmitter {
     const jresult = await this.socket.emit(eventName, jdata);
     const result = JSON.parse(jresult);
     if (result && result.error) {
-      const SpecificError = serverErrorMap[result.error.code];
+      const { error } = result;
+      const SpecificError = serverErrorMap[error.code];
       if (SpecificError) {
-        throw new SpecificError(result.error.message);
+        throw new SpecificError(error.message);
       }
-      throw new ServerError(result.error, this.trustchainId);
+      throw new InternalError(`Server error with status: ${error.status}, code: ${error.code}, message: ${error.message}`);
     }
     return result;
   }

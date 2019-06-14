@@ -158,7 +158,7 @@ const generateGroupsTests = (args: TestArgs) => {
       await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
       await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-      await expect(bobLaptop.createGroup([bobPublicIdentity, publicProvisionalIdentity])).to.be.rejectedWith(errors.ServerError);
+      await expect(bobLaptop.createGroup([bobPublicIdentity, publicProvisionalIdentity])).to.be.rejectedWith(errors.InternalError);
     });
 
     it('should add a provisional member to a group', async () => {
@@ -205,7 +205,7 @@ const generateGroupsTests = (args: TestArgs) => {
       await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
       await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.InternalError);
     });
 
     it('should claim a group creation, a group add, and an encrypt', async () => {

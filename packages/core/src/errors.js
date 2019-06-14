@@ -42,6 +42,12 @@ export class GroupTooBig extends TankerError {
   }
 }
 
+export class InternalError extends TankerError {
+  constructor(message: string) {
+    super('InternalError', message);
+  }
+}
+
 export class InvalidVerification extends TankerError {
   constructor(message: string) {
     super('InvalidVerification', message);
@@ -57,19 +63,6 @@ export class OperationCanceled extends TankerError {
 export class PreconditionFailed extends TankerError {
   constructor(message: string) {
     super('PreconditionFailed', message);
-  }
-}
-
-export class ServerError extends TankerError {
-  error: Object;
-  b64TrustchainId: b64string;
-
-  constructor(error: Object, trustchainId: Uint8Array) {
-    const b64TrustchainId = utils.toBase64(trustchainId);
-    const message = `status: ${error.status}, code: ${error.code}, message: ${error.message}, trustchainId: ${b64TrustchainId}`;
-    super('ServerError', message);
-    this.error = error;
-    this.b64TrustchainId = b64TrustchainId;
   }
 }
 

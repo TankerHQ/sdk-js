@@ -4,6 +4,7 @@ import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { type SecretProvisionalIdentity } from '@tanker/identity';
 
 import { InvalidArgument, PreconditionFailed } from '../errors';
+import { VerificationNeeded } from '../errors.internal';
 
 import { Client, b64RequestObject } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
@@ -129,8 +130,7 @@ export default class DeviceManager {
         },
       }));
     } catch (e) {
-      const error = e.error;
-      if (error.code && error.code === 'verification_needed') {
+      if (e instanceof VerificationNeeded) {
         return null;
       }
       throw e;

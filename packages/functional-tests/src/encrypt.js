@@ -277,7 +277,7 @@ const generateEncryptTests = (args: TestArgs) => {
         const verificationCode = await args.trustchainHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.InternalError);
       });
 
       it('gracefully accept an already attached provisional identity', async () => {
@@ -331,7 +331,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
         verificationCode = await args.trustchainHelper.getVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.ServerError);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InternalError);
       });
 
       it('decrypt resource on a new device', async () => {
