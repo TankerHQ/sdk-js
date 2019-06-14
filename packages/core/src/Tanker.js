@@ -8,7 +8,7 @@ import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
-import { InvalidSessionStatus, InvalidArgument, OperationCanceled } from './errors';
+import { InvalidArgument, OperationCanceled, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
@@ -171,7 +171,7 @@ export class Tanker extends EventEmitter {
     if (this.status !== status) {
       const { name } = statusDefs[status];
       const message = `Expected status ${name} but got ${this.statusName} trying to ${to}.`;
-      throw new InvalidSessionStatus(this.status, message);
+      throw new PreconditionFailed(message);
     }
   }
 
@@ -219,7 +219,7 @@ export class Tanker extends EventEmitter {
       const { name: ready } = statusDefs[statuses.READY];
       const { name: verification } = statusDefs[statuses.IDENTITY_VERIFICATION_NEEDED];
       const message = `Expected status ${ready} or ${verification} but got ${this.statusName} trying to get verification methods.`;
-      throw new InvalidSessionStatus(this.status, message);
+      throw new PreconditionFailed(message);
     }
 
     return this._session.getVerificationMethods();

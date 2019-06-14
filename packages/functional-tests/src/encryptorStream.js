@@ -143,8 +143,8 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
     describe('Error Handling', () => {
       it('cannot makeEncryptorStream and makeDecryptorStream when session has ended', async () => {
         await aliceLaptop.stop();
-        await expect(aliceLaptop.makeEncryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
-        await expect(aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.InvalidSessionStatus);
+        await expect(aliceLaptop.makeEncryptorStream()).to.be.rejectedWith(errors.PreconditionFailed);
+        await expect(aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       it('throws InvalidArgument when resource was not shared with user', async () => {

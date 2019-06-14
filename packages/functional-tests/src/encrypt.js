@@ -43,11 +43,11 @@ const generateEncryptTests = (args: TestArgs) => {
     before(() => { bobLaptop = args.makeTanker(); });
 
     it('throws when using a session in an invalid state', async () => {
-      await expect(bobLaptop.encrypt(clearText)).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.encrypt(clearText)).to.be.rejectedWith(errors.PreconditionFailed);
     });
 
     it('throws when decrypting using a session in an invalid state', async () => {
-      await expect(bobLaptop.decrypt(utils.fromString('test'))).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.decrypt(utils.fromString('test'))).to.be.rejectedWith(errors.PreconditionFailed);
     });
   });
 

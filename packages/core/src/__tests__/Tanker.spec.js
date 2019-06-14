@@ -7,7 +7,7 @@ import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
-import { InvalidArgument, InvalidIdentity, InvalidSessionStatus, OperationCanceled } from '../errors';
+import { InvalidArgument, InvalidIdentity, PreconditionFailed, OperationCanceled } from '../errors';
 
 import { type RemoteVerification, statuses } from '../Session/types';
 import { type ShareWithOptions } from '../DataProtection/ShareWithOptions';
@@ -115,11 +115,11 @@ describe('Tanker', () => {
     });
 
     it('should throw when trying to get deviceId', async () => {
-      expect(() => tanker.deviceId).to.throw(InvalidSessionStatus);
+      expect(() => tanker.deviceId).to.throw(PreconditionFailed);
     });
 
     it('should throw when trying to get verification methods', async () => {
-      await expect(tanker.getVerificationMethods()).to.be.rejectedWith(InvalidSessionStatus);
+      await expect(tanker.getVerificationMethods()).to.be.rejectedWith(PreconditionFailed);
     });
 
     describe('start', () => {
@@ -205,7 +205,7 @@ describe('Tanker', () => {
       });
 
       it('should throw if generating verification key after registration', async () => {
-        await expect(tanker.generateVerificationKey()).to.be.rejectedWith(InvalidSessionStatus);
+        await expect(tanker.generateVerificationKey()).to.be.rejectedWith(PreconditionFailed);
       });
     });
 

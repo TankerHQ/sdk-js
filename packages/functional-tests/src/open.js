@@ -103,7 +103,7 @@ const generateOpenTests = (args: TestArgs) => {
     });
 
     it('throws when registering before having started a session', async () => {
-      await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
     });
 
     it('creates the first device with the passphrase method', async () => {

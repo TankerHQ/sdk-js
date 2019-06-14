@@ -70,15 +70,6 @@ export class TooManyAttempts extends TankerError {
   }
 }
 
-export class InvalidSessionStatus extends TankerError {
-  status: number;
-
-  constructor(status: number, message: string = `status: ${status}`) {
-    super('InvalidSessionStatus', message);
-    this.status = status;
-  }
-}
-
 export class OperationCanceled extends TankerError {
   constructor(message: string = 'Operation canceled') {
     super('OperationCanceled', message);
