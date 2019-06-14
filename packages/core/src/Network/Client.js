@@ -7,7 +7,7 @@ import { InvalidIdentity, type PublicProvisionalIdentity, type PublicProvisional
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { ExpiredVerification, InvalidVerification, PreconditionFailed, ServerError, TooManyAttempts } from '../errors';
+import { ExpiredVerification, GroupTooBig, InvalidVerification, PreconditionFailed, ServerError, TooManyAttempts } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -50,6 +50,7 @@ export function b64RequestObject(requestObject: any): any {
 }
 
 const serverErrorMap = {
+  group_too_big: GroupTooBig,
   invalid_passphrase: InvalidVerification,
   invalid_verification_code: InvalidVerification,
   too_many_attempts: TooManyAttempts,

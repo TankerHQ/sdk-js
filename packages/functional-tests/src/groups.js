@@ -73,14 +73,14 @@ const generateGroupsTests = (args: TestArgs) => {
 
     it('throws on groupCreation with empty users', async () => {
       await expect(aliceLaptop.createGroup([]))
-        .to.be.rejectedWith(errors.InvalidGroupSize);
+        .to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('throws on groupUpdate with empty users', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
 
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [] }))
-        .to.be.rejectedWith(errors.InvalidGroupSize);
+        .to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('should publish keys to group', async () => {

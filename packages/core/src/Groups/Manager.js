@@ -9,7 +9,7 @@ import { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
 import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
-import { InvalidArgument, InvalidGroupSize, ServerError } from '../errors';
+import { InvalidArgument, GroupTooBig } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
 
@@ -36,9 +36,9 @@ export default class GroupManager {
 
   async createGroup(publicIdentities: Array<b64string>): Promise<b64string> {
     if (publicIdentities.length === 0)
-      throw new InvalidGroupSize('A group cannot be created empty');
+      throw new InvalidArgument('A group cannot be created empty');
     if (publicIdentities.length > MAX_GROUP_SIZE)
-      throw new InvalidGroupSize(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
+      throw new GroupTooBig(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
@@ -54,8 +54,8 @@ export default class GroupManager {
       users,
       provisionalUsers
     );
-    await this._client.sendBlock(userGroupCreationBlock);
 
+    await this._client.sendBlock(userGroupCreationBlock);
     await this._trustchain.sync();
 
     return utils.toBase64(groupSignatureKeyPair.publicKey);
@@ -63,9 +63,9 @@ export default class GroupManager {
 
   async updateGroupMembers(groupId: string, publicIdentities: Array<b64string>): Promise<void> {
     if (publicIdentities.length === 0)
-      throw new InvalidGroupSize(`Cannot add no member to group ${groupId}`);
+      throw new InvalidArgument(`Cannot add no member to group ${groupId}`);
     if (publicIdentities.length > MAX_GROUP_SIZE)
-      throw new InvalidGroupSize(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
+      throw new GroupTooBig(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
 
     const internalGroupId = utils.fromBase64(groupId);
     await this._fetchGroups([internalGroupId]);
@@ -90,15 +90,8 @@ export default class GroupManager {
       users,
       provisionalUsers,
     );
-    try {
-      await this._client.sendBlock(userGroupAdditionBlock);
-    } catch (e) {
-      if ((e instanceof ServerError) && e.error.code === 'group_too_big')
-        throw new InvalidGroupSize(`A group cannot contain more than ${MAX_GROUP_SIZE} members`);
-      else
-        throw e;
-    }
 
+    await this._client.sendBlock(userGroupAdditionBlock);
     await this._trustchain.sync();
   }
 

@@ -37,9 +37,9 @@ export class ExpiredVerification extends TankerError {
   }
 }
 
-export class InvalidGroupSize extends TankerError {
-  constructor(msg: string) {
-    super('InvalidGroupSize', msg);
+export class GroupTooBig extends TankerError {
+  constructor(message: string) {
+    super('GroupTooBig', message);
   }
 }
 

@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { tcrypto, utils, random } from '@tanker/crypto';
 import { expect } from './chai';
 import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
-import { InvalidArgument, InvalidGroupSize } from '../errors';
+import { InvalidArgument, GroupTooBig } from '../errors';
 
 
 import { makeMemoryGroupStore } from './GroupStore.spec';
@@ -77,21 +77,21 @@ describe('GroupManager', () => {
   });
 
   it('throws when creating a group with 0 members', async () => {
-    await expect(groupManager.createGroup([])).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.createGroup([])).to.be.rejectedWith(InvalidArgument);
   });
 
   it('throws when updating a group with 0 members', async () => {
-    await expect(groupManager.updateGroupMembers(utils.toBase64(groupId), [])).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.updateGroupMembers(utils.toBase64(groupId), [])).to.be.rejectedWith(InvalidArgument);
   });
 
   it('throws when creating a group with 1001 members', async () => {
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
-    await expect(groupManager.createGroup(users)).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.createGroup(users)).to.be.rejectedWith(GroupTooBig);
   });
 
   it('throws when updating a group with 1001 members', async () => {
     const users = Array.from({ length: MAX_GROUP_SIZE + 1 }, () => 'bob');
-    await expect(groupManager.updateGroupMembers(utils.toBase64(groupId), users)).to.be.rejectedWith(InvalidGroupSize);
+    await expect(groupManager.updateGroupMembers(utils.toBase64(groupId), users)).to.be.rejectedWith(GroupTooBig);
   });
 
   it('throws when updating a non existent group', async () => {
