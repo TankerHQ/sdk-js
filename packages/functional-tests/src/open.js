@@ -30,7 +30,7 @@ const generateOpenTests = (args: TestArgs) => {
     });
 
     it('throws when giving an invalid identity', async () => {
-      await expect(bobLaptop.start('secret')).to.be.rejectedWith(errors.InvalidIdentity);
+      await expect(bobLaptop.start('secret')).to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('returns IDENTITY_REGISTRATION_NEEDED status if new identity provided', async () => {

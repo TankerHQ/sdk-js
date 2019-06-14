@@ -4,7 +4,6 @@ import { utils } from '@tanker/crypto';
 
 import { obfuscateUserId } from '../userId';
 import { createUserSecretBinary, assertUserSecret, USER_SECRET_SIZE } from '../userSecret';
-import { InvalidIdentity } from '../InvalidIdentity';
 
 const { fromBase64, fromString } = utils;
 
@@ -58,7 +57,7 @@ describe('userSecret', () => {
 
   it('should reject invalid secrets, even with correct size', async () => {
     const secret = fromString('And our interests are the same !');
-    expect(() => assertUserSecret(obfuscateUserId(trustchainId, 'danglars'), secret)).to.throw(InvalidIdentity);
+    expect(() => assertUserSecret(obfuscateUserId(trustchainId, 'danglars'), secret)).to.throw();
   });
 
   it('should reject secrets of the wrong user most of the time', async () => {

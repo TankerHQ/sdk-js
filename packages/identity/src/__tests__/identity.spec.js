@@ -1,7 +1,8 @@
 // @flow
 import { expect } from 'chai';
 import { tcrypto, utils } from '@tanker/crypto';
-import { InvalidIdentity } from '../InvalidIdentity';
+import { InvalidArgument } from '@tanker/errors';
+
 import {
   _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
   createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken,
@@ -91,8 +92,8 @@ describe('Identity', () => {
       expect(_deserializePermanentIdentity(b64PermanentIdentity)).to.deep.equal(_deserializePermanentIdentity(goodPermanentIdentity));
     });
 
-    it('throws when upgrading with the wrong userId', async () => {
-      await expect(upgradeUserToken(trustchain.id, 'bad user id', goodUserToken)).to.be.rejectedWith(InvalidIdentity);
+    it('throws when upgrading with non matching userId and userToken', async () => {
+      await expect(upgradeUserToken(trustchain.id, 'bad user id', goodUserToken)).to.be.rejectedWith(InvalidArgument);
     });
   });
 

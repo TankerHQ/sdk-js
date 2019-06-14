@@ -2,6 +2,7 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { _deserializePermanentIdentity, assertUserSecret } from '@tanker/identity';
+import { InvalidArgument } from '../errors';
 
 export type DelegationToken = {
   ephemeral_public_signature_key: Uint8Array,
@@ -19,26 +20,30 @@ export type UserData = {
 };
 
 export function extractUserData(identityB64: b64string): UserData {
-  const identity = _deserializePermanentIdentity(identityB64);
+  try {
+    const identity = _deserializePermanentIdentity(identityB64);
 
-  const userId = utils.fromBase64(identity.value);
-  const userSecret = utils.fromBase64(identity.user_secret);
-  const trustchainId = utils.fromBase64(identity.trustchain_id);
+    const userId = utils.fromBase64(identity.value);
+    const userSecret = utils.fromBase64(identity.user_secret);
+    const trustchainId = utils.fromBase64(identity.trustchain_id);
 
-  const delegationToken: DelegationToken = {
-    ephemeral_public_signature_key: utils.fromBase64(identity.ephemeral_public_signature_key),
-    ephemeral_private_signature_key: utils.fromBase64(identity.ephemeral_private_signature_key),
-    user_id: userId,
-    delegation_signature: utils.fromBase64(identity.delegation_signature),
-    last_reset: new Uint8Array(32),
-  };
+    const delegationToken: DelegationToken = {
+      ephemeral_public_signature_key: utils.fromBase64(identity.ephemeral_public_signature_key),
+      ephemeral_private_signature_key: utils.fromBase64(identity.ephemeral_private_signature_key),
+      user_id: userId,
+      delegation_signature: utils.fromBase64(identity.delegation_signature),
+      last_reset: new Uint8Array(32),
+    };
 
-  assertUserSecret(userId, userSecret);
+    assertUserSecret(userId, userSecret);
 
-  return {
-    trustchainId,
-    userId,
-    userSecret,
-    delegationToken,
-  };
+    return {
+      trustchainId,
+      userId,
+      userSecret,
+      delegationToken,
+    };
+  } catch (e) {
+    throw new InvalidArgument(`Invalid identity provided: ${identityB64}`);
+  }
 }

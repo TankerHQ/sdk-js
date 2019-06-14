@@ -1,7 +1,6 @@
 // @flow
 import { generichash, random, utils, type b64string } from '@tanker/crypto';
 import { obfuscateUserId } from './userId';
-import { InvalidIdentity } from './InvalidIdentity';
 
 export const USER_SECRET_SIZE = 32;
 
@@ -46,5 +45,5 @@ export function assertUserSecret(userId: Uint8Array, secret: Uint8Array) {
 
   const checkByte = checksumByte(secret.subarray(0, USER_SECRET_SIZE - 1), userId);
   if (checkByte !== secret[USER_SECRET_SIZE - 1])
-    throw new InvalidIdentity('Secret does not match the user ID');
+    throw new Error('Secret does not match the user ID');
 }

@@ -4,7 +4,6 @@ import { TankerError } from '@tanker/errors';
 
 // Re-expose these common error classes:
 export { TankerError, InvalidArgument } from '@tanker/errors';
-export { InvalidIdentity } from '@tanker/identity';
 
 export class DecryptionFailed extends TankerError {
   b64ResourceId: ?b64string;

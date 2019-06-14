@@ -1,7 +1,7 @@
 // @flow
 
 import { generichash, tcrypto, utils } from '@tanker/crypto';
-import { type SecretProvisionalIdentity, InvalidIdentity } from '@tanker/identity';
+import { type SecretProvisionalIdentity } from '@tanker/identity';
 
 import { InvalidArgument, PreconditionFailed } from '../errors';
 
@@ -97,7 +97,9 @@ export default class DeviceManager {
         verificationMethod: { type: 'email', email },
       };
     }
-    throw new InvalidIdentity(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
+
+    // Target is already checked when deserializing the provisional identity
+    throw new Error(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
   }
 
   async verifyProvisionalIdentity(verification: EmailVerification) {

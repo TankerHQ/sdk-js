@@ -2,7 +2,6 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 
-import { InvalidIdentity } from './InvalidIdentity';
 import { obfuscateUserId } from './userId';
 import { createUserSecretB64 } from './userSecret';
 
@@ -65,7 +64,7 @@ export function _deserializeIdentity(identity: b64string): SecretIdentity { // e
   try {
     return utils.fromB64Json(identity);
   } catch (e) {
-    throw new InvalidIdentity(e);
+    throw new InvalidArgument(`Invalid identity provided: ${identity}`);
   }
 }
 
@@ -75,11 +74,11 @@ export function _deserializePermanentIdentity(identity: b64string): SecretPerman
   try {
     result = utils.fromB64Json(identity);
   } catch (e) {
-    throw new InvalidIdentity(e);
+    throw new InvalidArgument(`Invalid permanent identity provided: ${identity}`);
   }
 
   if (result.target !== 'user')
-    throw new InvalidIdentity(`Expected an identity, but contained target "${result.target}"`);
+    throw new InvalidArgument(`Expected a permanent identity, but contained target "${result.target}"`);
 
   return result;
 }
@@ -90,11 +89,11 @@ export function _deserializeProvisionalIdentity(identity: b64string): SecretProv
   try {
     result = utils.fromB64Json(identity);
   } catch (e) {
-    throw new InvalidIdentity(e);
+    throw new InvalidArgument(`Invalid provisional identity provided: ${identity}`);
   }
 
   if (result.target !== 'email')
-    throw new InvalidIdentity(`Expected a provisional identity, but contained target "${result.target}"`);
+    throw new InvalidArgument(`Expected a provisional identity, but contained target "${result.target}"`);
 
   return result;
 }
@@ -103,7 +102,7 @@ export function _deserializePublicIdentity(identity: b64string): PublicIdentity 
   try {
     return utils.fromB64Json(identity);
   } catch (e) {
-    throw new InvalidIdentity(e);
+    throw new InvalidArgument(`Invalid public identity provided: ${identity}`);
   }
 }
 
@@ -190,7 +189,7 @@ export async function getPublicIdentity(tankerIdentity: b64string): Promise<b64s
     return _serializeIdentity({ trustchain_id, target, value, public_signature_key, public_encryption_key });
   }
 
-  throw new InvalidIdentity('Invalid Tanker identity provided');
+  throw new InvalidArgument(`Invalid secret identity provided: ${tankerIdentity}`);
 }
 
 // Note: userToken generated with the deprecated @tanker/user-token sdk
@@ -206,7 +205,7 @@ export async function upgradeUserToken(trustchainId: b64string, userId: string, 
   } = utils.fromB64Json(userToken);
 
   if (utils.toBase64(obfuscatedUserId) !== user_id)
-    throw new InvalidIdentity('Invalid userId provided');
+    throw new InvalidArgument('The userId and userToken provided do not match');
 
   const permanentIdentity: SecretPermanentIdentity = {
     trustchain_id: trustchainId,

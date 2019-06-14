@@ -3,11 +3,11 @@
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
 import { generichash, utils, type b64string } from '@tanker/crypto';
-import { InvalidIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
+import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { ExpiredVerification, GroupTooBig, InvalidVerification, PreconditionFailed, ServerError, TooManyAttempts } from '../errors';
+import { ExpiredVerification, InvalidArgument, GroupTooBig, InvalidVerification, PreconditionFailed, ServerError, TooManyAttempts } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -236,7 +236,7 @@ export class Client extends EventEmitter {
 
     const request = provisionalIdentities.map(provisionalIdentity => {
       if (provisionalIdentity.target !== 'email') {
-        throw new InvalidIdentity(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
+        throw new InvalidArgument(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
       }
       const email = generichash(utils.fromString(provisionalIdentity.value));
       return { type: 'email', hashed_email: email };
