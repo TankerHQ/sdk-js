@@ -280,7 +280,7 @@ const generateEncryptTests = (args: TestArgs) => {
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
       });
 
-      it('gracefully rejects attaching a provisional identity twice', async () => {
+      it('gracefully accept an already attached provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
         const verificationCode = await args.trustchainHelper.getVerificationCode(email);
@@ -312,9 +312,15 @@ const generateEncryptTests = (args: TestArgs) => {
         await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerificationCode);
       });
 
+      it('throws when verifying an email that does not match the provisional identity', async () => {
+        const anotherEmail = `${uuid.v4()}@tanker-functional-test.io`;
+        const verificationCode = await args.trustchainHelper.getVerificationCode(anotherEmail);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
       it('throws when verifying provisional identity without attaching first', async () => {
         const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidProvisionalIdentityStatus);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       it('throw when two users attach the same provisional identity', async () => {

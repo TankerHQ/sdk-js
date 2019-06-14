@@ -85,9 +85,9 @@ export class OperationCanceled extends TankerError {
   }
 }
 
-export class InvalidProvisionalIdentityStatus extends TankerError {
+export class PreconditionFailed extends TankerError {
   constructor(message: string) {
-    super('InvalidProvisionalIdentityStatus', message);
+    super('PreconditionFailed', message);
   }
 }
 

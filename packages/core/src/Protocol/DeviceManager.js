@@ -3,7 +3,7 @@
 import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { type SecretProvisionalIdentity, InvalidIdentity } from '@tanker/identity';
 
-import { InvalidProvisionalIdentityStatus } from '../errors';
+import { InvalidArgument, PreconditionFailed } from '../errors';
 
 import { Client, b64RequestObject } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
@@ -105,10 +105,10 @@ export default class DeviceManager {
       throw new Error(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
 
     if (!this._provisionalIdentity)
-      throw new InvalidProvisionalIdentityStatus('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
+      throw new PreconditionFailed('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
 
     if (this._provisionalIdentity.value !== verification.email)
-      throw new InvalidProvisionalIdentityStatus('Verification email does not match provisional identity');
+      throw new InvalidArgument('"verification.email" does not match provisional identity');
 
     const tankerKeys = await this._verifyAndGetProvisionalIdentityKeys(verification);
     if (tankerKeys)
