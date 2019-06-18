@@ -242,7 +242,7 @@ export class Client extends EventEmitter {
         throw new InvalidIdentity(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
       }
       const email = generichash(utils.fromString(provisionalIdentity.value));
-      return { type: 'email', email };
+      return { type: 'email', hashed_email: email };
     });
 
     // Note: public keys are returned in an array matching the original order of provisional identities in the request

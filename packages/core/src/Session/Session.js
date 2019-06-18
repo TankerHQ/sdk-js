@@ -100,8 +100,9 @@ export class Session {
       const method = { ...verificationMethod };
 
       // Compat: email value might be missing if unlock method registered with SDK < 2.0.0
-      if (method.type === 'email' && method.email) {
-        method.email = utils.toString(decrypt(this.localUser.userSecret, utils.fromBase64(method.email)));
+      if (method.type === 'email' && method.encrypted_email) {
+        method.email = utils.toString(decrypt(this.localUser.userSecret, utils.fromBase64(method.encrypted_email)));
+        delete method.encrypted_email;
       }
 
       return method;
