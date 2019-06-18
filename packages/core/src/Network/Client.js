@@ -231,8 +231,8 @@ export class Client extends EventEmitter {
     const result = await this.send('get public provisional identities', emails);
 
     return result.map(e => ({
-      tankerSignaturePublicKey: utils.fromBase64(e.SignaturePublicKey),
-      tankerEncryptionPublicKey: utils.fromBase64(e.EncryptionPublicKey),
+      tankerSignaturePublicKey: utils.fromBase64(e.signature_public_key),
+      tankerEncryptionPublicKey: utils.fromBase64(e.encryption_public_key),
     }));
   }
 
