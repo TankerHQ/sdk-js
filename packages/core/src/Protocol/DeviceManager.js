@@ -30,12 +30,12 @@ const tankerProvisionalKeys = (serverResult) => {
 
   return {
     tankerSignatureKeyPair: {
-      privateKey: utils.fromBase64(serverResult.SignaturePrivateKey),
-      publicKey: utils.fromBase64(serverResult.SignaturePublicKey),
+      privateKey: utils.fromBase64(serverResult.signature_private_key),
+      publicKey: utils.fromBase64(serverResult.signature_public_key),
     },
     tankerEncryptionKeyPair: {
-      privateKey: utils.fromBase64(serverResult.EncryptionPrivateKey),
-      publicKey: utils.fromBase64(serverResult.EncryptionPublicKey),
+      privateKey: utils.fromBase64(serverResult.encryption_private_key),
+      publicKey: utils.fromBase64(serverResult.encryption_public_key),
     }
   };
 };
