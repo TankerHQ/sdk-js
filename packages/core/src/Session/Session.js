@@ -7,7 +7,7 @@ import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
 import { takeChallenge } from './ClientAuthenticator';
 import { decrypt } from '../DataProtection/Encryptors/v2';
-import { OperationCanceled } from '../errors';
+import { InternalError, InvalidVerification, OperationCanceled, TankerError } from '../errors';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
 import { type UserData } from './UserData';
@@ -117,7 +117,11 @@ export class Session {
   createUser = async (verification: Verification) => {
     let ghostDeviceKeys;
     if (verification.verificationKey) {
-      ghostDeviceKeys = ghostDeviceKeysFromUnlockKey(verification.verificationKey);
+      try {
+        ghostDeviceKeys = ghostDeviceKeysFromUnlockKey(verification.verificationKey);
+      } catch (e) {
+        throw new InvalidVerification(e);
+      }
     } else {
       ghostDeviceKeys = generateGhostDeviceKeys();
     }
@@ -145,25 +149,38 @@ export class Session {
   }
 
   unlockUser = async (verification: Verification) => {
+    let newDevice;
     let unlockKey;
-    if (verification.verificationKey) {
-      unlockKey = verification.verificationKey;
-    } else {
-      const remoteVerification = ((verification: any): RemoteVerification);
-      const encryptedUnlockKey = await sendGetVerificationKey(this.localUser, this._client, remoteVerification);
-      unlockKey = decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
+
+    try {
+      if (verification.verificationKey) {
+        unlockKey = verification.verificationKey;
+      } else {
+        const remoteVerification: RemoteVerification = (verification: any);
+        const encryptedUnlockKey = await sendGetVerificationKey(this.localUser, this._client, remoteVerification);
+        unlockKey = decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
+      }
+
+      const ghostDevice = extractGhostDevice(unlockKey);
+      const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
+
+      newDevice = generateDeviceFromGhostDevice(
+        this.localUser.trustchainId,
+        this.localUser.userId,
+        this.localUser.deviceKeys(),
+        ghostDevice,
+        encryptedUserKey,
+      );
+    } catch (e) {
+      if (e instanceof TankerError) {
+        throw e;
+      }
+      if (verification.verificationKey) {
+        throw new InvalidVerification(e);
+      }
+      throw new InternalError(e);
     }
 
-    const ghostDevice = extractGhostDevice(unlockKey);
-    const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
-
-    const newDevice = generateDeviceFromGhostDevice(
-      this.localUser.trustchainId,
-      this.localUser.userId,
-      this.localUser.deviceKeys(),
-      ghostDevice,
-      encryptedUserKey,
-    );
     await this._client.sendBlock(newDevice.deviceBlock);
     await this.authenticate();
   }
