@@ -2,8 +2,8 @@
 
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
-import { utils, type b64string } from '@tanker/crypto';
-import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
+import { generichash, utils, type b64string } from '@tanker/crypto';
+import { InvalidIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
@@ -28,18 +28,24 @@ export type ClientOptions = {
 }
 
 export function b64RequestObject(requestObject: any): any {
+  if (Array.isArray(requestObject)) {
+    return requestObject.map(elem => b64RequestObject(elem));
+  }
+
   const result = {};
-  Object.entries(requestObject).forEach(elem => {
-    if (elem[1] instanceof Uint8Array) {
-      result[elem[0]] = utils.toBase64(elem[1]);
-    } else if (Array.isArray(elem[1])) {
-      result[elem[0]] = elem[1].map(b64RequestObject);
-    } else if (elem[1] && typeof elem[1] === 'object') {
-      result[elem[0]] = b64RequestObject(elem[1]);
+
+  Object.entries(requestObject).forEach(([key, value]) => {
+    if (value instanceof Uint8Array) {
+      result[key] = utils.toBase64(value);
+    } else if (Array.isArray(value)) {
+      result[key] = b64RequestObject(value);
+    } else if (value && typeof value === 'object') {
+      result[key] = b64RequestObject(value);
     } else {
-      result[elem[0]] = elem[1]; // eslint-disable-line prefer-destructuring
+      result[key] = value;
     }
   });
+
   return result;
 }
 
@@ -227,29 +233,29 @@ export class Client extends EventEmitter {
     await this.send('push keys', serializedBlocks);
   }
 
-  getProvisionalIdentityPublicKeys = async (emails: Array<{ email: string }>): Promise<Array<*>> => {
-    const result = await this.send('get public provisional identities', emails);
-
-    return result.map(e => ({
-      tankerSignaturePublicKey: utils.fromBase64(e.signature_public_key),
-      tankerEncryptionPublicKey: utils.fromBase64(e.encryption_public_key),
-    }));
-  }
-
   getProvisionalUsers = async (provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> => {
     if (provisionalIdentities.length === 0)
       return [];
 
-    const provisionalIds = provisionalIdentities.map(e => ({ [e.target]: e.value }));
-    const tankerPublicKeys = await this.getProvisionalIdentityPublicKeys(provisionalIds);
+    const request = provisionalIdentities.map(provisionalIdentity => {
+      if (provisionalIdentity.target !== 'email') {
+        throw new InvalidIdentity(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
+      }
+      const email = generichash(utils.fromString(provisionalIdentity.value));
+      return { type: 'email', hashed_email: email };
+    });
 
-    return tankerPublicKeys.map((e, i) => ({
+    // Note: public keys are returned in an array matching the original order of provisional identities in the request
+    const tankerPublicKeys = await this.send('get public provisional identities', b64RequestObject(request));
+
+    return tankerPublicKeys.map((tpk, i) => ({
       trustchainId: utils.fromBase64(provisionalIdentities[i].trustchain_id),
       target: provisionalIdentities[i].target,
       value: provisionalIdentities[i].value,
-      ...e,
-      appSignaturePublicKey: utils.fromBase64(provisionalIdentities[i].public_signature_key),
       appEncryptionPublicKey: utils.fromBase64(provisionalIdentities[i].public_encryption_key),
+      appSignaturePublicKey: utils.fromBase64(provisionalIdentities[i].public_signature_key),
+      tankerEncryptionPublicKey: utils.fromBase64(tpk.encryption_public_key),
+      tankerSignaturePublicKey: utils.fromBase64(tpk.signature_public_key),
     }));
   }
 }

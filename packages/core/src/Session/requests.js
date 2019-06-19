@@ -12,10 +12,10 @@ import { type UserCreation } from './deviceCreation';
 import { type Verification, type RemoteVerification } from './types';
 import { type GhostDevice } from './ghostDevice';
 
-export type VerificationRequest = $Exact<{
-  passphrase: Uint8Array,
+type VerificationRequest = $Exact<{
+  hashed_passphrase: Uint8Array,
 }> | $Exact<{
-  email: Uint8Array,
+  hashed_email: Uint8Array,
   encrypted_email: Uint8Array,
   verification_code: string,
 }>;
@@ -38,14 +38,14 @@ type GetVerificationKeyRequest = $Exact<{
 export const formatVerificationRequest = (verification: RemoteVerification, localUser: LocalUser): VerificationRequest => {
   if (verification.email) {
     return {
-      email: generichash(utils.fromString(verification.email)),
+      hashed_email: generichash(utils.fromString(verification.email)),
       encrypted_email: encrypt(localUser.userSecret, utils.fromString(verification.email)),
       verification_code: verification.verificationCode,
     };
   }
   if (verification.passphrase) {
     return {
-      passphrase: generichash(utils.fromString(verification.passphrase)),
+      hashed_passphrase: generichash(utils.fromString(verification.passphrase)),
     };
   }
   throw new Error('Assertion error: invalid remote verification in formatVerificationRequest');

@@ -123,7 +123,7 @@ export default class DeviceManager {
       result = await this._client.send('get verified provisional identity', b64RequestObject({
         verification_method: {
           type: 'email',
-          email: generichash(utils.fromString(email)),
+          hashed_email: generichash(utils.fromString(email)),
         },
       }));
     } catch (e) {
