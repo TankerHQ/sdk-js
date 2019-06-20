@@ -1,6 +1,7 @@
 // @flow
 import uuid from 'uuid';
 import { errors, statuses, type TankerInterface, type Verification, type VerificationMethod } from '@tanker/core';
+import { utils, type b64string } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
@@ -79,12 +80,12 @@ const generateUnlockTests = (args: TestArgs) => {
 
       it('should fail to register an email verification method if the verification code is wrong', async () => {
         const verificationCode = await trustchainHelper.getWrongVerificationCode('john@doe.com');
-        await expect(bobLaptop.registerIdentity({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        await expect(bobLaptop.registerIdentity({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('should fail to register an email verification method if the verification code is not for the targeted email', async () => {
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
-        await expect(bobLaptop.registerIdentity({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        await expect(bobLaptop.registerIdentity({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('can test that both verification methods have been registered', async () => {
@@ -125,7 +126,7 @@ const generateUnlockTests = (args: TestArgs) => {
 
         // try to update email with a code containing a typo
         verificationCode = await trustchainHelper.getWrongVerificationCode('elton@doe.com');
-        await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('should fail to update the email verification method if the verification code is not for the targeted email', async () => {
@@ -134,7 +135,7 @@ const generateUnlockTests = (args: TestArgs) => {
 
         // try to update email with a code for another email address
         verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
-        await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
     });
 
@@ -146,21 +147,21 @@ const generateUnlockTests = (args: TestArgs) => {
 
       it('fails to unlock a new device with a wrong passphrase', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidPassphrase);
+        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('fails to unlock a new device without having registered a passphrase', async () => {
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.VerificationMethodNotSet);
+        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       it('can register an unlock passphrase, update it, and unlock a new device with the new passphrase only', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         await bobLaptop.setVerificationMethod({ passphrase: 'new passphrase' });
 
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'passphrase' })).to.be.rejectedWith(errors.InvalidPassphrase);
+        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'passphrase' })).to.be.rejectedWith(errors.InvalidVerification);
         await bobPhone.stop();
 
         await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'new passphrase' })).to.be.fulfilled;
@@ -181,34 +182,102 @@ const generateUnlockTests = (args: TestArgs) => {
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         verificationCode = await trustchainHelper.getWrongVerificationCode('john@doe.com');
-        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('fails to unlock a new device without having registered an email address', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
-        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.VerificationMethodNotSet);
+        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
     });
 
     describe('device unlocking by verification key', () => {
+      const corruptVerificationKey = (key: b64string, field: string, position: number): b64string => {
+        const unwrappedKey = utils.fromB64Json(key);
+        const unwrappedField = utils.fromBase64(unwrappedKey[field]);
+        unwrappedField[position] += 1;
+        unwrappedKey[field] = utils.toBase64(unwrappedField);
+        return utils.toB64Json(unwrappedKey);
+      };
+
       let verificationKey;
+      let verificationKeyNotUsed;
 
       beforeEach(async () => {
+        verificationKeyNotUsed = await bobLaptop.generateVerificationKey();
         verificationKey = await bobLaptop.generateVerificationKey();
-        await bobLaptop.registerIdentity({ verificationKey });
       });
 
-      it('does list the verification key as a verification method', async () => {
+      it('can use a generated verification key to register', async () => {
+        await bobLaptop.registerIdentity({ verificationKey });
+        expect(bobLaptop.status).to.equal(READY);
+      });
+
+      it('does list the verification key as the unique verification method', async () => {
+        await bobLaptop.registerIdentity({ verificationKey });
         expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'verificationKey' }]);
       });
 
-      it('can generate a verification key and unlock a new device with it', async () => {
+      it('can unlock a new device with a verification key', async () => {
+        await bobLaptop.registerIdentity({ verificationKey });
         await expect(expectUnlock(bobPhone, bobIdentity, { verificationKey })).to.be.fulfilled;
       });
 
       it('should throw if setting another verification method after verification key has been used', async () => {
+        await bobLaptop.registerIdentity({ verificationKey });
         await expect(bobLaptop.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.OperationCanceled);
+      });
+
+      describe('register identity with an invalid verification key', () => {
+        beforeEach(async () => {
+          await bobPhone.start(bobIdentity);
+        });
+
+        it('throws InvalidVerification when using an obviously wrong verification key', async () => {
+          await expect(bobPhone.registerIdentity({ verificationKey: 'not_a_verification_key' })).to.be.rejectedWith(errors.InvalidVerification);
+        });
+
+        it('throws InvalidVerification when using a corrupt verification key', async () => {
+          const badKeys = [
+            corruptVerificationKey(verificationKey, 'privateSignatureKey', 4), // private part
+            corruptVerificationKey(verificationKey, 'privateSignatureKey', 60), // public part
+            // privateEncryptionKey can't be corrupted before registration...
+          ];
+
+          for (let i = 0; i < badKeys.length; i++) {
+            const badKey = badKeys[i];
+            await expect(bobPhone.registerIdentity({ verificationKey: badKey }), `bad verification key #${i}`).to.be.rejectedWith(errors.InvalidVerification);
+          }
+        });
+      });
+
+      describe('verify identity with an invalid verification key', () => {
+        beforeEach(async () => {
+          await bobLaptop.registerIdentity({ verificationKey });
+          await bobPhone.start(bobIdentity);
+        });
+
+        it('throws InvalidVerification when using an obviously wrong verification key', async () => {
+          await expect(bobPhone.verifyIdentity({ verificationKey: 'not_a_verification_key' })).to.be.rejectedWith(errors.InvalidVerification);
+        });
+
+        it('throws InvalidVerification when using a verification key different from the one used at registration', async () => {
+          await expect(bobPhone.verifyIdentity({ verificationKey: verificationKeyNotUsed })).to.be.rejectedWith(errors.InvalidVerification);
+        });
+
+        it('throws InvalidVerification when using a corrupt verification key', async () => {
+          const badKeys = [
+            corruptVerificationKey(verificationKey, 'privateSignatureKey', 4), // corrupt private part
+            corruptVerificationKey(verificationKey, 'privateSignatureKey', 60), // corrupt public part
+            corruptVerificationKey(verificationKey, 'privateEncryptionKey', 4), // does not match the one used at registration
+          ];
+
+          for (let i = 0; i < badKeys.length; i++) {
+            const badKey = badKeys[i];
+            await expect(bobPhone.verifyIdentity({ verificationKey: badKey }), `bad verification key #${i}`).to.be.rejectedWith(errors.InvalidVerification);
+          }
+        });
       });
     });
   });

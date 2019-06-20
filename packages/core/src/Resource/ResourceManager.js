@@ -2,7 +2,7 @@
 import varint from 'varint';
 import { tcrypto, random, generichash, number, utils, type Key } from '@tanker/crypto';
 
-import { ResourceNotFound, InvalidEncryptionFormat, InvalidArgument, NotEnoughData } from '../errors';
+import { DecryptionFailed, InvalidArgument } from '../errors';
 import type { VerifiedKeyPublish } from '../Blocks/entries';
 import { getEncryptionFormat, encryptData, extractResourceId } from '../DataProtection/Encryptor';
 import Trustchain from '../Trustchain/Trustchain';
@@ -31,29 +31,36 @@ export const extractHeaderV4 = (encryptedData: Uint8Array): { data: Uint8Array, 
   const { version, versionLength } = getEncryptionFormat(encryptedData);
 
   if (version !== 4)
-    throw new InvalidEncryptionFormat(`unhandled format version in extractHeaderV4: '${version}'`);
+    throw new DecryptionFailed({ message: `unhandled format version in extractHeaderV4: '${version}'` });
 
   const uint32Length = 4;
+  const minEncryptedDataLength = versionLength + uint32Length + tcrypto.MAC_SIZE;
 
-  if (encryptedData.length < versionLength + uint32Length + tcrypto.MAC_SIZE)
-    throw new NotEnoughData('data is not long enough to extract the encryption header');
+  if (encryptedData.length < minEncryptedDataLength)
+    throw new InvalidArgument('encryptedData', `Uint8Array(${minEncryptedDataLength}+)`, encryptedData);
 
+  let data;
+  let header;
   let pos = versionLength;
 
-  const encryptedChunkSize = number.fromUint32le(encryptedData.subarray(pos, pos + uint32Length));
-  pos += uint32Length;
+  try {
+    const encryptedChunkSize = number.fromUint32le(encryptedData.subarray(pos, pos + uint32Length));
+    pos += uint32Length;
 
-  const resourceId = encryptedData.subarray(pos, pos + tcrypto.MAC_SIZE);
-  pos += tcrypto.MAC_SIZE;
+    const resourceId = encryptedData.subarray(pos, pos + tcrypto.MAC_SIZE);
+    pos += tcrypto.MAC_SIZE;
 
-  const header = {
-    version,
-    encryptedChunkSize,
-    resourceId,
-    byteLength: pos,
-  };
+    header = {
+      version,
+      encryptedChunkSize,
+      resourceId,
+      byteLength: pos,
+    };
 
-  const data = encryptedData.subarray(pos);
+    data = encryptedData.subarray(pos);
+  } catch (e) {
+    throw new InvalidArgument('encryptedData', 'Uint8Array with properly formatted v4 header', encryptedData);
+  }
 
   return { data, header };
 };
@@ -76,14 +83,7 @@ export function getResourceId(encryptedData: Uint8Array): Uint8Array {
     return extractResourceId(encryptedData);
   }
 
-  let resourceId;
-
-  try {
-    ({ header: { resourceId } } = extractHeaderV4(encryptedData));
-  } catch (err) {
-    throw new InvalidArgument('encryptedData', 'Uint8Array with properly formatted v4 header', encryptedData);
-  }
-
+  const { header: { resourceId } } = extractHeaderV4(encryptedData);
   return resourceId;
 }
 
@@ -130,7 +130,7 @@ export class ResourceManager {
       await this._trustchain.sync();
       return this.findKeyFromResourceId(resourceId);
     }
-    throw new ResourceNotFound(resourceId);
+    throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
   }
 
   async extractAndSaveResourceKey(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {

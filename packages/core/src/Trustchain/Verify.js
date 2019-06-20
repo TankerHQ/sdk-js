@@ -2,6 +2,8 @@
 
 import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+
+import { InternalError } from '../errors';
 import { InvalidBlockError } from '../errors.internal';
 import { findIndex } from '../utils';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
@@ -73,7 +75,7 @@ export function verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser
       throw new InvalidBlockError('invalid_public_user_key', 'public_user_key is different than the author\'s one', { entry, authorDevice });
 
     if (!authorUser)
-      throw new Error('Assertion error: We have an author device, but no author user!?');
+      throw new InternalError('Assertion error: We have an author device, but no author user!?');
 
     if (utils.toBase64(entry.user_id) !== authorUser.userId)
       throw new InvalidBlockError('forbidden', 'the author is not authorized to create a device for this user', { entry, authorDevice });

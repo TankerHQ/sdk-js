@@ -131,14 +131,14 @@ describe('KeyDecryptor', () => {
     expect(await decryptor.keyFromKeyPublish(keyPublish)).to.be.null;
   });
 
-  it('throws Error when device key cannot be found', async () => {
+  it('returns null when author device key cannot be found', async () => {
     const keyPublish = makeKeyPublish(
       preferredNature(NATURE_KIND.key_publish_to_device),
       new Uint8Array([0])
     );
     store.empty();
 
-    await expect(decryptor.keyFromKeyPublish(keyPublish)).to.be.rejectedWith(Error, 'Key publish is verified');
+    expect(await decryptor.keyFromKeyPublish(keyPublish)).to.be.null;
   });
 
   it('returns null when deviceId does not match recipient', async () => {

@@ -27,6 +27,7 @@ import {
 
 import { type Nature, NATURE } from './Nature';
 import { type Block, hashBlock } from './Block';
+import { InternalError } from '../errors';
 
 export type VerificationFields = {|
   index: number,
@@ -69,7 +70,7 @@ function internalEntryToDbEntry(entry: any): any {
     } else if (elem[1] && typeof elem[1] === 'object') {
       result[elem[0]] = internalEntryToDbEntry(elem[1]);
     } else if (typeof elem[1] === 'string') {
-      throw new Error('Assertion error: string not allowed, see l.72');
+      throw new InternalError('Assertion error: string not allowed, see l.72');
     } else {
       result[elem[0]] = elem[1]; // eslint-disable-line prefer-destructuring
     }
@@ -161,7 +162,7 @@ export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
     case NATURE.key_publish_to_user_group:
       keyPublishAction = unserializeKeyPublish(block.payload);
       break;
-    default: throw new Error('Assertion error: wrong type for keyPublishFromBlock');
+    default: throw new InternalError('Assertion error: wrong type for keyPublishFromBlock');
   }
   return {
     ...verificationFields,
@@ -212,7 +213,7 @@ export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
       ...userGroupAction,
     };
   } else {
-    throw new Error('Assertion error: wrong type for userGroupEntryFromBlock');
+    throw new InternalError('Assertion error: wrong type for userGroupEntryFromBlock');
   }
 }
 
@@ -242,7 +243,7 @@ export function deviceCreationFromBlock(block: Block): UnverifiedDeviceCreation 
     case NATURE.device_creation_v3:
       userEntry = unserializeUserDeviceV3(block.payload);
       break;
-    default: throw new Error('Assertion error: wrong type for deviceCreationFromBlock');
+    default: throw new InternalError('Assertion error: wrong type for deviceCreationFromBlock');
   }
   return {
     ...verificationFields,
@@ -269,7 +270,7 @@ export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): Unv
     case NATURE.device_revocation_v2:
       userEntry = unserializeDeviceRevocationV2(block.payload);
       break;
-    default: throw new Error('Assertion error: wrong type for deviceRevocationFromBlock');
+    default: throw new InternalError('Assertion error: wrong type for deviceRevocationFromBlock');
   }
   return {
     ...verificationFields,
@@ -294,7 +295,7 @@ export function provisionalIdentityClaimFromBlock(block: Block): UnverifiedProvi
     case NATURE.provisional_identity_claim:
       userEntry = unserializeProvisionalIdentityClaim(block.payload);
       break;
-    default: throw new Error('Assertion error: wrong type for provisionalIdentityClaimFromBlock');
+    default: throw new InternalError('Assertion error: wrong type for provisionalIdentityClaimFromBlock');
   }
   return {
     ...verificationFields,

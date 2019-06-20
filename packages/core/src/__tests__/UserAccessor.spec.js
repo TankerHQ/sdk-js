@@ -7,7 +7,7 @@ import { expect } from './chai';
 import { makeUserStoreBuilder } from './UserStoreBuilder';
 import UserAccessor from '../Users/UserAccessor';
 import makeUint8Array from './makeUint8Array';
-import { RecipientsNotFound } from '../errors';
+import { InvalidArgument } from '../errors';
 
 import Trustchain from '../Trustchain/Trustchain';
 
@@ -151,17 +151,17 @@ describe('Users', () => {
       expect(retUserIds).to.have.members(expectedUserIds);
     });
 
-    it('throws RecipientsNotFound as appropriate', async () => {
+    it('throws InvalidArgument as appropriate', async () => {
       const { users, builder, generator } = await makeTestUsers();
       await builder.newUserCreationV3('alice');
       await builder.newUserCreationV3('bob');
       const aliceIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'alice');
       const bobIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'bob');
-      const casperIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'casper');
 
-      const publicIdentities = await toPublicIdentities([aliceIdentity, bobIdentity, casperIdentity]);
-      await expect(users.getUsers({ publicIdentities }))
-        .to.be.rejectedWith(RecipientsNotFound);
+      const casperUnregisteredIdentity = await createIdentity(utils.toBase64(generator.trustchainId), utils.toBase64(generator.appSignKeys.privateKey), 'casper');
+
+      const publicIdentities = await toPublicIdentities([aliceIdentity, bobIdentity, casperUnregisteredIdentity]);
+      await expect(users.getUsers({ publicIdentities })).to.be.rejectedWith(InvalidArgument);
     });
   });
 
@@ -174,10 +174,10 @@ describe('Users', () => {
       expect(devicePublicEncryptionKey).to.deep.equal(expected);
     });
 
-    it('throws if device does not exist', async () => {
+    it('returns null if device does not exist', async () => {
       const { users, builder } = await makeTestUsers();
       await builder.newUserCreationV3('alice');
-      await expect(users.getDevicePublicEncryptionKey(new Uint8Array(0))).to.be.rejectedWith(RecipientsNotFound);
+      expect(await users.getDevicePublicEncryptionKey(new Uint8Array(0))).to.be.equal(null);
     });
   });
 });

@@ -2,6 +2,8 @@
 
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
+import { InternalError } from '../errors';
+
 export const TABLE_METADATA = 'trustchain_metadata';
 
 const TABLE = 'trustchain';
@@ -99,7 +101,7 @@ export default class TrustchainStore {
 
   get trustchainPublicKey(): Uint8Array {
     if (!this._trustchainPublicKey) {
-      throw new Error('Assertion error: Trustchain public key does not exist');
+      throw new InternalError('Assertion error: Trustchain public key does not exist');
     }
     return this._trustchainPublicKey;
   }

@@ -4,7 +4,7 @@ import { errors } from '@tanker/core';
 import { tcrypto, utils } from '@tanker/crypto';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import FilePonyfill from '@tanker/file-ponyfill';
-import { expect, expectRejectedWithProperty } from './chai';
+import { expect } from './chai';
 
 import { type TestArgs } from './TestArgs';
 
@@ -43,11 +43,11 @@ const generateEncryptTests = (args: TestArgs) => {
     before(() => { bobLaptop = args.makeTanker(); });
 
     it('throws when using a session in an invalid state', async () => {
-      await expect(bobLaptop.encrypt(clearText)).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.encrypt(clearText)).to.be.rejectedWith(errors.PreconditionFailed);
     });
 
     it('throws when decrypting using a session in an invalid state', async () => {
-      await expect(bobLaptop.decrypt(utils.fromString('test'))).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.decrypt(utils.fromString('test'))).to.be.rejectedWith(errors.PreconditionFailed);
     });
   });
 
@@ -95,12 +95,12 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when decrypting data with an unknow encryption format', async () => {
         const invalidEncrypted = new Uint8Array([127]);
-        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
       it('throws when decrypting data with an invalid encryption format', async () => {
         const invalidEncrypted = new Uint8Array([255]); // not a varint
-        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidEncryptionFormat);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
       it('throws when decrypting truncated encrypted resource', async () => {
@@ -114,14 +114,14 @@ const generateEncryptTests = (args: TestArgs) => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const corruptPos = encrypted.length - 4;
         encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
+        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when calling decrypt with a corrupted buffer (data)', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const corruptPos = 4;
         encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptFailed);
+        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
       it('can encrypt and decrypt a text resource', async () => {
@@ -156,14 +156,8 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('throws when sharing with a permanent identity that is not registered', async () => {
-        const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
-
-        await expectRejectedWithProperty({
-          handler: async () => bobLaptop.encrypt(clearText, { shareWithUsers: [eveIdentity] }),
-          exception: errors.RecipientsNotFound,
-          property: 'recipientIds',
-          expectedValue: [eveIdentity]
-        });
+        const evePublicIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [evePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, evePublicIdentity);
       });
 
       it('shares even when the recipient is not connected', async () => {
@@ -202,26 +196,16 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when sharing a resource that doesn\'t exist', async () => {
         const badResourceId = 'AAAAAAAAAAAAAAAAAAAAAA==';
-
-        await expectRejectedWithProperty({
-          handler: async () => bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] }),
-          exception: errors.ResourceNotFound,
-          property: 'b64ResourceId',
-          expectedValue: badResourceId
-        });
+        await expect(bobLaptop.share([badResourceId], { shareWithUsers: [alicePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, badResourceId);
       });
 
       it('throws when sharing with a permanent identity that is not registered', async () => {
         const edata = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(edata);
-        const eveIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
+        const evePublicIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
 
-        await expectRejectedWithProperty({
-          handler: async () => bobLaptop.share([resourceId], { shareWithUsers: [eveIdentity] }),
-          exception: errors.RecipientsNotFound,
-          property: 'recipientIds',
-          expectedValue: [eveIdentity]
-        });
+        await expect(bobLaptop.share([resourceId], { shareWithUsers: [evePublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, evePublicIdentity);
       });
 
       it('shares an existing resource with a permanent identity', async () => {
@@ -293,10 +277,10 @@ const generateEncryptTests = (args: TestArgs) => {
         const verificationCode = await args.trustchainHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.InternalError);
       });
 
-      it('gracefully rejects attaching a provisional identity twice', async () => {
+      it('gracefully accept an already attached provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
         const verificationCode = await args.trustchainHelper.getVerificationCode(email);
@@ -325,12 +309,18 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('throws when verifying provisional identity with wrong verification code', async () => {
-        await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerificationCode);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerification);
+      });
+
+      it('throws when verifying an email that does not match the provisional identity', async () => {
+        const anotherEmail = `${uuid.v4()}@tanker-functional-test.io`;
+        const verificationCode = await args.trustchainHelper.getVerificationCode(anotherEmail);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when verifying provisional identity without attaching first', async () => {
         const verificationCode = await args.trustchainHelper.getVerificationCode(email);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidProvisionalIdentityStatus);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       it('throw when two users attach the same provisional identity', async () => {
@@ -341,7 +331,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
         verificationCode = await args.trustchainHelper.getVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.ServerError);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InternalError);
       });
 
       it('decrypt resource on a new device', async () => {

@@ -4,8 +4,6 @@ import { utils, tcrypto, type b64string } from '@tanker/crypto';
 
 import { encrypt, decrypt } from '../DataProtection/Encryptors/v2';
 
-import { InvalidVerificationKey } from '../errors';
-
 export type GhostDevice = {
   privateEncryptionKey: Uint8Array,
   privateSignatureKey: Uint8Array,
@@ -21,15 +19,11 @@ export const generateGhostDeviceKeys = (): GhostDeviceKeys => ({
 });
 
 export const extractGhostDevice = (unlockKey: b64string): GhostDevice => {
-  try {
-    const decoded = utils.fromB64Json(unlockKey);
-    return {
-      privateEncryptionKey: utils.fromBase64(decoded.privateEncryptionKey),
-      privateSignatureKey: utils.fromBase64(decoded.privateSignatureKey),
-    };
-  } catch (e) {
-    throw new InvalidVerificationKey(e);
-  }
+  const decoded = utils.fromB64Json(unlockKey);
+  return {
+    privateEncryptionKey: utils.fromBase64(decoded.privateEncryptionKey),
+    privateSignatureKey: utils.fromBase64(decoded.privateSignatureKey),
+  };
 };
 
 export const decryptUnlockKey = (encryptedUnlockKey: Uint8Array, userSecret: Uint8Array) => utils.toString(decrypt(userSecret, encryptedUnlockKey));

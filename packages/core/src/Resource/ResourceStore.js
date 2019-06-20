@@ -2,7 +2,9 @@
 
 import { utils, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
+
 import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
+import { InternalError } from '../errors';
 
 const TABLE = 'resource_keys';
 
@@ -34,7 +36,7 @@ export default class ResourceStore {
 
   constructor(ds: DataStore<*>, userSecret: Uint8Array) {
     if (!userSecret)
-      throw new Error('Invalid user secret');
+      throw new InternalError('Invalid user secret');
 
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_ds', { value: ds, writable: true });

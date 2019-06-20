@@ -1,6 +1,8 @@
 // @flow
 import find from 'array-find';
 import { utils, type b64string } from '@tanker/crypto';
+
+import { InternalError } from '../errors';
 import { InvalidBlockError } from '../errors.internal';
 import { findIndex, compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
@@ -137,7 +139,7 @@ export default class TrustchainVerifier {
   async _unlockedVerifySingleUserDeviceRevocation(targetUser: ?User, entry: UnverifiedDeviceRevocation): Promise<VerifiedDeviceRevocation> {
     const authorUser = await this._storage.userStore.findUser({ deviceId: entry.author });
     if (!authorUser)
-      throw new Error('Assertion error: User has a device in userstore, but findUser failed!'); // Mostly just for flow. Should Never Happen™
+      throw new InternalError('Assertion error: User has a device in userstore, but findUser failed!'); // Mostly just for flow. Should Never Happen™
     const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(entry.author));
     const authorDevice = authorUser.devices[deviceIndex];
 
@@ -158,7 +160,7 @@ export default class TrustchainVerifier {
         return this._unlockedVerifySingleUserDeviceRevocation(user, revocationEntry);
       }
       default:
-        throw new Error(`Assertion error: unexpected nature ${entry.nature}`);
+        throw new InternalError(`Assertion error: unexpected nature ${entry.nature}`);
     }
   }
 
@@ -214,7 +216,7 @@ export default class TrustchainVerifier {
         return verifyUserGroupAddition(entry, author, group);
       }
       default:
-        throw new Error(`Assertion error: unexpected nature ${entry.nature}`);
+        throw new InternalError(`Assertion error: unexpected nature ${entry.nature}`);
     }
   }
 

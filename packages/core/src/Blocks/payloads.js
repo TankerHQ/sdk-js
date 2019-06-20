@@ -4,6 +4,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 
 import { type Block } from './Block';
 import { NATURE } from './Nature';
+import { InternalError } from '../errors';
 import { UpgradeRequiredError } from '../errors.internal';
 import { getArray, getStaticArray, encodeArrayLength, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from './Serialize';
 
@@ -165,11 +166,11 @@ const trustchainIdSize = hashSize;
 
 export function serializeBlock(block: Block): Uint8Array {
   if (block.author.length !== hashSize)
-    throw new Error('Assertion error: invalid block author size');
+    throw new InternalError('Assertion error: invalid block author size');
   if (block.signature.length !== signatureSize)
-    throw new Error('Assertion error: invalid block signature size');
+    throw new InternalError('Assertion error: invalid block signature size');
   if (block.trustchain_id.length !== trustchainIdSize)
-    throw new Error('Assertion error: invalid block trustchain_id size');
+    throw new InternalError('Assertion error: invalid block trustchain_id size');
 
   return utils.concatArrays(
     new Uint8Array(varint.encode(currentVersion)),
@@ -209,7 +210,7 @@ export function unserializeBlock(src: Uint8Array): Block {
 
 export function serializeTrustchainCreation(trustchainCreation: TrustchainCreationRecord): Uint8Array {
   if (trustchainCreation.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid trustchain public key size');
+    throw new InternalError('Assertion error: invalid trustchain public key size');
 
   return trustchainCreation.public_signature_key;
 }
@@ -240,23 +241,23 @@ function serializeUserKeys(userKeys: UserKeys): Uint8Array {
 
 export function serializeUserDeviceV3(userDevice: UserDeviceRecord): Uint8Array {
   if (!utils.equalArray(userDevice.last_reset, new Uint8Array(tcrypto.HASH_SIZE)))
-    throw new Error('Assertion error: user device last reset must be null');
+    throw new InternalError('Assertion error: user device last reset must be null');
   if (userDevice.ephemeral_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device ephemeral public signature key size');
+    throw new InternalError('Assertion error: invalid user device ephemeral public signature key size');
   if (userDevice.user_id.length !== tcrypto.HASH_SIZE)
-    throw new Error('Assertion error: invalid user device user id size');
+    throw new InternalError('Assertion error: invalid user device user id size');
   if (userDevice.delegation_signature.length !== tcrypto.SIGNATURE_SIZE)
-    throw new Error('Assertion error: invalid user device delegation signature size');
+    throw new InternalError('Assertion error: invalid user device delegation signature size');
   if (userDevice.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device public signature key size');
+    throw new InternalError('Assertion error: invalid user device public signature key size');
   if (userDevice.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device public encryption key size');
+    throw new InternalError('Assertion error: invalid user device public encryption key size');
   if (!userDevice.user_key_pair)
-    throw new Error('Assertion error: invalid user device user key pair');
+    throw new InternalError('Assertion error: invalid user device user key pair');
   if (userDevice.user_key_pair.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device user public encryption key size');
+    throw new InternalError('Assertion error: invalid user device user public encryption key size');
   if (userDevice.user_key_pair.encrypted_private_encryption_key.length !== SEALED_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device user encrypted private encryption key size');
+    throw new InternalError('Assertion error: invalid user device user encrypted private encryption key size');
 
   const deviceFlags = new Uint8Array(1);
   deviceFlags[0] = userDevice.is_ghost_device ? 1 : 0;
@@ -354,7 +355,7 @@ export function unserializeKeyPublishToDevice(src: Uint8Array): KeyPublishRecord
   ]);
 
   if (result.key.length !== tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE)
-    throw new Error('invalid key publish key size');
+    throw new InternalError('invalid key publish key size');
   return result;
 }
 
@@ -377,27 +378,27 @@ export function unserializeKeyPublish(src: Uint8Array): KeyPublishToUserGroupRec
 
 export function serializeDeviceRevocationV1(deviceRevocation: DeviceRevocationRecord): Uint8Array {
   if (deviceRevocation.device_id.length !== hashSize)
-    throw new Error('Assertion error: invalid device revocation device_id size');
+    throw new InternalError('Assertion error: invalid device revocation device_id size');
 
   return deviceRevocation.device_id;
 }
 
 export function serializeDeviceRevocationV2(deviceRevocation: DeviceRevocationRecord): Uint8Array {
   if (deviceRevocation.device_id.length !== hashSize)
-    throw new Error('Assertion error: invalid device revocation device_id size');
+    throw new InternalError('Assertion error: invalid device revocation device_id size');
   if (!deviceRevocation.user_keys)
-    throw new Error('Assertion error: invalid user device user keys');
+    throw new InternalError('Assertion error: invalid user device user keys');
   if (deviceRevocation.user_keys.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device user public encryption key size');
+    throw new InternalError('Assertion error: invalid user device user public encryption key size');
   if (deviceRevocation.user_keys.previous_public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device user previous public encryption key size');
+    throw new InternalError('Assertion error: invalid user device user previous public encryption key size');
   if (deviceRevocation.user_keys.encrypted_previous_encryption_key.length !== SEALED_KEY_SIZE)
-    throw new Error('Assertion error: invalid user device user previous encrypted private encryption key size');
+    throw new InternalError('Assertion error: invalid user device user previous encrypted private encryption key size');
   for (const key of deviceRevocation.user_keys.private_keys) {
     if (key.recipient.length !== tcrypto.HASH_SIZE)
-      throw new Error('Assertion error: invalid user device encrypted key recipient size');
+      throw new InternalError('Assertion error: invalid user device encrypted key recipient size');
     if (key.key.length !== SEALED_KEY_SIZE)
-      throw new Error('Assertion error: invalid user device user encrypted private encryption key size');
+      throw new InternalError('Assertion error: invalid user device user encrypted private encryption key size');
   }
 
   return utils.concatArrays(
@@ -462,39 +463,39 @@ function unserializeProvisionalGroupEncryptedKeyV2(src: Uint8Array, offset: numb
 
 function checkGroupEncryptedKeyV1(blockType: string, key: GroupEncryptedKeyV1): void {
   if (key.public_user_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error(`Assertion error: invalid ${blockType} recipient user public key size`);
+    throw new InternalError(`Assertion error: invalid ${blockType} recipient user public key size`);
   if (key.encrypted_group_private_encryption_key.length !== tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE)
-    throw new Error(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
+    throw new InternalError(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
 }
 
 function checkGroupEncryptedKeyV2(blockType: string, key: GroupEncryptedKeyV2): void {
   if (key.user_id.length !== tcrypto.HASH_SIZE)
-    throw new Error(`Assertion error: invalid ${blockType} recipient user id size`);
+    throw new InternalError(`Assertion error: invalid ${blockType} recipient user id size`);
   if (key.public_user_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error(`Assertion error: invalid ${blockType} recipient user public key size`);
+    throw new InternalError(`Assertion error: invalid ${blockType} recipient user public key size`);
   if (key.encrypted_group_private_encryption_key.length !== tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE)
-    throw new Error(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
+    throw new InternalError(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
 }
 
 function checkProvisionalGroupEncryptedKeyV2(blockType: string, key: ProvisionalGroupEncryptedKeyV2): void {
   if (key.app_provisional_user_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error(`Assertion error: invalid ${blockType} app signature public key size`);
+    throw new InternalError(`Assertion error: invalid ${blockType} app signature public key size`);
   if (key.tanker_provisional_user_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error(`Assertion error: invalid ${blockType} tanker signature public key size`);
+    throw new InternalError(`Assertion error: invalid ${blockType} tanker signature public key size`);
   if (key.encrypted_group_private_encryption_key.length !== TWO_TIMES_SEALED_KEY_SIZE)
-    throw new Error(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
+    throw new InternalError(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
 }
 
 export function serializeUserGroupCreationV1(userGroupCreation: UserGroupCreationRecordV1): Uint8Array {
   if (userGroupCreation.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user group creation group public signature key size');
+    throw new InternalError('Assertion error: invalid user group creation group public signature key size');
   if (userGroupCreation.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user group creation group public encryption key size');
+    throw new InternalError('Assertion error: invalid user group creation group public encryption key size');
   if (userGroupCreation.encrypted_group_private_signature_key.length !== tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE)
-    throw new Error('Assertion error: invalid user group creation encrypted group private signature key size');
+    throw new InternalError('Assertion error: invalid user group creation encrypted group private signature key size');
   userGroupCreation.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV1('user group creation V1', k));
   if (userGroupCreation.self_signature.length !== tcrypto.SIGNATURE_SIZE)
-    throw new Error('Assertion error: invalid user group creation group self signature size');
+    throw new InternalError('Assertion error: invalid user group creation group self signature size');
 
   return utils.concatArrays(
     userGroupCreation.public_signature_key,
@@ -518,15 +519,15 @@ export function unserializeUserGroupCreationV1(src: Uint8Array): UserGroupCreati
 
 export function serializeUserGroupCreationV2(userGroupCreation: UserGroupCreationRecordV2): Uint8Array {
   if (userGroupCreation.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user group creation group public signature key size');
+    throw new InternalError('Assertion error: invalid user group creation group public signature key size');
   if (userGroupCreation.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid user group creation group public encryption key size');
+    throw new InternalError('Assertion error: invalid user group creation group public encryption key size');
   if (userGroupCreation.encrypted_group_private_signature_key.length !== tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE)
-    throw new Error('Assertion error: invalid user group creation encrypted group private signature key size');
+    throw new InternalError('Assertion error: invalid user group creation encrypted group private signature key size');
   userGroupCreation.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group creation V2', k));
   userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users.forEach(k => checkProvisionalGroupEncryptedKeyV2('user group creation V2', k));
   if (userGroupCreation.self_signature.length !== tcrypto.SIGNATURE_SIZE)
-    throw new Error('Assertion error: invalid user group creation group self signature size');
+    throw new InternalError('Assertion error: invalid user group creation group self signature size');
 
   return utils.concatArrays(
     userGroupCreation.public_signature_key,
@@ -553,10 +554,10 @@ export function unserializeUserGroupCreationV2(src: Uint8Array): UserGroupCreati
 
 export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditionRecordV1): Uint8Array {
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
-    throw new Error('Assertion error: invalid user group addition previous group block size');
+    throw new InternalError('Assertion error: invalid user group addition previous group block size');
   userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV1('user group add V1', k));
   if (userGroupAddition.self_signature_with_current_key.length !== tcrypto.SIGNATURE_SIZE)
-    throw new Error('Assertion error: invalid user group addition group self signature size');
+    throw new InternalError('Assertion error: invalid user group addition group self signature size');
 
   return utils.concatArrays(
     userGroupAddition.group_id,
@@ -569,11 +570,11 @@ export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditio
 
 export function serializeUserGroupAdditionV2(userGroupAddition: UserGroupAdditionRecordV2): Uint8Array {
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
-    throw new Error('Assertion error: invalid user group addition previous group block size');
+    throw new InternalError('Assertion error: invalid user group addition previous group block size');
   userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group add V2', k));
   userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.forEach(k => checkProvisionalGroupEncryptedKeyV2('user group creation V2', k));
   if (userGroupAddition.self_signature_with_current_key.length !== tcrypto.SIGNATURE_SIZE)
-    throw new Error('Assertion error: invalid user group addition group self signature size');
+    throw new InternalError('Assertion error: invalid user group addition group self signature size');
 
   return utils.concatArrays(
     userGroupAddition.group_id,
@@ -607,20 +608,20 @@ export function unserializeUserGroupAdditionV2(src: Uint8Array): UserGroupAdditi
 
 export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: ProvisionalIdentityClaimRecord): Uint8Array {
   if (provisionalIdentityClaim.user_id.length !== tcrypto.HASH_SIZE)
-    throw new Error('Assertion error: invalid claim provisional user id size');
+    throw new InternalError('Assertion error: invalid claim provisional user id size');
   if (provisionalIdentityClaim.app_provisional_identity_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid claim provisional app public key size');
+    throw new InternalError('Assertion error: invalid claim provisional app public key size');
   if (provisionalIdentityClaim.tanker_provisional_identity_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid claim provisional tanker public key size');
+    throw new InternalError('Assertion error: invalid claim provisional tanker public key size');
   if (provisionalIdentityClaim.author_signature_by_app_key.length !== tcrypto.SIGNATURE_SIZE)
-    throw new Error('Assertion error: invalid claim provisional app signature size');
+    throw new InternalError('Assertion error: invalid claim provisional app signature size');
   if (provisionalIdentityClaim.author_signature_by_tanker_key.length !== tcrypto.SIGNATURE_SIZE)
-    throw new Error('Assertion error: invalid claim provisional tanker signature size');
+    throw new InternalError('Assertion error: invalid claim provisional tanker signature size');
   if (provisionalIdentityClaim.recipient_user_public_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
-    throw new Error('Assertion error: invalid claim provisional recipient key size');
+    throw new InternalError('Assertion error: invalid claim provisional recipient key size');
   if (provisionalIdentityClaim.encrypted_provisional_identity_private_keys.length !== tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE * 2
                                                             + tcrypto.SEAL_OVERHEAD)
-    throw new Error('Assertion error: invalid claim provisional encrypted keys size');
+    throw new InternalError('Assertion error: invalid claim provisional encrypted keys size');
 
   return utils.concatArrays(
     provisionalIdentityClaim.user_id,

@@ -1,9 +1,10 @@
 // @flow
 
 import { generichash, tcrypto, utils } from '@tanker/crypto';
-import { type SecretProvisionalIdentity, InvalidIdentity } from '@tanker/identity';
+import { type SecretProvisionalIdentity } from '@tanker/identity';
 
-import { InvalidProvisionalIdentityStatus } from '../errors';
+import { InternalError, InvalidArgument, PreconditionFailed } from '../errors';
+import { VerificationNeeded } from '../errors.internal';
 
 import { Client, b64RequestObject } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
@@ -68,7 +69,7 @@ export default class DeviceManager {
     await this._trustchain.sync();
     const user = await this._userAccessor.findUser({ userId: this._localUser.userId });
     if (!user)
-      throw new Error('Cannot find the current user in the users');
+      throw new InternalError('Cannot find the current user in the users');
 
     const revokeDeviceBlock = this._localUser.blockGenerator.makeDeviceRevocationBlock(user, this._storage.keyStore.currentUserKey, revokedDeviceId);
     await this._client.sendBlock(revokeDeviceBlock);
@@ -97,18 +98,20 @@ export default class DeviceManager {
         verificationMethod: { type: 'email', email },
       };
     }
-    throw new InvalidIdentity(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
+
+    // Target is already checked when deserializing the provisional identity
+    throw new InternalError(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
   }
 
   async verifyProvisionalIdentity(verification: EmailVerification) {
     if (!('email' in verification))
-      throw new Error(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
+      throw new InternalError(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
 
     if (!this._provisionalIdentity)
-      throw new InvalidProvisionalIdentityStatus('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
+      throw new PreconditionFailed('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
 
     if (this._provisionalIdentity.value !== verification.email)
-      throw new InvalidProvisionalIdentityStatus('Verification email does not match provisional identity');
+      throw new InvalidArgument('"verification.email" does not match provisional identity');
 
     const tankerKeys = await this._verifyAndGetProvisionalIdentityKeys(verification);
     if (tankerKeys)
@@ -127,8 +130,7 @@ export default class DeviceManager {
         },
       }));
     } catch (e) {
-      const error = e.error;
-      if (error.code && error.code === 'verification_needed') {
+      if (e instanceof VerificationNeeded) {
         return null;
       }
       throw e;

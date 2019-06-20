@@ -154,7 +154,7 @@ const generateRevocationTests = (args: TestArgs) => {
       const clear = await bobLaptop.decrypt(encrypted);
       expect(clear).to.eq(message);
 
-      await expect(bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobPhone.decrypt(encrypted)).to.be.rejectedWith(errors.PreconditionFailed);
       await aliceLaptop.stop();
     });
   });

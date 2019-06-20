@@ -5,7 +5,7 @@ import { utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 
-import { InvalidEncryptionFormat } from '../errors';
+import { DecryptionFailed } from '../errors';
 import { decryptData, encryptData } from '../DataProtection/Encryptor';
 import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
 import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
@@ -75,8 +75,8 @@ describe('Encryptor', () => {
   it('should throw when an unsupported format version is detected', () => {
     const zeroVersion = varint.encode(0);
     const incorrectVersion = varint.encode(52);
-    expect(() => decryptData(key, zeroVersion)).to.throw(InvalidEncryptionFormat);
-    expect(() => decryptData(key, incorrectVersion)).to.throw(InvalidEncryptionFormat);
+    expect(() => decryptData(key, zeroVersion)).to.throw(DecryptionFailed);
+    expect(() => decryptData(key, incorrectVersion)).to.throw(DecryptionFailed);
   });
 
   it('should encrypt / decrypt a buffer', () => {

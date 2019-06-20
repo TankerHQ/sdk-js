@@ -30,7 +30,7 @@ const generateGetDeviceListTests = (args: TestArgs) => {
 
     it('should throw when using a session in an invalid state', async () => {
       await bobLaptop.stop();
-      await expect(bobLaptop.getDeviceList()).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.getDeviceList()).to.be.rejectedWith(errors.PreconditionFailed);
     });
 
     it('can list the devices of a user', async () => {

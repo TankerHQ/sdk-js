@@ -6,7 +6,7 @@ import { type PublicPermanentIdentity } from '@tanker/identity';
 import UserStore, { type FindUsersParameters } from './UserStore';
 import { type User } from './User';
 import Trustchain from '../Trustchain/Trustchain';
-import { InvalidArgument, RecipientsNotFound } from '../errors';
+import { InternalError, InvalidArgument } from '../errors';
 
 export type UserDevice = {|
     id: string,
@@ -54,7 +54,7 @@ export default class UserAccessor {
 
     const user = await this.findUser({ userId });
     if (!user)
-      throw new Error(`No such user ${utils.toString(userId)}`);
+      throw new InternalError(`No such user ${utils.toString(userId)}`);
 
     return user.devices.map(device => ({
       id: device.deviceId,
@@ -66,7 +66,7 @@ export default class UserAccessor {
   async findUsers(args: FindUsersParameters): Promise<Array<User>> {
     const { hashedUserIds } = args;
     if (!hashedUserIds)
-      throw new Error('Expected hashedUserIds parameter, but was missing');
+      throw new InternalError('Expected hashedUserIds parameter, but was missing');
 
     await this._fetchUsers(hashedUserIds);
 
@@ -77,7 +77,7 @@ export default class UserAccessor {
   async getUsers({ publicIdentities }: { publicIdentities: Array<PublicPermanentIdentity> }): Promise<Array<User>> {
     const obfuscatedUserIds = publicIdentities.map(u => {
       if (u.target !== 'user')
-        throw new Error(`Assertion error: publicIdentity ${u.target} should be 'user'`);
+        throw new InternalError(`Assertion error: publicIdentity ${u.target} should be 'user'`);
       return utils.fromBase64(u.value);
     });
 
@@ -86,13 +86,15 @@ export default class UserAccessor {
     if (fullUsers.length === obfuscatedUserIds.length)
       return fullUsers;
 
-    const missingIds = [];
+    const invalidPublicIdentities = [];
     for (const publicIdentity of publicIdentities) {
       const found = fullUsers.some(user => user.userId === publicIdentity.value);
       if (!found)
-        missingIds.push(utils.toB64Json(publicIdentity));
+        invalidPublicIdentities.push(utils.toB64Json(publicIdentity));
     }
-    throw new RecipientsNotFound(missingIds);
+
+    const message = `The following identities are invalid or do not exist on the trustchain: "${invalidPublicIdentities.join('", "')}"`;
+    throw new InvalidArgument(message);
   }
 
   async getDevicePublicEncryptionKey(deviceId: Uint8Array): Promise<?Uint8Array> {
@@ -104,6 +106,6 @@ export default class UserAccessor {
     if (newlyVerifiedDevice)
       return newlyVerifiedDevice.public_encryption_key;
 
-    throw new RecipientsNotFound([utils.toBase64(deviceId)]);
+    return null;
   }
 }

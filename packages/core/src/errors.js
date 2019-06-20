@@ -3,85 +3,54 @@ import { utils, type b64string } from '@tanker/crypto';
 import { TankerError } from '@tanker/errors';
 
 // Re-expose these common error classes:
-export { TankerError, InvalidArgument, NotEnoughData } from '@tanker/errors';
-export { InvalidIdentity } from '@tanker/identity';
+export { TankerError, InvalidArgument } from '@tanker/errors';
 
-export class ResourceNotFound extends TankerError {
-  b64ResourceId: b64string;
+export class DecryptionFailed extends TankerError {
+  b64ResourceId: ?b64string;
+  next: ?Error;
 
-  constructor(resourceId: Uint8Array) {
-    const b64ResourceId = utils.toBase64(resourceId);
-    super('ResourceNotFound', b64ResourceId);
-    this.b64ResourceId = b64ResourceId;
-  }
-}
+  constructor(args: { error?: Error, message?: string, resourceId?: Uint8Array }) {
+    const { error, resourceId } = args;
+    let message = args.message;
+    let b64ResourceId;
 
-export class DecryptFailed extends TankerError {
-  b64ResourceId: b64string;
-  next: Error;
+    if (resourceId) {
+      b64ResourceId = utils.toBase64(resourceId);
 
-  constructor(e: Error, resourceId: Uint8Array) {
-    const b64ResourceId = utils.toBase64(resourceId);
-    let message;
-
-    try {
-      message = `resource ${b64ResourceId} decryption failed with: ${e.toString()}`;
-    } catch (err) {
-      message = `resource ${b64ResourceId} decryption failed`;
+      if (!message) {
+        message = `resource ${b64ResourceId} decryption failed`;
+        if (error) message += `with: ${error.toString()}`;
+      }
     }
 
-    super('DecryptFailed', message);
+    super('DecryptionFailed', message);
 
-    this.next = e;
+    this.next = error;
     this.b64ResourceId = b64ResourceId;
   }
 }
 
-export class InvalidVerificationKey extends TankerError {
-  next: Error;
-
-  constructor(e: Error) {
-    super('InvalidVerificationKey');
-    this.next = e;
-  }
-}
-
-export class InvalidPassphrase extends TankerError {
+export class ExpiredVerification extends TankerError {
   constructor(message: string) {
-    super('InvalidPassphrase', message);
+    super('ExpiredVerification', message);
   }
 }
 
-export class InvalidVerificationCode extends TankerError {
+export class GroupTooBig extends TankerError {
   constructor(message: string) {
-    super('InvalidVerificationCode', message);
+    super('GroupTooBig', message);
   }
 }
 
-export class ExpiredVerificationCode extends TankerError {
+export class InternalError extends TankerError {
   constructor(message: string) {
-    super('ExpiredVerificationCode', message);
+    super('InternalError', message);
   }
 }
 
-export class VerificationMethodNotSet extends TankerError {
+export class InvalidVerification extends TankerError {
   constructor(message: string) {
-    super('VerificationMethodNotSet', message);
-  }
-}
-
-export class MaxVerificationAttemptsReached extends TankerError {
-  constructor(message: string) {
-    super('MaxVerificationAttemptsReached', message);
-  }
-}
-
-export class InvalidSessionStatus extends TankerError {
-  status: number;
-
-  constructor(status: number, message: string = `status: ${status}`) {
-    super('InvalidSessionStatus', message);
-    this.status = status;
+    super('InvalidVerification', message);
   }
 }
 
@@ -91,64 +60,14 @@ export class OperationCanceled extends TankerError {
   }
 }
 
-export class InvalidProvisionalIdentityStatus extends TankerError {
+export class PreconditionFailed extends TankerError {
   constructor(message: string) {
-    super('InvalidProvisionalIdentityStatus', message);
+    super('PreconditionFailed', message);
   }
 }
 
-export class InvalidEncryptionFormat extends TankerError {
+export class TooManyAttempts extends TankerError {
   constructor(message: string) {
-    super('InvalidEncryptionFormat', message);
-  }
-}
-
-export class ServerError extends TankerError {
-  error: Object;
-  b64TrustchainId: b64string;
-
-  constructor(error: Object, trustchainId: Uint8Array) {
-    const b64TrustchainId = utils.toBase64(trustchainId);
-    const message = `status: ${error.status}, code: ${error.code}, message: ${error.message}, trustchainId: ${b64TrustchainId}`;
-    super('ServerError', message);
-    this.error = error;
-    this.b64TrustchainId = b64TrustchainId;
-  }
-}
-
-export class InvalidDelegationToken extends TankerError {
-  constructor(message: string) {
-    super('InvalidDelegationToken', message);
-  }
-}
-
-export class AuthenticationError extends TankerError {
-  next: Error;
-
-  constructor(e: any) {
-    super('AuthenticationError', `couldn't authenticate: ${e.message}`);
-    this.next = e;
-  }
-}
-
-export class RecipientsNotFound extends TankerError {
-  recipientIds: Array<string>;
-
-  constructor(recipientIds: Array<string>) {
-    super('RecipientsNotFound', `Recipient(s) '${recipientIds.join(', ')}' not found`);
-
-    this.recipientIds = recipientIds;
-  }
-}
-
-export class InvalidGroupSize extends TankerError {
-  constructor(msg: string) {
-    super('InvalidGroupSize', msg);
-  }
-}
-
-export class IdentityAlreadyRegistered extends TankerError {
-  constructor(msg: string) {
-    super('IdentityAlreadyRegistered', msg);
+    super('TooManyAttempts', message);
   }
 }

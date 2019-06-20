@@ -29,7 +29,7 @@ export class KeyDecryptor {
     }
     const authorKey = await this._userAccessor.getDevicePublicEncryptionKey(keyPublishEntry.author);
     if (!authorKey)
-      throw new Error('Assertion error: Key publish is verified, but can\'t find author\'s key!');
+      return null;
     return tcrypto.asymDecrypt(keyPublishEntry.key, authorKey, this._localUser.privateEncryptionKey);
   }
 

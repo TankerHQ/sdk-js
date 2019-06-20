@@ -1,4 +1,5 @@
 // @flow
+import { InternalError } from './errors';
 import PromiseWrapper from './PromiseWrapper';
 
 // Loose interface that will match any nodeJS EventEmitter or SocketIo client.
@@ -100,7 +101,7 @@ export default class SynchronizedEventEmitter {
     const listener = this.eventListeners[id];
 
     if (!listener)
-      throw new Error(`could not find listener with id=${id}`);
+      throw new InternalError(`could not find listener with id=${id}`);
 
     this.subEmitter.removeListener(listener.eventName, listener.cb);
 

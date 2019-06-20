@@ -1,6 +1,4 @@
 // @flow
-export { InvalidIdentity } from './InvalidIdentity';
-
 export type {
   PublicPermanentIdentity, SecretPermanentIdentity,
   PublicProvisionalIdentity, SecretProvisionalIdentity,

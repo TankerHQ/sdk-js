@@ -4,7 +4,7 @@ import uuid from 'uuid';
 import { errors } from '@tanker/core';
 import { utils } from '@tanker/crypto';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
-import { expect, expectRejectedWithProperty } from './chai';
+import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const generateGroupsTests = (args: TestArgs) => {
@@ -13,7 +13,7 @@ const generateGroupsTests = (args: TestArgs) => {
     let alicePublicIdentity;
     let bobLaptop;
     let bobPublicIdentity;
-    let unknownUsers;
+    let unknownPublicIdentity;
     const message = "Two's company, three's a crowd";
 
     before(async () => {
@@ -29,7 +29,7 @@ const generateGroupsTests = (args: TestArgs) => {
       await bobLaptop.start(bobIdentity);
       await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-      unknownUsers = [await getPublicIdentity(await args.trustchainHelper.generateIdentity('galette'))];
+      unknownPublicIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('galette'));
     });
 
     after(async () => {
@@ -55,46 +55,32 @@ const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('throws on groupCreation with invalid user', async () => {
-      await expectRejectedWithProperty({
-        handler: async () => aliceLaptop.createGroup([alicePublicIdentity, ...unknownUsers]),
-        exception: errors.RecipientsNotFound,
-        property: 'recipientIds',
-        expectedValue: unknownUsers
-      });
+      await expect(aliceLaptop.createGroup([alicePublicIdentity, unknownPublicIdentity]))
+        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
     });
 
     it('throws on groupUpdate with invalid users', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-
-      await expectRejectedWithProperty({
-        handler: async () => aliceLaptop.updateGroupMembers(groupId, { usersToAdd: unknownUsers }),
-        exception: errors.RecipientsNotFound,
-        property: 'recipientIds',
-        expectedValue: unknownUsers
-      });
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [unknownPublicIdentity] }))
+        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
     });
 
     it('throws on groupUpdate with mix valid/invalid users', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-
-      await expectRejectedWithProperty({
-        handler: async () => aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, ...unknownUsers] }),
-        exception: errors.RecipientsNotFound,
-        property: 'recipientIds',
-        expectedValue: unknownUsers
-      });
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, unknownPublicIdentity] }))
+        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
     });
 
     it('throws on groupCreation with empty users', async () => {
       await expect(aliceLaptop.createGroup([]))
-        .to.be.rejectedWith(errors.InvalidGroupSize);
+        .to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('throws on groupUpdate with empty users', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
 
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [] }))
-        .to.be.rejectedWith(errors.InvalidGroupSize);
+        .to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('should publish keys to group', async () => {
@@ -136,7 +122,7 @@ const generateGroupsTests = (args: TestArgs) => {
     it('should share old keys with added group members', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
       const encrypted = await aliceLaptop.encrypt(message, { shareWithGroups: [groupId] });
-      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.ResourceNotFound);
+      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
 
       const decrypted = await bobLaptop.decrypt(encrypted);
@@ -172,7 +158,7 @@ const generateGroupsTests = (args: TestArgs) => {
       await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
       await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-      await expect(bobLaptop.createGroup([bobPublicIdentity, publicProvisionalIdentity])).to.be.rejectedWith(errors.ServerError);
+      await expect(bobLaptop.createGroup([bobPublicIdentity, publicProvisionalIdentity])).to.be.rejectedWith(errors.InternalError);
     });
 
     it('should add a provisional member to a group', async () => {
@@ -219,7 +205,7 @@ const generateGroupsTests = (args: TestArgs) => {
       await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
       await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.ServerError);
+      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.InternalError);
     });
 
     it('should claim a group creation, a group add, and an encrypt', async () => {

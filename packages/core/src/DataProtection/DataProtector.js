@@ -1,7 +1,7 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 import { type PublicIdentity, type PublicProvisionalUser, _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
-import { ResourceNotFound, DecryptFailed } from '../errors';
+import { DecryptionFailed, InternalError } from '../errors';
 import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
@@ -93,7 +93,7 @@ export default class DataProtector {
       const keys = recipientUsers.map(user => {
         const userPublicKey = getLastUserPublicKey(user);
         if (!userPublicKey)
-          throw new Error('Trying to share with a user without user public key');
+          throw new InternalError('Trying to share with a user without user public key');
         return userPublicKey;
       });
 
@@ -138,8 +138,8 @@ export default class DataProtector {
     const key = await this._resourceManager.findKeyFromResourceId(resourceId, true);
     try {
       return decryptData(key, protectedData);
-    } catch (e) {
-      throw new DecryptFailed(e, resourceId);
+    } catch (error) {
+      throw new DecryptionFailed({ error, resourceId });
     }
   }
 
@@ -154,8 +154,6 @@ export default class DataProtector {
     const keys = await Promise.all(resourceIds.map(async (b64ResourceId) => {
       const resourceId = utils.fromBase64(b64ResourceId);
       const key = await this._resourceManager.findKeyFromResourceId(resourceId);
-      if (!key)
-        throw new ResourceNotFound(resourceId);
       return { resourceId, key };
     }));
 

@@ -2,7 +2,7 @@
 import { aead, tcrypto, type Key } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
-import { InvalidArgument, DecryptFailed } from '../errors';
+import { InvalidArgument, DecryptionFailed } from '../errors';
 import { extractHeaderV4, type HeaderV4 } from '../Resource/ResourceManager';
 
 export type ResourceIdKeyMapper = {
@@ -65,7 +65,7 @@ export default class DecryptorStream extends Transform {
           const clearData = aead.decryptAEAD(key, iv, encryptedData);
           this._decryptionStream.push(clearData);
         } catch (error) {
-          return done(new DecryptFailed(error, resourceId));
+          return done(new DecryptionFailed({ error, resourceId }));
         }
 
         done();
@@ -73,7 +73,7 @@ export default class DecryptorStream extends Transform {
 
       flush: (done) => {
         if (this._state.lastEncryptedChunkSize % encryptedChunkSize === 0) {
-          done(new DecryptFailed(new Error('Data has been truncated'), resourceId));
+          done(new DecryptionFailed({ message: 'Data has been truncated', resourceId }));
           return;
         }
 

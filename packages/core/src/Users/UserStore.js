@@ -3,6 +3,7 @@
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 
+import { InternalError } from '../errors';
 import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 
@@ -161,7 +162,7 @@ export default class UserStore {
         return this._prepareDeviceRevocation(revocationEntry);
       }
       default:
-        throw new Error(`Invalid nature: ${entry.nature}`);
+        throw new InternalError(`Invalid nature: ${entry.nature}`);
     }
   }
 
@@ -195,12 +196,12 @@ export default class UserStore {
 
   async _prepareDeviceRevocation(deviceRevocation: VerifiedDeviceRevocation) {
     if (!deviceRevocation.user_id) {
-      throw new Error('Missing user_id in the record');
+      throw new InternalError('Missing user_id in the record');
     }
 
     const user = await this.findUser({ userId: deviceRevocation.user_id });
     if (!user)
-      throw new Error('User not found!');
+      throw new InternalError('User not found!');
 
     const { updatedUser, userPublicKey } = applyDeviceRevocationToUser(deviceRevocation, user);
 
@@ -221,7 +222,7 @@ export default class UserStore {
 
   async findUser(args: FindUserParameters): Promise<?User> {
     if (Object.keys(args).length !== 1)
-      throw new Error(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
+      throw new InternalError(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (args.userId) {
       const record = await this._ds.first(USERS_TABLE, {
@@ -248,16 +249,16 @@ export default class UserStore {
       return this.findUser({ userId: utils.fromBase64(keyUserId) });
     }
 
-    throw new Error('Find: invalid argument');
+    throw new InternalError('Find: invalid argument');
   }
 
   async findUsers(args: FindUsersParameters): Promise<Array<User>> {
     const { hashedUserIds } = args;
     if (Object.keys(args).length !== 1)
-      throw new Error(`findUsers: expected exactly one argument, got ${Object.keys(args).length}`);
+      throw new InternalError(`findUsers: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (!hashedUserIds)
-      throw new Error('Find: invalid argument');
+      throw new InternalError('Find: invalid argument');
 
     const b64HashedUserIds = hashedUserIds.map(id => utils.toBase64(id));
     return this._ds.find(USERS_TABLE, {
@@ -270,7 +271,7 @@ export default class UserStore {
   _findDeviceToUser = async (args: FindDeviceParameters): Promise<?DeviceToUser> => {
     const { deviceId } = args;
     if (Object.keys(args).length !== 1)
-      throw new Error(`findUserDeviceToUser: expected exactly one argument, got ${Object.keys(args).length}`);
+      throw new InternalError(`findUserDeviceToUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (deviceId) {
       const record = await this._ds.first(DEVICES_USER_TABLE, {
@@ -278,14 +279,14 @@ export default class UserStore {
       });
       return record;
     } else {
-      throw new Error('Find: invalid argument');
+      throw new InternalError('Find: invalid argument');
     }
   }
 
   _findDevicesToUsers = async (args: FindDevicesParameters): Promise<Array<DeviceToUser>> => {
     const { hashedDeviceIds } = args;
     if (Object.keys(args).length !== 1)
-      throw new Error(`findDevicesToUsers: expected exactly one argument, got ${Object.keys(args).length}`);
+      throw new InternalError(`findDevicesToUsers: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (hashedDeviceIds) {
       return this._ds.find(DEVICES_USER_TABLE, {
@@ -294,7 +295,7 @@ export default class UserStore {
         }
       });
     } else {
-      throw new Error('Find: invalid argument');
+      throw new InternalError('Find: invalid argument');
     }
   }
 
@@ -305,10 +306,10 @@ export default class UserStore {
     const { deviceId, userId } = deviceToUser;
     const user = await this.findUser({ userId: utils.fromBase64(userId) });
     if (!user)
-      throw new Error('Find: no such userId'); // not supposed to be trigerred (here for flow)
+      throw new InternalError('Find: no such userId'); // not supposed to be trigerred (here for flow)
     const deviceIndex = findIndex(user.devices, (d) => d.deviceId === deviceId);
     if (deviceIndex === -1)
-      throw new Error('Device not found!');
+      throw new InternalError('Device not found!');
     return user.devices[deviceIndex];
   }
 
@@ -327,7 +328,7 @@ export default class UserStore {
         return map;
       const deviceIndex = findIndex(user.devices, (d) => d.deviceId === elem.deviceId);
       if (deviceIndex === -1)
-        throw new Error('Device not found!');
+        throw new InternalError('Device not found!');
       const device = user.devices[deviceIndex];
       map.set(device.deviceId, device);
       return map;

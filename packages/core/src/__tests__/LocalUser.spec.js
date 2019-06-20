@@ -8,7 +8,7 @@ import TestGenerator from './TestGenerator';
 
 import { type UserKeys } from '../Blocks/payloads';
 import LocalUser from '../Session/LocalUser';
-import { extractUserData } from '../UserData';
+import { extractUserData } from '../Session/UserData';
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 class FakeKeyStore {

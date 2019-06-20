@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import { InvalidArgument } from './errors';
+import { InternalError, InvalidArgument } from './errors';
 
 export function toBase64(bytes: Uint8Array): b64string {
   if (!(bytes instanceof Uint8Array))
@@ -32,7 +32,7 @@ export function fromString(str: string): Uint8Array {
 
 export function compareSameSizeUint8Arrays(left: Uint8Array, right: Uint8Array): number {
   if (left.length !== right.length)
-    throw new Error('AssertionError: arguments in compareSameSizeArrays do not have the same size');
+    throw new InternalError('AssertionError: arguments in compareSameSizeArrays do not have the same size');
   for (let i = 0; i < left.length; i++) {
     if (left[i] < right[i])
       return -1;

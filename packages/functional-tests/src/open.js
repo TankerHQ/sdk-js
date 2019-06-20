@@ -30,7 +30,7 @@ const generateOpenTests = (args: TestArgs) => {
     });
 
     it('throws when giving an invalid identity', async () => {
-      await expect(bobLaptop.start('secret')).to.be.rejectedWith(errors.InvalidIdentity);
+      await expect(bobLaptop.start('secret')).to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('returns IDENTITY_REGISTRATION_NEEDED status if new identity provided', async () => {
@@ -103,7 +103,7 @@ const generateOpenTests = (args: TestArgs) => {
     });
 
     it('throws when registering before having started a session', async () => {
-      await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.InvalidSessionStatus);
+      await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
     });
 
     it('creates the first device with the passphrase method', async () => {

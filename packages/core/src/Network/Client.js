@@ -3,11 +3,12 @@
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
 import { generichash, utils, type b64string } from '@tanker/crypto';
-import { InvalidIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
+import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
-import { AuthenticationError, ExpiredVerificationCode, InvalidPassphrase, InvalidVerificationCode, MaxVerificationAttemptsReached, ServerError, VerificationMethodNotSet } from '../errors';
+import { VerificationNeeded } from '../errors.internal';
+import { ExpiredVerification, InvalidArgument, InternalError, GroupTooBig, InvalidVerification, PreconditionFailed, TooManyAttempts } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 export type AuthDeviceParams = {
@@ -50,13 +51,17 @@ export function b64RequestObject(requestObject: any): any {
 }
 
 const serverErrorMap = {
-  invalid_passphrase: InvalidPassphrase,
-  invalid_verification_code: InvalidVerificationCode,
-  max_attempts_reached: MaxVerificationAttemptsReached,
-  verification_code_expired: ExpiredVerificationCode,
-  verification_code_not_found: InvalidVerificationCode,
-  verification_method_not_set: VerificationMethodNotSet,
-  verification_key_not_found: VerificationMethodNotSet,
+  device_not_found: InvalidVerification,
+  group_too_big: GroupTooBig,
+  invalid_delegation_signature: InvalidVerification,
+  invalid_passphrase: InvalidVerification,
+  invalid_verification_code: InvalidVerification,
+  too_many_attempts: TooManyAttempts,
+  verification_code_expired: ExpiredVerification,
+  verification_code_not_found: InvalidVerification,
+  verification_method_not_set: PreconditionFailed,
+  verification_needed: VerificationNeeded,
+  verification_key_not_found: PreconditionFailed,
 };
 
 export type Authenticator = (string) => AuthDeviceParams;
@@ -98,7 +103,7 @@ export class Client extends EventEmitter {
 
   setAuthenticator = async (authenticator: Authenticator) => {
     if (this._authenticator)
-      throw new Error('authenticator has already been set');
+      throw new InternalError('authenticator has already been set');
 
     this._authenticator = authenticator;
     return this.authenticate();
@@ -107,7 +112,7 @@ export class Client extends EventEmitter {
   authenticate = async () => {
     const authenticator = this._authenticator;
     if (!authenticator)
-      throw new Error('no authenticator has been set');
+      throw new InternalError('no authenticator has been set');
     const challenge = await this.requestAuthChallenge();
     return this.authenticateDevice(authenticator(challenge));
   }
@@ -145,11 +150,7 @@ export class Client extends EventEmitter {
       user_id: utils.toBase64(userId),
     };
 
-    try {
-      return this.send('authenticate device', authDeviceRequest);
-    } catch (e) {
-      throw new AuthenticationError(e);
-    }
+    return this.send('authenticate device', authDeviceRequest);
   }
 
   async remoteStatus(trustchainId: Uint8Array, userId: Uint8Array, publicSignatureKey: Uint8Array) {
@@ -169,7 +170,7 @@ export class Client extends EventEmitter {
 
   async open(): Promise<void> {
     if (this._abortOpen) {
-      throw new Error('open already in progress');
+      throw new InternalError('open already in progress');
     }
     return new Promise((resolve, reject) => {
       let connectListener;
@@ -181,7 +182,7 @@ export class Client extends EventEmitter {
         this._abortOpen = null;
       };
 
-      this._abortOpen = () => { cleanup(); reject(new Error('aborted')); };
+      this._abortOpen = () => { cleanup(); reject(new InternalError('aborted')); };
 
       connectListener = this.registerListener('connect', () => { cleanup(); resolve(); });
       errorListener = this.registerListener('connect_error', (e) => { cleanup(); reject(e); });
@@ -209,11 +210,12 @@ export class Client extends EventEmitter {
     const jresult = await this.socket.emit(eventName, jdata);
     const result = JSON.parse(jresult);
     if (result && result.error) {
-      const SpecificError = serverErrorMap[result.error.code];
+      const { error } = result;
+      const SpecificError = serverErrorMap[error.code];
       if (SpecificError) {
-        throw new SpecificError(result.error.message);
+        throw new SpecificError(error.message);
       }
-      throw new ServerError(result.error, this.trustchainId);
+      throw new InternalError(`Server error with status: ${error.status}, code: ${error.code}, message: ${error.message}`);
     }
     return result;
   }
@@ -239,7 +241,7 @@ export class Client extends EventEmitter {
 
     const request = provisionalIdentities.map(provisionalIdentity => {
       if (provisionalIdentity.target !== 'email') {
-        throw new InvalidIdentity(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
+        throw new InvalidArgument(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
       }
       const email = generichash(utils.fromString(provisionalIdentity.value));
       return { type: 'email', hashed_email: email };

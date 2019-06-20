@@ -13,6 +13,7 @@ import {
   type UserGroupAdditionRecord,
 } from '../Blocks/payloads';
 import { NATURE_KIND, natureKind } from '../Blocks/Nature';
+import { InternalError } from '../errors';
 
 function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: KeyStore): ?Object {
   for (const gek of groupKeys) {
@@ -104,7 +105,7 @@ export default class GroupUpdater {
 
     const previousGroup = await this._groupStore.findExternal({ groupId: userGroupAddition.group_id });
     if (!previousGroup)
-      throw new Error(`Assertion error: can't find group ${utils.toBase64(userGroupAddition.group_id)}`);
+      throw new InternalError(`Assertion error: can't find group ${utils.toBase64(userGroupAddition.group_id)}`);
 
     await this._groupStore.updateLastGroupBlock({ groupId: userGroupAddition.group_id, currentLastGroupBlock: entry.hash, currentLastGroupIndex: entry.index });
 
@@ -156,7 +157,7 @@ export default class GroupUpdater {
     else if (natureKind(entry.nature) === NATURE_KIND.user_group_addition)
       await this._applyUserGroupAddition(entry);
     else
-      throw new Error(`unsupported group update block nature: ${entry.nature}`);
+      throw new InternalError(`unsupported group update block nature: ${entry.nature}`);
   }
 
   applyProvisionalIdentityClaim = async (provisionalUserKeys: ProvisionalUserKeyPairs) => {
@@ -168,7 +169,7 @@ export default class GroupUpdater {
         return provisionalKeyId === provisionalUserKeys.id;
       });
       if (myKeys.length !== 1)
-        throw new Error('assertion error: findExternals returned groups without my keys');
+        throw new InternalError('assertion error: findExternals returned groups without my keys');
       const privateEncryptionKey = provisionalUnseal(myKeys[0].encryptedGroupPrivateEncryptionKey, provisionalUserKeys);
       return {
         groupId: g.groupId,

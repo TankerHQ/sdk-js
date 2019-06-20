@@ -7,7 +7,7 @@ import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
-import { InvalidArgument, InvalidIdentity, InvalidSessionStatus, OperationCanceled } from '../errors';
+import { InvalidArgument, PreconditionFailed, OperationCanceled } from '../errors';
 
 import { type RemoteVerification, statuses } from '../Session/types';
 import { type ShareWithOptions } from '../DataProtection/ShareWithOptions';
@@ -115,11 +115,11 @@ describe('Tanker', () => {
     });
 
     it('should throw when trying to get deviceId', async () => {
-      expect(() => tanker.deviceId).to.throw(InvalidSessionStatus);
+      expect(() => tanker.deviceId).to.throw(PreconditionFailed);
     });
 
     it('should throw when trying to get verification methods', async () => {
-      await expect(tanker.getVerificationMethods()).to.be.rejectedWith(InvalidSessionStatus);
+      await expect(tanker.getVerificationMethods()).to.be.rejectedWith(PreconditionFailed);
     });
 
     describe('start', () => {
@@ -129,7 +129,7 @@ describe('Tanker', () => {
       });
 
       it('should throw when identity is not base64', async () => {
-        await expect(tanker.start('not b64')).to.be.rejectedWith(InvalidIdentity);
+        await expect(tanker.start('not b64')).to.be.rejectedWith(InvalidArgument);
       });
 
       it('should throw when identity\'s trustchain does not match tanker\'s', async () => {
@@ -150,7 +150,7 @@ describe('Tanker', () => {
           userId,
         );
         const truncatedIdentity = identity.slice(0, identity.length - 10);
-        await expect(tanker.start(truncatedIdentity)).to.be.rejectedWith(InvalidIdentity);
+        await expect(tanker.start(truncatedIdentity)).to.be.rejectedWith(InvalidArgument);
       });
     });
   });
@@ -205,7 +205,7 @@ describe('Tanker', () => {
       });
 
       it('should throw if generating verification key after registration', async () => {
-        await expect(tanker.generateVerificationKey()).to.be.rejectedWith(InvalidSessionStatus);
+        await expect(tanker.generateVerificationKey()).to.be.rejectedWith(PreconditionFailed);
       });
     });
 

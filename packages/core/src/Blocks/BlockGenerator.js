@@ -20,9 +20,9 @@ import {
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 
 import { signBlock, type Block } from './Block';
-import { type DelegationToken } from '../Session/types';
+import { InternalError } from '../errors';
+import { type DelegationToken } from '../Session/UserData';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
-import { InvalidDelegationToken } from '../errors';
 
 export function getUserGroupCreationBlockSignDataV1(record: UserGroupCreationRecordV1): Uint8Array {
   return utils.concatArrays(
@@ -151,8 +151,6 @@ export class BlockGenerator {
   }
 
   makeNewUserBlock(args: NewUserParams) {
-    if (!utils.equalArray(args.delegationToken.user_id, args.userId))
-      throw new InvalidDelegationToken(`delegation token for user ${utils.toBase64(args.delegationToken.user_id)}, but we are ${utils.toBase64(args.userId)}`);
     const userKeys = tcrypto.makeEncryptionKeyPair();
 
     return this._makeDeviceBlock({
@@ -285,7 +283,7 @@ export class BlockGenerator {
     const keysForUsers = users.map(u => {
       const userPublicKey = getLastUserPublicKey(u);
       if (!userPublicKey)
-        throw new Error('createUserGroup: user does not have user keys');
+        throw new InternalError('createUserGroup: user does not have user keys');
       return {
         user_id: utils.fromBase64(u.userId),
         public_user_encryption_key: userPublicKey,
@@ -336,7 +334,7 @@ export class BlockGenerator {
     const keysForUsers = users.map(u => {
       const userPublicKey = getLastUserPublicKey(u);
       if (!userPublicKey)
-        throw new Error('addToUserGroup: user does not have user keys');
+        throw new InternalError('addToUserGroup: user does not have user keys');
       return {
         user_id: utils.fromBase64(u.userId),
         public_user_encryption_key: userPublicKey,

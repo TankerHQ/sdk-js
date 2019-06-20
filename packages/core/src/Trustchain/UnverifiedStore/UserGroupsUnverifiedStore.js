@@ -6,6 +6,7 @@ import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 import type { UnverifiedUserGroup, UnverifiedUserGroupCreation, UnverifiedUserGroupAddition, VerifiedUserGroup } from '../../Blocks/entries';
 import { entryToDbEntry, dbEntryToEntry } from '../../Blocks/entries';
 import { natureKind, NATURE_KIND } from '../../Blocks/Nature';
+import { InternalError } from '../../errors';
 
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';
@@ -58,7 +59,7 @@ export default class UserGroupsUnverifiedStore {
         const dbEntry = entryToDbEntry(entry, utils.toBase64(groupAddition.previous_group_block));
         mapEntry.set(dbEntry._id, dbEntry); // eslint-disable-line no-underscore-dangle
       } else {
-        throw new Error('Assertion failure: entry is not a group entry');
+        throw new InternalError('Assertion failure: entry is not a group entry');
       }
     }
     await this._ds.bulkAdd(UNVERIFIED_GROUPS_TABLE, [...mapEntry.values()]);

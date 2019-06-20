@@ -1,6 +1,7 @@
 // @flow
 import Socket from 'socket.io-client';
 
+import { InternalError } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 
@@ -71,7 +72,7 @@ export default class SocketIoWrapper {
   abortRequests = (reason: string): void => {
     // reject all running requests and mark them as done
     for (const r of this.runningRequests) {
-      r.reject(new Error(`emit(${r.eventName}) failed due to ${reason}`));
+      r.reject(new InternalError(`emit(${r.eventName}) failed due to ${reason}`));
     }
     this.runningRequests = [];
   }
