@@ -120,6 +120,9 @@ export default class TrustchainPuller {
         if (this._donePromises.length > 0) {
           this.scheduleCatchUp();
         }
+      }).catch((e) => {
+        this._catchUpInProgress = null;
+        donePromises.forEach(d => d.reject(e));
       });
     }
 
@@ -127,17 +130,14 @@ export default class TrustchainPuller {
   }
 
   _catchUp = async (extraUsers: Array<Uint8Array>, extraGroups: Array<Uint8Array>): Promise<void> => {
-    try {
-      const blocks = await this.client.send('get blocks 2', {
-        index: this._trustchainStore.lastBlockIndex,
-        trustchain_id: utils.toBase64(this.client.trustchainId),
-        extra_users: extraUsers,
-        extra_groups: extraGroups
-      });
-      await this._processNewBlocks(blocks);
-    } catch (e) {
-      console.error('CatchUp failed:', e);
-    }
+    const blocks = await this.client.send('get blocks 2', {
+      index: this._trustchainStore.lastBlockIndex,
+      trustchain_id: utils.toBase64(this.client.trustchainId),
+      extra_users: extraUsers,
+      extra_groups: extraGroups
+    });
+    await this._processNewBlocks(blocks);
+
     if (!this._caughtUpOnce.settled) {
       this._caughtUpOnce.resolve();
     }

@@ -1,7 +1,8 @@
 // @flow
 import sinon from 'sinon';
-import { errors } from '@tanker/core';
+import { errors, statuses } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
+import PromiseWrapper from '@tanker/core/src/PromiseWrapper';
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
@@ -92,11 +93,20 @@ const generateRevocationTests = (args: TestArgs) => {
       });
     }
 
-    it('can\'t open a session on a device revoked while closed', async () => {
+    it('will close a Tanker session on a device revoked while closed', async () => {
       const bobPhoneDeviceId = bobPhone.deviceId;
       await bobPhone.stop();
       await bobLaptop.revokeDevice(bobPhoneDeviceId);
-      await expect(bobPhone.start(bobIdentity)).to.be.rejectedWith(errors.OperationCanceled);
+
+      const promiseWrapper = new PromiseWrapper();
+      bobPhone.on('deviceRevoked', () => {
+        promiseWrapper.resolve();
+      });
+      await bobPhone.start(bobIdentity);
+
+      await promiseWrapper.promise;
+
+      expect(bobPhone.status).to.equal(statuses.STOPPED);
     });
 
     it('can list a User\'s active and revoked devices', async () => {

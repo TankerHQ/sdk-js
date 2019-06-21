@@ -97,7 +97,7 @@ export class Client extends EventEmitter {
     this._authenticator = (challenge) => takeChallenge(this.trustchainId, userId, signatureKeyPair, challenge);
 
     this.registerListener('reconnect', () => {
-      this._authenticate().catch((e) => { console.error(e); });
+      this._authenticate().catch((e) => this.emit('authentication_failed', e));
     });
     return this._authenticate();
   }

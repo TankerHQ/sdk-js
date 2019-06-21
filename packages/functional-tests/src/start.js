@@ -62,9 +62,7 @@ const generateStartTests = (args: TestArgs) => {
       await bobLaptop.start(bobIdentity);
 
       // Force an exception to occur between block sending and receival during registration
-      bobLaptop._session.authenticate = () => { // eslint-disable-line no-underscore-dangle
-        throw new Error(interruptMessage);
-      };
+      bobLaptop._session.authenticate = () => Promise.reject(new Error(interruptMessage)); // eslint-disable-line no-underscore-dangle
 
       // Will create the device on the trustchain but fail to go further...
       await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(interruptMessage);
