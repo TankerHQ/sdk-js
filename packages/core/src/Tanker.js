@@ -160,7 +160,7 @@ export class Tanker extends EventEmitter {
   }
 
   get deviceId(): b64string {
-    this.assert(statuses.READY, 'get device ID');
+    this.assert(statuses.READY, 'get the device id');
     if (!this._session.storage.keyStore || !this._session.storage.keyStore.deviceId)
       throw new InternalError('Tried to get our device hash, but could not find it!');
 
@@ -300,6 +300,8 @@ export class Tanker extends EventEmitter {
   }
 
   async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
+    this.assert(statuses.READY, 'get a resource id');
+
     if (!(encryptedData instanceof Uint8Array))
       throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 

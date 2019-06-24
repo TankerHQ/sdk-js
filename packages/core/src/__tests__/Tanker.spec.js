@@ -118,6 +118,11 @@ describe('Tanker', () => {
       expect(() => tanker.deviceId).to.throw(PreconditionFailed);
     });
 
+    it('should throw when trying to get a resource id', async () => {
+      const fakeResource = new Uint8Array(100);
+      await expect(tanker.getResourceId(fakeResource)).to.be.rejectedWith(PreconditionFailed);
+    });
+
     it('should throw when trying to get verification methods', async () => {
       await expect(tanker.getVerificationMethods()).to.be.rejectedWith(PreconditionFailed);
     });
