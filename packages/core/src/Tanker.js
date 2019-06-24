@@ -8,7 +8,7 @@ import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
-import { InternalError, InvalidArgument, OperationCanceled, PreconditionFailed } from './errors';
+import { DecryptionFailed, InternalError, InvalidArgument, OperationCanceled, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
@@ -303,7 +303,14 @@ export class Tanker extends EventEmitter {
     if (!(encryptedData instanceof Uint8Array))
       throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
-    return utils.toBase64(syncGetResourceId(encryptedData));
+    try {
+      return utils.toBase64(syncGetResourceId(encryptedData));
+    } catch (e) {
+      if (e instanceof DecryptionFailed) {
+        throw new InvalidArgument('"encryptedData" is corrupted');
+      }
+      throw e;
+    }
   }
 
   async revokeDevice(deviceId: b64string): Promise<void> {
