@@ -118,6 +118,11 @@ describe('Tanker', () => {
       expect(() => tanker.deviceId).to.throw(PreconditionFailed);
     });
 
+    it('should throw when trying to get a resource id', async () => {
+      const fakeResource = new Uint8Array(100);
+      await expect(tanker.getResourceId(fakeResource)).to.be.rejectedWith(PreconditionFailed);
+    });
+
     it('should throw when trying to get verification methods', async () => {
       await expect(tanker.getVerificationMethods()).to.be.rejectedWith(PreconditionFailed);
     });
@@ -215,10 +220,10 @@ describe('Tanker', () => {
       });
 
       it('should throw getResourceId has invalid argument', async () => {
-        const notUint8ArrayValues = [undefined, null, 0, {}, [], 'str'];
+        const notResources = [undefined, null, 0, {}, [], 'str', new Uint8Array(10)];
 
-        for (let i = 0; i < notUint8ArrayValues.length; i++) {
-          const arg = ((notUint8ArrayValues[i]: any): Uint8Array);
+        for (let i = 0; i < notResources.length; i++) {
+          const arg = ((notResources[i]: any): Uint8Array);
           await expect(tanker.getResourceId(arg), `bad resource #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });

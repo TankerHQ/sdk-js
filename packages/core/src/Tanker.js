@@ -8,7 +8,7 @@ import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
-import { InternalError, InvalidArgument, OperationCanceled, PreconditionFailed } from './errors';
+import { DecryptionFailed, InternalError, InvalidArgument, OperationCanceled, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
@@ -160,7 +160,7 @@ export class Tanker extends EventEmitter {
   }
 
   get deviceId(): b64string {
-    this.assert(statuses.READY, 'get device ID');
+    this.assert(statuses.READY, 'get the device id');
     if (!this._session.storage.keyStore || !this._session.storage.keyStore.deviceId)
       throw new InternalError('Tried to get our device hash, but could not find it!');
 
@@ -300,10 +300,19 @@ export class Tanker extends EventEmitter {
   }
 
   async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
+    this.assert(statuses.READY, 'get a resource id');
+
     if (!(encryptedData instanceof Uint8Array))
       throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
 
-    return utils.toBase64(syncGetResourceId(encryptedData));
+    try {
+      return utils.toBase64(syncGetResourceId(encryptedData));
+    } catch (e) {
+      if (e instanceof DecryptionFailed) {
+        throw new InvalidArgument('"encryptedData" is corrupted');
+      }
+      throw e;
+    }
   }
 
   async revokeDevice(deviceId: b64string): Promise<void> {
