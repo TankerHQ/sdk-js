@@ -77,7 +77,10 @@ function setRecipientKeyPublish(kp: GeneratorKeyResult, recipient: Uint8Array, n
   }
 }
 
-describe('TrustchainVerifier', () => {
+describe('TrustchainVerifier', function () { // eslint-disable-line func-names
+  // Running with PouchDB memory in the browser is very slow
+  this.timeout(30000);
+
   describe('block validation', () => {
     it('should reject a block with an unknown author', async () => {
       const builder = await makeTrustchainBuilder();
