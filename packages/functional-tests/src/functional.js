@@ -9,7 +9,7 @@ import generateStreamEncryptor from './encryptorStream';
 import generateEncryptTests from './encrypt';
 import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';
-import generateOpenTests from './start';
+import generateStartTests from './start';
 import generateRevocationTests from './revocation';
 import generateVerificationTests from './verification';
 
@@ -58,7 +58,7 @@ export function generateFunctionalTests(
     generateEncryptTests(args);
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
-    generateOpenTests(args);
+    generateStartTests(args);
     generateRevocationTests(args);
     generateVerificationTests(args);
   });
