@@ -11,7 +11,7 @@ import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';
 import generateOpenTests from './open';
 import generateRevocationTests from './revocation';
-import generateUnlockTests from './unlock';
+import generateVerificationTests from './verification';
 
 import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
 
