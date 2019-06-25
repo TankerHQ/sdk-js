@@ -19,7 +19,7 @@ const expectVerificationToMatchMethod = (verification: Verification, method: Ver
   }
 };
 
-const expectUnlock = async (tanker: TankerInterface, identity: string, verification: Verification) => {
+const expectVerification = async (tanker: TankerInterface, identity: string, verification: Verification) => {
   await tanker.start(identity);
   expect(tanker.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
 
@@ -34,8 +34,8 @@ const expectUnlock = async (tanker: TankerInterface, identity: string, verificat
   expectVerificationToMatchMethod(verification, method);
 };
 
-const generateUnlockTests = (args: TestArgs) => {
-  describe('unlock', () => {
+const generateVerificationTests = (args: TestArgs) => {
+  describe('verification', () => {
     let bobLaptop;
     let bobPhone;
     let bobIdentity;
@@ -139,60 +139,60 @@ const generateUnlockTests = (args: TestArgs) => {
       });
     });
 
-    describe('device unlocking by passphrase', () => {
-      it('can register an unlock passphrase and unlock a new device with it', async () => {
+    describe('verification by passphrase', () => {
+      it('can register a verification passphrase and open a new device with it', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'passphrase' })).to.be.fulfilled;
+        await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'passphrase' })).to.be.fulfilled;
       });
 
-      it('fails to unlock a new device with a wrong passphrase', async () => {
+      it('fails to verify with a wrong passphrase', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
+        await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
-      it('fails to unlock a new device without having registered a passphrase', async () => {
+      it('fails to verify without having registered a passphrase', async () => {
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.PreconditionFailed);
+        await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
-      it('can register an unlock passphrase, update it, and unlock a new device with the new passphrase only', async () => {
+      it('can register a verification passphrase, update it, and verify with the new passphrase only', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         await bobLaptop.setVerificationMethod({ passphrase: 'new passphrase' });
 
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'passphrase' })).to.be.rejectedWith(errors.InvalidVerification);
+        await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'passphrase' })).to.be.rejectedWith(errors.InvalidVerification);
         await bobPhone.stop();
 
-        await expect(expectUnlock(bobPhone, bobIdentity, { passphrase: 'new passphrase' })).to.be.fulfilled;
+        await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'new passphrase' })).to.be.fulfilled;
       });
     });
 
-    describe('device unlocking by email', () => {
-      it('can register an unlock email and unlock a new device with a valid verification code', async () => {
+    describe('email verification', () => {
+      it('can register a verification email and verify with a valid verification code', async () => {
         let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
-        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.fulfilled;
+        await expect(expectVerification(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.fulfilled;
       });
 
-      it('fails to unlock a new device with a wrong verification code', async () => {
+      it('fails to verify with a wrong verification code', async () => {
         let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         verificationCode = await trustchainHelper.getWrongVerificationCode('john@doe.com');
-        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+        await expect(expectVerification(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
-      it('fails to unlock a new device without having registered an email address', async () => {
+      it('fails to verify without having registered an email address', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
-        await expect(expectUnlock(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
+        await expect(expectVerification(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
     });
 
-    describe('device unlocking by verification key', () => {
+    describe('verification key', () => {
       const corruptVerificationKey = (key: b64string, field: string, position: number): b64string => {
         const unwrappedKey = utils.fromB64Json(key);
         const unwrappedField = utils.fromBase64(unwrappedKey[field]);
@@ -219,9 +219,9 @@ const generateUnlockTests = (args: TestArgs) => {
         expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'verificationKey' }]);
       });
 
-      it('can unlock a new device with a verification key', async () => {
+      it('can verify with a verification key', async () => {
         await bobLaptop.registerIdentity({ verificationKey });
-        await expect(expectUnlock(bobPhone, bobIdentity, { verificationKey })).to.be.fulfilled;
+        await expect(expectVerification(bobPhone, bobIdentity, { verificationKey })).to.be.fulfilled;
       });
 
       it('should throw if setting another verification method after verification key has been used', async () => {
@@ -283,4 +283,4 @@ const generateUnlockTests = (args: TestArgs) => {
   });
 };
 
-export default generateUnlockTests;
+export default generateVerificationTests;

@@ -60,6 +60,6 @@ export function generateFunctionalTests(
     generateGroupsTests(args);
     generateOpenTests(args);
     generateRevocationTests(args);
-    generateUnlockTests(args);
+    generateVerificationTests(args);
   });
 }
