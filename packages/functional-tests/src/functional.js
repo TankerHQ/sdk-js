@@ -9,7 +9,7 @@ import generateStreamEncryptor from './encryptorStream';
 import generateEncryptTests from './encrypt';
 import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';
-import generateOpenTests from './open';
+import generateOpenTests from './start';
 import generateRevocationTests from './revocation';
 import generateVerificationTests from './verification';
 
