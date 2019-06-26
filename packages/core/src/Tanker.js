@@ -8,7 +8,7 @@ import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
 
-import { DecryptionFailed, InternalError, InvalidArgument, OperationCanceled, PreconditionFailed } from './errors';
+import { DecryptionFailed, InternalError, InvalidArgument, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
@@ -204,11 +204,6 @@ export class Tanker extends EventEmitter {
     assertVerification(verification);
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
-
-    const verificationMethods = await this._session.getVerificationMethods();
-
-    if (verificationMethods.some(vm => vm.type === 'verificationKey'))
-      throw new OperationCanceled('Cannot call setVerificationMethod() after a verification key has been used');
 
     return this._session.setVerificationMethod(verification);
   }

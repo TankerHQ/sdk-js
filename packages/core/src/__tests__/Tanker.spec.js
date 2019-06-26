@@ -7,7 +7,7 @@ import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
-import { InvalidArgument, PreconditionFailed, OperationCanceled } from '../errors';
+import { InvalidArgument, PreconditionFailed } from '../errors';
 
 import { type RemoteVerification, statuses } from '../Session/types';
 import { type ShareWithOptions } from '../DataProtection/ShareWithOptions';
@@ -202,11 +202,6 @@ describe('Tanker', () => {
           const arg = ((badArgs[i]: any): RemoteVerification);
           await expect(tanker.setVerificationMethod(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
         }
-      });
-
-      it('should throw if setting another verification method after verification key has been used', async () => {
-        tanker._session.getVerificationMethods = async () => [{ type: 'verificationKey' }]; // eslint-disable-line no-underscore-dangle
-        await expect(tanker.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(OperationCanceled);
       });
 
       it('should throw if generating verification key after registration', async () => {
