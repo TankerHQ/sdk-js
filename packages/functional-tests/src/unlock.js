@@ -226,7 +226,7 @@ const generateUnlockTests = (args: TestArgs) => {
 
       it('should throw if setting another verification method after verification key has been used', async () => {
         await bobLaptop.registerIdentity({ verificationKey });
-        await expect(bobLaptop.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.OperationCanceled);
+        await expect(bobLaptop.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       describe('register identity with an invalid verification key', () => {
