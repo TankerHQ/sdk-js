@@ -60,6 +60,12 @@ export class OperationCanceled extends TankerError {
   }
 }
 
+export class NetworkError extends TankerError {
+  constructor(message: string = 'Network error') {
+    super('NetworkError', message);
+  }
+}
+
 export class PreconditionFailed extends TankerError {
   constructor(message: string) {
     super('PreconditionFailed', message);

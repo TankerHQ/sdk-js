@@ -2,21 +2,16 @@
 
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
-import { generichash, utils, type b64string } from '@tanker/crypto';
+import { tcrypto, generichash, utils, type b64string } from '@tanker/crypto';
 import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 import { VerificationNeeded } from '../errors.internal';
-import { ExpiredVerification, InvalidArgument, InternalError, GroupTooBig, InvalidVerification, PreconditionFailed, TooManyAttempts } from '../errors';
+import { ExpiredVerification, InvalidArgument, InternalError, GroupTooBig, InvalidVerification, PreconditionFailed, TooManyAttempts, NetworkError, OperationCanceled } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
-export type AuthDeviceParams = {
-  signature: Uint8Array,
-  publicSignatureKey: Uint8Array,
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-}
+import { type Authenticator, takeChallenge } from './Authenticator';
 
 export type DeviceCreatedCb = () => void;
 
@@ -64,8 +59,6 @@ const serverErrorMap = {
   verification_key_not_found: PreconditionFailed,
 };
 
-export type Authenticator = (string) => AuthDeviceParams;
-
 /**
  * Network communication
  */
@@ -76,6 +69,8 @@ export class Client extends EventEmitter {
   _authenticator: ?Authenticator;
   _socketCreator: () => void;
   _abortOpen: ?() => void;
+  _opening: ?Promise<void>;
+  _authenticating: ?Promise<void>;
 
   constructor(trustchainId: Uint8Array, options?: ClientOptions) {
     super();
@@ -90,31 +85,42 @@ export class Client extends EventEmitter {
 
     this.socket = new SocketIoWrapper(opts);
 
-    // The 'connect' event is received after first connection and
-    // after each reconnection (after the 'reconnect' event).
-    this.registerListener('reconnect', async () => {
-      if (this._authenticator)
-        /* noawait */ this.authenticate();
-    });
     this.registerListener('new relevant block', () => {
       this.emit('blockAvailable');
     });
   }
 
-  setAuthenticator = async (authenticator: Authenticator) => {
+  authenticate = async (userId: Uint8Array, signatureKeyPair: tcrypto.SodiumKeyPair) => {
     if (this._authenticator)
-      throw new InternalError('authenticator has already been set');
+      throw new InternalError('Assertion error: client is already authenticated');
 
-    this._authenticator = authenticator;
-    return this.authenticate();
+    this._authenticator = (challenge) => takeChallenge(this.trustchainId, userId, signatureKeyPair, challenge);
+
+    this.registerListener('reconnect', () => {
+      this._authenticate().catch((e) => { console.error(e); });
+    });
+    return this._authenticate();
   }
 
-  authenticate = async () => {
-    const authenticator = this._authenticator;
-    if (!authenticator)
-      throw new InternalError('no authenticator has been set');
-    const challenge = await this.requestAuthChallenge();
-    return this.authenticateDevice(authenticator(challenge));
+  _authenticate = async () => {
+    const auth = async () => {
+      const { challenge } = await this._unauthenticatedSend('request auth challenge');
+
+      if (!this._authenticator)
+        throw new InternalError('Assertion error: missing authenticator');
+
+      const { signature, publicSignatureKey, trustchainId, userId } = this._authenticator(challenge);
+
+      return this._unauthenticatedSend('authenticate device', {
+        signature: utils.toBase64(signature),
+        public_signature_key: utils.toBase64(publicSignatureKey),
+        trustchain_id: utils.toBase64(trustchainId),
+        user_id: utils.toBase64(userId),
+      });
+    };
+
+    this._authenticating = auth().finally(() => { this._authenticating = null; });
+    return this._authenticating;
   }
 
   registerListener = (event: string, cb: Function): number => {
@@ -137,22 +143,6 @@ export class Client extends EventEmitter {
     }
   }
 
-  async requestAuthChallenge(): Promise<string> {
-    const { challenge } = await this.send('request auth challenge');
-    return challenge;
-  }
-
-  async authenticateDevice({ userId, trustchainId, publicSignatureKey, signature }: AuthDeviceParams) {
-    const authDeviceRequest = {
-      signature: utils.toBase64(signature),
-      public_signature_key: utils.toBase64(publicSignatureKey),
-      trustchain_id: utils.toBase64(trustchainId),
-      user_id: utils.toBase64(userId),
-    };
-
-    return this.send('authenticate device', authDeviceRequest);
-  }
-
   async remoteStatus(trustchainId: Uint8Array, userId: Uint8Array, publicSignatureKey: Uint8Array) {
     const request = {
       trustchain_id: utils.toBase64(trustchainId),
@@ -169,10 +159,13 @@ export class Client extends EventEmitter {
   }
 
   async open(): Promise<void> {
-    if (this._abortOpen) {
-      throw new InternalError('open already in progress');
+    if (this.socket.isOpen()) {
+      return;
     }
-    return new Promise((resolve, reject) => {
+    if (this._opening) {
+      return this._opening;
+    }
+    this._opening = new Promise((resolve, reject) => {
       let connectListener;
       let errorListener;
 
@@ -180,15 +173,28 @@ export class Client extends EventEmitter {
         this.unregisterListener(connectListener);
         this.unregisterListener(errorListener);
         this._abortOpen = null;
+        this._opening = null;
       };
 
-      this._abortOpen = () => { cleanup(); reject(new InternalError('aborted')); };
+      this._abortOpen = () => {
+        const error = new OperationCanceled('client opening aborted');
+        cleanup();
+        this.socket.abortRequests(error);
+        reject(error);
+      };
 
       connectListener = this.registerListener('connect', () => { cleanup(); resolve(); });
-      errorListener = this.registerListener('connect_error', (e) => { cleanup(); reject(e); });
+      errorListener = this.registerListener('connect_error', () => {
+        const error = new NetworkError('Cannot connect socket');
+        cleanup();
+        this.socket.abortRequests(error);
+        reject(error);
+      });
 
       this.socket.open();
     });
+
+    return this._opening;
   }
 
   async close(): Promise<void> {
@@ -205,9 +211,20 @@ export class Client extends EventEmitter {
     await this.socket.close();
   }
 
-  async send(eventName: string, payload: any): Promise<any> {
-    const jdata = eventName !== 'push block' ? JSON.stringify(payload) : payload;
-    const jresult = await this.socket.emit(eventName, jdata);
+  async send(route: string, payload: any): Promise<any> {
+    await this.open();
+    await this._authenticating;
+    return this._send(route, payload);
+  }
+
+  async _unauthenticatedSend(route: string, payload: any): Promise<any> {
+    await this.open();
+    return this._send(route, payload);
+  }
+
+  async _send(route: string, payload: any): Promise<any> {
+    const jdata = route !== 'push block' ? JSON.stringify(payload) : payload;
+    const jresult = await this.socket.emit(route, jdata);
     const result = JSON.parse(jresult);
     if (result && result.error) {
       const { error } = result;

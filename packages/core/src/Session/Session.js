@@ -5,7 +5,6 @@ import Trustchain from '../Trustchain/Trustchain';
 import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
-import { takeChallenge } from './ClientAuthenticator';
 import { decrypt } from '../DataProtection/Encryptors/v2';
 import { InternalError, InvalidVerification, OperationCanceled, TankerError } from '../errors';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
@@ -78,7 +77,7 @@ export class Session {
   }
 
   authenticate = async () => {
-    await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
+    await this._client.authenticate(this.localUser.userId, this.storage.keyStore.signatureKeyPair);
     await this._trustchain.ready();
 
     if (this.localUser.wasRevoked) {
