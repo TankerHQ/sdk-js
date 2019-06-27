@@ -1,17 +1,14 @@
 // @flow
-import { utils } from '@tanker/crypto';
-
 import Trustchain from '../Trustchain/Trustchain';
 import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
-import { decrypt } from '../DataProtection/Encryptors/v2';
 import { InternalError, InvalidVerification, OperationCanceled, TankerError } from '../errors';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
 import { type UserData } from './UserData';
 
-import { sendGetVerificationKey, getLastUserKey, sendUserCreation, sendSetVerificationMethod } from './requests';
+import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './ghostDevice';
 import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCreation';
@@ -88,26 +85,7 @@ export class Session {
     this._status = statuses.READY;
   }
 
-  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => {
-    const request = {
-      trustchain_id: utils.toBase64(this.localUser.trustchainId),
-      user_id: utils.toBase64(this.localUser.userId),
-    };
-
-    const res = await this._client.send('get verification methods', request);
-
-    return res.verification_methods.map(verificationMethod => {
-      const method = { ...verificationMethod };
-
-      // Compat: email value might be missing if unlock method registered with SDK < 2.0.0
-      if (method.type === 'email' && method.encrypted_email) {
-        method.email = utils.toString(decrypt(this.localUser.userSecret, utils.fromBase64(method.encrypted_email)));
-        delete method.encrypted_email;
-      }
-
-      return method;
-    });
-  }
+  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => getVerificationMethods(this._client, this.localUser)
 
   setVerificationMethod = async (verification: RemoteVerification): Promise<void> => {
     await sendSetVerificationMethod(this._client, this.localUser, verification);
