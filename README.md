@@ -61,12 +61,12 @@ import { Tanker } from '@tanker/client-browser';
 const tanker = new Tanker({ trustchainId: '...' });
 
 // Sign in with the user's cryptographic identity
-await tanker.open(aliceUserId, aliceUserToken);
+await tanker.start(aliceIdentity);
 
 // Encrypt data and share it with separate recipients or groups
 const encryptedMessage = await tanker.encrypt(
-  'It is a secret to everybody',
-  { shareWithUsers: [bobUserId] }
+  "It's a secret to everybody",
+  { shareWithUsers: [bobIdentity] }
 );
 
 // Decrypt data (or throw if not a legitimate recipient)
