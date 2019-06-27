@@ -13,8 +13,6 @@ import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 import { type Authenticator, takeChallenge } from './Authenticator';
 
-export type DeviceCreatedCb = () => void;
-
 const defaultApiAddress = 'https://api.tanker.io';
 
 export type ClientOptions = {
@@ -67,7 +65,6 @@ export class Client extends EventEmitter {
   trustchainId: Uint8Array;
   sessionConnections: Set<number>;
   _authenticator: ?Authenticator;
-  _socketCreator: () => void;
   _abortOpen: ?() => void;
   _opening: ?Promise<void>;
   _authenticating: ?Promise<void>;
