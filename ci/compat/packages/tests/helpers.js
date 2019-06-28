@@ -2,6 +2,7 @@
 
 import { tankerUrl } from '../../../../packages/functional-tests/src/Helpers';
 import { fromBase64, toBase64 } from '../../../../packages/client-node';
+import { getPublicIdentity } from '../../../../packages/identity';
 
 const password = 'plop';
 
@@ -90,6 +91,10 @@ class UserV2 extends BaseUser {
     return this._identity;
   }
 
+  get id() {
+    return getPublicIdentity(this._identity);
+  }
+
   getRevocationPromise() {
     return new Promise(resolve => this._tanker.once('deviceRevoked', resolve));
   }
@@ -113,6 +118,11 @@ export function makeV1User(opts) {
     await tanker.unlockCurrentDevice({ password });
   });
   return new UserV1(tanker, opts.userId, opts.token);
+}
+
+export function makeV2User(opts) {
+  const tanker = makeTanker(opts.Tanker, opts.adapter, opts.trustchainId, opts.prefix);
+  return new UserV2(tanker, opts.identity);
 }
 
 export function makeCurrentUser(opts) {

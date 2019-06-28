@@ -6,12 +6,12 @@ import { expect } from 'chai';
 import { toBase64 } from '../../../../packages/client-node';
 import { upgradeUserToken } from '../../../../packages/identity';
 import { TrustchainHelper } from '../../../../packages/functional-tests/src/Helpers';
-import { makeCurrentUser, makeV1User } from './helpers';
+import { makeCurrentUser, makeV1User, makeV2User } from './helpers';
 
 function generateEncryptTest(args) {
   it(`encrypts in ${args.version} and decrypts with current code`, async () => {
     const message = 'secret message';
-    const encryptedData = await args.versionAlice.encrypt(message, [args.versionBob.id], []);
+    const encryptedData = await args.versionAlice.encrypt(message, [await args.versionBob.id], []);
 
     let decryptedData = await args.currentBob.decrypt(encryptedData);
     expect(decryptedData).to.equal(message);
@@ -24,7 +24,10 @@ function generateEncryptTest(args) {
 function generateGroupTest(args) {
   it(`encrypts and shares with a group in ${args.version} and decrypts with current code`, async () => {
     let message = 'secret message for a group';
-    const groupId = await args.versionAlice.createGroup([args.versionBob.id, args.versionAlice.id]);
+    const groupId = await args.versionAlice.createGroup([
+      await args.versionBob.id,
+      await args.versionAlice.id,
+    ]);
     let encryptedData = await args.versionAlice.encrypt(message, [], [groupId]);
 
     let decryptedData = await args.currentBob.decrypt(encryptedData);
@@ -53,7 +56,7 @@ function generateUnlockTest(args) {
   });
 }
 
-function generateRevocationTest(args) {
+function generateRevocationV1Test(args) {
   it(`creates a device with ${args.version} and revokes it with current code`, async () => {
     const phone = makeV1User({
       Tanker: args.Tanker,
@@ -76,10 +79,11 @@ const generatorMap = {
   encrypt: generateEncryptTest,
   group: generateGroupTest,
   unlock: generateUnlockTest,
-  revocation: generateRevocationTest,
+  revocationV1: generateRevocationV1Test,
+
 };
 
-function generateTests(opts) {
+function generateV1Tests(opts) {
   describe(opts.version, function () { // eslint-disable-line func-names
     this.timeout(30000);
     const args = {
@@ -143,4 +147,68 @@ function generateTests(opts) {
   });
 }
 
-module.exports = generateTests;
+function generateV2Tests(opts) {
+  const version = opts.Tanker.version;
+  describe(version, function () { // eslint-disable-line func-names
+    this.timeout(30000);
+    const args = {
+      version,
+      Tanker: opts.Tanker,
+      adapter: opts.adapter,
+    };
+    before(async () => {
+      args.trustchainHelper = await TrustchainHelper.newTrustchain();
+      args.trustchainId = toBase64(args.trustchainHelper.trustchainId);
+      const aliceId = uuid.v4();
+      const bobId = uuid.v4();
+      const trustchainPrivateKey = toBase64(args.trustchainHelper.trustchainKeyPair.privateKey);
+      const aliceIdentity = await opts.createIdentity(args.trustchainId, trustchainPrivateKey, aliceId);
+      const bobIdentity = await opts.createIdentity(args.trustchainId, trustchainPrivateKey, bobId);
+
+      args.versionBob = makeV2User({
+        Tanker: opts.Tanker,
+        adapter: opts.adapter,
+        trustchainId: args.trustchainId,
+        identity: bobIdentity,
+        prefix: 'bob1',
+      });
+      args.versionAlice = makeV2User({
+        Tanker: opts.Tanker,
+        adapter: opts.adapter,
+        trustchainId: args.trustchainId,
+        identity: aliceIdentity,
+        prefix: 'alice1',
+      });
+      args.currentBob = makeCurrentUser({
+        trustchainId: args.trustchainId,
+        identity: bobIdentity,
+        prefix: 'bob2',
+      });
+      args.currentAlice = makeCurrentUser({
+        trustchainId: args.trustchainId,
+        identity: aliceIdentity,
+        prefix: 'alice2',
+      });
+
+      await args.versionBob.start();
+      await args.versionAlice.start();
+      await args.currentBob.start();
+      await args.currentAlice.start();
+    });
+
+    after(async () => {
+      await args.versionBob.stop();
+      await args.versionAlice.stop();
+      await args.currentBob.stop();
+      await args.currentAlice.stop();
+      await args.trustchainHelper.cleanup();
+    });
+
+    opts.tests.forEach(test => generatorMap[test](args));
+  });
+}
+
+module.exports = {
+  generateV1Tests,
+  generateV2Tests,
+};
