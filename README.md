@@ -60,7 +60,7 @@ import { Tanker } from '@tanker/client-browser';
 // Init the isolated Tanker environment within your application
 const tanker = new Tanker({ trustchainId: '...' });
 
-// Sign in with the user's cryptographic identity
+// Start a session with the user's cryptographic identity
 await tanker.start(aliceIdentity);
 
 // Encrypt data and share it with separate recipients or groups
@@ -79,8 +79,8 @@ The client SDK automatically handles complex key exchanges, cryptographic operat
 
 For more details and advanced examples, please refer to:
 
-* [SDK implementation guide](https://tanker.io/docs/latest/guide/getting-started/)
-* [API reference](https://tanker.io/docs/latest/api/tanker/)
+* [SDK implementation guide](https://docs.tanker.io/latest/guide/basic-concepts/)
+* [API reference](https://docs.tanker.io/latest/api/tanker/)
 * [Product overview](https://tanker.io/product)
 
 Or fiddle with the [quickstart examples](https://github.com/TankerHQ/quickstart-examples) to see the Tanker SDKs integrated in a collection of demo apps.
