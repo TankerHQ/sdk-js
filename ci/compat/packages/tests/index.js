@@ -43,7 +43,7 @@ function generateGroupTest(args) {
   });
 }
 
-function generateUnlockTest(args) {
+function generateVerificationTest(args) {
   it(`registers unlock with ${args.version} and unlocks with current code`, async () => {
     const phone = makeCurrentUser({
       adapter: args.adapter,
@@ -75,12 +75,31 @@ function generateRevocationV1Test(args) {
   });
 }
 
+function generateRevocationV2Test(args) {
+  it(`creates a device with ${args.version} and revokes it with current code`, async () => {
+    const phone = makeV2User({
+      Tanker: args.Tanker,
+      adapter: args.adapter,
+      identity: args.currentBob.identity,
+      trustchainId: args.trustchainId,
+      prefix: 'phone',
+    });
+    await phone.start();
+    const deviceRevoked = phone.getRevocationPromise();
+
+    await args.currentBob.revokeDevice(phone.deviceId);
+    await deviceRevoked;
+    expect(phone.status).to.equal(args.Tanker.STOPPED);
+  });
+}
+
 const generatorMap = {
   encrypt: generateEncryptTest,
   group: generateGroupTest,
-  unlock: generateUnlockTest,
+  unlock: generateVerificationTest,
+  verification: generateVerificationTest,
   revocationV1: generateRevocationV1Test,
-
+  revocationV2: generateRevocationV2Test,
 };
 
 function generateV1Tests(opts) {

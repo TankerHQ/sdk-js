@@ -1,0 +1,12 @@
+{
+  "name": "2.0.0",
+  "version": "0.0.1",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@tanker/client-node": "2.0.0",
+    "@tanker/datastore-pouchdb-memory": "2.0.0",
+    "@tanker/identity": "2.0.0",
+    "tests": "0.0.1-local"
+  }
+}
