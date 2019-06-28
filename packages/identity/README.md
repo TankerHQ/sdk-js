@@ -1,6 +1,6 @@
 # Identity SDK
 
-Tanker Identity generation in JavaScript for the [Tanker SDK](https://tanker.io/docs/latest).
+Tanker Identity generation in JavaScript for the [Tanker SDK](https://docs.tanker.io/latest/).
 
 ## Installation
 
@@ -48,4 +48,4 @@ async function getUserIdentity(userId) {
 }
 ```
 
-Read more about user *identity* in the [Tanker guide](https://tanker.io/docs/latest/guide/server/).
+Read more about user *identity* in the [Tanker guide](https://docs.tanker.io/latest/guide/basic-concepts/).
