@@ -6,7 +6,7 @@ import { type TestArgs } from './TestArgs';
 
 const { STOPPED, READY, IDENTITY_REGISTRATION_NEEDED, IDENTITY_VERIFICATION_NEEDED } = statuses;
 
-const generateOpenTests = (args: TestArgs) => {
+const generateStartTests = (args: TestArgs) => {
   describe('start', () => {
     let bobIdentity;
     let bobLaptop;
@@ -112,7 +112,7 @@ const generateOpenTests = (args: TestArgs) => {
       await expect(bobLaptop.status).to.equal(READY);
     });
 
-    it('reopen the first device created with the passphrase method', async () => {
+    it('re-start the first device created with the passphrase method', async () => {
       await bobLaptop.start(bobIdentity);
       await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
       await expect(bobLaptop.status).to.equal(READY);
@@ -124,4 +124,4 @@ const generateOpenTests = (args: TestArgs) => {
   });
 };
 
-export default generateOpenTests;
+export default generateStartTests;
