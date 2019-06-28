@@ -27,9 +27,9 @@ matrix:
     - script: yarn karma --browsers FirefoxOSX
       name: "Firefox on OS X"
     - script: yarn karma --browsers Android8
-      name: "Chorme Android 8"
+      name: "Chrome Android 8"
     - script: yarn karma --browsers Android5
-      name: "Chorme Android 5"
+      name: "Chrome Android 5"
     - script: yarn karma --browsers iOS12
       name: "Safari iOS 12"
   allow_failures:
