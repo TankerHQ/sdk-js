@@ -68,6 +68,7 @@ export class Client extends EventEmitter {
   _abortOpen: ?() => void;
   _opening: ?Promise<void>;
   _authenticating: ?Promise<void>;
+  _authenticated: bool = false;
 
   constructor(trustchainId: Uint8Array, options?: ClientOptions) {
     super();
@@ -93,6 +94,10 @@ export class Client extends EventEmitter {
 
     this._authenticator = (challenge) => takeChallenge(this.trustchainId, userId, signatureKeyPair, challenge);
 
+    this.registerListener('disconnect', () => {
+      this._authenticated = false;
+    });
+
     this.registerListener('reconnect', () => {
       this._authenticate().catch((e) => this.emit('authentication_failed', e));
     });
@@ -100,6 +105,14 @@ export class Client extends EventEmitter {
   }
 
   _authenticate = async () => {
+    if (this._authenticated || !this._authenticator) {
+      return;
+    }
+
+    if (this._authenticating) {
+      return this._authenticating;
+    }
+
     const auth = async () => {
       const { challenge } = await this._unauthenticatedSend('request auth challenge');
 
@@ -116,7 +129,12 @@ export class Client extends EventEmitter {
       });
     };
 
-    this._authenticating = auth().finally(() => { this._authenticating = null; });
+    this._authenticating = auth().then(() => {
+      this._authenticated = true;
+    }).finally(() => {
+      this._authenticating = null;
+    });
+
     return this._authenticating;
   }
 
@@ -181,8 +199,8 @@ export class Client extends EventEmitter {
       };
 
       connectListener = this.registerListener('connect', () => { cleanup(); resolve(); });
-      errorListener = this.registerListener('connect_error', () => {
-        const error = new NetworkError('Cannot connect socket');
+      errorListener = this.registerListener('connect_error', (err) => {
+        const error = new NetworkError(`can't connect socket: ${err && err.message} ${err && err.description && err.description.message}`);
         cleanup();
         this.socket.abortRequests(error);
         reject(error);
@@ -204,13 +222,14 @@ export class Client extends EventEmitter {
 
     // purge authentication handler
     this._authenticator = null;
+    this._authenticated = false;
 
     await this.socket.close();
   }
 
   async send(route: string, payload: any): Promise<any> {
     await this.open();
-    await this._authenticating;
+    await this._authenticate();
     return this._send(route, payload);
   }
 
@@ -229,7 +248,7 @@ export class Client extends EventEmitter {
       if (SpecificError) {
         throw new SpecificError(error.message);
       }
-      throw new InternalError(`Server error with status: ${error.status}, code: ${error.code}, message: ${error.message}`);
+      throw new InternalError(`Server error on route "${route}" with status: ${error.status}, code: ${error.code}, message: ${error.message}`);
     }
     return result;
   }
