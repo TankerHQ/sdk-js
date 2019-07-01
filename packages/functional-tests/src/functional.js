@@ -7,7 +7,7 @@ import type { TestArgs, TestResources } from './TestArgs';
 
 import generateStreamEncryptor from './encryptorStream';
 import generateEncryptTests from './encrypt';
-import generateOfflineTests from './offline';
+import generateNetworkTests from './network';
 import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';
 import generateStartTests from './start';
@@ -62,6 +62,6 @@ export function generateFunctionalTests(
     generateStartTests(args);
     generateRevocationTests(args);
     generateVerificationTests(args);
-    generateOfflineTests(args);
+    generateNetworkTests(args);
   });
 }
