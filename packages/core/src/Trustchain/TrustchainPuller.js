@@ -62,7 +62,7 @@ export default class TrustchainPuller {
     this._unverifiedStore = unverifiedStore;
     this.synchronizedClient = new SynchronizedEventEmitter(client);
     this.events = [
-      this.synchronizedClient.on('blockAvailable', () => this.scheduleCatchUp()),
+      this.synchronizedClient.on('blockAvailable', () => this.scheduleCatchUp().catch(e => console.error('Caught error in background catch up', e))),
     ];
 
     this._extraUsers = [];
@@ -118,7 +118,7 @@ export default class TrustchainPuller {
         donePromises.forEach(d => d.resolve());
 
         if (this._donePromises.length > 0) {
-          this.scheduleCatchUp();
+          this.scheduleCatchUp().catch(e => console.error('Caught error in background catch up', e));
         }
       }).catch((e) => {
         this._catchUpInProgress = null;

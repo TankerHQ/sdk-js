@@ -95,7 +95,8 @@ export class Session extends EventEmitter {
   }
 
   authenticationError = (e: Error) => {
-    if (!(e instanceof NetworkError)) {
+    // OperationCanceled: thrown if you never managed to authenticate and the session gets closed
+    if (!(e instanceof NetworkError) && !(e instanceof OperationCanceled)) {
       console.error(e);
       this.emit('authentication_failed');
     }

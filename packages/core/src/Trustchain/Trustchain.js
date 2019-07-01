@@ -39,7 +39,7 @@ export default class Trustchain {
   }
 
   async ready() {
-    this._trustchainPuller.scheduleCatchUp([], []);
+    await this._trustchainPuller.scheduleCatchUp([], []); // await to avoid unhandled rejections
     return this._trustchainPuller.succeededOnce();
   }
 
