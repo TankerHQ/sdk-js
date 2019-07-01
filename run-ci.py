@@ -2,7 +2,6 @@ import argparse
 import sys
 
 import ci.js
-import ci.mail
 import ci.endtoend
 import ci.conan
 import ci.cpp
@@ -17,16 +16,14 @@ def check(*, runner: str, env: str, nightly: bool) -> None:
         ci.js.run_tests_in_node(env=env)
 
     if nightly:
-        with ci.mail.notify_failure("sdk-js"):
-            ci.js.run_tests_in_browser_ten_times(env=env, runner=runner)
+        ci.js.run_tests_in_browser_ten_times(env=env, runner=runner)
     else:
         ci.js.run_tests_in_browser(env=env, runner=runner)
 
 
 def compat(*, env: str) -> None:
     ci.js.yarn_install_deps()
-    with ci.mail.notify_failure("compat tests"):
-        ci.js.run_sdk_compat_tests(env=env)
+    ci.js.run_sdk_compat_tests(env=env)
 
 
 def e2e(args) -> None:
