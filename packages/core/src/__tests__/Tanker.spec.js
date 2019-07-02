@@ -9,18 +9,33 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 import { Tanker, optionsWithDefaults } from '..';
 import { InvalidArgument, PreconditionFailed } from '../errors';
 
-import { type RemoteVerification, statuses } from '../Session/types';
+import { type EmailVerification, type RemoteVerification, statuses } from '../Session/types';
 import { type ShareWithOptions } from '../DataProtection/ShareWithOptions';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
   let trustchainId;
   let userId;
+  let badVerifications;
 
   before(() => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     trustchainId = random(tcrypto.HASH_SIZE);
     userId = 'winnie';
+
+    badVerifications = [
+      undefined,
+      null,
+      'valid@email.com',
+      [],
+      {},
+      { email: null, verificationCode: '12345678' },
+      { email: ['valid@email.com'], verificationCode: '12345678' },
+      { email: 'valid@email.com', verificationCode: '12345678', extra_invalid_key: 'test' },
+      { passphrase: 12 },
+      { passphrase: new Uint8Array(12) },
+      { email: 'valid@email.com', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
+    ];
   });
 
   describe('version', () => {
@@ -91,7 +106,7 @@ describe('Tanker', () => {
     });
   });
 
-  describe('session stopped', () => {
+  describe('without a session', () => {
     let tanker;
     let options;
 
@@ -160,7 +175,7 @@ describe('Tanker', () => {
     });
   });
 
-  describe('session ready', () => {
+  describe('with a session', () => {
     let tanker;
 
     before(() => {
@@ -173,48 +188,57 @@ describe('Tanker', () => {
     });
 
     beforeEach(() => {
-      // forge a "ready" session
+      // mock a session
       tanker._session = ({ // eslint-disable-line no-underscore-dangle
         localUser: {},
         storage: { keyStore: { deviceId: new Uint8Array([]) } },
         status: statuses.READY,
-        getVerificationMethods: async () => [{ type: 'passphrase' }],
       }: any);
     });
 
-    describe('set verification method', () => {
-      const badArgs = [
-        undefined,
-        null,
-        'valid@email.com',
-        [],
-        {},
-        { email: null, verificationCode: '12345678' },
-        { email: ['valid@email.com'], verificationCode: '12345678' },
-        { email: 'valid@email.com', verificationCode: '12345678', extra_invalid_key: 'test' },
-        { passphrase: 12 },
-        { passphrase: new Uint8Array(12) },
-        { email: 'valid@email.com', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // update only one method at a time!
-      ];
+    describe('when identity registration is needed', () => {
+      // $FlowExpectedError
+      beforeEach(() => { tanker._session.status = statuses.IDENTITY_REGISTRATION_NEEDED; }); // eslint-disable-line no-underscore-dangle
 
-      it('should throw if invalid argument given', async () => {
-        for (let i = 0; i < badArgs.length; i++) {
-          const arg = ((badArgs[i]: any): RemoteVerification);
-          await expect(tanker.setVerificationMethod(arg), `register test n°${i}`).to.be.rejectedWith(InvalidArgument);
+      it('registering identity should throw if invalid argument given', async () => {
+        for (let i = 0; i < badVerifications.length; i++) {
+          const arg = ((badVerifications[i]: any): RemoteVerification);
+          await expect(tanker.registerIdentity(arg), `register test #${i}`).to.be.rejectedWith(InvalidArgument);
         }
-      });
-
-      it('should throw if generating verification key after registration', async () => {
-        await expect(tanker.generateVerificationKey()).to.be.rejectedWith(PreconditionFailed);
       });
     });
 
-    describe('other methods', () => {
-      it('should get deviceId', async () => {
+    describe('when identity verification is needed', () => {
+      // $FlowExpectedError
+      beforeEach(() => { tanker._session.status = statuses.IDENTITY_VERIFICATION_NEEDED; }); // eslint-disable-line no-underscore-dangle
+
+      it('verifying identity should throw if invalid argument given', async () => {
+        for (let i = 0; i < badVerifications.length; i++) {
+          const arg = ((badVerifications[i]: any): RemoteVerification);
+          await expect(tanker.verifyIdentity(arg), `verify identity test #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
+      });
+    });
+
+    describe('which is ready', () => {
+      it('setting verification method should throw if invalid argument given', async () => {
+        for (let i = 0; i < badVerifications.length; i++) {
+          const arg = ((badVerifications[i]: any): RemoteVerification);
+          await expect(tanker.setVerificationMethod(arg), `set verification method test #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
+      });
+
+      it('setting verification method should throw if generating verification key after registration', async () => {
+        tanker._session.getVerificationMethods = async () => [{ type: 'passphrase' }]; // eslint-disable-line no-underscore-dangle
+
+        await expect(tanker.generateVerificationKey()).to.be.rejectedWith(PreconditionFailed);
+      });
+
+      it('getting the device id should not throw', async () => {
         expect(() => tanker.deviceId).to.not.throw();
       });
 
-      it('should throw getResourceId has invalid argument', async () => {
+      it('getting the resource id should throw if invalid argument given', async () => {
         const notResources = [undefined, null, 0, {}, [], 'str', new Uint8Array(10)];
 
         for (let i = 0; i < notResources.length; i++) {
@@ -223,7 +247,7 @@ describe('Tanker', () => {
         }
       });
 
-      it('should throw if revokeDevice has bad device ID', async () => {
+      it('revoking a device should throw if invalid argument given', async () => {
         const badArgs = [
           undefined,
           null,
@@ -233,11 +257,11 @@ describe('Tanker', () => {
 
         for (let i = 0; i < badArgs.length; i++) {
           const arg = ((badArgs[i]: any): b64string);
-          await expect(tanker.revokeDevice(arg), `revoke test n°${i}`).to.be.rejectedWith(InvalidArgument);
+          await expect(tanker.revokeDevice(arg), `revoke test #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
 
-      it('should throw if createGroup has bad users', async () => {
+      it('creating a group should throw if invalid argument given', async () => {
         const badArgs = [
           undefined,
           null,
@@ -247,36 +271,41 @@ describe('Tanker', () => {
 
         for (let i = 0; i < badArgs.length; i++) {
           const arg = ((badArgs[i]: any): Array<string>);
-          await expect(tanker.createGroup(arg), `createGroup test n°${i}`).to.be.rejectedWith(InvalidArgument);
+          await expect(tanker.createGroup(arg), `create group test #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
 
-      it('should throw if updateGroupMembers has bad arguments', async () => {
+      it('updating group members should throw if invalid argument given', async () => {
         // $FlowExpectedError
         await expect(tanker.updateGroupMembers('', { usersToAdd: null })).to.be.rejectedWith(InvalidArgument);
         // $FlowExpectedError
         await expect(tanker.updateGroupMembers(null, { usersToAdd: ['user1'] })).to.be.rejectedWith(InvalidArgument);
       });
-    });
 
-    describe('sharing', () => {
-      const notShareWithValues = [
-        null,
-        0,
-        'noArrayAroundMe',
-        { shareWithUsers: [undefined] },
-        { shareWithUsers: 'noArrayAroundMe' },
-        { shareWithGroups: 'noArrayAroundMe' },
-        { shareWithGroups: [new Uint8Array(32)] },
-      ];
+      it('sharing should throw if invalid argument given', async () => {
+        const notShareWithValues = [
+          null,
+          0,
+          'noArrayAroundMe',
+          { shareWithUsers: [undefined] },
+          { shareWithUsers: 'noArrayAroundMe' },
+          { shareWithGroups: 'noArrayAroundMe' },
+          { shareWithGroups: [new Uint8Array(32)] },
+        ];
 
-      it('share() should throw when given an invalid option', async () => {
         notShareWithValues.push(undefined);
         notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
 
         for (let i = 0; i < notShareWithValues.length; i++) {
           const arg = ((notShareWithValues[i]: any): ShareWithOptions);
           await expect(tanker.share(['resourceId'], arg), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
+      });
+
+      it('verifying a provisional identity should throw if invalid argument given', async () => {
+        for (let i = 0; i < badVerifications.length; i++) {
+          const arg = ((badVerifications[i]: any): EmailVerification);
+          await expect(tanker.verifyProvisionalIdentity(arg), `verify provisional identity test #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
     });
