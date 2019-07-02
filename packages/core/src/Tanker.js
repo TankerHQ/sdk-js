@@ -235,7 +235,7 @@ export class Tanker extends EventEmitter {
 
   async verifyProvisionalIdentity(verification: EmailVerification): Promise<void> {
     this.assert(statuses.READY, 'verify a provisional identity');
-
+    assertVerification(verification);
     return this._session.apis.deviceManager.verifyProvisionalIdentity(verification);
   }
 
