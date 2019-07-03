@@ -8,5 +8,5 @@ export type TestResources = { [string]: Array<TestResource<any>> };
 export type TestArgs = {
   trustchainHelper: TrustchainHelper,
   resources: TestResources,
-  makeTanker: () => TankerInterface,
+  makeTanker: (b64TrustchainId?: string) => TankerInterface,
 };
