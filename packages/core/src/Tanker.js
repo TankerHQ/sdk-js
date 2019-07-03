@@ -150,7 +150,8 @@ export class Tanker extends EventEmitter {
 
   _setSession = (session: ?Session) => {
     if (session) {
-      session.localUser.on('device_revoked', this._nuke);
+      session.on('device_revoked', this._nuke);
+      session.on('authentication_failed', this.stop);
       this._session = session;
     } else {
       delete this._session;
@@ -252,10 +253,9 @@ export class Tanker extends EventEmitter {
   }
 
   async stop(): Promise<void> {
-    const session = this._session;
-    this._setSession(null);
-
-    if (session) {
+    if (this._session) {
+      const session = this._session;
+      this._setSession(null);
       await session.close();
     }
   }

@@ -1,23 +1,21 @@
 // @flow
-import { utils } from '@tanker/crypto';
+import EventEmitter from 'events';
 
 import Trustchain from '../Trustchain/Trustchain';
 import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
-import { takeChallenge } from './ClientAuthenticator';
-import { decrypt } from '../DataProtection/Encryptors/v2';
-import { InternalError, InvalidVerification, OperationCanceled, TankerError } from '../errors';
+import { InternalError, InvalidVerification, OperationCanceled, TankerError, NetworkError } from '../errors';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
 import { type UserData } from './UserData';
 
-import { sendGetVerificationKey, getLastUserKey, sendUserCreation, sendSetVerificationMethod } from './requests';
+import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './ghostDevice';
 import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCreation';
 
-export class Session {
+export class Session extends EventEmitter {
   localUser: LocalUser;
 
   storage: Storage;
@@ -28,13 +26,17 @@ export class Session {
 
   apis: Apis;
 
-  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client, status: ?Status) {
+  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client, status: Status) {
+    super();
+
     this.storage = storage;
     this._trustchain = trustchain;
     this.localUser = localUser;
     this._client = client;
-    this._status = status || statuses.STOPPED;
+    this._status = status;
 
+    localUser.on('device_revoked', () => this.emit('device_revoked'));
+    client.on('authentication_failed', (e) => this.authenticationError(e));
     this.apis = new Apis(localUser, storage, trustchain, client);
   }
 
@@ -44,7 +46,12 @@ export class Session {
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
     const client = new Client(userData.trustchainId, clientOptions);
-    client.open();
+    client.open().catch((e) => {
+      if (!(e instanceof OperationCanceled) && !(e instanceof NetworkError)) {
+        console.error(e);
+      }
+    });
+
     const storage = new Storage(storeOptions);
     await storage.open(userData.userId, userData.userSecret);
 
@@ -69,46 +76,33 @@ export class Session {
       }
 
       // Device registered on the trustchain, but device creation block not pulled yet...
-      // Just start the session normally and wait for the pull to catch missing blocks.
+      // Wait for the pull to catch missing blocks.
+      const session = new Session(localUser, storage, trustchain, client, statuses.STOPPED);
+      await session.authenticate();
+      return session;
     }
 
-    const session = new Session(localUser, storage, trustchain, client);
-    await session.authenticate();
+    const session = new Session(localUser, storage, trustchain, client, statuses.READY);
+
+    session.authenticate().catch((e) => session.authenticationError(e));
     return session;
   }
 
   authenticate = async () => {
-    await this._client.setAuthenticator((challenge: string) => takeChallenge(this.localUser, this.storage.keyStore.signatureKeyPair, challenge));
+    await this._client.authenticate(this.localUser.userId, this.storage.keyStore.signatureKeyPair);
     await this._trustchain.ready();
-
-    if (this.localUser.wasRevoked) {
-      await this.nuke();
-      throw new OperationCanceled('this device was revoked');
-    }
-
     this._status = statuses.READY;
   }
 
-  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => {
-    const request = {
-      trustchain_id: utils.toBase64(this.localUser.trustchainId),
-      user_id: utils.toBase64(this.localUser.userId),
-    };
+  authenticationError = (e: Error) => {
+    // OperationCanceled: thrown if you never managed to authenticate and the session gets closed
+    if (!(e instanceof NetworkError) && !(e instanceof OperationCanceled)) {
+      console.error(e);
+      this.emit('authentication_failed');
+    }
+  };
 
-    const res = await this._client.send('get verification methods', request);
-
-    return res.verification_methods.map(verificationMethod => {
-      const method = { ...verificationMethod };
-
-      // Compat: email value might be missing if unlock method registered with SDK < 2.0.0
-      if (method.type === 'email' && method.encrypted_email) {
-        method.email = utils.toString(decrypt(this.localUser.userSecret, utils.fromBase64(method.encrypted_email)));
-        delete method.encrypted_email;
-      }
-
-      return method;
-    });
-  }
+  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => getVerificationMethods(this._client, this.localUser)
 
   setVerificationMethod = async (verification: RemoteVerification): Promise<void> => {
     await sendSetVerificationMethod(this._client, this.localUser, verification);

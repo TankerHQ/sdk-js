@@ -62,7 +62,7 @@ export default class TrustchainPuller {
     this._unverifiedStore = unverifiedStore;
     this.synchronizedClient = new SynchronizedEventEmitter(client);
     this.events = [
-      this.synchronizedClient.on('blockAvailable', () => this.scheduleCatchUp()),
+      this.synchronizedClient.on('blockAvailable', () => this.scheduleCatchUp().catch(e => console.error('Caught error in background catch up', e))),
     ];
 
     this._extraUsers = [];
@@ -118,8 +118,11 @@ export default class TrustchainPuller {
         donePromises.forEach(d => d.resolve());
 
         if (this._donePromises.length > 0) {
-          this.scheduleCatchUp();
+          this.scheduleCatchUp().catch(e => console.error('Caught error in background catch up', e));
         }
+      }).catch((e) => {
+        this._catchUpInProgress = null;
+        donePromises.forEach(d => d.reject(e));
       });
     }
 
@@ -127,17 +130,14 @@ export default class TrustchainPuller {
   }
 
   _catchUp = async (extraUsers: Array<Uint8Array>, extraGroups: Array<Uint8Array>): Promise<void> => {
-    try {
-      const blocks = await this.client.send('get blocks 2', {
-        index: this._trustchainStore.lastBlockIndex,
-        trustchain_id: utils.toBase64(this.client.trustchainId),
-        extra_users: extraUsers,
-        extra_groups: extraGroups
-      });
-      await this._processNewBlocks(blocks);
-    } catch (e) {
-      console.error('CatchUp failed:', e);
-    }
+    const blocks = await this.client.send('get blocks 2', {
+      index: this._trustchainStore.lastBlockIndex,
+      trustchain_id: utils.toBase64(this.client.trustchainId),
+      extra_users: extraUsers,
+      extra_groups: extraGroups
+    });
+    await this._processNewBlocks(blocks);
+
     if (!this._caughtUpOnce.settled) {
       this._caughtUpOnce.resolve();
     }

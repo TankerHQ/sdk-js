@@ -1,7 +1,7 @@
 // @flow
 import Socket from 'socket.io-client';
 
-import { InternalError } from '../errors';
+import { NetworkError } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 
@@ -52,8 +52,7 @@ export default class SocketIoWrapper {
   constructor({ socket, url, sdkInfo }: CreationParam) {
     this.socket = socket || new Socket(url, { transports: ['websocket', 'polling'], autoConnect: false, query: sdkInfo });
     this.socket.on('error', e => logSocketError(e, 'error'));
-    this.socket.on('connect_error', e => logSocketError(e, 'connect_error'));
-    this.socket.on('disconnect', this.abortRequests);
+    this.socket.on('disconnect', reason => this.abortRequests(new NetworkError(`socket disconnected: ${reason}`)));
     this.synchronizedSocket = new SynchronizedEventEmitter(this.socket);
   }
 
@@ -69,10 +68,10 @@ export default class SocketIoWrapper {
 
   removeListener = async (id: number) => this.synchronizedSocket.removeListener(id);
 
-  abortRequests = (reason: string): void => {
+  abortRequests = (error: Error): void => {
     // reject all running requests and mark them as done
     for (const r of this.runningRequests) {
-      r.reject(new InternalError(`emit(${r.eventName}) failed due to ${reason}`));
+      r.reject(error);
     }
     this.runningRequests = [];
   }

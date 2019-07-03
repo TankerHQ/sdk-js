@@ -2,7 +2,7 @@
 
 import { generichash, utils, tcrypto } from '@tanker/crypto';
 
-import { encrypt } from '../DataProtection/Encryptors/v2';
+import { encrypt, decrypt } from '../DataProtection/Encryptors/v2';
 
 import { type Block } from '../Blocks/Block';
 import { Client, b64RequestObject } from '../Network/Client';
@@ -12,7 +12,6 @@ import { type UserCreation } from './deviceCreation';
 import { type Verification, type RemoteVerification } from './types';
 import { type GhostDevice } from './ghostDevice';
 import { InternalError } from '../errors';
-
 
 type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,
@@ -101,4 +100,25 @@ export const sendSetVerificationMethod = async (client: Client, localUser: Local
   };
 
   await client.send('set verification method', b64RequestObject(request));
+};
+
+export const getVerificationMethods = async (client: Client, localUser: LocalUser) => {
+  const request = {
+    trustchain_id: localUser.trustchainId,
+    user_id: localUser.userId,
+  };
+
+  const res = await client.send('get verification methods', b64RequestObject(request));
+
+  return res.verification_methods.map(verificationMethod => {
+    const method = { ...verificationMethod };
+
+    // Compat: email value might be missing if unlock method registered with SDK < 2.0.0
+    if (method.type === 'email' && method.encrypted_email) {
+      method.email = utils.toString(decrypt(localUser.userSecret, utils.fromBase64(method.encrypted_email)));
+      delete method.encrypted_email;
+    }
+
+    return method;
+  });
 };
