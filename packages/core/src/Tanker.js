@@ -246,9 +246,10 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('identity', 'b64string', identityB64);
     // End type verif
     const userData = extractUserData(identityB64);
+    const userDataTrustchainId = utils.toBase64(userData.trustchainId);
 
-    if (this.trustchainId !== utils.toBase64(userData.trustchainId))
-      throw new InvalidArgument('identity', 'b64string', identityB64);
+    if (this.trustchainId !== userDataTrustchainId)
+      throw new InvalidArgument(`The provided identity was not signed by the private key of the current trustchain: expected trustchain id "${this.trustchainId}", but got "${userDataTrustchainId}"`);
     return userData;
   }
 
