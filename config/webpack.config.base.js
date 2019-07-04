@@ -59,7 +59,7 @@ const getBabelLoaders = (env) => {
   ];
 };
 
-const makeBaseConfig = ({ mode, target }) => {
+const makeBaseConfig = ({ mode, target, react, hmre }) => {
   const base = {
     target,
     mode,
@@ -74,7 +74,7 @@ const makeBaseConfig = ({ mode, target }) => {
 
     module: {
       rules: [
-        ...getBabelLoaders({ target }),
+        ...getBabelLoaders({ target, react, hmre }),
         {
           test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
           loader: 'url-loader',
