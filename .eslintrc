@@ -63,6 +63,15 @@ rules:
     - error
     - always
 
+  react/no-multi-comp:
+    - error
+    - ignoreStateless: true
+  react/destructuring-assignment: 0
+  react/require-default-props: 0
+  react/sort-comp: 0
+  react/jsx-filename-extension: 0
+  react/jsx-one-expression-per-line: 0
+
 plugins:
     - chai-expect
     - chai-friendly

@@ -200,3 +200,15 @@ search = '"@tanker/errors": "{current_version}"'
 [[file]]
 src = "packages/stream/node/package.json"
 search = '"@tanker/stream-base": "{current_version}"'
+
+[[file]]
+src = "packages/verification-ui/node/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/verification-ui/node/package.json"
+search = '"@tanker/client-browser": "{current_version}"'
+
+[[file]]
+src = "packages/verification-ui/node/package.json"
+search = '"@tanker/identity": "{current_version}"'

@@ -1,16 +1,11 @@
 // @noflow
 const babel = require('rollup-plugin-babel');
-const flow = require('rollup-plugin-flow');
 const localResolve = require('rollup-plugin-local-resolve');
 
 const copy = require('./rollup-plugin-copy-edit');
 const getBabelConfig = require('./babel.config');
 
-const babelPresets = {
-  node: getBabelConfig({ target: 'node' }),
-  browser: getBabelConfig({ target: 'web' }),
-  es: getBabelConfig({ target: 'es' }),
-};
+const targetMap = { node: 'node', browser: 'web', es: 'es' };
 
 const buildFormats = {
   node: 'cjs',
@@ -27,12 +22,11 @@ const makeConfig = ({ input, output, target, copies }) => ({
   },
   plugins: [
     localResolve(),
-    flow(),
     babel({
       exclude: 'node_modules/**', // only transpile our source code
       babelrc: false,
       runtimeHelpers: true,
-      ...babelPresets[target],
+      ...getBabelConfig({ target: targetMap[target], react: true }),
     }),
     copy(copies)
   ],
