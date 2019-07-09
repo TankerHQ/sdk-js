@@ -7,7 +7,7 @@ import TrustchainStore from './TrustchainStore';
 import Storage from '../Session/Storage';
 import GroupUpdater from '../Groups/GroupUpdater';
 import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
-import type { VerifiedKeyPublish, VerifiedDeviceCreation } from '../Blocks/entries';
+import type { VerifiedDeviceCreation } from '../Blocks/entries';
 
 export default class Trustchain {
   _trustchainStore: TrustchainStore;
@@ -59,13 +59,5 @@ export default class Trustchain {
     if (!unverifiedDevice)
       return null;
     return this._trustchainVerifier.verifyDeviceCreation(unverifiedDevice);
-  }
-
-  async findKeyPublish(resourceId: Uint8Array): Promise<?VerifiedKeyPublish> {
-    const unverifiedKP = await this._unverifiedStore.findUnverifiedKeyPublish(resourceId);
-    if (!unverifiedKP)
-      return null;
-    const verifiedEntries = await this._trustchainVerifier.verifyKeyPublishes([unverifiedKP]);
-    return verifiedEntries.length ? verifiedEntries[0] : null;
   }
 }

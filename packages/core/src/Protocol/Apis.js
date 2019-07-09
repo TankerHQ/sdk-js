@@ -36,12 +36,11 @@ export class Apis {
 
     this.resourceManager = new ResourceManager(
       storage.resourceStore,
-      trustchain,
+      client,
       new KeyDecryptor(
         localUser,
-        this.userAccessor,
-        storage.groupStore
-      )
+        this.groupManager
+      ),
     );
 
     this.dataProtector = new DataProtector(

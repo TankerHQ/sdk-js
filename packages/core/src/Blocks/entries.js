@@ -3,16 +3,12 @@ import { utils } from '@tanker/crypto';
 
 import {
   type Record,
-  type KeyPublishRecord,
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
   type UserDeviceRecord,
   type DeviceRevocationRecord,
   type ProvisionalIdentityClaimRecord,
   unserializePayload,
-  unserializeKeyPublish,
-  unserializeKeyPublishToDevice,
-  unserializeKeyPublishToProvisionalUser,
   unserializeUserDeviceV1,
   unserializeUserDeviceV2,
   unserializeUserDeviceV3,
@@ -136,39 +132,6 @@ export type UnverifiedTrustchainCreation = {
   ...VerificationFields,
   public_signature_key: Uint8Array,
 };
-
-export type UnverifiedKeyPublish = {
-  ...VerificationFields,
-  ...KeyPublishRecord,
-};
-
-export type VerifiedKeyPublish = {
-  ...KeyPublishRecord,
-  author: Uint8Array,
-  nature: Nature,
-};
-
-export function keyPublishFromBlock(block: Block): UnverifiedKeyPublish {
-  const verificationFields = verificationFieldsFromBlock(block);
-  let keyPublishAction;
-  switch (block.nature) {
-    case NATURE.key_publish_to_device:
-      keyPublishAction = unserializeKeyPublishToDevice(block.payload);
-      break;
-    case NATURE.key_publish_to_provisional_user:
-      keyPublishAction = unserializeKeyPublishToProvisionalUser(block.payload);
-      break;
-    case NATURE.key_publish_to_user:
-    case NATURE.key_publish_to_user_group:
-      keyPublishAction = unserializeKeyPublish(block.payload);
-      break;
-    default: throw new InternalError('Assertion error: wrong type for keyPublishFromBlock');
-  }
-  return {
-    ...verificationFields,
-    ...keyPublishAction
-  };
-}
 
 export type UnverifiedUserGroupCreation = {
   ...VerificationFields,

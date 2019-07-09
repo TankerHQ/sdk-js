@@ -2,14 +2,18 @@
 
 import sinon from 'sinon';
 
+import { tcrypto, utils, random } from '@tanker/crypto';
+
 import { expect } from './chai';
 import { InvalidArgument } from '../errors';
 import { ResourceManager } from '../Resource/ResourceManager';
-import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 
-class TrustchainStub {
-  sync = sinon.spy();
-  findKeyPublish = sinon.spy();
+import TestGenerator from './TestGenerator';
+
+import { serializeBlock } from '../Blocks/payloads';
+
+class ClientStub {
+  send = () => { };
 }
 
 class ResourceStoreStub {
@@ -23,14 +27,15 @@ class KeyDecryptorStub {
 }
 
 function makeManager() {
-  const trustchain = new TrustchainStub();
+  const client = new ClientStub();
   const resourceStore = new ResourceStoreStub();
   const keyDecryptor = new KeyDecryptorStub();
+  const localUser = { trustchainId: new Uint8Array(0) };
 
   // $FlowExpectedError
-  const manager = new ResourceManager(resourceStore, trustchain, keyDecryptor);
+  const manager = new ResourceManager(resourceStore, client, keyDecryptor, localUser);
   return {
-    trustchain,
+    client,
     resourceStore,
     keyDecryptor,
     manager
@@ -38,6 +43,16 @@ function makeManager() {
 }
 
 describe('ResourceManager', () => {
+  let testKeyPublish;
+
+  before(async () => {
+    const testGenerator = new TestGenerator();
+    testGenerator.makeTrustchainCreation();
+    const userId = random(tcrypto.HASH_SIZE);
+    const userCreation = await testGenerator.makeUserCreation(userId);
+    testKeyPublish = testGenerator.makeKeyPublishToUser(userCreation, userCreation.user);
+  });
+
   describe('SaveResourceKey', () => {
     it('can save Resource', async () => {
       const { resourceStore, manager } = makeManager();
@@ -52,88 +67,30 @@ describe('ResourceManager', () => {
 
   describe('FindKeyFromResourceId', () => {
     it('throws InvalidArgument after a single try when it cannot find the resource', async () => {
-      const { trustchain, resourceStore, manager } = makeManager();
+      const { client, resourceStore, manager } = makeManager();
 
-      const id = new Uint8Array([0]);
+      client.send = () => [];
 
-      await expect(manager.findKeyFromResourceId(id)).to.be.rejectedWith(InvalidArgument);
+      await expect(manager.findKeyFromResourceId(testKeyPublish.resourceId)).to.be.rejectedWith(InvalidArgument);
       expect(resourceStore.findResourceKey.calledOnce).to.be.true;
-      expect(trustchain.findKeyPublish.calledOnce).to.be.true;
-      expect(trustchain.sync.notCalled).to.be.true;
-    });
-
-    it('throws InvalidArgument on second try when it cannot find the resource and retry is one', async () => {
-      const { trustchain, resourceStore, manager } = makeManager();
-
-      const id = new Uint8Array([0]);
-
-      await expect(manager.findKeyFromResourceId(id, true)).to.be.rejectedWith(InvalidArgument);
-      expect(resourceStore.findResourceKey.calledTwice).to.be.true;
-      expect(trustchain.findKeyPublish.calledTwice).to.be.true;
-      expect(trustchain.sync.calledOnce).to.be.true;
     });
 
     it('can find keys from ResourceStore', async () => {
       const { resourceStore, manager } = makeManager();
 
-      resourceStore.findResourceKey = (arg) => arg;
+      resourceStore.findResourceKey = () => testKeyPublish.resourceKey;
 
-      const id = new Uint8Array([0]);
-
-      expect(await manager.findKeyFromResourceId(id, true)).to.be.equal(id);
+      expect(await manager.findKeyFromResourceId(testKeyPublish.resourceId)).to.be.equal(testKeyPublish.resourceKey);
     });
 
     it('can find keys from Trustchain', async () => {
-      const { trustchain, resourceStore, manager } = makeManager();
+      const { client, resourceStore, manager, keyDecryptor } = makeManager();
 
-      trustchain.findKeyPublish = (arg) => arg;
-      // $FlowExpectedError
-      manager.extractAndSaveResourceKey = (arg) => arg;
+      client.send = () => [utils.toBase64(serializeBlock(testKeyPublish.block))];
+      keyDecryptor.keyFromKeyPublish = () => testKeyPublish.resourceKey;
 
-      const id = new Uint8Array([0]);
-
-      expect(await manager.findKeyFromResourceId(id, true)).to.be.equal(id);
+      expect(await manager.findKeyFromResourceId(testKeyPublish.resourceId)).to.be.equal(testKeyPublish.resourceKey);
       expect(resourceStore.findResourceKey.calledOnce).to.be.true;
-    });
-  });
-
-  describe('ProcessKeyPublish', () => {
-    const keyPublishEntry = {
-      resourceId: new Uint8Array([0]),
-      author: new Uint8Array([0]),
-      key: new Uint8Array([0]),
-      nature: preferredNature(NATURE_KIND.key_publish_to_device),
-      recipient: new Uint8Array([0])
-    };
-
-    const internalError = new Error('Error thrown on purpose in unit tests');
-
-    it('returns null if storage is not ready', async () => {
-      const { keyDecryptor, manager } = makeManager();
-      keyDecryptor.deviceReady = () => false;
-
-      expect(await manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.null;
-    });
-
-    it('extracts and saves resource key', async () => {
-      const { resourceStore, manager } = makeManager();
-
-      expect(await manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.equal(keyPublishEntry.key);
-      expect(resourceStore.saveResourceKey.calledOnce).to.be.true;
-    });
-
-    it('throws when saving resource failed', async () => {
-      const { resourceStore, manager } = makeManager();
-      resourceStore.saveResourceKey = () => { throw internalError; };
-
-      await expect(manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.rejected;
-    });
-
-    it('throws when key extraction failed', async () => {
-      const { keyDecryptor, manager } = makeManager();
-      keyDecryptor.keyFromKeyPublish = () => { throw internalError; };
-
-      await expect(manager.extractAndSaveResourceKey(keyPublishEntry)).to.be.rejected;
     });
   });
 });
