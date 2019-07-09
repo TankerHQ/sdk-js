@@ -477,6 +477,44 @@ const generateEncryptTests = (args: TestArgs) => {
       });
     });
   });
+
+  describe.only('small binary file upload', () => {
+    let aliceLaptop;
+    let aliceIdentity;
+
+    before(async () => {
+      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      aliceLaptop = args.makeTanker();
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+    });
+
+    after(async () => {
+      await aliceLaptop.stop();
+    });
+
+    it('can upload and download a small file', async () => {
+      const { type: originalType, resource: clear } = args.resources.small[2];
+
+      const fileId = await aliceLaptop.upload(clear);
+
+      const outputOptions = {};
+      outputOptions.type = originalType;
+
+      if (global.Blob && outputOptions.type === Blob) {
+        outputOptions.mime = clear.type;
+      }
+      if (global.File && outputOptions.type === File) {
+        outputOptions.mime = clear.type;
+        outputOptions.name = clear.name;
+        outputOptions.lastModified = clear.lastModified;
+      }
+
+      const decrypted = await aliceLaptop.download(fileId, outputOptions);
+      expectType(decrypted, originalType);
+      expectDeepEqual(decrypted, clear);
+    });
+  });
 };
 
 export default generateEncryptTests;
