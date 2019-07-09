@@ -138,4 +138,15 @@ export default class GroupManager {
 
     return groups;
   }
+
+  async getGroupEncryptionKeyPair(groupPublicEncryptionKey: Uint8Array) {
+    let group = await this._groupStore.findFull({ groupPublicEncryptionKey });
+    if (!group)
+      await this._trustchain.updateGroupStoreWithPublicEncryptionKey(groupPublicEncryptionKey);
+
+    group = await this._groupStore.findFull({ groupPublicEncryptionKey });
+    if (!group)
+      return null;
+    return group.encryptionKeyPair;
+  }
 }
