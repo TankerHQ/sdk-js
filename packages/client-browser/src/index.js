@@ -5,6 +5,7 @@ import Dexie from '@tanker/datastore-dexie-browser';
 
 import { assertDataType, getDataLength, castData, type Data } from './dataHelpers';
 import { simpleFetch } from './http';
+import { UploadStream } from './gcs/UploadStream';
 import { makeOutputOptions, type OutputOptions } from './outputOptions';
 
 const { READY } = statuses;
@@ -106,26 +107,29 @@ class Tanker extends TankerCore {
   }
 
   async upload<T: Data>(clearData: Data, options?: ExtendedEncryptionOptions<T> = {}): Promise<string> {
-    const encryptedFile = await this.encryptData(clearData, { ...options, type: File });
-    const encryptedFileLength = encryptedFile.size;
+    this.assert(READY, 'upload a file');
+    assertDataType(clearData, 'clearData');
 
-    const resourceId = await this.getResourceId(encryptedFile);
+    const encryptionOptions = this._parseEncryptionOptions(options);
+    const encryptor = await this._session.apis.dataProtector.makeEncryptorStream(encryptionOptions);
+
+    const { clearChunkSize, encryptedChunkSize, overheadPerChunk, resourceId } = encryptor;
+    const totalClearSize = getDataLength(clearData);
+    const lastClearChunkSize = totalClearSize % clearChunkSize;
+    const totalEncryptedSize = Math.floor(totalClearSize / clearChunkSize) * encryptedChunkSize + lastClearChunkSize + overheadPerChunk;
 
     const { url, headers } = await this._session._client.send('get file upload url', { // eslint-disable-line no-underscore-dangle
       resource_id: resourceId,
-      upload_content_length: encryptedFileLength,
+      upload_content_length: totalEncryptedSize,
     });
 
-    let response = await simpleFetch(url, { method: 'POST', headers });
-    if (!response.ok) {
-      throw new errors.NetworkError(`Request failed with status: ${response.status}`);
-    }
-    const uploadUrl = response.headers.location;
+    const slicer = new SlicerStream({ source: clearData });
+    const uploader = new UploadStream(url, headers, totalEncryptedSize, true);
 
-    response = await simpleFetch(uploadUrl, { method: 'PUT', headers, body: encryptedFile });
-    if (!response.ok) {
-      throw new errors.NetworkError(`Request failed with status: ${response.status}`);
-    }
+    await new Promise((resolve, reject) => {
+      [slicer, encryptor, uploader].forEach(s => s.on('error', reject));
+      slicer.pipe(encryptor).pipe(uploader).on('finish', resolve);
+    });
 
     return resourceId;
   }

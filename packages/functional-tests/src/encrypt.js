@@ -494,7 +494,7 @@ const generateEncryptTests = (args: TestArgs) => {
     });
 
     it('can upload and download a small file', async () => {
-      const { type: originalType, resource: clear } = args.resources.small[2];
+      const { type: originalType, resource: clear } = args.resources.medium[2];
 
       const fileId = await aliceLaptop.upload(clear);
 
