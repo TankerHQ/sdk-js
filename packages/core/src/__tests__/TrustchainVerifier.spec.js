@@ -1,25 +1,10 @@
 // @flow
 /* eslint-disable no-underscore-dangle */
 
-import { tcrypto, random } from '@tanker/crypto';
-
 import { expect, assert } from './chai';
-import { silencer } from './ConsoleSilencer';
 import { InvalidBlockError } from '../errors.internal';
-import { type UnverifiedEntry, blockToEntry, deviceCreationFromBlock } from '../Blocks/entries';
-import { type GeneratorKeyResult, type GeneratorUserResult } from './Generator';
-import { signBlock, type Block } from '../Blocks/Block';
-import TrustchainBuilder, { makeTrustchainBuilder } from './TrustchainBuilder';
-import UserStore from '../Users/UserStore';
-import { serializeKeyPublish } from '../Blocks/payloads';
-import { NATURE, type Nature } from '../Blocks/Nature';
-
-
-type EntryBlockSignParam = {
-  entry: UnverifiedEntry,
-  block: Block,
-  blockPrivateSignatureKey: Uint8Array,
-};
+import { deviceCreationFromBlock } from '../Blocks/entries';
+import { makeTrustchainBuilder } from './TrustchainBuilder';
 
 async function assertFailsWithNature(promise: Promise<*>, nature: string): Promise<void> {
   try {
@@ -32,55 +17,7 @@ async function assertFailsWithNature(promise: Promise<*>, nature: string): Promi
   assert.fail('Exception not thrown');
 }
 
-function mergeBlock<T: EntryBlockSignParam>(user: T, block: Object, maybeBlockPrivateSignatureKey = null): T {
-  const blockPrivateSignatureKey = maybeBlockPrivateSignatureKey || user.blockPrivateSignatureKey;
-  const newBlock = { ...user.block, ...block };
-  const entry = blockToEntry(signBlock(newBlock, blockPrivateSignatureKey));
-  return { ...user, block: newBlock, entry };
-}
-
-function mergeKeyPublish(serializeFunction: Function, kp: GeneratorKeyResult, payload: Object, maybeBlockPrivateSignatureKey = null): GeneratorKeyResult {
-  const alteredPayload = { ...(kp.entry.payload_unverified: any), ...(payload: any) };
-  const serializedPayload = serializeFunction(alteredPayload);
-  const merged = mergeBlock(kp, { payload: serializedPayload }, maybeBlockPrivateSignatureKey);
-  merged.unverifiedKeyPublish = {
-    ...(merged.entry: any),
-    ...merged.entry.payload_unverified,
-  };
-  return merged;
-}
-
-function setKeyPublishAuthor(keyPublish: GeneratorKeyResult, author: Uint8Array, maybeBlockPrivateSignatureKey: ?Uint8Array): GeneratorKeyResult {
-  const merged = mergeBlock(keyPublish, { author }, maybeBlockPrivateSignatureKey);
-  return {
-    ...merged,
-    unverifiedKeyPublish: {
-      ...merged.entry,
-      ...merged.entry.payload_unverified,
-    },
-  };
-}
-
-function setRecipientKeyPublish(kp: GeneratorKeyResult, recipient: Uint8Array, nature: Nature, maybeBlockPrivateSignatureKey: ?Uint8Array): GeneratorKeyResult {
-  const payload = {
-    recipient,
-  };
-  switch (nature) {
-    case NATURE.key_publish_to_device:
-      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
-    case NATURE.key_publish_to_user:
-      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
-    case NATURE.key_publish_to_user_group:
-      return mergeKeyPublish(serializeKeyPublish, kp, payload, maybeBlockPrivateSignatureKey);
-    default:
-      throw new Error('Invalid key publish nature');
-  }
-}
-
-describe('TrustchainVerifier', function () { // eslint-disable-line func-names
-  // Running with PouchDB memory in the browser is very slow
-  this.timeout(30000);
-
+describe('TrustchainVerifier', () => {
   describe('block validation', () => {
     it('should reject a block with an unknown author', async () => {
       const builder = await makeTrustchainBuilder();
@@ -121,108 +58,6 @@ describe('TrustchainVerifier', function () { // eslint-disable-line func-names
       expect(await userStore.findDevice({ deviceId: alice6.entry.hash })).to.be.null;
 
       expect(await userStore.findDevice({ deviceId: bob.entry.hash })).to.be.null;
-    });
-  });
-
-  describe('verifyKeyPublishes', () => {
-    let builder: TrustchainBuilder;
-    let userStore: UserStore;
-    let author: GeneratorUserResult;
-    let authorDevice: GeneratorUserResult;
-    let author2: GeneratorUserResult;
-    let user: GeneratorUserResult;
-
-    beforeEach(async () => {
-      builder = await makeTrustchainBuilder();
-      ({ userStore } = builder);
-      user = await builder.addUserV3('alice');
-      authorDevice = await builder.addUserV3('bob');
-      author = await builder.addDeviceV3({ id: 'bob', parentIndex: 0 });
-      author2 = await builder.addUserV3('dave');
-
-      await builder.trustchainVerifier.verifyDeviceCreation(user.unverifiedDeviceCreation);
-    });
-
-    it('verifies all author blocks', async () => {
-      const keyPublish = await builder.addKeyPublishToUser({ from: author, to: user });
-      const keyPublish2 = await builder.addKeyPublishToUser({ from: author2, to: user });
-      const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish, keyPublish2.unverifiedKeyPublish]);
-      expect(result.length).to.equal(2);
-      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ deviceId: author2.entry.hash })).to.not.be.null;
-    });
-
-    it('fails to verify keypublishes with bad authors', async () => {
-      silencer.silence('error', /invalid block/);
-
-      const keyPublish = await builder.addKeyPublishToUser({ from: author, to: user });
-      const keyPublish2 = await builder.addKeyPublishToUser({ from: author2, to: user });
-      const alteredKP2 = setKeyPublishAuthor(keyPublish2, keyPublish.entry.hash);
-
-      const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish, alteredKP2.unverifiedKeyPublish]);
-      expect(result.length).to.equal(1);
-      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ deviceId: author2.entry.hash })).to.be.null;
-
-      silencer.restore();
-    });
-
-    it('verified group block', async () => {
-      const group = await builder.addUserGroupCreation(author, ['alice']);
-
-      const keyPublishToGroup = await builder.addKeyPublishToUserGroup({ from: author2, to: group });
-
-      const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublishToGroup.unverifiedKeyPublish]);
-      expect(result.length).to.equal(1);
-      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ deviceId: author2.entry.hash })).to.not.be.null;
-
-      const groupId = (group.entry.payload_unverified: any).public_signature_key;
-      const verifiedGroup = await builder.groupStore.findExternal({ groupId });
-      expect(!!verifiedGroup).to.be.true;
-    });
-
-    it('fails to verify key publishes with bad groups', async () => {
-      silencer.silence('error', /invalid block/);
-
-      const group = await builder.addUserGroupCreation(author, ['alice']);
-
-      const keyPublishToGroup = await builder.addKeyPublishToUserGroup({ from: author2, to: group });
-      const alteredKP = setRecipientKeyPublish(keyPublishToGroup, new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE), NATURE.key_publish_to_user_group);
-
-      const result = await builder.trustchainVerifier.verifyKeyPublishes([alteredKP.unverifiedKeyPublish]);
-      expect(result.length).to.equal(0);
-
-      silencer.restore();
-    });
-
-    it('verifies key publishes to provisional users', async () => {
-      const provisionalUserPublicKeys = {
-        app_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        tanker_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-      };
-      const keyPublish = await builder.addKeyPublishToProvisionalUser({ from: author, to: provisionalUserPublicKeys });
-      const result = await builder.trustchainVerifier.verifyKeyPublishes([keyPublish.unverifiedKeyPublish]);
-      expect(result.length).to.equal(1);
-
-      expect(await userStore.findDevice({ deviceId: author.entry.hash })).to.not.be.null;
-      expect(await userStore.findDevice({ deviceId: authorDevice.entry.hash })).to.not.be.null;
-    });
-
-    it('verifies claim provisional identity', async () => {
-      const provisionalUserKeys = {
-        appSignatureKeyPair: tcrypto.makeSignKeyPair(),
-        appEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
-        tankerSignatureKeyPair: tcrypto.makeSignKeyPair(),
-        tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
-      };
-
-      // Note: user is necessarily the author of its own identity claim block
-      const claim = await builder.addProvisionalIdentityClaim(user, provisionalUserKeys);
-      await expect(builder.trustchainVerifier.verifyClaimsForUser(claim.unverifiedProvisionalIdentityClaim.user_id)).to.be.fulfilled;
     });
   });
 });

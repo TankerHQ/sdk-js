@@ -11,7 +11,6 @@ import { type ExternalGroup } from '../Groups/types';
 import { getUserGroupCreationBlockSignDataV1, getUserGroupCreationBlockSignDataV2, getUserGroupAdditionBlockSignDataV1, getUserGroupAdditionBlockSignDataV2 } from '../Blocks/BlockGenerator';
 import type {
   UnverifiedTrustchainCreation,
-  UnverifiedKeyPublish, VerifiedKeyPublish,
   UnverifiedUserGroup, VerifiedUserGroup,
   UnverifiedDeviceCreation, UnverifiedDeviceRevocation,
   UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
@@ -29,10 +28,6 @@ import {
 import {
   NATURE,
   isTrustchainCreation,
-  isKeyPublishToDevice,
-  isKeyPublishToUser,
-  isKeyPublishToUserGroup,
-  isKeyPublishToProvisionalUser,
 } from '../Blocks/Nature';
 
 export const rootBlockAuthor = new Uint8Array(32);
@@ -125,48 +120,6 @@ export function verifyDeviceRevocation(entry: UnverifiedDeviceRevocation, author
         throw new InvalidBlockError('invalid_new_key', 'missing encrypted private key for an active device', { entry, targetUser });
     }
   }
-}
-
-function verifyKeyPublishToDevice(entry: UnverifiedKeyPublish, author: Device, recipient: ?User) {
-  if (!recipient)
-    throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid device', { entry, author });
-  for (const userKey of recipient.userPublicKeys)
-    if (userKey.index < entry.index)
-      throw new InvalidBlockError('version_mismatch', 'cannot send a key publish V1 to a user V3', { entry, author, recipient });
-}
-
-function verifyKeyPublishToUser(entry: UnverifiedKeyPublish, author: Device, recipient: ?User) {
-  if (!recipient)
-    throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid user', { entry, author });
-
-  const indexUserKey = find(recipient.userPublicKeys, userPublicKey => utils.equalArray(userPublicKey.userPublicKey, entry.recipient));
-
-  const futureUserKey = find(recipient.userPublicKeys, userPublicKey => userPublicKey.index > indexUserKey.index);
-
-  if (futureUserKey && entry.index > futureUserKey.index)
-    throw new InvalidBlockError('invalid_user_public_key', 'user public key has been superseeded', { entry, author });
-}
-
-function verifyKeyPublishToUserGroup(entry: UnverifiedKeyPublish, author: Device, recipient: ?ExternalGroup) {
-  if (!recipient)
-    throw new InvalidBlockError('invalid_recipient', 'recipient is not a valid group', { entry, author });
-}
-
-export function verifyKeyPublish(keyPublish: UnverifiedKeyPublish, author: Device, recipientUser: ?User, recipientGroup: ?ExternalGroup): VerifiedKeyPublish {
-  if (!tcrypto.verifySignature(keyPublish.hash, keyPublish.signature, author.devicePublicSignatureKey))
-    throw new InvalidBlockError('invalid_signature', 'signature is invalid', { keyPublish, author });
-
-  if (isKeyPublishToDevice(keyPublish.nature)) {
-    verifyKeyPublishToDevice(keyPublish, author, recipientUser);
-  } else if (isKeyPublishToUser(keyPublish.nature)) {
-    verifyKeyPublishToUser(keyPublish, author, recipientUser);
-  } else if (isKeyPublishToUserGroup(keyPublish.nature)) {
-    verifyKeyPublishToUserGroup(keyPublish, author, recipientGroup);
-  } else if (isKeyPublishToProvisionalUser(keyPublish.nature)) {
-    // Nothing to verify beyond the signature
-  }
-
-  return keyPublish;
 }
 
 export function verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Device, existingGroup: ?ExternalGroup): VerifiedUserGroup {

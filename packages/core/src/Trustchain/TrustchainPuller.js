@@ -9,7 +9,6 @@ import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 
 import {
   blockToEntry,
-  keyPublishFromBlock,
   userGroupEntryFromBlock,
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
@@ -134,7 +133,8 @@ export default class TrustchainPuller {
       index: this._trustchainStore.lastBlockIndex,
       trustchain_id: utils.toBase64(this.client.trustchainId),
       extra_users: extraUsers,
-      extra_groups: extraGroups
+      extra_groups: extraGroups,
+      on_demand_key_publishes: true,
     });
     await this._processNewBlocks(blocks);
 
@@ -144,7 +144,6 @@ export default class TrustchainPuller {
   }
 
   _processNewBlocks = async (b64Blocks: Array<string>) => {
-    const keyPublishes = [];
     const userEntries = [];
     const userGroups = [];
     const claims = [];
@@ -160,9 +159,7 @@ export default class TrustchainPuller {
         maxBlockIndex = block.index;
       }
 
-      if (isKeyPublish(block.nature)) {
-        keyPublishes.push(keyPublishFromBlock(block));
-      } else if (isUserGroup(block.nature)) {
+      if (isUserGroup(block.nature)) {
         userGroups.push(userGroupEntryFromBlock(block));
       } else if (isDeviceCreation(block.nature)) {
         const userEntry = deviceCreationFromBlock(block);
@@ -181,7 +178,7 @@ export default class TrustchainPuller {
         claims.push(provisionalIdentityClaimFromBlock(block));
       } else if (isTrustchainCreation(block.nature)) {
         trustchainCreationEntry = blockToEntry(block);
-      } else {
+      } else if (!isKeyPublish(block.nature)) {
         throw new InternalError('Assertion error: Unexpected nature in trustchain puller callback');
       }
     }
@@ -193,7 +190,6 @@ export default class TrustchainPuller {
     }
 
     await this._unverifiedStore.addUnverifiedUserEntries(userEntries);
-    await this._unverifiedStore.addUnverifiedKeyPublishes(keyPublishes);
     await this._unverifiedStore.addUnverifiedUserGroups(userGroups);
     await this._unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries(claims);
     await this._trustchainStore.updateLastBlockIndex(maxBlockIndex);

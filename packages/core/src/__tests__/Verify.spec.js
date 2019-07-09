@@ -10,7 +10,6 @@ import {
   verifyTrustchainCreation,
   verifyDeviceCreation,
   verifyDeviceRevocation,
-  verifyKeyPublish,
   verifyUserGroupCreation,
   verifyUserGroupAddition,
   verifyProvisionalIdentityClaim,
@@ -20,9 +19,10 @@ import { type User } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 
 import type {
-  UnverifiedTrustchainCreation, UnverifiedKeyPublish, UnverifiedUserGroup,
+  UnverifiedTrustchainCreation, UnverifiedUserGroup,
   UnverifiedDeviceCreation, UnverifiedDeviceRevocation, UnverifiedProvisionalIdentityClaim,
 } from '../Blocks/entries';
+
 import { NATURE } from '../Blocks/Nature';
 
 import TestGenerator from './TestGenerator';
@@ -305,129 +305,6 @@ describe('BlockVerification', () => {
     });
   });
 
-  describe('key publish to device', () => {
-    let user: User;
-    let unverifiedKeyPublish: UnverifiedKeyPublish;
-    beforeEach(async () => {
-      testGenerator.makeTrustchainCreation();
-      const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      const deviceCreation = testGenerator.makeDeviceCreation(userCreation);
-      user = deviceCreation.user;
-      user.userPublicKeys = [];
-      const keyPublish = testGenerator.makeKeyPublishToDevice(deviceCreation, user.devices[0]);
-      unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
-    });
-
-    it('should accept a correct key publish to device', () => {
-      expect(() => verifyKeyPublish(unverifiedKeyPublish, user.devices[1], user, null))
-        .to.not.throw();
-    });
-
-    it('should reject a keyPublish with an invalid signature', () => {
-      unverifiedKeyPublish.signature[0] += 1;
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[1], user, null),
-        'invalid_signature'
-      );
-    });
-
-    it('should reject a keyPublish to device with no recipient', () => {
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[1], null, null),
-        'invalid_recipient'
-      );
-    });
-
-    it('should reject a keyPublish to device with version mismatch', () => {
-      user.userPublicKeys = [{
-        index: 0,
-        userPublicKey: new Uint8Array(0),
-      }];
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[1], user, null),
-        'version_mismatch'
-      );
-    });
-  });
-
-  describe('key publish to user', () => {
-    let user: User;
-    let unverifiedKeyPublish: UnverifiedKeyPublish;
-    beforeEach(async () => {
-      testGenerator.makeTrustchainCreation();
-      const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      user = userCreation.user;
-      testGenerator.skipIndex(); // used for faking a revocation
-      const keyPublish = testGenerator.makeKeyPublishToUser(userCreation, user);
-      unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
-    });
-
-    it('should accept a correct key publish to user', () => {
-      expect(() => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, null))
-        .to.not.throw();
-    });
-
-    it('should reject a keyPublish with an invalid signature', () => {
-      unverifiedKeyPublish.signature[0] += 1;
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, null),
-        'invalid_signature'
-      );
-    });
-    it('should reject a keyPublish to user with no recipient', () => {
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null),
-        'invalid_recipient'
-      );
-    });
-
-    it('should reject a keyPublish to user if public key is not the most recent', () => {
-      user.userPublicKeys = [{
-        index: unverifiedKeyPublish.index - 1,
-        userPublicKey: unverifiedKeyPublish.recipient,
-      }, {
-        index: unverifiedKeyPublish.index,
-        userPublicKey: new Uint8Array(0),
-      }];
-      unverifiedKeyPublish.index += 1;
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, null),
-        'invalid_user_public_key'
-      );
-    });
-  });
-
-  describe('key publish to provisional user', () => {
-    let user: User;
-    let unverifiedKeyPublish: UnverifiedKeyPublish;
-
-    beforeEach(async () => {
-      testGenerator.makeTrustchainCreation();
-      const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      user = userCreation.user;
-      testGenerator.skipIndex(); // used for faking a revocation
-      const provisionalIdentityPublicKeys = testGenerator.makeProvisionalUser();
-      const keyPublish = testGenerator.makeKeyPublishToProvisionalUser(userCreation, provisionalIdentityPublicKeys);
-      unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
-    });
-
-    it('should accept a correct key publish to provisional user', () => {
-      expect(() => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null))
-        .to.not.throw();
-    });
-
-    it('should reject a key publish to provisional user with an invalid signature', () => {
-      unverifiedKeyPublish.signature[0] += 1;
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], null, null),
-        'invalid_signature'
-      );
-    });
-  });
-
   describe('group creation', () => {
     let user: User;
     let externalGroup: ExternalGroup;
@@ -530,43 +407,6 @@ describe('BlockVerification', () => {
       assertFailWithNature(
         () => verifyUserGroupAddition(unverifiedUserGroup, user.devices[0], externalGroup),
         'invalid_previous_group_block'
-      );
-    });
-  });
-
-  describe('key publish to user group', () => {
-    let user: User;
-    let externalGroup: ExternalGroup;
-    let unverifiedKeyPublish: UnverifiedKeyPublish;
-    beforeEach(async () => {
-      testGenerator.makeTrustchainCreation();
-      const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      user = userCreation.user;
-      const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user]);
-      externalGroup = userGroupCreation.externalGroup;
-
-      const keyPublish = testGenerator.makeKeyPublishToGroup(userCreation, externalGroup);
-      unverifiedKeyPublish = keyPublish.unverifiedKeyPublish;
-    });
-
-    it('should accept a valid kp2ug', async () => {
-      expect(() => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, externalGroup))
-        .to.not.throw();
-    });
-
-    it('should reject a keyPublish with an invalid signature', () => {
-      unverifiedKeyPublish.signature[0] += 1;
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, externalGroup),
-        'invalid_signature'
-      );
-    });
-
-    it('should reject a kp2ug with a bad recipient', async () => {
-      assertFailWithNature(
-        () => verifyKeyPublish(unverifiedKeyPublish, user.devices[0], user, null),
-        'invalid_recipient'
       );
     });
   });

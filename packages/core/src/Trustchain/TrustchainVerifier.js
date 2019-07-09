@@ -10,7 +10,6 @@ import { type User, type Device } from '../Users/User';
 import GroupUpdater from '../Groups/GroupUpdater';
 import type {
   UnverifiedTrustchainCreation,
-  UnverifiedKeyPublish, VerifiedKeyPublish,
   UnverifiedUserGroup, VerifiedUserGroup,
   UnverifiedDeviceCreation, VerifiedDeviceCreation,
   UnverifiedDeviceRevocation, VerifiedDeviceRevocation,
@@ -18,12 +17,8 @@ import type {
 } from '../Blocks/entries';
 
 import {
-  NATURE,
   NATURE_KIND,
   natureKind,
-  isKeyPublishToDevice,
-  isKeyPublishToUser,
-  isKeyPublishToProvisionalUser,
 } from '../Blocks/Nature';
 
 import Storage from '../Session/Storage';
@@ -32,7 +27,6 @@ import {
   verifyTrustchainCreation,
   verifyDeviceCreation,
   verifyDeviceRevocation,
-  verifyKeyPublish,
   verifyUserGroupCreation,
   verifyUserGroupAddition,
   verifyProvisionalIdentityClaim,
@@ -77,48 +71,6 @@ export default class TrustchainVerifier {
       result.set(utils.toBase64(entry.hash), author); // eslint-disable-line no-param-reassign
       return result;
     }, new Map());
-  }
-
-  async _unlockedVerifyKeyPublishes(keyPublishes: Array<UnverifiedKeyPublish>): Promise<Array<VerifiedKeyPublish>> {
-    const verifiedKeyPublishes = [];
-    const keyPublishesAuthors = await this._unlockedGetVerifiedAuthorsByHash(keyPublishes);
-    for (const keyPublish of keyPublishes) {
-      try {
-        const author = keyPublishesAuthors.get(utils.toBase64(keyPublish.hash));
-        if (!author)
-          throw new InvalidBlockError('author_not_found', 'author not found', { keyPublish });
-
-        if (keyPublish.nature === NATURE.key_publish_to_user_group) {
-          await this._unlockedProcessUserGroupWithPublicEncryptionKey(keyPublish.recipient);
-        }
-
-        let verifiedKeyPublish;
-        if (isKeyPublishToDevice(keyPublish.nature)) {
-          const recipient = await this._storage.userStore.findUser({ deviceId: keyPublish.recipient });
-          verifiedKeyPublish = verifyKeyPublish(keyPublish, author, recipient);
-        } else if (isKeyPublishToUser(keyPublish.nature)) {
-          const recipient = await this._storage.userStore.findUser({ userPublicKey: keyPublish.recipient });
-          verifiedKeyPublish = verifyKeyPublish(keyPublish, author, recipient);
-        } else if (isKeyPublishToProvisionalUser(keyPublish.nature)) {
-          verifiedKeyPublish = verifyKeyPublish(keyPublish, author, null, null);
-        } else {
-          const recipient = await this._storage.groupStore.findExternal({ groupPublicEncryptionKey: keyPublish.recipient });
-          verifiedKeyPublish = verifyKeyPublish(keyPublish, author, null, recipient);
-        }
-        verifiedKeyPublishes.push(verifiedKeyPublish);
-      } catch (e) {
-        if (!(e instanceof InvalidBlockError))
-          throw e;
-        else
-          console.error('invalid block', e);
-        continue;
-      }
-    }
-    return verifiedKeyPublishes;
-  }
-
-  async verifyKeyPublishes(entries: Array<UnverifiedKeyPublish>): Promise<Array<VerifiedKeyPublish>> {
-    return this._verifyQueue.enqueue(() => this._unlockedVerifyKeyPublishes(entries));
   }
 
   async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
@@ -325,6 +277,11 @@ export default class TrustchainVerifier {
       for (const groupId of groupIds) {
         await this._unlockedProcessUserGroup(groupId);
       }
+    });
+  }
+  async updateGroupStoreWithPublicEncryptionKey(publicEncryptionKey: Uint8Array) {
+    await this._verifyQueue.enqueue(async () => {
+      await this._unlockedProcessUserGroupWithPublicEncryptionKey(publicEncryptionKey);
     });
   }
 
