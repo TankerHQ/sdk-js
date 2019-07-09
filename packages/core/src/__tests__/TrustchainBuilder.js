@@ -8,7 +8,6 @@ import { extractUserData } from '../Session/UserData';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 import Generator, {
   type GeneratorUserResult,
-  type GeneratorKeyResult,
   type GeneratorUserGroupResult,
   type GeneratorUserGroupAdditionResult,
   type GeneratorDevice,
@@ -27,7 +26,6 @@ import GroupUpdater from '../Groups/GroupUpdater';
 import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 
 import { userGroupEntryFromBlock, deviceCreationFromBlock, provisionalIdentityClaimFromBlock } from '../Blocks/entries';
-import { type ProvisionalPublicKey } from '../Blocks/payloads';
 
 export default class TrustchainBuilder {
   dataStore: DataStore<*>;
@@ -105,35 +103,6 @@ export default class TrustchainBuilder {
     const { id, parentIndex } = args;
     const result = await this.generator.newDeviceCreationV3({ userId: id, parentIndex: parentIndex || 0 });
     await this.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(result.block)]);
-    return result;
-  }
-
-  async addKeyPublishToDevice(args: {from: GeneratorUserResult, to: GeneratorUserResult, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
-    const { symmetricKey, to, from, resourceId } = args;
-
-    const result = await this.generator.newKeyPublishToDevice({ symmetricKey, toDevice: to.device, fromDevice: from.device, resourceId });
-    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
-    return result;
-  }
-
-  async addKeyPublishToUser(args: {from: GeneratorUserResult, to: GeneratorUserResult, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
-    const { symmetricKey, to, from, resourceId } = args;
-    const result = await this.generator.newKeyPublishToUser({ symmetricKey, toUser: to.user, fromDevice: from.device, resourceId });
-    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
-    return result;
-  }
-
-  async addKeyPublishToUserGroup(args: {from: GeneratorUserResult, to: GeneratorUserGroupResult, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
-    const { symmetricKey, to, from, resourceId } = args;
-    const result = await this.generator.newKeyPublishToUserGroup({ symmetricKey, toGroup: to, fromDevice: from.device, resourceId });
-    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
-    return result;
-  }
-
-  async addKeyPublishToProvisionalUser(args: {from: GeneratorUserResult, to: ProvisionalPublicKey, symmetricKey?: Uint8Array, resourceId?: Uint8Array}): Promise<GeneratorKeyResult> {
-    const { symmetricKey, to, from, resourceId } = args;
-    const result = await this.generator.newKeyPublishToProvisionalUser({ symmetricKey, toProvisionalUserPublicKey: to, fromDevice: from.device, resourceId });
-    await this.unverifiedStore.addUnverifiedKeyPublishes([result.unverifiedKeyPublish]);
     return result;
   }
 

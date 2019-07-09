@@ -1,14 +1,14 @@
 // @flow
 /* eslint-disable no-underscore-dangle */
 
-import { tcrypto, random, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
 import Generator from './Generator';
 
 import { blockToEntry } from '../Blocks/entries';
 import { type UserDeviceRecord, unserializePayload } from '../Blocks/payloads';
-import { isKeyPublishToDevice, isKeyPublishToProvisionalUser, isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
+import { isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
 
 describe('trustchain-generator', () => {
   let generator;
@@ -79,70 +79,6 @@ describe('trustchain-generator', () => {
     expect(generator.users['47'].devices[1].id).to.deep.equal(deviceAddBlock.hash);
     expect(tcrypto.verifySignature(delegationBuffer, deviceAddBlockPayload.delegation_signature, publicKey)).to.equal(true);
     expect(tcrypto.verifySignature(deviceAddBlock.hash, signature, deviceAddBlockPayload.ephemeral_public_signature_key)).to.equal(true);
-  });
-
-  it('should add a key publish', async () => {
-    await generator.newUserCreationV3('47');
-    await generator.newDeviceCreationV3({ userId: '47', parentIndex: 0 });
-    await generator.newDeviceCreationV3({ userId: '47', parentIndex: 1 });
-    const firstDevice = generator.users['47'].devices[0];
-    const secondDevice = generator.users['47'].devices[1];
-
-    const args = {
-      symmetricKey: random(tcrypto.SYMMETRIC_KEY_SIZE),
-      resourceId: random(tcrypto.MAC_SIZE),
-      fromDevice: firstDevice,
-      toDevice: secondDevice
-    };
-
-    const { block: keyPublishBlock, entry: keyPublishEntry } = await generator.newKeyPublishToDevice(args);
-
-    expect(isKeyPublishToDevice(keyPublishEntry.nature)).to.be.true;
-    expect(tcrypto.verifySignature(
-      keyPublishEntry.hash,
-      keyPublishBlock.signature,
-      firstDevice.signKeys.publicKey
-    )).to.equal(true);
-  });
-
-  it('should not be able to add a key publish to user on a user V1', async () => {
-    await generator.newUserCreationV1('user47');
-    const recipient = await generator.newUserCreationV1('user48');
-    const firstDevice = generator.users.user47.devices[0];
-
-    const args = {
-      symmetricKey: random(tcrypto.SYMMETRIC_KEY_SIZE),
-      resourceId: random(tcrypto.MAC_SIZE),
-      fromDevice: firstDevice,
-      toUser: recipient.user
-    };
-
-    await expect(generator.newKeyPublishToUser(args)).to.be.rejected;
-  });
-
-  it('should add a key publish to provisionalUser', async () => {
-    await generator.newUserCreationV3('47');
-    await generator.newDeviceCreationV3({ userId: '47', parentIndex: 0 });
-    const firstDevice = generator.users['47'].devices[0];
-
-    const args = {
-      symmetricKey: random(tcrypto.SYMMETRIC_KEY_SIZE),
-      resourceId: random(tcrypto.MAC_SIZE),
-      toProvisionalUserPublicKey: {
-        app_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        tanker_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-      },
-      fromDevice: firstDevice,
-    };
-
-    const { block: keyPublishBlock, entry: keyPublishEntry } = await generator.newKeyPublishToProvisionalUser(args);
-
-    expect(isKeyPublishToProvisionalUser(keyPublishEntry.nature)).to.be.true;
-    expect(tcrypto.verifySignature(
-      keyPublishEntry.hash,
-      keyPublishBlock.signature,
-      firstDevice.signKeys.publicKey
-    )).to.equal(true);
   });
 
   it('should revoke a device', async () => {

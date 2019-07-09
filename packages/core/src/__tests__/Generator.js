@@ -1,27 +1,22 @@
 // @flow
-import { tcrypto, random, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { obfuscateUserId, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
 
 import { blockToEntry } from '../Blocks/entries';
-import type { UnverifiedEntry, UnverifiedKeyPublish, UnverifiedDeviceCreation, UnverifiedDeviceRevocation, UnverifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import type { UnverifiedEntry, UnverifiedDeviceCreation, UnverifiedDeviceRevocation, UnverifiedProvisionalIdentityClaim } from '../Blocks/entries';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import { encodeArrayLength } from '../Blocks/Serialize';
+import type { Device, User } from '../Users/User';
 
 import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 import { serializeTrustchainCreation,
   serializeUserDeviceV3,
-  serializeKeyPublish,
   serializeDeviceRevocationV1,
   serializeDeviceRevocationV2,
-  type ProvisionalPublicKey,
   serializeProvisionalIdentityClaim,
   type UserDeviceRecord,
-  type KeyPublishRecord,
   SEALED_KEY_SIZE } from '../Blocks/payloads';
 
 import { preferredNature, NATURE, NATURE_KIND, type Nature } from '../Blocks/Nature';
-
-import type { Device, User } from '../Users/User';
 
 export type GeneratorDevice = {
   id: Uint8Array,
@@ -42,14 +37,6 @@ export function serializeUserDeviceV1(userDevice: UserDeviceRecord): Uint8Array 
     userDevice.delegation_signature,
     userDevice.public_signature_key,
     userDevice.public_encryption_key,
-  );
-}
-
-export function serializeKeyPublishToDevice(keyPublish: KeyPublishRecord): Uint8Array {
-  return utils.concatArrays(
-    keyPublish.recipient,
-    keyPublish.resourceId,
-    encodeArrayLength(keyPublish.key), keyPublish.key
   );
 }
 
@@ -87,15 +74,6 @@ export type GeneratorRevocationResult = {
   user: GeneratorUser,
   blockPrivateSignatureKey: Uint8Array,
   unverifiedDeviceRevocation: UnverifiedDeviceRevocation,
-}
-
-export type GeneratorKeyResult = {
-  entry: UnverifiedEntry,
-  block: Block,
-  symmetricKey: Uint8Array,
-  resourceId: Uint8Array,
-  blockPrivateSignatureKey: Uint8Array,
-  unverifiedKeyPublish: UnverifiedKeyPublish,
 }
 
 export type GeneratorUserGroupResult = {
@@ -296,133 +274,6 @@ class Generator {
       ...result,
       user: { ...this.users[userId] },
     };
-  }
-
-  async newKeyPublishToDevice(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toDevice: GeneratorDevice, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
-    let { resourceId, symmetricKey } = args;
-    if (!resourceId)
-      resourceId = random(tcrypto.MAC_SIZE);
-    if (!symmetricKey)
-      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-
-    const encryptedKey = tcrypto.asymEncrypt(
-      symmetricKey,
-      args.toDevice.encryptionKeys.publicKey,
-      args.fromDevice.encryptionKeys.privateKey
-    );
-    const share = {
-      resourceId,
-      recipient: args.toDevice.id,
-      key: encryptedKey,
-    };
-    this.trustchainIndex += 1;
-    const block = signBlock({
-      index: this.trustchainIndex,
-      trustchain_id: this.trustchainId,
-      nature: NATURE.key_publish_to_device,
-      author: args.fromDevice.id,
-      payload: serializeKeyPublishToDevice(share)
-    }, args.fromDevice.signKeys.privateKey);
-    this.pushedBlocks.push(block);
-    const entry = blockToEntry(block);
-    const unverifiedKeyPublish: UnverifiedKeyPublish = ({
-      ...entry,
-      ...entry.payload_unverified,
-    }: any);
-    return {
-      symmetricKey,
-      resourceId,
-      block,
-      entry,
-      unverifiedKeyPublish,
-      blockPrivateSignatureKey: args.fromDevice.signKeys.privateKey,
-    };
-  }
-
-  async newCommonKeyPublish(args: { symmetricKey: Uint8Array, encryptedKey: Uint8Array, resourceId?: Uint8Array, fromDevice: GeneratorDevice, toKey: Uint8Array, nature: Nature }) {
-    let { resourceId } = args;
-    if (!resourceId)
-      resourceId = random(tcrypto.MAC_SIZE);
-
-    const share = {
-      resourceId,
-      recipient: args.toKey,
-      key: args.encryptedKey,
-    };
-    this.trustchainIndex += 1;
-    const block = signBlock({
-      index: this.trustchainIndex,
-      trustchain_id: this.trustchainId,
-      nature: args.nature,
-      author: args.fromDevice.id,
-      payload: serializeKeyPublish(share)
-    }, args.fromDevice.signKeys.privateKey);
-    this.pushedBlocks.push(block);
-    const entry = blockToEntry(block);
-    const unverifiedKeyPublish: UnverifiedKeyPublish = ({
-      ...entry,
-      ...entry.payload_unverified,
-    }: any);
-    return {
-      symmetricKey: args.symmetricKey,
-      resourceId,
-      block,
-      entry,
-      unverifiedKeyPublish,
-      blockPrivateSignatureKey: args.fromDevice.signKeys.privateKey,
-    };
-  }
-
-  async newKeyPublishToUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toUser: GeneratorUser, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
-    if (!args.toUser.userKeys)
-      throw new Error('Generator: cannot add a keyPublish to user on a user V1');
-    const toKey = args.toUser.userKeys.publicKey;
-
-    let { symmetricKey } = args;
-    if (!symmetricKey)
-      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const encryptedKey = tcrypto.sealEncrypt(symmetricKey, toKey);
-
-    return this.newCommonKeyPublish({
-      ...args,
-      symmetricKey,
-      encryptedKey,
-      toKey,
-      nature: NATURE.key_publish_to_user,
-    });
-  }
-
-  async newKeyPublishToUserGroup(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toGroup: GeneratorUserGroupResult, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
-    let { symmetricKey } = args;
-    if (!symmetricKey)
-      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const encryptedKey = tcrypto.sealEncrypt(symmetricKey, args.toGroup.groupEncryptionKeyPair.publicKey);
-    const toKey = args.toGroup.groupEncryptionKeyPair.publicKey;
-
-    return this.newCommonKeyPublish({
-      ...args,
-      symmetricKey,
-      encryptedKey,
-      toKey,
-      nature: NATURE.key_publish_to_user_group,
-    });
-  }
-
-  async newKeyPublishToProvisionalUser(args: { symmetricKey?: Uint8Array, resourceId?: Uint8Array, toProvisionalUserPublicKey: ProvisionalPublicKey, fromDevice: GeneratorDevice }): Promise<GeneratorKeyResult> {
-    let { symmetricKey } = args;
-    if (!symmetricKey)
-      symmetricKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-
-    const preEncryptedKey = tcrypto.sealEncrypt(symmetricKey, args.toProvisionalUserPublicKey.app_public_encryption_key);
-    const encryptedKey = tcrypto.sealEncrypt(preEncryptedKey, args.toProvisionalUserPublicKey.tanker_public_encryption_key);
-
-    return this.newCommonKeyPublish({
-      ...args,
-      symmetricKey,
-      encryptedKey,
-      toKey: utils.concatArrays(args.toProvisionalUserPublicKey.app_public_encryption_key, args.toProvisionalUserPublicKey.tanker_public_encryption_key),
-      nature: NATURE.key_publish_to_provisional_user,
-    });
   }
 
   async newDeviceRevocationV1(from: GeneratorDevice, to: { id: Uint8Array }, { unsafe }: { unsafe: bool } = {}): Promise<GeneratorRevocationResult> {
