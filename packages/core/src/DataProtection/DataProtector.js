@@ -137,11 +137,6 @@ export class DataProtector {
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
-    if (shareWithSelf) {
-      const [{ resourceId, key }] = keys;
-      await this._resourceManager.saveResourceKey(resourceId, key);
-    }
-
     return this._publishKeys(keys, users, provisionalUsers, groups);
   }
 
@@ -149,7 +144,7 @@ export class DataProtector {
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array });
 
     const resourceId = getResourceId(castEncryptedData);
-    const key = await this._resourceManager.findKeyFromResourceId(resourceId, true);
+    const key = await this._resourceManager.findKeyFromResourceId(resourceId);
 
     let clearData;
     try {
@@ -241,7 +236,7 @@ export class DataProtector {
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
     const resourceIdKeyMapper = {
-      findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId, true)
+      findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId)
     };
     return new DecryptorStream(resourceIdKeyMapper);
   }
