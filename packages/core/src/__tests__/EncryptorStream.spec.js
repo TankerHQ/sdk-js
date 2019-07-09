@@ -51,7 +51,7 @@ describe('Encryptor Stream', () => {
     const stream = new EncryptorStream(resourceId, key);
     const sync = watchStream(stream);
 
-    expect(stream.resourceId()).to.be.equal(utils.toBase64(resourceId));
+    expect(stream.resourceId).to.be.equal(utils.toBase64(resourceId));
 
     stream.end();
     await sync.promise;
