@@ -80,7 +80,7 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
         encryptor.write(utils.fromString(letterContents));
         encryptor.end();
 
-        const resourceId = encryptor.resourceId();
+        const resourceId = encryptor.resourceId;
         await aliceLaptop.share([resourceId], { shareWithUsers: [bobPublicIdentity] });
 
         encryptor.pipe(decryptor);

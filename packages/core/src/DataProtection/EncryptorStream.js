@@ -10,15 +10,16 @@ export const defaultEncryptedChunkSize = 1024 * 1024; // 1MB
 export default class EncryptorStream extends Transform {
   _clearChunkSize: number;
   _encryptedChunkSize: number;
+  _encryptorStream: Transform;
   _key: Uint8Array;
   _header: HeaderV4;
+  _overheadPerChunk: number;
+  _resizerStream: ResizerStream;
   _serializedHeader: Uint8Array;
   _state: {
     index: number,
     lastClearChunkSize: number,
   }
-  _resizerStream: ResizerStream;
-  _encryptorStream: Transform;
 
   constructor(resourceId: Uint8Array, key: Uint8Array, encryptedChunkSize: number = defaultEncryptedChunkSize) {
     super({ objectMode: true });
@@ -40,8 +41,8 @@ export default class EncryptorStream extends Transform {
       lastClearChunkSize: 0,
     };
 
-    const overheadPerChunk = this._serializedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
-    this._clearChunkSize = this._encryptedChunkSize - overheadPerChunk;
+    this._overheadPerChunk = this._serializedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
+    this._clearChunkSize = this._encryptedChunkSize - this._overheadPerChunk;
 
     this._configureStreams();
   }
@@ -109,7 +110,19 @@ export default class EncryptorStream extends Transform {
     this._resizerStream.end();
   }
 
-  resourceId(): b64string {
+  get clearChunkSize(): number {
+    return this._clearChunkSize;
+  }
+
+  get encryptedChunkSize(): number {
+    return this._encryptedChunkSize;
+  }
+
+  get overheadPerChunk(): number {
+    return this._overheadPerChunk;
+  }
+
+  get resourceId(): b64string {
     return utils.toBase64(this._header.resourceId);
   }
 }
