@@ -5,6 +5,7 @@ import { MergerStream, SlicerStream } from '@tanker/stream-browser';
 import Dexie from '@tanker/datastore-dexie-browser';
 
 import { assertDataType, getDataLength, castData, type Data } from './dataHelpers';
+import { simpleFetch } from './http';
 import { makeOutputOptions, type OutputOptions } from './outputOptions';
 
 const { READY } = statuses;
@@ -103,6 +104,46 @@ class Tanker extends TankerCore {
   async getResourceId(encryptedData: Data): Promise<b64string> {
     const source = await castData(encryptedData, { type: Uint8Array }, MAX_SIMPLE_RESOURCE_SIZE);
     return super.getResourceId(source);
+  }
+
+  async upload(clearData: Data, options?: ShareWithOptions = {}): Promise<string> {
+    const encryptedFile = await this.encryptData(clearData, { ...options, type: File });
+    const encryptedFileLength = encryptedFile.size;
+
+    const resourceId = await this.getResourceId(encryptedFile);
+
+    const { url, headers } = await this._session._client.send('get file upload url', { // eslint-disable-line no-underscore-dangle
+      resource_id: resourceId,
+      upload_content_length: encryptedFileLength,
+    });
+
+    let response = await simpleFetch(url, { method: 'POST', headers });
+    if (!response.ok) {
+      throw new errors.NetworkError(`Request failed with status: ${response.status}`);
+    }
+    const uploadUrl = response.headers.location;
+
+    response = await simpleFetch(uploadUrl, { method: 'PUT', headers, body: encryptedFile });
+    if (!response.ok) {
+      throw new errors.NetworkError(`Request failed with status: ${response.status}`);
+    }
+
+    return resourceId;
+  }
+
+  async download<T: Data>(resourceId: string, options?: OutputOptions<T> = {}): Promise<T> {
+    const { url } = await this._session._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
+      resource_id: resourceId,
+    });
+
+    const response = await simpleFetch(url, { method: 'GET', responseType: 'blob' });
+    if (!response.ok) {
+      throw new errors.NetworkError(`Request failed with status: ${response.status}`);
+    }
+
+    // $FlowIKnow Defaulting to File output type breaks the Promise<T> assumption
+    const file = await this.decryptData(response.body, { type: File, ...options });
+    return file;
   }
 }
 
