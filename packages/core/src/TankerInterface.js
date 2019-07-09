@@ -12,4 +12,9 @@ export interface EncryptionInterface {
   decrypt(cipher: Uint8Array): Promise<string>;
 }
 
-export type TankerInterface = TankerCore & EncryptionInterface;
+export interface FileStorageInterface {
+  upload(clearData: Uint8Array, options?: ShareWithOptions): Promise<string>;
+  download<T>(resourceId: string, options?: { type?: Class<T> }): Promise<T>;
+}
+
+export type TankerInterface = TankerCore & EncryptionInterface & FileStorageInterface;
