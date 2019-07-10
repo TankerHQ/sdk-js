@@ -12,6 +12,8 @@
     "build:identity": "rollup --config packages/identity/config/rollup.js",
     "build:crypto": "rollup --config packages/crypto/config/rollup.js",
     "build:datastores": "rollup --config packages/datastore/config/rollup.js",
+    "start:emails": "cd packages/emails; yarn start",
+    "build:emails": "cd packages/emails; yarn build",
     "build:errors": "rollup --config packages/errors/config/rollup.js",
     "build:file-ponyfill": "rollup --config packages/file-ponyfill/config/rollup.js",
     "build:file-reader": "rollup --config packages/file-reader/config/rollup.js",
