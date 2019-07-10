@@ -22,27 +22,37 @@ export default class EncryptorStream extends Transform {
   }
 
   constructor(resourceId: Uint8Array, key: Uint8Array, encryptedChunkSize: number = defaultEncryptedChunkSize) {
-    super({ objectMode: true });
-
-    this._encryptedChunkSize = encryptedChunkSize;
-
-    this._key = key;
-
-    this._header = {
+    const header = {
       version: currentStreamVersion,
-      encryptedChunkSize: this._encryptedChunkSize,
+      encryptedChunkSize,
       resourceId,
     };
 
-    this._serializedHeader = serializeHeaderV4(this._header);
+    const serializedHeader = serializeHeaderV4(header);
 
+    const overheadPerChunk = serializedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
+
+    const clearChunkSize = encryptedChunkSize - overheadPerChunk;
+
+    super({
+      // buffering a single input chunk ('drain' can pull more)
+      writableHighWaterMark: 1,
+      writableObjectMode: true,
+      // buffering a single output chunk
+      readableHighWaterMark: 1,
+      readableObjectMode: true,
+    });
+
+    this._clearChunkSize = clearChunkSize;
+    this._encryptedChunkSize = encryptedChunkSize;
+    this._header = header;
+    this._key = key;
+    this._overheadPerChunk = overheadPerChunk;
+    this._serializedHeader = serializedHeader;
     this._state = {
       index: 0,
       lastClearChunkSize: 0,
     };
-
-    this._overheadPerChunk = this._serializedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
-    this._clearChunkSize = this._encryptedChunkSize - this._overheadPerChunk;
 
     this._configureStreams();
   }
@@ -51,8 +61,12 @@ export default class EncryptorStream extends Transform {
     this._resizerStream = new ResizerStream(this._clearChunkSize);
 
     this._encryptorStream = new Transform({
+      // buffering input bytes until clear chunk size is reached
       writableHighWaterMark: this._clearChunkSize,
+      writableObjectMode: false,
+      // buffering output bytes until encrypted chunk size is reached
       readableHighWaterMark: this._encryptedChunkSize,
+      readableObjectMode: false,
 
       transform: (clearData, encoding, done) => {
         try {
