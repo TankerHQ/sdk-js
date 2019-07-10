@@ -4,7 +4,7 @@ import { MergerStream, SlicerStream } from '@tanker/stream-browser';
 import Dexie from '@tanker/datastore-dexie-browser';
 
 import { assertDataType, getDataLength, castData, type Data } from './dataHelpers';
-import { simpleFetch } from './http';
+import { DownloadStream } from './gcs/DownloadStream';
 import { UploadStream } from './gcs/UploadStream';
 import { makeOutputOptions, type OutputOptions } from './outputOptions';
 
@@ -135,17 +135,23 @@ class Tanker extends TankerCore {
   }
 
   async download<T: Data>(resourceId: string, options?: OutputOptions<T> = {}): Promise<File> {
+    this.assert(READY, 'download a file');
+
+    const outputOptions = makeOutputOptions(null, { type: File, ...options });
+
     const { url } = await this._session._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
       resource_id: resourceId,
     });
 
-    const response = await simpleFetch(url, { method: 'GET', responseType: 'blob' });
-    if (!response.ok) {
-      throw new errors.NetworkError(`Request failed with status: ${response.status}`);
-    }
+    const downloadChunkSize = 1024 * 1024;
+    const downloader = new DownloadStream(url, downloadChunkSize, true);
+    const decryptor = await this._session.apis.dataProtector.makeDecryptorStream();
+    const merger = new MergerStream(outputOptions);
 
-    const file = await this.decryptData(response.body, { type: File, ...options });
-    return file;
+    return new Promise((resolve, reject) => {
+      [downloader, decryptor, merger].forEach(s => s.on('error', reject));
+      downloader.pipe(decryptor).pipe(merger).on('data', resolve);
+    });
   }
 }
 
