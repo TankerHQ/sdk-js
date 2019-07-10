@@ -1,14 +1,14 @@
 {
-  "name": "@tanker/identity",
+  "name": "@tanker/fake-authentication",
   "version": "0.0.1",
-  "description": "Tanker Identity SDK",
+  "description": "Tanker fake-authentication SDK",
   "author": "Tanker Team",
   "license": "Apache-2.0",
   "main": "src/index.js",
   "module": "es.js",
   "browser": "browser.js",
   "scripts": {
-    "test": "cd ../..; yarn test:identity"
+    "test": "cd ../..; yarn test:fake-authentication"
   },
   "homepage": "https://tanker.io/",
   "repository": {
@@ -19,13 +19,14 @@
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "7.5.4",
-    "@tanker/crypto": "0.0.1",
-    "@tanker/errors": "0.0.1"
+    "@babel/runtime-corejs2": "7.4.5",
+    "fetch-ponyfill": "^6.1.0"
   },
   "devDependencies": {
+    "@tanker/identity": "0.0.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "chai-exclude": "^1.0.12"
+    "chai-exclude": "^1.0.12",
+    "uuid": "^3.3.2"
   }
 }
