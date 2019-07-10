@@ -1,5 +1,4 @@
 // @flow
-import { utils } from '@tanker/crypto';
 import { errors } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect } from './chai';
@@ -7,26 +6,32 @@ import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const generateEncryptorStreamTests = (args: TestArgs) => {
-  describe('EncryptorStream', () => {
+  describe('stream encryption', () => {
     let aliceIdentity;
     let aliceLaptop;
     let bobIdentity;
     let bobPublicIdentity;
     let bobLaptop;
+    let smallClearData;
+    let largeClearData;
 
-    const watchStream = (stream) => {
-      const sync = {};
-      sync.promise = new Promise((resolve, reject) => {
-        sync.resolve = resolve;
-        sync.reject = reject;
-      });
+    const watchStream = (stream) => new Promise((resolve, reject) => {
+      const result = [];
+      stream.on('data', data => result.push(data));
+      stream.on('end', () => resolve(result));
+      stream.on('error', reject);
+    });
 
-      stream.on('error', sync.reject);
-      stream.on('end', sync.resolve);
-      return sync;
+    const setupTestData = () => {
+      smallClearData = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+      largeClearData = new Uint8Array(5 * 1024 * 1024);
+      largeClearData.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 100);
+      largeClearData.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 1000);
+      largeClearData.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 4000000);
     };
 
-    beforeEach(async () => {
+    before(async () => {
       aliceIdentity = await args.trustchainHelper.generateIdentity();
       bobIdentity = await args.trustchainHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
@@ -36,127 +41,98 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
       await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
       await bobLaptop.start(bobIdentity);
       await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+      setupTestData();
     });
 
-    afterEach(async () => {
+    after(async () => {
       await Promise.all([
         aliceLaptop.stop(),
         bobLaptop.stop(),
       ]);
     });
 
-    describe('Sharing', () => {
-      it('shares a streamed resource', async () => {
-        const letterContents = 'Secret message';
-        let decryptedData = '';
+    describe('encryption and decryption', () => {
+      it('can encrypt/decrypt a resource in multiple \'write\'', async () => {
+        const encryptor = await aliceLaptop.makeEncryptorStream();
+        encryptor.write(smallClearData.subarray(0, 2));
+        encryptor.write(smallClearData.subarray(2, 5));
+        encryptor.write(smallClearData.subarray(5, 10));
+        encryptor.end();
 
-        const encryptor = await aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity] });
-        const decryptor = await bobLaptop.makeDecryptorStream();
-        const sync = watchStream(decryptor);
-        decryptor.on('data', (data) => {
-          decryptedData = `${decryptedData}${utils.toString(data)}`;
-        });
+        const decryptor = await aliceLaptop.makeDecryptorStream();
+        const watchPromise = watchStream(decryptor);
 
         encryptor.pipe(decryptor);
 
-        encryptor.write(utils.fromString(letterContents));
+        const decryptedData = await watchPromise;
+        expect(decryptedData).to.deep.equal([smallClearData]);
+      });
+
+      it('can encrypt/decrypt large resources (data size > MB)', async () => {
+        const encryptor = await aliceLaptop.makeEncryptorStream();
+        encryptor.write(largeClearData);
         encryptor.end();
 
-        await expect(sync.promise).to.be.fulfilled;
-        expect(decryptedData).to.equal(letterContents);
+        const decryptor = await aliceLaptop.makeDecryptorStream();
+        const watchPromise = watchStream(decryptor);
+
+        encryptor.pipe(decryptor);
+
+        const decryptedData = await watchPromise;
+
+        let offset = 0;
+        for (const cData of decryptedData) {
+          expect(cData).to.deep.equal(largeClearData.subarray(offset, offset + cData.length));
+          offset += cData.length;
+        }
+        expect(offset).to.equal(largeClearData.length);
+      });
+    });
+
+    describe('sharing', () => {
+      it('shares a streamed resource', async () => {
+        const encryptor = await aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity] });
+        const decryptor = await bobLaptop.makeDecryptorStream();
+        const watchPromise = watchStream(decryptor);
+
+        encryptor.pipe(decryptor);
+
+        encryptor.write(smallClearData);
+        encryptor.end();
+
+        const decryptedData = await watchPromise;
+        expect(decryptedData).to.deep.equal([smallClearData]);
       });
 
       it('can postpone share', async () => {
-        const letterContents = 'Secret message';
-        let decryptedData = '';
-
         const encryptor = await aliceLaptop.makeEncryptorStream();
         const decryptor = await bobLaptop.makeDecryptorStream();
-        const sync = watchStream(decryptor);
-        decryptor.on('data', (data) => {
-          decryptedData = `${decryptedData}${utils.toString(data)}`;
-        });
+        const watchPromise = watchStream(decryptor);
 
-        encryptor.write(utils.fromString(letterContents));
+        encryptor.write(smallClearData);
         encryptor.end();
 
         const resourceId = encryptor.resourceId;
         await aliceLaptop.share([resourceId], { shareWithUsers: [bobPublicIdentity] });
 
         encryptor.pipe(decryptor);
-        await expect(sync.promise).to.be.fulfilled;
 
-        expect(decryptedData).to.equal(letterContents);
-      });
-    });
-
-    describe('Encryption/Decryption', () => {
-      it('can encrypt/decrypt a resource in multiple \'write\'', async () => {
-        const letterContents = ['Harder', 'Better', 'Faster', 'Stronger'];
-        let decryptedData = '';
-
-        const encryptor = await aliceLaptop.makeEncryptorStream();
-
-        for (const word of letterContents)
-          encryptor.write(utils.fromString(word));
-        encryptor.end();
-
-        const decryptor = await aliceLaptop.makeDecryptorStream();
-        const sync = watchStream(decryptor);
-        decryptor.on('data', (data) => {
-          decryptedData = `${decryptedData}${utils.toString(data)}`;
-        });
-
-        encryptor.pipe(decryptor);
-
-        await expect(sync.promise).to.be.fulfilled;
-        expect(decryptedData).to.equal(letterContents.join(''));
-      });
-
-      it('can encrypt/decrypt large resources (data size > MB)', async () => {
-        const clearData = new Uint8Array(10000000);
-        clearData.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 100);
-        clearData.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 1000);
-        clearData.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 9000000);
-
-        const decryptedData = [];
-
-        const encryptor = await aliceLaptop.makeEncryptorStream();
-        encryptor.write(clearData);
-        encryptor.end();
-
-        const decryptor = await aliceLaptop.makeDecryptorStream();
-        const sync = watchStream(decryptor);
-        decryptor.on('data', (data) => decryptedData.push(data));
-
-        encryptor.pipe(decryptor);
-        await expect(sync.promise).to.be.fulfilled;
-
-        let offset = 0;
-        for (const cData of decryptedData) {
-          expect(cData).to.deep.equal(clearData.subarray(offset, offset + cData.length));
-          offset += cData.length;
-        }
-      });
-    });
-
-    describe('Error Handling', () => {
-      it('cannot makeEncryptorStream and makeDecryptorStream when session has ended', async () => {
-        await aliceLaptop.stop();
-        await expect(aliceLaptop.makeEncryptorStream()).to.be.rejectedWith(errors.PreconditionFailed);
-        await expect(aliceLaptop.makeDecryptorStream()).to.be.rejectedWith(errors.PreconditionFailed);
+        const decryptedData = await watchPromise;
+        expect(decryptedData).to.deep.equal([smallClearData]);
       });
 
       it('throws InvalidArgument when resource was not shared with user', async () => {
         const encryptor = await aliceLaptop.makeEncryptorStream();
+        encryptor.write(smallClearData);
         encryptor.end();
 
         const decryptor = await bobLaptop.makeDecryptorStream();
-        const sync = watchStream(decryptor);
+        const watchPromise = watchStream(decryptor);
 
         encryptor.pipe(decryptor);
 
-        await expect(sync.promise).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(watchPromise).to.be.rejectedWith(errors.InvalidArgument);
       });
     });
   });
