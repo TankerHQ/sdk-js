@@ -25,7 +25,9 @@ export default class SlicerStream extends Readable {
       throw new InvalidArgument('options.outputSize', 'number', outputSize);
 
     super({
+      // buffering a single output chunk
       objectMode: true,
+      highWaterMark: 1,
     });
 
     this._outputSize = outputSize || 5 * 1024 * 1024; // 5MB
