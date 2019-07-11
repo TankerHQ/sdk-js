@@ -19,7 +19,7 @@ function clean(obj) {
 
 // this decode a public identities and clean it. (remove empty fields returned by go)
 function dec(identity) {
-  return clean(Buffer.from(identity, 'base64').toString('ascii'));
+  return clean(JSON.parse(Buffer.from(identity, 'base64').toString('ascii')));
 }
 
 describe('FakeAuthentication', () => {
