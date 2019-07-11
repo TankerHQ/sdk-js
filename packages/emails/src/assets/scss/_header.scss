@@ -1,0 +1,17 @@
+.header {
+  max-width: $global-width;
+  width: 100%;
+  border-bottom: 1px solid $borders-color;
+  background-color: $white;
+  vertical-align: middle;
+
+  .wrapper-inner {
+    text-align: center;
+  }
+
+  img {
+    display: inline;
+    width: 30px;
+    height: 31px;
+  }
+}

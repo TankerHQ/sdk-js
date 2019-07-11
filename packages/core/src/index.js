@@ -12,7 +12,7 @@ export default Tanker;
 
 export type { b64string } from '@tanker/crypto';
 export type { EncryptionOptions } from './DataProtection/EncryptionOptions';
-export type { Verification, VerificationMethod } from './Session/types';
+export type { EmailVerification, PassphraseVerification, KeyVerification, Verification, VerificationMethod } from './Session/types';
 export type { TankerOptions } from './Tanker';
 export type { TankerInterface, EncryptionInterface } from './TankerInterface';
 
