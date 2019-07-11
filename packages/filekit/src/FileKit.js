@@ -1,18 +1,18 @@
 // @flow
 import Tanker from '@tanker/client-browser';
 import Storage from '@tanker/storage';
-import VerificationUi from '@tanker/ui';
+import VerificationUI from '@tanker/verification-ui';
 import saveToFile from 'file-saver';
 
 export default class FileKit {
   constructor(config) {
     this.tanker = new Tanker(config);
     this.storage = new Storage(this.tanker);
-    this.verificationUi = new VerificationUi(this.tanker);
+    this.verificationUI = new VerificationUI(this.tanker);
   }
 
   async start(email, privateIdentity, privateProvisionalIdentity) {
-    return this.verificationUi.start(email, privateIdentity, privateProvisionalIdentity);
+    return this.verificationUI.start(email, privateIdentity, privateProvisionalIdentity);
   }
 
   async startWithVerificationKey(privateIdentity, verificationKey, privateProvisionalIdentity) {
