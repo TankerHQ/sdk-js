@@ -18,11 +18,9 @@
     "build:file-ponyfill": "rollup --config packages/file-ponyfill/config/rollup.js",
     "build:file-reader": "rollup --config packages/file-reader/config/rollup.js",
     "build:streams": "rollup --config packages/stream/config/rollup.js",
-
     "build:storage": "rollup --config packages/storage/config/rollup.js",
     "build:fake-authentication": "rollup --config packages/fake-authentication/config/rollup.js",
     "build:filekit": "rollup --config packages/filekit/config/rollup.js",
-
     "build:verification-ui-base": "rollup --config packages/verification-ui/config/rollup.js",
     "build:verification-ui-umd": "webpack --config packages/verification-ui/config/webpack.config.production.js",
     "build:verification-ui": "yarn build:verification-ui-base && yarn build:verification-ui-umd",
