@@ -29,6 +29,22 @@ export class DownloadStream extends Readable {
     }
   }
 
+  async getMetadata() {
+    const response = await simpleFetch(this._url, {
+      method: 'HEAD',
+      responseType: 'arraybuffer',
+    });
+
+    const { ok, status, statusText, body, headers } = response;
+    // Note: status is usually 206 Partial Content
+    if (!ok) {
+      throw new errors.NetworkError(`GCS download request failed with status ${status}: ${statusText}`);
+    }
+
+    const metadata = headers['x-goog-meta-tanker-metadata'];
+    return metadata;
+  }
+
   async _read(/* size: number */) {
     let result;
 

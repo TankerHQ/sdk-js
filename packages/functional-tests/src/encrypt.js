@@ -498,19 +498,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       const fileId = await aliceLaptop.upload(clear);
 
-      const outputOptions = {};
-      outputOptions.type = originalType;
-
-      if (global.Blob && outputOptions.type === Blob) {
-        outputOptions.mime = clear.type;
-      }
-      if (global.File && outputOptions.type === File) {
-        outputOptions.mime = clear.type;
-        outputOptions.name = clear.name;
-        outputOptions.lastModified = clear.lastModified;
-      }
-
-      const decrypted = await aliceLaptop.download(fileId, outputOptions);
+      const decrypted = await aliceLaptop.download(fileId);
       expectType(decrypted, originalType);
       expectDeepEqual(decrypted, clear);
     });

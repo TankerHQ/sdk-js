@@ -1,5 +1,5 @@
 // @flow
-import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, type TankerOptions, type EncryptionOptions, type b64string } from '@tanker/core';
+import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, type TankerOptions, type EncryptionOptions, type b64string, toBase64, fromBase64 } from '@tanker/core';
 import { MergerStream, SlicerStream } from '@tanker/stream-browser';
 import Dexie from '@tanker/datastore-dexie-browser';
 
@@ -123,6 +123,25 @@ class Tanker extends TankerCore {
       upload_content_length: totalEncryptedSize,
     });
 
+    if (global.File && clearData instanceof global.File) {
+      if (!options.mime)
+        options.mime = clearData.type;
+      if (!options.name)
+        options.name = clearData.name;
+      if (!options.lastModified)
+        options.lastModified = clearData.lastModified;
+    }
+
+    const metadata = {};
+    if (options.mime)
+      metadata.mime = options.mime;
+    if (options.name)
+      metadata.name = options.name;
+    if (options.lastModified)
+      metadata.lastModified = options.lastModified;
+    const metadataString = toBase64(await this.encrypt(JSON.stringify(metadata)));
+    headers['x-goog-meta-tanker-metadata'] = metadataString;
+
     const slicer = new SlicerStream({ source: clearData });
     const uploader = new UploadStream(url, headers, totalEncryptedSize, true);
 
@@ -145,8 +164,12 @@ class Tanker extends TankerCore {
 
     const downloadChunkSize = 1024 * 1024;
     const downloader = new DownloadStream(url, downloadChunkSize, true);
+    const encryptedMetadata = await downloader.getMetadata();
+    const metadata = JSON.parse(await this.decrypt(fromBase64(encryptedMetadata)));
     const decryptor = await this._session.apis.dataProtector.makeDecryptorStream();
-    const merger = new MergerStream(outputOptions);
+    // FIXME i think it's unsafe to just fetch metadata and use them as options
+    // without any validation
+    const merger = new MergerStream({ ...metadata, ...outputOptions });
 
     return new Promise((resolve, reject) => {
       [downloader, decryptor, merger].forEach(s => s.on('error', reject));
