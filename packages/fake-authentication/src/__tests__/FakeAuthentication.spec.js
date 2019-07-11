@@ -5,7 +5,7 @@ import { getPublicIdentity } from '@tanker/identity';
 import FakeAuthentication from '../FakeAuthentication';
 import 'isomorphic-fetch';
 
-const appId = 'TLX6BlK7N1I5KobYP1Jfwm58cfpg1EJZ8+HxUUqrGmM=';
+const appId = '4UY17Jl/TcvB6P1j8fgX5ZMuigcmZMfq9nRfLvzztiU=';
 
 function clean(obj) {
   const propNames = Object.getOwnPropertyNames(obj);

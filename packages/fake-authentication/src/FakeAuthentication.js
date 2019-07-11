@@ -47,7 +47,7 @@ export default class FakeAuthentication {
     const appId = this.appId;
     const obsUserIds = userIds.map(u => obfuscateUserId(appId, u));
 
-    const response = await fetch(`${this.url}/apps/${trim(encode(appId))}/public_identities?user_ids=${encodeURIComponent(obsUserIds.join(','))}`, {
+    const response = await fetch(`${this.url}/apps/${toSafeBase64(fromBase64(appId))}/public_identities?user_ids=${encodeURIComponent(obsUserIds.join(','))}`, {
       method: 'GET',
     });
     const identitiesArray: Array<PublicIdentityResponse> = await response.json();
