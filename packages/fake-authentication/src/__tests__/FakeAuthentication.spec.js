@@ -25,12 +25,12 @@ function dec(identity) {
 describe('FakeAuthentication', () => {
   it('Returns a permanent identity', async () => {
     const fa = new FakeAuthentication(appId);
-    const userId = uuid.v4();
+    const ourUserId = uuid.v4();
 
-    const privateUserIdentity = await fa.getPrivateIdentity(userId);
+    const { userId, privateIdentity } = await fa.getPrivateIdentity(ourUserId);
 
-    expect(privateUserIdentity.user_id).to.equal(userId);
-    expect(privateUserIdentity.private_identity).to.exist;
+    expect(userId).to.equal(ourUserId);
+    expect(privateIdentity).to.exist;
   });
 
   it('Always returns the same permanent identity', async () => {
@@ -52,8 +52,8 @@ describe('FakeAuthentication', () => {
     const privUser1 = await fa.getPrivateIdentity(userId1);
     const publicUserIdentities = await fa.getUserPublicIdentities([userId1, userId2]);
     const privUser2 = await fa.getPrivateIdentity(userId2);
-    expect(dec(publicUserIdentities[userId1])).to.deep.equal(dec(await getPublicIdentity(privUser1.private_identity)));
-    expect(dec(publicUserIdentities[userId2])).to.equal(dec(await getPublicIdentity(privUser2.private_provisional_identity)));
+    expect(dec(publicUserIdentities[userId1])).to.deep.equal(dec(await getPublicIdentity(privUser1.privateIdentity)));
+    expect(dec(publicUserIdentities[userId2])).to.equal(dec(await getPublicIdentity(privUser2.privateProvisionalIdentity)));
   });
 
   it('returns a public identities after a provisional has been taken', async () => {
@@ -64,8 +64,8 @@ describe('FakeAuthentication', () => {
     const privateUserIdentity = await fa.getPrivateIdentity(userId);
     const publicPermUserIdentities = await fa.getUserPublicIdentities([userId]);
 
-    expect(privateUserIdentity.user_id).to.equal(userId);
-    expect(dec(publicProvUserIdentities[userId])).to.equal(dec(await getPublicIdentity(privateUserIdentity.private_provisional_identity)));
-    expect(dec(publicPermUserIdentities[userId])).to.equal(dec(await getPublicIdentity(privateUserIdentity.private_identity)));
+    expect(privateUserIdentity.userId).to.equal(userId);
+    expect(dec(publicProvUserIdentities[userId])).to.equal(dec(await getPublicIdentity(privateUserIdentity.privateProvisionalIdentity)));
+    expect(dec(publicPermUserIdentities[userId])).to.equal(dec(await getPublicIdentity(privateUserIdentity.privateIdentity)));
   });
 });

@@ -20,25 +20,25 @@ const fakeAuth = new FakeAuthentication(appId);
 
 ### Get a private identity
 
-Returns the private identity associated to the provided user id.
+Returns the private identity associated to the provided user id. If `getPublicIdentities` has been called with this user id, a private provisional identity is also returned.
 
 #### With an email
 ```javascript
 
 const userId = 'cedric@sample.com';
-const {privateIdentity} = await fakeAuth.getPrivateIdentity(userId);
+const {privateIdentity, privateProvisionalIdentity} = await fakeAuth.getPrivateIdentity(userId);
 ```
 
 #### With a user id
 ```javascript
 
 const userId = 'silvie';
-const {privateIdentity} = await fakeAuth.getPrivateIdentity(userId);
+const {privateIdentity, privateProvisionalIdentity} = await fakeAuth.getPrivateIdentity(userId);
 ```
 
 #### With a generated user id
 
-It is possible to ask getPrivateIdentity to generate a user id for you.
+It is possible to ask getPrivateIdentity to generate a user id for you. There is no provisional identity, because the user id has been generated and we are sure no one shared with it.
 
 ```javascript
 const {userId, privateIdentity} = await fakeAuth.getPrivateIdentity();
@@ -59,12 +59,13 @@ const status = await tanker.start(privateIdentity);
 switch(status) {
   case 'IDENTITY_REGISTRATION_NEEDED': {
     const verifCode = fetchIt(); // TODO
-    tanker.registerIdentity(email, verifCode);
+    await tanker.registerIdentity(email, verifCode);
+    await tanker.attachProvisionalIdentity(privateProvisionalIdentity);
     break;
   }
   case 'IDENTITY_VERIFICATION_NEEDED': {
     const verifCode = fetchIt(); // TODO
-    tanker.verifyIdentity(verifCode);
+    await tanker.verifyIdentity(verifCode);
     break;
   }
 }
@@ -75,7 +76,7 @@ switch(status) {
 ```javascript
 // tanker.start not needed here. (done by the verif)
 const verifUI = new VerificationUI(tanker);
-await verifUI.start(email, privateIdentity);
+await verifUI.start(email, privateIdentity, privateProvisionalIdentity);
 // tanker is now ready
 ```
 

@@ -6,6 +6,7 @@ import { generichash, utils } from '@tanker/crypto';
 type PrivateIdentityResponse = {
   userId: string,
   privateIdentity: string,
+  privateProvisionalIdentity: string,
 };
 
 const { concatArrays, fromString, toSafeBase64 } = utils;
@@ -37,6 +38,7 @@ export default class FakeAuthentication {
     const json: PrivateIdentityResponse = await response.json();
     return {
       privateIdentity: json.private_identity,
+      privateProvisionalIdentity: json.private_provisional_identity,
       userId,
     };
   }
