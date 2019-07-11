@@ -1,4 +1,5 @@
 //@flow
+import uuid from 'uuid';
 import { encode, trim } from 'url-safe-base64';
 import { generichash, utils } from '@tanker/crypto';
 
@@ -28,7 +29,11 @@ export default class FakeAuthentication {
     this.url = fakeAuthServerUrl || 'http://localhost:8080';
   }
 
-  async getPrivateIdentity(userId: string) {
+  async getPrivateIdentity(pUserId?: string) {
+    let userId = pUserId;
+    if (!pUserId)
+      userId = uuid.v4();
+
     const appId = this.appId;
     const obsUserId = obfuscateUserId(appId, userId);
 
