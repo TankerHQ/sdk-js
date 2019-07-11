@@ -511,19 +511,8 @@ const generateEncryptTests = (args: TestArgs) => {
 
         const fileId = await aliceLaptop.upload(clear);
 
-        const outputOptions = {};
-        outputOptions.type = originalType;
+        const decrypted = await aliceLaptop.download(fileId);
 
-        if (global.Blob && outputOptions.type === Blob) {
-          outputOptions.mime = clear.type;
-        }
-        if (global.File && outputOptions.type === File) {
-          outputOptions.mime = clear.type;
-          outputOptions.name = clear.name;
-          outputOptions.lastModified = clear.lastModified;
-        }
-
-        const decrypted = await aliceLaptop.download(fileId, outputOptions);
         expectType(decrypted, originalType);
         expectDeepEqual(decrypted, clear);
       });
@@ -534,19 +523,8 @@ const generateEncryptTests = (args: TestArgs) => {
 
       const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity] });
 
-      const outputOptions = {};
-      outputOptions.type = originalType;
+      const decrypted = await bobLaptop.download(fileId);
 
-      if (global.Blob && outputOptions.type === Blob) {
-        outputOptions.mime = clear.type;
-      }
-      if (global.File && outputOptions.type === File) {
-        outputOptions.mime = clear.type;
-        outputOptions.name = clear.name;
-        outputOptions.lastModified = clear.lastModified;
-      }
-
-      const decrypted = await bobLaptop.download(fileId, outputOptions);
       expectType(decrypted, originalType);
       expectDeepEqual(decrypted, clear);
     });

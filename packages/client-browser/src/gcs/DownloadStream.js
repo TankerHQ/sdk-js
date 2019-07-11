@@ -29,6 +29,21 @@ export class DownloadStream extends Readable {
     }
   }
 
+  async getMetadata() {
+    const response = await simpleFetch(this._url, {
+      method: 'HEAD',
+      responseType: 'text',
+    });
+
+    const { ok, status, statusText, headers } = response;
+    if (!ok) {
+      throw new errors.NetworkError(`GCS metadata head request failed with status ${status}: ${statusText}`);
+    }
+
+    const metadata = headers['x-goog-meta-tanker-metadata'];
+    return metadata;
+  }
+
   async _read(/* size: number */) {
     let result;
 
