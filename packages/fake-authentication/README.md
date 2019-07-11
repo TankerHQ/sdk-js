@@ -1,10 +1,9 @@
 # Tanker Fake Authentication
 
-**This must not be used in production.**
-
 This package provide a fake user identity server. Given a user id it will return a Tanker private identity to be used with Tanker. It also returns a list of public identities given a list of user ids.
 This package aims at reducing the friction when starting new projects, by delaying the integration of Tanker identity in your application server.
 
+**This must not be used in production, user identities would not be protected **
 
 ## API
 
@@ -20,7 +19,7 @@ const fakeAuth = new FakeAuthentication(trustchainId);
 
 Returns a private identity given a user id. This API is not protected in any way, this is for test only.
 
-The returned private identities are public, anyone can access them just knowing the user id.
+Those private identities can be accessed by anyone who knows the user id.
 
 #### With an email
 ```javascript
