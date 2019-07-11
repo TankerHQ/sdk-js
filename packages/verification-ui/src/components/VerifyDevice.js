@@ -80,10 +80,6 @@ class VerifyDevice extends React.Component<Props> {
     this.sendVerificationEmail();
   }
 
-  componentWillUnmount() {
-    this.props.context.actions.reset();
-  }
-
   sendVerificationEmail = async () => {
     const { appId, email, context } = this.props;
     const { actions, sendAttempts, sendIsFetching } = context;
