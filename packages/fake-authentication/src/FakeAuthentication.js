@@ -4,14 +4,8 @@ import { encode, trim } from 'url-safe-base64';
 import { generichash, utils } from '@tanker/crypto';
 
 type PrivateIdentityResponse = {
-  user_id: string,
-  private_identity: string,
-  private_provisional_identity: string,
-};
-
-type PublicIdentityResponse = {
-  user_id: string,
-  public_identity: string,
+  userId: string,
+  privateIdentity: string,
 };
 
 const { concatArrays, fromString, toSafeBase64 } = utils;
@@ -42,8 +36,8 @@ export default class FakeAuthentication {
     });
     const json: PrivateIdentityResponse = await response.json();
     return {
-      ...json,
-      user_id: userId,
+      privateIdentity: json.private_identity,
+      userId,
     };
   }
 
