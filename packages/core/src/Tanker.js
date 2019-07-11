@@ -184,6 +184,23 @@ export class Tanker extends EventEmitter {
     return this.status;
   }
 
+  /* one time only session, we register a verificationKey that we discard */
+  async startDisposableSession(identityB64: b64string) {
+    const status = await this.start(identityB64);
+    switch (status) {
+      case Tanker.statuses.IDENTITY_REGISTRATION_NEEDED: {
+        const genVerificationKey = await this.tanker.generateVerificationKey();
+        await this.tanker.registerIdentity({ verificationKey: genVerificationKey });
+        return;
+      }
+      case Tanker.statuses.IDENTITY_VERIFICATION_NEEDED: {
+        throw new Error('This identity has already been used, create a new one.');
+      }
+      default:
+        throw new Error('UnImplemented status');
+    }
+  }
+
   async registerIdentity(verification: Verification): Promise<void> {
     this.assert(statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
     assertVerification(verification);
