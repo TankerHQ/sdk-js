@@ -186,3 +186,42 @@ search = '"@tanker/errors": "{current_version}"'
 [[file]]
 src = "packages/stream/node/package.json"
 search = '"@tanker/stream-base": "{current_version}"'
+
+
+[[file]]
+src = "packages/verification-ui/package.json"
+search = '"version": "{current_version}"'
+[[file]]
+src = "packages/verification-ui/package.json"
+search = '"@tanker/client-browser": "{current_version}"'
+
+
+[[file]]
+src = "packages/filekit/package.json"
+search = '"version": "{current_version}"'
+[[file]]
+src = "packages/filekit/package.json"
+search = '"@tanker/client-browser": "{current_version}"'
+[[file]]
+src = "packages/filekit/package.json"
+search = '"@tanker/storage": "{current_version}"'
+[[file]]
+src = "packages/filekit/package.json"
+search = '"@tanker/verification-ui": "{current_version}"'
+
+
+[[file]]
+src = "packages/storage/package.json"
+search = '"version": "{current_version}"'
+[[file]]
+src = "packages/storage/package.json"
+search = '"@tanker/client-browser": "{current_version}"'
+
+
+[[file]]
+src = "packages/fake-authentication/package.json"
+search = '"version": "{current_version}"'
+[[file]]
+src = "packages/fake-authentication/package.json"
+search = '"@tanker/client-browser": "{current_version}"'
+
