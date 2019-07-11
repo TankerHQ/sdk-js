@@ -1,0 +1,19 @@
+{
+  "name": "@tanker/storage",
+  "version": "0.0.1",
+  "description": "Tanker Storage SDK",
+  "author": "Tanker Team",
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "dependencies": {
+    "@babel/runtime-corejs2": "7.4.5",
+    "@tanker/client-browser": "0.0.1"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "chai-exclude": "^1.0.12"
+  }
+}
