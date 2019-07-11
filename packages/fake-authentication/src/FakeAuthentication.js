@@ -1,6 +1,5 @@
 //@flow
 import uuid from 'uuid';
-import { encode, trim } from 'url-safe-base64';
 import { generichash, utils } from '@tanker/crypto';
 
 type PrivateIdentityResponse = {
@@ -9,7 +8,7 @@ type PrivateIdentityResponse = {
   privateProvisionalIdentity: string,
 };
 
-const { concatArrays, fromString, toSafeBase64 } = utils;
+const { concatArrays, fromString, toSafeBase64, fromBase64 } = utils;
 
 export function obfuscateUserId(trustchainId: Uint8Array, userId: string): Uint8Array {
   return toSafeBase64(generichash(concatArrays(fromString(userId), fromString(trustchainId))));
@@ -21,7 +20,7 @@ export default class FakeAuthentication {
 
   constructor(appId: string, fakeAuthServerUrl?: string) {
     this.appId = appId;
-    this.url = fakeAuthServerUrl || 'http://localhost:8080';
+    this.url = fakeAuthServerUrl || 'https://staging-fakeauth.tanker.io';
   }
 
   async getPrivateIdentity(pUserId?: string) {
@@ -32,10 +31,11 @@ export default class FakeAuthentication {
     const appId = this.appId;
     const obsUserId = obfuscateUserId(appId, userId);
 
-    const response = await fetch(`${this.url}/apps/${trim(encode(appId))}/private_identity?user_id=${encodeURIComponent(obsUserId)}`, {
+    const response = await fetch(`${this.url}/apps/${toSafeBase64(fromBase64(appId))}/private_identity?user_id=${encodeURIComponent(obsUserId)}`, {
       method: 'GET',
     });
     const json: PrivateIdentityResponse = await response.json();
+    console.log('jsonm:', json, toSafeBase64(fromBase64(appId)));
     return {
       privateIdentity: json.private_identity,
       privateProvisionalIdentity: json.private_provisional_identity,
