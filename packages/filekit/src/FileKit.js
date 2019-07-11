@@ -1,7 +1,8 @@
 // @flow
 import Tanker from '@tanker/client-browser';
 import Storage from '@tanker/storage';
-import VerificationUi from '@tanker/verificationUi';
+import VerificationUi from '@tanker/verification-ui';
+import saveToFile from 'file-saver';
 
 export default class FileKit {
   constructor(config) {
@@ -43,6 +44,7 @@ export default class FileKit {
   }
 
   async download(...args) {
-    return this.storage.download(...args);
+    const file = await this.storage.download(...args);
+    saveToFile(file);
   }
 }
