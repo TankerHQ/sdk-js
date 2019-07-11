@@ -9,7 +9,10 @@ export default class ResizerStream extends Transform {
 
   constructor(outputSize: number) {
     super({
+      // buffering input bytes until outputSize is reached
       writableHighWaterMark: outputSize,
+      writableObjectMode: false,
+      // buffering a single output chunk
       readableHighWaterMark: 1,
       readableObjectMode: true
     });

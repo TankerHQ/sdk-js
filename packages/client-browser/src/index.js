@@ -1,9 +1,11 @@
 // @flow
-import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, type TankerOptions, type EncryptionOptions, type b64string } from '@tanker/core';
+import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, type TankerOptions, type EncryptionOptions, type b64string, toBase64, fromBase64 } from '@tanker/core';
 import { MergerStream, SlicerStream } from '@tanker/stream-browser';
 import Dexie from '@tanker/datastore-dexie-browser';
 
 import { assertDataType, getDataLength, castData, type Data } from './dataHelpers';
+import { DownloadStream } from './gcs/DownloadStream';
+import { UploadStream } from './gcs/UploadStream';
 import { makeOutputOptions, type OutputOptions } from './outputOptions';
 
 const { READY } = statuses;
@@ -102,6 +104,77 @@ class Tanker extends TankerCore {
   async getResourceId(encryptedData: Data): Promise<b64string> {
     const source = await castData(encryptedData, { type: Uint8Array }, MAX_SIMPLE_RESOURCE_SIZE);
     return super.getResourceId(source);
+  }
+
+  async upload<T: Data>(clearData: Data, options?: ExtendedEncryptionOptions<T> = {}): Promise<string> {
+    this.assert(READY, 'upload a file');
+    assertDataType(clearData, 'clearData');
+
+    const encryptionOptions = this._parseEncryptionOptions(options);
+    const encryptor = await this._session.apis.dataProtector.makeEncryptorStream(encryptionOptions);
+
+    const { clearChunkSize, encryptedChunkSize, overheadPerChunk, resourceId } = encryptor;
+    const totalClearSize = getDataLength(clearData);
+    const lastClearChunkSize = totalClearSize % clearChunkSize;
+    const totalEncryptedSize = Math.floor(totalClearSize / clearChunkSize) * encryptedChunkSize + lastClearChunkSize + overheadPerChunk;
+
+    const { url, headers } = await this._session._client.send('get file upload url', { // eslint-disable-line no-underscore-dangle
+      resource_id: resourceId,
+      upload_content_length: totalEncryptedSize,
+    });
+
+    if (global.File && clearData instanceof global.File) {
+      if (!options.mime)
+        options.mime = clearData.type;
+      if (!options.name)
+        options.name = clearData.name;
+      if (!options.lastModified)
+        options.lastModified = clearData.lastModified;
+    }
+
+    const metadata = {};
+    if (options.mime)
+      metadata.mime = options.mime;
+    if (options.name)
+      metadata.name = options.name;
+    if (options.lastModified)
+      metadata.lastModified = options.lastModified;
+    const metadataString = toBase64(await this.encrypt(JSON.stringify(metadata)));
+    headers['x-goog-meta-tanker-metadata'] = metadataString;
+
+    const slicer = new SlicerStream({ source: clearData });
+    const uploader = new UploadStream(url, headers, totalEncryptedSize, true);
+
+    await new Promise((resolve, reject) => {
+      [slicer, encryptor, uploader].forEach(s => s.on('error', reject));
+      slicer.pipe(encryptor).pipe(uploader).on('finish', resolve);
+    });
+
+    return resourceId;
+  }
+
+  async download<T: Data>(resourceId: string, options?: OutputOptions<T> = {}): Promise<File> {
+    this.assert(READY, 'download a file');
+
+    const outputOptions = makeOutputOptions(null, { type: File, ...options });
+
+    const { url } = await this._session._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
+      resource_id: resourceId,
+    });
+
+    const downloadChunkSize = 1024 * 1024;
+    const downloader = new DownloadStream(url, downloadChunkSize, true);
+    const encryptedMetadata = await downloader.getMetadata();
+    const metadata = JSON.parse(await this.decrypt(fromBase64(encryptedMetadata)));
+    const decryptor = await this._session.apis.dataProtector.makeDecryptorStream();
+    // FIXME i think it's unsafe to just fetch metadata and use them as options
+    // without any validation
+    const merger = new MergerStream({ ...metadata, ...outputOptions });
+
+    return new Promise((resolve, reject) => {
+      [downloader, decryptor, merger].forEach(s => s.on('error', reject));
+      downloader.pipe(decryptor).pipe(merger).on('data', resolve);
+    });
   }
 }
 
