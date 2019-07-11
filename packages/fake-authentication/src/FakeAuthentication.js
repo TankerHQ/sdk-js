@@ -35,7 +35,6 @@ export default class FakeAuthentication {
       method: 'GET',
     });
     const json: PrivateIdentityResponse = await response.json();
-    console.log('jsonm:', json, toSafeBase64(fromBase64(appId)));
     return {
       privateIdentity: json.private_identity,
       privateProvisionalIdentity: json.private_provisional_identity,
