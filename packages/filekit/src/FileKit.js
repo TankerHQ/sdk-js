@@ -1,7 +1,7 @@
 // @flow
 import Tanker from '@tanker/client-browser';
 import Storage from '@tanker/storage';
-import VerificationUi from '@tanker/verification-ui';
+import VerificationUi from '@tanker/ui';
 import saveToFile from 'file-saver';
 
 export default class FileKit {
