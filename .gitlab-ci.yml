@@ -39,67 +39,13 @@ check/linux:
     - schedules
   script:
     - dmenv run -- python run-ci.py check --runner linux --env "$CHECKS_ENV"
-    - mv coverage/lcov-report lcov-report
+    # - mv coverage/lcov-report lcov-report
   artifacts:
     paths:
       - lcov-report/
     expire_in: 7 days
   tags:
     - linux
-
-check/macos:
-  extends: .check
-  except:
-    - schedules
-  script:
-    - dmenv run -- python run-ci.py check --runner macos --env "$CHECKS_ENV"
-  tags:
-    - macos
-
-.check/windows:
-  stage: check
-  before_script:
-    - if "%CHECKS_ENV%"=="" CALL gitlab_checks_env.bat
-    - dmenv install
-  tags:
-    - windows
-  allow_failure: true
-
-check/windows/edge:
-  extends: .check/windows
-  script:
-    - dmenv run -- python run-ci.py check --runner windows-edge --env %CHECKS_ENV%
-
-check/windows/ie:
-  extends: .check/windows
-  only:
-    - schedules
-  script:
-    - dmenv run -- python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
-
-check/windows/ie/manual:
-  extends: .check/windows
-  when: manual
-  script:
-    - dmenv run -- python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
-
-check/linux/nightly:
-  extends: .check
-  only:
-    - schedules
-  script:
-    - dmenv run -- python run-ci.py check --runner linux --nightly
-  tags:
-    - linux
-
-check/macos/nightly:
-  extends: .check
-  only:
-    - schedules
-  script:
-    - dmenv run -- python run-ci.py check --runner macos --nightly
-  tags:
-    - macos
 
 .deploy:
   stage: deploy
