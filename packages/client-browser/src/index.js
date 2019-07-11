@@ -1,6 +1,6 @@
 // @flow
 import type { TankerOptions, ShareWithOptions, b64string } from '@tanker/core';
-import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, assertShareWithOptions } from '@tanker/core';
+import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, fromBase64, toBase64, assertShareWithOptions } from '@tanker/core';
 import { MergerStream, SlicerStream } from '@tanker/stream-browser';
 import Dexie from '@tanker/datastore-dexie-browser';
 
@@ -127,8 +127,20 @@ class Tanker extends TankerCore {
     if (service !== 'GCS')
       throw new errors.InternalError(`unsupported storage service: ${service}`);
 
+    let metadata = {};
+
+    if (global.File && clearData instanceof global.File) {
+      metadata = {
+        mime: clearData.type,
+        name: clearData.name,
+        lastModified: clearData.lastModified,
+      };
+    }
+
+    const encryptedMetadata = toBase64(await this.encrypt(JSON.stringify(metadata), { ...options, type: Uint8Array }));
+
     const slicer = new SlicerStream({ source: clearData });
-    const uploader = new UploadStream(url, headers, totalEncryptedSize, true);
+    const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata, true);
 
     await new Promise((resolve, reject) => {
       [slicer, encryptor, uploader].forEach(s => s.on('error', reject));
@@ -141,9 +153,6 @@ class Tanker extends TankerCore {
   async download<T: Data>(resourceId: string, options?: OutputOptions<T> = {}): Promise<T> {
     this.assert(READY, 'download a file');
 
-    // $FlowIKnown Passing null since we don't have an input from which to get the default type, passing File instead
-    const outputOptions = makeOutputOptions(null, { type: File, ...options });
-
     const { url, service } = await this._session._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
       resource_id: resourceId,
     });
@@ -153,8 +162,14 @@ class Tanker extends TankerCore {
 
     const downloadChunkSize = 1024 * 1024;
     const downloader = new DownloadStream(url, downloadChunkSize, true);
-    const decryptor = await this._session.apis.dataProtector.makeDecryptorStream();
+
+    const encryptedMetadata = await downloader.getMetadata();
+    const metadata = JSON.parse(await this.decrypt(fromBase64(encryptedMetadata)));
+    const noInput = new Uint8Array(0); // when downloading there's no input available to define default output type
+    const outputOptions = makeOutputOptions(noInput, { type: File, ...options, ...metadata });
     const merger = new MergerStream(outputOptions);
+
+    const decryptor = await this._session.apis.dataProtector.makeDecryptorStream();
 
     return new Promise((resolve, reject) => {
       [downloader, decryptor, merger].forEach(s => s.on('error', reject));
