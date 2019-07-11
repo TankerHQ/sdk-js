@@ -191,9 +191,6 @@ search = '"@tanker/stream-base": "{current_version}"'
 [[file]]
 src = "packages/verification-ui/package.json"
 search = '"version": "{current_version}"'
-[[file]]
-src = "packages/verification-ui/package.json"
-search = '"@tanker/client-browser": "{current_version}"'
 
 
 [[file]]
