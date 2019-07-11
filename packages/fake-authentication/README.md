@@ -1,9 +1,12 @@
 # Tanker Fake Authentication
 
-This package provide a fake user identity server. Given a user id it will return a Tanker private identity to be used with Tanker. It also returns a list of public identities given a list of user ids.
-This package aims at reducing the friction when starting new projects, by delaying the integration of Tanker identity in your application server.
+This package aims at reducing the friction when starting new projects, by delaying the integration of Tanker identity in your application server. It interacts with a Tanker server, that stores private identities. ```getPrivateIdentity``` returns the private identity associated to the provided user id. If it is a new user id a new private identity is created. Those private identities can then be used to start a Tanker session.
 
-**This must not be used in production, user identities would not be protected**
+```getPublicIdentities``` can be used to return a list of public identities from a list of user ids (missing identities are created on the spot). The returned list can be passed to functions that expect a list of users to share with.
+
+<aside class="warning">
+This must not be used in production, user identities are not protected, you must serve them from you application server through an authenticated route.
+</aside>
 
 ## API
 
@@ -12,36 +15,33 @@ This package aims at reducing the friction when starting new projects, by delayi
 ```javascript
 import FakeAuthentication from '@tanker/fake-authentication';
 
-const fakeAuth = new FakeAuthentication(trustchainId);
+const fakeAuth = new FakeAuthentication(appId);
 ```
 
 ### Get a private identity
 
-Returns a private identity given a user id. This API is not protected in any way, this is for test only.
-
-Those private identities can be accessed by anyone who knows the user id.
+Returns the private identity associated to the provided user id.
 
 #### With an email
 ```javascript
 
 const userId = 'cedric@sample.com';
-const {privateIdentity, privateProvisionalIdentity} = await fakeAuth.getPrivateIdentity(userId);
+const {privateIdentity} = await fakeAuth.getPrivateIdentity(userId);
 ```
 
 #### With a user id
 ```javascript
 
 const userId = 'silvie';
-const {privateIdentity, privateProvisionalIdentity} = await fakeAuth.getPrivateIdentity(userId);
+const {privateIdentity} = await fakeAuth.getPrivateIdentity(userId);
 ```
 
-#### Anonymous
+#### With a generated user id
 
-It is possible to generate a user id and use fake authentication with anonymous identities.
+It is possible to ask getPrivateIdentity to generate a user id for you.
 
 ```javascript
-const userId = uuid.v4();
-const {privateIdentity} = await fakeAuth.getPrivateIdentity(userId);
+const {userId, privateIdentity} = await fakeAuth.getPrivateIdentity();
 ```
 
 #### How to use the returned identity
@@ -49,19 +49,17 @@ const {privateIdentity} = await fakeAuth.getPrivateIdentity(userId);
 ##### With FileKit
 
 ```javascript
-// then use it with Tanker or FileKit
-filekit.start(email, privateIdentity, privateProvisionalIdentity);
+await fileKit.start(email, privateIdentity);
 ```
 
 ##### With Tanker
 
 ```javascript
-status = tanker.start(privateIdentity);
+const status = await tanker.start(privateIdentity);
 switch(status) {
   case 'IDENTITY_REGISTRATION_NEEDED': {
     const verifCode = fetchIt(); // TODO
     tanker.registerIdentity(email, verifCode);
-    tanker.attachProvisionalIdentity(privateProvisionalIdentity);
     break;
   }
   case 'IDENTITY_VERIFICATION_NEEDED': {
@@ -77,7 +75,7 @@ switch(status) {
 ```javascript
 // tanker.start not needed here. (done by the verif)
 const verifUI = new VerificationUI(tanker);
-await verifUI.start(email, privateIdentity, privateProvisionalIdentity);
+await verifUI.start(email, privateIdentity);
 // tanker is now ready
 ```
 
@@ -91,19 +89,18 @@ await filekit.startAnonymous(privateIdentity);
 
 ##### With Tanker (Anonymous)
 ```javascript
-// this code could belong to tanker.startAnonymous (it would return the verificationKey)
 tanker.start(privateIdentity);
 const verificationKey = await tanker.generateVerificationKey()
 await tanker.registerIdentity({verificationKey});
 // to get back access to the data store the verificationKey and the PrivateIdentity? (to have the userId)
 
-// TO BE WARPED IN:
-const verificationKey = await tanker.startAnonymous(privateIdentity);
+// TO BE ADDED TO TANKER AS SOMETHING LIKE:
+const verificationKey = await tanker.startWithVerificationKey(privateIdentity);
 ```
 
 ## Get public identities
 
-Returns a array of object including the user_id and the public_identity. The public identities returned will be provisional for userIds that have no identities registered. (when getPrivateIdentity wasn't called for the userId).
+Returns an object mapping the user ids to the public identities.
 
 ```javascript
 const userIds = ['alice@sample.io', 'bob@company.com'];
