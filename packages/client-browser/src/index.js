@@ -139,7 +139,7 @@ class Tanker extends TankerCore {
       metadata.name = options.name;
     if (options.lastModified)
       metadata.lastModified = options.lastModified;
-    const metadataString = toBase64(await this.encrypt(JSON.stringify(metadata)));
+    const metadataString = toBase64(await this.encrypt(JSON.stringify(metadata), encryptionOptions));
     headers['x-goog-meta-tanker-metadata'] = metadataString;
 
     const slicer = new SlicerStream({ source: clearData });
