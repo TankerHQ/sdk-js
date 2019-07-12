@@ -18,13 +18,14 @@ export default class FileKit {
   async startWithVerificationKey(privateIdentity, verificationKey, privateProvisionalIdentity) {
     const status = await this.tanker.start(privateIdentity);
     switch (status) {
-      case 'IDENTITY_REGISTRATION_NEEDED': {
+      case Tanker.statuses.IDENTITY_REGISTRATION_NEEDED: {
         const genVerificationKey = await this.tanker.generateVerificationKey();
         await this.tanker.registerIdentity({ verificationKey: genVerificationKey });
-        await this.tanker.attachProvisionalIdentity(privateProvisionalIdentity);
+        if (privateProvisionalIdentity)
+          await this.tanker.attachProvisionalIdentity(privateProvisionalIdentity);
         return genVerificationKey;
       }
-      case 'IDENTITY_VERIFICATION_NEEDED': {
+      case Tanker.statuses.IDENTITY_VERIFICATION_NEEDED: {
         if (!verificationKey)
           throw new Error('Please provide a verificationKey');
         await this.tanker.verifyIdentity({ verificationKey });
