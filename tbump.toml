@@ -189,11 +189,6 @@ search = '"@tanker/stream-base": "{current_version}"'
 
 
 [[file]]
-src = "packages/verification-ui/package.json"
-search = '"version": "{current_version}"'
-
-
-[[file]]
 src = "packages/filekit/package.json"
 search = '"version": "{current_version}"'
 [[file]]
@@ -221,4 +216,17 @@ search = '"version": "{current_version}"'
 [[file]]
 src = "packages/fake-authentication/package.json"
 search = '"@tanker/client-browser": "{current_version}"'
+
+
+[[file]]
+src = "packages/verification-ui/node/package.json"
+search = '"version": "{current_version}"'
+
+[[file]]
+src = "packages/verification-ui/node/package.json"
+search = '"@tanker/client-browser": "{current_version}"'
+
+[[file]]
+src = "packages/verification-ui/node/package.json"
+search = '"@tanker/identity": "{current_version}"'
 

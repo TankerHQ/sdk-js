@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Tanker, type b64string, type EmailVerification } from '@tanker/client-browser';
+import 'isomorphic-fetch';
 
 import Root from './components/Root';
 

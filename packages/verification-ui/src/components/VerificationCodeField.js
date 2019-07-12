@@ -42,7 +42,7 @@ const Rectangle = styled.div`
     margin: 0 4px 0 0;
   }
 
-  &:nth-child(5) {
+  &:nth-child(6) {
     margin: 0 15px 0 0;
   }
 `;
@@ -75,9 +75,12 @@ const NumberField = styled.input`
   }
 `;
 
-const VerificationCodeField = ({ value, onChange, onDelete, ...props }: { value: string, onChange: Function, onDelete: Function}) => (
+type Props = { id: string, value: string, onChange: Function, onDelete: Function };
+const VerificationCodeField = ({ id, value, onChange, onDelete, ...props }: Props) => (
   <Rectangles {...props}>
     <NumberField
+      id={id}
+      aria-controls={`${id}-hidden`}
       type="tel"
       onChange={onChange}
       onKeyDown={event => event.key === 'Backspace' && onDelete()}
@@ -85,6 +88,7 @@ const VerificationCodeField = ({ value, onChange, onDelete, ...props }: { value:
       position={value.length}
       hidden={value.length >= 8}
     />
+    <input id={`${id}-hidden`} type="hidden" value={value} />
     {value
       .padEnd(8, ' ')
       .split('')

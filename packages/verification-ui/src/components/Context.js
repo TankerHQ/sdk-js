@@ -78,7 +78,7 @@ class ContextHolder {
   }
 
   _dispatch = (action: { type: string }) => {
-    const shouldLog = __DEVELOPMENT__ && module.hot;
+    const shouldLog = typeof __DEVELOPMENT__ !== 'undefined' && __DEVELOPMENT__ && module.hot;
 
     try {
       if (shouldLog)

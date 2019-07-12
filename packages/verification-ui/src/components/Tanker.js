@@ -23,6 +23,7 @@ const Container = styled(Modal)`
   overflow-y: auto;
 
   @media (max-width: 980px) {
+    width: 100%;
     height: 100%;
   }
 

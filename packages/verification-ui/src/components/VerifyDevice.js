@@ -11,7 +11,7 @@ import Spinner from './Spinner';
 
 import VerificationCodeField from './VerificationCodeField';
 
-const Title = styled.h1`
+const Label = styled.label`
   margin: 0 0 30px;
   color: ${colors.text};
   font-size: 14px;
@@ -94,16 +94,15 @@ class VerifyDevice extends React.Component<Props> {
       },
       body: JSON.stringify({
         trustchain_id: appId,
-        email_data: {
-          subject: 'Verify your email address',
-          to_email: email,
-        },
+        email_data: { to_email: email },
       })
     });
-    const ret = await raw.json();
-    if (ret.code) {
-      console.error(ret.code);
-      actions.sendError(new Error(ret.code));
+
+    if (raw.status !== 200) {
+      const ret = await raw.json();
+      if (ret.error)
+        actions.sendError(new Error(ret.error.code));
+      actions.sendError(new Error(ret));
     } else {
       actions.sendSuccess();
     }
@@ -142,11 +141,12 @@ class VerifyDevice extends React.Component<Props> {
 
     return (
       <>
-        <Title>
+        <Label htmlFor="tanker-verification-ui-field">
           We need to verify it{"'"}s you. A verification code was sent to {email}.<br />
           Please enter it below:
-        </Title>
+        </Label>
         <StyledVerificationCodeField
+          id="tanker-verification-ui-field"
           value={context.verificationCode}
           onChange={event => this.appendToVerificationCode(event.target.value)}
           onDelete={this.shaveVerificationCode}
