@@ -10,6 +10,6 @@ export default class Storage {
   }
 
   download(...args) {
-    return this.tanker.upload(...args);
+    return this.tanker.download(...args);
   }
 }
