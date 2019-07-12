@@ -69,8 +69,17 @@ export class DownloadStream extends Readable {
       }
 
       if (!this._totalLength) {
-        const header = headers['content-range']; // e.g. "bytes 786432-1048575/1048698"
-        this._totalLength = parseInt(header.split('/')[1], 0);
+        if (headers['content-range']) {
+          const header = headers['content-range']; // e.g. "bytes 786432-1048575/1048698"
+          this._totalLength = parseInt(header.split('/')[1], 0);
+        } else if (headers['content-length']) {
+          // if the whole file fits in a single request, gcs answers with
+          // content-length and no content-range
+          const header = headers['content-length'];
+          this._totalLength = parseInt(header, 0);
+        } else {
+          throw new errors.NetworkError(`GCS answered with neither content-range nor content-length`);
+        }
         this.log(`found total length ${this._totalLength}`);
       }
 
