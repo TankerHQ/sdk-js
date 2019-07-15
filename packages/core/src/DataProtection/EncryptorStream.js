@@ -10,38 +10,49 @@ export const defaultEncryptedChunkSize = 1024 * 1024; // 1MB
 export default class EncryptorStream extends Transform {
   _clearChunkSize: number;
   _encryptedChunkSize: number;
+  _encryptorStream: Transform;
   _key: Uint8Array;
   _header: HeaderV4;
+  _overheadPerChunk: number;
+  _resizerStream: ResizerStream;
   _serializedHeader: Uint8Array;
   _state: {
     index: number,
     lastClearChunkSize: number,
   }
-  _resizerStream: ResizerStream;
-  _encryptorStream: Transform;
 
   constructor(resourceId: Uint8Array, key: Uint8Array, encryptedChunkSize: number = defaultEncryptedChunkSize) {
-    super({ objectMode: true });
-
-    this._encryptedChunkSize = encryptedChunkSize;
-
-    this._key = key;
-
-    this._header = {
+    const header = {
       version: currentStreamVersion,
-      encryptedChunkSize: this._encryptedChunkSize,
+      encryptedChunkSize,
       resourceId,
     };
 
-    this._serializedHeader = serializeHeaderV4(this._header);
+    const serializedHeader = serializeHeaderV4(header);
 
+    const overheadPerChunk = serializedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
+
+    const clearChunkSize = encryptedChunkSize - overheadPerChunk;
+
+    super({
+      // buffering a single input chunk ('drain' can pull more)
+      writableHighWaterMark: 1,
+      writableObjectMode: true,
+      // buffering a single output chunk
+      readableHighWaterMark: 1,
+      readableObjectMode: true,
+    });
+
+    this._clearChunkSize = clearChunkSize;
+    this._encryptedChunkSize = encryptedChunkSize;
+    this._header = header;
+    this._key = key;
+    this._overheadPerChunk = overheadPerChunk;
+    this._serializedHeader = serializedHeader;
     this._state = {
       index: 0,
       lastClearChunkSize: 0,
     };
-
-    const overheadPerChunk = this._serializedHeader.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
-    this._clearChunkSize = this._encryptedChunkSize - overheadPerChunk;
 
     this._configureStreams();
   }
@@ -50,8 +61,12 @@ export default class EncryptorStream extends Transform {
     this._resizerStream = new ResizerStream(this._clearChunkSize);
 
     this._encryptorStream = new Transform({
+      // buffering input bytes until clear chunk size is reached
       writableHighWaterMark: this._clearChunkSize,
+      writableObjectMode: false,
+      // buffering output bytes until encrypted chunk size is reached
       readableHighWaterMark: this._encryptedChunkSize,
+      readableObjectMode: false,
 
       transform: (clearData, encoding, done) => {
         try {
@@ -109,7 +124,19 @@ export default class EncryptorStream extends Transform {
     this._resizerStream.end();
   }
 
-  resourceId(): b64string {
+  get clearChunkSize(): number {
+    return this._clearChunkSize;
+  }
+
+  get encryptedChunkSize(): number {
+    return this._encryptedChunkSize;
+  }
+
+  get overheadPerChunk(): number {
+    return this._overheadPerChunk;
+  }
+
+  get resourceId(): b64string {
     return utils.toBase64(this._header.resourceId);
   }
 }

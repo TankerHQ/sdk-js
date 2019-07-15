@@ -22,7 +22,14 @@ export default class DecryptorStream extends Transform {
   _decryptionStream: Transform;
 
   constructor(mapper: ResourceIdKeyMapper) {
-    super({ objectMode: true });
+    super({
+      // buffering a single input chunk ('drain' can pull more)
+      writableHighWaterMark: 1,
+      writableObjectMode: true,
+      // buffering a single output chunk
+      readableHighWaterMark: 1,
+      readableObjectMode: true,
+    });
 
     this._mapper = mapper;
 
@@ -50,8 +57,12 @@ export default class DecryptorStream extends Transform {
     this._resizerStream = new ResizerStream(encryptedChunkSize);
 
     this._decryptionStream = new Transform({
+      // buffering input bytes until encrypted chunk size is reached
       writableHighWaterMark: encryptedChunkSize,
+      writableObjectMode: false,
+      // buffering output bytes until clear chunk size is reached
       readableHighWaterMark: encryptedChunkSize - overheadPerChunk,
+      readableObjectMode: false,
 
       transform: (encryptedChunk, encoding, done) => {
         const encryptedData = encryptedChunk.subarray(headerLength + tcrypto.XCHACHA_IV_SIZE);

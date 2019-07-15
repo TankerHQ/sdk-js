@@ -142,6 +142,11 @@ describe('Tanker', () => {
       await expect(tanker.getVerificationMethods()).to.be.rejectedWith(PreconditionFailed);
     });
 
+    it('should throw when trying to make a stream encryptor or decryptor', async () => {
+      await expect(tanker.makeDecryptorStream()).to.be.rejectedWith(PreconditionFailed);
+      await expect(tanker.makeEncryptorStream()).to.be.rejectedWith(PreconditionFailed);
+    });
+
     describe('start', () => {
       it('should throw when identity is undefined', async () => {
         // $FlowExpectedError
