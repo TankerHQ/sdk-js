@@ -21,7 +21,7 @@
     "start:test": "cd ../..; yarn start:test-crypto"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "7.4.5",
+    "@babel/runtime-corejs2": "7.5.4",
     "libsodium-wrappers": "^0.5.1"
   }
 }
