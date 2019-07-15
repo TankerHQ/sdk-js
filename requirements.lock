@@ -44,7 +44,7 @@ schema==0.7.0
 setuptools==40.8.0
 six==1.12.0
 tabulate==0.8.3
-tbump==5.0.4
+tbump==6.0.0
 toml==0.10.0
 tqdm==4.32.1
 typed-ast==1.4.0
