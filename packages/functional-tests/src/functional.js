@@ -44,9 +44,9 @@ export function generateFunctionalTests(
       silencer.silence('warn', /deprecated/);
 
       args.trustchainHelper = await TrustchainHelper.newTrustchain();
-      const b64TrustchainId = utils.toBase64(args.trustchainHelper.trustchainId);
+      const b64DefaultTrustchainId = utils.toBase64(args.trustchainHelper.trustchainId);
 
-      args.makeTanker = () => makeTanker(b64TrustchainId);
+      args.makeTanker = (b64TrustchainId = b64DefaultTrustchainId) => makeTanker(b64TrustchainId);
     });
 
     after(async () => {

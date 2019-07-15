@@ -1,5 +1,7 @@
 // @flow
 import { errors, statuses } from '@tanker/core';
+import { createIdentity } from '@tanker/identity';
+
 
 import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
@@ -20,8 +22,17 @@ const generateStartTests = (args: TestArgs) => {
       bobLaptop.stop();
     });
 
-    it('default status to be STOPPED', async () => {
+    it('has STOPPED status before start', async () => {
       expect(bobLaptop.status).to.equal(STOPPED);
+    });
+
+    it('throws when having configured a non existing trustchain', async () => {
+      const nonExistentB64TrustchainId = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+      const nonExistentB64TrustchainPrivateKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+      const userId = 'bob';
+      bobIdentity = await createIdentity(nonExistentB64TrustchainId, nonExistentB64TrustchainPrivateKey, userId);
+      bobLaptop = args.makeTanker(nonExistentB64TrustchainId);
+      await expect(bobLaptop.start(bobIdentity)).to.be.rejectedWith(errors.NetworkError, 'trustchain_not_found');
     });
 
     it('throws when giving invalid arguments', async () => {
