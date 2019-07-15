@@ -15,10 +15,12 @@ const getConstructor = instance => {
     return Buffer;
   else if (instance instanceof Uint8Array)
     return Uint8Array;
-  else if (global.File && instance instanceof File || instance instanceof FilePonyfill) // must be before Blob
+  else if (global.File && instance instanceof File) // must be before Blob
     return File;
-  // else if (global.Blob && instance instanceof Blob)
-  return Blob;
+  else if (global.Blob && instance instanceof Blob)
+    return Blob;
+  else
+    throw new Error(`Test error: unexpected instance in getConstructor: ${instance}`);
 };
 
 const getConstructorName = (constructor: Object): string => {
@@ -28,10 +30,12 @@ const getConstructorName = (constructor: Object): string => {
     return 'Buffer';
   else if (constructor === Uint8Array)
     return 'Uint8Array';
-  else if (global.File && constructor === File || constructor === FilePonyfill) // must be before Blob
+  else if (global.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
     return 'File';
-  // else if (global.Blob && constructor === Blob)
-  return 'Blob';
+  else if (global.Blob && constructor === Blob)
+    return 'Blob';
+  else
+    throw new Error(`Test error: unexpected constructor in getConstructorName: ${constructor}`);
 };
 
 const generateEncryptTests = (args: TestArgs) => {
@@ -396,19 +400,14 @@ const generateEncryptTests = (args: TestArgs) => {
     });
   });
 
-  // A few helpers needed to test binary resources:
-  const objectType = (obj: Object) => {
-    const type = getConstructor(obj);
-    return type === 'FilePonyfill' ? File : type;
-  };
   // In Edge and IE11, accessing the webkitRelativePath property (though defined) triggers
   // a TypeError: Invalid calling object. We avoid this by comparing only useful props.
   const fileProps = (obj: Object) => {
     const { name, size, type, lastModified } = obj;
     return { name, size, type, lastModified };
   };
-  const expectType = (obj: Object, type: Object) => expect(objectType(obj)).to.equal(type);
-  const expectSameType = (a: Object, b: Object) => expect(objectType(a)).to.equal(objectType(b));
+  const expectType = (obj: Object, type: Object) => expect(getConstructor(obj)).to.equal(type);
+  const expectSameType = (a: Object, b: Object) => expect(getConstructor(a)).to.equal(getConstructor(b));
   const expectDeepEqual = (a: Object, b: Object) => {
     if (global.File && a instanceof File) {
       expect(fileProps(a)).to.deep.equal(fileProps(b));
