@@ -11,7 +11,7 @@
     "test": "cd ../..; yarn test:identity"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "7.4.5",
+    "@babel/runtime-corejs2": "7.5.4",
     "@tanker/crypto": "0.0.1",
     "@tanker/errors": "0.0.1"
   },
