@@ -119,10 +119,13 @@ class Tanker extends TankerCore {
     const lastClearChunkSize = totalClearSize % clearChunkSize;
     const totalEncryptedSize = Math.floor(totalClearSize / clearChunkSize) * encryptedChunkSize + lastClearChunkSize + overheadPerChunk;
 
-    const { url, headers } = await this._session._client.send('get file upload url', { // eslint-disable-line no-underscore-dangle
+    const { url, headers, service } = await this._session._client.send('get file upload url', { // eslint-disable-line no-underscore-dangle
       resource_id: resourceId,
       upload_content_length: totalEncryptedSize,
     });
+
+    if (service !== 'GCS')
+      throw new errors.InternalError(`unsupported storage service: ${service}`);
 
     const slicer = new SlicerStream({ source: clearData });
     const uploader = new UploadStream(url, headers, totalEncryptedSize, true);
@@ -141,9 +144,12 @@ class Tanker extends TankerCore {
     // $FlowIKnown Passing null since we don't have an input from which to get the default type, passing File instead
     const outputOptions = makeOutputOptions(null, { type: File, ...options });
 
-    const { url } = await this._session._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
+    const { url, service } = await this._session._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
       resource_id: resourceId,
     });
+
+    if (service !== 'GCS')
+      throw new errors.InternalError(`unsupported storage service: ${service}`);
 
     const downloadChunkSize = 1024 * 1024;
     const downloader = new DownloadStream(url, downloadChunkSize, true);
