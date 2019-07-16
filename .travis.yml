@@ -26,8 +26,8 @@ matrix:
       name: "Chrome on OS X"
     - script: yarn karma --browsers FirefoxOSX
       name: "Firefox on OS X"
-    - script: yarn karma --browsers Android8
-      name: "Chrome Android 8"
+    - script: yarn karma --browsers Android9
+      name: "Chrome Android 9"
     - script: yarn karma --browsers Android5
       name: "Chrome Android 5"
     - script: yarn karma --browsers iOS12
