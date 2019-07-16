@@ -13,8 +13,7 @@ import { statusDefs, statuses, type Status, type Verification, type EmailVerific
 
 import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
-import { type EncryptionOptions, validateEncryptionOptions } from './DataProtection/EncryptionOptions';
-import { type ShareWithOptions, validateShareWithOptions } from './DataProtection/ShareWithOptions';
+import { type ShareWithOptions, assertShareWithOptions, isShareWithOptionsEmpty } from './DataProtection/ShareWithOptions';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 
@@ -276,23 +275,23 @@ export class Tanker extends EventEmitter {
     return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
   }
 
-  _parseEncryptionOptions = (options?: EncryptionOptions = {}): EncryptionOptions => {
-    if (!validateEncryptionOptions(options))
-      throw new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<String> }', options);
-
-    return options;
-  }
-
-  async share(resourceIds: Array<b64string>, shareWithOptions: ShareWithOptions): Promise<void> {
+  async share(resourceIds: Array<b64string>, shareOptions: ShareWithOptions): Promise<void> {
     this.assert(statuses.READY, 'share');
 
     if (!(resourceIds instanceof Array))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    if (!validateShareWithOptions(shareWithOptions))
-      throw new InvalidArgument('shareWithOptions', '{ shareWithUsers: Array<b64string>, shareWithGroups: Array<string> }', shareWithOptions);
+    assertShareWithOptions(shareOptions, 'shareOptions');
 
-    return this._session.apis.dataProtector.share(resourceIds, shareWithOptions);
+    if (isShareWithOptionsEmpty(shareOptions)) {
+      throw new InvalidArgument(
+        'shareOptions.shareWith*',
+        'shareOptions.shareWithUsers or shareOptions.shareWithGroups must contain recipients',
+        shareOptions
+      );
+    }
+
+    return this._session.apis.dataProtector.share(resourceIds, shareOptions);
   }
 
   async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
@@ -342,12 +341,11 @@ export class Tanker extends EventEmitter {
     return this._session.apis.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async makeEncryptorStream(options?: EncryptionOptions): Promise<EncryptorStream> {
+  async makeEncryptorStream(options: ShareWithOptions = {}): Promise<EncryptorStream> {
     this.assert(statuses.READY, 'make a stream encryptor');
+    assertShareWithOptions(options, 'options');
 
-    const opts = this._parseEncryptionOptions(options);
-
-    return this._session.apis.dataProtector.makeEncryptorStream(opts);
+    return this._session.apis.dataProtector.makeEncryptorStream(options);
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
