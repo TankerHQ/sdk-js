@@ -1,9 +1,11 @@
 // @flow
 import { type b64string } from '@tanker/crypto';
 
+import { InvalidArgument } from '../errors';
+
 export type ShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
 
-export const validateShareWithOptions = (value: ShareWithOptions): bool => {
+const validateShareWithOptions = (value: ShareWithOptions): bool => {
   if (!value || typeof value !== 'object' || value instanceof Array)
     return false;
 
@@ -18,6 +20,12 @@ export const validateShareWithOptions = (value: ShareWithOptions): bool => {
   }
 
   return true;
+};
+
+export const assertShareWithOptions = (value: ShareWithOptions, argName: string = 'options') => {
+  if (!validateShareWithOptions(value)) {
+    throw new InvalidArgument(argName, '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', value);
+  }
 };
 
 export const isShareWithOptionsEmpty = (opts: ShareWithOptions) => {

@@ -10,7 +10,7 @@ import { Tanker, optionsWithDefaults } from '..';
 import { InvalidArgument, PreconditionFailed } from '../errors';
 
 import { type EmailVerification, type RemoteVerification, statuses } from '../Session/types';
-import { type ShareWithOptions } from '../DataProtection/ShareWithOptions';
+import { type ShareWithOptions, assertShareWithOptions } from '../DataProtection/ShareWithOptions';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
@@ -104,6 +104,11 @@ describe('Tanker', () => {
       // $FlowExpectedError
       expect(() => optionsWithDefaults({ a: 1 }, 'not an object')).to.throw(InvalidArgument);
     });
+
+    it('should throw if ShareWithOptions is invalid', async () => {
+      // $FlowExpectedError
+      expect(() => assertShareWithOptions('not an object')).to.throw(InvalidArgument);
+    });
   });
 
   describe('without a session', () => {
@@ -122,11 +127,6 @@ describe('Tanker', () => {
 
     it('get options', async () => {
       expect(tanker.options).to.deep.equal(options);
-    });
-
-    it('should throw if EncryptionOptions is invalid', async () => {
-      // $FlowExpectedError
-      expect(() => tanker._parseEncryptionOptions('not an object')).to.throw(InvalidArgument); // eslint-disable-line no-underscore-dangle
     });
 
     it('should throw when trying to get deviceId', async () => {
@@ -296,6 +296,7 @@ describe('Tanker', () => {
           { shareWithUsers: 'noArrayAroundMe' },
           { shareWithGroups: 'noArrayAroundMe' },
           { shareWithGroups: [new Uint8Array(32)] },
+          {}, // empty is not allowed on reshare
         ];
 
         notShareWithValues.push(undefined);

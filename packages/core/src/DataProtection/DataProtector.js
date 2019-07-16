@@ -12,7 +12,6 @@ import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { decryptData } from './Encryptor';
-import { type EncryptionOptions } from './EncryptionOptions';
 import { type ShareWithOptions } from './ShareWithOptions';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
@@ -143,7 +142,7 @@ export default class DataProtector {
     }
   }
 
-  async encryptAndShareData(data: Uint8Array, options: EncryptionOptions = {}): Promise<Uint8Array> {
+  async encryptAndShareData(data: Uint8Array, options: ShareWithOptions = {}): Promise<Uint8Array> {
     const { key, resourceId, encryptedData } = this._resourceManager.makeSimpleResource(data);
     await this._shareResources([{ resourceId, key }], options, true);
     return encryptedData;
@@ -160,7 +159,7 @@ export default class DataProtector {
     return this._shareResources(keys, shareWith, false);
   }
 
-  async makeEncryptorStream(options: EncryptionOptions): Promise<EncryptorStream> {
+  async makeEncryptorStream(options: ShareWithOptions): Promise<EncryptorStream> {
     const streamResource = this._resourceManager.makeStreamResource();
     const encryptorStream = new EncryptorStream(streamResource.resourceId, streamResource.key);
 
