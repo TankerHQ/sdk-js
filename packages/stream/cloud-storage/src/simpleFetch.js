@@ -1,8 +1,6 @@
 // @flow
 import { errors } from '@tanker/core';
 
-import type { Data } from './dataHelpers';
-
 type HTTPMethod = 'DELETE' | 'GET' | 'HEAD' | 'OPTIONS' | 'POST' | 'PUT';
 
 type ResponseTypeString = 'arraybuffer' | 'blob' | 'text';
@@ -12,7 +10,7 @@ type RequestOptions<T: ResponseTypeString> = $Exact<{
   method?: HTTPMethod,
   responseType?: T,
   headers?: Object,
-  body?: Data,
+  body?: ArrayBuffer | Blob | Buffer | File | Uint8Array,
 }>;
 
 type Response<T: ResponseType> = $Exact<{

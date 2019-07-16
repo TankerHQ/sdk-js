@@ -61,6 +61,7 @@ def deploy_sdk(env: str, git_tag: str) -> None:
                 "@tanker/stream-base",
                 "@tanker/stream-browser",
                 "@tanker/stream-node",
+                "@tanker/stream-cloud-storage",
             ],
         },
         {
