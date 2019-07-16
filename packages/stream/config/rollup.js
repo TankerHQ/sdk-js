@@ -8,6 +8,7 @@ const packages = [
   'base',
   'browser',
   'node',
+  'cloud-storage',
 ];
 
 module.exports = flatten(packages.map(pack => {
@@ -26,7 +27,12 @@ module.exports = flatten(packages.map(pack => {
     node: [
       { target: 'node', path: path.resolve(packageRoot, 'dist', 'index.js') },
       { target: 'es', path: path.resolve(packageRoot, 'dist', 'es.js') },
-    ]
+    ],
+    'cloud-storage': [
+      { target: 'browser', path: path.resolve(packageRoot, 'dist', 'browser.js') },
+      { target: 'node', path: path.resolve(packageRoot, 'dist', 'index.js') },
+      { target: 'es', path: path.resolve(packageRoot, 'dist', 'es.js') },
+    ],
   }[pack];
 
   return baseConfig({

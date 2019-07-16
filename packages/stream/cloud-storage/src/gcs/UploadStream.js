@@ -1,8 +1,8 @@
 // @flow
-import { errors } from '@tanker/core';
-import { Writable } from '@tanker/stream-browser';
+import { InvalidArgument, NetworkError } from '@tanker/errors';
+import { Writable } from '@tanker/stream-base';
 
-import { simpleFetch } from '../http';
+import { simpleFetch } from '../simpleFetch';
 
 const GCSUploadSizeIncrement = 256 * 1024; // 256KiB
 
@@ -41,7 +41,7 @@ export class UploadStream extends Writable {
 
     const { ok, status, statusText, headers } = await simpleFetch(this._initUrl, { method: 'POST', headers: this._headers });
     if (!ok) {
-      throw new errors.NetworkError(`GCS init request failed with status ${status}: ${statusText}`);
+      throw new NetworkError(`GCS init request failed with status ${status}: ${statusText}`);
     }
     this._uploadUrl = headers.location;
     this.log(`using upload URL ${this._uploadUrl}`);
@@ -58,7 +58,7 @@ export class UploadStream extends Writable {
       const lastChunk = nextLength >= this._contentLength;
 
       if (!lastChunk && chunkLength % GCSUploadSizeIncrement !== 0) {
-        throw new errors.InternalError(`GCS upload request with invalid chunk length: ${chunkLength} (not multiple of 256KiB)`);
+        throw new InvalidArgument(`GCS upload request with invalid chunk length: ${chunkLength} (not multiple of 256KiB)`);
       }
 
       const contentRangeHeader = `bytes ${prevLength}-${nextLength - 1}/${lastChunk ? this._contentLength : '*'}`;
@@ -74,7 +74,7 @@ export class UploadStream extends Writable {
       const { ok, status, statusText } = response;
       const success = (lastChunk && ok) || (!lastChunk && status === 308);
       if (!success) {
-        throw new errors.NetworkError(`GCS upload request failed with status ${status}: ${statusText}`);
+        throw new NetworkError(`GCS upload request failed with status ${status}: ${statusText}`);
       }
 
       this._uploadedLength += chunkLength;

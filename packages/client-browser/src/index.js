@@ -1,12 +1,11 @@
 // @flow
 import type { TankerOptions, ShareWithOptions, b64string } from '@tanker/core';
 import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, fromBase64, toBase64, assertShareWithOptions } from '@tanker/core';
-import { MergerStream, SlicerStream } from '@tanker/stream-browser';
 import Dexie from '@tanker/datastore-dexie-browser';
+import { MergerStream, SlicerStream } from '@tanker/stream-browser';
+import cloudStorage from '@tanker/stream-cloud-storage';
 
 import { assertDataType, getDataLength, castData, type Data } from './dataHelpers';
-import { DownloadStream } from './gcs/DownloadStream';
-import { UploadStream } from './gcs/UploadStream';
 import { makeOutputOptions, type OutputOptions } from './outputOptions';
 
 const { READY } = statuses;
@@ -124,8 +123,10 @@ class Tanker extends TankerCore {
       upload_content_length: totalEncryptedSize,
     });
 
-    if (service !== 'GCS')
-      throw new errors.InternalError(`unsupported storage service: ${service}`);
+    if (!cloudStorage[service])
+      throw new errors.InternalError(`unsupported cloud storage service: ${service}`);
+
+    const { UploadStream } = cloudStorage[service];
 
     let metadata = {};
 
@@ -157,8 +158,10 @@ class Tanker extends TankerCore {
       resource_id: resourceId,
     });
 
-    if (service !== 'GCS')
-      throw new errors.InternalError(`unsupported storage service: ${service}`);
+    if (!cloudStorage[service])
+      throw new errors.InternalError(`unsupported cloud storage service: ${service}`);
+
+    const { DownloadStream } = cloudStorage[service];
 
     const downloadChunkSize = 1024 * 1024;
     const downloader = new DownloadStream(url, downloadChunkSize);

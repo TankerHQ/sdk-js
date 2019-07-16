@@ -1,8 +1,8 @@
 // @flow
-import { errors } from '@tanker/core';
-import { Readable } from '@tanker/stream-browser';
+import { NetworkError } from '@tanker/errors';
+import { Readable } from '@tanker/stream-base';
 
-import { simpleFetch } from '../http';
+import { simpleFetch } from '../simpleFetch';
 
 export class DownloadStream extends Readable {
   _chunkSize: number;
@@ -37,7 +37,7 @@ export class DownloadStream extends Readable {
 
     const { ok, status, statusText, headers } = response;
     if (!ok) {
-      throw new errors.NetworkError(`GCS metadata head request failed with status ${status}: ${statusText}`);
+      throw new NetworkError(`GCS metadata head request failed with status ${status}: ${statusText}`);
     }
 
     const metadata = headers['x-goog-meta-tanker-metadata'];
@@ -64,7 +64,7 @@ export class DownloadStream extends Readable {
       const { ok, status, statusText, body, headers } = response;
       // Note: status is usually 206 Partial Content
       if (!ok) {
-        throw new errors.NetworkError(`GCS download request failed with status ${status}: ${statusText}`);
+        throw new NetworkError(`GCS download request failed with status ${status}: ${statusText}`);
       }
 
       result = new Uint8Array(body);
@@ -75,7 +75,7 @@ export class DownloadStream extends Readable {
           const header = headers['content-range']; // e.g. "bytes 786432-1048575/1048698"
 
           if (typeof header !== 'string' || !header.match(/^bytes +\d+-\d+\/\d+$/)) {
-            throw new errors.NetworkError(`GCS answered with status 206 but an invalid content-range header: ${header}`);
+            throw new NetworkError(`GCS answered with status 206 but an invalid content-range header: ${header}`);
           }
 
           this._totalLength = parseInt(header.split('/')[1], 0);
