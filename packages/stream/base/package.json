@@ -1,6 +1,6 @@
 {
   "name": "@tanker/stream-base",
-  "version": "0.0.1",
+  "version": "9999.0.0",
   "description": "Tanker Stream SDK",
   "author": "Tanker Team",
   "license": "Apache-2.0",
@@ -17,7 +17,7 @@
   "browser": "browser.js",
   "dependencies": {
     "@babel/runtime-corejs2": "7.4.5",
-    "@tanker/errors": "0.0.1",
+    "@tanker/errors": "9999.0.0",
     "readable-stream": "^3.4.0"
   },
   "devDependencies": {

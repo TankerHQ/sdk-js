@@ -1,6 +1,6 @@
 {
   "name": "@tanker/functional-tests",
-  "version": "0.0.1",
+  "version": "9999.0.0",
   "private": true,
   "license": "UNLICENSED",
   "main": "src/index.js",

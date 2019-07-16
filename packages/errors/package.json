@@ -1,6 +1,6 @@
 {
   "name": "@tanker/errors",
-  "version": "0.0.1",
+  "version": "9999.0.0",
   "description": "Tanker SDK (common error classes)",
   "author": "Tanker Team",
   "license": "Apache-2.0",

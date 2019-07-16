@@ -1,6 +1,6 @@
 {
   "name": "@tanker/datastore-dexie-browser",
-  "version": "0.0.1",
+  "version": "9999.0.0",
   "description": "Tanker SDK (datastore dexie browser)",
   "author": "Tanker Team",
   "license": "Apache-2.0",
@@ -20,6 +20,6 @@
     "dexie": "^2.0.4"
   },
   "devDependencies": {
-    "@tanker/datastore-tests": "0.0.1"
+    "@tanker/datastore-tests": "9999.0.0"
   }
 }

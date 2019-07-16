@@ -1,6 +1,6 @@
 {
   "name": "@tanker/crypto",
-  "version": "0.0.1",
+  "version": "9999.0.0",
   "description": "Tanker SDK (cryptographic primitives)",
   "author": "Tanker Team",
   "license": "Apache-2.0",

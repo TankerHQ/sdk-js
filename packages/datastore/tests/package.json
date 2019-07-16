@@ -1,11 +1,11 @@
 {
   "name": "@tanker/datastore-tests",
-  "version": "0.0.1",
+  "version": "9999.0.0",
   "private": true,
   "license": "Apache-2.0",
   "main": "src/index.js",
   "dependencies": {
-    "@tanker/datastore-base": "0.0.1",
+    "@tanker/datastore-base": "9999.0.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "uuid": "^3.3.2"
