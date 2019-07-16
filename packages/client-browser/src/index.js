@@ -140,7 +140,7 @@ class Tanker extends TankerCore {
     const encryptedMetadata = toBase64(await this.encrypt(JSON.stringify(metadata), { ...options, type: Uint8Array }));
 
     const slicer = new SlicerStream({ source: clearData });
-    const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata, true);
+    const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata);
 
     await new Promise((resolve, reject) => {
       [slicer, encryptor, uploader].forEach(s => s.on('error', reject));
@@ -161,7 +161,7 @@ class Tanker extends TankerCore {
       throw new errors.InternalError(`unsupported storage service: ${service}`);
 
     const downloadChunkSize = 1024 * 1024;
-    const downloader = new DownloadStream(url, downloadChunkSize, true);
+    const downloader = new DownloadStream(url, downloadChunkSize);
 
     const encryptedMetadata = await downloader.getMetadata();
     const metadata = JSON.parse(await this.decrypt(fromBase64(encryptedMetadata)));
