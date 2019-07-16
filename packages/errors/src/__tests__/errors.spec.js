@@ -1,8 +1,8 @@
 // @flow
 import { expect } from 'chai';
 
-import TankerError from '../TankerError';
-import InvalidArgument from '../errors/InvalidArgument';
+import { TankerError } from '../TankerError';
+import { InvalidArgument } from '../errors/InvalidArgument';
 
 describe('TankerError', () => {
   it('should be type testable with instanceof', () => {
