@@ -63,7 +63,6 @@ check/macos:
     - dmenv install
   tags:
     - windows
-  allow_failure: true
 
 check/windows/edge:
   extends: .check/windows
@@ -73,13 +72,15 @@ check/windows/edge:
 check/windows/ie:
   extends: .check/windows
   only:
-    - schedules
+    - master
   script:
     - dmenv run -- python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
 
 check/windows/ie/manual:
   extends: .check/windows
   when: manual
+  except:
+    - master
   script:
     - dmenv run -- python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
 
