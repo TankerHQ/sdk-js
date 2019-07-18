@@ -67,6 +67,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
 
       await restartWithNetworkIssue(alicePhone, aliceIdentity);
       await expect(alicePhone.decrypt(encrypted)).to.be.rejectedWith(errors.NetworkError);
+      await aliceLaptop.stop();
     });
   });
 };

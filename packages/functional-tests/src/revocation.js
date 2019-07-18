@@ -146,6 +146,7 @@ const generateRevocationTests = (args: TestArgs) => {
       const bobNewPhone = args.makeTanker();
       await bobNewPhone.start(bobIdentity);
       await expect(bobNewPhone.verifyIdentity({ passphrase: 'passphrase' })).to.be.fulfilled;
+      await bobNewPhone.stop();
     });
 
     it('Alice can share with Bob who has a revoked device', async () => {

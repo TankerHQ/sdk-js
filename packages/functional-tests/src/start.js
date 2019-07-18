@@ -56,6 +56,7 @@ const generateStartTests = (args: TestArgs) => {
       const bobPhone = args.makeTanker();
       await bobPhone.start(bobIdentity);
       await expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      await bobPhone.stop();
     });
 
     it('returns READY status if identity of existing user provided on existing device', async () => {
