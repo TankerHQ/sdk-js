@@ -3,6 +3,7 @@ import { NetworkError } from '@tanker/errors';
 import { Readable } from '@tanker/stream-base';
 
 import { simpleFetch } from '../simpleFetch';
+import { retry } from '../retry';
 
 export class DownloadStream extends Readable {
   _chunkSize: number;
@@ -53,19 +54,27 @@ export class DownloadStream extends Readable {
 
       const rangeHeader = `bytes=${prevLength}-${nextLength - 1}`;
 
-      this.log(`downloading chunk of size ${this._chunkSize} with header "Range: ${rangeHeader}"`);
+      const response = await retry(async () => {
+        this.log(`downloading chunk of size ${this._chunkSize} with header "Range: ${rangeHeader}"`);
 
-      const response = await simpleFetch(this._url, {
-        method: 'GET',
-        headers: { Range: rangeHeader },
-        responseType: 'arraybuffer',
+        const resp = await simpleFetch(this._url, {
+          method: 'GET',
+          headers: { Range: rangeHeader },
+          responseType: 'arraybuffer',
+        });
+
+        const { ok, status, statusText } = resp;
+        // Note: status is usually 206 Partial Content
+        if (!ok) {
+          throw new NetworkError(`GCS download request failed with status ${status}: ${statusText}`);
+        }
+
+        return resp;
+      }, {
+        retries: 2,
       });
 
-      const { ok, status, statusText, body, headers } = response;
-      // Note: status is usually 206 Partial Content
-      if (!ok) {
-        throw new NetworkError(`GCS download request failed with status ${status}: ${statusText}`);
-      }
+      const { status, body, headers } = response;
 
       result = new Uint8Array(body);
 
