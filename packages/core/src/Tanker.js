@@ -189,8 +189,8 @@ export class Tanker extends EventEmitter {
     const status = await this.start(identityB64);
     switch (status) {
       case Tanker.statuses.IDENTITY_REGISTRATION_NEEDED: {
-        const genVerificationKey = await this.tanker.generateVerificationKey();
-        await this.tanker.registerIdentity({ verificationKey: genVerificationKey });
+        const genVerificationKey = await this.generateVerificationKey();
+        await this.registerIdentity({ verificationKey: genVerificationKey });
         return;
       }
       case Tanker.statuses.IDENTITY_VERIFICATION_NEEDED: {
