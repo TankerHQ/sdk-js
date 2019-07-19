@@ -1,8 +1,8 @@
 // @flow
-import TankerError from '../TankerError';
+import { TankerError } from '../TankerError';
 import { safePrintType, safePrintValue } from '../print';
 
-export default class InvalidArgument extends TankerError {
+export class InvalidArgument extends TankerError {
   constructor(name: string, expectedType?: string, value?: any) {
     let message: string;
     if (expectedType) {

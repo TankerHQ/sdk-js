@@ -478,6 +478,59 @@ const generateEncryptTests = (args: TestArgs) => {
       });
     });
   });
+
+  describe('binary file upload and download', () => {
+    if (!global.File) return; // skip Node.js
+
+    let aliceIdentity;
+    let aliceLaptop;
+    let bobIdentity;
+    let bobLaptop;
+    let bobPublicIdentity;
+
+    before(async () => {
+      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      aliceLaptop = args.makeTanker();
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
+      bobLaptop = args.makeTanker();
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+    });
+
+    after(async () => {
+      await aliceLaptop.stop();
+    });
+
+    sizes.forEach(size => {
+      if (size === 'big') return; // only test small and medium
+
+      it(`can upload and download a ${size} file`, async () => {
+        const { type: originalType, resource: clear } = args.resources[size][2];
+
+        const fileId = await aliceLaptop.upload(clear);
+
+        const decrypted = await aliceLaptop.download(fileId);
+
+        expectType(decrypted, originalType);
+        expectDeepEqual(decrypted, clear);
+      });
+    });
+
+    it('can download a shared file', async () => {
+      const { type: originalType, resource: clear } = args.resources.small[2];
+
+      const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity] });
+
+      const decrypted = await bobLaptop.download(fileId);
+
+      expectType(decrypted, originalType);
+      expectDeepEqual(decrypted, clear);
+    });
+  });
 };
 
 export default generateEncryptTests;

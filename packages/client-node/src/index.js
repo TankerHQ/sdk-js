@@ -100,6 +100,14 @@ class Tanker extends TankerCore {
     const source = castData(encryptedData, Uint8Array);
     return super.getResourceId(source);
   }
+
+  async upload(clearData: Data, options?: ShareWithOptions = {}): Promise<string> { // eslint-disable-line no-unused-vars
+    throw new errors.InternalError('Not available in Node.js yet');
+  }
+
+  async download<T: Data>(resourceId: string, options?: OutputOptions<T> = {}): Promise<T> { // eslint-disable-line no-unused-vars
+    throw new errors.InternalError('Not available in Node.js yet');
+  }
 }
 
 export type { b64string } from '@tanker/core';
