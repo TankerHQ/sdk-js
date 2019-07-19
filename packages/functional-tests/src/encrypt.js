@@ -310,6 +310,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
         const decrypted = await eveLaptop.decrypt(cipherText);
         expect(decrypted).to.equal(clearText);
+        await eveLaptop.stop();
       });
 
       it('throws when verifying provisional identity with wrong verification code', async () => {
@@ -349,6 +350,7 @@ const generateEncryptTests = (args: TestArgs) => {
         await alicePhone.verifyIdentity({ passphrase: 'passphrase' });
         const decrypted = await alicePhone.decrypt(cipherText);
         expect(decrypted).to.equal(clearText);
+        await alicePhone.stop();
       });
     });
   });
