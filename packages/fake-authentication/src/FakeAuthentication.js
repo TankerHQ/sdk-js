@@ -54,7 +54,7 @@ export default class FakeAuthentication {
     };
   }
 
-  async generateUserId(): string {
+  generateUserId(): string {
     return uuid.v4();
   }
 
