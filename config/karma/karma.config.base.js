@@ -20,7 +20,7 @@ module.exports = {
 
   // list of files / patterns to load in the browser
   files: [
-    { pattern: '**/src/__tests__/index.js', watched: true, included: true, served: true, nocache: false },
+    { pattern: '**/__tests__/index.js', watched: true, included: true, served: true, nocache: false },
   ],
 
   // list of files to exclude
@@ -29,10 +29,10 @@ module.exports = {
   // preprocess matching files before serving them to the browser
   // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
   preprocessors: {
-    '**/src/__tests__/index.js': ['webpack', 'sourcemap'],
+    '**/__tests__/index.js': ['webpack', 'sourcemap'],
   },
 
-  webpack: makeBaseConfig({ mode: 'production', target: 'web' }),
+  webpack: makeBaseConfig({ mode: 'production', target: 'web', react: true }),
 
   // test results reporter to use
   // possible values: 'dots', 'progress'

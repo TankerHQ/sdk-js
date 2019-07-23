@@ -3,7 +3,7 @@
   "private": true,
   "license": "Apache-2.0",
   "scripts": {
-    "build:all": "yarn build:crypto && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:streams && yarn build:identity && yarn build:core && yarn build:datastores && yarn build:client-browser && yarn build:client-node",
+    "build:all": "yarn build:crypto && yarn build:emails && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:streams && yarn build:identity && yarn build:core && yarn build:datastores && yarn build:client-browser && yarn build:client-node && yarn build:verification-ui",
     "build:client-browser-base": "rollup --config packages/client-browser/config/rollup.js",
     "build:client-browser-umd": "webpack --config packages/client-browser/config/webpack.config.js",
     "build:client-browser": "yarn build:client-browser-base && yarn build:client-browser-umd",
@@ -12,10 +12,16 @@
     "build:identity": "rollup --config packages/identity/config/rollup.js",
     "build:crypto": "rollup --config packages/crypto/config/rollup.js",
     "build:datastores": "rollup --config packages/datastore/config/rollup.js",
+    "start:emails": "cd packages/emails; yarn start",
+    "build:emails": "cd packages/emails; yarn build",
     "build:errors": "rollup --config packages/errors/config/rollup.js",
     "build:file-ponyfill": "rollup --config packages/file-ponyfill/config/rollup.js",
     "build:file-reader": "rollup --config packages/file-reader/config/rollup.js",
     "build:streams": "rollup --config packages/stream/config/rollup.js",
+    "build:verification-ui-base": "rollup --config packages/verification-ui/config/rollup.js",
+    "build:verification-ui-umd": "webpack --config packages/verification-ui/config/webpack.config.production.js",
+    "build:verification-ui": "yarn build:verification-ui-base && yarn build:verification-ui-umd",
+    "start:verification-ui": "webpack-dev-server -w --hot --config packages/verification-ui/config/webpack.config.development.js",
     "lint:js": "eslint \"packages/**/*.js\"",
     "lint:flow": "flow check",
     "test": "mocha \"packages/**/src/**/*.spec{,.node}.js\" --exit --require ./config/tests/babel.setup.js --recursive --full-trace --trace-warnings --reporter=spec",
@@ -33,6 +39,7 @@
     "debug:crypto": "karma start packages/crypto/config/karma.config.debug.js",
     "debug:errors": "karma start packages/errors/config/karma.config.debug.js",
     "debug:streams": "karma start packages/stream/config/karma.config.debug.js",
+    "debug:verification-ui": "karma start packages/verification-ui/config/karma.config.debug.js",
     "proof": "yarn lint:js && yarn lint:flow && yarn test",
     "coverage": "nyc --reporter=lcov --reporter=text-summary yarn test"
   },
@@ -42,6 +49,7 @@
     "@babel/plugin-transform-runtime": "7.5.0",
     "@babel/preset-env": "7.5.4",
     "@babel/preset-flow": "7.0.0",
+    "@babel/preset-react": "^7.0.0",
     "@babel/register": "7.4.4",
     "babel-eslint": "10.0.1",
     "babel-loader": "8.0.6",
@@ -80,7 +88,8 @@
     "rollup-plugin-local-resolve": "1.0.7",
     "sinon": "^4.5.0",
     "webpack": "^4.32.2",
-    "webpack-cli": "^3.3.2"
+    "webpack-cli": "^3.3.2",
+    "webpack-dev-server": "^3.7.2"
   },
   "workspaces": [
     "packages/*",

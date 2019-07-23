@@ -76,6 +76,7 @@ def deploy_sdk(env: str, git_tag: str) -> None:
         {"build": "core", "publish": ["@tanker/core"]},
         {"build": "client-browser", "publish": ["@tanker/client-browser"]},
         {"build": "client-node", "publish": ["@tanker/client-node"]},
+        {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
     ]
 
     for config in configs:
