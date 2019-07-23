@@ -3,7 +3,7 @@ import React from 'react';
 import { hot } from 'react-hot-loader';
 import { TransitionMotion, spring } from 'react-motion';
 import styled from 'styled-components';
-import fetch from 'fetch-ponyfill';
+import fetchPonyfill from 'fetch-ponyfill';
 
 import colors from './colors';
 import { type Context } from '../context/makeContextHolder';
@@ -85,6 +85,8 @@ const Panel = styled.div`
 const willEnter = () => ({ opacity: 0, x: 300 });
 const willLeave = () => ({ opacity: spring(0, { stiffness: 300, damping: 25 }), x: spring(-300) });
 const computeStyles = values => ({ opacity: values.opacity, transform: `translate3d(${values.x}px, 0, 0)` });
+
+const { fetch } = fetchPonyfill({ Promise });
 
 type Props = { context: Context, appId: string, url: string, email: string, check: string => Promise<void>, exit: () => void };
 export const Tanker = ({ context, appId, url, email, check, exit }: Props) => (
