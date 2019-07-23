@@ -1,4 +1,5 @@
 // @flow
-export { default as TankerError } from './TankerError';
-export { default as InvalidArgument } from './errors/InvalidArgument';
+export { TankerError } from './TankerError';
+export { InvalidArgument } from './errors/InvalidArgument';
+export { NetworkError } from './errors/NetworkError';
 export { getConstructorName, safePrintType, safePrintValue } from './print';
