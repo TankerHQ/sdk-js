@@ -530,6 +530,11 @@ const generateEncryptTests = (args: TestArgs) => {
       expectType(decrypted, originalType);
       expectDeepEqual(decrypted, clear);
     });
+
+    it('throws InvalidArgument if downloading a non existing file', async () => {
+      const nonExistingFileId = 'AAAAAAAAAAAAAAAAAAAAAA==';
+      await expect(aliceLaptop.download(nonExistingFileId)).to.be.rejectedWith(errors.InvalidArgument);
+    });
   });
 };
 

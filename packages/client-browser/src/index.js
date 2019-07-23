@@ -166,7 +166,16 @@ class Tanker extends TankerCore {
     const downloadChunkSize = 1024 * 1024;
     const downloader = new DownloadStream(url, downloadChunkSize);
 
-    const encryptedMetadata = await downloader.getMetadata();
+    let encryptedMetadata;
+    try {
+      encryptedMetadata = await downloader.getMetadata();
+    } catch (e) {
+      if (e instanceof errors.NetworkError && e.message.match(/404/)) {
+        throw new errors.InvalidArgument(`Could not find any uploaded file that matches the provided resourceId: ${resourceId}`);
+      }
+      throw e;
+    }
+
     const metadata = JSON.parse(await this.decrypt(fromBase64(encryptedMetadata)));
     const noInput = new Uint8Array(0); // when downloading there's no input available to define default output type
     const outputOptions = makeOutputOptions(noInput, { type: File, ...options, ...metadata });
