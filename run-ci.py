@@ -78,6 +78,7 @@ def deploy_sdk(env: str, git_tag: str) -> None:
         {"build": "client-browser", "publish": ["@tanker/client-browser"]},
         {"build": "client-node", "publish": ["@tanker/client-node"]},
         {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
+        {"build": "fake-authentication", "publish": ["@tanker/fake-authentication"]},
     ]
 
     for config in configs:
