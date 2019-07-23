@@ -1,8 +1,11 @@
 // @flow
+import { utils } from '@tanker/crypto';
 import { getPublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import uuid from 'uuid';
+
+import { TrustchainHelper, tankerUrl, idToken } from '../../../functional-tests/src/Helpers';
 
 import FakeAuthentication from '../FakeAuthentication';
 
@@ -17,12 +20,23 @@ const expectMatchingPublicIdentities = (identityA: string, identityB: string) =>
 );
 
 describe('FakeAuthentication', () => {
+  if (!tankerUrl || !idToken) {
+    // Those functional tests create a trustchain automatically and require a TANKER_TOKEN to run
+    // They also require a TANKER_URL to know to which trustchain server they should talk to
+    if (process.env.CI) {
+      throw new Error('Functional tests should be running, check the configuration');
+    }
+    console.log('skipping fake authentication tests'); // eslint-disable-line no-console
+    return;
+  }
+
   let fa;
 
-  before(() => {
-    // With trustchain private key: pPXe1C6qKFQwhh+er3N69nRt6797Rr2tPLglh2Qpfx4uCic14VMAmNukfs9CbBZ205Z0PrUHBk5RCNdYCwF13g==
-    const appId = 'qzORKAdxrYC/7mSeYTWsPMJkiyv1Vu61n5F/REvtUSk=';
-    fa = new FakeAuthentication({ appId, url: 'https://dev-fakeauth.tanker.io' });
+  before(async () => {
+    const trustchainHelper = await TrustchainHelper.newTrustchain();
+    const appId = utils.toBase64(trustchainHelper.trustchainId);
+    const url = tankerUrl.replace('api.', 'fakeauth.');
+    fa = new FakeAuthentication({ appId, url });
   });
 
   it('returns a disposable permanent identity without an email', async () => {

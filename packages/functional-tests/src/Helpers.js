@@ -127,6 +127,7 @@ export class TrustchainHelper {
       root_block: utils.toBase64(serializeBlock(rootBlock)),
       name: `functest-${uuid.v4()}`,
       is_test: true,
+      private_signature_key: utils.toBase64(trustchainKeyPair.privateKey),
     };
     const requester = await AuthenticatedRequester.open();
     await requester.send('create trustchain', message);
