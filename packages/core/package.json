@@ -19,7 +19,7 @@
     "test": "cd ../..; yarn test:core"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "7.5.4",
+    "@babel/runtime-corejs2": "^7.4.0",
     "@tanker/crypto": "0.0.1",
     "@tanker/datastore-base": "0.0.1",
     "@tanker/errors": "0.0.1",
@@ -35,7 +35,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chai-exclude": "^1.0.12",
-    "tmp": "^0.0.33",
+    "tmp": "^0.1.0",
     "uuid": "^3.3.2"
   }
 }
