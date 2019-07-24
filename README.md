@@ -51,8 +51,7 @@ Tanker is an open-source solution to protect sensitive data in any application, 
 
 Tanker **FileKit** is an end-to-end encrypted file storage service for apps.
 
-Tanker **FileKit** transfers and stores files in the cloud. The files are encrypted in the browser before being uploaded, and
-can be downloaded only by the owner and recipients, completely transparently.
+Tanker **FileKit** transfers and stores files in the cloud. The files are encrypted in the browser before being uploaded, and can only be downloaded by the owner and recipients, completely transparently.
 
 It wraps Tanker **Core** and Tanker **VerificationUI** in a single easy-to-use to use package.
 
@@ -151,10 +150,16 @@ Tanker **Fake Authentication** reduces the friction when starting new projects, 
 
 ## Browser support
 
-The JavaScript SDKs support and are heavily tested on:
+The Tanker JavaScript SDKs support the following platforms:
 
-* Chrome, Firefox, Safari, Edge, and Internet Explorer 11
+* Chrome, Firefox, Safari, Microsoft Edge, and Internet Explorer 11
 * Node.js 8+
+
+The Tanker JavaScript SDKs are constantly tested with all of the supported browsers via unit and functional tests.
+
+We use [BrowserStack](https://www.browserstack.com/) to automate testing on many browser & OS combinations.
+
+<img src="./src/public/browserstack.png" alt="BrowserStack logo">
 
 ## Other platforms
 
@@ -204,12 +209,6 @@ Before submitting your pull request, please make sure that your changes pass the
 For non-trivial changes, we highly recommend including extra tests.
 
 When you're ready, submit your [pull request](https://github.com/TankerHQ/sdk-js/pulls), targeting the `master` branch of this repository.
-
-### Credits
-
-At Tanker, we happily use [BrowserStack](https://www.browserstack.com/) to automate testing on many browsers.
-
-<img src="./src/public/browserstack.png" alt="BrowserStack logo">
 
 ## License
 

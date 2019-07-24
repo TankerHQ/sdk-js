@@ -64,7 +64,7 @@ await fileKit.startDisposableSession(privateIdentity);
 ```
 
 <aside class="note">
-Note that a privateIdentity is still required, it authorizes the FileKit client to use Tanker.
+Note that a private identity is required to start a disposable session too. It allows the FileKit client to use Tanker.
 </aside>
 
 ### Initializing in a production application
