@@ -21,13 +21,5 @@
   "dependencies": {
     "@babel/runtime-corejs2": "7.4.5",
     "fetch-ponyfill": "^6.1.0"
-  },
-  "devDependencies": {
-    "@tanker/crypto": "0.0.1",
-    "@tanker/identity": "0.0.1",
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
-    "chai-exclude": "^1.0.12",
-    "uuid": "^3.3.2"
   }
 }

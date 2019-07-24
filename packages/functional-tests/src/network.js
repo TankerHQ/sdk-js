@@ -73,7 +73,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
 };
 
 const generateNetworkTests = (args: TestArgs) => {
-  describe('Network issues', () => {
+  describe('network issues', () => {
     Object.keys(networkIssues).forEach(type => generateNetworkIssueTests(args, type));
   });
 };
