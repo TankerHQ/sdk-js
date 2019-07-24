@@ -1,19 +1,20 @@
 // @flow
 import Tanker from '@tanker/client-node';
-import { type TankerInterface, type b64string } from '@tanker/core';
 import PouchDBMemory from '@tanker/datastore-pouchdb-memory';
+
+import type { b64string } from '@tanker/core';
 
 import { tankerUrl, makePrefix, makeRandomUint8Array } from '../Helpers';
 import { generateFunctionalTests } from '../functional';
 import { type TestResources } from '../TestArgs';
 
-const makeTanker = (trustchainId: b64string): TankerInterface => {
-  const tanker: TankerInterface = (new Tanker({
+const makeTanker = (trustchainId: b64string): Tanker => {
+  const tanker = new Tanker({
     trustchainId,
     dataStore: { adapter: PouchDBMemory, prefix: makePrefix() },
     sdkType: 'test',
     url: tankerUrl,
-  }): any);
+  });
 
   return tanker;
 };

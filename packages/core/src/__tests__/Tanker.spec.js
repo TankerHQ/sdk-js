@@ -10,13 +10,21 @@ import { Tanker, optionsWithDefaults } from '..';
 import { InvalidArgument, PreconditionFailed } from '../errors';
 
 import { type EmailVerification, type RemoteVerification, statuses } from '../Session/types';
-import { type ShareWithOptions, assertShareWithOptions } from '../DataProtection/ShareWithOptions';
+import { type ShareWithOptions, assertShareWithOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
   let trustchainId;
   let userId;
   let badVerifications;
+
+  const makeTestTankerOptions = () => ({
+    trustchainId: utils.toBase64(trustchainId),
+    socket: ({}: any),
+    dataStore: { ...dataStoreConfig, prefix: makePrefix() },
+    sdkType: 'test',
+    streams: ({}: any),
+  });
 
   before(() => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
@@ -68,16 +76,16 @@ describe('Tanker', () => {
         expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
       });
 
-      expect(() => new Tanker({ trustchainId: 'ok', dataStore: { ...dataStoreConfig, prefix: makePrefix() }, sdkType: 'test' })).not.to.throw();
+      expect(() => new Tanker(makeTestTankerOptions())).not.to.throw();
     });
 
     it('tanker options should accept defaults', () => {
       const { adapter } = dataStoreConfig;
       const options = { trustchainId: 'id' };
-      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter } };
+      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: ({}: any) };
       const mergedOptions = optionsWithDefaults(options, defaultOptions);
       expect(mergedOptions).to.deep.equal({
-        trustchainId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }
+        trustchainId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: {}
       });
     });
 
@@ -86,13 +94,13 @@ describe('Tanker', () => {
 
       const defaultPrefix = makePrefix();
       const defaultDatastore = { adapter, prefix: defaultPrefix };
-      const defaultOptions = { trustchainId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore };
+      const defaultOptions = { trustchainId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore, streams: ({}: any) };
 
       const newPrefix = makePrefix();
       const newOptions = { trustchainId: 'new', url: 'http://new.io', dataStore: { adapter, prefix: newPrefix } };
 
       const expectedDatastore = { adapter, prefix: newPrefix };
-      const expectedOptions = { trustchainId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore };
+      const expectedOptions = { trustchainId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore, streams: {} };
 
       const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
       expect(mergedOptions).to.deep.equal(expectedOptions);
@@ -116,12 +124,7 @@ describe('Tanker', () => {
     let options;
 
     beforeEach(async () => {
-      options = {
-        trustchainId: utils.toBase64(trustchainId),
-        socket: ({}: any),
-        dataStore: { ...dataStoreConfig, prefix: makePrefix() },
-        sdkType: 'test'
-      };
+      options = makeTestTankerOptions();
       tanker = new Tanker(options);
     });
 
@@ -184,12 +187,7 @@ describe('Tanker', () => {
     let tanker;
 
     before(() => {
-      tanker = new Tanker({
-        trustchainId: utils.toBase64(trustchainId),
-        socket: {},
-        dataStore: { ...dataStoreConfig, prefix: makePrefix() },
-        sdkType: 'test'
-      });
+      tanker = new Tanker(makeTestTankerOptions());
     });
 
     beforeEach(() => {

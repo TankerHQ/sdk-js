@@ -27,9 +27,6 @@
     "@babel/runtime-corejs2": "^7.4.0",
     "@tanker/core": "0.0.1",
     "@tanker/datastore-dexie-browser": "0.0.1",
-    "@tanker/file-ponyfill": "0.0.1",
-    "@tanker/file-reader": "0.0.1",
-    "@tanker/stream-browser": "0.0.1",
-    "@tanker/stream-cloud-storage": "0.0.1"
+    "@tanker/stream-browser": "0.0.1"
   }
 }

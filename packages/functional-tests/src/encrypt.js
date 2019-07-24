@@ -481,8 +481,6 @@ const generateEncryptTests = (args: TestArgs) => {
   });
 
   describe('binary file upload and download', () => {
-    if (!global.File) return; // skip Node.js
-
     let aliceIdentity;
     let aliceLaptop;
     let bobIdentity;
