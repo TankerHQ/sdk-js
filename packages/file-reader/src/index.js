@@ -1,2 +1,5 @@
 // @flow
-export { default } from './FileReader';
+import FileReader from './FileReader';
+
+export { FileReader };
+export default FileReader;

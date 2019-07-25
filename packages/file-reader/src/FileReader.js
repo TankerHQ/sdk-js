@@ -1,18 +1,31 @@
 // @flow
 
-// $FlowIKnow cross-browser compat
-const blobSlice: Function = Blob.prototype.slice || Blob.prototype.mozSlice || Blob.prototype.webkitSlice;
+/* eslint-disable */
+const __global = (() => {
+  if (typeof window !== 'undefined')
+    return window;
 
-export default class FileReader {
+  if (typeof WorkerGlobalScope !== 'undefined')
+    return self;
+
+  if (typeof global !== 'undefined')
+    return global;
+
+  // $FlowIKnow Unorthodox call of Function
+  return Function('return this;')();
+})();
+/* eslint-enable */
+
+class FileReader {
   _source: Blob;
-  _reader: window.FileReader;
-  _readPositions: {| start: number, end: number |} = { start: 0, end: 0 };
-  _currentRead: ?{| resolve: Function, reject: Function |};
+  _reader: __global.FileReader;
+  _readPositions: $Exact<{ start: number, end: number }> = { start: 0, end: 0 };
+  _currentRead: ?$Exact<{ resolve: Function, reject: Function }>;
 
   constructor(source: Blob | File) {
     this._source = source;
 
-    this._reader = new window.FileReader();
+    this._reader = new __global.FileReader();
     this._reader.addEventListener('load', this._onLoad.bind(this));
     this._reader.addEventListener('error', this._onError.bind(this));
     this._reader.addEventListener('abort', this._onError.bind(this));
@@ -72,9 +85,14 @@ export default class FileReader {
 
     this._readPositions = { start, end };
 
+    // $FlowIKnow cross-browser compat
+    const blobSlice = Blob.prototype.slice || Blob.prototype.mozSlice || Blob.prototype.webkitSlice;
+
     return new Promise((resolve, reject) => {
       this._currentRead = { resolve, reject };
       this._reader.readAsArrayBuffer(blobSlice.call(this._source, start, end));
     });
   }
 }
+
+export default FileReader;
