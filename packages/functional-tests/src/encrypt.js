@@ -402,8 +402,9 @@ const generateEncryptTests = (args: TestArgs) => {
     });
   });
 
-  // In Edge and IE11, accessing the webkitRelativePath property (though defined) triggers
-  // a TypeError: Invalid calling object. We avoid this by comparing only useful props.
+  // In Edge and IE11, accessing the webkitRelativePath property on File instances triggers
+  // a "TypeError: Invalid calling object", although the property exists. We avoid this error
+  // by comparing only a subset of useful File properties:
   const fileProps = (obj: Object) => {
     const { name, size, type, lastModified } = obj;
     return { name, size, type, lastModified };
