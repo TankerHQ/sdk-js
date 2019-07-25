@@ -35,7 +35,7 @@ const DeviceVerified = ({ exit }: { exit: () => void }) => (
     <BigCheck width={30} color={colors.green} />
     <Title>You’re all set.</Title>
     <Text>Your email has been verified.</Text>
-    <Done blue round type="button" onClick={exit}>
+    <Done blue round type="button" onClick={exit} id="tanker-verification-ui-done-button">
       Done
     </Done>
   </>
