@@ -19,7 +19,7 @@
     "test": "cd ../..; yarn test:errors"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "7.5.4"
+    "@babel/runtime-corejs2": "^7.4.0"
   },
   "devDependencies": {
     "chai": "^4.2.0"

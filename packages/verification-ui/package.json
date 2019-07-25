@@ -28,7 +28,7 @@
     "styled-components": "^4.0.0"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "7.4.5",
+    "@babel/runtime-corejs2": "^7.4.0",
     "dumb-reducer": "^2.0.2",
     "fetch-ponyfill": "^6.1.0",
     "polished": "^3.4.1",
