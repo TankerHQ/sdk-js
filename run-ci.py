@@ -11,7 +11,7 @@ from path import Path
 
 def check(*, runner: str, env: str, nightly: bool) -> None:
     ci.js.yarn_install_deps()
-    if runner == "linux":
+    if runner == "linux" and not nightly:
         ci.js.run_linters()
         ci.js.run_tests_in_node(env=env)
 
