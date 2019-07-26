@@ -10,9 +10,9 @@ export class VerificationUI {
   _container: Element;
 
   constructor(tanker: Tanker) {
-    this._container = global.document.createElement('div');
+    this._container = window.document.createElement('div');
     this._container.className = 'tanker-verification-ui';
-    global.document.body.appendChild(this._container);
+    window.document.body.appendChild(this._container);
 
     this._tanker = tanker;
   }
