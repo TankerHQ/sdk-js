@@ -2,7 +2,7 @@
 import { NetworkError } from '@tanker/errors';
 import { Readable } from '@tanker/stream-base';
 
-import { simpleFetch } from '../simpleFetch';
+import { fetch } from '../fetch';
 import { retry } from '../retry';
 
 export class DownloadStream extends Readable {
@@ -31,17 +31,14 @@ export class DownloadStream extends Readable {
   }
 
   async getMetadata() {
-    const response = await simpleFetch(this._url, {
-      method: 'HEAD',
-      responseType: 'text',
-    });
+    const response = await fetch(this._url, { method: 'HEAD' });
 
     const { ok, status, statusText, headers } = response;
     if (!ok) {
       throw new NetworkError(`GCS metadata head request failed with status ${status}: ${statusText}`);
     }
 
-    const metadata = headers['x-goog-meta-tanker-metadata'];
+    const metadata = headers.get('x-goog-meta-tanker-metadata');
     return metadata;
   }
 
@@ -57,10 +54,9 @@ export class DownloadStream extends Readable {
       const response = await retry(async () => {
         this.log(`downloading chunk of size ${this._chunkSize} with header "Range: ${rangeHeader}"`);
 
-        const resp = await simpleFetch(this._url, {
+        const resp = await fetch(this._url, {
           method: 'GET',
           headers: { Range: rangeHeader },
-          responseType: 'arraybuffer',
         });
 
         const { ok, status, statusText } = resp;
@@ -74,14 +70,15 @@ export class DownloadStream extends Readable {
         retries: 2,
       });
 
-      const { status, body, headers } = response;
+      const { status, headers } = response;
+      const body = await response.arrayBuffer();
 
       result = new Uint8Array(body);
 
       if (!this._totalLength) {
         // Partial content: file is incomplete (i.e. bigger than chunkSize)
         if (status === 206) {
-          const header = headers['content-range']; // e.g. "bytes 786432-1048575/1048698"
+          const header = headers.get('content-range'); // e.g. "bytes 786432-1048575/1048698"
 
           if (typeof header !== 'string' || !header.match(/^bytes +\d+-\d+\/\d+$/)) {
             throw new NetworkError(`GCS answered with status 206 but an invalid content-range header: ${header}`);
