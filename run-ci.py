@@ -11,7 +11,7 @@ from path import Path
 
 def check(*, runner: str, env: str, nightly: bool) -> None:
     ci.js.yarn_install_deps()
-    if runner == "linux":
+    if runner == "linux" and not nightly:
         ci.js.run_linters()
         ci.js.run_tests_in_node(env=env)
 
@@ -84,7 +84,7 @@ def deploy_sdk(env: str, git_tag: str) -> None:
             ci.js.publish_npm_package(package_name, version)
 
 
-def main() -> None:
+def _main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
 
@@ -123,6 +123,16 @@ def main() -> None:
     else:
         parser.print_help()
         sys.exit(1)
+
+
+def main():
+    # hide backtrace when tests fail
+    try:
+        _main()
+    except ci.js.TestFailed:
+        sys.exit(1)
+    except Exception:
+        raise
 
 
 if __name__ == "__main__":
