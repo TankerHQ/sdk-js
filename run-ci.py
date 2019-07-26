@@ -84,7 +84,7 @@ def deploy_sdk(env: str, git_tag: str) -> None:
             ci.js.publish_npm_package(package_name, version)
 
 
-def main() -> None:
+def _main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
 
@@ -123,6 +123,16 @@ def main() -> None:
     else:
         parser.print_help()
         sys.exit(1)
+
+
+def main():
+    # hide backtrace when tests fail
+    try:
+        _main()
+    except ci.js.TestFailed:
+        sys.exit(1)
+    except Exception:
+        raise
 
 
 if __name__ == "__main__":
