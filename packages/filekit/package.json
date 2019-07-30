@@ -1,0 +1,47 @@
+{
+  "name": "@tanker/filekit",
+  "version": "0.0.1",
+  "description": "Tanker FileKit SDK",
+  "author": "Tanker Team",
+  "license": "Apache-2.0",
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "scripts": {
+    "test": "cd ../..; yarn test:filekit"
+  },
+  "homepage": "https://tanker.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TankerHQ/sdk-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TankerHQ/sdk-js/issues"
+  },
+  "keywords": [
+    "tanker",
+    "encryption",
+    "end-to-end",
+    "sdk",
+    "cryptography",
+    "privacy",
+    "client-side",
+    "security",
+    "upload",
+    "download",
+    "file",
+    "storage",
+    "cloud"
+  ],
+  "dependencies": {
+    "@babel/runtime-corejs2": "^7.4.0",
+    "@tanker/client-browser": "0.0.1",
+    "@tanker/verification-ui": "0.0.1",
+    "file-saver": "^2.0.2"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "chai-exclude": "^1.0.12"
+  }
+}

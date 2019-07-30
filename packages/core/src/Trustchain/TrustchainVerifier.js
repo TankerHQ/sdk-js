@@ -74,7 +74,7 @@ export default class TrustchainVerifier {
       if (!author || author.revokedAt < entry.index)
         return result;
 
-      result.set(utils.toBase64(entry.hash), author); // eslint-disable-line no-param-reassign, bogus-lints-in-reduce
+      result.set(utils.toBase64(entry.hash), author); // eslint-disable-line no-param-reassign
       return result;
     }, new Map());
   }

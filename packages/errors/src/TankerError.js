@@ -1,5 +1,5 @@
 // @flow
-export default class TankerError extends Error {
+export class TankerError extends Error {
   constructor(name: string = 'TankerError', message?: string) {
     super(message);
     this.name = name;

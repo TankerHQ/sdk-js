@@ -16,7 +16,7 @@
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
-    "@babel/runtime-corejs2": "7.5.4",
+    "@babel/runtime-corejs2": "^7.4.0",
     "@tanker/crypto": "0.0.1"
   },
   "devDependencies": {

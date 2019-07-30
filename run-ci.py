@@ -61,6 +61,7 @@ def deploy_sdk(env: str, git_tag: str) -> None:
                 "@tanker/stream-base",
                 "@tanker/stream-browser",
                 "@tanker/stream-node",
+                "@tanker/stream-cloud-storage",
             ],
         },
         {
@@ -76,6 +77,9 @@ def deploy_sdk(env: str, git_tag: str) -> None:
         {"build": "core", "publish": ["@tanker/core"]},
         {"build": "client-browser", "publish": ["@tanker/client-browser"]},
         {"build": "client-node", "publish": ["@tanker/client-node"]},
+        {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
+        {"build": "fake-authentication", "publish": ["@tanker/fake-authentication"]},
+        {"build": "filekit", "publish": ["@tanker/filekit"]},
     ]
 
     for config in configs:

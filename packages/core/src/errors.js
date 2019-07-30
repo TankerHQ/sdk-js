@@ -3,7 +3,7 @@ import { utils, type b64string } from '@tanker/crypto';
 import { TankerError } from '@tanker/errors';
 
 // Re-expose these common error classes:
-export { TankerError, InvalidArgument } from '@tanker/errors';
+export { TankerError, InvalidArgument, NetworkError } from '@tanker/errors';
 
 export class DecryptionFailed extends TankerError {
   b64ResourceId: ?b64string;
@@ -57,12 +57,6 @@ export class InvalidVerification extends TankerError {
 export class OperationCanceled extends TankerError {
   constructor(message: string = 'Operation canceled') {
     super('OperationCanceled', message);
-  }
-}
-
-export class NetworkError extends TankerError {
-  constructor(message: string = 'Network error') {
-    super('NetworkError', message);
   }
 }
 

@@ -1,8 +1,9 @@
 // @flow
 import type { TankerOptions, ShareWithOptions, b64string } from '@tanker/core';
-import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, assertShareWithOptions } from '@tanker/core';
-import { MergerStream, SlicerStream } from '@tanker/stream-browser';
+import { Tanker as TankerCore, errors, statuses, optionsWithDefaults, getEncryptionFormat, fromString, toString, fromBase64, toBase64, assertShareWithOptions } from '@tanker/core';
 import Dexie from '@tanker/datastore-dexie-browser';
+import { MergerStream, SlicerStream } from '@tanker/stream-browser';
+import cloudStorage from '@tanker/stream-cloud-storage';
 
 import { assertDataType, getDataLength, castData, type Data } from './dataHelpers';
 import { makeOutputOptions, type OutputOptions } from './outputOptions';
@@ -104,9 +105,92 @@ class Tanker extends TankerCore {
     const source = await castData(encryptedData, { type: Uint8Array }, MAX_SIMPLE_RESOURCE_SIZE);
     return super.getResourceId(source);
   }
+
+  async upload(clearData: Data, options?: ShareWithOptions = {}): Promise<string> {
+    this.assert(READY, 'upload a file');
+    assertDataType(clearData, 'clearData');
+    assertShareWithOptions(options, 'options');
+
+    const encryptor = await this._session.apis.dataProtector.makeEncryptorStream(options);
+
+    const { clearChunkSize, encryptedChunkSize, overheadPerChunk, resourceId } = encryptor;
+    const totalClearSize = getDataLength(clearData);
+    const lastClearChunkSize = totalClearSize % clearChunkSize;
+    const totalEncryptedSize = Math.floor(totalClearSize / clearChunkSize) * encryptedChunkSize + lastClearChunkSize + overheadPerChunk;
+
+    const { url, headers, service } = await this._session._client.send('get file upload url', { // eslint-disable-line no-underscore-dangle
+      resource_id: resourceId,
+      upload_content_length: totalEncryptedSize,
+    });
+
+    if (!cloudStorage[service])
+      throw new errors.InternalError(`unsupported cloud storage service: ${service}`);
+
+    const { UploadStream } = cloudStorage[service];
+
+    let metadata = {};
+
+    if (global.File && clearData instanceof global.File) {
+      metadata = {
+        mime: clearData.type,
+        name: clearData.name,
+        lastModified: clearData.lastModified,
+      };
+    }
+
+    const encryptedMetadata = toBase64(await this.encrypt(JSON.stringify(metadata), { ...options, type: Uint8Array }));
+
+    const slicer = new SlicerStream({ source: clearData });
+    const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata);
+
+    await new Promise((resolve, reject) => {
+      [slicer, encryptor, uploader].forEach(s => s.on('error', reject));
+      slicer.pipe(encryptor).pipe(uploader).on('finish', resolve);
+    });
+
+    return resourceId;
+  }
+
+  async download<T: Data>(resourceId: string, options?: OutputOptions<T> = {}): Promise<T> {
+    this.assert(READY, 'download a file');
+
+    const { url, service } = await this._session._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
+      resource_id: resourceId,
+    });
+
+    if (!cloudStorage[service])
+      throw new errors.InternalError(`unsupported cloud storage service: ${service}`);
+
+    const { DownloadStream } = cloudStorage[service];
+
+    const downloadChunkSize = 1024 * 1024;
+    const downloader = new DownloadStream(url, downloadChunkSize);
+
+    let encryptedMetadata;
+    try {
+      encryptedMetadata = await downloader.getMetadata();
+    } catch (e) {
+      if (e instanceof errors.NetworkError && e.message.match(/404/)) {
+        throw new errors.InvalidArgument(`Could not find any uploaded file that matches the provided resourceId: ${resourceId}`);
+      }
+      throw e;
+    }
+
+    const metadata = JSON.parse(await this.decrypt(fromBase64(encryptedMetadata)));
+    const noInput = new Uint8Array(0); // when downloading there's no input available to define default output type
+    const outputOptions = makeOutputOptions(noInput, { type: File, ...options, ...metadata });
+    const merger = new MergerStream(outputOptions);
+
+    const decryptor = await this._session.apis.dataProtector.makeDecryptorStream();
+
+    return new Promise((resolve, reject) => {
+      [downloader, decryptor, merger].forEach(s => s.on('error', reject));
+      downloader.pipe(decryptor).pipe(merger).on('data', resolve);
+    });
+  }
 }
 
-export type { b64string } from '@tanker/core';
+export type { b64string, EmailVerification, PassphraseVerification, KeyVerification, Verification, TankerOptions } from '@tanker/core';
 export { errors, fromBase64, toBase64 } from '@tanker/core';
 export { Tanker };
 export default Tanker;

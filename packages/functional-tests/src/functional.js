@@ -13,6 +13,7 @@ import generateGroupsTests from './groups';
 import generateStartTests from './start';
 import generateRevocationTests from './revocation';
 import generateVerificationTests from './verification';
+import generateFakeAuthenticationTests from './fake-authentication';
 
 import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
 
@@ -63,5 +64,6 @@ export function generateFunctionalTests(
     generateRevocationTests(args);
     generateVerificationTests(args);
     generateNetworkTests(args);
+    generateFakeAuthenticationTests(args);
   });
 }
