@@ -1,5 +1,5 @@
 // @flow
-import { NetworkError } from '@tanker/errors';
+import { InvalidArgument, NetworkError } from '@tanker/errors';
 import { Readable } from '@tanker/stream-base';
 
 import { fetch } from '../fetch';
@@ -8,17 +8,19 @@ import { retry } from '../retry';
 export class DownloadStream extends Readable {
   _chunkSize: number;
   _downloadedLength: number;
+  _resourceId: string;
   _totalLength: number;
   _url: string;
   _verbose: bool;
 
-  constructor(url: string, chunkSize: number, verbose: bool = false) {
+  constructor(resourceId: string, url: string, chunkSize: number, verbose: bool = false) {
     super({
       objectMode: true
     });
 
     this._downloadedLength = 0;
     this._chunkSize = chunkSize;
+    this._resourceId = resourceId;
     this._totalLength = 0;
     this._url = url;
     this._verbose = verbose;
@@ -35,7 +37,11 @@ export class DownloadStream extends Readable {
 
     const { ok, status, statusText, headers } = response;
     if (!ok) {
-      throw new NetworkError(`GCS metadata head request failed with status ${status}: ${statusText}`);
+      if (status === 404) {
+        throw new InvalidArgument(`Could not find any uploaded file that matches the provided resourceId: ${this._resourceId}`);
+      } else {
+        throw new NetworkError(`GCS metadata head request failed with status ${status}: ${statusText}`);
+      }
     }
 
     const metadata = headers.get('x-goog-meta-tanker-metadata');

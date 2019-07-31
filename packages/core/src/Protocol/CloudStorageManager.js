@@ -4,7 +4,7 @@ import streamCloudStorage from '@tanker/stream-cloud-storage';
 import { getDataLength } from '@tanker/types';
 import type { Data } from '@tanker/types';
 
-import { InternalError, InvalidArgument, NetworkError } from '../errors';
+import { InternalError } from '../errors';
 import type { Client } from '../Network/Client';
 import type { DataProtector, Streams } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOptions } from '../DataProtection/options';
@@ -82,18 +82,9 @@ export class CloudStorageManager {
     const { DownloadStream } = streamCloudStorage[service];
 
     const downloadChunkSize = 1024 * 1024;
-    const downloader = new DownloadStream(url, downloadChunkSize);
+    const downloader = new DownloadStream(resourceId, url, downloadChunkSize);
 
-    let encryptedMetadata;
-    try {
-      encryptedMetadata = await downloader.getMetadata();
-    } catch (e) {
-      if (e instanceof NetworkError && e.message.match(/404/)) {
-        throw new InvalidArgument(`Could not find any uploaded file that matches the provided resourceId: ${resourceId}`);
-      }
-      throw e;
-    }
-
+    const encryptedMetadata = await downloader.getMetadata();
     const metadata = await this._decryptMetadata(encryptedMetadata);
     const { outputOptions } = extractOptions({ type: defaultDownloadType, ...options, ...metadata });
     const merger = new this._streams.MergerStream(outputOptions);
