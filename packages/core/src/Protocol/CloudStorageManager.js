@@ -10,6 +10,16 @@ import type { DataProtector, Streams } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOptions } from '../DataProtection/options';
 import type { OutputOptions, ShareWithOptions } from '../DataProtection/options';
 
+const pipeStreams = (
+  { streams, resolveEvent }: { streams: Array<$Values<Streams>>, resolveEvent: string }
+) => new Promise((resolve, reject) => {
+  streams.forEach(stream => stream.on('error', reject));
+  streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
+});
+
+// Detection of: Edge | Edge iOS | Edge Android | Edge (Chromium-based)
+const isEdge = () => /(edge|edgios|edga|edg)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
+
 export class CloudStorageManager {
   _client: Client;
   _dataProtector: DataProtector;
@@ -63,10 +73,20 @@ export class CloudStorageManager {
     const slicer = new this._streams.SlicerStream({ source: clearData });
     const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata);
 
-    await new Promise((resolve, reject) => {
-      [slicer, encryptor, uploader].forEach(s => s.on('error', reject));
-      slicer.pipe(encryptor).pipe(uploader).on('finish', resolve);
-    });
+    let streams;
+
+    // Some version of Edge (e.g. version 18) fail to handle the 308 HTTP status used by
+    // GCS in a non-standard way (no redirection expected) when uploading in chunks. So we
+    // add a merger stream before the uploader to ensure there's a single upload request
+    // returning the 200 HTTP status.
+    if (service === 'GCS' && isEdge()) {
+      const merger = new this._streams.MergerStream({ type: Uint8Array });
+      streams = [slicer, encryptor, merger, uploader];
+    } else {
+      streams = [slicer, encryptor, uploader];
+    }
+
+    await pipeStreams({ streams, resolveEvent: 'finish' });
 
     return resourceId;
   }
@@ -91,10 +111,7 @@ export class CloudStorageManager {
 
     const decryptor = await this._dataProtector.makeDecryptorStream();
 
-    return new Promise((resolve, reject) => {
-      [downloader, decryptor, merger].forEach(s => s.on('error', reject));
-      downloader.pipe(decryptor).pipe(merger).on('data', resolve);
-    });
+    return pipeStreams({ streams: [downloader, decryptor, merger], resolveEvent: 'data' });
   }
 }
 
