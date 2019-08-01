@@ -1,6 +1,6 @@
 // @flow
 import { utils } from '@tanker/crypto';
-import type { TankerInterface, b64string } from '@tanker/core';
+import type { Tanker, b64string } from '@tanker/core';
 
 import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
 import type { TestArgs, TestResources } from './TestArgs';
@@ -19,7 +19,7 @@ import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
 
 export function generateFunctionalTests(
   name: string,
-  makeTanker: (trustchainId: b64string) => TankerInterface,
+  makeTanker: (trustchainId: b64string) => Tanker,
   generateTestResources: () => TestResources,
 ) {
   if (!tankerUrl || !idToken) {

@@ -2,7 +2,7 @@
 import uuid from 'uuid';
 import Socket from 'socket.io-client';
 
-import type { TankerInterface, b64string } from '@tanker/core';
+import type { Tanker, b64string } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
@@ -73,7 +73,7 @@ class AuthenticatedRequester {
   }
 }
 
-export async function syncTankers(...tankers: Array<TankerInterface>): Promise<void> {
+export async function syncTankers(...tankers: Array<Tanker>): Promise<void> {
   await Promise.all(tankers.map(t => t._session._trustchain && t._session._trustchain.ready())); // eslint-disable-line no-underscore-dangle
 }
 

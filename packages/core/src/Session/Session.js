@@ -4,6 +4,7 @@ import EventEmitter from 'events';
 import Trustchain from '../Trustchain/Trustchain';
 import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
+import type { Streams } from '../DataProtection/DataProtector';
 import { Client, type ClientOptions } from '../Network/Client';
 import { InternalError, InvalidVerification, OperationCanceled, TankerError, NetworkError } from '../errors';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
@@ -26,7 +27,7 @@ export class Session extends EventEmitter {
 
   apis: Apis;
 
-  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client, status: Status) {
+  constructor(localUser: LocalUser, storage: Storage, streams: Streams, trustchain: Trustchain, client: Client, status: Status) {
     super();
 
     this.storage = storage;
@@ -37,14 +38,14 @@ export class Session extends EventEmitter {
 
     localUser.on('device_revoked', () => this.emit('device_revoked'));
     client.on('authentication_failed', (e) => this.authenticationError(e));
-    this.apis = new Apis(localUser, storage, trustchain, client);
+    this.apis = new Apis(localUser, storage, streams, trustchain, client);
   }
 
   get status(): Status {
     return this._status;
   }
 
-  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
+  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions, streams: Streams) => {
     const client = new Client(userData.trustchainId, clientOptions);
     client.open().catch((e) => {
       if (!(e instanceof OperationCanceled) && !(e instanceof NetworkError)) {
@@ -68,21 +69,21 @@ export class Session extends EventEmitter {
       const { deviceExists, userExists } = await client.remoteStatus(localUser.trustchainId, localUser.userId, localUser.publicSignatureKey);
 
       if (!userExists) {
-        return new Session(localUser, storage, trustchain, client, statuses.IDENTITY_REGISTRATION_NEEDED);
+        return new Session(localUser, storage, streams, trustchain, client, statuses.IDENTITY_REGISTRATION_NEEDED);
       }
 
       if (!deviceExists) {
-        return new Session(localUser, storage, trustchain, client, statuses.IDENTITY_VERIFICATION_NEEDED);
+        return new Session(localUser, storage, streams, trustchain, client, statuses.IDENTITY_VERIFICATION_NEEDED);
       }
 
       // Device registered on the trustchain, but device creation block not pulled yet...
       // Wait for the pull to catch missing blocks.
-      const session = new Session(localUser, storage, trustchain, client, statuses.STOPPED);
+      const session = new Session(localUser, storage, streams, trustchain, client, statuses.STOPPED);
       await session.authenticate();
       return session;
     }
 
-    const session = new Session(localUser, storage, trustchain, client, statuses.READY);
+    const session = new Session(localUser, storage, streams, trustchain, client, statuses.READY);
 
     session.authenticate().catch((e) => session.authenticationError(e));
     return session;

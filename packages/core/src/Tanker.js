@@ -1,6 +1,8 @@
 // @flow
 
 import { utils, type b64string } from '@tanker/crypto';
+import { assertDataType, castData } from '@tanker/types';
+import type { Data } from '@tanker/types';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
 import EventEmitter from 'events';
 
@@ -13,11 +15,23 @@ import { statusDefs, statuses, type Status, type Verification, type EmailVerific
 
 import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
-import { type ShareWithOptions, assertShareWithOptions, isShareWithOptionsEmpty } from './DataProtection/ShareWithOptions';
+import type { OutputOptions, ShareWithOptions } from './DataProtection/options';
+import { assertShareWithOptions, extractOptions, isShareWithOptionsEmpty } from './DataProtection/options';
+import type { Streams } from './DataProtection/DataProtector';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 
 import { TANKER_SDK_VERSION } from './version';
+
+// The maximum byte size of a resource encrypted with the "simple" algorithms
+// (different from v4) is obtained by summing the sizes of:
+//  - the version: 1 byte (varint < 128)
+//  - the MAC: 16 bytes
+//  - the IV: 24 bytes
+//  - the data: 5 megabytes (libsodium's hard limit)
+//
+// By reading an input up to this size, we're sure to be able to extract the resource ID.
+const SAFE_RESOURCE_ID_EXTRACTION = 1 + 16 + 24 + 5 * (1024 * 1024);
 
 type TankerDefaultOptions = $Exact<{
   trustchainId?: b64string,
@@ -25,6 +39,7 @@ type TankerDefaultOptions = $Exact<{
   url?: string,
   dataStore: DataStoreOptions,
   sdkType: string,
+  streams: Streams,
 }>;
 
 type TankerCoreOptions = $Exact<{
@@ -33,6 +48,7 @@ type TankerCoreOptions = $Exact<{
   url?: string,
   dataStore: DataStoreOptions,
   sdkType: string,
+  streams: Streams,
 }>;
 
 export type TankerOptions = $Exact<{
@@ -64,6 +80,7 @@ export class Tanker extends EventEmitter {
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
+  _streams: Streams;
 
   static version = TANKER_SDK_VERSION;
   static statuses = statuses;
@@ -89,6 +106,8 @@ export class Tanker extends EventEmitter {
     }
 
     this._options = options;
+
+    this._streams = options.streams;
 
     const clientOptions: ClientOptions = {
       sdkInfo: {
@@ -179,7 +198,7 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.STOPPED, 'start a session');
     const userData = this._parseIdentity(identityB64);
 
-    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
+    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions, this._streams);
     this._setSession(session);
     return this.status;
   }
@@ -275,33 +294,33 @@ export class Tanker extends EventEmitter {
     return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
   }
 
-  async share(resourceIds: Array<b64string>, shareOptions: ShareWithOptions): Promise<void> {
+  async share(resourceIds: Array<b64string>, sharingOptions: ShareWithOptions): Promise<void> {
     this.assert(statuses.READY, 'share');
 
     if (!(resourceIds instanceof Array))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    assertShareWithOptions(shareOptions, 'shareOptions');
+    assertShareWithOptions(sharingOptions, 'sharingOptions');
 
-    if (isShareWithOptionsEmpty(shareOptions)) {
+    if (isShareWithOptionsEmpty(sharingOptions)) {
       throw new InvalidArgument(
-        'shareOptions.shareWith*',
-        'shareOptions.shareWithUsers or shareOptions.shareWithGroups must contain recipients',
-        shareOptions
+        'sharingOptions.shareWith*',
+        'sharingOptions.shareWithUsers or sharingOptions.shareWithGroups must contain recipients',
+        sharingOptions
       );
     }
 
-    return this._session.apis.dataProtector.share(resourceIds, shareOptions);
+    return this._session.apis.dataProtector.share(resourceIds, sharingOptions);
   }
 
   async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
     this.assert(statuses.READY, 'get a resource id');
+    assertDataType(encryptedData, 'encryptedData');
 
-    if (!(encryptedData instanceof Uint8Array))
-      throw new InvalidArgument('encryptedData', 'Uint8Array', encryptedData);
+    const source = await castData(encryptedData, { type: Uint8Array }, SAFE_RESOURCE_ID_EXTRACTION);
 
     try {
-      return utils.toBase64(syncGetResourceId(encryptedData));
+      return utils.toBase64(syncGetResourceId(source));
     } catch (e) {
       if (e instanceof DecryptionFailed) {
         throw new InvalidArgument('"encryptedData" is corrupted');
@@ -352,6 +371,51 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.READY, 'make a stream decryptor');
 
     return this._session.apis.dataProtector.makeDecryptorStream();
+  }
+
+  async encryptData<T: Data>(clearData: Data, options?: $Shape<ShareWithOptions & OutputOptions<T>> = {}): Promise<T> {
+    this.assert(statuses.READY, 'encrypt data');
+    assertDataType(clearData, 'clearData');
+
+    const { outputOptions, sharingOptions } = extractOptions(options, clearData);
+
+    return this._session.apis.dataProtector.encryptData(clearData, sharingOptions, outputOptions);
+  }
+
+  async encrypt<T: Data>(plain: string, options?: $Shape<ShareWithOptions & OutputOptions<T>>): Promise<T> {
+    this.assert(statuses.READY, 'encrypt');
+
+    if (typeof plain !== 'string')
+      throw new InvalidArgument('plain', 'string', plain);
+
+    return this.encryptData(utils.fromString(plain), options);
+  }
+
+  async decryptData<T: Data>(encryptedData: Data, options?: $Shape<OutputOptions<T>> = {}): Promise<T> {
+    this.assert(statuses.READY, 'decrypt data');
+    assertDataType(encryptedData, 'encryptedData');
+
+    const { outputOptions } = extractOptions(options, encryptedData);
+
+    return this._session.apis.dataProtector.decryptData(encryptedData, outputOptions);
+  }
+
+  async decrypt(cipher: Data): Promise<string> {
+    return utils.toString(await this.decryptData(cipher, { type: Uint8Array }));
+  }
+
+  async upload<T: Data>(clearData: Data, options?: $Shape<ShareWithOptions & OutputOptions<T>> = {}): Promise<string> {
+    this.assert(statuses.READY, 'upload a file');
+    assertDataType(clearData, 'clearData');
+
+    const { outputOptions, sharingOptions } = extractOptions(options, clearData);
+
+    return this._session.apis.cloudStorageManager.upload(clearData, sharingOptions, outputOptions);
+  }
+
+  async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T>> = {}): Promise<T> {
+    this.assert(statuses.READY, 'download a file');
+    return this._session.apis.cloudStorageManager.download(resourceId, options);
   }
 }
 

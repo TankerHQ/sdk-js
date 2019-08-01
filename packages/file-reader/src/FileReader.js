@@ -1,18 +1,16 @@
 // @flow
+import globalThis from '@tanker/global-this';
 
-// $FlowIKnow cross-browser compat
-const blobSlice: Function = Blob.prototype.slice || Blob.prototype.mozSlice || Blob.prototype.webkitSlice;
-
-export default class FileReader {
+class FileReader {
   _source: Blob;
-  _reader: window.FileReader;
-  _readPositions: {| start: number, end: number |} = { start: 0, end: 0 };
-  _currentRead: ?{| resolve: Function, reject: Function |};
+  _reader: globalThis.FileReader;
+  _readPositions: $Exact<{ start: number, end: number }> = { start: 0, end: 0 };
+  _currentRead: ?$Exact<{ resolve: Function, reject: Function }>;
 
   constructor(source: Blob | File) {
     this._source = source;
 
-    this._reader = new window.FileReader();
+    this._reader = new globalThis.FileReader();
     this._reader.addEventListener('load', this._onLoad.bind(this));
     this._reader.addEventListener('error', this._onError.bind(this));
     this._reader.addEventListener('abort', this._onError.bind(this));
@@ -72,9 +70,14 @@ export default class FileReader {
 
     this._readPositions = { start, end };
 
+    // $FlowIKnow cross-browser compat
+    const blobSlice = Blob.prototype.slice || Blob.prototype.mozSlice || Blob.prototype.webkitSlice;
+
     return new Promise((resolve, reject) => {
       this._currentRead = { resolve, reject };
       this._reader.readAsArrayBuffer(blobSlice.call(this._source, start, end));
     });
   }
 }
+
+export default FileReader;

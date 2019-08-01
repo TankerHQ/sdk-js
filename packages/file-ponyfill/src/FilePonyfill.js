@@ -1,20 +1,9 @@
 // @noflow
 /* eslint-disable */
 
-const __global = (() => {
-  if (typeof window !== 'undefined')
-    return window;
+import globalThis from '@tanker/global-this';
 
-  if (typeof WorkerGlobalScope !== 'undefined')
-    return self;
-
-  if (typeof global !== 'undefined')
-    return global;
-
-  return Function('return this;')();
-})();
-
-const { File } = __global;
+const { File } = globalThis;
 
 // By default, suppose File doesn't need to be ponyfilled
 let FilePonyfill = File;

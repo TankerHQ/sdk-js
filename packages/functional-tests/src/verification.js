@@ -1,6 +1,6 @@
 // @flow
 import uuid from 'uuid';
-import { errors, statuses, type TankerInterface, type Verification, type VerificationMethod } from '@tanker/core';
+import { errors, statuses, type Tanker, type Verification, type VerificationMethod } from '@tanker/core';
 import { utils, type b64string } from '@tanker/crypto';
 
 import { expect } from './chai';
@@ -19,7 +19,7 @@ const expectVerificationToMatchMethod = (verification: Verification, method: Ver
   }
 };
 
-const expectVerification = async (tanker: TankerInterface, identity: string, verification: Verification) => {
+const expectVerification = async (tanker: Tanker, identity: string, verification: Verification) => {
   await tanker.start(identity);
   expect(tanker.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
 

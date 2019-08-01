@@ -2,7 +2,7 @@
 import { InvalidArgument, NetworkError } from '@tanker/errors';
 import { Writable } from '@tanker/stream-base';
 
-import { simpleFetch } from '../simpleFetch';
+import { fetch } from '../fetch';
 import { retry } from '../retry';
 
 const GCSUploadSizeIncrement = 256 * 1024; // 256KiB
@@ -40,11 +40,11 @@ export class UploadStream extends Writable {
   async initialize() {
     this.log('initializing...');
 
-    const { ok, status, statusText, headers } = await simpleFetch(this._initUrl, { method: 'POST', headers: this._headers });
+    const { ok, status, statusText, headers } = await fetch(this._initUrl, { method: 'POST', headers: this._headers });
     if (!ok) {
       throw new NetworkError(`GCS init request failed with status ${status}: ${statusText}`);
     }
-    this._uploadUrl = headers.location;
+    this._uploadUrl = headers.get('location');
     this.log(`using upload URL ${this._uploadUrl}`);
   }
 
@@ -67,7 +67,7 @@ export class UploadStream extends Writable {
       await retry(async () => {
         this.log(`uploading chunk of size ${chunkLength} with header "Content-Range: ${contentRangeHeader}"`);
 
-        const response = await simpleFetch(this._uploadUrl, {
+        const response = await fetch(this._uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Range': contentRangeHeader },
           body: chunk,
