@@ -1,7 +1,7 @@
 {
-  "name": "@tanker/file-ponyfill",
+  "name": "@tanker/global-this",
   "version": "0.0.1",
-  "description": "A cross-browser ponyfill for File with a working constructor",
+  "description": "Tanker SDK (global-this)",
   "author": "Tanker Team",
   "license": "Apache-2.0",
   "homepage": "https://tanker.io/",
@@ -12,21 +12,16 @@
   "bugs": {
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
-  "keywords": [
-    "file",
-    "browser",
-    "dom",
-    "constructor",
-    "ponyfill",
-    "polyfill"
-  ],
   "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "scripts": {
+    "test": "cd ../..; yarn test:global-this"
+  },
   "dependencies": {
-    "@babel/runtime-corejs2": "^7.4.0",
-    "@tanker/global-this": "0.0.1"
+    "@babel/runtime-corejs2": "^7.4.0"
   },
   "devDependencies": {
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1"
+    "chai": "^4.2.0"
   }
 }

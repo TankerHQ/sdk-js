@@ -1,27 +1,12 @@
 // @flow
 import type { b64string } from '@tanker/crypto';
 import FilePonyfill from '@tanker/file-ponyfill';
+import globalThis from '@tanker/global-this';
 import { getConstructor, type Data } from '@tanker/types';
 
 import { InternalError, InvalidArgument } from '../errors';
 
-/* eslint-disable */
-const __global = (() => {
-  if (typeof window !== 'undefined')
-    return window;
-
-  if (typeof WorkerGlobalScope !== 'undefined')
-    return self;
-
-  if (typeof global !== 'undefined')
-    return global;
-
-  // $FlowIKnow Unorthodox call of Function
-  return Function('return this;')();
-})();
-/* eslint-enable */
-
-export const defaultDownloadType = __global.File ? __global.File : Uint8Array;
+export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Array;
 
 export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: string, lastModified?: number };
 
@@ -81,14 +66,14 @@ export const extractOptions = <T: Data>(options: Object, input?: Data): Extracte
   outputOptions.type = outputType;
 
   if (
-    __global.Blob && outputType === __global.Blob
-    || __global.File && outputType === __global.File
+    globalThis.Blob && outputType === globalThis.Blob
+    || globalThis.File && outputType === globalThis.File
     || FilePonyfill && outputType === FilePonyfill
   ) {
-    if (input instanceof __global.Blob) {
+    if (input instanceof globalThis.Blob) {
       outputOptions.mime = input.type;
     }
-    if (input instanceof __global.File && (outputType === __global.File || outputType === FilePonyfill)) {
+    if (input instanceof globalThis.File && (outputType === globalThis.File || outputType === FilePonyfill)) {
       outputOptions.name = input.name;
       outputOptions.lastModified = input.lastModified;
     }
@@ -96,7 +81,7 @@ export const extractOptions = <T: Data>(options: Object, input?: Data): Extracte
     if (typeof options.mime === 'string') {
       outputOptions.mime = options.mime;
     }
-    if (outputType === __global.File || outputType === __global.FilePonyfill) {
+    if (outputType === globalThis.File || outputType === globalThis.FilePonyfill) {
       if (typeof options.name === 'string') {
         outputOptions.name = options.name;
       }

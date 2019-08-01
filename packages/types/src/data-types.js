@@ -2,39 +2,24 @@
 import { errors } from '@tanker/core';
 import FilePonyfill from '@tanker/file-ponyfill';
 import FileReader from '@tanker/file-reader';
-
-/* eslint-disable */
-const __global = (() => {
-  if (typeof window !== 'undefined')
-    return window;
-
-  if (typeof WorkerGlobalScope !== 'undefined')
-    return self;
-
-  if (typeof global !== 'undefined')
-    return global;
-
-  // $FlowIKnow Unorthodox call of Function
-  return Function('return this;')();
-})();
-/* eslint-enable */
+import globalThis from '@tanker/global-this';
 
 export type Data = ArrayBuffer | Blob | Buffer | File | Uint8Array;
 
 // Detect types available in this environment
 const dataTypeDefs = (() => {
   const defs = [];
-  if (__global.ArrayBuffer !== undefined)
+  if (globalThis.ArrayBuffer !== undefined)
     defs.push({ type: ArrayBuffer, lengthOf: (arg: ArrayBuffer) => arg.byteLength });
-  if (__global.Buffer !== undefined)
+  if (globalThis.Buffer !== undefined)
     defs.push({ type: Buffer, lengthOf: (arg: Buffer) => arg.length }); // MUST be before Uint8Array
-  if (__global.Uint8Array !== undefined)
+  if (globalThis.Uint8Array !== undefined)
     defs.push({ type: Uint8Array, lengthOf: (arg: Uint8Array) => arg.length });
-  if (__global.File !== undefined) {
+  if (globalThis.File !== undefined) {
     defs.push({ type: File, lengthOf: (arg: File) => arg.size }); // MUST be before FilePonyfill and Blob
     defs.push({ type: FilePonyfill, lengthOf: (arg: FilePonyfill) => arg.size }); // MUST be before Blob
   }
-  if (__global.Blob !== undefined)
+  if (globalThis.Blob !== undefined)
     defs.push({ type: Blob, lengthOf: (arg: Blob) => arg.size });
   return defs;
 })();
@@ -56,13 +41,13 @@ export const getConstructor = <T: Data>(instance: T): * => {
 export const getConstructorName = (constructor: Object): string => {
   if (constructor === ArrayBuffer)
     return 'ArrayBuffer';
-  if (__global.Buffer && constructor === Buffer)
+  if (globalThis.Buffer && constructor === Buffer)
     return 'Buffer';
   else if (constructor === Uint8Array)
     return 'Uint8Array';
-  else if (__global.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
+  else if (globalThis.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
     return 'File';
-  else if (__global.Blob && constructor === Blob)
+  else if (globalThis.Blob && constructor === Blob)
     return 'Blob';
   else
     throw new errors.InternalError('Assertion error: unhandled type');

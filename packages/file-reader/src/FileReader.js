@@ -1,31 +1,16 @@
 // @flow
-
-/* eslint-disable */
-const __global = (() => {
-  if (typeof window !== 'undefined')
-    return window;
-
-  if (typeof WorkerGlobalScope !== 'undefined')
-    return self;
-
-  if (typeof global !== 'undefined')
-    return global;
-
-  // $FlowIKnow Unorthodox call of Function
-  return Function('return this;')();
-})();
-/* eslint-enable */
+import globalThis from '@tanker/global-this';
 
 class FileReader {
   _source: Blob;
-  _reader: __global.FileReader;
+  _reader: globalThis.FileReader;
   _readPositions: $Exact<{ start: number, end: number }> = { start: 0, end: 0 };
   _currentRead: ?$Exact<{ resolve: Function, reject: Function }>;
 
   constructor(source: Blob | File) {
     this._source = source;
 
-    this._reader = new __global.FileReader();
+    this._reader = new globalThis.FileReader();
     this._reader.addEventListener('load', this._onLoad.bind(this));
     this._reader.addEventListener('error', this._onError.bind(this));
     this._reader.addEventListener('abort', this._onError.bind(this));
