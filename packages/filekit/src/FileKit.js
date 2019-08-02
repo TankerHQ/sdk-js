@@ -53,10 +53,6 @@ export default class FileKit {
     return this.tanker.download(...args);
   }
 
-  async share(...args: any) {
-    return this.tanker.share(...args);
-  }
-
   async downloadToDisk(...args: any) {
     const file = await this.download(...args);
     saveToDisk(file);
