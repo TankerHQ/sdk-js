@@ -1,6 +1,5 @@
 language: node_js
-node_js:
-  - "11"
+node_js: 12
 
 install:
   - yarn
@@ -8,10 +7,27 @@ install:
 matrix:
   include:
     - script:
-        - yarn build:all
-        - yarn coverage
-        - yarn run codecov
+      - yarn build:all
+      - npm run coverage
+      - yarn run codecov
       name: "Coverage"
+    - script:
+      - yarn build:all
+      - yarn test
+      name: "Node 10"
+      node_js: 10
+    - script:
+      - yarn test
+      name: "Node 12"
+    - script:
+      - yarn test
+      name: "Node 10 on mac"
+      os: osx
+      node_js: 10
+    - script:
+      - yarn test
+      name: "Node 12 on mac"
+      os: osx
     - script: yarn karma --browsers ChromeWindows10
       name: "Latest Chrome on Windows 10"
     - script: yarn karma --browsers Chrome70Windows7
