@@ -16,9 +16,9 @@
   "module": "es.js",
   "dependencies": {
     "@tanker/datastore-pouchdb-base": "0.0.1",
-    "pouchdb-adapter-leveldb": "^7.1.1",
-    "pouchdb-core": "^7.1.1",
-    "pouchdb-find": "^7.1.1"
+    "pouchdb-adapter-leveldb": "^6.4.3",
+    "pouchdb-core": "^6.4.3",
+    "pouchdb-find": "^6.4.3"
   },
   "devDependencies": {
     "@tanker/datastore-tests": "0.0.1",

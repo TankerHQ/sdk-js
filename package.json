@@ -116,9 +116,5 @@
     ],
     "sourceMap": false,
     "instrument": false
-  },
-  "resolutions": {
-    "leveldown": "5.0.2",
-    "levelup": "4.0.2"
   }
 }
