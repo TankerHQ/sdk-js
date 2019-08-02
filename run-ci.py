@@ -131,12 +131,7 @@ def run_tests_in_browser(*, env: str, runner: str) -> None:
         ci.run("killall", "Safari", check=False)
         delete_safari_state()
         this_path = Path(__file__).parent
-        safari_awaker_script = this_path / "ci/keep-safari-awake.sh"
-        safari_awaker = subprocess.Popen(["bash", safari_awaker_script])
-        try:
-            ci.js.run_yarn("karma", "--browsers", "Safari", env=run_env)
-        finally:
-            safari_awaker.kill()
+        ci.js.run_yarn("karma", "--browsers", "Safari", env=run_env)
     elif runner == "windows-edge":
         delete_edge_state()
         ci.js.run_yarn("karma", "--browsers", "Edge", env=run_env)
