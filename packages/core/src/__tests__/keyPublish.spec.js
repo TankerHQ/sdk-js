@@ -10,7 +10,7 @@ import {
   serializeKeyPublish,
 } from '../Blocks/payloads';
 
-import { unserializeKeyPublishToDevice, unserializeKeyPublish, unserializeKeyPublishToProvisionalUser, SEALED_KEY_SIZE, TWO_TIMES_SEALED_KEY_SIZE } from '../Resource/keyPublish';
+import { unserializeKeyPublishToDevice, unserializeKeyPublish, unserializeKeyPublishToProvisionalUser, SEALED_KEY_SIZE, TWO_TIMES_SEALED_KEY_SIZE } from '../DataProtection/Resource/keyPublish';
 
 describe('key publish', () => {
   it('correctly deserializes a KeyPublishV1 test vector', async () => {

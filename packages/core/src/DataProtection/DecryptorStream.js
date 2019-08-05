@@ -3,7 +3,7 @@ import { aead, tcrypto, type Key } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
 import { InvalidArgument, DecryptionFailed } from '../errors';
-import { extractHeaderV4, type HeaderV4 } from '../Resource/ResourceManager';
+import { extractHeaderV4, type HeaderV4 } from './Resource/ResourceManager';
 
 export type ResourceIdKeyMapper = {
   findKey: (Uint8Array) => Promise<Key>

@@ -1,8 +1,8 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 
-import { getArray, getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-import { unserializeBlock } from '../Blocks/payloads';
+import { getArray, getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
+import { unserializeBlock } from '../../Blocks/payloads';
 
 export const KeyPublishNatures = Object.freeze({
   key_publish_to_device: 3,

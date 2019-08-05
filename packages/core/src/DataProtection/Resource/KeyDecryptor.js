@@ -1,86 +1,59 @@
 // @flow
 
-import { tcrypto, utils, type Key } from '@tanker/crypto';
+import { tcrypto, type Key } from '@tanker/crypto';
 
-import type { VerifiedKeyPublish } from '../Blocks/entries';
-import { isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from '../Blocks/Nature';
-import GroupStore from '../Groups/GroupStore';
-import LocalUser from '../Session/LocalUser';
-import UserAccessor from '../Users/UserAccessor';
+import GroupManager from '../../Groups/Manager';
+import LocalUser from '../../Session/LocalUser';
+
+import { type KeyPublish, isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './keyPublish';
 
 export class KeyDecryptor {
   _localUser: LocalUser;
-  _userAccessor: UserAccessor;
-  _groupStore: GroupStore;
+  _groupManager: GroupManager;
 
   constructor(
     localUser: LocalUser,
-    userAccessor: UserAccessor,
-    groupStore: GroupStore
+    groupManager: GroupManager
   ) {
     this._localUser = localUser;
-    this._userAccessor = userAccessor;
-    this._groupStore = groupStore;
+    this._groupManager = groupManager;
   }
 
-  async decryptResourceKeyPublishedToDevice(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
-    if (!this._localUser.deviceId || !utils.equalArray(keyPublishEntry.recipient, this._localUser.deviceId)) {
-      return null;
-    }
-    const authorKey = await this._userAccessor.getDevicePublicEncryptionKey(keyPublishEntry.author);
-    if (!authorKey)
-      return null;
-    return tcrypto.asymDecrypt(keyPublishEntry.key, authorKey, this._localUser.privateEncryptionKey);
-  }
-
-  async decryptResourceKeyPublishedToUser(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
+  async decryptResourceKeyPublishedToUser(keyPublishEntry: KeyPublish): Promise<Key> {
     const userKey = this._localUser.findUserKey(keyPublishEntry.recipient);
     if (!userKey)
-      return null;
+      throw new Error('User key not found');
     return tcrypto.sealDecrypt(keyPublishEntry.key, userKey);
   }
 
-  async decryptResourceKeyPublishedToGroup(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
-    const group = await this._groupStore.findFull({ groupPublicEncryptionKey: keyPublishEntry.recipient });
-    if (!group)
-      return null;
-    return tcrypto.sealDecrypt(keyPublishEntry.key, group.encryptionKeyPair);
+  async decryptResourceKeyPublishedToGroup(keyPublishEntry: KeyPublish): Promise<Key> {
+    const encryptionKeyPair = await this._groupManager.getGroupEncryptionKeyPair(keyPublishEntry.recipient);
+    if (!encryptionKeyPair)
+      throw new Error('Group not found');
+    return tcrypto.sealDecrypt(keyPublishEntry.key, encryptionKeyPair);
   }
 
-  async decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
+  async decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry: KeyPublish): Promise<Key> {
     const keys = this._localUser.findProvisionalUserKey(keyPublishEntry.recipient);
     if (!keys)
-      return null;
+      throw new Error('Provisional user key not found');
     const d1 = tcrypto.sealDecrypt(keyPublishEntry.key, keys.tankerEncryptionKeyPair);
     const d2 = tcrypto.sealDecrypt(d1, keys.appEncryptionKeyPair);
     return d2;
   }
 
-  async keyFromKeyPublish(keyPublishEntry: VerifiedKeyPublish): Promise<?Key> {
-    let resourceKey: Promise<?Key>;
-
-    try {
-      if (isKeyPublishToDevice(keyPublishEntry.nature)) {
-        resourceKey = this.decryptResourceKeyPublishedToDevice(keyPublishEntry);
-      } else if (isKeyPublishToUser(keyPublishEntry.nature)) {
-        resourceKey = this.decryptResourceKeyPublishedToUser(keyPublishEntry);
-      } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
-        resourceKey = this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
-      } else if (isKeyPublishToProvisionalUser(keyPublishEntry.nature)) {
-        resourceKey = this.decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry);
-      } else {
-        resourceKey = Promise.resolve(null);
-      }
-    } catch (err) {
-      const b64resourceId = utils.toBase64(keyPublishEntry.resourceId);
-      console.error(`Cannot decrypt key of resource "${b64resourceId}":`, err);
-      throw err;
+  async keyFromKeyPublish(keyPublishEntry: KeyPublish): Promise<Key> {
+    if (isKeyPublishToDevice(keyPublishEntry.nature)) {
+      throw new Error('Key publish to device is not supported anymore');
     }
 
-    return resourceKey;
-  }
-
-  deviceReady(): bool {
-    return !!this._localUser.deviceId;
+    if (isKeyPublishToUser(keyPublishEntry.nature)) {
+      return this.decryptResourceKeyPublishedToUser(keyPublishEntry);
+    } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
+      return this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
+    } else if (isKeyPublishToProvisionalUser(keyPublishEntry.nature)) {
+      return this.decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry);
+    }
+    throw new Error('Invalid natyure for key publish');
   }
 }

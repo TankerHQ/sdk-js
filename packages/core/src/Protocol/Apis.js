@@ -8,8 +8,6 @@ import LocalUser from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';
-import { KeyDecryptor } from '../Resource/KeyDecryptor';
-import { ResourceManager } from '../Resource/ResourceManager';
 import { DataProtector, type Streams } from '../DataProtection/DataProtector';
 import DeviceManager from './DeviceManager';
 import CloudStorageManager from './CloudStorageManager';
@@ -19,7 +17,6 @@ export class Apis {
   userAccessor: UserAccessor;
   groupManager: GroupManager;
 
-  resourceManager: ResourceManager;
   dataProtector: DataProtector;
   deviceManager: DeviceManager;
   cloudStorageManager: CloudStorageManager;
@@ -34,17 +31,8 @@ export class Apis {
       client,
     );
 
-    this.resourceManager = new ResourceManager(
-      storage.resourceStore,
-      client,
-      new KeyDecryptor(
-        localUser,
-        this.groupManager
-      ),
-    );
-
     this.dataProtector = new DataProtector(
-      this.resourceManager,
+      storage.resourceStore,
       client,
       this.groupManager,
       localUser,

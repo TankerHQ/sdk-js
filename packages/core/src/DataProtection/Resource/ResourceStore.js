@@ -3,8 +3,8 @@
 import { utils, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
-import { InternalError } from '../errors';
+import * as EncryptorV1 from '../Encryptors/v1';
+import { InternalError } from '../../errors';
 
 const TABLE = 'resource_keys';
 

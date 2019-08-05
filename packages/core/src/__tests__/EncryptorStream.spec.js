@@ -5,7 +5,7 @@ import { expect } from './chai';
 import EncryptorStream from '../DataProtection/EncryptorStream';
 import { InvalidArgument } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
-import { currentStreamVersion, getResourceId, extractHeaderV4 } from '../Resource/ResourceManager';
+import { currentStreamVersion, getResourceId, extractHeaderV4 } from '../DataProtection/Resource/ResourceManager';
 
 describe('Encryptor Stream', () => {
   const headerV4Length = 21;

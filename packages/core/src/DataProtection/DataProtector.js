@@ -7,7 +7,10 @@ import type { Data } from '@tanker/types';
 import type { Readable, Transform } from '@tanker/stream-base';
 
 import { DecryptionFailed, InternalError } from '../errors';
-import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
+import { ResourceManager, getResourceId } from './Resource/ResourceManager';
+import ResourceStore from './Resource/ResourceStore';
+import { KeyDecryptor } from './Resource/KeyDecryptor';
+
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
@@ -41,14 +44,21 @@ export class DataProtector {
   _streams: Streams;
 
   constructor(
-    resourceManager: ResourceManager,
+    resourceStore: ResourceStore,
     client: Client,
     groupManager: GroupManager,
     localUser: LocalUser,
     userAccessor: UserAccessor,
     streams: Streams,
   ) {
-    this._resourceManager = resourceManager;
+    this._resourceManager = new ResourceManager(
+      resourceStore,
+      client,
+      new KeyDecryptor(
+        localUser,
+        groupManager
+      ),
+    );
     this._client = client;
     this._groupManager = groupManager;
     this._localUser = localUser;

@@ -4,12 +4,12 @@ import { tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { toBase64 } from '../index';
-import { KeyDecryptor } from '../Resource/KeyDecryptor';
+import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
 
 import GroupManager from '../Groups/Manager';
 import LocalUser from '../Session/LocalUser';
 
-import { type KeyPublish, type KeyPublishNature, KeyPublishNatures } from '../Resource/keyPublish';
+import { type KeyPublish, type KeyPublishNature, KeyPublishNatures } from '../DataProtection/Resource/keyPublish';
 
 const refDeviceId = new Uint8Array([0, 0, 7]);
 

@@ -6,7 +6,7 @@ import { tcrypto, utils, random } from '@tanker/crypto';
 
 import { expect } from './chai';
 import { InvalidArgument } from '../errors';
-import { ResourceManager } from '../Resource/ResourceManager';
+import { ResourceManager } from '../DataProtection/Resource/ResourceManager';
 
 import TestGenerator from './TestGenerator';
 

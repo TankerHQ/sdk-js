@@ -8,7 +8,7 @@ import EventEmitter from 'events';
 
 import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
-import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
+import { getResourceId as syncGetResourceId } from './DataProtection/Resource/ResourceManager';
 
 import { DecryptionFailed, InternalError, InvalidArgument, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';

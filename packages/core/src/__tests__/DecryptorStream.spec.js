@@ -6,7 +6,7 @@ import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
 import { InvalidArgument, DecryptionFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
-import { currentStreamVersion, serializeHeaderV4 } from '../Resource/ResourceManager';
+import { currentStreamVersion, serializeHeaderV4 } from '../DataProtection/Resource/ResourceManager';
 
 describe('Decryptor Stream', () => {
   let buffer: Array<Uint8Array>;

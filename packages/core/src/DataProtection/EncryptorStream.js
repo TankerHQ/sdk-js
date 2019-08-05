@@ -2,7 +2,7 @@
 import { aead, random, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
-import { currentStreamVersion, serializeHeaderV4, type HeaderV4 } from '../Resource/ResourceManager';
+import { currentStreamVersion, serializeHeaderV4, type HeaderV4 } from './Resource/ResourceManager';
 import { InvalidArgument } from '../errors';
 
 export const defaultEncryptedChunkSize = 1024 * 1024; // 1MB

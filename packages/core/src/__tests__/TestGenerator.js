@@ -20,7 +20,7 @@ import { serializeBlock } from '../Blocks/payloads';
 
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
-import { type KeyPublish, newKeyPublish } from '../Resource/keyPublish';
+import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
 
 import { encodeArrayLength } from '../Blocks/Serialize';
 
