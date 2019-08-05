@@ -26,23 +26,9 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_dbs', { value: dbs, writable: true });
 
-    // IndexedDB understands binary data so no serialization needed
-    if (PouchDB.dataStoreName === 'PouchDBBrowser') {
-      const iframe = (typeof window !== 'undefined') && window.parent && window.parent !== window;
-
-      if (iframe) {
-        this.fromDB = transform.fixObjects;
-        this.toDB = transform.identity;
-      } else {
-        this.fromDB = transform.identity;
-        this.toDB = transform.identity;
-      }
-
-    // LevelDB and Memory adapters need serialization
-    } else {
-      this.fromDB = transform.deserializeBinary;
-      this.toDB = transform.serializeBinary;
-    }
+    // both levelDB and memory adapters need serialization
+    this.fromDB = transform.deserializeBinary;
+    this.toDB = transform.serializeBinary;
 
     return this;
   }
