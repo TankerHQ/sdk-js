@@ -1,13 +1,12 @@
 // @flow
 
 import varint from 'varint';
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, encryptionV2, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { type Group, type ExternalGroup, type ProvisionalEncryptionKeys } from './types';
-import { InternalError } from '../errors';
+import { InternalError, DecryptionFailed } from '../errors';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
 
 type EncryptedPrivateKeys = {|
   signatureKey: Uint8Array,
@@ -40,11 +39,12 @@ function encryptGroupKeys(userSecret: Uint8Array, group: Group): Uint8Array {
     new Uint8Array(varint.encode(group.index)),
   );
   const data = utils.concatArrays(group.signatureKeyPair.privateKey, group.encryptionKeyPair.privateKey);
-  return EncryptorV2.encrypt(userSecret, data, ad);
+  return encryptionV2.serialize(encryptionV2.encrypt(userSecret, data, ad));
 }
 
 async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promise<EncryptedPrivateKeys> {
-  if (!dbGroup.encryptedPrivateKeys)
+  const encryptedPrivateKeys = dbGroup.encryptedPrivateKeys;
+  if (!encryptedPrivateKeys)
     throw new InternalError('Group not fullgroup');
 
   const ad = utils.concatArrays(
@@ -55,8 +55,11 @@ async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promi
     new Uint8Array(varint.encode(dbGroup.index)),
   );
 
-  // $FlowIKnow already checked for nullity
-  const ec = EncryptorV2.decrypt(userSecret, dbGroup.encryptedPrivateKeys, ad);
+  if (encryptedPrivateKeys.length < encryptionV2.overhead) {
+    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
+  }
+
+  const ec = encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedPrivateKeys), ad);
   return unserializeGeneric(ec, [
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PRIVATE_KEY_SIZE, o, 'signatureKey'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE, o, 'encryptionKey'),

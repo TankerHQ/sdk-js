@@ -1,8 +1,8 @@
 // @flow
 
-import { utils, tcrypto, type b64string } from '@tanker/crypto';
+import { utils, tcrypto, encryptionV2, type b64string } from '@tanker/crypto';
 
-import { encrypt, decrypt } from '../DataProtection/Encryptors/v2';
+import { DecryptionFailed } from '../errors';
 
 export type GhostDevice = {
   privateEncryptionKey: Uint8Array,
@@ -26,14 +26,19 @@ export const extractGhostDevice = (unlockKey: b64string): GhostDevice => {
   };
 };
 
-export const decryptUnlockKey = (encryptedUnlockKey: Uint8Array, userSecret: Uint8Array) => utils.toString(decrypt(userSecret, encryptedUnlockKey));
+export const decryptUnlockKey = (encryptedUnlockKey: Uint8Array, userSecret: Uint8Array) => {
+  if (encryptedUnlockKey.length < encryptionV2.overhead) {
+    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
+  }
+  return utils.toString(encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedUnlockKey)));
+};
 
 export const ghostDeviceToUnlockKey = (ghostDevice: GhostDevice) => utils.toB64Json({
   privateEncryptionKey: utils.toBase64(ghostDevice.privateEncryptionKey),
   privateSignatureKey: utils.toBase64(ghostDevice.privateSignatureKey),
 });
 
-export const ghostDeviceToEncryptedUnlockKey = (ghostDevice: GhostDevice, userSecret: Uint8Array) => encrypt(userSecret, utils.fromString(ghostDeviceToUnlockKey(ghostDevice)));
+export const ghostDeviceToEncryptedUnlockKey = (ghostDevice: GhostDevice, userSecret: Uint8Array) => encryptionV2.serialize(encryptionV2.encrypt(userSecret, utils.fromString(ghostDeviceToUnlockKey(ghostDevice))));
 
 export const ghostDeviceKeysFromUnlockKey = (unlockKey: b64string): GhostDeviceKeys => {
   const ghostDevice = extractGhostDevice(unlockKey);

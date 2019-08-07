@@ -7,9 +7,6 @@ import { expect } from './chai';
 
 import { DecryptionFailed } from '../errors';
 import { decryptData, encryptData } from '../DataProtection/Encryptor';
-import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
-import * as EncryptorV2 from '../DataProtection/Encryptors/v2';
-import * as EncryptorV3 from '../DataProtection/Encryptors/v3';
 
 describe('Encryptor', () => {
   const clearData = utils.fromString('this is very secret');
@@ -23,7 +20,6 @@ describe('Encryptor', () => {
   const configs = [
     {
       version: 1,
-      encryptor: EncryptorV1,
       testVector: new Uint8Array([
         // encrypted data
         0xc9, 0x5d, 0xe6, 0xa, 0x34, 0xb2, 0x89, 0x42, 0x7a, 0x6d, 0xda, 0xd7,
@@ -38,7 +34,6 @@ describe('Encryptor', () => {
     },
     {
       version: 2,
-      encryptor: EncryptorV2,
       testVector: new Uint8Array([
         // iv
         0x32, 0x93, 0xa3, 0xf8, 0x6c, 0xa8, 0x82, 0x25, 0xbc, 0x17, 0x7e, 0xb5,
@@ -53,7 +48,6 @@ describe('Encryptor', () => {
     },
     {
       version: 3,
-      encryptor: EncryptorV3,
       testVector: new Uint8Array([
         // encrypted data
         0x37, 0xb5, 0x3d, 0x55, 0x34, 0xb5, 0xc1, 0x3f, 0xe3, 0x72, 0x81, 0x47,
@@ -95,25 +89,6 @@ describe('Encryptor', () => {
     it(`should throw if trying to decrypt a corrupted buffer v${version}`, () => {
       const resource = utils.concatArrays(new Uint8Array([version]), tamperWith(testVector));
       expect(() => decryptData(key, resource)).to.throw();
-    });
-  });
-
-  configs.forEach(({ version, testVector, encryptor }) => {
-    describe(`EncryptorV${version}`, () => {
-      it('should encrypt / decrypt a buffer', () => {
-        const encryptedData = encryptor.encrypt(key, clearData);
-        const decryptedData = encryptor.decrypt(key, encryptedData);
-        expect(decryptedData).to.deep.equal(clearData);
-      });
-
-      it(`should decrypt a buffer v${version}`, () => {
-        const decryptedData = encryptor.decrypt(key, testVector);
-        expect(decryptedData).to.deep.equal(clearData);
-      });
-
-      it(`should throw if trying to decrypt a corrupted buffer v${version}`, () => {
-        expect(() => encryptor.decrypt(key, tamperWith(testVector))).to.throw();
-      });
     });
   });
 });

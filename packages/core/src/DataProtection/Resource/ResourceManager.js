@@ -1,9 +1,8 @@
 // @flow
-import varint from 'varint';
-import { tcrypto, random, generichash, number, utils, type Key } from '@tanker/crypto';
+import { tcrypto, random, generichash, utils, type Key } from '@tanker/crypto';
 
-import { DecryptionFailed, InvalidArgument } from '../../errors';
-import { getEncryptionFormat, encryptData, extractResourceId } from '../Encryptor';
+import { InvalidArgument } from '../../errors';
+import { encryptData, extractResourceId } from '../Encryptor';
 import { KeyDecryptor } from './KeyDecryptor';
 
 import { Client } from '../../Network/Client';
@@ -21,73 +20,6 @@ export type ResourceMeta = $Exact<{
 }>;
 
 export type Resource = $Exact<{ ...ResourceMeta, encryptedData: Uint8Array }>;
-
-export type HeaderV4 = {
-  version: 4,
-  resourceId: Uint8Array,
-  encryptedChunkSize: number,
-  byteLength?: number,
-};
-
-export const extractHeaderV4 = (encryptedData: Uint8Array): { data: Uint8Array, header: HeaderV4 } => {
-  const { version, versionLength } = getEncryptionFormat(encryptedData);
-
-  if (version !== 4)
-    throw new DecryptionFailed({ message: `unhandled format version in extractHeaderV4: '${version}'` });
-
-  const uint32Length = 4;
-  const minEncryptedDataLength = versionLength + uint32Length + tcrypto.MAC_SIZE;
-
-  if (encryptedData.length < minEncryptedDataLength)
-    throw new InvalidArgument('encryptedData', `Uint8Array(${minEncryptedDataLength}+)`, encryptedData);
-
-  let data;
-  let header;
-  let pos = versionLength;
-
-  try {
-    const encryptedChunkSize = number.fromUint32le(encryptedData.subarray(pos, pos + uint32Length));
-    pos += uint32Length;
-
-    const resourceId = encryptedData.subarray(pos, pos + tcrypto.MAC_SIZE);
-    pos += tcrypto.MAC_SIZE;
-
-    header = {
-      version,
-      encryptedChunkSize,
-      resourceId,
-      byteLength: pos,
-    };
-
-    data = encryptedData.subarray(pos);
-  } catch (e) {
-    throw new InvalidArgument('encryptedData', 'Uint8Array with properly formatted v4 header', encryptedData);
-  }
-
-  return { data, header };
-};
-
-export const serializeHeaderV4 = (header: HeaderV4): Uint8Array => {
-  const version = varint.encode(header.version);
-  const encryptedChunkSize = number.toUint32le(header.encryptedChunkSize);
-  const resourceId = header.resourceId;
-  return utils.concatArrays(new Uint8Array(version), encryptedChunkSize, resourceId);
-};
-
-export function getResourceId(encryptedData: Uint8Array): Uint8Array {
-  const { version, versionLength } = getEncryptionFormat(encryptedData);
-  const minEncryptedDataLength = versionLength + tcrypto.MAC_SIZE;
-
-  if (encryptedData.length < minEncryptedDataLength)
-    throw new InvalidArgument('encryptedData', `Uint8Array(${minEncryptedDataLength}+)`, encryptedData);
-
-  if (isSimpleVersion(version)) {
-    return extractResourceId(encryptedData);
-  }
-
-  const { header: { resourceId } } = extractHeaderV4(encryptedData);
-  return resourceId;
-}
 
 export class ResourceManager {
   _resourceStore: ResourceStore;

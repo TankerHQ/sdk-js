@@ -7,7 +7,7 @@ import type { Data } from '@tanker/types';
 import type { Readable, Transform } from '@tanker/stream-base';
 
 import { DecryptionFailed, InternalError } from '../errors';
-import { ResourceManager, getResourceId } from './Resource/ResourceManager';
+import { ResourceManager } from './Resource/ResourceManager';
 import ResourceStore from './Resource/ResourceStore';
 import { KeyDecryptor } from './Resource/KeyDecryptor';
 
@@ -19,7 +19,7 @@ import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-import { decryptData, getEncryptionFormat } from './Encryptor';
+import { decryptData, getEncryptionFormat, extractResourceId } from './Encryptor';
 import type { OutputOptions, ShareWithOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
@@ -153,7 +153,7 @@ export class DataProtector {
   async _simpleDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>): Promise<T> {
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array });
 
-    const resourceId = getResourceId(castEncryptedData);
+    const resourceId = extractResourceId(castEncryptedData);
     const key = await this._resourceManager.findKeyFromResourceId(resourceId);
 
     let clearData;

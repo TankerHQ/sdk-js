@@ -111,7 +111,7 @@ const generateEncryptTests = (args: TestArgs) => {
         const encrypted = await bobLaptop.encrypt(clearText);
         // shorter than version + resource ID: should not even try to decrypt
         const invalidEncrypted = encrypted.subarray(0, tcrypto.MAC_SIZE - 4);
-        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
       it('throws when calling decrypt with a corrupted buffer (resource id)', async () => {

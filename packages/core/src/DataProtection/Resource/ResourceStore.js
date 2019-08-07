@@ -1,10 +1,9 @@
 // @flow
 
-import { utils, type Key } from '@tanker/crypto';
+import { utils, encryptionV1, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
-import * as EncryptorV1 from '../Encryptors/v1';
-import { InternalError } from '../../errors';
+import { InternalError, DecryptionFailed } from '../../errors';
 
 const TABLE = 'resource_keys';
 
@@ -45,7 +44,7 @@ export default class ResourceStore {
 
   async saveResourceKey(resourceId: Uint8Array, key: Key): Promise<void> {
     // prevent db corruption by using the resourceId as additional data
-    const encryptedKey = EncryptorV1.encrypt(this._userSecret, key, resourceId);
+    const encryptedKey = encryptionV1.serialize(encryptionV1.encrypt(this._userSecret, key, resourceId));
     const b64ResourceId = utils.toBase64(resourceId);
     // We never want to overwrite a key for a given resourceId
     try {
@@ -65,7 +64,11 @@ export default class ResourceStore {
       const b64ResourceId = utils.toBase64(resourceId);
       const result = await this._ds.get(TABLE, b64ResourceId);
       const encryptedKey = utils.fromBase64(result.b64EncryptedKey);
-      return EncryptorV1.decrypt(this._userSecret, encryptedKey, resourceId);
+
+      if (encryptedKey.length < encryptionV1.overhead) {
+        throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV1.overhead} for encryption v1` });
+      }
+      return encryptionV1.decrypt(this._userSecret, encryptionV1.unserialize(encryptedKey), resourceId);
     } catch (e) {
       if (e instanceof dbErrors.RecordNotFound) {
         return;

@@ -1,8 +1,6 @@
 // @flow
 
-import { generichash, utils, tcrypto } from '@tanker/crypto';
-
-import { encrypt, decrypt } from '../DataProtection/Encryptors/v2';
+import { generichash, utils, tcrypto, encryptionV2 } from '@tanker/crypto';
 
 import { type Block } from '../Blocks/Block';
 import { Client, b64RequestObject } from '../Network/Client';
@@ -11,7 +9,7 @@ import LocalUser from './LocalUser';
 import { type UserCreation } from './deviceCreation';
 import { type Verification, type RemoteVerification } from './types';
 import { type GhostDevice } from './ghostDevice';
-import { InternalError } from '../errors';
+import { InternalError, DecryptionFailed } from '../errors';
 
 type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,
@@ -40,7 +38,7 @@ export const formatVerificationRequest = (verification: RemoteVerification, loca
   if (verification.email) {
     return {
       hashed_email: generichash(utils.fromString(verification.email)),
-      encrypted_email: encrypt(localUser.userSecret, utils.fromString(verification.email)),
+      encrypted_email: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.email))),
       verification_code: verification.verificationCode,
     };
   }
@@ -115,7 +113,11 @@ export const getVerificationMethods = async (client: Client, localUser: LocalUse
 
     // Compat: email value might be missing if unlock method registered with SDK < 2.0.0
     if (method.type === 'email' && method.encrypted_email) {
-      method.email = utils.toString(decrypt(localUser.userSecret, utils.fromBase64(method.encrypted_email)));
+      const encryptedEmail = utils.fromBase64(method.encrypted_email);
+      if (encryptedEmail.length < encryptionV2.overhead) {
+        throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
+      }
+      method.email = utils.toString(encryptionV2.decrypt(localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
       delete method.encrypted_email;
     }
 

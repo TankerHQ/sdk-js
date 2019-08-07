@@ -1,9 +1,8 @@
 // @flow
-import { aead, tcrypto, type Key } from '@tanker/crypto';
+import { encryptionV4, type Key } from '@tanker/crypto';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
 import { InvalidArgument, DecryptionFailed } from '../errors';
-import { extractHeaderV4, type HeaderV4 } from './Resource/ResourceManager';
 
 export type ResourceIdKeyMapper = {
   findKey: (Uint8Array) => Promise<Key>
@@ -40,19 +39,22 @@ export default class DecryptorStream extends Transform {
     };
   }
 
-  async _extractHeader(encryptedData: Uint8Array): Promise<{ header: HeaderV4, data: Uint8Array, key: Uint8Array }> {
-    const { data, header } = extractHeaderV4(encryptedData);
+  async _extractHeader(encryptedData: Uint8Array): Promise<{ header: encryptionV4.EncryptionData, key: Uint8Array }> {
+    let header;
+    try {
+      header = encryptionV4.unserialize(encryptedData);
+    } catch (e) {
+      throw new InvalidArgument('encryptedData', e, encryptedData);
+    }
     const key = await this._mapper.findKey(header.resourceId);
-    return { data, header, key };
+    return { header, key };
   }
 
   async _configureStreams(headOfEncryptedData: Uint8Array) {
     const { key, header } = await this._extractHeader(headOfEncryptedData);
     this._state.headerRead = true;
 
-    const { byteLength: headerLength, encryptedChunkSize, resourceId } = header;
-
-    const overheadPerChunk = headerLength + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD;
+    const { encryptedChunkSize, resourceId } = header;
 
     this._resizerStream = new ResizerStream(encryptedChunkSize);
 
@@ -61,23 +63,18 @@ export default class DecryptorStream extends Transform {
       writableHighWaterMark: encryptedChunkSize,
       writableObjectMode: false,
       // buffering output bytes until clear chunk size is reached
-      readableHighWaterMark: encryptedChunkSize - overheadPerChunk,
+      readableHighWaterMark: encryptedChunkSize - encryptionV4.overhead,
       readableObjectMode: false,
 
       transform: (encryptedChunk, encoding, done) => {
-        const encryptedData = encryptedChunk.subarray(headerLength + tcrypto.XCHACHA_IV_SIZE);
-        const ivSeed = encryptedChunk.subarray(headerLength, headerLength + tcrypto.XCHACHA_IV_SIZE);
-        const iv = tcrypto.deriveIV(ivSeed, this._state.index);
-
-        this._state.index += 1; // safe as long as index < 2^53
-        this._state.lastEncryptedChunkSize = encryptedChunk.length;
-
         try {
-          const clearData = aead.decryptAEAD(key, iv, encryptedData);
+          const clearData = encryptionV4.decrypt(key, this._state.index, encryptionV4.unserialize(encryptedChunk));
           this._decryptionStream.push(clearData);
         } catch (error) {
           return done(new DecryptionFailed({ error, resourceId }));
         }
+        this._state.lastEncryptedChunkSize = encryptedChunk.length;
+        this._state.index += 1; // safe as long as index < 2^53
 
         done();
       },
