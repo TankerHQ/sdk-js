@@ -11,9 +11,9 @@ const Dialog = styled.dialog`
   position: fixed;
   max-width: 100%;
   max-height: 100%;
-  margin: 0 auto;
+  margin: 0;
   top: 50%;
-  left: 0;
+  left: 50%;
   padding: 0;
   background: #fff;
   border: none;
@@ -21,7 +21,7 @@ const Dialog = styled.dialog`
   box-shadow: 0 2px 20px 0 ${transparentize(0.7, colors.grey)};
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  transform: translate3d(0, calc(var(--offset) - 50%), 0) scale(var(--scale));
+  transform: translate3d(-50%, calc(var(--offset) - 50%), 0) scale(var(--scale));
   will-change: transform;
   z-index: 1338;
 
