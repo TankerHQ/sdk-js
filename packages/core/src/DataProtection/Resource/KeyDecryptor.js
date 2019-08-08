@@ -7,7 +7,7 @@ import LocalUser from '../../Session/LocalUser';
 
 import { DecryptionFailed, InternalError } from '../../errors';
 
-import { type KeyPublish, isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './keyPublish';
+import { type KeyPublish, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './keyPublish';
 
 export class KeyDecryptor {
   _localUser: LocalUser;
@@ -45,10 +45,6 @@ export class KeyDecryptor {
   }
 
   async keyFromKeyPublish(keyPublishEntry: KeyPublish): Promise<Key> {
-    if (isKeyPublishToDevice(keyPublishEntry.nature)) {
-      throw new DecryptionFailed({ message: 'Key publish to device is not supported anymore' });
-    }
-
     if (isKeyPublishToUser(keyPublishEntry.nature)) {
       return this.decryptResourceKeyPublishedToUser(keyPublishEntry);
     } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
@@ -56,6 +52,6 @@ export class KeyDecryptor {
     } else if (isKeyPublishToProvisionalUser(keyPublishEntry.nature)) {
       return this.decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry);
     }
-    throw new InternalError('Invalid nature for key publish');
+    throw new InternalError(`Invalid nature for key publish: ${keyPublishEntry.nature}`);
   }
 }

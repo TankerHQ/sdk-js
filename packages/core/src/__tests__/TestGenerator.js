@@ -15,14 +15,12 @@ import {
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
 
-import { hashBlock, signBlock, type Block } from '../Blocks/Block';
+import { hashBlock, type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
 import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
-
-import { encodeArrayLength } from '../Blocks/Serialize';
 
 import { rootBlockAuthor } from '../Trustchain/Verify';
 
@@ -310,42 +308,6 @@ class TestGenerator {
       block,
       testUser,
       user: this._testUserToUser(testUser)
-    };
-  }
-
-  makeKeyPublishToDeviceBlock(parentDevice: TestDeviceCreation, recipient: Device, resourceId: Uint8Array, resourceKey: Uint8Array): Block {
-    const sharedKey = tcrypto.asymEncrypt(
-      resourceKey,
-      recipient.devicePublicEncryptionKey,
-      parentDevice.testDevice.encryptionKeys.privateKey
-    );
-    const pKeyBlock = signBlock({
-      index: 0,
-      trustchain_id: this._trustchainId,
-      nature: preferredNature(NATURE_KIND.key_publish_to_device),
-      author: parentDevice.testDevice.id,
-      payload: utils.concatArrays(
-        recipient.devicePublicEncryptionKey,
-        resourceId,
-        encodeArrayLength(sharedKey), sharedKey
-      ) }, parentDevice.testDevice.signKeys.privateKey);
-    return pKeyBlock;
-  }
-
-  makeKeyPublishToDevice = (parentDevice: TestDeviceCreation, recipient: Device): TestKeyPublish => {
-    const resourceId = random(tcrypto.MAC_SIZE);
-    const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-
-    this._trustchainIndex += 1;
-    const block = this.makeKeyPublishToDeviceBlock(parentDevice, recipient, resourceId, resourceKey);
-    block.index = this._trustchainIndex;
-
-    const keyPublish = newKeyPublish(utils.toBase64(serializeBlock(block)));
-    return {
-      keyPublish,
-      block,
-      resourceId,
-      resourceKey
     };
   }
 

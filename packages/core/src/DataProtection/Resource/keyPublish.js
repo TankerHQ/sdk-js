@@ -1,13 +1,12 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 
-import { getArray, getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
+import { getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
 import { unserializeBlock } from '../../Blocks/payloads';
 
 import { InternalError } from '../../errors';
 
 export const KeyPublishNatures = Object.freeze({
-  key_publish_to_device: 3,
   key_publish_to_user: 8,
   key_publish_to_user_group: 11,
   key_publish_to_provisional_user: 13,
@@ -31,22 +30,9 @@ export type KeyPublish = {|
 |};
 
 
-export const isKeyPublishToDevice = (nature: number) => nature === KeyPublishNatures.key_publish_to_device;
 export const isKeyPublishToUser = (nature: number) => nature === KeyPublishNatures.key_publish_to_user;
 export const isKeyPublishToUserGroup = (nature: number) => nature === KeyPublishNatures.key_publish_to_user_group;
 export const isKeyPublishToProvisionalUser = (nature: number) => nature === KeyPublishNatures.key_publish_to_provisional_user;
-
-export function unserializeKeyPublishToDevice(src: Uint8Array): KeyPublishAction {
-  const result = unserializeGeneric(src, [
-    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'recipient'),
-    (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
-    (d, o) => getArray(d, o, 'key'),
-  ]);
-
-  if (result.key.length !== tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE)
-    throw new InternalError('invalid key publish key size');
-  return result;
-}
 
 export const unserializeKeyPublish = (src: Uint8Array): KeyPublishAction => unserializeGeneric(src, [
   (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient'),
@@ -66,9 +52,6 @@ export const newKeyPublish = (b64Block: b64string): KeyPublish => {
 
   let keyPublishAction;
   switch (block.nature) {
-    case KeyPublishNatures.key_publish_to_device:
-      keyPublishAction = unserializeKeyPublishToDevice(block.payload);
-      break;
     case KeyPublishNatures.key_publish_to_provisional_user:
       keyPublishAction = unserializeKeyPublishToProvisionalUser(block.payload);
       break;

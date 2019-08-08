@@ -5,7 +5,7 @@ import { tcrypto } from '@tanker/crypto';
 import { expect } from './chai';
 import { toBase64 } from '../index';
 import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
-import { InvalidArgument, DecryptionFailed } from '../errors';
+import { InternalError, DecryptionFailed } from '../errors';
 
 import GroupManager from '../Groups/Manager';
 import LocalUser from '../Session/LocalUser';
@@ -93,7 +93,7 @@ describe('KeyDecryptor', () => {
   it('throws when not called with a key publish', async () => {
     const badKeyPublish = (({ nature: 42 }: any): KeyPublish);
 
-    await expect(decryptor.keyFromKeyPublish(badKeyPublish)).to.be.rejectedWith(InvalidArgument);
+    await expect(decryptor.keyFromKeyPublish(badKeyPublish)).to.be.rejectedWith(InternalError);
   });
 
   it('throws when user key cannot be found', async () => {
