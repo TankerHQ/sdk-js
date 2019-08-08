@@ -147,6 +147,11 @@ export class DataProtector {
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
+    if (shareWithSelf) {
+      const [{ resourceId, key }] = keys;
+      await this._resourceManager.saveResourceKey(resourceId, key);
+    }
+
     return this._publishKeys(keys, users, provisionalUsers, groups);
   }
 

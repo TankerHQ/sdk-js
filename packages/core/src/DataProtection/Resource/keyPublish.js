@@ -4,6 +4,8 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { getArray, getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
 import { unserializeBlock } from '../../Blocks/payloads';
 
+import { InternalError } from '../../errors';
+
 export const KeyPublishNatures = Object.freeze({
   key_publish_to_device: 3,
   key_publish_to_user: 8,
@@ -42,7 +44,7 @@ export function unserializeKeyPublishToDevice(src: Uint8Array): KeyPublishAction
   ]);
 
   if (result.key.length !== tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE)
-    throw new Error('invalid key publish key size');
+    throw new InternalError('invalid key publish key size');
   return result;
 }
 
@@ -75,7 +77,7 @@ export const newKeyPublish = (b64Block: b64string): KeyPublish => {
       keyPublishAction = unserializeKeyPublish(block.payload);
       break;
     default:
-      throw new Error('Assertion error: wrong type for keyPublishFromBlock');
+      throw new InternalError('Assertion error: wrong type for keyPublishFromBlock');
   }
 
   const typeSafeNature: KeyPublishNature = (block.nature: any);

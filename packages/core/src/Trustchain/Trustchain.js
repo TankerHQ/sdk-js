@@ -50,6 +50,7 @@ export default class Trustchain {
   async updateGroupStore(groupIds: Array<Uint8Array>) {
     return this._trustchainVerifier.updateGroupStore(groupIds);
   }
+
   async updateGroupStoreWithPublicEncryptionKey(groupPublicEncryptionKey: Uint8Array) {
     return this._trustchainVerifier.updateGroupStoreWithPublicEncryptionKey(groupPublicEncryptionKey);
   }

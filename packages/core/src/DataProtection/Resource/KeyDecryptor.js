@@ -5,6 +5,8 @@ import { tcrypto, type Key } from '@tanker/crypto';
 import GroupManager from '../../Groups/Manager';
 import LocalUser from '../../Session/LocalUser';
 
+import { DecryptionFailed, InternalError } from '../../errors';
+
 import { type KeyPublish, isKeyPublishToDevice, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './keyPublish';
 
 export class KeyDecryptor {
@@ -22,21 +24,21 @@ export class KeyDecryptor {
   async decryptResourceKeyPublishedToUser(keyPublishEntry: KeyPublish): Promise<Key> {
     const userKey = this._localUser.findUserKey(keyPublishEntry.recipient);
     if (!userKey)
-      throw new Error('User key not found');
+      throw new DecryptionFailed({ message: 'User key not found' });
     return tcrypto.sealDecrypt(keyPublishEntry.key, userKey);
   }
 
   async decryptResourceKeyPublishedToGroup(keyPublishEntry: KeyPublish): Promise<Key> {
     const encryptionKeyPair = await this._groupManager.getGroupEncryptionKeyPair(keyPublishEntry.recipient);
     if (!encryptionKeyPair)
-      throw new Error('Group not found');
+      throw new DecryptionFailed({ message: 'Group not found' });
     return tcrypto.sealDecrypt(keyPublishEntry.key, encryptionKeyPair);
   }
 
   async decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry: KeyPublish): Promise<Key> {
     const keys = this._localUser.findProvisionalUserKey(keyPublishEntry.recipient);
     if (!keys)
-      throw new Error('Provisional user key not found');
+      throw new DecryptionFailed({ message: 'Provisional user key not found' });
     const d1 = tcrypto.sealDecrypt(keyPublishEntry.key, keys.tankerEncryptionKeyPair);
     const d2 = tcrypto.sealDecrypt(d1, keys.appEncryptionKeyPair);
     return d2;
@@ -44,7 +46,7 @@ export class KeyDecryptor {
 
   async keyFromKeyPublish(keyPublishEntry: KeyPublish): Promise<Key> {
     if (isKeyPublishToDevice(keyPublishEntry.nature)) {
-      throw new Error('Key publish to device is not supported anymore');
+      throw new DecryptionFailed({ message: 'Key publish to device is not supported anymore' });
     }
 
     if (isKeyPublishToUser(keyPublishEntry.nature)) {
@@ -54,6 +56,6 @@ export class KeyDecryptor {
     } else if (isKeyPublishToProvisionalUser(keyPublishEntry.nature)) {
       return this.decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry);
     }
-    throw new Error('Invalid natyure for key publish');
+    throw new InternalError('Invalid nature for key publish');
   }
 }

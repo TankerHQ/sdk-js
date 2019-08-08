@@ -1,7 +1,7 @@
 // @flow
 import { tcrypto, random, generichash, utils, type Key } from '@tanker/crypto';
 
-import { InvalidArgument } from '../../errors';
+import { InvalidArgument, InternalError } from '../../errors';
 import { encryptData, extractResourceId } from '../Encryptor';
 import { KeyDecryptor } from './KeyDecryptor';
 
@@ -65,7 +65,7 @@ export class ResourceManager {
       resource_ids: [utils.toBase64(resourceId)],
     });
     if (!Array.isArray(response)) {
-      throw new Error('Invalid response from server');
+      throw new InternalError('Invalid response from server');
     }
     if (response.length === 0) {
       throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
