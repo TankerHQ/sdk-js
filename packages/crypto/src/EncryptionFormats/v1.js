@@ -40,3 +40,12 @@ export function decrypt(key: Uint8Array, data: EncryptionData, associatedData?: 
 export const extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
 
 export const overhead = 1 + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
+
+export const compatDecrypt = (key: Uint8Array, buffer: Uint8Array, additionalData?: Uint8Array): Uint8Array => {
+  try {
+    return decrypt(key, unserialize(buffer), additionalData);
+  } catch (e) {
+    const bufferWithVersion = utils.concatArrays(new Uint8Array([version]), buffer);
+    return decrypt(key, unserialize(bufferWithVersion), additionalData);
+  }
+};

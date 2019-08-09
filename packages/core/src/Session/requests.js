@@ -38,7 +38,7 @@ export const formatVerificationRequest = (verification: RemoteVerification, loca
   if (verification.email) {
     return {
       hashed_email: generichash(utils.fromString(verification.email)),
-      encrypted_email: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.email))),
+      encrypted_email: encryptionV2.compatEncrypt(localUser.userSecret, utils.fromString(verification.email)),
       verification_code: verification.verificationCode,
     };
   }
@@ -117,7 +117,7 @@ export const getVerificationMethods = async (client: Client, localUser: LocalUse
       if (encryptedEmail.length < encryptionV2.overhead) {
         throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
       }
-      method.email = utils.toString(encryptionV2.decrypt(localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
+      method.email = utils.toString(encryptionV2.compatDecrypt(localUser.userSecret, encryptedEmail));
       delete method.encrypted_email;
     }
 

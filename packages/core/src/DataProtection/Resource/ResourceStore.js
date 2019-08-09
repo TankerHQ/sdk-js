@@ -68,7 +68,7 @@ export default class ResourceStore {
       if (encryptedKey.length < encryptionV1.overhead) {
         throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV1.overhead} for encryption v1` });
       }
-      return encryptionV1.decrypt(this._userSecret, encryptionV1.unserialize(encryptedKey), resourceId);
+      return encryptionV1.compatDecrypt(this._userSecret, encryptedKey, resourceId);
     } catch (e) {
       if (e instanceof dbErrors.RecordNotFound) {
         return;

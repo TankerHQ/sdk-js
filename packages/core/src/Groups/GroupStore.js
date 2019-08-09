@@ -59,7 +59,7 @@ async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promi
     throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
   }
 
-  const ec = encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedPrivateKeys), ad);
+  const ec = encryptionV2.compatDecrypt(userSecret, encryptedPrivateKeys, ad);
   return unserializeGeneric(ec, [
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PRIVATE_KEY_SIZE, o, 'signatureKey'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE, o, 'encryptionKey'),
