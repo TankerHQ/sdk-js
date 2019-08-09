@@ -51,11 +51,10 @@ export class CloudStorageManager {
 
   async upload<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>): Promise<string> {
     const encryptor = await this._dataProtector.makeEncryptorStream(sharingOptions);
+    const { resourceId } = encryptor;
 
-    const { clearChunkSize, encryptedChunkSize, overheadPerChunk, resourceId } = encryptor;
     const totalClearSize = getDataLength(clearData);
-    const lastClearChunkSize = totalClearSize % clearChunkSize;
-    const totalEncryptedSize = Math.floor(totalClearSize / clearChunkSize) * encryptedChunkSize + lastClearChunkSize + overheadPerChunk;
+    const totalEncryptedSize = encryptor.getEncryptedSize(totalClearSize);
 
     const { url, headers, service } = await this._client.send('get file upload url', {
       resource_id: resourceId,

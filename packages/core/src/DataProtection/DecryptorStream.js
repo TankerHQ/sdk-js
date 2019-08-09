@@ -14,6 +14,7 @@ export default class DecryptorStream extends Transform {
   _state: {
     initialized: bool,
     index: number,
+    maxEncryptedChunkSize: number,
     lastEncryptedChunkSize: number,
   };
 
@@ -35,6 +36,7 @@ export default class DecryptorStream extends Transform {
     this._state = {
       initialized: false,
       index: 0,
+      maxEncryptedChunkSize: 0,
       lastEncryptedChunkSize: 0,
     };
   }
@@ -51,6 +53,7 @@ export default class DecryptorStream extends Transform {
 
     const key = await this._mapper.findKey(resourceId);
 
+    this._state.maxEncryptedChunkSize = encryptedChunkSize;
     this._resizerStream = new ResizerStream(encryptedChunkSize);
 
     this._decryptionStream = new Transform({
@@ -75,7 +78,7 @@ export default class DecryptorStream extends Transform {
       },
 
       flush: (done) => {
-        if (this._state.lastEncryptedChunkSize % encryptedChunkSize === 0) {
+        if (this._state.lastEncryptedChunkSize % this._state.maxEncryptedChunkSize === 0) {
           done(new DecryptionFailed({ message: 'Data has been truncated', resourceId }));
           return;
         }
@@ -119,4 +122,9 @@ export default class DecryptorStream extends Transform {
     this._decryptionStream.on('end', done);
     this._resizerStream.end();
   }
+
+  getClearSize = (encryptedSize: number): number => encryptionV4.getClearSize(
+    encryptedSize,
+    this._state.maxEncryptedChunkSize,
+  );
 }
