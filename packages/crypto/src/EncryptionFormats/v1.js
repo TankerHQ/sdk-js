@@ -1,0 +1,42 @@
+// @flow
+import { aead, random, tcrypto, utils } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
+
+import varint from 'varint';
+
+export type EncryptionData = {
+  encryptedData: Uint8Array,
+  resourceId?: Uint8Array,
+  iv: Uint8Array,
+};
+
+const version = 1;
+
+export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array(varint.encode(version)), data.encryptedData, data.iv);
+
+export const unserialize = (buffer: Uint8Array): EncryptionData => {
+  const bufferVersion = varint.decode(buffer);
+  if (bufferVersion !== version) {
+    throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
+  }
+
+  const encryptedData = buffer.subarray(1, buffer.length - tcrypto.XCHACHA_IV_SIZE);
+  const iv = buffer.subarray(buffer.length - tcrypto.XCHACHA_IV_SIZE);
+
+  const resourceId = aead.extractMac(buffer);
+  return { iv, encryptedData, resourceId };
+};
+
+export const encrypt = (key: Uint8Array, plaintext: Uint8Array, associatedData?: Uint8Array): EncryptionData => {
+  const iv = random(tcrypto.XCHACHA_IV_SIZE);
+  const encryptedData = aead.encryptAEAD(key, iv, plaintext, associatedData);
+  return { encryptedData, iv };
+};
+
+export function decrypt(key: Uint8Array, data: EncryptionData, associatedData?: Uint8Array): Uint8Array {
+  return aead.decryptAEAD(key, data.iv, data.encryptedData, associatedData);
+}
+
+export const extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
+
+export const overhead = 1 + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;

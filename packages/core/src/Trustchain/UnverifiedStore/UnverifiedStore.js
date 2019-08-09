@@ -2,19 +2,20 @@
 import { type DataStore } from '@tanker/datastore-base';
 
 import type {
-  UnverifiedKeyPublish,
   UnverifiedUserGroup, VerifiedUserGroup,
   UnverifiedDeviceCreation, VerifiedDeviceCreation,
   UnverifiedDeviceRevocation, VerifiedDeviceRevocation,
   UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
 } from '../../Blocks/entries';
-import KeyPublishUnverifiedStore from './KeyPublishUnverifiedStore';
 import ProvisionalIdentityClaimUnverifiedStore from './ProvisionalIdentityClaimUnverifiedStore';
 import UserUnverifiedStore from './UserUnverifiedStore';
 import UserGroupsUnverifiedStore from './UserGroupsUnverifiedStore';
 
 const schemaTablesV3 = [
-  ...KeyPublishUnverifiedStore.tables,
+  {
+    name: 'unverified_key_publishes',
+    indexes: [['resourceId'], ['nature']]
+  }
 ];
 
 const schemaTablesV4 = [
@@ -30,7 +31,6 @@ const schemaTablesV6 = [
 
 // Storage for unverified blocks of different natures
 export default class UnverifiedStore {
-  keyPublishUnverifiedStore: KeyPublishUnverifiedStore;
   userUnverifiedStore: UserUnverifiedStore;
   userGroupsUnverifiedStore: UserGroupsUnverifiedStore;
   provisionalIdentityClaimUnverifiedStore: ProvisionalIdentityClaimUnverifiedStore;
@@ -68,7 +68,6 @@ export default class UnverifiedStore {
 
   static async open(ds: DataStore<*>): Promise<UnverifiedStore> {
     const store = new UnverifiedStore();
-    store.keyPublishUnverifiedStore = await KeyPublishUnverifiedStore.open(ds);
     store.userUnverifiedStore = await UserUnverifiedStore.open(ds);
     store.userGroupsUnverifiedStore = await UserGroupsUnverifiedStore.open(ds);
     store.provisionalIdentityClaimUnverifiedStore = await ProvisionalIdentityClaimUnverifiedStore.open(ds);
@@ -76,18 +75,9 @@ export default class UnverifiedStore {
   }
 
   async close(): Promise<void> {
-    await this.keyPublishUnverifiedStore.close();
     await this.userUnverifiedStore.close();
     await this.userGroupsUnverifiedStore.close();
     await this.provisionalIdentityClaimUnverifiedStore.close();
-  }
-
-  async addUnverifiedKeyPublishes(entries: Array<UnverifiedKeyPublish>) {
-    return this.keyPublishUnverifiedStore.addUnverifiedKeyPublishes(entries);
-  }
-
-  async findUnverifiedKeyPublish(resourceId: Uint8Array): Promise<?UnverifiedKeyPublish> {
-    return this.keyPublishUnverifiedStore.findUnverifiedKeyPublish(resourceId);
   }
 
   async addUnverifiedUserEntries(entries: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>): Promise<void> {

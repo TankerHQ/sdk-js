@@ -1,12 +1,11 @@
 // @flow
 import sinon from 'sinon';
 
-import { utils, aead, random, tcrypto } from '@tanker/crypto';
+import { utils, random, tcrypto, encryptionV4 } from '@tanker/crypto';
 import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
 import { InvalidArgument, DecryptionFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
-import { currentStreamVersion, serializeHeaderV4 } from '../Resource/ResourceManager';
 
 describe('Decryptor Stream', () => {
   let buffer: Array<Uint8Array>;
@@ -27,14 +26,8 @@ describe('Decryptor Stream', () => {
 
   const encryptMsg = (index, str) => {
     const clear = utils.fromString(str);
-    const header = serializeHeaderV4({
-      version: currentStreamVersion,
-      resourceId,
-      encryptedChunkSize: clear.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD + 21,
-    });
-    const ivSeed = random(tcrypto.XCHACHA_IV_SIZE);
-    const iv = tcrypto.deriveIV(ivSeed, index);
-    const encrypted = utils.concatArrays(header, ivSeed, aead.encryptAEAD(key, iv, clear));
+    const encryptedChunkSize = encryptionV4.overhead + clear.length;
+    const encrypted = encryptionV4.serialize(encryptionV4.encrypt(key, index, resourceId, encryptedChunkSize, clear));
     return { clear, encrypted };
   };
 
@@ -68,8 +61,7 @@ describe('Decryptor Stream', () => {
     const msg2 = encryptMsg(1, '2nd message');
     const emptyMsg = encryptMsg(2, '');
 
-    stream.write(msg1.encrypted.subarray(0, 21));
-    stream.write(msg1.encrypted.subarray(21));
+    stream.write(msg1.encrypted);
     stream.write(msg2.encrypted);
     stream.write(emptyMsg.encrypted);
     stream.end();
@@ -85,8 +77,7 @@ describe('Decryptor Stream', () => {
     const msg1 = encryptMsg(0, '1st message');
     const msg2 = encryptMsg(1, '2nd');
 
-    stream.write(msg1.encrypted.subarray(0, 21));
-    stream.write(msg1.encrypted.subarray(21));
+    stream.write(msg1.encrypted);
     stream.write(msg2.encrypted);
     stream.end();
 
@@ -274,10 +265,10 @@ describe('Decryptor Stream', () => {
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
-    it('throws DecryptionFailed when the header is corrupted', async () => {
+    it('throws InvalidArgument when the header is corrupted', async () => {
       chunks[0][0] += 1;
       stream.write(chunks[0]);
-      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
+      await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
     it('throws DecryptionFailed when data is written in wrong order', async () => {

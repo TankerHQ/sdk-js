@@ -5,7 +5,7 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
-import SharedKeystore from '../Resource/ResourceStore';
+import SharedKeystore from '../DataProtection/Resource/ResourceStore';
 
 describe('ResourceStore', () => {
   let dbName;

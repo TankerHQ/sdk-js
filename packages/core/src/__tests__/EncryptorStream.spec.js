@@ -1,11 +1,10 @@
 // @flow
-import { aead, random, tcrypto, utils } from '@tanker/crypto';
+import { aead, random, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 
 import { expect } from './chai';
 import EncryptorStream from '../DataProtection/EncryptorStream';
 import { InvalidArgument } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
-import { currentStreamVersion, getResourceId, extractHeaderV4 } from '../Resource/ResourceManager';
 
 describe('Encryptor Stream', () => {
   const headerV4Length = 21;
@@ -20,12 +19,6 @@ describe('Encryptor Stream', () => {
     stream.on('error', (err) => sync.reject(err));
     stream.on('end', () => sync.resolve());
     return sync;
-  };
-
-  const splitArray = (a: Uint8Array, index: number): [Uint8Array, Uint8Array] => {
-    const head = a.subarray(0, index);
-    const tail = a.subarray(index);
-    return [head, tail];
   };
 
   before(() => {
@@ -63,11 +56,10 @@ describe('Encryptor Stream', () => {
     stream.end();
     await sync.promise;
 
-    const { header } = extractHeaderV4(buffer[0]);
+    const data = encryptionV4.unserialize(buffer[0]);
 
-    expect(header.version).to.equal(currentStreamVersion);
-    expect(header.resourceId).to.deep.equal(resourceId);
-    expect(typeof header.encryptedChunkSize).to.equal('number');
+    expect(data.resourceId).to.deep.equal(resourceId);
+    expect(typeof data.encryptedChunkSize).to.equal('number');
   });
 
   it('outputs a resource from which you can directly get the resource id', async () => {
@@ -76,7 +68,7 @@ describe('Encryptor Stream', () => {
     stream.end();
     await sync.promise;
 
-    expect(getResourceId(buffer[0])).to.deep.equal(resourceId);
+    expect(encryptionV4.extractResourceId(buffer[0])).to.deep.equal(resourceId);
   });
 
   it('derives its iv and push header before encryption', async () => {
@@ -93,12 +85,12 @@ describe('Encryptor Stream', () => {
     await expect(sync.promise).to.be.fulfilled;
 
     expect(buffer.length).to.be.equal(1);
-    const { data, header } = extractHeaderV4(buffer[0]);
+    const data = encryptionV4.unserialize(buffer[0]);
 
-    expect(header.resourceId).to.deep.equal(resourceId);
+    expect(data.resourceId).to.deep.equal(resourceId);
 
-    const eMsg = data.subarray(tcrypto.XCHACHA_IV_SIZE);
-    const ivSeed = data.subarray(0, tcrypto.XCHACHA_IV_SIZE);
+    const eMsg = data.encryptedData;
+    const ivSeed = data.ivSeed;
     const iv = tcrypto.deriveIV(ivSeed, 0);
 
     expect(() => aead.decryptAEAD(key, ivSeed, eMsg)).to.throw();
@@ -125,17 +117,9 @@ describe('Encryptor Stream', () => {
     expect(buffer.length).to.equal(3);
 
     buffer.forEach((chunk, index) => {
-      const { data, header } = extractHeaderV4(chunk);
-      expect(header.version).to.equal(currentStreamVersion);
-      expect(header.encryptedChunkSize).to.equal(encryptedChunkSize);
-      expect(header.resourceId).to.deep.equal(resourceId);
-
-      const [ivSeed, eMsg] = splitArray(data, tcrypto.XCHACHA_IV_SIZE);
-      const iv = tcrypto.deriveIV(ivSeed, index);
-
-      // Last chunk is an empty chunk added to check integrity (data has not been truncated)
+      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]));
       const expectedMsg = index === 2 ? new Uint8Array(0) : msg;
-      expect(aead.decryptAEAD(key, iv, eMsg)).to.deep.equal(expectedMsg);
+      expect(clearData).to.deep.equal(expectedMsg);
     });
   });
 
@@ -160,16 +144,9 @@ describe('Encryptor Stream', () => {
     expect(buffer.length).to.equal(3);
 
     buffer.forEach((chunk, index) => {
-      const { data, header } = extractHeaderV4(chunk);
-      expect(header.version).to.equal(currentStreamVersion);
-      expect(header.encryptedChunkSize).to.equal(encryptedChunkSize);
-      expect(header.resourceId).to.deep.equal(resourceId);
-
-      const [ivSeed, eMsg] = splitArray(data, tcrypto.XCHACHA_IV_SIZE);
-      const iv = tcrypto.deriveIV(ivSeed, index);
-
+      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]));
       const expectedMsg = index === 2 ? msg.subarray(1) : msg;
-      expect(aead.decryptAEAD(key, iv, eMsg)).to.deep.equal(expectedMsg);
+      expect(clearData).to.deep.equal(expectedMsg);
     });
   });
 });

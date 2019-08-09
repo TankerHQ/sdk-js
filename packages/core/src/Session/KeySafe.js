@@ -1,9 +1,8 @@
 // @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, encryptionV1, type b64string } from '@tanker/crypto';
 
 import { type UserKeys } from '../Blocks/payloads';
-import * as EncryptorV1 from '../DataProtection/Encryptors/v1';
-import { InternalError } from '../errors';
+import { InternalError, DecryptionFailed } from '../errors';
 
 export type ProvisionalUserKeyPairs = {|
   id: string,
@@ -43,11 +42,14 @@ async function encryptObject(key: Uint8Array, plainObject: Object): Promise<Uint
     }
     return v;
   });
-  return EncryptorV1.encrypt(key, utils.fromString(json));
+  return encryptionV1.serialize(encryptionV1.encrypt(key, utils.fromString(json)));
 }
 
 async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<Object> {
-  const jsonBytes = EncryptorV1.decrypt(key, ciphertext);
+  if (ciphertext.length < encryptionV1.overhead) {
+    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV1.overhead} for encryption v1` });
+  }
+  const jsonBytes = encryptionV1.decrypt(key, encryptionV1.unserialize(ciphertext));
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
     if (typeof v === 'string' && startsWith(v, base64Prefix))
       return utils.fromBase64(v.substring(base64Prefix.length));

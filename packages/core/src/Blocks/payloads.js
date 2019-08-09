@@ -57,15 +57,6 @@ export type KeyPublishRecord = {|
   key: Uint8Array,
 |}
 
-// the recipient is a User Key
-export type KeyPublishToUserRecord = KeyPublishRecord;
-
-// the recipient is a Group Public Key
-export type KeyPublishToUserGroupRecord = KeyPublishRecord;
-
-// the recipient is an provisional Public Key
-export type KeyPublishToProvisionalUserRecord = KeyPublishRecord;
-
 export type DeviceRevocationRecord = {|
   device_id: Uint8Array,
   user_keys?: UserKeys,
@@ -153,7 +144,6 @@ export type ProvisionalIdentityClaimRecord = {|
 |}
 
 export type Record = TrustchainCreationRecord | UserDeviceRecord | DeviceRevocationRecord | ProvisionalIdentityClaimRecord |
-                      KeyPublishRecord | KeyPublishToUserRecord | KeyPublishToUserGroupRecord | KeyPublishToProvisionalUserRecord |
                       UserGroupCreationRecordV1 | UserGroupCreationRecordV2 | UserGroupAdditionRecordV1 | UserGroupAdditionRecordV2 |
                       ProvisionalIdentityClaimRecord;
 
@@ -345,35 +335,6 @@ export function serializeKeyPublish(keyPublish: KeyPublishRecord): Uint8Array {
     keyPublish.resourceId,
     keyPublish.key,
   );
-}
-
-export function unserializeKeyPublishToDevice(src: Uint8Array): KeyPublishRecord {
-  const result = unserializeGeneric(src, [
-    (d, o) => getStaticArray(d, hashSize, o, 'recipient'),
-    (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
-    (d, o) => getArray(d, o, 'key'),
-  ]);
-
-  if (result.key.length !== tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE)
-    throw new InternalError('invalid key publish key size');
-  return result;
-}
-
-export function unserializeKeyPublishToProvisionalUser(src: Uint8Array): KeyPublishRecord {
-  // NOTE: We concatenate the public signature keys of the app and tanker as a single recipient field, since we don't use them separately
-  return unserializeGeneric(src, [
-    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE * 2, o, 'recipient'),
-    (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
-    (d, o) => getStaticArray(d, TWO_TIMES_SEALED_KEY_SIZE, o, 'key'),
-  ]);
-}
-
-export function unserializeKeyPublish(src: Uint8Array): KeyPublishToUserGroupRecord | KeyPublishToUserRecord {
-  return unserializeGeneric(src, [
-    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient'),
-    (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
-    (d, o) => getStaticArray(d, SEALED_KEY_SIZE, o, 'key'),
-  ]);
 }
 
 export function serializeDeviceRevocationV1(deviceRevocation: DeviceRevocationRecord): Uint8Array {
@@ -653,10 +614,6 @@ export function unserializePayload(block: Block): Record {
     case NATURE.device_creation_v1: return unserializeUserDeviceV1(block.payload);
     case NATURE.device_creation_v2: return unserializeUserDeviceV2(block.payload);
     case NATURE.device_creation_v3: return unserializeUserDeviceV3(block.payload);
-    case NATURE.key_publish_to_device: return unserializeKeyPublishToDevice(block.payload);
-    case NATURE.key_publish_to_user: return unserializeKeyPublish(block.payload);
-    case NATURE.key_publish_to_user_group: return unserializeKeyPublish(block.payload);
-    case NATURE.key_publish_to_provisional_user: return unserializeKeyPublishToProvisionalUser(block.payload);
     case NATURE.device_revocation_v1: return unserializeDeviceRevocationV1(block.payload);
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
     case NATURE.user_group_creation_v1: return unserializeUserGroupCreationV1(block.payload);

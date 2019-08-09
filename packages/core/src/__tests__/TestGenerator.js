@@ -6,10 +6,8 @@ import { type PublicProvisionalUser, createIdentity, getPublicIdentity } from '@
 import {
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
-  keyPublishFromBlock,
   userGroupEntryFromBlock,
   provisionalIdentityClaimFromBlock,
-  type UnverifiedKeyPublish,
   type UnverifiedUserGroup,
   type UnverifiedDeviceCreation,
   type UnverifiedDeviceRevocation,
@@ -17,11 +15,12 @@ import {
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
 
+import { hashBlock, type Block } from '../Blocks/Block';
+import { serializeBlock } from '../Blocks/payloads';
+
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group, type ExternalGroup } from '../Groups/types';
-
-import { hashBlock, signBlock, type Block } from '../Blocks/Block';
-import { encodeArrayLength } from '../Blocks/Serialize';
+import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
 
 import { rootBlockAuthor } from '../Trustchain/Verify';
 
@@ -86,9 +85,10 @@ export type TestDeviceRevocation = {
 }
 
 export type TestKeyPublish = {
-  unverifiedKeyPublish: UnverifiedKeyPublish,
   block: Block,
-  resourceId: Uint8Array
+  keyPublish: KeyPublish,
+  resourceId: Uint8Array,
+  resourceKey: Uint8Array
 };
 
 export type TestUserGroup = {
@@ -311,40 +311,6 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToDeviceBlock(parentDevice: TestDeviceCreation, recipient: Device, resourceId: Uint8Array): Block {
-    const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const sharedKey = tcrypto.asymEncrypt(
-      resourceKey,
-      recipient.devicePublicEncryptionKey,
-      parentDevice.testDevice.encryptionKeys.privateKey
-    );
-    const pKeyBlock = signBlock({
-      index: 0,
-      trustchain_id: this._trustchainId,
-      nature: preferredNature(NATURE_KIND.key_publish_to_device),
-      author: parentDevice.testDevice.id,
-      payload: utils.concatArrays(
-        recipient.devicePublicEncryptionKey,
-        resourceId,
-        encodeArrayLength(sharedKey), sharedKey
-      ) }, parentDevice.testDevice.signKeys.privateKey);
-    return pKeyBlock;
-  }
-
-  makeKeyPublishToDevice = (parentDevice: TestDeviceCreation, recipient: Device): TestKeyPublish => {
-    const resourceId = random(tcrypto.MAC_SIZE);
-    this._trustchainIndex += 1;
-    const block = this.makeKeyPublishToDeviceBlock(parentDevice, recipient, resourceId);
-    block.index = this._trustchainIndex;
-
-    const unverifiedKeyPublish = keyPublishFromBlock(block);
-    return {
-      unverifiedKeyPublish,
-      block,
-      resourceId
-    };
-  }
-
   makeKeyPublishToUser = (parentDevice: TestDeviceCreation, recipient: User): TestKeyPublish => {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = random(tcrypto.MAC_SIZE);
@@ -362,11 +328,12 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishBlock(lastUserKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user);
     block.index = this._trustchainIndex;
 
-    const unverifiedKeyPublish = keyPublishFromBlock(block);
+    const keyPublish = newKeyPublish(utils.toBase64(serializeBlock(block)));
     return {
-      unverifiedKeyPublish,
+      keyPublish,
       block,
-      resourceId
+      resourceId,
+      resourceKey
     };
   }
 
@@ -383,11 +350,12 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishBlock(recipient.publicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
     block.index = this._trustchainIndex;
 
-    const unverifiedKeyPublish = keyPublishFromBlock(block);
+    const keyPublish = newKeyPublish(utils.toBase64(serializeBlock(block)));
     return {
-      unverifiedKeyPublish,
+      keyPublish,
       block,
-      resourceId
+      resourceId,
+      resourceKey
     };
   }
 
@@ -405,10 +373,12 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishToProvisionalUserBlock(recipient, resourceKey, resourceId);
     block.index = this._trustchainIndex;
 
+    const keyPublish = newKeyPublish(utils.toBase64(serializeBlock(block)));
     return {
-      unverifiedKeyPublish: keyPublishFromBlock(block),
+      keyPublish,
       block,
-      resourceId
+      resourceId,
+      resourceKey
     };
   }
 

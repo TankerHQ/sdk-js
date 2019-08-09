@@ -7,7 +7,10 @@ import type { Data } from '@tanker/types';
 import type { Readable, Transform } from '@tanker/stream-base';
 
 import { DecryptionFailed, InternalError } from '../errors';
-import { ResourceManager, getResourceId } from '../Resource/ResourceManager';
+import { ResourceManager } from './Resource/ResourceManager';
+import ResourceStore from './Resource/ResourceStore';
+import { KeyDecryptor } from './Resource/KeyDecryptor';
+
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
@@ -16,7 +19,7 @@ import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-import { decryptData, getEncryptionFormat } from './Encryptor';
+import { decryptData, getEncryptionFormat, extractResourceId } from './Encryptor';
 import type { OutputOptions, ShareWithOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
@@ -41,14 +44,21 @@ export class DataProtector {
   _streams: Streams;
 
   constructor(
-    resourceManager: ResourceManager,
+    resourceStore: ResourceStore,
     client: Client,
     groupManager: GroupManager,
     localUser: LocalUser,
     userAccessor: UserAccessor,
     streams: Streams,
   ) {
-    this._resourceManager = resourceManager;
+    this._resourceManager = new ResourceManager(
+      resourceStore,
+      client,
+      new KeyDecryptor(
+        localUser,
+        groupManager
+      ),
+    );
     this._client = client;
     this._groupManager = groupManager;
     this._localUser = localUser;
@@ -148,8 +158,8 @@ export class DataProtector {
   async _simpleDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>): Promise<T> {
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array });
 
-    const resourceId = getResourceId(castEncryptedData);
-    const key = await this._resourceManager.findKeyFromResourceId(resourceId, true);
+    const resourceId = extractResourceId(castEncryptedData);
+    const key = await this._resourceManager.findKeyFromResourceId(resourceId);
 
     let clearData;
     try {
@@ -241,7 +251,7 @@ export class DataProtector {
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
     const resourceIdKeyMapper = {
-      findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId, true)
+      findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId)
     };
     return new DecryptorStream(resourceIdKeyMapper);
   }

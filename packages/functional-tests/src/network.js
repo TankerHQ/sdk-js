@@ -46,6 +46,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
 
     it('can decrypt a resource locally', async () => {
       const encrypted = await alicePhone.encrypt(clearText);
+      await alicePhone.decrypt(encrypted);
 
       await restartWithNetworkIssue(alicePhone, aliceIdentity);
       const decrypted = await alicePhone.decrypt(encrypted);

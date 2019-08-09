@@ -8,7 +8,7 @@ import EventEmitter from 'events';
 
 import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
-import { getResourceId as syncGetResourceId } from './Resource/ResourceManager';
+import { extractResourceId } from './DataProtection/Encryptor';
 
 import { DecryptionFailed, InternalError, InvalidArgument, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
@@ -320,7 +320,7 @@ export class Tanker extends EventEmitter {
     const source = await castData(encryptedData, { type: Uint8Array }, SAFE_RESOURCE_ID_EXTRACTION);
 
     try {
-      return utils.toBase64(syncGetResourceId(source));
+      return utils.toBase64(extractResourceId(source));
     } catch (e) {
       if (e instanceof DecryptionFailed) {
         throw new InvalidArgument('"encryptedData" is corrupted');

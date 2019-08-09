@@ -25,28 +25,6 @@ describe('UnverifiedStore', () => {
     unverifiedStore = await initUnverifiedStore();
   });
 
-  describe('key publishes', () => {
-    let keyPublish;
-
-    before(async () => {
-      const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      keyPublish = testGenerator.makeKeyPublishToUser(userCreation, userCreation.user);
-
-      await unverifiedStore.addUnverifiedKeyPublishes([keyPublish.unverifiedKeyPublish]);
-    });
-
-    it('returns null when fetching a missing key publish', async () => {
-      const result = await unverifiedStore.findUnverifiedKeyPublish(new Uint8Array(0));
-      expect(result).to.equal(null);
-    });
-
-    it('finds an unverified key publish', async () => {
-      const result = await unverifiedStore.findUnverifiedKeyPublish(keyPublish.resourceId);
-      expect(result).excluding('_rev', '_idx').to.deep.equal(keyPublish.unverifiedKeyPublish);
-    });
-  });
-
   describe('user devices & revocations', () => {
     let userCreation;
     let deviceCreation;
