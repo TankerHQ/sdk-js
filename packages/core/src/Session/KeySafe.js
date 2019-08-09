@@ -49,7 +49,7 @@ async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<O
   if (ciphertext.length < encryptionV1.overhead) {
     throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV1.overhead} for encryption v1` });
   }
-  const jsonBytes = encryptionV1.decrypt(key, encryptionV1.unserialize(ciphertext));
+  const jsonBytes = encryptionV1.compatDecrypt(key, ciphertext);
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
     if (typeof v === 'string' && startsWith(v, base64Prefix))
       return utils.fromBase64(v.substring(base64Prefix.length));
