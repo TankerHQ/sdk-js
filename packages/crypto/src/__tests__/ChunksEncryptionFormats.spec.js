@@ -103,4 +103,13 @@ describe('Encryption V4', () => {
     const decryptedData = encryptorV4.decrypt(key, 2, encryptorV4.unserialize(encryptedData));
     expect(decryptedData).to.deep.equal(new Uint8Array(0));
   });
+
+  it('should compute clear and encrypted sizes', () => {
+    const { overhead, getClearSize, getEncryptedSize } = encryptorV4;
+    const clearSize = getClearSize(chunk1.length + chunk2.length, encryptedChunkSize);
+    const encryptedSize = getEncryptedSize(testMessage.length, encryptedChunkSize);
+    expect(clearSize).to.equal(testMessage.length);
+    expect(encryptedSize).to.equal(chunk1.length + chunk2.length);
+    expect(encryptedSize - clearSize).to.equal(2 * overhead);
+  });
 });
