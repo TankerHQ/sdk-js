@@ -4,11 +4,14 @@ import FilePonyfill from '@tanker/file-ponyfill';
 import globalThis from '@tanker/global-this';
 import { getConstructor, type Data } from '@tanker/types';
 
+import type { OnProgress } from './ProgressHandler';
 import { InternalError, InvalidArgument } from '../errors';
 
 export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Array;
 
 export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: string, lastModified?: number };
+
+export type ProgressOptions = { onProgress?: OnProgress };
 
 export type SharingOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
 
@@ -88,4 +91,17 @@ export const extractOutputOptions = <T: Data>(options: Object, input?: Data): Ou
   }
 
   return outputOptions;
+};
+
+export const extractProgressOptions = (options: Object): ProgressOptions => {
+  const progressOptions = {};
+
+  if ('onProgress' in options) {
+    if (typeof options.onProgress !== 'function')
+      throw new InvalidArgument('options', '{ onProgress?: (progress: { currentBytes: number, totalBytes: ?number }) => void }', options);
+
+    progressOptions.onProgress = options.onProgress;
+  }
+
+  return progressOptions;
 };

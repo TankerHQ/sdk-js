@@ -95,6 +95,7 @@ export default class DecryptorStream extends Transform {
     this._resizerStream.pipe(this._decryptionStream);
 
     this._state.initialized = true;
+    this.emit('initialized');
   }
 
   async _transform(encryptedData: Uint8Array, encoding: ?string, done: Function) {

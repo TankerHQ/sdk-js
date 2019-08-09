@@ -1,9 +1,11 @@
 // @flow
+import sinon from 'sinon';
 import uuid from 'uuid';
 import { errors } from '@tanker/core';
-import { tcrypto, utils } from '@tanker/crypto';
+import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import FilePonyfill from '@tanker/file-ponyfill';
+import { getDataLength } from '@tanker/types';
 import { expect } from './chai';
 
 import { type TestArgs } from './TestArgs';
@@ -36,6 +38,18 @@ const getConstructorName = (constructor: Object): string => {
     return 'Blob';
   else
     throw new Error(`Test error: unexpected constructor in getConstructorName: ${constructor}`);
+};
+
+const expectProgressReport = (spy, totalBytes, maxBytesPerStep = encryptionV4.defaultMaxEncryptedChunkSize) => {
+  const stepCount = 1 + Math.ceil(totalBytes / maxBytesPerStep);
+  expect(spy.callCount).to.equal(stepCount);
+
+  let currentBytes = 0;
+  for (let step = 0; step < stepCount - 1; step++) {
+    expect(spy.getCall(step).args).to.deep.equal([{ currentBytes, totalBytes }]);
+    currentBytes += maxBytesPerStep;
+  }
+  expect(spy.getCall(stepCount - 1).args).to.deep.equal([{ currentBytes: totalBytes, totalBytes }]);
 };
 
 const generateEncryptTests = (args: TestArgs) => {
@@ -132,6 +146,17 @@ const generateEncryptTests = (args: TestArgs) => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const decrypted = await bobLaptop.decrypt(encrypted);
         expect(decrypted).to.equal(clearText);
+      });
+
+      it('can report progress when encrypting and decrypting', async () => {
+        const onProgress = sinon.spy();
+
+        const encrypted = await bobLaptop.encrypt(clearText, { onProgress });
+        expectProgressReport(onProgress, encrypted.length);
+        onProgress.resetHistory();
+
+        const decrypted = await bobLaptop.decrypt(encrypted, { onProgress });
+        expectProgressReport(onProgress, decrypted.length, encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
       });
     });
 
@@ -452,13 +477,17 @@ const generateEncryptTests = (args: TestArgs) => {
     forEachSize(['small', 'medium', 'big'], size => {
       args.resources[size].forEach(({ type, resource: clear }) => {
         it(`can encrypt and decrypt a ${size} ${getConstructorName(type)}`, async () => {
-          const encrypted = await aliceLaptop.encryptData(clear);
+          const onProgress = sinon.spy();
+
+          const encrypted = await aliceLaptop.encryptData(clear, { onProgress });
           expectSameType(encrypted, clear);
+          expectProgressReport(onProgress, getDataLength(encrypted));
+          onProgress.resetHistory();
 
-          const decrypted = await aliceLaptop.decryptData(encrypted);
+          const decrypted = await aliceLaptop.decryptData(encrypted, { onProgress });
           expectSameType(decrypted, clear);
-
           expectDeepEqual(decrypted, clear);
+          expectProgressReport(onProgress, getDataLength(decrypted), encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
         });
       });
     });
@@ -530,7 +559,23 @@ const generateEncryptTests = (args: TestArgs) => {
       });
     });
 
-    it('can download a shared file', async () => {
+    it('can report progress at upload and download', async () => {
+      const onProgress = sinon.spy();
+
+      const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2];
+
+      const fileId = await aliceLaptop.upload(clear, { onProgress });
+      const encryptedSize = encryptionV4.getEncryptedSize(clearSize, encryptionV4.defaultMaxEncryptedChunkSize);
+      expectProgressReport(onProgress, encryptedSize);
+      onProgress.resetHistory();
+
+      const decrypted = await aliceLaptop.download(fileId, { onProgress });
+      expectType(decrypted, originalType);
+      expectDeepEqual(decrypted, clear);
+      expectProgressReport(onProgress, getDataLength(decrypted), encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
+    });
+
+    it('can download a file shared at upload', async () => {
       const { type: originalType, resource: clear } = args.resources.small[2];
 
       const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity] });

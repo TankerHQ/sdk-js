@@ -14,9 +14,8 @@ import { statusDefs, statuses, type Status, type Verification, type EmailVerific
 
 import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
-import type { OutputOptions, SharingOptions } from './DataProtection/options';
-
-import { defaultDownloadType, extractOutputOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
+import type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
+import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
 import type { Streams } from './DataProtection/DataProtector';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
@@ -384,17 +383,18 @@ export class Tanker extends EventEmitter {
     return this._session.apis.dataProtector.makeDecryptorStream();
   }
 
-  async encryptData<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T>> = {}): Promise<T> {
+  async encryptData<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     this.assert(statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
+    const progressOptions = extractProgressOptions(options);
     const sharingOptions = extractSharingOptions(options);
 
-    return this._session.apis.dataProtector.encryptData(clearData, sharingOptions, outputOptions);
+    return this._session.apis.dataProtector.encryptData(clearData, sharingOptions, outputOptions, progressOptions);
   }
 
-  async encrypt<T: Data>(plain: string, options?: $Shape<SharingOptions & OutputOptions<T>>): Promise<T> {
+  async encrypt<T: Data>(plain: string, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
     this.assert(statuses.READY, 'encrypt');
 
     if (typeof plain !== 'string')
@@ -403,30 +403,33 @@ export class Tanker extends EventEmitter {
     return this.encryptData(utils.fromString(plain), options);
   }
 
-  async decryptData<T: Data>(encryptedData: Data, options?: $Shape<OutputOptions<T>> = {}): Promise<T> {
+  async decryptData<T: Data>(encryptedData: Data, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     this.assert(statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
     const outputOptions = extractOutputOptions(options, encryptedData);
+    const progressOptions = extractProgressOptions(options);
 
-    return this._session.apis.dataProtector.decryptData(encryptedData, outputOptions);
+    return this._session.apis.dataProtector.decryptData(encryptedData, outputOptions, progressOptions);
   }
 
-  async decrypt(cipher: Data): Promise<string> {
-    return utils.toString(await this.decryptData(cipher, { type: Uint8Array }));
+  async decrypt(cipher: Data, options?: $Shape<ProgressOptions> = {}): Promise<string> {
+    const progressOptions = extractProgressOptions(options);
+    return utils.toString(await this.decryptData(cipher, { ...progressOptions, type: Uint8Array }));
   }
 
-  async upload<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T>> = {}): Promise<string> {
+  async upload<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<string> {
     this.assert(statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
+    const progressOptions = extractProgressOptions(options);
     const sharingOptions = extractSharingOptions(options);
 
-    return this._session.apis.cloudStorageManager.upload(clearData, sharingOptions, outputOptions);
+    return this._session.apis.cloudStorageManager.upload(clearData, sharingOptions, outputOptions, progressOptions);
   }
 
-  async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T>> = {}): Promise<T> {
+  async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     this.assert(statuses.READY, 'download a file');
 
     if (typeof resourceId !== 'string')
@@ -436,8 +439,9 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
 
     const outputOptions = extractOutputOptions({ type: defaultDownloadType, ...options });
+    const progressOptions = extractProgressOptions(options);
 
-    return this._session.apis.cloudStorageManager.download(resourceId, outputOptions);
+    return this._session.apis.cloudStorageManager.download(resourceId, outputOptions, progressOptions);
   }
 }
 

@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import { InvalidArgument } from '@tanker/errors';
 
 import { expect } from './chai';
-import { ProgressHandler } from '../DataProtection/progress';
+import { ProgressHandler } from '../DataProtection/ProgressHandler';
 
 describe('ProgressHandler', () => {
   it('can report progress knowing the total byte size', async () => {

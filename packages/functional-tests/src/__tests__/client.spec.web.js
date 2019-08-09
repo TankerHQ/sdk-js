@@ -21,28 +21,30 @@ const makeTanker = (appId: b64string): Tanker => {
 };
 
 const generateTestResources = (): TestResources => {
-  const small = makeRandomUint8Array(1024); // 1kB -> this will use v3 format
-  const medium = makeRandomUint8Array(1024 * 1024); // 1MB -> this will use v4 format with 2 chunks
-  const big = makeRandomUint8Array(6 * 1024 * 1024); // 6MB -> this will use v4 format with 7 chunks
+  const sizes = [1024, 1024 * 1024, 6 * 1024 * 1024];
+
+  const small = makeRandomUint8Array(sizes[0]); // 1kB -> this will use v3 format
+  const medium = makeRandomUint8Array(sizes[1]); // 1MB -> this will use v4 format with 2 chunks
+  const big = makeRandomUint8Array(sizes[2]); // 6MB -> this will use v4 format with 7 chunks
 
   const result = {
     small: [
-      { type: ArrayBuffer, resource: small.buffer },
-      { type: Blob, resource: new Blob([small], { type: 'application/octet-stream' }) },
-      { type: File, resource: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }) },
-      { type: Uint8Array, resource: small },
+      { size: sizes[0], type: ArrayBuffer, resource: small.buffer },
+      { size: sizes[0], type: Blob, resource: new Blob([small], { type: 'application/octet-stream' }) },
+      { size: sizes[0], type: File, resource: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }) },
+      { size: sizes[0], type: Uint8Array, resource: small },
     ],
     medium: [
-      { type: ArrayBuffer, resource: medium.buffer },
-      { type: Blob, resource: new Blob([medium], { type: 'application/octet-stream' }) },
-      { type: File, resource: new FilePonyfill([medium], 'picture.jpeg', { type: 'image/jpeg' }) },
-      { type: Uint8Array, resource: medium },
+      { size: sizes[1], type: ArrayBuffer, resource: medium.buffer },
+      { size: sizes[1], type: Blob, resource: new Blob([medium], { type: 'application/octet-stream' }) },
+      { size: sizes[1], type: File, resource: new FilePonyfill([medium], 'picture.jpeg', { type: 'image/jpeg' }) },
+      { size: sizes[1], type: Uint8Array, resource: medium },
     ],
     big: [
-      { type: ArrayBuffer, resource: big.buffer },
-      { type: Blob, resource: new Blob([big], { type: 'application/octet-stream' }) },
-      { type: File, resource: new FilePonyfill([big], 'holidays.mp4', { type: 'video/mp4' }) },
-      { type: Uint8Array, resource: big },
+      { size: sizes[2], type: ArrayBuffer, resource: big.buffer },
+      { size: sizes[2], type: Blob, resource: new Blob([big], { type: 'application/octet-stream' }) },
+      { size: sizes[2], type: File, resource: new FilePonyfill([big], 'holidays.mp4', { type: 'video/mp4' }) },
+      { size: sizes[2], type: Uint8Array, resource: big },
     ],
   };
 
