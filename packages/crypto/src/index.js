@@ -12,6 +12,7 @@ import * as encryptionV1 from './EncryptionFormats/v1';
 import * as encryptionV2 from './EncryptionFormats/v2';
 import * as encryptionV3 from './EncryptionFormats/v3';
 import * as encryptionV4 from './EncryptionFormats/v4';
+import * as encryptionV5 from './EncryptionFormats/v5';
 
 export {
   aead,
@@ -24,6 +25,7 @@ export {
   encryptionV2,
   encryptionV3,
   encryptionV4,
+  encryptionV5,
 };
 
 export type {

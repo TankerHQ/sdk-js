@@ -185,6 +185,48 @@ const generateEncryptTests = (args: TestArgs) => {
       });
     });
 
+
+    describe('encrypt with existing resource ID', () => {
+      it('encrypts and decrypts', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+
+        const encrypted2 = await bobLaptop.encrypt(clearText, { resourceId });
+        const decrypted = await bobLaptop.decrypt(encrypted2);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('encrypts and can be decrypted by initial recipient', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+
+        const encrypted2 = await bobLaptop.encrypt(clearText, { resourceId });
+        const decrypted = await aliceLaptop.decrypt(encrypted2);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('encrypts blazingly fast', async function () { // eslint-disable-line func-names
+        this.timeout(1000);
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+
+        for (let i = 0; i < 100; ++i) {
+          await bobLaptop.encrypt(clearText, { resourceId });
+        }
+      });
+
+      it('throws if given both resourceId and shareWithUser', async () => {
+        const resourceId = 'abcdef12345678';
+        await expect(bobLaptop.encrypt(clearText, { resourceId, shareWithUsers: [alicePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('throws if given both resourceId and shareWithGroup', async () => {
+        const resourceId = 'abcdef12345678';
+        const groupId = await bobLaptop.createGroup([alicePublicIdentity]);
+        await expect(bobLaptop.encrypt(clearText, { resourceId, shareWithGroups: [groupId] })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+    });
+
     describe('share after encryption (reshare)', () => {
       it('throws when sharing an invalid resource id', async () => {
         // $FlowExpectedError
