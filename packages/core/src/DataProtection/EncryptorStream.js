@@ -39,10 +39,10 @@ export default class EncryptorStream extends Transform {
       lastClearChunkSize: 0,
     };
 
-    this._configureStreams();
+    this._initializeStreams();
   }
 
-  _configureStreams() {
+  _initializeStreams() {
     this._resizerStream = new ResizerStream(this._clearChunkSize);
 
     this._encryptorStream = new Transform({
