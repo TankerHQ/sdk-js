@@ -10,7 +10,7 @@ import * as encryptorV2 from '../EncryptionFormats/v2';
 import * as encryptorV3 from '../EncryptionFormats/v3';
 import * as encryptorV5 from '../EncryptionFormats/v5';
 
-describe('Encryptor', () => {
+describe('Simple Encryption', () => {
   const clearData = utils.fromString('this is very secret');
 
   const key = new Uint8Array([

@@ -18,7 +18,12 @@ export type EncryptionData = {
   encryptedChunkSize: number,
 };
 
-const version = 4;
+export const version = 4;
+
+export const features = {
+  chunks: true,
+  fixedResourceId: true,
+};
 
 export const overhead = 1 + uint32Length + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
 

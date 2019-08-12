@@ -19,8 +19,8 @@ import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-import { decryptData, encryptData, extractResourceId, makeResource, isSimpleEncryption } from './Encryptor';
-import type { Resource } from './Encryptor';
+import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './Resource';
+import type { Resource } from './Resource';
 import type { OutputOptions, SharingOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
@@ -153,13 +153,15 @@ export class DataProtector {
 
   async _simpleDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>): Promise<T> {
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array });
-
-    const resourceId = extractResourceId(castEncryptedData);
+    const encryption = extractEncryptionFormat(castEncryptedData);
+    const resourceId = encryption.extractResourceId(castEncryptedData);
     const key = await this._resourceManager.findKeyFromResourceId(resourceId);
 
     let clearData;
+
     try {
-      clearData = decryptData(key, castEncryptedData);
+      // $FlowIKnow
+      clearData = encryption.decrypt(key, encryption.unserialize(castEncryptedData));
     } catch (error) {
       throw new DecryptionFailed({ error, resourceId });
     }
@@ -179,31 +181,38 @@ export class DataProtector {
   }
 
   async decryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>): Promise<T> {
-    // Format versions up to 127 are stored on a single-byte varint, so reading 1 byte would
-    // be enough for now. We're reading 4 bytes to be forward compatible in case we decide to
-    // introduce a lot of new formats in the future.
-    const maxBytes = 4;
-    const leadingBytes = await castData(encryptedData, { type: Uint8Array }, maxBytes);
+    const leadingBytes = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
+    const encryption = extractEncryptionFormat(leadingBytes);
 
-    if (isSimpleEncryption(leadingBytes))
-      return this._simpleDecryptData(encryptedData, outputOptions);
+    if (encryption.features.chunks)
+      return this._streamDecryptData(encryptedData, outputOptions);
 
-    return this._streamDecryptData(encryptedData, outputOptions);
+    return this._simpleDecryptData(encryptedData, outputOptions);
   }
 
-  async _simpleEncryptData<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, b64ResourceId?: b64string): Promise<T> {
+  async _simpleEncryptData<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>): Promise<T> {
+    const encryption = getSimpleEncryption();
+
+    const castClearData = await castData(clearData, { type: Uint8Array });
+    const { key } = makeResource();
+    const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData));
+    const resourceId = encryption.extractResourceId(encryptedData);
+    await this._shareResources([{ resourceId, key }], sharingOptions, true);
+
+    return castData(encryptedData, outputOptions);
+  }
+
+  async _simpleEncryptDataWithResourceId<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, b64ResourceId: b64string): Promise<T> {
+    const encryption = getSimpleEncryptionWithFixedResourceId();
     const castClearData = await castData(clearData, { type: Uint8Array });
 
-    if (!b64ResourceId) {
-      const { key, resourceId, encryptedData } = encryptData(castClearData);
-      await this._shareResources([{ resourceId, key }], sharingOptions, true);
-      return castData(encryptedData, outputOptions);
-    } else {
-      const resourceId = utils.fromBase64(b64ResourceId);
-      const key = await this._resourceManager.findKeyFromResourceId(resourceId);
-      const encryptedResource = encryptData(castClearData, { key, resourceId });
-      return castData(encryptedResource.encryptedData, outputOptions);
-    }
+    if (typeof b64ResourceId !== 'string')
+      throw new InternalError('Assertion error: called _simpleEncryptDataWithResourceId without a resourceId');
+    const resourceId = utils.fromBase64(b64ResourceId);
+    const key = await this._resourceManager.findKeyFromResourceId(resourceId);
+
+    const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData, resourceId));
+    return castData(encryptedData, outputOptions);
   }
 
   async _streamEncryptData<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, b64ResourceId?: b64string): Promise<T> {
@@ -218,10 +227,13 @@ export class DataProtector {
   }
 
   async encryptData<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, b64ResourceId?: b64string): Promise<T> {
-    if (getDataLength(clearData) < STREAM_THRESHOLD)
-      return this._simpleEncryptData(clearData, sharingOptions, outputOptions, b64ResourceId);
+    if (getDataLength(clearData) >= STREAM_THRESHOLD)
+      return this._streamEncryptData(clearData, sharingOptions, outputOptions, b64ResourceId);
 
-    return this._streamEncryptData(clearData, sharingOptions, outputOptions, b64ResourceId);
+    if (b64ResourceId)
+      return this._simpleEncryptDataWithResourceId(clearData, sharingOptions, outputOptions, b64ResourceId);
+
+    return this._simpleEncryptData(clearData, sharingOptions, outputOptions);
   }
 
   async share(resourceIds: Array<b64string>, sharingOptions: SharingOptions): Promise<void> {

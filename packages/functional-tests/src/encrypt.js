@@ -99,19 +99,19 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when decrypting data with an unknow encryption format', async () => {
         const invalidEncrypted = new Uint8Array([127]);
-        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when decrypting data with an invalid encryption format', async () => {
         const invalidEncrypted = new Uint8Array([255]); // not a varint
-        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when decrypting truncated encrypted resource', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         // shorter than version + resource id: should not even try to decrypt
         const invalidEncrypted = encrypted.subarray(0, tcrypto.MAC_SIZE - 4);
-        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
+        await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when calling decrypt with a corrupted buffer (resource id)', async () => {

@@ -14,7 +14,12 @@ export type EncryptionData = {
   iv: Uint8Array,
 };
 
-const version = 5;
+export const version = 5;
+
+export const features = {
+  chunks: false,
+  fixedResourceId: true,
+};
 
 export const overhead = 1 + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
 

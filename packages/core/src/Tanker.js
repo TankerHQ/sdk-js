@@ -8,9 +8,8 @@ import EventEmitter from 'events';
 
 import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
-import { extractResourceId } from './DataProtection/Encryptor';
 
-import { DecryptionFailed, InternalError, InvalidArgument, PreconditionFailed } from './errors';
+import { InternalError, InvalidArgument, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
@@ -21,18 +20,9 @@ import { defaultDownloadType, extractOutputOptions, extractSharingOptions, isObj
 import type { Streams } from './DataProtection/DataProtector';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
+import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/Resource';
 
 import { TANKER_SDK_VERSION } from './version';
-
-// The maximum byte size of a resource encrypted with the "simple" algorithms
-// (different from v4) is obtained by summing the sizes of:
-//  - the version: 1 byte (varint < 128)
-//  - the MAC: 16 bytes
-//  - the IV: 24 bytes
-//  - the data: 5 megabytes (libsodium's hard limit)
-//
-// By reading an input up to this size, we're sure to be able to extract the resource ID.
-const SAFE_RESOURCE_ID_EXTRACTION = 1 + 16 + 24 + 5 * (1024 * 1024);
 
 type TankerDefaultOptions = $Exact<{
   appId?: b64string,
@@ -341,16 +331,11 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.READY, 'get a resource id');
     assertDataType(encryptedData, 'encryptedData');
 
-    const source = await castData(encryptedData, { type: Uint8Array }, SAFE_RESOURCE_ID_EXTRACTION);
+    const castEncryptedData = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
 
-    try {
-      return utils.toBase64(extractResourceId(source));
-    } catch (e) {
-      if (e instanceof DecryptionFailed) {
-        throw new InvalidArgument('"encryptedData" is corrupted');
-      }
-      throw e;
-    }
+    const encryption = extractEncryptionFormat(castEncryptedData);
+
+    return utils.toBase64(encryption.extractResourceId(castEncryptedData));
   }
 
   async revokeDevice(deviceId: b64string): Promise<void> {
