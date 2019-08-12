@@ -192,6 +192,9 @@ const generateEncryptTests = (args: TestArgs) => {
         const resourceId = await bobLaptop.getResourceId(encrypted);
 
         const encrypted2 = await bobLaptop.encrypt(clearText, { resourceId });
+        const resourceId2 = await bobLaptop.getResourceId(encrypted2);
+        expect(resourceId2).to.equal(resourceId);
+
         const decrypted = await bobLaptop.decrypt(encrypted2);
         expect(decrypted).to.equal(clearText);
       });
