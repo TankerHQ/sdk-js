@@ -7,11 +7,6 @@ import { InternalError, DecryptionFailed } from '../../errors';
 
 const TABLE = 'resource_keys';
 
-export type SharedKeyRecord = {
-  resourceId: Uint8Array,
-  symmetricKey: Uint8Array,
-}
-
 export default class ResourceStore {
   /*:: _ds: DataStore<*>; */
   /*:: _userSecret: Uint8Array; */
