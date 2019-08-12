@@ -461,26 +461,30 @@ const generateEncryptTests = (args: TestArgs) => {
     expect(a).to.deep.equal(b);
   };
 
-  const sizes = Object.keys(args.resources);
+  // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
+  const forEachSize = (sizes: Array<string>, fun: Function) => {
+    const availableSizes = Object.keys(args.resources);
+    return sizes.filter(size => availableSizes.indexOf(size) !== -1).forEach(fun);
+  };
 
-  sizes.forEach(size => {
-    describe(`${size} binary resource encryption`, () => {
-      let aliceLaptop;
-      let aliceIdentity;
+  describe('binary resource encryption', () => {
+    let aliceLaptop;
+    let aliceIdentity;
 
-      before(async () => {
-        aliceIdentity = await args.trustchainHelper.generateIdentity();
-        aliceLaptop = args.makeTanker();
-        await aliceLaptop.start(aliceIdentity);
-        await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
-      });
+    before(async () => {
+      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      aliceLaptop = args.makeTanker();
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+    });
 
-      after(async () => {
-        await aliceLaptop.stop();
-      });
+    after(async () => {
+      await aliceLaptop.stop();
+    });
 
+    forEachSize(['small', 'medium', 'big'], size => {
       args.resources[size].forEach(({ type, resource: clear }) => {
-        it(`can encrypt and decrypt keeping input type (${getConstructorName(type)}) by default`, async () => {
+        it(`can encrypt and decrypt a ${size} ${getConstructorName(type)}`, async () => {
           const encrypted = await aliceLaptop.encryptData(clear);
           expectSameType(encrypted, clear);
 
@@ -490,13 +494,13 @@ const generateEncryptTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
       });
+    });
 
-      // Type conversions have already been tested with medium resources, so skip for big ones.
-      if (size === 'big') return;
-
+    // Testing type conversions with medium resources is enough, so skip for big ones.
+    forEachSize(['small', 'medium'], size => {
       args.resources[size].forEach(({ type: originalType, resource: clear }) => {
         args.resources[size].forEach(({ type: transientType }) => {
-          it(`can encrypt a ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
+          it(`can encrypt a ${size} ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
             const encrypted = await aliceLaptop.encryptData(clear, { type: transientType });
             expectType(encrypted, transientType);
 
@@ -546,9 +550,7 @@ const generateEncryptTests = (args: TestArgs) => {
       await aliceLaptop.stop();
     });
 
-    sizes.forEach(size => {
-      if (size === 'big') return; // only test small and medium
-
+    forEachSize(['small', 'medium'], size => {
       it(`can upload and download a ${size} file`, async () => {
         const { type: originalType, resource: clear } = args.resources[size][2];
 
