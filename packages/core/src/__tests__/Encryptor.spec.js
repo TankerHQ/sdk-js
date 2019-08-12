@@ -1,12 +1,12 @@
 // @flow
 
 import varint from 'varint';
-import { utils } from '@tanker/crypto';
+import { utils, random, tcrypto } from '@tanker/crypto';
 
 import { expect } from './chai';
 
 import { DecryptionFailed } from '../errors';
-import { decryptData, encryptData } from '../DataProtection/Encryptor';
+import { decryptData, encryptData, extractResourceId } from '../DataProtection/Encryptor';
 
 describe('Encryptor', () => {
   const clearData = utils.fromString('this is very secret');
@@ -74,8 +74,19 @@ describe('Encryptor', () => {
   });
 
   it('should encrypt / decrypt a buffer', () => {
-    const encryptedData = encryptData(key, clearData);
-    const decryptedData = decryptData(key, encryptedData);
+    const encryptedResource = encryptData(clearData);
+    const decryptedData = decryptData(encryptedResource.key, encryptedResource.encryptedData);
+    expect(decryptedData).to.deep.equal(clearData);
+  });
+
+  it('should encrypt / decrypt a buffer with fixed resource ID', () => {
+    const resourceId = random(tcrypto.MAC_SIZE);
+
+    const encryptedResource = encryptData(clearData, { key, resourceId });
+    expect(encryptedResource.resourceId).to.deep.equal(resourceId);
+    expect(extractResourceId(encryptedResource.encryptedData)).to.deep.equal(resourceId);
+
+    const decryptedData = decryptData(key, encryptedResource.encryptedData);
     expect(decryptedData).to.deep.equal(clearData);
   });
 
