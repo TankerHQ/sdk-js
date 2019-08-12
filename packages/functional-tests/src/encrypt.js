@@ -109,7 +109,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when decrypting truncated encrypted resource', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
-        // shorter than version + resource ID: should not even try to decrypt
+        // shorter than version + resource id: should not even try to decrypt
         const invalidEncrypted = encrypted.subarray(0, tcrypto.MAC_SIZE - 4);
         await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
@@ -186,7 +186,7 @@ const generateEncryptTests = (args: TestArgs) => {
     });
 
 
-    describe('encrypt with existing resource ID', () => {
+    describe('encrypt with existing resource id', () => {
       it('encrypts and decrypts', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(encrypted);
@@ -499,8 +499,20 @@ const generateEncryptTests = (args: TestArgs) => {
       });
     });
 
-    // Testing type conversions with medium resources is enough, so skip for big ones.
+    // Medium and big resources use the same encryption format, so no need to test on big resources
     forEachSize(['small', 'medium'], size => {
+      args.resources[size].forEach(({ type, resource: clear }) => {
+        it(`can get the resource id of a ${size} ${getConstructorName(type)}`, async () => {
+          // Get a resource id
+          const encryptedText = await aliceLaptop.encrypt(clearText);
+          const expectedResourceId = await aliceLaptop.getResourceId(encryptedText);
+
+          const encrypted = await aliceLaptop.encryptData(clear, { resourceId: expectedResourceId });
+          const resourceId = await aliceLaptop.getResourceId(encrypted);
+          expect(resourceId).to.equal(expectedResourceId);
+        });
+      });
+
       args.resources[size].forEach(({ type: originalType, resource: clear }) => {
         args.resources[size].forEach(({ type: transientType }) => {
           it(`can encrypt a ${size} ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
@@ -589,7 +601,7 @@ const generateEncryptTests = (args: TestArgs) => {
       expectDeepEqual(decrypted, clear);
     });
 
-    it('can upload a file with an existing resource ID', async () => {
+    it('can upload a file with an existing resource id', async () => {
       const encrypted = await aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
       const resourceId = await aliceLaptop.getResourceId(encrypted);
 
