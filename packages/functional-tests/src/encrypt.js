@@ -572,6 +572,32 @@ const generateEncryptTests = (args: TestArgs) => {
       expectDeepEqual(decrypted, clear);
     });
 
+    it('can share a file after upload', async () => {
+      const { type: originalType, resource: clear } = args.resources.small[2];
+
+      const fileId = await aliceLaptop.upload(clear);
+      await aliceLaptop.share([fileId], { shareWithUsers: [bobPublicIdentity] });
+
+      const decrypted = await bobLaptop.download(fileId);
+
+      expectType(decrypted, originalType);
+      expectDeepEqual(decrypted, clear);
+    });
+
+    it('can upload a file with an existing resource ID', async () => {
+      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
+      const resourceId = await aliceLaptop.getResourceId(encrypted);
+
+      const { type: originalType, resource: clear } = args.resources.small[2];
+
+      const fileId = await aliceLaptop.upload(clear, { resourceId });
+
+      const decrypted = await bobLaptop.download(fileId);
+
+      expectType(decrypted, originalType);
+      expectDeepEqual(decrypted, clear);
+    });
+
     it('throws InvalidArgument if downloading a non existing file', async () => {
       const nonExistingFileId = 'AAAAAAAAAAAAAAAAAAAAAA==';
       await expect(aliceLaptop.download(nonExistingFileId)).to.be.rejectedWith(errors.InvalidArgument);
