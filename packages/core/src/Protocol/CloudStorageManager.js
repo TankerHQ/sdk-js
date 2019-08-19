@@ -68,7 +68,7 @@ export class CloudStorageManager {
     const { UploadStream } = streamCloudStorage[service];
 
     const { type, ...metadata } = outputOptions;
-    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, { resourceId });
+    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, sharingOptions);
 
     const slicer = new this._streams.SlicerStream({ source: clearData });
     const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata);

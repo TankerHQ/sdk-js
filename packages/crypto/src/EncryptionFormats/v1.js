@@ -6,7 +6,7 @@ import varint from 'varint';
 
 export type EncryptionData = {
   encryptedData: Uint8Array,
-  resourceId: Uint8Array,
+  resourceId?: Uint8Array,
   iv: Uint8Array,
 };
 
@@ -30,8 +30,7 @@ export const unserialize = (buffer: Uint8Array): EncryptionData => {
 export const encrypt = (key: Uint8Array, plaintext: Uint8Array, associatedData?: Uint8Array): EncryptionData => {
   const iv = random(tcrypto.XCHACHA_IV_SIZE);
   const encryptedData = aead.encryptAEAD(key, iv, plaintext, associatedData);
-  const resourceId = aead.extractMac(iv);
-  return { encryptedData, iv, resourceId };
+  return { encryptedData, iv };
 };
 
 export function decrypt(key: Uint8Array, data: EncryptionData, associatedData?: Uint8Array): Uint8Array {

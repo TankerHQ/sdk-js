@@ -49,10 +49,6 @@ export default class FileKit {
     return this.tanker.upload(...args);
   }
 
-  async share(...args: any) {
-    return this.tanker.share(...args);
-  }
-
   async download(...args: any) {
     return this.tanker.download(...args);
   }
