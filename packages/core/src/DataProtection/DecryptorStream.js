@@ -12,7 +12,7 @@ export default class DecryptorStream extends Transform {
   _mapper: ResourceIdKeyMapper;
 
   _state: {
-    initialized: bool,
+    headerRead: bool,
     index: number,
     lastEncryptedChunkSize: number,
   };
@@ -33,23 +33,28 @@ export default class DecryptorStream extends Transform {
     this._mapper = mapper;
 
     this._state = {
-      initialized: false,
+      headerRead: false,
       index: 0,
       lastEncryptedChunkSize: 0,
     };
   }
 
-  async _initializeStreams(headOfEncryptedData: Uint8Array) {
-    let encryptedChunkSize;
-    let resourceId;
-
+  async _extractHeader(encryptedData: Uint8Array): Promise<{ header: encryptionV4.EncryptionData, key: Uint8Array }> {
+    let header;
     try {
-      ({ encryptedChunkSize, resourceId } = encryptionV4.unserialize(headOfEncryptedData));
+      header = encryptionV4.unserialize(encryptedData);
     } catch (e) {
-      throw new InvalidArgument('encryptedData', e, headOfEncryptedData);
+      throw new InvalidArgument('encryptedData', e, encryptedData);
     }
+    const key = await this._mapper.findKey(header.resourceId);
+    return { header, key };
+  }
 
-    const key = await this._mapper.findKey(resourceId);
+  async _configureStreams(headOfEncryptedData: Uint8Array) {
+    const { key, header } = await this._extractHeader(headOfEncryptedData);
+    this._state.headerRead = true;
+
+    const { encryptedChunkSize, resourceId } = header;
 
     this._resizerStream = new ResizerStream(encryptedChunkSize);
 
@@ -90,17 +95,15 @@ export default class DecryptorStream extends Transform {
     [this._resizerStream, this._decryptionStream].forEach((stream) => stream.on('error', forwardError));
 
     this._resizerStream.pipe(this._decryptionStream);
-
-    this._state.initialized = true;
   }
 
   async _transform(encryptedData: Uint8Array, encoding: ?string, done: Function) {
     if (!(encryptedData instanceof Uint8Array))
       return done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
 
-    if (!this._state.initialized) {
+    if (!this._state.headerRead) {
       try {
-        await this._initializeStreams(encryptedData);
+        await this._configureStreams(encryptedData);
       } catch (err) {
         return done(err);
       }
@@ -111,7 +114,7 @@ export default class DecryptorStream extends Transform {
 
   _flush(done: Function) {
     // When end() is called before any data has been written:
-    if (!this._state.initialized) {
+    if (!this._state.headerRead) {
       done();
       return;
     }

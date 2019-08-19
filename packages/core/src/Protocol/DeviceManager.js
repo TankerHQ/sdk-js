@@ -14,6 +14,11 @@ import { formatVerificationRequest } from '../Session/requests';
 import { statuses, type EmailVerificationMethod, type Status, type EmailVerification } from '../Session/types';
 import UserAccessor from '../Users/UserAccessor';
 
+export type KeyResourceId = {
+  key: Uint8Array,
+  resourceId: Uint8Array,
+};
+
 type TankerProvisionalKeys = {
   tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
   tankerEncryptionKeyPair: tcrypto.SodiumKeyPair

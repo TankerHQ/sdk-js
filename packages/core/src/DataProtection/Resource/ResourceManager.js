@@ -9,6 +9,17 @@ import { Client } from '../../Network/Client';
 import ResourceStore from './ResourceStore';
 import { newKeyPublish } from './keyPublish';
 
+export const currentStreamVersion = 4;
+
+export const isSimpleVersion = (version: number) => version > 0 && version < 4;
+
+export type ResourceMeta = $Exact<{
+  key: Uint8Array,
+  resourceId: Uint8Array,
+}>;
+
+export type Resource = $Exact<{ ...ResourceMeta, encryptedData: Uint8Array }>;
+
 export class ResourceManager {
   _resourceStore: ResourceStore;
   _client: Client;

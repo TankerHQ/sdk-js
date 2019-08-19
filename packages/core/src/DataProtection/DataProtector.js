@@ -20,13 +20,17 @@ import { type User, getLastUserPublicKey } from '../Users/User';
 import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { decryptData, encryptData, extractResourceId, makeResource, isSimpleEncryption } from './Encryptor';
-import type { Resource } from './Encryptor';
 import type { OutputOptions, ShareWithOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
 
 // Stream encryption will be used starting from this clear data size:
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
+
+export type KeyResourceId = {
+  key: Uint8Array,
+  resourceId: Uint8Array,
+};
 
 export type Streams = { MergerStream: Transform, SlicerStream: Readable };
 
@@ -63,13 +67,13 @@ export class DataProtector {
   }
 
   _makeKeyPublishBlocks(
-    resource: Array<Resource>,
+    keyResourceIds: Array<KeyResourceId>,
     keys: Array<Uint8Array>,
     nature: NatureKind
   ): Array<Block> {
     const blocks: Array<Block> = [];
     for (const publicEncryptionKey of keys) {
-      for (const { key, resourceId } of resource) {
+      for (const { key, resourceId } of keyResourceIds) {
         const block = this._localUser.blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
         blocks.push(block);
       }
@@ -78,12 +82,12 @@ export class DataProtector {
   }
 
   _makeKeyPublishToProvisionalIdentityBlocks(
-    resource: Array<Resource>,
+    keyResourceIds: Array<KeyResourceId>,
     provisionalUsers: Array<PublicProvisionalUser>
   ): Array<Block> {
     const blocks: Array<Block> = [];
     for (const provisionalUser of provisionalUsers) {
-      for (const { key, resourceId } of resource) {
+      for (const { key, resourceId } of keyResourceIds) {
         blocks.push(this._localUser.blockGenerator.makeKeyPublishToProvisionalUserBlock(provisionalUser, key, resourceId));
       }
     }
@@ -91,7 +95,7 @@ export class DataProtector {
   }
 
   async _publishKeys(
-    resource: Array<Resource>,
+    keyResourceIds: Array<KeyResourceId>,
     recipientUsers: Array<User>,
     recipientProvisionalUsers: Array<PublicProvisionalUser>,
     recipientGroups: Array<ExternalGroup>
@@ -100,11 +104,11 @@ export class DataProtector {
     if (recipientGroups.length > 0) {
       const keys = recipientGroups.map(group => group.publicEncryptionKey);
 
-      blocks = blocks.concat(this._makeKeyPublishBlocks(resource, keys, NATURE_KIND.key_publish_to_user_group));
+      blocks = blocks.concat(this._makeKeyPublishBlocks(keyResourceIds, keys, NATURE_KIND.key_publish_to_user_group));
     }
 
     if (recipientProvisionalUsers.length > 0) {
-      blocks = blocks.concat(this._makeKeyPublishToProvisionalIdentityBlocks(resource, recipientProvisionalUsers));
+      blocks = blocks.concat(this._makeKeyPublishToProvisionalIdentityBlocks(keyResourceIds, recipientProvisionalUsers));
     }
 
     if (recipientUsers.length > 0) {
@@ -115,7 +119,7 @@ export class DataProtector {
         return userPublicKey;
       });
 
-      blocks = blocks.concat(this._makeKeyPublishBlocks(resource, keys, NATURE_KIND.key_publish_to_user));
+      blocks = blocks.concat(this._makeKeyPublishBlocks(keyResourceIds, keys, NATURE_KIND.key_publish_to_user));
     }
 
     await this._client.sendKeyPublishBlocks(blocks);
