@@ -53,16 +53,6 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
       expect(decrypted).to.equal(clearText);
     });
 
-    it('can encrypt reusing a resource id', async () => {
-      const encrypted = await alicePhone.encrypt(clearText);
-      const resourceId = await alicePhone.getResourceId(encrypted);
-
-      await restartWithNetworkIssue(alicePhone, aliceIdentity);
-      const encrypted2 = await alicePhone.encrypt(clearText, { resourceId });
-      const decrypted = await alicePhone.decrypt(encrypted2);
-      expect(decrypted).to.equal(clearText);
-    });
-
     it('throws if trying to encrypt', async () => {
       await restartWithNetworkIssue(alicePhone, aliceIdentity);
       await expect(alicePhone.encrypt(clearText)).to.be.rejectedWith(errors.NetworkError);

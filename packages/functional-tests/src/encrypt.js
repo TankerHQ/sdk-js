@@ -208,6 +208,16 @@ const generateEncryptTests = (args: TestArgs) => {
         expect(decrypted).to.equal(clearText);
       });
 
+      it('encrypts blazingly fast', async function () { // eslint-disable-line func-names
+        this.timeout(1000);
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+
+        for (let i = 0; i < 100; ++i) {
+          await bobLaptop.encrypt(clearText, { resourceId });
+        }
+      });
+
       it('throws if given both resourceId and shareWithUser', async () => {
         const resourceId = 'abcdef12345678';
         await expect(bobLaptop.encrypt(clearText, { resourceId, shareWithUsers: [alicePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
