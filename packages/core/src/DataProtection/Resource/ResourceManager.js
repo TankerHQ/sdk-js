@@ -1,7 +1,8 @@
 // @flow
-import { utils, type Key } from '@tanker/crypto';
+import { tcrypto, random, generichash, utils, type Key } from '@tanker/crypto';
 
 import { InvalidArgument, InternalError } from '../../errors';
+import { encryptData, extractResourceId } from '../Encryptor';
 import { KeyDecryptor } from './KeyDecryptor';
 
 import { Client } from '../../Network/Client';
@@ -33,6 +34,20 @@ export class ResourceManager {
     this._resourceStore = resourceStore;
     this._client = client;
     this._keyDecryptor = keyDecryptor;
+  }
+
+  makeSimpleResource(plain: Uint8Array): Resource {
+    const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const encryptedData = encryptData(key, plain);
+    const resourceId = extractResourceId(encryptedData);
+    return { key, resourceId, encryptedData };
+  }
+
+  makeStreamResource(): ResourceMeta {
+    const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
+    const resourceId = generichash(key, tcrypto.MAC_SIZE);
+
+    return { key, resourceId };
   }
 
   async findKeyFromResourceId(resourceId: Uint8Array): Promise<Key> {
