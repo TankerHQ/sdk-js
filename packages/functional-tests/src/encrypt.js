@@ -185,39 +185,13 @@ const generateEncryptTests = (args: TestArgs) => {
       });
     });
 
+    it('encrypt should ignore resource id argument', async () => {
+      const encrypted = await bobLaptop.encrypt(clearText);
+      const resourceId = await bobLaptop.getResourceId(encrypted);
 
-    describe('encrypt with existing resource id', () => {
-      it('encrypts and decrypts', async () => {
-        const encrypted = await bobLaptop.encrypt(clearText);
-        const resourceId = await bobLaptop.getResourceId(encrypted);
-
-        const encrypted2 = await bobLaptop.encrypt(clearText, { resourceId });
-        const resourceId2 = await bobLaptop.getResourceId(encrypted2);
-        expect(resourceId2).to.equal(resourceId);
-
-        const decrypted = await bobLaptop.decrypt(encrypted2);
-        expect(decrypted).to.equal(clearText);
-      });
-
-      it('encrypts and can be decrypted by initial recipient', async () => {
-        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
-        const resourceId = await bobLaptop.getResourceId(encrypted);
-
-        const encrypted2 = await bobLaptop.encrypt(clearText, { resourceId });
-        const decrypted = await aliceLaptop.decrypt(encrypted2);
-        expect(decrypted).to.equal(clearText);
-      });
-
-      it('throws if given both resourceId and shareWithUser', async () => {
-        const resourceId = 'abcdef12345678';
-        await expect(bobLaptop.encrypt(clearText, { resourceId, shareWithUsers: [alicePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
-      });
-
-      it('throws if given both resourceId and shareWithGroup', async () => {
-        const resourceId = 'abcdef12345678';
-        const groupId = await bobLaptop.createGroup([alicePublicIdentity]);
-        await expect(bobLaptop.encrypt(clearText, { resourceId, shareWithGroups: [groupId] })).to.be.rejectedWith(errors.InvalidArgument);
-      });
+      const encrypted2 = await bobLaptop.encrypt(clearText, (({ resourceId }): any));
+      const resourceId2 = await bobLaptop.getResourceId(encrypted2);
+      expect(resourceId2).to.not.equal(resourceId);
     });
 
     describe('share after encryption (reshare)', () => {
@@ -491,18 +465,6 @@ const generateEncryptTests = (args: TestArgs) => {
 
     // Medium and big resources use the same encryption format, so no need to test on big resources
     forEachSize(['small', 'medium'], size => {
-      args.resources[size].forEach(({ type, resource: clear }) => {
-        it(`can get the resource id of a ${size} ${getConstructorName(type)}`, async () => {
-          // Get a resource id
-          const encryptedText = await aliceLaptop.encrypt(clearText);
-          const expectedResourceId = await aliceLaptop.getResourceId(encryptedText);
-
-          const encrypted = await aliceLaptop.encryptData(clear, { resourceId: expectedResourceId });
-          const resourceId = await aliceLaptop.getResourceId(encrypted);
-          expect(resourceId).to.equal(expectedResourceId);
-        });
-      });
-
       args.resources[size].forEach(({ type: originalType, resource: clear }) => {
         args.resources[size].forEach(({ type: transientType }) => {
           it(`can encrypt a ${size} ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
@@ -584,20 +546,6 @@ const generateEncryptTests = (args: TestArgs) => {
 
       const fileId = await aliceLaptop.upload(clear);
       await aliceLaptop.share([fileId], { shareWithUsers: [bobPublicIdentity] });
-
-      const decrypted = await bobLaptop.download(fileId);
-
-      expectType(decrypted, originalType);
-      expectDeepEqual(decrypted, clear);
-    });
-
-    it('can upload a file with an existing resource id', async () => {
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithUsers: [bobPublicIdentity] });
-      const resourceId = await aliceLaptop.getResourceId(encrypted);
-
-      const { type: originalType, resource: clear } = args.resources.small[2];
-
-      const fileId = await aliceLaptop.upload(clear, { resourceId });
 
       const decrypted = await bobLaptop.download(fileId);
 

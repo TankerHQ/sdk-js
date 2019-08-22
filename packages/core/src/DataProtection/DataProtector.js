@@ -21,7 +21,7 @@ import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { decryptData, encryptData, extractResourceId, makeResource, isSimpleEncryption } from './Encryptor';
 import type { Resource } from './Encryptor';
-import type { OutputOptions, ShareWithOptions } from './options';
+import { convertShareWithOptions, type OutputOptions, type InternalShareWithOptions, type ShareWithOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
 
@@ -191,7 +191,7 @@ export class DataProtector {
     return this._streamDecryptData(encryptedData, outputOptions);
   }
 
-  async _simpleEncryptData<T: Data>(clearData: Data, sharingOptions: ShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
+  async _simpleEncryptData<T: Data>(clearData: Data, sharingOptions: InternalShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
     const castClearData = await castData(clearData, { type: Uint8Array });
 
     if (!sharingOptions.resourceId) {
@@ -206,9 +206,9 @@ export class DataProtector {
     }
   }
 
-  async _streamEncryptData<T: Data>(clearData: Data, sharingOptions: ShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
+  async _streamEncryptData<T: Data>(clearData: Data, sharingOptions: InternalShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
     const slicer = new this._streams.SlicerStream({ source: clearData });
-    const encryptor = await this.makeEncryptorStream(sharingOptions);
+    const encryptor = await this.makeEncryptorStream(convertShareWithOptions(sharingOptions));
     const merger = new this._streams.MergerStream(outputOptions);
 
     return new Promise((resolve, reject) => {
@@ -217,7 +217,7 @@ export class DataProtector {
     });
   }
 
-  async encryptData<T: Data>(clearData: Data, sharingOptions: ShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
+  async encryptData<T: Data>(clearData: Data, sharingOptions: InternalShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
     if (getDataLength(clearData) < STREAM_THRESHOLD)
       return this._simpleEncryptData(clearData, sharingOptions, outputOptions);
 
@@ -235,7 +235,7 @@ export class DataProtector {
     return this._shareResources(keys, shareWith, false);
   }
 
-  async makeEncryptorStream(options: ShareWithOptions): Promise<EncryptorStream> {
+  async makeEncryptorStream(options: InternalShareWithOptions): Promise<EncryptorStream> {
     let encryptorStream;
     if (options.resourceId) {
       const resourceId = utils.fromBase64(options.resourceId);

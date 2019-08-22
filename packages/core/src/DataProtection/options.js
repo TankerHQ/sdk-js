@@ -10,12 +10,18 @@ export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Arra
 
 export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: string, lastModified?: number };
 
-export type ShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, resourceId?: string };
+export type ShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
+
+export type InternalShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, resourceId?: string };
 
 type ExtractedOptions<T> = {
   outputOptions: OutputOptions<T>,
   sharingOptions: ShareWithOptions,
 };
+
+export function convertShareWithOptions(o: ShareWithOptions): InternalShareWithOptions {
+  return (o: any);
+}
 
 const validateShareWithOptions = (value: ShareWithOptions): bool => {
   if (!value || typeof value !== 'object' || value instanceof Array)
@@ -31,18 +37,12 @@ const validateShareWithOptions = (value: ShareWithOptions): bool => {
       return false;
   }
 
-  if ('resourceId' in value && typeof value.resourceId !== 'string')
-    return false;
-
   return true;
 };
 
 export const assertShareWithOptions = (value: ShareWithOptions, argName: string = 'options') => {
   if (!validateShareWithOptions(value)) {
-    throw new InvalidArgument(argName, '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, resourceId?: string}', value);
-  }
-  if (value.resourceId && (value.shareWithGroups || value.shareWithUsers)) {
-    throw new InvalidArgument(argName, 'shareWith and resourceId options are incompatible', value);
+    throw new InvalidArgument(argName, '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', value);
   }
 };
 
@@ -99,13 +99,14 @@ export const extractOptions = <T: Data>(options: Object, input?: Data): Extracte
 
   const sharingOptions = {};
 
-  ['shareWithUsers', 'shareWithGroups', 'resourceId'].forEach(key => {
+  ['shareWithUsers', 'shareWithGroups'].forEach(key => {
     if (key in options) {
       sharingOptions[key] = options[key];
     }
   });
 
-  assertShareWithOptions(sharingOptions);
+  if (!validateShareWithOptions(sharingOptions))
+    throw new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options);
 
   return { outputOptions, sharingOptions };
 };
