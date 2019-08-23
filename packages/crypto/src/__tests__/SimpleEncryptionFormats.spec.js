@@ -1,9 +1,10 @@
 // @flow
 
-import { utils, random, tcrypto } from '@tanker/crypto';
-
 import { expect } from './chai';
 
+import { random } from '../random';
+import * as tcrypto from '../tcrypto';
+import * as utils from '../utils';
 import * as encryptorV1 from '../EncryptionFormats/v1';
 import * as encryptorV2 from '../EncryptionFormats/v2';
 import * as encryptorV3 from '../EncryptionFormats/v3';

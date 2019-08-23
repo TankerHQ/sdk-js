@@ -1,8 +1,11 @@
 // @flow
-import { utils, tcrypto, aead } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 
 import varint from 'varint';
+
+import * as aead from '../aead';
+import * as tcrypto from '../tcrypto';
+import * as utils from '../utils';
 
 const version = 3;
 

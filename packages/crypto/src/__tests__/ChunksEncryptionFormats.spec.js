@@ -1,7 +1,7 @@
 // @flow
-import { utils } from '@tanker/crypto';
 import { expect } from './chai';
 
+import * as utils from '../utils';
 import * as encryptorV4 from '../EncryptionFormats/v4';
 
 const testMessage = utils.fromString('this is a secret');
