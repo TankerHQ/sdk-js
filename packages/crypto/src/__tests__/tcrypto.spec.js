@@ -1,8 +1,8 @@
 // @flow
-import { tcrypto } from '@tanker/crypto';
-
 import { expect } from './chai';
 import { fromString } from '../utils';
+
+import * as tcrypto from '../tcrypto';
 
 describe('tcrypto', () => {
   it('should be able to encrypt/decrypt with seal method', async () => {

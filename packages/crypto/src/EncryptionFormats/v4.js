@@ -1,9 +1,13 @@
 // @flow
-import { utils, tcrypto, aead, number, random } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 
 import varint from 'varint';
 
+import * as aead from '../aead';
+import { random } from '../random';
+import * as tcrypto from '../tcrypto';
+import * as utils from '../utils';
+import * as number from '../number';
 
 export type EncryptionData = {
   encryptedData: Uint8Array,
