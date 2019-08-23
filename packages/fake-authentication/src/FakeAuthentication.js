@@ -3,6 +3,8 @@ import fetchPonyfill from 'fetch-ponyfill';
 
 const { fetch } = fetchPonyfill({ Promise });
 
+export const TANKER_FAKEAUTH_VERSION = '0.0.1';
+
 type PrivateIdentity = {
   permanentIdentity: string,
   provisionalIdentity: string,
@@ -36,6 +38,16 @@ const pathJoin = (...args: Array<string>) => {
 
 type Config = $Exact<{ appId?: string, trustchainId?: string, url?: string }>;
 
+function doFetch(url: string): Promise<*> {
+  return fetch(url,
+    {
+      headers: {
+        'X-Tanker-SdkVersion': TANKER_FAKEAUTH_VERSION,
+        'X-Tanker-SdkType': 'fakeauth-js',
+      }
+    });
+}
+
 export default class FakeAuthentication {
   appId: string;
   baseUrl: string;
@@ -61,7 +73,7 @@ export default class FakeAuthentication {
       url = pathJoin(this.baseUrl, 'disposable_private_identity');
     }
 
-    const response = await fetch(url);
+    const response = await doFetch(url);
 
     if (!response.ok)
       throw new Error(`Server error: ${await response.text()}`);
@@ -82,7 +94,7 @@ export default class FakeAuthentication {
       throw new Error(`Invalid emails: ${JSON.stringify(emails)}`);
 
     const url = pathJoin(this.baseUrl, `public_identities?emails=${encodeURIComponent(emails.join(','))}`);
-    const response = await fetch(url);
+    const response = await doFetch(url);
 
     if (!response.ok)
       throw new Error(`Server error: ${await response.text()}`);
