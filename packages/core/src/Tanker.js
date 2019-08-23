@@ -16,7 +16,7 @@ import { statusDefs, statuses, type Status, type Verification, type EmailVerific
 import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
 import type { OutputOptions, ShareWithOptions } from './DataProtection/options';
-import { assertShareWithOptions, extractOptions, isShareWithOptionsEmpty } from './DataProtection/options';
+import { convertShareWithOptions, assertShareWithOptions, extractOptions, isShareWithOptionsEmpty } from './DataProtection/options';
 import type { Streams } from './DataProtection/DataProtector';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
@@ -364,7 +364,7 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.READY, 'make a stream encryptor');
     assertShareWithOptions(options, 'options');
 
-    return this._session.apis.dataProtector.makeEncryptorStream(options);
+    return this._session.apis.dataProtector.makeEncryptorStream(convertShareWithOptions(options));
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
@@ -379,7 +379,7 @@ export class Tanker extends EventEmitter {
 
     const { outputOptions, sharingOptions } = extractOptions(options, clearData);
 
-    return this._session.apis.dataProtector.encryptData(clearData, sharingOptions, outputOptions);
+    return this._session.apis.dataProtector.encryptData(clearData, convertShareWithOptions(sharingOptions), outputOptions);
   }
 
   async encrypt<T: Data>(plain: string, options?: $Shape<ShareWithOptions & OutputOptions<T>>): Promise<T> {

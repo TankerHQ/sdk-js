@@ -7,8 +7,8 @@ import type { Data } from '@tanker/types';
 import { InternalError } from '../errors';
 import type { Client } from '../Network/Client';
 import type { DataProtector, Streams } from '../DataProtection/DataProtector';
-import { defaultDownloadType, extractOptions } from '../DataProtection/options';
-import type { OutputOptions, ShareWithOptions } from '../DataProtection/options';
+import { defaultDownloadType, extractOptions, convertShareWithOptions } from '../DataProtection/options';
+import type { OutputOptions, ShareWithOptions, InternalShareWithOptions } from '../DataProtection/options';
 
 const pipeStreams = (
   { streams, resolveEvent }: { streams: Array<$Values<Streams>>, resolveEvent: string }
@@ -35,7 +35,7 @@ export class CloudStorageManager {
     this._streams = streams;
   }
 
-  async _encryptAndShareMetadata(metadata: Object, sharingOptions: ShareWithOptions): Promise<b64string> {
+  async _encryptAndShareMetadata(metadata: Object, sharingOptions: InternalShareWithOptions): Promise<b64string> {
     const jsonMetadata = JSON.stringify(metadata);
     const clearMetadata = utils.fromString(jsonMetadata);
     const encryptedMetadata = await this._dataProtector.encryptData(clearMetadata, sharingOptions, { type: Uint8Array });
@@ -50,7 +50,7 @@ export class CloudStorageManager {
   }
 
   async upload<T: Data>(clearData: Data, sharingOptions: ShareWithOptions, outputOptions: OutputOptions<T>): Promise<string> {
-    const encryptor = await this._dataProtector.makeEncryptorStream(sharingOptions);
+    const encryptor = await this._dataProtector.makeEncryptorStream(convertShareWithOptions(sharingOptions));
 
     const { clearChunkSize, encryptedChunkSize, overheadPerChunk, resourceId } = encryptor;
     const totalClearSize = getDataLength(clearData);
@@ -68,7 +68,7 @@ export class CloudStorageManager {
     const { UploadStream } = streamCloudStorage[service];
 
     const { type, ...metadata } = outputOptions;
-    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, sharingOptions);
+    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, { resourceId });
 
     const slicer = new this._streams.SlicerStream({ source: clearData });
     const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata);
