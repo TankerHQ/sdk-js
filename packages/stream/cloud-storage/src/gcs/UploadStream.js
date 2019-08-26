@@ -16,13 +16,13 @@ export class UploadStream extends Writable {
   _uploadedLength: number;
   _verbose: bool;
 
-  constructor(url: string, headers: Object, contentLength: number, encryptedMetadata: string, verbose: bool = false) {
+  constructor(urls: Array<string>, headers: Object, contentLength: number, _recommendedChunkSize: number, encryptedMetadata: string, verbose: bool = false) {
     super({
       highWaterMark: 1,
       objectMode: true
     });
 
-    this._initUrl = url;
+    this._initUrl = urls[0];
     this._headers = { ...headers, 'x-goog-meta-tanker-metadata': encryptedMetadata };
     this._contentLength = contentLength;
     this._uploadedLength = 0;
