@@ -10,7 +10,7 @@ import { Tanker, optionsWithDefaults } from '..';
 import { InvalidArgument, PreconditionFailed } from '../errors';
 
 import { type EmailVerification, type RemoteVerification, statuses } from '../Session/types';
-import { type ShareWithOptions, assertShareWithOptions } from '../DataProtection/options';
+import { type ShareWithOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
@@ -111,11 +111,6 @@ describe('Tanker', () => {
       expect(() => optionsWithDefaults('not an object', { a: 1 })).to.throw(InvalidArgument);
       // $FlowExpectedError
       expect(() => optionsWithDefaults({ a: 1 }, 'not an object')).to.throw(InvalidArgument);
-    });
-
-    it('should throw if ShareWithOptions is invalid', async () => {
-      // $FlowExpectedError
-      expect(() => assertShareWithOptions('not an object')).to.throw(InvalidArgument);
     });
   });
 

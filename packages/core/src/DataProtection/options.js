@@ -12,32 +12,28 @@ export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: str
 
 export type ShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
 
-type ExtractedOptions<T> = {
-  outputOptions: OutputOptions<T>,
-  sharingOptions: ShareWithOptions,
-};
+export const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
-const validateShareWithOptions = (value: ShareWithOptions): bool => {
-  if (!value || typeof value !== 'object' || value instanceof Array)
-    return false;
+export const extractSharingOptions = (options: Object): ShareWithOptions => {
+  const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options);
 
-  const keysToCheck = ['shareWithGroups', 'shareWithUsers'];
-  const keys = Object.keys(value).filter(key => keysToCheck.indexOf(key) !== -1);
+  if (!isObject(options))
+    throw error;
 
-  for (const key of keys) {
-    if (!(value[key] instanceof Array))
-      return false;
-    if (value[key].some(el => typeof el !== 'string'))
-      return false;
-  }
+  const sharingOptions = {};
 
-  return true;
-};
+  ['shareWithUsers', 'shareWithGroups'].forEach(key => {
+    if (key in options) {
+      if (!(options[key] instanceof Array))
+        throw error;
+      if (options[key].some(el => typeof el !== 'string'))
+        throw error;
 
-export const assertShareWithOptions = (value: ShareWithOptions, argName: string = 'options') => {
-  if (!validateShareWithOptions(value)) {
-    throw new InvalidArgument(argName, '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', value);
-  }
+      sharingOptions[key] = options[key];
+    }
+  });
+
+  return sharingOptions;
 };
 
 export const isShareWithOptionsEmpty = (opts: ShareWithOptions): bool => {
@@ -48,9 +44,9 @@ export const isShareWithOptionsEmpty = (opts: ShareWithOptions): bool => {
   return true;
 };
 
-export const extractOptions = <T: Data>(options: Object, input?: Data): ExtractedOptions<T> => {
-  if (!options || typeof options !== 'object' || options instanceof Array)
-    throw new InvalidArgument('options', 'a combination of ShareWithOptions and OutputOptions', options);
+export const extractOutputOptions = <T: Data>(options: Object, input?: Data): OutputOptions<T> => {
+  if (!isObject(options))
+    throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
 
   let outputType;
 
@@ -59,7 +55,7 @@ export const extractOptions = <T: Data>(options: Object, input?: Data): Extracte
   } else if (input) {
     outputType = getConstructor(input);
   } else {
-    throw new InternalError('Assertion error: called extractOptions without a type or input');
+    throw new InternalError('Assertion error: called extractOutputOptions without a type or input');
   }
 
   const outputOptions = {};
@@ -91,15 +87,5 @@ export const extractOptions = <T: Data>(options: Object, input?: Data): Extracte
     }
   }
 
-  const sharingOptions = {};
-
-  ['shareWithUsers', 'shareWithGroups'].forEach(key => {
-    if (key in options) {
-      sharingOptions[key] = options[key];
-    }
-  });
-
-  assertShareWithOptions(sharingOptions);
-
-  return { outputOptions, sharingOptions };
+  return outputOptions;
 };

@@ -7,7 +7,7 @@ import type { Data } from '@tanker/types';
 import { InternalError } from '../errors';
 import type { Client } from '../Network/Client';
 import type { DataProtector, Streams } from '../DataProtection/DataProtector';
-import { defaultDownloadType, extractOptions } from '../DataProtection/options';
+import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import type { OutputOptions, ShareWithOptions } from '../DataProtection/options';
 
 const pipeStreams = (
@@ -106,7 +106,7 @@ export class CloudStorageManager {
 
     const encryptedMetadata = await downloader.getMetadata();
     const metadata = await this._decryptMetadata(encryptedMetadata);
-    const { outputOptions } = extractOptions({ type: defaultDownloadType, ...options, ...metadata });
+    const outputOptions = extractOutputOptions({ type: defaultDownloadType, ...options, ...metadata });
     const merger = new this._streams.MergerStream(outputOptions);
 
     const decryptor = await this._dataProtector.makeDecryptorStream();

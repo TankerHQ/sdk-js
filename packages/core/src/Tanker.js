@@ -17,7 +17,7 @@ import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
 import type { OutputOptions, ShareWithOptions } from './DataProtection/options';
 
-import { assertShareWithOptions, defaultDownloadType, extractOptions, isShareWithOptionsEmpty } from './DataProtection/options';
+import { defaultDownloadType, extractOutputOptions, extractSharingOptions, isObject, isShareWithOptionsEmpty } from './DataProtection/options';
 import type { Streams } from './DataProtection/DataProtector';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
@@ -295,13 +295,13 @@ export class Tanker extends EventEmitter {
     return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
   }
 
-  async share(resourceIds: Array<b64string>, sharingOptions: ShareWithOptions): Promise<void> {
+  async share(resourceIds: Array<b64string>, options: ShareWithOptions): Promise<void> {
     this.assert(statuses.READY, 'share');
 
-    if (!(resourceIds instanceof Array))
+    if (!(resourceIds instanceof Array) || resourceIds.some(id => typeof id !== 'string'))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    assertShareWithOptions(sharingOptions, 'sharingOptions');
+    const sharingOptions = extractSharingOptions(options);
 
     if (isShareWithOptionsEmpty(sharingOptions)) {
       throw new InvalidArgument(
@@ -335,6 +335,7 @@ export class Tanker extends EventEmitter {
 
     if (typeof deviceId !== 'string')
       throw new InvalidArgument('deviceId', 'string', deviceId);
+
     return this._session.apis.deviceManager.revokeDevice(deviceId);
   }
 
@@ -363,9 +364,10 @@ export class Tanker extends EventEmitter {
 
   async makeEncryptorStream(options: ShareWithOptions = {}): Promise<EncryptorStream> {
     this.assert(statuses.READY, 'make a stream encryptor');
-    assertShareWithOptions(options, 'options');
 
-    return this._session.apis.dataProtector.makeEncryptorStream(options);
+    const sharingOptions = extractSharingOptions(options);
+
+    return this._session.apis.dataProtector.makeEncryptorStream(sharingOptions);
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
@@ -378,7 +380,8 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
-    const { outputOptions, sharingOptions } = extractOptions(options, clearData);
+    const outputOptions = extractOutputOptions(options, clearData);
+    const sharingOptions = extractSharingOptions(options);
 
     return this._session.apis.dataProtector.encryptData(clearData, sharingOptions, outputOptions);
   }
@@ -396,7 +399,7 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
-    const { outputOptions } = extractOptions(options, encryptedData);
+    const outputOptions = extractOutputOptions(options, encryptedData);
 
     return this._session.apis.dataProtector.decryptData(encryptedData, outputOptions);
   }
@@ -409,14 +412,24 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
-    const { outputOptions, sharingOptions } = extractOptions(options, clearData);
+    const outputOptions = extractOutputOptions(options, clearData);
+    const sharingOptions = extractSharingOptions(options);
 
     return this._session.apis.cloudStorageManager.upload(clearData, sharingOptions, outputOptions);
   }
 
   async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T>> = {}): Promise<T> {
     this.assert(statuses.READY, 'download a file');
-    return this._session.apis.cloudStorageManager.download(resourceId, options);
+
+    if (typeof resourceId !== 'string')
+      throw new InvalidArgument('resourceId', 'string', resourceId);
+
+    if (!isObject(options))
+      throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
+
+    const outputOptions = extractOutputOptions({ type: defaultDownloadType, ...options });
+
+    return this._session.apis.cloudStorageManager.download(resourceId, outputOptions);
   }
 }
 
