@@ -21,7 +21,7 @@ import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { decryptData, encryptData, extractResourceId, makeResource, isSimpleEncryption } from './Encryptor';
 import type { Resource } from './Encryptor';
-import { convertShareWithOptions, type OutputOptions, type InternalShareWithOptions, type ShareWithOptions } from './options';
+import type { OutputOptions, ShareWithOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
 
@@ -191,24 +191,24 @@ export class DataProtector {
     return this._streamDecryptData(encryptedData, outputOptions);
   }
 
-  async _simpleEncryptData<T: Data>(clearData: Data, sharingOptions: InternalShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
+  async _simpleEncryptData<T: Data>(clearData: Data, sharingOptions: ShareWithOptions, outputOptions: OutputOptions<T>, b64ResourceId?: b64string): Promise<T> {
     const castClearData = await castData(clearData, { type: Uint8Array });
 
-    if (!sharingOptions.resourceId) {
+    if (!b64ResourceId) {
       const { key, resourceId, encryptedData } = encryptData(castClearData);
       await this._shareResources([{ resourceId, key }], sharingOptions, true);
       return castData(encryptedData, outputOptions);
     } else {
-      const resourceId = utils.fromBase64(sharingOptions.resourceId);
+      const resourceId = utils.fromBase64(b64ResourceId);
       const key = await this._resourceManager.findKeyFromResourceId(resourceId);
       const encryptedResource = encryptData(castClearData, { key, resourceId });
       return castData(encryptedResource.encryptedData, outputOptions);
     }
   }
 
-  async _streamEncryptData<T: Data>(clearData: Data, sharingOptions: InternalShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
+  async _streamEncryptData<T: Data>(clearData: Data, sharingOptions: ShareWithOptions, outputOptions: OutputOptions<T>, b64ResourceId?: b64string): Promise<T> {
     const slicer = new this._streams.SlicerStream({ source: clearData });
-    const encryptor = await this.makeEncryptorStream(convertShareWithOptions(sharingOptions));
+    const encryptor = await this.makeEncryptorStream(sharingOptions, b64ResourceId);
     const merger = new this._streams.MergerStream(outputOptions);
 
     return new Promise((resolve, reject) => {
@@ -217,11 +217,11 @@ export class DataProtector {
     });
   }
 
-  async encryptData<T: Data>(clearData: Data, sharingOptions: InternalShareWithOptions, outputOptions: OutputOptions<T>): Promise<T> {
+  async encryptData<T: Data>(clearData: Data, sharingOptions: ShareWithOptions, outputOptions: OutputOptions<T>, b64ResourceId?: b64string): Promise<T> {
     if (getDataLength(clearData) < STREAM_THRESHOLD)
-      return this._simpleEncryptData(clearData, sharingOptions, outputOptions);
+      return this._simpleEncryptData(clearData, sharingOptions, outputOptions, b64ResourceId);
 
-    return this._streamEncryptData(clearData, sharingOptions, outputOptions);
+    return this._streamEncryptData(clearData, sharingOptions, outputOptions, b64ResourceId);
   }
 
   async share(resourceIds: Array<b64string>, shareWith: ShareWithOptions): Promise<void> {
@@ -235,15 +235,16 @@ export class DataProtector {
     return this._shareResources(keys, shareWith, false);
   }
 
-  async makeEncryptorStream(options: InternalShareWithOptions): Promise<EncryptorStream> {
+  async makeEncryptorStream(sharingOptions: ShareWithOptions, b64ResourceId?: b64string): Promise<EncryptorStream> {
     let encryptorStream;
-    if (options.resourceId) {
-      const resourceId = utils.fromBase64(options.resourceId);
+
+    if (b64ResourceId) {
+      const resourceId = utils.fromBase64(b64ResourceId);
       const key = await this._resourceManager.findKeyFromResourceId(resourceId);
       encryptorStream = new EncryptorStream(resourceId, key);
     } else {
       const resource = makeResource();
-      await this._shareResources([resource], options, true);
+      await this._shareResources([resource], sharingOptions, true);
       encryptorStream = new EncryptorStream(resource.resourceId, resource.key);
     }
 

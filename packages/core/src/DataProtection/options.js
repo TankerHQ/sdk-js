@@ -12,16 +12,10 @@ export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: str
 
 export type ShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
 
-export type InternalShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, resourceId?: string };
-
 type ExtractedOptions<T> = {
   outputOptions: OutputOptions<T>,
   sharingOptions: ShareWithOptions,
 };
-
-export function convertShareWithOptions(o: ShareWithOptions): InternalShareWithOptions {
-  return (o: any);
-}
 
 const validateShareWithOptions = (value: ShareWithOptions): bool => {
   if (!value || typeof value !== 'object' || value instanceof Array)
@@ -105,8 +99,7 @@ export const extractOptions = <T: Data>(options: Object, input?: Data): Extracte
     }
   });
 
-  if (!validateShareWithOptions(sharingOptions))
-    throw new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options);
+  assertShareWithOptions(sharingOptions);
 
   return { outputOptions, sharingOptions };
 };
