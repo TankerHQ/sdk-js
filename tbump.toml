@@ -28,3 +28,7 @@ search = '"@tanker/[^"]+": "{current_version}"'
 [[file]]
 src = "packages/core/src/version.js"
 search = "TANKER_SDK_VERSION = '{current_version}'"
+
+[[file]]
+src = "packages/fake-authentication/src/FakeAuthentication.js"
+search = "TANKER_FAKEAUTH_VERSION = '{current_version}'"
