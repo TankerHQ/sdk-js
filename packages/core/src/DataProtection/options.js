@@ -10,11 +10,11 @@ export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Arra
 
 export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: string, lastModified?: number };
 
-export type ShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
+export type SharingOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
 
 export const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
-export const extractSharingOptions = (options: Object): ShareWithOptions => {
+export const extractSharingOptions = (options: Object): SharingOptions => {
   const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options);
 
   if (!isObject(options))
@@ -36,7 +36,7 @@ export const extractSharingOptions = (options: Object): ShareWithOptions => {
   return sharingOptions;
 };
 
-export const isShareWithOptionsEmpty = (opts: ShareWithOptions): bool => {
+export const isSharingOptionsEmpty = (opts: SharingOptions): bool => {
   if (opts.shareWithGroups && opts.shareWithGroups.length > 0)
     return false;
   if (opts.shareWithUsers && opts.shareWithUsers.length > 0)

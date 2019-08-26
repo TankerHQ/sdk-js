@@ -8,7 +8,7 @@ import { InternalError } from '../errors';
 import type { Client } from '../Network/Client';
 import type { DataProtector, Streams } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
-import type { OutputOptions, ShareWithOptions } from '../DataProtection/options';
+import type { OutputOptions, SharingOptions } from '../DataProtection/options';
 
 const pipeStreams = (
   { streams, resolveEvent }: { streams: Array<$Values<Streams>>, resolveEvent: string }
@@ -49,7 +49,7 @@ export class CloudStorageManager {
     return JSON.parse(jsonMetadata);
   }
 
-  async upload<T: Data>(clearData: Data, sharingOptions: ShareWithOptions, outputOptions: OutputOptions<T>): Promise<string> {
+  async upload<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>): Promise<string> {
     const encryptor = await this._dataProtector.makeEncryptorStream(sharingOptions);
 
     const { clearChunkSize, encryptedChunkSize, overheadPerChunk, resourceId } = encryptor;

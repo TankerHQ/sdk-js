@@ -10,7 +10,7 @@ import { Tanker, optionsWithDefaults } from '..';
 import { InvalidArgument, PreconditionFailed } from '../errors';
 
 import { type EmailVerification, type RemoteVerification, statuses } from '../Session/types';
-import { type ShareWithOptions } from '../DataProtection/options';
+import { type SharingOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
@@ -296,7 +296,7 @@ describe('Tanker', () => {
         notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
 
         for (let i = 0; i < notShareWithValues.length; i++) {
-          const arg = ((notShareWithValues[i]: any): ShareWithOptions);
+          const arg = ((notShareWithValues[i]: any): SharingOptions);
           await expect(tanker.share(['resourceId'], arg), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
