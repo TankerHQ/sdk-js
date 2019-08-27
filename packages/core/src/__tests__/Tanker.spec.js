@@ -52,8 +52,44 @@ describe('Tanker', () => {
     });
   });
 
-  describe('init', () => {
-    it('constructor should throw with bad config argument', () => {
+  describe('optionsWithDefaults', () => {
+    it('should accept default options', () => {
+      const { adapter } = dataStoreConfig;
+      const options = { appId: 'id' };
+      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: ({}: any) };
+      const mergedOptions = optionsWithDefaults(options, defaultOptions);
+      expect(mergedOptions).to.deep.equal({
+        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: {}
+      });
+    });
+
+    it('should (deep) override default options', () => {
+      const { adapter } = dataStoreConfig;
+
+      const defaultPrefix = makePrefix();
+      const defaultDatastore = { adapter, prefix: defaultPrefix };
+      const defaultOptions = { appId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore, streams: ({}: any) };
+
+      const newPrefix = makePrefix();
+      const newOptions = { appId: 'new', url: 'http://new.io', dataStore: { adapter, prefix: newPrefix } };
+
+      const expectedDatastore = { adapter, prefix: newPrefix };
+      const expectedOptions = { appId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore, streams: {} };
+
+      const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
+      expect(mergedOptions).to.deep.equal(expectedOptions);
+    });
+
+    it('should throw when using optionsWithDefaults with bad arguments', () => {
+      // $FlowExpectedError
+      expect(() => optionsWithDefaults('not an object', { a: 1 })).to.throw(InvalidArgument);
+      // $FlowExpectedError
+      expect(() => optionsWithDefaults({ a: 1 }, 'not an object')).to.throw(InvalidArgument);
+    });
+  });
+
+  describe('constructor', () => {
+    it('throws when constructed with bad config arguments', () => {
       [
         // wrong types of options
         undefined,
@@ -75,42 +111,15 @@ describe('Tanker', () => {
         // $FlowExpectedError
         expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
       });
+    });
 
+    it('constructs a Tanker instance with default options', () => {
       expect(() => new Tanker(makeTestTankerOptions())).not.to.throw();
     });
 
-    it('tanker options should accept defaults', () => {
-      const { adapter } = dataStoreConfig;
-      const options = { appId: 'id' };
-      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: ({}: any) };
-      const mergedOptions = optionsWithDefaults(options, defaultOptions);
-      expect(mergedOptions).to.deep.equal({
-        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: {}
-      });
-    });
-
-    it('tanker options should (deep) override defaults', () => {
-      const { adapter } = dataStoreConfig;
-
-      const defaultPrefix = makePrefix();
-      const defaultDatastore = { adapter, prefix: defaultPrefix };
-      const defaultOptions = { appId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore, streams: ({}: any) };
-
-      const newPrefix = makePrefix();
-      const newOptions = { appId: 'new', url: 'http://new.io', dataStore: { adapter, prefix: newPrefix } };
-
-      const expectedDatastore = { adapter, prefix: newPrefix };
-      const expectedOptions = { appId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore, streams: {} };
-
-      const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
-      expect(mergedOptions).to.deep.equal(expectedOptions);
-    });
-
-    it('should thow when using optionsWithDefaults with bad arguments', () => {
-      // $FlowExpectedError
-      expect(() => optionsWithDefaults('not an object', { a: 1 })).to.throw(InvalidArgument);
-      // $FlowExpectedError
-      expect(() => optionsWithDefaults({ a: 1 }, 'not an object')).to.throw(InvalidArgument);
+    it('accepts the deprecated trustchainId option', () => {
+      const { appId: trustchainId, ...defaultOptions } = makeTestTankerOptions();
+      expect(() => new Tanker({ trustchainId, ...defaultOptions })).not.to.throw();
     });
   });
 
@@ -156,11 +165,11 @@ describe('Tanker', () => {
       });
 
       it('should throw when identity\'s trustchain does not match tanker\'s', async () => {
-        const otherTrustchainKeyPair = tcrypto.makeSignKeyPair();
-        const otherappId = random(tcrypto.HASH_SIZE);
+        const otherAppKeyPair = tcrypto.makeSignKeyPair();
+        const otherAppId = random(tcrypto.HASH_SIZE);
         const identity = await createIdentity(
-          utils.toBase64(otherappId),
-          utils.toBase64(otherTrustchainKeyPair.privateKey),
+          utils.toBase64(otherAppId),
+          utils.toBase64(otherAppKeyPair.privateKey),
           userId,
         );
         await expect(tanker.start(identity)).to.be.rejectedWith(InvalidArgument);

@@ -1,5 +1,5 @@
 // @flow
-import { Tanker, errors } from '@tanker/client-browser';
+import { Tanker, errors, type TankerOptions } from '@tanker/client-browser';
 import VerificationUI from '@tanker/verification-ui';
 import saveToDisk from 'file-saver';
 
@@ -7,13 +7,8 @@ export default class FileKit {
   tanker: Tanker;
   verificationUI: VerificationUI;
 
-  constructor(config: Object) {
-    const { appId, ...otherConfig } = config;
-
-    if (typeof appId !== 'string')
-      throw new errors.InvalidArgument('Invalid appId option');
-
-    this.tanker = new Tanker({ ...otherConfig, appId });
+  constructor(config: TankerOptions) {
+    this.tanker = new Tanker(config);
     this.verificationUI = new VerificationUI(this.tanker);
   }
 

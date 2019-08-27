@@ -103,7 +103,7 @@ class UserV2 extends BaseUser {
 function makeTanker(Tanker, adapter, appId, prefix) {
   return new Tanker({
     appId,
-    trustchainId: appId,
+    trustchainId: appId, // set trustchainId because old version only understand this param
     url: tankerUrl,
     sdkType: 'test',
     dataStore: {

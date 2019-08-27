@@ -97,18 +97,19 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('options', 'object', options);
     }
 
-    if (options.appId) {
+    if ('appId' in options) {
       if (typeof options.appId !== 'string') {
         throw new InvalidArgument('options.appId', 'string', options.appId);
       }
 
       this._trustchainId = options.appId;
-    } else if (options.trustchainId) {
+    } else if ('trustchainId' in options) {
       if (typeof options.trustchainId !== 'string') {
         throw new InvalidArgument('options.trustchainId', 'string', options.trustchainId);
       }
 
       this._trustchainId = options.trustchainId;
+      console.warn('"trustchainId" option has been deprecated in favor of "appId", it will be removed in the next major release.');
     } else {
       throw new InvalidArgument('options.appId', 'string', options.appId);
     }

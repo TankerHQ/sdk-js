@@ -94,7 +94,7 @@ class VerifyDevice extends React.Component<Props> {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          trustchain_id: appId,
+          app_id: appId,
           email_data: { to_email: email },
         }),
       });
