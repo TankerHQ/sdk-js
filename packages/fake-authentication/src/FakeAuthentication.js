@@ -4,7 +4,7 @@ import fetchPonyfill from 'fetch-ponyfill';
 const { fetch } = fetchPonyfill({ Promise });
 
 type PrivateIdentity = {
-  permanentIdentity: string,
+  identity: string,
   provisionalIdentity: string,
 };
 
@@ -52,7 +52,7 @@ export default class FakeAuthentication {
     this.baseUrl = pathJoin(serverUrl, 'apps', encodeURIComponent(this.appId));
   }
 
-  async getPrivateIdentity(email?: string): Promise<PrivateIdentity> {
+  async getIdentity(email?: string): Promise<PrivateIdentity> {
     let url;
 
     if (typeof email === 'string') {
@@ -69,7 +69,7 @@ export default class FakeAuthentication {
     const json: PrivateIdentityResponse = await response.json();
 
     const privateIdentity = {};
-    privateIdentity.permanentIdentity = json.private_permanent_identity;
+    privateIdentity.identity = json.private_permanent_identity;
 
     if (typeof json.private_provisional_identity === 'string')
       privateIdentity.provisionalIdentity = json.private_provisional_identity;

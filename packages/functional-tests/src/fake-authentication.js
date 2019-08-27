@@ -27,25 +27,25 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
     });
 
     it('returns a disposable permanent identity without an email', async () => {
-      const privateIdentity = await fa.getPrivateIdentity();
-      const { permanentIdentity, provisionalIdentity } = privateIdentity;
-      expect(permanentIdentity).to.be.a.string;
+      const privateIdentity = await fa.getIdentity();
+      const { identity, provisionalIdentity } = privateIdentity;
+      expect(identity).to.be.a.string;
       expect(provisionalIdentity).not.to.exist;
     });
 
     it('returns a permanent identity for the given email', async () => {
       const email = makeTestEmail();
-      const privateIdentity = await fa.getPrivateIdentity(email);
-      const { permanentIdentity, provisionalIdentity } = privateIdentity;
-      expect(permanentIdentity).to.be.a.string;
+      const privateIdentity = await fa.getIdentity(email);
+      const { identity, provisionalIdentity } = privateIdentity;
+      expect(identity).to.be.a.string;
       expect(provisionalIdentity).not.to.exist;
     });
 
     it('returns the same permanent identity when requested multiple times', async () => {
       const email = makeTestEmail();
 
-      const result1 = await fa.getPrivateIdentity(email);
-      const result2 = await fa.getPrivateIdentity(email);
+      const result1 = await fa.getIdentity(email);
+      const result2 = await fa.getIdentity(email);
 
       expect(result1).to.deep.equal(result2);
     });
@@ -55,11 +55,11 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
       const email2 = makeTestEmail();
 
       // email1 exists, while email2 is provisional
-      const priv1 = await fa.getPrivateIdentity(email1);
+      const priv1 = await fa.getIdentity(email1);
       const [pub1, pub2] = await fa.getPublicIdentities([email1, email2]);
-      const priv2 = await fa.getPrivateIdentity(email2);
+      const priv2 = await fa.getIdentity(email2);
 
-      expectMatchingPublicIdentities(pub1, await getPublicIdentity(priv1.permanentIdentity));
+      expectMatchingPublicIdentities(pub1, await getPublicIdentity(priv1.identity));
       expectMatchingPublicIdentities(pub2, await getPublicIdentity(priv2.provisionalIdentity));
     });
 
@@ -67,11 +67,11 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
       const email = makeTestEmail();
 
       const [publicProvIdentity] = await fa.getPublicIdentities([email]);
-      const { permanentIdentity, provisionalIdentity } = await fa.getPrivateIdentity(email);
+      const { identity, provisionalIdentity } = await fa.getIdentity(email);
       const [publicPermIdentity] = await fa.getPublicIdentities([email]);
 
       expectMatchingPublicIdentities(publicProvIdentity, await getPublicIdentity(provisionalIdentity));
-      expectMatchingPublicIdentities(publicPermIdentity, await getPublicIdentity(permanentIdentity));
+      expectMatchingPublicIdentities(publicPermIdentity, await getPublicIdentity(identity));
     });
   });
 };

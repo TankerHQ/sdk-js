@@ -17,15 +17,15 @@ export default class FileKit {
     this.verificationUI = new VerificationUI(this.tanker);
   }
 
-  async start(email: string, privateIdentity: { permanentIdentity: string, provisionalIdentity?: string }) {
-    const { permanentIdentity, provisionalIdentity } = privateIdentity;
-    return this.verificationUI.start(email, permanentIdentity, provisionalIdentity);
+  async start(email: string, privateIdentity: { identity: string, provisionalIdentity?: string }) {
+    const { identity, provisionalIdentity } = privateIdentity;
+    return this.verificationUI.start(email, identity, provisionalIdentity);
   }
 
   /* one time only session, we register a verificationKey that we discard */
-  async startDisposableSession(privateIdentity: { permanentIdentity: string }) {
-    const { permanentIdentity } = privateIdentity;
-    const status = await this.tanker.start(permanentIdentity);
+  async startDisposableSession(privateIdentity: { identity: string }) {
+    const { identity } = privateIdentity;
+    const status = await this.tanker.start(identity);
 
     switch (status) {
       case Tanker.statuses.IDENTITY_REGISTRATION_NEEDED: {
