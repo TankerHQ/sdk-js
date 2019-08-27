@@ -28,7 +28,7 @@ export class VerificationUI {
   )
 
   _mount = (email: string, check: Function, exit: Function) => {
-    ReactDOM.render(<Root appId={this._tanker.trustchainId} url={this._tanker.options.url || 'https://api.tanker.io'} email={email} check={check} exit={exit} />, this._container);
+    ReactDOM.render(<Root appId={this._tanker.appId} url={this._tanker.options.url || 'https://api.tanker.io'} email={email} check={check} exit={exit} />, this._container);
   }
 
   _unmount = () => {

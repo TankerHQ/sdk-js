@@ -10,7 +10,7 @@ This package is meant to wrap a Tanker client and start it through the Verificat
 import { Tanker } from '@tanker/client-browser';
 import VerificationUI from '@tanker/verification-ui';
 
-const config = { trustchainId: <trustchain-id> };
+const config = { appId: <app-id> };
 const tanker = new Tanker(config);
 const verificationUI = new VerificationUI(tanker);
 

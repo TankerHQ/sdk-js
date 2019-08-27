@@ -30,7 +30,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
     };
 
     beforeEach(async () => {
-      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      aliceIdentity = await args.appHelper.generateIdentity();
       alicePhone = args.makeTanker();
       await alicePhone.start(aliceIdentity);
       await alicePhone.registerIdentity({ passphrase: 'passphrase' });

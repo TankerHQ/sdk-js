@@ -5,7 +5,7 @@ import { expect } from 'chai';
 
 import { toBase64 } from '../../../../packages/client-node';
 import { upgradeUserToken } from '../../../../packages/identity';
-import { TrustchainHelper } from '../../../../packages/functional-tests/src/Helpers';
+import { AppHelper } from '../../../../packages/functional-tests/src/Helpers';
 import { makeCurrentUser, makeV1User, makeV2User } from './helpers';
 
 function generateEncryptTest(args) {
@@ -48,7 +48,7 @@ function generateVerificationTest(args) {
     const phone = makeCurrentUser({
       adapter: args.adapter,
       identity: args.currentBob.identity,
-      trustchainId: args.trustchainId,
+      appId: args.appId,
       prefix: 'phone',
     });
     await phone.start();
@@ -63,7 +63,7 @@ function generateRevocationV1Test(args) {
       adapter: args.adapter,
       userId: args.versionBob.id,
       token: args.versionBob.token,
-      trustchainId: args.trustchainId,
+      appId: args.appId,
       prefix: 'phone',
     });
     await phone.open();
@@ -81,7 +81,7 @@ function generateRevocationV2Test(args) {
       Tanker: args.Tanker,
       adapter: args.adapter,
       identity: args.currentBob.identity,
-      trustchainId: args.trustchainId,
+      appId: args.appId,
       prefix: 'phone',
     });
     await phone.start();
@@ -111,20 +111,20 @@ function generateV1Tests(opts) {
       adapter: opts.adapter,
     };
     before(async () => {
-      args.trustchainHelper = await TrustchainHelper.newTrustchain();
-      args.trustchainId = toBase64(args.trustchainHelper.trustchainId);
+      args.appHelper = await AppHelper.newApp();
+      args.appId = toBase64(args.appHelper.appId);
       const aliceId = uuid.v4();
       const bobId = uuid.v4();
-      const trustchainPrivateKey = toBase64(args.trustchainHelper.trustchainKeyPair.privateKey);
-      const aliceToken = opts.generateUserToken(args.trustchainId, trustchainPrivateKey, aliceId);
-      const bobToken = opts.generateUserToken(args.trustchainId, trustchainPrivateKey, bobId);
-      const aliceIdentity = await upgradeUserToken(args.trustchainId, aliceId, aliceToken);
-      const bobIdentity = await upgradeUserToken(args.trustchainId, bobId, bobToken);
+      const appSecret = toBase64(args.appHelper.appKeyPair.privateKey);
+      const aliceToken = opts.generateUserToken(args.appId, appSecret, aliceId);
+      const bobToken = opts.generateUserToken(args.appId, appSecret, bobId);
+      const aliceIdentity = await upgradeUserToken(args.appId, aliceId, aliceToken);
+      const bobIdentity = await upgradeUserToken(args.appId, bobId, bobToken);
 
       args.versionBob = makeV1User({
         Tanker: opts.Tanker,
         adapter: opts.adapter,
-        trustchainId: args.trustchainId,
+        appId: args.appId,
         userId: bobId,
         token: bobToken,
         prefix: 'bob1',
@@ -132,18 +132,18 @@ function generateV1Tests(opts) {
       args.versionAlice = makeV1User({
         Tanker: opts.Tanker,
         adapter: opts.adapter,
-        trustchainId: args.trustchainId,
+        appId: args.appId,
         userId: aliceId,
         token: aliceToken,
         prefix: 'alice1',
       });
       args.currentBob = makeCurrentUser({
-        trustchainId: args.trustchainId,
+        appId: args.appId,
         identity: bobIdentity,
         prefix: 'bob2',
       });
       args.currentAlice = makeCurrentUser({
-        trustchainId: args.trustchainId,
+        appId: args.appId,
         identity: aliceIdentity,
         prefix: 'alice2',
       });
@@ -159,7 +159,7 @@ function generateV1Tests(opts) {
       await args.versionAlice.close();
       await args.currentBob.stop();
       await args.currentAlice.stop();
-      await args.trustchainHelper.cleanup();
+      await args.appHelper.cleanup();
     });
 
     opts.tests.forEach(test => generatorMap[test](args));
@@ -176,35 +176,35 @@ function generateV2Tests(opts) {
       adapter: opts.adapter,
     };
     before(async () => {
-      args.trustchainHelper = await TrustchainHelper.newTrustchain();
-      args.trustchainId = toBase64(args.trustchainHelper.trustchainId);
+      args.appHelper = await AppHelper.newApp();
+      args.appId = toBase64(args.appHelper.appId);
       const aliceId = uuid.v4();
       const bobId = uuid.v4();
-      const trustchainPrivateKey = toBase64(args.trustchainHelper.trustchainKeyPair.privateKey);
-      const aliceIdentity = await opts.createIdentity(args.trustchainId, trustchainPrivateKey, aliceId);
-      const bobIdentity = await opts.createIdentity(args.trustchainId, trustchainPrivateKey, bobId);
+      const appSecret = toBase64(args.appHelper.appKeyPair.privateKey);
+      const aliceIdentity = await opts.createIdentity(args.appId, appSecret, aliceId);
+      const bobIdentity = await opts.createIdentity(args.appId, appSecret, bobId);
 
       args.versionBob = makeV2User({
         Tanker: opts.Tanker,
         adapter: opts.adapter,
-        trustchainId: args.trustchainId,
+        appId: args.appId,
         identity: bobIdentity,
         prefix: 'bob1',
       });
       args.versionAlice = makeV2User({
         Tanker: opts.Tanker,
         adapter: opts.adapter,
-        trustchainId: args.trustchainId,
+        appId: args.appId,
         identity: aliceIdentity,
         prefix: 'alice1',
       });
       args.currentBob = makeCurrentUser({
-        trustchainId: args.trustchainId,
+        appId: args.appId,
         identity: bobIdentity,
         prefix: 'bob2',
       });
       args.currentAlice = makeCurrentUser({
-        trustchainId: args.trustchainId,
+        appId: args.appId,
         identity: aliceIdentity,
         prefix: 'alice2',
       });
@@ -220,7 +220,7 @@ function generateV2Tests(opts) {
       await args.versionAlice.stop();
       await args.currentBob.stop();
       await args.currentAlice.stop();
-      await args.trustchainHelper.cleanup();
+      await args.appHelper.cleanup();
     });
 
     opts.tests.forEach(test => generatorMap[test](args));

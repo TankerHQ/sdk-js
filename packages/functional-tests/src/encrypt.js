@@ -64,9 +64,9 @@ const generateEncryptTests = (args: TestArgs) => {
     let bobPublicIdentity;
 
     before(async () => {
-      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      aliceIdentity = await args.appHelper.generateIdentity();
       alicePublicIdentity = await getPublicIdentity(aliceIdentity);
-      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobIdentity = await args.appHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
       aliceLaptop = args.makeTanker();
       bobLaptop = args.makeTanker();
@@ -144,7 +144,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('encrypt and share with a provisional identity', async () => {
         const email = 'alice@tanker-functional-test.io';
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
       });
@@ -155,12 +155,12 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when sharing with secret provisional identities', async () => {
         const email = 'alice@tanker-functional-test.io';
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when sharing with a permanent identity that is not registered', async () => {
-        const evePublicIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
+        const evePublicIdentity = await getPublicIdentity(await args.appHelper.generateIdentity('eve'));
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [evePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, evePublicIdentity);
       });
 
@@ -215,7 +215,7 @@ const generateEncryptTests = (args: TestArgs) => {
       it('throws when sharing with a permanent identity that is not registered', async () => {
         const edata = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(edata);
-        const evePublicIdentity = await getPublicIdentity(await args.trustchainHelper.generateIdentity('eve'));
+        const evePublicIdentity = await getPublicIdentity(await args.appHelper.generateIdentity('eve'));
 
         await expect(bobLaptop.share([resourceId], { shareWithUsers: [evePublicIdentity] }))
           .to.be.rejectedWith(errors.InvalidArgument, evePublicIdentity);
@@ -232,7 +232,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('shares an existing resource with a provisional identity', async () => {
         const email = 'alice@tanker-functional-test.io';
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
         const cipherText = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(cipherText);
@@ -247,7 +247,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
       beforeEach(async () => {
         email = `${uuid.v4()}@tanker-functional-test.io`;
-        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.trustchainHelper.trustchainId), email);
+        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
         publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
@@ -258,14 +258,14 @@ const generateEncryptTests = (args: TestArgs) => {
       });
 
       it('does not throw if nothing to claim', async () => {
-        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        const verificationCode = await args.appHelper.getVerificationCode(email);
         await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.fulfilled;
       });
 
       it('decrypt data shared with an attached provisional identity', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        const verificationCode = await args.appHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         const decrypted = await aliceLaptop.decrypt(cipherText);
@@ -275,7 +275,7 @@ const generateEncryptTests = (args: TestArgs) => {
       it('decrypt data shared with an attached provisional identity after session restart', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        const verificationCode = await args.appHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
         await aliceLaptop.stop();
 
@@ -287,7 +287,7 @@ const generateEncryptTests = (args: TestArgs) => {
       it('throws when sharing with already claimed identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        const verificationCode = await args.appHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.InternalError);
@@ -296,7 +296,7 @@ const generateEncryptTests = (args: TestArgs) => {
       it('gracefully accept an already attached provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        const verificationCode = await args.appHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
@@ -306,10 +306,10 @@ const generateEncryptTests = (args: TestArgs) => {
       it('attach a provisional identity without requesting verification if email already verified', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const eveIdentity = await args.trustchainHelper.generateIdentity();
+        const eveIdentity = await args.appHelper.generateIdentity();
         const eveLaptop = args.makeTanker();
 
-        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        const verificationCode = await args.appHelper.getVerificationCode(email);
 
         await eveLaptop.start(eveIdentity);
         await eveLaptop.registerIdentity({ email, verificationCode });
@@ -328,22 +328,22 @@ const generateEncryptTests = (args: TestArgs) => {
 
       it('throws when verifying an email that does not match the provisional identity', async () => {
         const anotherEmail = `${uuid.v4()}@tanker-functional-test.io`;
-        const verificationCode = await args.trustchainHelper.getVerificationCode(anotherEmail);
+        const verificationCode = await args.appHelper.getVerificationCode(anotherEmail);
         await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when verifying provisional identity without attaching first', async () => {
-        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        const verificationCode = await args.appHelper.getVerificationCode(email);
         await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       it('throw when two users attach the same provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        let verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        let verificationCode = await args.appHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-        verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        verificationCode = await args.appHelper.getVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InternalError);
       });
@@ -351,7 +351,7 @@ const generateEncryptTests = (args: TestArgs) => {
       it('decrypt resource on a new device', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await args.trustchainHelper.getVerificationCode(email);
+        const verificationCode = await args.appHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         const alicePhone = args.makeTanker();
@@ -372,8 +372,8 @@ const generateEncryptTests = (args: TestArgs) => {
     let bobIdentity;
 
     beforeEach(async () => {
-      aliceIdentity = await args.trustchainHelper.generateIdentity();
-      bobIdentity = await args.trustchainHelper.generateIdentity();
+      aliceIdentity = await args.appHelper.generateIdentity();
+      bobIdentity = await args.appHelper.generateIdentity();
       aliceLaptop = args.makeTanker();
       bobLaptop = args.makeTanker();
       bobPhone = args.makeTanker();
@@ -439,7 +439,7 @@ const generateEncryptTests = (args: TestArgs) => {
     let aliceIdentity;
 
     before(async () => {
-      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      aliceIdentity = await args.appHelper.generateIdentity();
       aliceLaptop = args.makeTanker();
       await aliceLaptop.start(aliceIdentity);
       await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
@@ -501,12 +501,12 @@ const generateEncryptTests = (args: TestArgs) => {
     let bobPublicIdentity;
 
     before(async () => {
-      aliceIdentity = await args.trustchainHelper.generateIdentity();
+      aliceIdentity = await args.appHelper.generateIdentity();
       aliceLaptop = args.makeTanker();
       await aliceLaptop.start(aliceIdentity);
       await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobIdentity = await args.appHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
       bobLaptop = args.makeTanker();
       await bobLaptop.start(bobIdentity);

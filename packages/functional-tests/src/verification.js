@@ -39,15 +39,15 @@ const generateVerificationTests = (args: TestArgs) => {
     let bobLaptop;
     let bobPhone;
     let bobIdentity;
-    let trustchainHelper;
+    let appHelper;
 
     before(() => {
-      ({ trustchainHelper } = args);
+      ({ appHelper } = args);
     });
 
     beforeEach(async () => {
       const bobId = uuid.v4();
-      bobIdentity = await trustchainHelper.generateIdentity(bobId);
+      bobIdentity = await appHelper.generateIdentity(bobId);
       bobLaptop = args.makeTanker();
       bobPhone = args.makeTanker();
       await bobLaptop.start(bobIdentity);
@@ -72,24 +72,24 @@ const generateVerificationTests = (args: TestArgs) => {
       });
 
       it('can test that email verification method has been registered', async () => {
-        const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        const verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'email', email: 'john@doe.com' }]);
       });
 
       it('should fail to register an email verification method if the verification code is wrong', async () => {
-        const verificationCode = await trustchainHelper.getWrongVerificationCode('john@doe.com');
+        const verificationCode = await appHelper.getWrongVerificationCode('john@doe.com');
         await expect(bobLaptop.registerIdentity({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('should fail to register an email verification method if the verification code is not for the targeted email', async () => {
-        const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        const verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await expect(bobLaptop.registerIdentity({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('can test that both verification methods have been registered', async () => {
-        const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        const verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         await bobLaptop.setVerificationMethod({ passphrase: 'passphrase' });
@@ -101,11 +101,11 @@ const generateVerificationTests = (args: TestArgs) => {
       });
 
       it('can test that email verification method has been updated and use it', async () => {
-        let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        let verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         // update email
-        verificationCode = await trustchainHelper.getVerificationCode('elton@doe.com');
+        verificationCode = await appHelper.getVerificationCode('elton@doe.com');
         await bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode });
 
         // check email is updated in cache
@@ -113,7 +113,7 @@ const generateVerificationTests = (args: TestArgs) => {
 
         // check email can be used on new device
         await bobPhone.start(bobIdentity);
-        verificationCode = await trustchainHelper.getVerificationCode('elton@doe.com');
+        verificationCode = await appHelper.getVerificationCode('elton@doe.com');
         await bobPhone.verifyIdentity({ email: 'elton@doe.com', verificationCode });
 
         // check received email is the updated one on new device
@@ -121,20 +121,20 @@ const generateVerificationTests = (args: TestArgs) => {
       });
 
       it('should fail to update the email verification method if the verification code is wrong', async () => {
-        let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        let verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         // try to update email with a code containing a typo
-        verificationCode = await trustchainHelper.getWrongVerificationCode('elton@doe.com');
+        verificationCode = await appHelper.getWrongVerificationCode('elton@doe.com');
         await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('should fail to update the email verification method if the verification code is not for the targeted email', async () => {
-        let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        let verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         // try to update email with a code for another email address
-        verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
     });
@@ -151,7 +151,7 @@ const generateVerificationTests = (args: TestArgs) => {
       });
 
       it('fails to verify without having registered a passphrase', async () => {
-        const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        const verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
         await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.PreconditionFailed);
@@ -170,24 +170,24 @@ const generateVerificationTests = (args: TestArgs) => {
 
     describe('email verification', () => {
       it('can register a verification email and verify with a valid verification code', async () => {
-        let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        let verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
-        verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await expect(expectVerification(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.fulfilled;
       });
 
       it('fails to verify with a wrong verification code', async () => {
-        let verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        let verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await bobLaptop.registerIdentity({ email: 'john@doe.com', verificationCode });
 
-        verificationCode = await trustchainHelper.getWrongVerificationCode('john@doe.com');
+        verificationCode = await appHelper.getWrongVerificationCode('john@doe.com');
         await expect(expectVerification(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('fails to verify without having registered an email address', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-        const verificationCode = await trustchainHelper.getVerificationCode('john@doe.com');
+        const verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await expect(expectVerification(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
     });

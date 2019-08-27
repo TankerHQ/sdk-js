@@ -14,7 +14,7 @@ const generateGetDeviceListTests = (args: TestArgs) => {
 
     beforeEach(async () => {
       bobId = uuid.v4();
-      bobIdentity = await args.trustchainHelper.generateIdentity(bobId);
+      bobIdentity = await args.appHelper.generateIdentity(bobId);
       bobLaptop = args.makeTanker();
       bobPhone = args.makeTanker();
       await bobLaptop.start(bobIdentity);

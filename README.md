@@ -105,7 +105,7 @@ The Core SDK takes care of all the difficult cryptography in the background, lea
 import { Tanker } from '@tanker/client-browser';
 
 // Initialize the isolated Tanker environment within your application
-const tanker = new Tanker({ trustchainId: '...' });
+const tanker = new Tanker({ appId: '...' });
 
 // Start a session with the user's cryptographic identity
 await tanker.start(aliceIdentity);

@@ -8,9 +8,9 @@ import { tankerUrl, makePrefix, makeRandomUint8Array } from '../Helpers';
 import { generateFunctionalTests } from '../functional';
 import { type TestResources } from '../TestArgs';
 
-const makeTanker = (trustchainId: b64string): Tanker => {
+const makeTanker = (appId: b64string): Tanker => {
   const tanker = new Tanker({
-    trustchainId,
+    appId,
     // $FlowIKnow adapter key is passed as a default option by @tanker/client-browser
     dataStore: { prefix: makePrefix() },
     sdkType: 'test',

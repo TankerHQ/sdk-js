@@ -31,7 +31,7 @@ if (!appId || !appSecret || !email) {
 
 createIdentity(appId, appSecret, userId).then(async identity => {
   const provisionalIdentity = await createProvisionalIdentity(appId, email);
-  const tanker = new Tanker({ trustchainId: appId, url });
+  const tanker = new Tanker({ appId, url });
   const verificationUI = new VerificationUI(tanker);
   await verificationUI.start(email, identity, provisionalIdentity);
 });

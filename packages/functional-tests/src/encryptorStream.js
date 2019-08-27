@@ -32,8 +32,8 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
     };
 
     before(async () => {
-      aliceIdentity = await args.trustchainHelper.generateIdentity();
-      bobIdentity = await args.trustchainHelper.generateIdentity();
+      aliceIdentity = await args.appHelper.generateIdentity();
+      bobIdentity = await args.appHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
       aliceLaptop = args.makeTanker();
       bobLaptop = args.makeTanker();

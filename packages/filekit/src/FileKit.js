@@ -8,12 +8,12 @@ export default class FileKit {
   verificationUI: VerificationUI;
 
   constructor(config: Object) {
-    const { appId: trustchainId, ...otherConfig } = config;
+    const { appId, ...otherConfig } = config;
 
-    if (typeof trustchainId !== 'string')
+    if (typeof appId !== 'string')
       throw new errors.InvalidArgument('Invalid appId option');
 
-    this.tanker = new Tanker({ ...otherConfig, trustchainId });
+    this.tanker = new Tanker({ ...otherConfig, appId });
     this.verificationUI = new VerificationUI(this.tanker);
   }
 

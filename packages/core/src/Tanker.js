@@ -35,6 +35,7 @@ import { TANKER_SDK_VERSION } from './version';
 const SAFE_RESOURCE_ID_EXTRACTION = 1 + 16 + 24 + 5 * (1024 * 1024);
 
 type TankerDefaultOptions = $Exact<{
+  appId?: b64string,
   trustchainId?: b64string,
   socket?: any,
   url?: string,
@@ -44,7 +45,8 @@ type TankerDefaultOptions = $Exact<{
 }>;
 
 type TankerCoreOptions = $Exact<{
-  trustchainId: b64string,
+  appId?: b64string,
+  trustchainId?: b64string,
   socket?: any,
   url?: string,
   dataStore: DataStoreOptions,
@@ -53,7 +55,8 @@ type TankerCoreOptions = $Exact<{
 }>;
 
 export type TankerOptions = $Exact<{
-  trustchainId: b64string,
+  appId?: b64string,
+  trustchainId?: b64string,
   socket?: any,
   url?: string,
   dataStore?: DataStoreOptions,
@@ -77,6 +80,7 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefa
 }
 
 export class Tanker extends EventEmitter {
+  _trustchainId: b64string;
   _session: Session;
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
@@ -93,8 +97,20 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('options', 'object', options);
     }
 
-    if (typeof options.trustchainId !== 'string') {
-      throw new InvalidArgument('options.trustchainId', 'string', options.trustchainId);
+    if (options.appId) {
+      if (typeof options.appId !== 'string') {
+        throw new InvalidArgument('options.appId', 'string', options.appId);
+      }
+
+      this._trustchainId = options.appId;
+    } else if (options.trustchainId) {
+      if (typeof options.trustchainId !== 'string') {
+        throw new InvalidArgument('options.trustchainId', 'string', options.trustchainId);
+      }
+
+      this._trustchainId = options.trustchainId;
+    } else {
+      throw new InvalidArgument('options.appId', 'string', options.appId);
     }
 
     if (typeof options.dataStore !== 'object' || options.dataStore instanceof Array) {
@@ -114,7 +130,7 @@ export class Tanker extends EventEmitter {
       sdkInfo: {
         version: Tanker.version,
         type: options.sdkType,
-        trustchainId: options.trustchainId
+        trustchainId: this._trustchainId,
       }
     };
     if (options.socket) { clientOptions.socket = options.socket; }
@@ -135,8 +151,12 @@ export class Tanker extends EventEmitter {
     }
   }
 
+  get appId(): b64string {
+    return this._trustchainId;
+  }
+
   get trustchainId(): b64string {
-    return this._options.trustchainId;
+    return this._trustchainId;
   }
 
   get options(): TankerCoreOptions {
