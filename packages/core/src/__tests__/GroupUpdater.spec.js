@@ -1,26 +1,14 @@
 // @flow
-
-import { mergeSchemas } from '@tanker/datastore-base';
-import { createUserSecretBinary } from '@tanker/identity';
 import { tcrypto, utils } from '@tanker/crypto';
 
 import { expect } from './chai';
-import GroupStore from '../Groups/GroupStore';
 import GroupUpdater from '../Groups/GroupUpdater';
-import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
 
 import type { UserGroupAdditionRecord, UserGroupCreationRecord, UserGroupCreationRecordV2 } from '../Blocks/payloads';
 import type { UnverifiedUserGroupCreation } from '../Blocks/entries';
 
-async function makeMemoryGroupStore(): Promise<GroupStore> {
-  const schemas = mergeSchemas(GroupStore.schemas);
-
-  const baseConfig = { ...dataStoreConfig, schemas };
-  const config = { ...baseConfig, dbName: `group-store-test-${makePrefix()}` };
-  const userSecret = createUserSecretBinary('trustchainid', 'userId');
-  return GroupStore.open(await openDataStore(config), userSecret);
-}
+import { makeMemoryGroupStore } from './GroupStore.spec';
 
 describe('GroupUpdater', () => {
   let builder;
@@ -139,7 +127,9 @@ describe('GroupUpdater', () => {
     await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
 
     const newGroup = await groupStore.findExternal({ groupId: group.groupSignatureKeyPair.publicKey });
-    expect(newGroup.lastGroupBlock).to.deep.equal(groupAdd.entry.hash);
+    expect(newGroup).not.to.be.null;
+    if (newGroup)
+      expect(newGroup.lastGroupBlock).to.deep.equal(groupAdd.entry.hash);
   });
 
   it('handles a group addition I always belonged to', async () => {
@@ -156,7 +146,9 @@ describe('GroupUpdater', () => {
     await groupUpdater.applyEntry({ ...groupAdd.entry, ...additionPayload });
 
     const newGroup = await groupStore.findExternal({ groupId: group.groupSignatureKeyPair.publicKey });
-    expect(newGroup.lastGroupBlock).to.deep.equal(groupAdd.entry.hash);
+    expect(newGroup).not.to.be.null;
+    if (newGroup)
+      expect(newGroup.lastGroupBlock).to.deep.equal(groupAdd.entry.hash);
   });
 
   it('handles a group addition which adds me', async () => {

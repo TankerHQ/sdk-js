@@ -204,7 +204,7 @@ export default class TrustchainPuller {
 
   _deviceRevocationFromBlock = async (block: Block) => {
     const userIdString = this._deviceIdToUserId.get(utils.toBase64(block.author));
-    let userId: Uint8Array;
+    let userId: ?Uint8Array;
     if (!userIdString)
       userId = await this._unverifiedStore.getUserIdFromDeviceId(block.author);
     else

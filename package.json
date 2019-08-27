@@ -72,7 +72,7 @@
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-mocha-no-only": "^1.1.0",
     "eslint-plugin-react": "^7.14.3",
-    "flow-bin": "0.98.1",
+    "flow-bin": "0.106.2",
     "fs-extra": "^8.0.1",
     "karma": "4.1.0",
     "karma-browserstack-launcher": "1.4.0",
