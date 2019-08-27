@@ -15,8 +15,9 @@ import { statusDefs, statuses, type Status, type Verification, type EmailVerific
 
 import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
-import type { OutputOptions, ShareWithOptions } from './DataProtection/options';
-import { convertShareWithOptions, assertShareWithOptions, extractOptions, isShareWithOptionsEmpty } from './DataProtection/options';
+import type { OutputOptions, SharingOptions } from './DataProtection/options';
+
+import { defaultDownloadType, extractOutputOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
 import type { Streams } from './DataProtection/DataProtector';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
@@ -294,19 +295,19 @@ export class Tanker extends EventEmitter {
     return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
   }
 
-  async share(resourceIds: Array<b64string>, sharingOptions: ShareWithOptions): Promise<void> {
+  async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {
     this.assert(statuses.READY, 'share');
 
-    if (!(resourceIds instanceof Array))
+    if (!(resourceIds instanceof Array) || resourceIds.some(id => typeof id !== 'string'))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
 
-    assertShareWithOptions(sharingOptions, 'sharingOptions');
+    const sharingOptions = extractSharingOptions(options);
 
-    if (isShareWithOptionsEmpty(sharingOptions)) {
+    if (isSharingOptionsEmpty(sharingOptions)) {
       throw new InvalidArgument(
-        'sharingOptions.shareWith*',
-        'sharingOptions.shareWithUsers or sharingOptions.shareWithGroups must contain recipients',
-        sharingOptions
+        'options.shareWith*',
+        'options.shareWithUsers or options.shareWithGroups must contain recipients',
+        options
       );
     }
 
@@ -334,6 +335,7 @@ export class Tanker extends EventEmitter {
 
     if (typeof deviceId !== 'string')
       throw new InvalidArgument('deviceId', 'string', deviceId);
+
     return this._session.apis.deviceManager.revokeDevice(deviceId);
   }
 
@@ -360,11 +362,12 @@ export class Tanker extends EventEmitter {
     return this._session.apis.groupManager.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async makeEncryptorStream(options: ShareWithOptions = {}): Promise<EncryptorStream> {
+  async makeEncryptorStream(options: SharingOptions = {}): Promise<EncryptorStream> {
     this.assert(statuses.READY, 'make a stream encryptor');
-    assertShareWithOptions(options, 'options');
 
-    return this._session.apis.dataProtector.makeEncryptorStream(convertShareWithOptions(options));
+    const sharingOptions = extractSharingOptions(options);
+
+    return this._session.apis.dataProtector.makeEncryptorStream(sharingOptions);
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
@@ -373,16 +376,17 @@ export class Tanker extends EventEmitter {
     return this._session.apis.dataProtector.makeDecryptorStream();
   }
 
-  async encryptData<T: Data>(clearData: Data, options?: $Shape<ShareWithOptions & OutputOptions<T>> = {}): Promise<T> {
+  async encryptData<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T>> = {}): Promise<T> {
     this.assert(statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
-    const { outputOptions, sharingOptions } = extractOptions(options, clearData);
+    const outputOptions = extractOutputOptions(options, clearData);
+    const sharingOptions = extractSharingOptions(options);
 
-    return this._session.apis.dataProtector.encryptData(clearData, convertShareWithOptions(sharingOptions), outputOptions);
+    return this._session.apis.dataProtector.encryptData(clearData, sharingOptions, outputOptions);
   }
 
-  async encrypt<T: Data>(plain: string, options?: $Shape<ShareWithOptions & OutputOptions<T>>): Promise<T> {
+  async encrypt<T: Data>(plain: string, options?: $Shape<SharingOptions & OutputOptions<T>>): Promise<T> {
     this.assert(statuses.READY, 'encrypt');
 
     if (typeof plain !== 'string')
@@ -395,7 +399,7 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
-    const { outputOptions } = extractOptions(options, encryptedData);
+    const outputOptions = extractOutputOptions(options, encryptedData);
 
     return this._session.apis.dataProtector.decryptData(encryptedData, outputOptions);
   }
@@ -404,18 +408,28 @@ export class Tanker extends EventEmitter {
     return utils.toString(await this.decryptData(cipher, { type: Uint8Array }));
   }
 
-  async upload<T: Data>(clearData: Data, options?: $Shape<ShareWithOptions & OutputOptions<T>> = {}): Promise<string> {
+  async upload<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T>> = {}): Promise<string> {
     this.assert(statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
-    const { outputOptions, sharingOptions } = extractOptions(options, clearData);
+    const outputOptions = extractOutputOptions(options, clearData);
+    const sharingOptions = extractSharingOptions(options);
 
     return this._session.apis.cloudStorageManager.upload(clearData, sharingOptions, outputOptions);
   }
 
   async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T>> = {}): Promise<T> {
     this.assert(statuses.READY, 'download a file');
-    return this._session.apis.cloudStorageManager.download(resourceId, options);
+
+    if (typeof resourceId !== 'string')
+      throw new InvalidArgument('resourceId', 'string', resourceId);
+
+    if (!isObject(options))
+      throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
+
+    const outputOptions = extractOutputOptions({ type: defaultDownloadType, ...options });
+
+    return this._session.apis.cloudStorageManager.download(resourceId, outputOptions);
   }
 }
 

@@ -10,43 +10,33 @@ export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Arra
 
 export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: string, lastModified?: number };
 
-export type ShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
+export type SharingOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
 
-export type InternalShareWithOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, resourceId?: string };
+export const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
-type ExtractedOptions<T> = {
-  outputOptions: OutputOptions<T>,
-  sharingOptions: ShareWithOptions,
+export const extractSharingOptions = (options: Object): SharingOptions => {
+  const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options);
+
+  if (!isObject(options))
+    throw error;
+
+  const sharingOptions = {};
+
+  ['shareWithUsers', 'shareWithGroups'].forEach(key => {
+    if (key in options) {
+      if (!(options[key] instanceof Array))
+        throw error;
+      if (options[key].some(el => typeof el !== 'string'))
+        throw error;
+
+      sharingOptions[key] = options[key];
+    }
+  });
+
+  return sharingOptions;
 };
 
-export function convertShareWithOptions(o: ShareWithOptions): InternalShareWithOptions {
-  return (o: any);
-}
-
-const validateShareWithOptions = (value: ShareWithOptions): bool => {
-  if (!value || typeof value !== 'object' || value instanceof Array)
-    return false;
-
-  const keysToCheck = ['shareWithGroups', 'shareWithUsers'];
-  const keys = Object.keys(value).filter(key => keysToCheck.indexOf(key) !== -1);
-
-  for (const key of keys) {
-    if (!(value[key] instanceof Array))
-      return false;
-    if (value[key].some(el => typeof el !== 'string'))
-      return false;
-  }
-
-  return true;
-};
-
-export const assertShareWithOptions = (value: ShareWithOptions, argName: string = 'options') => {
-  if (!validateShareWithOptions(value)) {
-    throw new InvalidArgument(argName, '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', value);
-  }
-};
-
-export const isShareWithOptionsEmpty = (opts: ShareWithOptions): bool => {
+export const isSharingOptionsEmpty = (opts: SharingOptions): bool => {
   if (opts.shareWithGroups && opts.shareWithGroups.length > 0)
     return false;
   if (opts.shareWithUsers && opts.shareWithUsers.length > 0)
@@ -54,9 +44,9 @@ export const isShareWithOptionsEmpty = (opts: ShareWithOptions): bool => {
   return true;
 };
 
-export const extractOptions = <T: Data>(options: Object, input?: Data): ExtractedOptions<T> => {
-  if (!options || typeof options !== 'object' || options instanceof Array)
-    throw new InvalidArgument('options', 'a combination of ShareWithOptions and OutputOptions', options);
+export const extractOutputOptions = <T: Data>(options: Object, input?: Data): OutputOptions<T> => {
+  if (!isObject(options))
+    throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
 
   let outputType;
 
@@ -65,7 +55,7 @@ export const extractOptions = <T: Data>(options: Object, input?: Data): Extracte
   } else if (input) {
     outputType = getConstructor(input);
   } else {
-    throw new InternalError('Assertion error: called extractOptions without a type or input');
+    throw new InternalError('Assertion error: called extractOutputOptions without a type or input');
   }
 
   const outputOptions = {};
@@ -97,16 +87,5 @@ export const extractOptions = <T: Data>(options: Object, input?: Data): Extracte
     }
   }
 
-  const sharingOptions = {};
-
-  ['shareWithUsers', 'shareWithGroups'].forEach(key => {
-    if (key in options) {
-      sharingOptions[key] = options[key];
-    }
-  });
-
-  if (!validateShareWithOptions(sharingOptions))
-    throw new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options);
-
-  return { outputOptions, sharingOptions };
+  return outputOptions;
 };
