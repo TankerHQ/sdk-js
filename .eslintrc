@@ -20,6 +20,7 @@ rules:
   curly: 0
   linebreak-style: 0
   lines-between-class-members: 0
+  max-classes-per-file: 0
   max-len: 0
   no-await-in-loop: 0
   no-console:
@@ -71,6 +72,9 @@ rules:
   react/sort-comp: 0
   react/jsx-filename-extension: 0
   react/jsx-one-expression-per-line: 0
+  react/jsx-props-no-spreading: 0
+  react/state-in-constructor: 0
+  react/static-property-placement: 0
 
 plugins:
     - chai-expect

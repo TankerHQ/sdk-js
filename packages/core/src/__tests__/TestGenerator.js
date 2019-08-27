@@ -249,7 +249,7 @@ class TestGenerator {
       createdAt: unverifiedDeviceCreation.index,
       revokedAt: Number.MAX_SAFE_INTEGER
     };
-    const testUser = Object.assign({}, parentDevice.testUser);
+    const testUser = { ...parentDevice.testUser };
     testUser.devices.push(testDevice);
 
     return {
@@ -470,11 +470,11 @@ class TestGenerator {
 
     const unverifiedUserGroup = userGroupEntryFromBlock(block);
 
-    const group: Group = (Object.assign({}, previousGroup.group): any);
+    const group: Group = ({ ...previousGroup.group }: any);
     group.lastGroupBlock = unverifiedUserGroup.hash;
     group.index = unverifiedUserGroup.index;
 
-    const externalGroup: ExternalGroup = (Object.assign({}, previousGroup.externalGroup): any);
+    const externalGroup: ExternalGroup = ({ ...previousGroup.externalGroup }: any);
     externalGroup.lastGroupBlock = unverifiedUserGroup.hash;
     externalGroup.index = unverifiedUserGroup.index;
 
@@ -504,7 +504,7 @@ class TestGenerator {
   }
 
   _deviceCreationV1(deviceCreation: UnverifiedDeviceCreation): UnverifiedDeviceCreation {
-    const deviceCreationV1 = Object.assign({}, deviceCreation);
+    const deviceCreationV1 = { ...deviceCreation };
     deviceCreationV1.nature = NATURE.device_creation_v1;
     deviceCreationV1.user_key_pair = null;
     return deviceCreationV1;
