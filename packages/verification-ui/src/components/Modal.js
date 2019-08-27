@@ -28,6 +28,7 @@ const Dialog = styled.dialog`
   @media (max-width: 980px) {
     height: 100%;
     top: 0;
+    left: 0;
     border-radius: 0;
     transform: translate3d(calc(-4.5 * var(--offset)), 0, 0);
   }
