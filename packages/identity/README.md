@@ -13,29 +13,29 @@ npm install --save @tanker/identity
 ## API
 
 ```javascript
-createIdentity(trustchainId, trustchainPrivateKey, userId);
+createIdentity(appId, appSecret, userId);
 ```
 
 Create a new Tanker identity. This identity is secret and must only be given to a user who has been authenticated by your application. This identity is used by the Tanker client SDK to open a Tanker session.
 
-**trustchainId**<br />
-The trustchain ID. You can access it from the [Tanker dashboard](https://dashboard.tanker.io).
+**appId**<br />
+The app ID. You can access it from the [Tanker dashboard](https://dashboard.tanker.io).
 
-**trustchainPrivateKey**<br />
-The trustchain private key. A secret that you have saved right after the creation of you trustchain.
+**appSecret**<br />
+The app secret key. A secret that you have saved right after the creation of your *App*.
 
 **userId**<br />
 The ID of a user in your application.
 <br /><br />
 
 ```javascript
-createProvisionalIdentity(trustchainId, email);
+createProvisionalIdentity(appId, email);
 ```
 
 Create a Tanker provisional identity. It allows you to share a resource with a user who does not have an account in your application yet.
 
-**trustchainId**<br />
-The trustchain ID. You can access it from the [Tanker dashboard](https://dashboard.tanker.io).
+**appId**<br />
+The app ID. You can access it from the [Tanker dashboard](https://dashboard.tanker.io).
 
 **email**<br />
 The email of the potential recipient of the resource.
@@ -52,14 +52,14 @@ A Tanker identity.
 <br /><br />
 
 ```javascript
-upgradeUserToken(trustchainId, userId, userToken);
+upgradeUserToken(appId, userId, userToken);
 ```
 
 Upgrade from a deprecated token used in previous versions of Tanker. Tanker v1 used a user token, when migrating to Tanker v2 you should use this function to migrate you used tokens to identities. This identity is secret and must only be given to a user who has been authenticated by your application. This identity is used by the Tanker client SDK to open a Tanker session.
 Note: You probably won't need this API.
 
-**trustchainId**<br />
-The trustchain ID. You can access it from the [Tanker dashboard](https://dashboard.tanker.io).
+**appId**<br />
+The app ID. You can access it from the [Tanker dashboard](https://dashboard.tanker.io).
 
 **userId**<br />
 The ID of a user in your application.
@@ -76,8 +76,8 @@ The server-side code below demonstrates a typical flow to safely deliver identit
 import { createIdentity } from '@tanker/identity';
 
 // Store these configurations in a safe place
-const trustchainId = '<trustchain-id>';
-const trustchainPrivateKey = '<trustchain-private-key>';
+const appId = '<app-id>';
+const appSecret = '<app-secret>';
 
 // Example server-side function in which you would implement checkAuth(),
 // retrieveUserIdentity() and storeUserIdentity() to use your own authentication
@@ -95,7 +95,7 @@ async function getUserIdentity(userId) {
 
   // If not found, create a new user identity
   if (!identity) {
-    identity = await createIdentity(trustchainId, trustchainPrivateKey, userId);
+    identity = await createIdentity(appId, appSecret, userId);
 
     // Store the newly generated user identity
     storeUserIdentity(userId, identity);
