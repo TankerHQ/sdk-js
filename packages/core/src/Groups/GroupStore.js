@@ -81,10 +81,10 @@ function groupToDbGroup(userSecret: Uint8Array, group: Group): DbGroup {
 }
 
 function externalGroupToDbGroup(group: ExternalGroup): { dbGroup: DbGroup, dbGroupProvisionalKeys: Array<DbGroupProvisionalKey> } {
-  if (!group.encryptedPrivateSignatureKey)
+  const { encryptedPrivateSignatureKey } = group;
+
+  if (!encryptedPrivateSignatureKey)
     throw new InternalError('Assertion error: trying to add external group without encrypted private signature key');
-  if (!group.provisionalEncryptionKeys)
-    throw new InternalError('Assertion error: trying to add external group without provisional encryption keys');
 
   return {
     dbGroup: {
@@ -92,8 +92,7 @@ function externalGroupToDbGroup(group: ExternalGroup): { dbGroup: DbGroup, dbGro
       publicSignatureKey: utils.toBase64(group.publicSignatureKey),
       publicEncryptionKey: utils.toBase64(group.publicEncryptionKey),
       encryptedPrivateKeys: null,
-      // $FlowIKnow already checked for nullity
-      encryptedPrivateSignatureKey: utils.toBase64(group.encryptedPrivateSignatureKey),
+      encryptedPrivateSignatureKey: utils.toBase64(encryptedPrivateSignatureKey),
       lastGroupBlock: utils.toBase64(group.lastGroupBlock),
       index: group.index,
     },
@@ -264,11 +263,13 @@ export default class GroupStore {
   }
 
   findFull = async (args: { groupId?: Uint8Array, groupPublicEncryptionKey?: Uint8Array }): Promise<?Group> => {
-    const { groupId, groupPublicEncryptionKey } = args;
     if (Object.keys(args).length !== 1)
       throw new InternalError(`findFull: expected exactly one argument, got ${Object.keys(args).length}`);
 
+    const { groupId, groupPublicEncryptionKey } = args;
+
     let record;
+
     if (groupId) {
       record = await this._findDbGroup(groupId);
     } else if (groupPublicEncryptionKey) {
@@ -278,27 +279,31 @@ export default class GroupStore {
 
     if (!record || !record.encryptedPrivateKeys)
       return null;
+
     return dbGroupToGroup(this._userSecret, record);
   }
 
   // This function retrieves an external group, but without its provisional keys, use
   // findExternalsByProvisionalSignaturePublicKeys to get those
   findExternal = async (args: { groupId?: Uint8Array, groupPublicEncryptionKey?: Uint8Array }): Promise<?ExternalGroup> => {
-    const { groupId, groupPublicEncryptionKey } = args;
     if (Object.keys(args).length !== 1)
       throw new InternalError(`findExternal: expected exactly one argument, got ${Object.keys(args).length}`);
 
+    const { groupId, groupPublicEncryptionKey } = args;
+
+    let record;
+
     if (groupId) {
-      const record = await this._findDbGroup(groupId);
-      if (!record)
-        return null;
-      return dbGroupToExternalGroup(record, []);
+      record = await this._findDbGroup(groupId);
     } else if (groupPublicEncryptionKey) {
-      const record = await this._ds.first(GROUPS_TABLE, { selector: { publicEncryptionKey: utils.toBase64(groupPublicEncryptionKey) } });
-      if (record)
-        return dbGroupToExternalGroup(record, []);
-    } else
+      record = await this._ds.first(GROUPS_TABLE, { selector: { publicEncryptionKey: utils.toBase64(groupPublicEncryptionKey) } });
+    } else {
       throw new InternalError('findExternal: invalid argument');
+    }
+
+    if (record)
+      return dbGroupToExternalGroup(record, []);
+
     return null;
   }
 

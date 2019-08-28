@@ -135,7 +135,12 @@ export default class GroupUpdater {
     }
 
     // I've just been added to this group, lets keep the private keys
-    const groupPrivateSignatureKey = tcrypto.sealDecrypt(previousGroup.encryptedPrivateSignatureKey, { publicKey: previousGroup.publicEncryptionKey, privateKey: groupPrivateEncryptionKey });
+    // $FlowIKnow already checked for nullity
+    const groupPrivateSignatureKey = tcrypto.sealDecrypt(previousGroup.encryptedPrivateSignatureKey, {
+      publicKey: previousGroup.publicEncryptionKey,
+      privateKey: groupPrivateEncryptionKey,
+    });
+
     await this._groupStore.put({
       groupId: previousGroup.groupId,
       signatureKeyPair: {
@@ -171,6 +176,8 @@ export default class GroupUpdater {
       if (myKeys.length !== 1)
         throw new InternalError('assertion error: findExternals returned groups without my keys');
       const privateEncryptionKey = provisionalUnseal(myKeys[0].encryptedGroupPrivateEncryptionKey, provisionalUserKeys);
+      if (!g.encryptedPrivateSignatureKey)
+        throw new InternalError('assertion error: findExternals returned groups without my keys');
       return {
         groupId: g.groupId,
         signatureKeyPair: {

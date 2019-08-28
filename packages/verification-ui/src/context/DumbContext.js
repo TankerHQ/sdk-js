@@ -17,10 +17,10 @@ const bindActionCreators = <T: Actions>(actionCreators: T, dispatch: Payload => 
 );
 
 class DumbContext<T: Object, U: BoundActions> extends EventEmitter {
-  reducer: Reducer;
-  state: T;
   actions: U;
   context: Object;
+  reducer: Reducer;
+  state: T;
 
   constructor(prefix: string, initialState: T, actions: $ObjMap<U, <I>(I => void) => (I => Payload)>) {
     super();

@@ -12,13 +12,15 @@ import TestGenerator, { type TestUserGroup, type TestDeviceCreation } from './Te
 
 import makeUint8Array from './makeUint8Array';
 
-export async function makeMemoryGroupStore(): Promise<GroupStore> {
+export async function makeMemoryGroupStore() {
   const schemas = mergeSchemas(GroupStore.schemas);
   const userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
 
   const baseConfig = { ...dataStoreConfig, schemas };
   const config = { ...baseConfig, dbName: `group-store-test-${makePrefix()}` };
-  return GroupStore.open(await openDataStore(config), userSecret);
+  const dataStore = await openDataStore(config);
+  const groupStore = await GroupStore.open(dataStore, userSecret);
+  return groupStore;
 }
 
 describe('GroupStore', () => {
