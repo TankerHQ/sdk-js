@@ -21,7 +21,7 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
     let fa;
 
     before(async () => {
-      const appId = utils.toBase64(args.trustchainHelper.trustchainId);
+      const appId = utils.toBase64(args.appHelper.appId);
       const url = tankerUrl.replace('api.', 'fakeauth.');
       fa = new FakeAuthentication({ appId, url });
     });

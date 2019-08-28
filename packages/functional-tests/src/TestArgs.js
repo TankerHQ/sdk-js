@@ -1,12 +1,12 @@
 // @flow
 import type { Tanker } from '@tanker/core';
-import { TrustchainHelper } from './Helpers';
+import { AppHelper } from './Helpers';
 
 export type TestResource<T> = { type: Class<T>, resource: T };
 export type TestResources = { [string]: Array<TestResource<any>> };
 
 export type TestArgs = {
-  trustchainHelper: TrustchainHelper,
+  appHelper: AppHelper,
   resources: TestResources,
-  makeTanker: (b64TrustchainId?: string) => Tanker,
+  makeTanker: (b64AppId?: string) => Tanker,
 };

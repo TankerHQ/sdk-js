@@ -32,7 +32,7 @@ const makeFakeFetch = (status: number, body: Object): Function => {
     expect(callCount).to.equal(1);
     expect(callArgs.uri).to.equal(`${defaultProps.url}/verification/email`);
     expect(callArgs.options.method).to.equal('POST');
-    expect(callArgs.options.body).to.equal(JSON.stringify({ trustchain_id: defaultProps.appId, email_data: { to_email: defaultProps.email } }));
+    expect(callArgs.options.body).to.equal(JSON.stringify({ app_id: defaultProps.appId, email_data: { to_email: defaultProps.email } }));
   };
 
   return fakeFetch;

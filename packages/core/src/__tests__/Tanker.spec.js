@@ -14,12 +14,12 @@ import { type SharingOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {
   let trustchainKeyPair;
-  let trustchainId;
+  let appId;
   let userId;
   let badVerifications;
 
   const makeTestTankerOptions = () => ({
-    trustchainId: utils.toBase64(trustchainId),
+    appId: utils.toBase64(appId),
     socket: ({}: any),
     dataStore: { ...dataStoreConfig, prefix: makePrefix() },
     sdkType: 'test',
@@ -28,7 +28,7 @@ describe('Tanker', () => {
 
   before(() => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
-    trustchainId = random(tcrypto.HASH_SIZE);
+    appId = random(tcrypto.HASH_SIZE);
     userId = 'winnie';
 
     badVerifications = [
@@ -52,65 +52,74 @@ describe('Tanker', () => {
     });
   });
 
-  describe('init', () => {
-    it('constructor should throw with bad config argument', () => {
+  describe('optionsWithDefaults', () => {
+    it('should accept default options', () => {
+      const { adapter } = dataStoreConfig;
+      const options = { appId: 'id' };
+      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: ({}: any) };
+      const mergedOptions = optionsWithDefaults(options, defaultOptions);
+      expect(mergedOptions).to.deep.equal({
+        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: {}
+      });
+    });
+
+    it('should (deep) override default options', () => {
+      const { adapter } = dataStoreConfig;
+
+      const defaultPrefix = makePrefix();
+      const defaultDatastore = { adapter, prefix: defaultPrefix };
+      const defaultOptions = { appId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore, streams: ({}: any) };
+
+      const newPrefix = makePrefix();
+      const newOptions = { appId: 'new', url: 'http://new.io', dataStore: { adapter, prefix: newPrefix } };
+
+      const expectedDatastore = { adapter, prefix: newPrefix };
+      const expectedOptions = { appId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore, streams: {} };
+
+      const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
+      expect(mergedOptions).to.deep.equal(expectedOptions);
+    });
+
+    it('should throw when using optionsWithDefaults with bad arguments', () => {
+      // $FlowExpectedError
+      expect(() => optionsWithDefaults('not an object', { a: 1 })).to.throw(InvalidArgument);
+      // $FlowExpectedError
+      expect(() => optionsWithDefaults({ a: 1 }, 'not an object')).to.throw(InvalidArgument);
+    });
+  });
+
+  describe('constructor', () => {
+    it('throws when constructed with bad config arguments', () => {
       [
         // wrong types of options
         undefined,
         null,
         'paf',
         ['a', 'b'],
-        // invalid trustchainId
+        // invalid appId
         {},
-        { trustchainId: undefined },
-        { trustchainId: new Uint8Array(32) },
+        { appId: undefined },
+        { appId: new Uint8Array(32) },
         // missing dataStore
-        { trustchainId: 'ok' },
+        { appId: 'ok' },
         // missing adapter
-        { trustchainId: 'ok', dataStore: {} },
+        { appId: 'ok', dataStore: {} },
         // wrong adapter type
-        { trustchainId: 'ok', dataStore: { adapter: 'not a function' } },
-        { trustchainId: 'ok', dataStore: { adapter: () => {} }, sdkType: undefined }
+        { appId: 'ok', dataStore: { adapter: 'not a function' } },
+        { appId: 'ok', dataStore: { adapter: () => {} }, sdkType: undefined }
       ].forEach((invalidOptions, i) => {
         // $FlowExpectedError
         expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
       });
+    });
 
+    it('constructs a Tanker instance with default options', () => {
       expect(() => new Tanker(makeTestTankerOptions())).not.to.throw();
     });
 
-    it('tanker options should accept defaults', () => {
-      const { adapter } = dataStoreConfig;
-      const options = { trustchainId: 'id' };
-      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: ({}: any) };
-      const mergedOptions = optionsWithDefaults(options, defaultOptions);
-      expect(mergedOptions).to.deep.equal({
-        trustchainId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: {}
-      });
-    });
-
-    it('tanker options should (deep) override defaults', () => {
-      const { adapter } = dataStoreConfig;
-
-      const defaultPrefix = makePrefix();
-      const defaultDatastore = { adapter, prefix: defaultPrefix };
-      const defaultOptions = { trustchainId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore, streams: ({}: any) };
-
-      const newPrefix = makePrefix();
-      const newOptions = { trustchainId: 'new', url: 'http://new.io', dataStore: { adapter, prefix: newPrefix } };
-
-      const expectedDatastore = { adapter, prefix: newPrefix };
-      const expectedOptions = { trustchainId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore, streams: {} };
-
-      const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
-      expect(mergedOptions).to.deep.equal(expectedOptions);
-    });
-
-    it('should thow when using optionsWithDefaults with bad arguments', () => {
-      // $FlowExpectedError
-      expect(() => optionsWithDefaults('not an object', { a: 1 })).to.throw(InvalidArgument);
-      // $FlowExpectedError
-      expect(() => optionsWithDefaults({ a: 1 }, 'not an object')).to.throw(InvalidArgument);
+    it('accepts the deprecated trustchainId option', () => {
+      const { appId: trustchainId, ...defaultOptions } = makeTestTankerOptions();
+      expect(() => new Tanker({ trustchainId, ...defaultOptions })).not.to.throw();
     });
   });
 
@@ -156,11 +165,11 @@ describe('Tanker', () => {
       });
 
       it('should throw when identity\'s trustchain does not match tanker\'s', async () => {
-        const otherTrustchainKeyPair = tcrypto.makeSignKeyPair();
-        const otherTrustchainId = random(tcrypto.HASH_SIZE);
+        const otherAppKeyPair = tcrypto.makeSignKeyPair();
+        const otherAppId = random(tcrypto.HASH_SIZE);
         const identity = await createIdentity(
-          utils.toBase64(otherTrustchainId),
-          utils.toBase64(otherTrustchainKeyPair.privateKey),
+          utils.toBase64(otherAppId),
+          utils.toBase64(otherAppKeyPair.privateKey),
           userId,
         );
         await expect(tanker.start(identity)).to.be.rejectedWith(InvalidArgument);
@@ -168,7 +177,7 @@ describe('Tanker', () => {
 
       it('should throw when identity is valid but truncated', async () => {
         const identity = await createIdentity(
-          utils.toBase64(trustchainId),
+          utils.toBase64(appId),
           utils.toBase64(trustchainKeyPair.privateKey),
           userId,
         );

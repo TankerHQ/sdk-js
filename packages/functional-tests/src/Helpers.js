@@ -94,13 +94,13 @@ export const makeRandomUint8Array = (sizeOfData: number) => {
   return data;
 };
 
-export function makeRootBlock(trustchainKeyPair: Object) {
+export function makeRootBlock(appKeyPair: Object) {
   const rootBlock: Block = {
     index: 1,
     trustchain_id: new Uint8Array(0),
     nature: preferredNature(NATURE_KIND.trustchain_creation),
     author: new Uint8Array(32),
-    payload: trustchainKeyPair.publicKey,
+    payload: appKeyPair.publicKey,
     signature: new Uint8Array(tcrypto.SIGNATURE_SIZE)
   };
 
@@ -109,42 +109,42 @@ export function makeRootBlock(trustchainKeyPair: Object) {
   return rootBlock;
 }
 
-export class TrustchainHelper {
+export class AppHelper {
   _requester: AuthenticatedRequester;
-  trustchainId: Uint8Array;
-  trustchainKeyPair: Object;
+  appId: Uint8Array;
+  appKeyPair: Object;
 
-  constructor(requester: AuthenticatedRequester, trustchainId: Uint8Array, trustchainKeyPair: Object) {
+  constructor(requester: AuthenticatedRequester, appId: Uint8Array, appKeyPair: Object) {
     this._requester = requester;
-    this.trustchainId = trustchainId;
-    this.trustchainKeyPair = trustchainKeyPair;
+    this.appId = appId;
+    this.appKeyPair = appKeyPair;
   }
 
-  static async newTrustchain(): Promise<TrustchainHelper> {
-    const trustchainKeyPair = tcrypto.makeSignKeyPair();
-    const rootBlock = makeRootBlock(trustchainKeyPair);
+  static async newApp(): Promise<AppHelper> {
+    const appKeyPair = tcrypto.makeSignKeyPair();
+    const rootBlock = makeRootBlock(appKeyPair);
     const message = {
       root_block: utils.toBase64(serializeBlock(rootBlock)),
       name: `functest-${uuid.v4()}`,
       is_test: true,
-      private_signature_key: utils.toBase64(trustchainKeyPair.privateKey),
+      private_signature_key: utils.toBase64(appKeyPair.privateKey),
     };
     const requester = await AuthenticatedRequester.open();
     await requester.send('create trustchain', message);
 
-    const trustchainId = rootBlock.trustchain_id;
+    const appId = rootBlock.trustchain_id;
 
-    return new TrustchainHelper(requester, trustchainId, trustchainKeyPair);
+    return new AppHelper(requester, appId, appKeyPair);
   }
 
   generateIdentity(userId?: string): Promise<b64string> {
     const id = userId || uuid.v4();
-    return createIdentity(utils.toBase64(this.trustchainId), utils.toBase64(this.trustchainKeyPair.privateKey), id);
+    return createIdentity(utils.toBase64(this.appId), utils.toBase64(this.appKeyPair.privateKey), id);
   }
 
   async getVerificationCode(email: string): Promise<string> {
     const msg = {
-      trustchain_id: utils.toBase64(this.trustchainId),
+      trustchain_id: utils.toBase64(this.appId),
       email,
     };
     const answer = await this._requester.send('get verification code', msg);
@@ -164,10 +164,6 @@ export class TrustchainHelper {
   }
 
   async cleanup(): Promise<void> {
-    await this.deleteRemoteTrustchain();
-  }
-
-  async deleteRemoteTrustchain(): Promise<void> {
-    return this._requester.send('delete trustchain', { id: utils.toBase64(this.trustchainId) });
+    await this._requester.send('delete trustchain', { id: utils.toBase64(this.appId) });
   }
 }

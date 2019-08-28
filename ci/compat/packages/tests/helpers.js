@@ -100,9 +100,10 @@ class UserV2 extends BaseUser {
   }
 }
 
-function makeTanker(Tanker, adapter, trustchainId, prefix) {
+function makeTanker(Tanker, adapter, appId, prefix) {
   return new Tanker({
-    trustchainId,
+    appId,
+    trustchainId: appId, // set trustchainId because old version only understand this param
     url: tankerUrl,
     sdkType: 'test',
     dataStore: {
@@ -113,7 +114,7 @@ function makeTanker(Tanker, adapter, trustchainId, prefix) {
 }
 
 export function makeV1User(opts) {
-  const tanker = makeTanker(opts.Tanker, opts.adapter, opts.trustchainId, opts.prefix);
+  const tanker = makeTanker(opts.Tanker, opts.adapter, opts.appId, opts.prefix);
   tanker.on('unlockRequired', async () => {
     await tanker.unlockCurrentDevice({ password });
   });
@@ -121,13 +122,13 @@ export function makeV1User(opts) {
 }
 
 export function makeV2User(opts) {
-  const tanker = makeTanker(opts.Tanker, opts.adapter, opts.trustchainId, opts.prefix);
+  const tanker = makeTanker(opts.Tanker, opts.adapter, opts.appId, opts.prefix);
   return new UserV2(tanker, opts.identity);
 }
 
 export function makeCurrentUser(opts) {
   const Tanker = require('../../../../packages/client-node').default; // eslint-disable-line global-require
   const adapter = require('../../../../packages/datastore/pouchdb-memory').default; // eslint-disable-line global-require
-  const tanker = makeTanker(Tanker, adapter, opts.trustchainId, opts.prefix);
+  const tanker = makeTanker(Tanker, adapter, opts.appId, opts.prefix);
   return new UserV2(tanker, opts.identity);
 }

@@ -2,7 +2,7 @@
 import { utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 
-import { TrustchainHelper, tankerUrl, idToken } from './Helpers';
+import { AppHelper, tankerUrl, idToken } from './Helpers';
 import type { TestArgs, TestResources } from './TestArgs';
 
 import generateStreamEncryptor from './encryptorStream';
@@ -19,12 +19,12 @@ import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
 
 export function generateFunctionalTests(
   name: string,
-  makeTanker: (trustchainId: b64string) => Tanker,
+  makeTanker: (appId: b64string) => Tanker,
   generateTestResources: () => TestResources,
 ) {
   if (!tankerUrl || !idToken) {
-    // Those functional tests create a trustchain automatically and require a TANKER_TOKEN to run
-    // They also require a TANKER_URL to know to which trustchain server they should talk to
+    // Those functional tests create an app automatically and require a TANKER_TOKEN to run
+    // They also require a TANKER_URL to know to which Tanker server they should talk to
     if (process.env.CI) {
       throw new Error('Functional tests should be running, check the configuration');
     }
@@ -44,14 +44,14 @@ export function generateFunctionalTests(
     before(async () => {
       silencer.silence('warn', /deprecated/);
 
-      args.trustchainHelper = await TrustchainHelper.newTrustchain();
-      const b64DefaultTrustchainId = utils.toBase64(args.trustchainHelper.trustchainId);
+      args.appHelper = await AppHelper.newApp();
+      const b64DefaultAppId = utils.toBase64(args.appHelper.appId);
 
-      args.makeTanker = (b64TrustchainId = b64DefaultTrustchainId) => makeTanker(b64TrustchainId);
+      args.makeTanker = (b64AppId = b64DefaultAppId) => makeTanker(b64AppId);
     });
 
     after(async () => {
-      await args.trustchainHelper.cleanup();
+      await args.appHelper.cleanup();
 
       silencer.restore();
     });

@@ -14,7 +14,7 @@ const generateStartTests = (args: TestArgs) => {
     let bobLaptop;
 
     beforeEach(async () => {
-      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobIdentity = await args.appHelper.generateIdentity();
       bobLaptop = args.makeTanker();
     });
 
@@ -26,12 +26,12 @@ const generateStartTests = (args: TestArgs) => {
       expect(bobLaptop.status).to.equal(STOPPED);
     });
 
-    it('throws when having configured a non existing trustchain', async () => {
-      const nonExistentB64TrustchainId = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-      const nonExistentB64TrustchainPrivateKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+    it('throws when having configured a non existing app', async () => {
+      const nonExistentB64AppId = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+      const nonExistentB64AppSecret = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
       const userId = 'bob';
-      bobIdentity = await createIdentity(nonExistentB64TrustchainId, nonExistentB64TrustchainPrivateKey, userId);
-      bobLaptop = args.makeTanker(nonExistentB64TrustchainId);
+      bobIdentity = await createIdentity(nonExistentB64AppId, nonExistentB64AppSecret, userId);
+      bobLaptop = args.makeTanker(nonExistentB64AppId);
       await expect(bobLaptop.start(bobIdentity)).to.be.rejectedWith(errors.NetworkError, 'trustchain_not_found');
     });
 
@@ -95,7 +95,7 @@ const generateStartTests = (args: TestArgs) => {
     let bobLaptop;
 
     beforeEach(async () => {
-      bobIdentity = await args.trustchainHelper.generateIdentity();
+      bobIdentity = await args.appHelper.generateIdentity();
       bobLaptop = args.makeTanker();
     });
 
