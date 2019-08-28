@@ -18,8 +18,8 @@ const pipeStreams = (
   streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
 });
 
-// Detection of: Edge | Edge iOS | Edge Android | Edge (Chromium-based)
-const isEdge = () => /(edge|edgios|edga|edg)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
+// Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
+const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
 export class CloudStorageManager {
   _client: Client;

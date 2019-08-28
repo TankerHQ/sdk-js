@@ -560,19 +560,22 @@ const generateEncryptTests = (args: TestArgs) => {
     });
 
     it('can report progress at upload and download', async () => {
+      // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
+      const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
+
       const onProgress = sinon.spy();
 
       const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2];
 
       const fileId = await aliceLaptop.upload(clear, { onProgress });
       const encryptedSize = encryptionV4.getEncryptedSize(clearSize, encryptionV4.defaultMaxEncryptedChunkSize);
-      expectProgressReport(onProgress, encryptedSize);
+      expectProgressReport(onProgress, encryptedSize, isEdge() ? encryptedSize : encryptionV4.defaultMaxEncryptedChunkSize);
       onProgress.resetHistory();
 
       const decrypted = await aliceLaptop.download(fileId, { onProgress });
       expectType(decrypted, originalType);
       expectDeepEqual(decrypted, clear);
-      expectProgressReport(onProgress, getDataLength(decrypted), encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
+      expectProgressReport(onProgress, clearSize, encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
     });
 
     it('can download a file shared at upload', async () => {
