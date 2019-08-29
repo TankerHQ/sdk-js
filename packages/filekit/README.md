@@ -7,6 +7,20 @@ can be downloaded only by the owner and recipients, completely transparently.
 
 It wraps Tanker **Core** and Tanker **VerificationUI** in a single easy-to-use to use package.
 
+## Live demo
+
+Here is an example of [what an application built with FileKit can do](https://tankerhq.github.io/filekit-tuto-app/).
+
+![FileKit app example](./src/public/filekit-app.png)
+
+## Getting started
+
+Get started with this tutorial: https://docs.tanker.io/filekit/latest/tutorials/file-transfer/
+
+## Documentation
+
+Our detailed documentation is available [here](https://docs.tanker.io/filekit/latest/).
+
 ## Quick Start
 
 You can use Fake Authentication to upload, download and share files without too much configuration:
