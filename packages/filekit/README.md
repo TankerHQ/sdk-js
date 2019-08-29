@@ -11,7 +11,7 @@ It wraps Tanker **Core** and Tanker **VerificationUI** in a single easy-to-use t
 
 Here is an example of [what an application built with FileKit can do](https://tankerhq.github.io/filekit-tuto-app/).
 
-![FileKit app example](./src/public/filekit-app.png)
+![FileKit app example](../../src/public/filekit-app.png)
 
 ## Getting started
 
