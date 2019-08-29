@@ -26,6 +26,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
       // "Kill" the server
       await tankerInstance.stop();
       tankerInstance._clientOptions.url = url; // eslint-disable-line
+      tankerInstance._clientOptions.connectTimeout = 1000; // eslint-disable-line
       await tankerInstance.start(identity);
     };
 

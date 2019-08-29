@@ -47,6 +47,7 @@ type TankerCoreOptions = $Exact<{
   trustchainId: b64string,
   socket?: any,
   url?: string,
+  connectTimeout?: number,
   dataStore: DataStoreOptions,
   sdkType: string,
   streams: Streams,
@@ -119,6 +120,7 @@ export class Tanker extends EventEmitter {
     };
     if (options.socket) { clientOptions.socket = options.socket; }
     if (options.url) { clientOptions.url = options.url; }
+    if (options.connectTimeout) { clientOptions.connectTimeout = options.connectTimeout; }
     this._clientOptions = clientOptions;
 
     const datastoreOptions: DataStoreOptions = {
