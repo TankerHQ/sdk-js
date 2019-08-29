@@ -9,7 +9,7 @@ const networkIssues = {
   // curl: (7) Failed to connect to api.tanker.io port 666: Operation timed out (75sec timeout)
   dns_resolution_failed: { url: 'https://no-api.tanker.io' },
   // curl: (6) Could not resolve host: noapi.tanker.io
-  non_routable_ip: { url: 'http://10.0.0.0' },
+  non_routable_ip: { url: 'http://192.0.2.0' },
   // curl: (7) Couldn't connect to server
 };
 
@@ -26,6 +26,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
       // "Kill" the server
       await tankerInstance.stop();
       tankerInstance._clientOptions.url = url; // eslint-disable-line
+      tankerInstance._clientOptions.connectTimeout = 1000; // eslint-disable-line
       await tankerInstance.start(identity);
     };
 

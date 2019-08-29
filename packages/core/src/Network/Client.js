@@ -18,6 +18,7 @@ const defaultApiAddress = 'https://api.tanker.io';
 export type ClientOptions = {
   socket?: Socket,
   url?: string,
+  connectTimeout?: number,
   sdkInfo: SdkInfo,
 }
 

@@ -41,6 +41,7 @@ export type SdkInfo = {
 type CreationParam = {
   socket?: Socket,
   url: string,
+  connectTimeout?: number,
   sdkInfo: SdkInfo,
 };
 
@@ -49,8 +50,8 @@ export default class SocketIoWrapper {
   synchronizedSocket: SynchronizedEventEmitter;
   runningRequests: Array<Request> = [];
 
-  constructor({ socket, url, sdkInfo }: CreationParam) {
-    this.socket = socket || new Socket(url, { transports: ['websocket', 'polling'], autoConnect: false, query: sdkInfo });
+  constructor({ socket, url, connectTimeout, sdkInfo }: CreationParam) {
+    this.socket = socket || new Socket(url, { timeout: connectTimeout, transports: ['websocket', 'polling'], autoConnect: false, query: sdkInfo });
     this.socket.on('error', e => logSocketError(e, 'error'));
     this.socket.on('session error', reason => this.abortRequests(new NetworkError(`socket disconnected by server: ${reason}`)));
     this.socket.on('disconnect', reason => this.abortRequests(new NetworkError(`socket disconnected: ${reason}`)));
