@@ -19,8 +19,7 @@
     "@tanker/errors": "0.0.1",
     "@tanker/file-ponyfill": "0.0.1",
     "@tanker/file-reader": "0.0.1",
-    "@tanker/stream-base": "0.0.1",
-    "@tanker/types": "0.0.1"
+    "@tanker/stream-base": "0.0.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",

@@ -29,6 +29,11 @@ export const assertDataType = (value: any, argName: string): void => {
     throw new errors.InvalidArgument(argName, 'ArrayBuffer | Blob | Buffer | File | Uint8Array', value);
 };
 
+export const assertDataTypeClass = (value: any, argName: string): void => {
+  if (!dataTypeDefs.some(def => value === def.type))
+    throw new errors.InvalidArgument(argName, 'class in [ArrayBuffer | Blob | Buffer | File | Uint8Array]', value);
+};
+
 export const getConstructor = <T: Data>(instance: T): * => {
   for (const def of dataTypeDefs) {
     if (instance instanceof def.type) {

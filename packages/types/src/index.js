@@ -1,6 +1,7 @@
 // @flow
 export {
   assertDataType,
+  assertDataTypeClass,
   castData,
   getConstructor,
   getConstructorName,

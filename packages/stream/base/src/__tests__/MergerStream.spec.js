@@ -5,7 +5,7 @@ import { castData, getConstructorName } from '@tanker/types';
 import { expect } from './chai';
 import MergerStream from '../MergerStream';
 
-describe('MergerStream (web)', () => {
+describe('MergerStream', () => {
   let bytes: Uint8Array;
   let input: Array<Uint8Array>;
 
@@ -19,17 +19,28 @@ describe('MergerStream (web)', () => {
     ];
   });
 
-  [
-    { type: ArrayBuffer },
-    { type: Uint8Array },
-    { type: Blob },
-    { type: File, name: 'a-file.txt' },
-    { type: FilePonyfill, name: 'a-file-ponyfill.txt' },
-  ].forEach(options => {
-    const { type: outputType } = options;
-    const outputTypeName = getConstructorName(outputType);
+  const testOptions = [];
 
-    it(`can merge binary chunks into a ${outputTypeName}`, async () => {
+  testOptions.push({ type: ArrayBuffer });
+  testOptions.push({ type: Uint8Array });
+
+  if (global.Buffer) {
+    testOptions.push({ type: Buffer });
+  }
+
+  if (global.Blob) {
+    testOptions.push({ type: Blob, mime: 'application/octet-stream' });
+  }
+
+  if (global.File) {
+    testOptions.push({ type: File, name: 'report.pdf', mime: 'application/pdf' });
+    testOptions.push({ type: FilePonyfill, name: 'report.pdf', mime: 'application/pdf' });
+  }
+
+  testOptions.forEach(options => {
+    const { type } = options;
+
+    it(`can merge binary chunks into a ${getConstructorName(type)}`, async () => {
       const stream = new MergerStream(options);
 
       const output: Array<Uint8Array> = [];
@@ -40,10 +51,16 @@ describe('MergerStream (web)', () => {
         stream.on('finish', async () => {
           try {
             expect(output).to.have.lengthOf(1);
-            expect(output[0]).to.be.an.instanceOf(outputType);
+            expect(output[0]).to.be.an.instanceOf(type);
+
             const outputBytes = await castData(output[0], { type: Uint8Array });
             expect(outputBytes).to.deep.equal(bytes);
-            if (outputTypeName === 'File') {
+
+            if (global.Blob && output[0] instanceof global.Blob) {
+              // $FlowExpectedError
+              expect(output[0].type).to.equal(options.mime);
+            }
+            if (global.File && output[0] instanceof global.File) {
               // $FlowExpectedError
               expect(output[0].name).to.equal(options.name);
             }

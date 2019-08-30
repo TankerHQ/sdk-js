@@ -4,7 +4,7 @@ import { Transform } from 'readable-stream';
 import Uint8Buffer from './Uint8Buffer';
 
 export default class ResizerStream extends Transform {
-  _buffer: Uint8Buffer = new Uint8Buffer();
+  _buffer: Uint8Buffer;
   _outputSize: number;
 
   constructor(outputSize: number) {
@@ -16,6 +16,8 @@ export default class ResizerStream extends Transform {
       readableHighWaterMark: 1,
       readableObjectMode: true
     });
+
+    this._buffer = new Uint8Buffer();
     this._outputSize = outputSize;
   }
 
