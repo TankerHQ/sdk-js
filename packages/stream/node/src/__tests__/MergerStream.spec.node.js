@@ -18,11 +18,6 @@ describe('MergerStream (node)', () => {
     ];
   });
 
-  it('assumes Uint8Array if no type given', () => {
-    const stream = new MergerStream();
-    expect(stream._type).to.equal(Uint8Array); // eslint-disable-line no-underscore-dangle
-  });
-
   [
     { type: ArrayBuffer },
     { type: Buffer },
@@ -42,7 +37,7 @@ describe('MergerStream (node)', () => {
           try {
             expect(output).to.have.lengthOf(1);
             expect(output[0]).to.be.an.instanceOf(type);
-            const outputBytes = castData(output[0], { type: Uint8Array });
+            const outputBytes = await castData(output[0], { type: Uint8Array });
             expect(outputBytes).to.deep.equal(bytes);
             resolve();
           } catch (e) {

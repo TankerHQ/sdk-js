@@ -16,7 +16,8 @@
   "dependencies": {
     "@babel/runtime-corejs2": "^7.4.0",
     "@tanker/errors": "0.0.1",
-    "@tanker/stream-base": "0.0.1"
+    "@tanker/stream-base": "0.0.1",
+    "@tanker/types": "0.0.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
