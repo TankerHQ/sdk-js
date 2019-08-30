@@ -8,11 +8,11 @@ const defaultMime = 'application/octet-stream';
 export const getConstructorName = (constructor: Object): string => {
   if (constructor === ArrayBuffer)
     return 'ArrayBuffer';
-  else if (constructor === Uint8Array)
+  if (constructor === Uint8Array)
     return 'Uint8Array';
-  else if (constructor === File || constructor === FilePonyfill) // must be before Blob
+  if (constructor === File || constructor === FilePonyfill) // must be before Blob
     return 'File';
-  // else if (constructor === Blob)
+  // if (constructor === Blob)
   return 'Blob';
 };
 

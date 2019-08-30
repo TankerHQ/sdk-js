@@ -15,14 +15,13 @@ const getConstructor = instance => {
     return ArrayBuffer;
   if (global.Buffer && instance instanceof Buffer)
     return Buffer;
-  else if (instance instanceof Uint8Array)
+  if (instance instanceof Uint8Array)
     return Uint8Array;
-  else if (global.File && instance instanceof File) // must be before Blob
+  if (global.File && instance instanceof File) // must be before Blob
     return File;
-  else if (global.Blob && instance instanceof Blob)
+  if (global.Blob && instance instanceof Blob)
     return Blob;
-  else
-    throw new Error(`Test error: unexpected instance in getConstructor: ${instance}`);
+  throw new Error(`Test error: unexpected instance in getConstructor: ${instance}`);
 };
 
 const getConstructorName = (constructor: Object): string => {
@@ -30,14 +29,13 @@ const getConstructorName = (constructor: Object): string => {
     return 'ArrayBuffer';
   if (global.Buffer && constructor === Buffer)
     return 'Buffer';
-  else if (constructor === Uint8Array)
+  if (constructor === Uint8Array)
     return 'Uint8Array';
-  else if (global.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
+  if (global.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
     return 'File';
-  else if (global.Blob && constructor === Blob)
+  if (global.Blob && constructor === Blob)
     return 'Blob';
-  else
-    throw new Error(`Test error: unexpected constructor in getConstructorName: ${constructor}`);
+  throw new Error(`Test error: unexpected constructor in getConstructorName: ${constructor}`);
 };
 
 const expectProgressReport = (spy, totalBytes, maxBytesPerStep = encryptionV4.defaultMaxEncryptedChunkSize) => {

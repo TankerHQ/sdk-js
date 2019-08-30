@@ -47,9 +47,11 @@ export class KeyDecryptor {
   async keyFromKeyPublish(keyPublishEntry: KeyPublish): Promise<Key> {
     if (isKeyPublishToUser(keyPublishEntry.nature)) {
       return this.decryptResourceKeyPublishedToUser(keyPublishEntry);
-    } else if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
+    }
+    if (isKeyPublishToUserGroup(keyPublishEntry.nature)) {
       return this.decryptResourceKeyPublishedToGroup(keyPublishEntry);
-    } else if (isKeyPublishToProvisionalUser(keyPublishEntry.nature)) {
+    }
+    if (isKeyPublishToProvisionalUser(keyPublishEntry.nature)) {
       return this.decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry);
     }
     throw new InternalError(`Invalid nature for key publish: ${keyPublishEntry.nature}`);
