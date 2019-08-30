@@ -24,8 +24,6 @@
     "@tanker/errors": "0.0.1"
   },
   "devDependencies": {
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
-    "chai-exclude": "^1.0.12"
+    "chai": "^4.2.0"
   }
 }
