@@ -3,40 +3,11 @@ import sinon from 'sinon';
 import uuid from 'uuid';
 import { errors } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
+import { getConstructor, getConstructorName, getDataLength } from '@tanker/types';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
-import FilePonyfill from '@tanker/file-ponyfill';
-import { getDataLength } from '@tanker/types';
 import { expect } from './chai';
 
 import { type TestArgs } from './TestArgs';
-
-const getConstructor = instance => {
-  if (instance instanceof ArrayBuffer)
-    return ArrayBuffer;
-  if (global.Buffer && instance instanceof Buffer)
-    return Buffer;
-  if (instance instanceof Uint8Array)
-    return Uint8Array;
-  if (global.File && instance instanceof File) // must be before Blob
-    return File;
-  if (global.Blob && instance instanceof Blob)
-    return Blob;
-  throw new Error(`Test error: unexpected instance in getConstructor: ${instance}`);
-};
-
-const getConstructorName = (constructor: Object): string => {
-  if (constructor === ArrayBuffer)
-    return 'ArrayBuffer';
-  if (global.Buffer && constructor === Buffer)
-    return 'Buffer';
-  if (constructor === Uint8Array)
-    return 'Uint8Array';
-  if (global.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
-    return 'File';
-  if (global.Blob && constructor === Blob)
-    return 'Blob';
-  throw new Error(`Test error: unexpected constructor in getConstructorName: ${constructor}`);
-};
 
 const expectProgressReport = (spy, totalBytes, maxBytesPerStep = encryptionV4.defaultMaxEncryptedChunkSize) => {
   const stepCount = 1 + Math.ceil(totalBytes / maxBytesPerStep);

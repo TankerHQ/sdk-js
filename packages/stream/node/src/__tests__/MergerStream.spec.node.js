@@ -1,13 +1,8 @@
 // @flow
+import { castData } from '@tanker/types';
+
 import { expect } from './chai';
 import MergerStream from '../MergerStream';
-
-const toUint8Array = (input: ArrayBuffer | Buffer | Uint8Array): Uint8Array => {
-  if (input instanceof Uint8Array)
-    return input;
-
-  return new Uint8Array(input);
-};
 
 describe('MergerStream (node)', () => {
   let bytes: Uint8Array;
@@ -47,7 +42,7 @@ describe('MergerStream (node)', () => {
           try {
             expect(output).to.have.lengthOf(1);
             expect(output[0]).to.be.an.instanceOf(type);
-            const outputBytes = toUint8Array(output[0]);
+            const outputBytes = castData(output[0], { type: Uint8Array });
             expect(outputBytes).to.deep.equal(bytes);
             resolve();
           } catch (e) {

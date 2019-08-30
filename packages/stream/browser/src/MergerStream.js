@@ -2,19 +2,9 @@
 import { InvalidArgument } from '@tanker/errors';
 import { BaseMergerStream } from '@tanker/stream-base';
 import FilePonyfill from '@tanker/file-ponyfill';
+import { getConstructorName } from '@tanker/types';
 
 const defaultMime = 'application/octet-stream';
-
-export const getConstructorName = (constructor: Object): string => {
-  if (constructor === ArrayBuffer)
-    return 'ArrayBuffer';
-  if (constructor === Uint8Array)
-    return 'Uint8Array';
-  if (constructor === File || constructor === FilePonyfill) // must be before Blob
-    return 'File';
-  // if (constructor === Blob)
-  return 'Blob';
-};
 
 export type Destination = ArrayBuffer | Blob | File | Uint8Array;
 const converters = {
