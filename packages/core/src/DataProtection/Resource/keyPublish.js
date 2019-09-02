@@ -1,10 +1,9 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
 import { getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
 import { unserializeBlock } from '../../Blocks/payloads';
-
-import { InternalError } from '../../errors';
 
 export const KeyPublishNatures = Object.freeze({
   key_publish_to_user: 8,

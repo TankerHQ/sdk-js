@@ -3,12 +3,12 @@
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
 import { tcrypto, generichash, utils, type b64string } from '@tanker/crypto';
+import { ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
 import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 import { VerificationNeeded } from '../errors.internal';
-import { ExpiredVerification, InvalidArgument, InternalError, GroupTooBig, InvalidVerification, PreconditionFailed, TooManyAttempts, NetworkError, OperationCanceled } from '../errors';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
 import { type Authenticator, takeChallenge } from './Authenticator';

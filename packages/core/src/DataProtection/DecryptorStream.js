@@ -1,8 +1,9 @@
 // @flow
 import { encryptionV4, type Key } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 
-import { InvalidArgument, DecryptionFailed } from '../errors';
+import { DecryptionFailed } from '../errors';
 
 export type ResourceIdKeyMapper = {
   findKey: (Uint8Array) => Promise<Key>

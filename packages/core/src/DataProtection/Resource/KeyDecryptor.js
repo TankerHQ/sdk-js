@@ -1,11 +1,12 @@
 // @flow
 
 import { tcrypto, type Key } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
 import GroupManager from '../../Groups/Manager';
 import LocalUser from '../../Session/LocalUser';
 
-import { DecryptionFailed, InternalError } from '../../errors';
+import { DecryptionFailed } from '../../errors';
 
 import { type KeyPublish, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './keyPublish';
 

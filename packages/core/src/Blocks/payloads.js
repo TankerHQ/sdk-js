@@ -1,10 +1,10 @@
 // @flow
 import varint from 'varint';
 import { tcrypto, utils } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
 import { type Block } from './Block';
 import { NATURE } from './Nature';
-import { InternalError } from '../errors';
 import { UpgradeRequiredError } from '../errors.internal';
 import { getArray, getStaticArray, encodeArrayLength, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from './Serialize';
 

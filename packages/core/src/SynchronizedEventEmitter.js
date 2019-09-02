@@ -1,5 +1,6 @@
 // @flow
-import { InternalError } from './errors';
+import { InternalError } from '@tanker/errors';
+
 import PromiseWrapper from './PromiseWrapper';
 
 // Loose interface that will match any nodeJS EventEmitter or SocketIo client.

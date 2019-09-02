@@ -1,8 +1,8 @@
 // @flow
 
 import { utils, type b64string } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
 import { _deserializePermanentIdentity, assertUserSecret } from '@tanker/identity';
-import { InvalidArgument } from '../errors';
 
 export type DelegationToken = {
   ephemeral_public_signature_key: Uint8Array,

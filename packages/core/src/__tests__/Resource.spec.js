@@ -1,11 +1,10 @@
 // @flow
-
 import varint from 'varint';
 import { utils } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
 
 import { expect } from './chai';
 
-import { InvalidArgument } from '../errors';
 import { extractEncryptionFormat } from '../DataProtection/Resource';
 
 describe('Resource', () => {

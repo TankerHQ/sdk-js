@@ -2,11 +2,11 @@
 
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
+import { InternalError } from '@tanker/errors';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
 import type { KeySafe, IndexedProvisionalUserKeyPairs, ProvisionalUserKeyPairs } from './KeySafe';
 import type { UserKeys } from '../Blocks/payloads';
-import { InternalError } from '../errors';
 
 const TABLE = 'device';
 

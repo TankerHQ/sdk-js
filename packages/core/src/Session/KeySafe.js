@@ -1,8 +1,9 @@
 // @flow
 import { tcrypto, utils, encryptionV1, type b64string } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
 import { type UserKeys } from '../Blocks/payloads';
-import { InternalError, DecryptionFailed } from '../errors';
+import { DecryptionFailed } from '../errors';
 
 export type ProvisionalUserKeyPairs = {|
   id: string,

@@ -2,11 +2,11 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
+import { InternalError } from '@tanker/errors';
 
 import type { UnverifiedUserGroup, UnverifiedUserGroupCreation, UnverifiedUserGroupAddition, VerifiedUserGroup } from '../../Blocks/entries';
 import { entryToDbEntry, dbEntryToEntry } from '../../Blocks/entries';
 import { natureKind, NATURE_KIND } from '../../Blocks/Nature';
-import { InternalError } from '../../errors';
 
 const UNVERIFIED_GROUPS_TABLE = 'unverified_user_groups'; // Table that stores our unverified blocks
 const ENCRYPTION_KEY_GROUP_ID_TABLE = 'encryption_key_to_group_id';

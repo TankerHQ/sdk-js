@@ -3,9 +3,10 @@
 import sinon from 'sinon';
 
 import { tcrypto, utils, random } from '@tanker/crypto';
+import { GroupTooBig, InvalidArgument } from '@tanker/errors';
+
 import { expect } from './chai';
 import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
-import { InvalidArgument, GroupTooBig } from '../errors';
 
 import { makeMemoryGroupStore } from './GroupStore.spec';
 import TestGenerator, { type TestUserGroup, type TestDeviceCreation } from './TestGenerator';

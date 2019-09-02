@@ -2,12 +2,12 @@
 
 import EventEmitter from 'events';
 import { tcrypto, utils, type Key } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/identity';
 
 import KeyStore from './KeyStore';
 import BlockGenerator from '../Blocks/BlockGenerator';
 import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
-import { InternalError } from '../errors';
 import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../utils';
 import type { UserData, DelegationToken } from './UserData';

@@ -1,5 +1,6 @@
 // @flow
 import { utils } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
 import {
   type Record,
@@ -23,7 +24,6 @@ import {
 
 import { type Nature, NATURE } from './Nature';
 import { type Block, hashBlock } from './Block';
-import { InternalError } from '../errors';
 
 export type VerificationFields = {|
   index: number,

@@ -2,7 +2,7 @@
 import varint from 'varint';
 import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, type Key, random, tcrypto, generichash } from '@tanker/crypto';
 
-import { InvalidArgument } from '../errors';
+import { InvalidArgument } from '@tanker/errors';
 
 export type Resource = {
   resourceId: Uint8Array,

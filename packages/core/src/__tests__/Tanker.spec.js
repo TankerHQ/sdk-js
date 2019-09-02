@@ -1,13 +1,13 @@
 // @flow
 
 import { tcrypto, utils, random, type b64string } from '@tanker/crypto';
+import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { createIdentity } from '@tanker/identity';
 
 import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
-import { InvalidArgument, PreconditionFailed } from '../errors';
 
 import { type EmailVerification, type RemoteVerification, statuses } from '../Session/types';
 import { type SharingOptions } from '../DataProtection/options';

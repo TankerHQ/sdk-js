@@ -2,8 +2,8 @@
 
 import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
-import { InternalError } from '../errors';
 import { InvalidBlockError } from '../errors.internal';
 import { findIndex } from '../utils';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';

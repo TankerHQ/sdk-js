@@ -1,6 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type Key, type b64string } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 import { type PublicProvisionalUser, type ProvisionalUserKeys } from '@tanker/identity';
 
 import {
@@ -20,7 +21,6 @@ import {
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 
 import { signBlock, type Block } from './Block';
-import { InternalError } from '../errors';
 import { type DelegationToken } from '../Session/UserData';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 

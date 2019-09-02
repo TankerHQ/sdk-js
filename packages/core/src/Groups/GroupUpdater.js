@@ -1,5 +1,6 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
 import GroupStore from './GroupStore';
 import KeyStore from '../Session/KeyStore';
@@ -13,7 +14,6 @@ import {
   type UserGroupAdditionRecord,
 } from '../Blocks/payloads';
 import { NATURE_KIND, natureKind } from '../Blocks/Nature';
-import { InternalError } from '../errors';
 
 function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: KeyStore): ?Object {
   for (const gek of groupKeys) {

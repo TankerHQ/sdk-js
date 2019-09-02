@@ -1,6 +1,6 @@
 // @flow
-
 import { utils, tcrypto, encryptionV2, type b64string } from '@tanker/crypto';
+
 import { DecryptionFailed } from '../errors';
 
 export type GhostDevice = {

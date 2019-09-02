@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import { InternalError, InvalidArgument } from './errors';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 
 export function toBase64(bytes: Uint8Array): b64string {
   if (!(bytes instanceof Uint8Array))

@@ -1,12 +1,14 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
+import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
+
 import type { PublicIdentity, PublicProvisionalUser } from '@tanker/identity';
 import type { Data } from '@tanker/types';
-import { MergerStream, SlicerStream } from '@tanker/stream-base';
 
-import { DecryptionFailed, InternalError } from '../errors';
+import { DecryptionFailed } from '../errors';
 import { ResourceManager } from './Resource/ResourceManager';
 import ResourceStore from './Resource/ResourceStore';
 import { KeyDecryptor } from './Resource/KeyDecryptor';

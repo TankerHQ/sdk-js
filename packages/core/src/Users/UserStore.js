@@ -2,8 +2,8 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
+import { InternalError } from '@tanker/errors';
 
-import { InternalError } from '../errors';
 import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 

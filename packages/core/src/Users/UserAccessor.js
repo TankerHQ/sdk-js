@@ -1,12 +1,12 @@
 // @flow
 
 import { utils } from '@tanker/crypto';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 import { type PublicPermanentIdentity } from '@tanker/identity';
 
 import UserStore, { type FindUsersParameters } from './UserStore';
 import { type User } from './User';
 import Trustchain from '../Trustchain/Trustchain';
-import { InternalError, InvalidArgument } from '../errors';
 
 export type UserDevice = {|
     id: string,
