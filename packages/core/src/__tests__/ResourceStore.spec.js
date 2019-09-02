@@ -1,8 +1,8 @@
 // @flow
 import { random, tcrypto } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import SharedKeystore from '../DataProtection/Resource/ResourceStore';

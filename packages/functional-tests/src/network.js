@@ -1,7 +1,7 @@
 // @flow
 import { errors, type Tanker } from '@tanker/core';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const networkIssues = {

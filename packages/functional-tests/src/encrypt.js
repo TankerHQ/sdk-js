@@ -1,11 +1,9 @@
 // @flow
-import sinon from 'sinon';
-import uuid from 'uuid';
 import { errors } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
 import { getConstructor, getConstructorName, getDataLength } from '@tanker/types';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
-import { expect } from './chai';
+import { expect, sinon, uuid } from '@tanker/test-utils';
 
 import { type TestArgs } from './TestArgs';
 

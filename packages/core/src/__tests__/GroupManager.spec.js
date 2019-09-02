@@ -1,11 +1,8 @@
 // @flow
-
-import sinon from 'sinon';
-
 import { tcrypto, utils, random } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument } from '@tanker/errors';
+import { expect, sinon } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import GroupManager, { MAX_GROUP_SIZE } from '../Groups/Manager';
 
 import { makeMemoryGroupStore } from './GroupStore.spec';

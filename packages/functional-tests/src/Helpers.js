@@ -1,5 +1,4 @@
 // @flow
-import uuid from 'uuid';
 import Socket from 'socket.io-client';
 
 import type { Tanker, b64string } from '@tanker/core';
@@ -8,6 +7,7 @@ import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
 import { random, tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
+import { uuid } from '@tanker/test-utils';
 
 const tankerUrl = process.env.TANKER_URL || '';
 const idToken = process.env.TANKER_TOKEN || '';

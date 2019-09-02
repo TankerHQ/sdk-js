@@ -2,9 +2,8 @@
 import { utils } from '@tanker/crypto';
 import FakeAuthentication from '@tanker/fake-authentication';
 import { getPublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
-import uuid from 'uuid';
+import { expect, uuid } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { tankerUrl } from './Helpers';
 import type { TestArgs } from './TestArgs';
 

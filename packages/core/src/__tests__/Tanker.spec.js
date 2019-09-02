@@ -3,8 +3,8 @@
 import { tcrypto, utils, random, type b64string } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { createIdentity } from '@tanker/identity';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';

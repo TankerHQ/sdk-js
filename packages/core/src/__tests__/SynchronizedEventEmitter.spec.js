@@ -1,9 +1,6 @@
 // @flow
-
 import EventEmitter from 'events';
-import sinon from 'sinon';
-
-import { expect } from './chai';
+import { expect, sinon } from '@tanker/test-utils';
 
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 

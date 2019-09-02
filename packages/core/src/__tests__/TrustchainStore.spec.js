@@ -1,8 +1,8 @@
 // @flow
 
 import { mergeSchemas } from '@tanker/datastore-base';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import KeyStore from '../Session/KeyStore';

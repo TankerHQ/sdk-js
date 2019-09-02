@@ -1,5 +1,5 @@
 // @flow
-import { expect } from 'chai';
+import { expect } from '@tanker/test-utils';
 
 import { TankerError } from '../TankerError';
 import { InvalidArgument } from '../errors/InvalidArgument';

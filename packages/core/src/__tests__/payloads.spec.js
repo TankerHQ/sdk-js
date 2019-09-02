@@ -1,8 +1,7 @@
 // @flow
 
 import { tcrypto, random, utils } from '@tanker/crypto';
-
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import { signBlock } from '../Blocks/Block';
 import { encodeListLength } from '../Blocks/Serialize';

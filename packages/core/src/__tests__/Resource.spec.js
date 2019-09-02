@@ -2,8 +2,7 @@
 import varint from 'varint';
 import { utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
-
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import { extractEncryptionFormat } from '../DataProtection/Resource';
 

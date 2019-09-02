@@ -1,7 +1,7 @@
 // @flow
-import { expect } from 'chai';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
+import { expect } from '@tanker/test-utils';
 
 import {
   _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,

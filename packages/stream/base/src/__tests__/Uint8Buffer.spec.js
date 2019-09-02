@@ -1,7 +1,7 @@
 // @flow
 import { InvalidArgument } from '@tanker/errors';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import Uint8Buffer from '../Uint8Buffer';
 
 describe('Uint8Buffer', () => {

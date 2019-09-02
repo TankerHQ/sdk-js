@@ -1,9 +1,8 @@
 // @flow
-import uuid from 'uuid';
 import { errors, statuses, type Tanker, type Verification, type VerificationMethod } from '@tanker/core';
 import { utils, type b64string } from '@tanker/crypto';
+import { expect, uuid } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;

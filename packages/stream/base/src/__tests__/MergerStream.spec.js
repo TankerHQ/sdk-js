@@ -1,8 +1,8 @@
 // @flow
 import FilePonyfill from '@tanker/file-ponyfill';
+import { expect } from '@tanker/test-utils';
 import { castData, getConstructorName } from '@tanker/types';
 
-import { expect } from './chai';
 import MergerStream from '../MergerStream';
 
 describe('MergerStream', () => {

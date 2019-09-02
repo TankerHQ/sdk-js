@@ -1,5 +1,6 @@
 // @flow
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
+
 import { exponentialDelayGenerator, noDelayGenerator, retry } from '../retry';
 
 describe('exponential delay generator', () => {

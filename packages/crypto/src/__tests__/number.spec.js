@@ -1,5 +1,6 @@
 // @flow
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
+
 import { fromUint32le, fromUint64le, toUint32le, toUint64le } from '../number';
 
 describe('number', () => {

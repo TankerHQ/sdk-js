@@ -1,7 +1,7 @@
 // @flow
 import { InvalidArgument } from '@tanker/errors';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { toBase64, fromBase64, toString, fromString, findIndex, compareSameSizeUint8Arrays } from '../utils';
 
 const notStringTypes = [undefined, null, 0, {}, [], new Uint8Array(0)];

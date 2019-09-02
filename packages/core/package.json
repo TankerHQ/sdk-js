@@ -36,10 +36,7 @@
   },
   "devDependencies": {
     "@tanker/datastore-pouchdb-memory": "0.0.1",
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
-    "chai-exclude": "^1.0.12",
-    "tmp": "^0.1.0",
-    "uuid": "^3.3.2"
+    "@tanker/test-utils": "0.0.1",
+    "tmp": "^0.1.0"
   }
 }

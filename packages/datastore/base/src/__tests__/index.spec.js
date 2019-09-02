@@ -1,6 +1,6 @@
 // @flow
 
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import { SchemaError } from '../errors';
 import { mergeSchemas } from '../index';

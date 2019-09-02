@@ -1,5 +1,5 @@
 // @flow
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import { decryptAEAD, encryptAEAD, extractMac } from '../aead';
 import { MAC_SIZE, SYMMETRIC_KEY_SIZE, XCHACHA_IV_SIZE } from '../tcrypto';

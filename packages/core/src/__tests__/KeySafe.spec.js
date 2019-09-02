@@ -1,8 +1,8 @@
 // @flow
 
 import { createUserSecretBinary } from '@tanker/identity';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from '../Session/KeySafe';
 
 describe('KeySafe', () => {

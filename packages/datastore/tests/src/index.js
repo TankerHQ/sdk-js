@@ -2,11 +2,7 @@
 /* eslint-disable no-underscore-dangle */
 import { utils } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore, type BaseConfig } from '@tanker/datastore-base';
-import chai, { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-import uuid from 'uuid';
-
-chai.use(chaiAsPromised);
+import { expect, uuid } from '@tanker/test-utils';
 
 export type { DataStore, BaseConfig };
 

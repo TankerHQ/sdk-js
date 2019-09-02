@@ -1,10 +1,9 @@
 // @flow
-import sinon from 'sinon';
 import { errors, statuses } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import PromiseWrapper from '@tanker/core/src/PromiseWrapper';
+import { expect, sinon } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 import { syncTankers } from './Helpers';
 

@@ -1,6 +1,6 @@
 // @flow
 import { random } from '@tanker/crypto';
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import TrustchainPuller from '../Trustchain/TrustchainPuller';
 

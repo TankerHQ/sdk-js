@@ -1,5 +1,5 @@
 // @flow
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import * as utils from '../utils';
 import * as encryptorV4 from '../EncryptionFormats/v4';

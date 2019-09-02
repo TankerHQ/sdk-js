@@ -2,8 +2,8 @@
 
 import { tcrypto } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { toBase64 } from '../index';
 import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
 

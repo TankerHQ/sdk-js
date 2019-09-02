@@ -1,6 +1,6 @@
 // @flow
-import { expect } from 'chai';
 import { utils } from '@tanker/crypto';
+import { expect } from '@tanker/test-utils';
 
 import { obfuscateUserId } from '../userId';
 import { createUserSecretBinary, assertUserSecret, USER_SECRET_SIZE } from '../userSecret';

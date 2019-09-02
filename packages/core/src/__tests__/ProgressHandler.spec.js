@@ -1,8 +1,7 @@
 // @flow
-import sinon from 'sinon';
 import { InvalidArgument } from '@tanker/errors';
+import { expect, sinon } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
 
 describe('ProgressHandler', () => {

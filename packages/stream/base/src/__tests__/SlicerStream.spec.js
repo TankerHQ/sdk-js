@@ -1,8 +1,8 @@
 // @flow
 import { safePrintType } from '@tanker/errors';
 import FilePonyfill from '@tanker/file-ponyfill';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import SlicerStream from '../SlicerStream';
 
 describe('SlicerStream', () => {

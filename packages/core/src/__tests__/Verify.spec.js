@@ -1,7 +1,7 @@
 // @flow
 import { tcrypto, random, utils } from '@tanker/crypto';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { InvalidBlockError } from '../errors.internal';
 
 import makeUint8Array from './makeUint8Array';

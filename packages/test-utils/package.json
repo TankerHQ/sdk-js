@@ -1,0 +1,14 @@
+{
+  "name": "@tanker/test-utils",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "src/index.js",
+  "dependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "chai-exclude": "^1.0.12",
+    "sinon": "^4.5.0",
+    "uuid": "^3.3.2"
+  }
+}

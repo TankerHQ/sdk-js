@@ -1,7 +1,7 @@
 // @flow
 import File from '@tanker/file-ponyfill';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import FileReader from '../FileReader';
 
 describe('FileReader', () => {

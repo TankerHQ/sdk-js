@@ -1,8 +1,7 @@
 // @flow
 
 import { tcrypto } from '@tanker/crypto';
-
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import makeUint8Array from './makeUint8Array';
 

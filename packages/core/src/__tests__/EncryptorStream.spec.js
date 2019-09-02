@@ -1,8 +1,8 @@
 // @flow
 import { aead, random, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import EncryptorStream from '../DataProtection/EncryptorStream';
 import PromiseWrapper from '../PromiseWrapper';
 

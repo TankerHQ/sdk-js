@@ -1,10 +1,8 @@
 // @flow
-import sinon from 'sinon';
-
 import { utils, random, tcrypto, encryptionV4 } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
+import { expect, sinon } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
 import PromiseWrapper from '../PromiseWrapper';
 

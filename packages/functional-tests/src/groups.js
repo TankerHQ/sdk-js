@@ -1,10 +1,9 @@
 // @flow
-import uuid from 'uuid';
-
 import { errors } from '@tanker/core';
 import { utils } from '@tanker/crypto';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
-import { expect } from './chai';
+import { expect, uuid } from '@tanker/test-utils';
+
 import { type TestArgs } from './TestArgs';
 
 const generateGroupsTests = (args: TestArgs) => {

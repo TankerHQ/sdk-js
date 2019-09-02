@@ -1,7 +1,7 @@
 // @flow
-import uuid from 'uuid';
 import PouchDBMemory from '@tanker/datastore-pouchdb-memory';
 import { type DataStore, type BaseConfig, type Schema, mergeSchemas } from '@tanker/datastore-base';
+import { uuid } from '@tanker/test-utils';
 
 type DataStoreConfig = {|
   ...BaseConfig,
