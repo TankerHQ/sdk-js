@@ -574,6 +574,15 @@ const generateEncryptTests = (args: TestArgs) => {
       const nonExistingFileId = 'AAAAAAAAAAAAAAAAAAAAAA==';
       await expect(aliceLaptop.download(nonExistingFileId)).to.be.rejectedWith(errors.InvalidArgument);
     });
+
+    it('throws InvalidArgument if giving an obviously wrong fileId', async () => {
+      const promises = [undefined, null, 'not a resourceId', [], {}].map(async (invalidFileId, i) => {
+        // $FlowExpectedError Giving invalid options
+        await expect(aliceLaptop.download(invalidFileId), `failed test #${i}`).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      await Promise.all(promises);
+    });
   });
 };
 

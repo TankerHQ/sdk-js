@@ -1,6 +1,6 @@
 // @flow
 
-import { utils, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { assertDataType, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
@@ -426,7 +426,8 @@ export class Tanker extends EventEmitter {
   async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     this.assert(statuses.READY, 'download a file');
 
-    if (typeof resourceId !== 'string')
+    // Best effort to catch values that can't be a resourceId before reaching the server
+    if (typeof resourceId !== 'string' || utils.fromBase64(resourceId).length !== tcrypto.MAC_SIZE)
       throw new InvalidArgument('resourceId', 'string', resourceId);
 
     if (!isObject(options))
