@@ -2,7 +2,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { transparentize } from 'polished';
-import { errors } from '@tanker/client-browser';
+import { InvalidVerification, TooManyAttempts } from '@tanker/errors';
 
 import colors from './colors';
 import { type Context } from '../context/makeContextHolder';
@@ -65,8 +65,8 @@ const LinkButton = styled(Button)`
 `;
 
 const errorTuples = [
-  [errors.TooManyAttempts, 'Too many attempts, please retry later.'],
-  [errors.InvalidVerification, 'Invalid verification code.'],
+  [TooManyAttempts, 'Too many attempts, please retry later.'],
+  [InvalidVerification, 'Invalid verification code.'],
 ];
 const findError = error => {
   const res = errorTuples.find(([e]) => error instanceof e);

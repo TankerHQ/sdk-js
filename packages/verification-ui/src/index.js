@@ -1,7 +1,7 @@
 // @flow
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Tanker, type b64string, type EmailVerification } from '@tanker/client-browser';
+import type { Tanker, b64string, EmailVerification } from '@tanker/client-browser';
 
 import Root from './components/Root';
 
@@ -36,15 +36,17 @@ export class VerificationUI {
   }
 
   start = async (email: string, identity: b64string, provisionalIdentity?: b64string) => {
+    const { statuses } = this._tanker.constructor;
     const status = await this._tanker.start(identity);
-    if (status === Tanker.statuses.IDENTITY_REGISTRATION_NEEDED)
+
+    if (status === statuses.IDENTITY_REGISTRATION_NEEDED)
       await this._mountAndWrap(email, this._tanker.registerIdentity.bind(this._tanker));
-    else if (status === Tanker.statuses.IDENTITY_VERIFICATION_NEEDED)
+    else if (status === statuses.IDENTITY_VERIFICATION_NEEDED)
       await this._mountAndWrap(email, this._tanker.verifyIdentity.bind(this._tanker));
 
     if (provisionalIdentity) {
       const { status: attachStatus } = await this._tanker.attachProvisionalIdentity(provisionalIdentity);
-      if (attachStatus === Tanker.statuses.IDENTITY_VERIFICATION_NEEDED)
+      if (attachStatus === statuses.IDENTITY_VERIFICATION_NEEDED)
         await this._mountAndWrap(email, this._tanker.verifyProvisionalIdentity.bind(this._tanker));
     }
 
