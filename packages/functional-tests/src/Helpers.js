@@ -1,5 +1,5 @@
 // @flow
-import Socket from 'socket.io-client';
+import Socket from 'socket.io-client'; // eslint-disable-line import/no-extraneous-dependencies
 
 import type { Tanker, b64string } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
