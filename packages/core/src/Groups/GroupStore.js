@@ -3,10 +3,9 @@
 import varint from 'varint';
 import { tcrypto, utils, encryptionV2, type b64string } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
-import { InternalError } from '@tanker/errors';
+import { DecryptionFailed, InternalError } from '@tanker/errors';
 
 import { type Group, type ExternalGroup, type ProvisionalEncryptionKeys } from './types';
-import { DecryptionFailed } from '../errors';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 
 type EncryptedPrivateKeys = {|

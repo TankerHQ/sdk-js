@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import { InternalError } from '@tanker/errors';
+import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -8,7 +8,6 @@ import { castData, getDataLength } from '@tanker/types';
 import type { PublicIdentity, PublicProvisionalUser } from '@tanker/identity';
 import type { Data } from '@tanker/types';
 
-import { DecryptionFailed } from '../errors';
 import { ResourceManager } from './Resource/ResourceManager';
 import ResourceStore from './Resource/ResourceStore';
 import { KeyDecryptor } from './Resource/KeyDecryptor';
@@ -167,7 +166,8 @@ export class DataProtector {
     // $FlowIKnow Already checked we are using a simple encryption
       clearData = encryption.decrypt(key, encryption.unserialize(castEncryptedData));
     } catch (error) {
-      throw new DecryptionFailed({ error, resourceId });
+      const b64ResourceId = utils.toBase64(resourceId);
+      throw new DecryptionFailed({ error, b64ResourceId });
     }
 
     const castClearData = await castData(clearData, outputOptions);

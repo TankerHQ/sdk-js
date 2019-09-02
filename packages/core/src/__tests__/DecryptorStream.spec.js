@@ -2,11 +2,10 @@
 import sinon from 'sinon';
 
 import { utils, random, tcrypto, encryptionV4 } from '@tanker/crypto';
-import { InvalidArgument } from '@tanker/errors';
+import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 
 import { expect } from './chai';
 import DecryptorStream from '../DataProtection/DecryptorStream';
-import { DecryptionFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 
 describe('Decryptor Stream', () => {

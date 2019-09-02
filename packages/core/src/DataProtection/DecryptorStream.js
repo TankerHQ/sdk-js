@@ -1,9 +1,7 @@
 // @flow
-import { encryptionV4, type Key } from '@tanker/crypto';
-import { InvalidArgument } from '@tanker/errors';
+import { encryptionV4, utils, type Key } from '@tanker/crypto';
+import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
-
-import { DecryptionFailed } from '../errors';
 
 export type ResourceIdKeyMapper = {
   findKey: (Uint8Array) => Promise<Key>
@@ -57,6 +55,8 @@ export default class DecryptorStream extends Transform {
     this._state.maxEncryptedChunkSize = encryptedChunkSize;
     this._resizerStream = new ResizerStream(encryptedChunkSize);
 
+    const b64ResourceId = utils.toBase64(resourceId);
+
     this._decryptionStream = new Transform({
       // buffering input bytes until encrypted chunk size is reached
       writableHighWaterMark: encryptedChunkSize,
@@ -70,7 +70,7 @@ export default class DecryptorStream extends Transform {
           const clearData = encryptionV4.decrypt(key, this._state.index, encryptionV4.unserialize(encryptedChunk));
           this._decryptionStream.push(clearData);
         } catch (error) {
-          return done(new DecryptionFailed({ error, resourceId }));
+          return done(new DecryptionFailed({ error, b64ResourceId }));
         }
         this._state.lastEncryptedChunkSize = encryptedChunk.length;
         this._state.index += 1; // safe as long as index < 2^53
@@ -80,7 +80,7 @@ export default class DecryptorStream extends Transform {
 
       flush: (done) => {
         if (this._state.lastEncryptedChunkSize % this._state.maxEncryptedChunkSize === 0) {
-          done(new DecryptionFailed({ message: 'Data has been truncated', resourceId }));
+          done(new DecryptionFailed({ message: 'Data has been truncated', b64ResourceId }));
           return;
         }
 
