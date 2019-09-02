@@ -1,16 +1,18 @@
 // @flow
+import { Readable } from 'readable-stream';
 
 // WARNING: don't import the File ponyfill here! We want to test against the real
 //          File constructor, for both real and ponyfilled files to be accepted.
 import { InvalidArgument } from '@tanker/errors';
 import FileReader from '@tanker/file-reader';
-import { Readable } from '@tanker/stream-base';
+import { assertDataType } from '@tanker/types';
 
-type Source = ArrayBuffer | Uint8Array | Blob | File;
+type ExternalSource = ArrayBuffer | Buffer | Uint8Array | Blob | File;
+type InternalSource = Uint8Array | Blob | File;
 
 export default class SlicerStream extends Readable {
   _mode: 'binary' | 'file';
-  _source: Uint8Array | Blob | File;
+  _source: InternalSource;
   _outputSize: number;
   _readingState: {
     byteSize: number,
@@ -19,14 +21,14 @@ export default class SlicerStream extends Readable {
   };
   _fileReader: FileReader;
 
-  constructor(options: { source: Source, outputSize?: number }) {
-    if (!options || typeof options !== 'object' || options instanceof Array)
+  constructor(options: { source: ExternalSource, outputSize?: number }) {
+    // $FlowIKnow Use of Object.prototype
+    if (!options || typeof options !== 'object' || Object.getPrototypeOf(options) !== Object.prototype)
       throw new InvalidArgument('options', 'object', options);
 
     const { source, outputSize } = options;
 
-    if ([ArrayBuffer, Uint8Array, Blob, File].every(constructor => !(source instanceof constructor)))
-      throw new InvalidArgument('options.source', 'either an ArrayBuffer, a Uint8Array, a Blob, or a File', source);
+    assertDataType(source, 'options.source');
 
     if (outputSize && typeof outputSize !== 'number')
       throw new InvalidArgument('options.outputSize', 'number', outputSize);
@@ -39,7 +41,7 @@ export default class SlicerStream extends Readable {
 
     this._outputSize = outputSize || 5 * 1024 * 1024; // 5MB
 
-    if (source instanceof ArrayBuffer || source instanceof Uint8Array) {
+    if (source instanceof ArrayBuffer || source instanceof Uint8Array) { // also catches Buffer
       this._initBinaryMode(source);
     } else {
       this._initFileMode(source);
@@ -58,7 +60,7 @@ export default class SlicerStream extends Readable {
    * Binary mode
    */
 
-  _initBinaryMode = (source: ArrayBuffer | Uint8Array) => {
+  _initBinaryMode = (source: ArrayBuffer | Buffer | Uint8Array) => {
     this._mode = 'binary';
     this._source = source instanceof ArrayBuffer ? new Uint8Array(source) : source;
     this._readingState = {

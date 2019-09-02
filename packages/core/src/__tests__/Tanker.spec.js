@@ -23,7 +23,6 @@ describe('Tanker', () => {
     socket: ({}: any),
     dataStore: { ...dataStoreConfig, prefix: makePrefix() },
     sdkType: 'test',
-    streams: ({}: any),
   });
 
   before(() => {
@@ -56,10 +55,10 @@ describe('Tanker', () => {
     it('should accept default options', () => {
       const { adapter } = dataStoreConfig;
       const options = { appId: 'id' };
-      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: ({}: any) };
+      const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter } };
       const mergedOptions = optionsWithDefaults(options, defaultOptions);
       expect(mergedOptions).to.deep.equal({
-        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }, streams: {}
+        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter }
       });
     });
 
@@ -68,13 +67,13 @@ describe('Tanker', () => {
 
       const defaultPrefix = makePrefix();
       const defaultDatastore = { adapter, prefix: defaultPrefix };
-      const defaultOptions = { appId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore, streams: ({}: any) };
+      const defaultOptions = { appId: 'default', url: 'http://default.io', sdkType: 'default', dataStore: defaultDatastore };
 
       const newPrefix = makePrefix();
       const newOptions = { appId: 'new', url: 'http://new.io', dataStore: { adapter, prefix: newPrefix } };
 
       const expectedDatastore = { adapter, prefix: newPrefix };
-      const expectedOptions = { appId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore, streams: {} };
+      const expectedOptions = { appId: 'new', url: 'http://new.io', sdkType: 'default', dataStore: expectedDatastore };
 
       const mergedOptions = optionsWithDefaults(newOptions, defaultOptions);
       expect(mergedOptions).to.deep.equal(expectedOptions);

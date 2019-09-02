@@ -6,8 +6,6 @@ const flatten = (arr) => arr.reduce((acc, val) => acc.concat(val), []);
 
 const packages = [
   'base',
-  'browser',
-  'node',
   'cloud-storage',
 ];
 
@@ -17,14 +15,6 @@ module.exports = flatten(packages.map(pack => {
   const outputs = {
     base: [
       { target: 'browser', path: path.resolve(packageRoot, 'dist', 'browser.js') },
-      { target: 'node', path: path.resolve(packageRoot, 'dist', 'index.js') },
-      { target: 'es', path: path.resolve(packageRoot, 'dist', 'es.js') },
-    ],
-    browser: [
-      { target: 'browser', path: path.resolve(packageRoot, 'dist', 'index.js') },
-      { target: 'es', path: path.resolve(packageRoot, 'dist', 'es.js') },
-    ],
-    node: [
       { target: 'node', path: path.resolve(packageRoot, 'dist', 'index.js') },
       { target: 'es', path: path.resolve(packageRoot, 'dist', 'es.js') },
     ],

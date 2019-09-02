@@ -8,7 +8,7 @@ import LocalUser from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';
-import { DataProtector, type Streams } from '../DataProtection/DataProtector';
+import { DataProtector } from '../DataProtection/DataProtector';
 import DeviceManager from './DeviceManager';
 import CloudStorageManager from './CloudStorageManager';
 
@@ -21,7 +21,7 @@ export class Apis {
   deviceManager: DeviceManager;
   cloudStorageManager: CloudStorageManager;
 
-  constructor(localUser: LocalUser, storage: Storage, streams: Streams, trustchain: Trustchain, client: Client) {
+  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client) {
     this.userAccessor = new UserAccessor(storage.userStore, trustchain, localUser.trustchainId, localUser.userId);
     this.groupManager = new GroupManager(
       localUser,
@@ -37,7 +37,6 @@ export class Apis {
       this.groupManager,
       localUser,
       this.userAccessor,
-      streams,
     );
 
     this.deviceManager = new DeviceManager(
@@ -51,7 +50,6 @@ export class Apis {
     this.cloudStorageManager = new CloudStorageManager(
       client,
       this.dataProtector,
-      streams,
     );
   }
 }

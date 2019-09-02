@@ -18,10 +18,12 @@
   "dependencies": {
     "@babel/runtime-corejs2": "^7.4.0",
     "@tanker/errors": "0.0.1",
+    "@tanker/file-reader": "0.0.1",
     "@tanker/types": "0.0.1",
     "readable-stream": "^3.4.0"
   },
   "devDependencies": {
+    "@tanker/file-ponyfill": "0.0.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1"
   }

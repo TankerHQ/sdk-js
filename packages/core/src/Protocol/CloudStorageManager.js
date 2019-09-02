@@ -1,18 +1,20 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
+import { MergerStream, SlicerStream } from '@tanker/stream-base';
+import type { Readable, Writable } from '@tanker/stream-base';
 import streamCloudStorage from '@tanker/stream-cloud-storage';
 import { getDataLength } from '@tanker/types';
 import type { Data } from '@tanker/types';
 
 import { InternalError } from '../errors';
 import type { Client } from '../Network/Client';
-import type { DataProtector, Streams } from '../DataProtection/DataProtector';
+import type { DataProtector } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
 import type { OutputOptions, ProgressOptions, SharingOptions } from '../DataProtection/options';
 
 const pipeStreams = (
-  { streams, resolveEvent }: { streams: Array<$Values<Streams>>, resolveEvent: string }
+  { streams, resolveEvent }: { streams: Array<Readable | Writable>, resolveEvent: string }
 ) => new Promise((resolve, reject) => {
   streams.forEach(stream => stream.on('error', reject));
   streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
@@ -24,16 +26,13 @@ const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefine
 export class CloudStorageManager {
   _client: Client;
   _dataProtector: DataProtector;
-  _streams: Streams;
 
   constructor(
     client: Client,
     dataProtector: DataProtector,
-    streams: Streams,
   ) {
     this._client = client;
     this._dataProtector = dataProtector;
-    this._streams = streams;
   }
 
   async _encryptAndShareMetadata(metadata: Object, b64ResourceId: b64string): Promise<b64string> {
@@ -71,7 +70,7 @@ export class CloudStorageManager {
     const metadata = { ...fileMetadata, clearContentLength: totalClearSize };
     const encryptedMetadata = await this._encryptAndShareMetadata(metadata, resourceId);
 
-    const slicer = new this._streams.SlicerStream({ source: clearData });
+    const slicer = new SlicerStream({ source: clearData });
     const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata);
 
     const progressHandler = new ProgressHandler(progressOptions).start(totalEncryptedSize);
@@ -84,7 +83,7 @@ export class CloudStorageManager {
     // add a merger stream before the uploader to ensure there's a single upload request
     // returning the 200 HTTP status.
     if (service === 'GCS' && isEdge()) {
-      const merger = new this._streams.MergerStream({ type: Uint8Array });
+      const merger = new MergerStream({ type: Uint8Array });
       streams.push(merger);
     }
 
@@ -111,7 +110,7 @@ export class CloudStorageManager {
     const encryptedMetadata = await downloader.getMetadata();
     const { clearContentLength, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
     const combinedOutputOptions = extractOutputOptions({ type: defaultDownloadType, ...outputOptions, ...fileMetadata });
-    const merger = new this._streams.MergerStream(combinedOutputOptions);
+    const merger = new MergerStream(combinedOutputOptions);
 
     const decryptor = await this._dataProtector.makeDecryptorStream();
 
