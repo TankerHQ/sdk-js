@@ -10,7 +10,7 @@ import * as encryptorV2 from '../EncryptionFormats/v2';
 import * as encryptorV3 from '../EncryptionFormats/v3';
 import * as encryptorV5 from '../EncryptionFormats/v5';
 
-describe('Encryptor', () => {
+describe('Simple Encryption', () => {
   const clearData = utils.fromString('this is very secret');
 
   const key = new Uint8Array([
@@ -118,6 +118,15 @@ describe('Encryptor', () => {
       const buff = encryptorV1.serialize(encryptedData);
       expect(encryptorV1.extractResourceId(buff)).to.deep.equal(encryptedData.resourceId);
     });
+
+    it('should compute clear and encrypted sizes', () => {
+      const { overhead, getClearSize, getEncryptedSize } = encryptorV1;
+      const clearSize = getClearSize(testVectorV1.length);
+      const encryptedSize = getEncryptedSize(clearData.length);
+      expect(clearSize).to.equal(clearData.length);
+      expect(encryptedSize).to.equal(testVectorV1.length);
+      expect(encryptedSize - clearSize).to.equal(overhead);
+    });
   });
 
   describe('EncryptionFormatV2', () => {
@@ -157,6 +166,15 @@ describe('Encryptor', () => {
       const encryptedData = encryptorV2.encrypt(key, clearData);
       const buff = encryptorV2.serialize(encryptedData);
       expect(encryptorV2.extractResourceId(buff)).to.deep.equal(encryptedData.resourceId);
+    });
+
+    it('should compute clear and encrypted sizes', () => {
+      const { overhead, getClearSize, getEncryptedSize } = encryptorV2;
+      const clearSize = getClearSize(testVectorV2.length);
+      const encryptedSize = getEncryptedSize(clearData.length);
+      expect(clearSize).to.equal(clearData.length);
+      expect(encryptedSize).to.equal(testVectorV2.length);
+      expect(encryptedSize - clearSize).to.equal(overhead);
     });
   });
 
@@ -198,8 +216,16 @@ describe('Encryptor', () => {
       const buff = encryptorV3.serialize(encryptedData);
       expect(encryptorV3.extractResourceId(buff)).to.deep.equal(encryptedData.resourceId);
     });
-  });
 
+    it('should compute clear and encrypted sizes', () => {
+      const { overhead, getClearSize, getEncryptedSize } = encryptorV3;
+      const clearSize = getClearSize(testVectorV3.length);
+      const encryptedSize = getEncryptedSize(clearData.length);
+      expect(clearSize).to.equal(clearData.length);
+      expect(encryptedSize).to.equal(testVectorV3.length);
+      expect(encryptedSize - clearSize).to.equal(overhead);
+    });
+  });
 
   describe('EncryptionFormatV5', () => {
     const resourceId = random(tcrypto.MAC_SIZE);
@@ -221,6 +247,7 @@ describe('Encryptor', () => {
         0x6e, 0xd1, 0x8b, 0xea, 0xd7, 0xf5, 0xad, 0x23, 0xc0, 0xbd, 0x8c, 0x1f,
       ]));
     });
+
     it('should decrypt a test vector v5', () => {
       const decryptedData = encryptorV5.decrypt(key, encryptorV5.unserialize(testVectorV5));
       expect(decryptedData).to.deep.equal(clearData);
@@ -250,6 +277,15 @@ describe('Encryptor', () => {
     it('should extract the resource id', () => {
       const extractedResourceId = encryptorV5.extractResourceId(testVectorV5);
       expect(extractedResourceId).to.deep.equal(new Uint8Array([0xc1, 0x74, 0x53, 0x1e, 0xdd, 0x77, 0x77, 0x87, 0x2c, 0x02, 0x6e, 0xf2, 0x36, 0xdf, 0x28, 0x7e]));
+    });
+
+    it('should compute clear and encrypted sizes', () => {
+      const { overhead, getClearSize, getEncryptedSize } = encryptorV5;
+      const clearSize = getClearSize(testVectorV5.length);
+      const encryptedSize = getEncryptedSize(clearData.length);
+      expect(clearSize).to.equal(clearData.length);
+      expect(encryptedSize).to.equal(testVectorV5.length);
+      expect(encryptedSize - clearSize).to.equal(overhead);
     });
   });
 });

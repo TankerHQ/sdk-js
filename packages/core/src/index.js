@@ -10,7 +10,7 @@ import { fromBase64, toBase64 } from './utils';
 export default Tanker;
 
 export type { b64string } from '@tanker/crypto';
-export type { OutputOptions, SharingOptions } from './DataProtection/options';
+export type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
 export type { EmailVerification, PassphraseVerification, KeyVerification, Verification, VerificationMethod } from './Session/types';
 export type { TankerOptions } from './Tanker';
 

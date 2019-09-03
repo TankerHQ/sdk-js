@@ -8,13 +8,24 @@ import { random } from '../random';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 
-const version = 5;
-
 export type EncryptionData = {
   encryptedData: Uint8Array,
   resourceId: Uint8Array,
   iv: Uint8Array,
 };
+
+export const version = 5;
+
+export const features = {
+  chunks: false,
+  fixedResourceId: true,
+};
+
+export const overhead = 1 + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
+
+export const getClearSize = (encryptedSize: number) => encryptedSize - overhead;
+
+export const getEncryptedSize = (clearSize: number) => clearSize + overhead;
 
 export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array(varint.encode(version)), data.resourceId, data.iv, data.encryptedData);
 
@@ -52,5 +63,3 @@ export const extractResourceId = (buffer: Uint8Array): Uint8Array => {
   const data = unserialize(buffer);
   return data.resourceId;
 };
-
-export const overhead = 1 + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;

@@ -4,14 +4,11 @@ import { ResizerStream, Transform } from '@tanker/stream-base';
 
 import { InvalidArgument } from '../errors';
 
-export const defaultEncryptedChunkSize = 1024 * 1024; // 1MB
-
 export default class EncryptorStream extends Transform {
-  _clearChunkSize: number;
-  _encryptedChunkSize: number;
+  _maxClearChunkSize: number;
+  _maxEncryptedChunkSize: number;
   _encryptorStream: Transform;
   _key: Uint8Array;
-  _overheadPerChunk: number;
   _resizerStream: ResizerStream;
   _resourceId: Uint8Array;
   _state: {
@@ -19,7 +16,7 @@ export default class EncryptorStream extends Transform {
     lastClearChunkSize: number,
   }
 
-  constructor(resourceId: Uint8Array, key: Uint8Array, encryptedChunkSize: number = defaultEncryptedChunkSize) {
+  constructor(resourceId: Uint8Array, key: Uint8Array, maxEncryptedChunkSize: number = encryptionV4.defaultMaxEncryptedChunkSize) {
     super({
       // buffering a single input chunk ('drain' can pull more)
       writableHighWaterMark: 1,
@@ -29,11 +26,10 @@ export default class EncryptorStream extends Transform {
       readableObjectMode: true,
     });
 
-    this._clearChunkSize = encryptedChunkSize - encryptionV4.overhead;
-    this._encryptedChunkSize = encryptedChunkSize;
+    this._maxClearChunkSize = maxEncryptedChunkSize - encryptionV4.overhead;
+    this._maxEncryptedChunkSize = maxEncryptedChunkSize;
     this._resourceId = resourceId;
     this._key = key;
-    this._overheadPerChunk = encryptionV4.overhead;
     this._state = {
       index: 0,
       lastClearChunkSize: 0,
@@ -43,14 +39,14 @@ export default class EncryptorStream extends Transform {
   }
 
   _initializeStreams() {
-    this._resizerStream = new ResizerStream(this._clearChunkSize);
+    this._resizerStream = new ResizerStream(this._maxClearChunkSize);
 
     this._encryptorStream = new Transform({
       // buffering input bytes until clear chunk size is reached
-      writableHighWaterMark: this._clearChunkSize,
+      writableHighWaterMark: this._maxClearChunkSize,
       writableObjectMode: false,
       // buffering output bytes until encrypted chunk size is reached
-      readableHighWaterMark: this._encryptedChunkSize,
+      readableHighWaterMark: this._maxEncryptedChunkSize,
       readableObjectMode: false,
 
       transform: (clearData, encoding, done) => {
@@ -65,7 +61,7 @@ export default class EncryptorStream extends Transform {
 
       flush: (done) => {
         // flush a last empty block if remaining clear data is an exact multiple of max clear chunk size
-        if (this._state.lastClearChunkSize % this._clearChunkSize === 0) {
+        if (this._state.lastClearChunkSize % this._maxClearChunkSize === 0) {
           try {
             const encryptedChunk = this._encryptChunk(new Uint8Array(0));
             this._encryptorStream.push(encryptedChunk);
@@ -86,7 +82,7 @@ export default class EncryptorStream extends Transform {
   }
 
   _encryptChunk(clearChunk: Uint8Array) {
-    const encryptedBuffer = encryptionV4.serialize(encryptionV4.encrypt(this._key, this._state.index, this._resourceId, this._encryptedChunkSize, clearChunk));
+    const encryptedBuffer = encryptionV4.serialize(encryptionV4.encrypt(this._key, this._state.index, this._resourceId, this._maxEncryptedChunkSize, clearChunk));
     this._state.index += 1; // safe as long as index < 2^53
     this._state.lastClearChunkSize = clearChunk.length;
 
@@ -107,18 +103,16 @@ export default class EncryptorStream extends Transform {
   }
 
   get clearChunkSize(): number {
-    return this._clearChunkSize;
+    return this._maxClearChunkSize;
   }
 
   get encryptedChunkSize(): number {
-    return this._encryptedChunkSize;
-  }
-
-  get overheadPerChunk(): number {
-    return this._overheadPerChunk;
+    return this._maxEncryptedChunkSize;
   }
 
   get resourceId(): b64string {
     return utils.toBase64(this._resourceId);
   }
+
+  getEncryptedSize = (clearSize: number): number => encryptionV4.getEncryptedSize(clearSize, this._maxEncryptedChunkSize);
 }

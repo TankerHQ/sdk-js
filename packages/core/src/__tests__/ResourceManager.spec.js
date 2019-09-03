@@ -54,7 +54,7 @@ describe('ResourceManager', () => {
   });
 
   describe('SaveResourceKey', () => {
-    it('can save Resource', async () => {
+    it('can save a resource key', async () => {
       const { resourceStore, manager } = makeManager();
 
       const id = new Uint8Array([0]);

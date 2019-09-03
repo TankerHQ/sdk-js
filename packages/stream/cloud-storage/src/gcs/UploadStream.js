@@ -83,6 +83,8 @@ export class UploadStream extends Writable {
       }, {
         retries: 2,
       });
+
+      this.emit('uploaded', chunk);
     } catch (e) {
       return callback(e);
     }

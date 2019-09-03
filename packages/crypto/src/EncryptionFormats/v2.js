@@ -8,13 +8,24 @@ import { random } from '../random';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 
-const version = 2;
-
 export type EncryptionData = {
   encryptedData: Uint8Array,
   resourceId: Uint8Array,
   iv: Uint8Array,
 };
+
+export const version = 2;
+
+export const features = {
+  chunks: false,
+  fixedResourceId: false,
+};
+
+export const overhead = 1 + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
+
+export const getClearSize = (encryptedSize: number) => encryptedSize - overhead;
+
+export const getEncryptedSize = (clearSize: number) => clearSize + overhead;
 
 export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array(varint.encode(version)), data.iv, data.encryptedData);
 
@@ -40,8 +51,6 @@ export const encrypt = (key: Uint8Array, plaintext: Uint8Array, additionalData?:
 export const decrypt = (key: Uint8Array, data: EncryptionData, additionalData?: Uint8Array): Uint8Array => aead.decryptAEAD(key, data.iv, data.encryptedData, additionalData);
 
 export const extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
-
-export const overhead = 1 + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
 
 export const compatDecrypt = (key: Uint8Array, buffer: Uint8Array, additionalData?: Uint8Array): Uint8Array => {
   try {

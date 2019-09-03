@@ -8,31 +8,20 @@ import EventEmitter from 'events';
 
 import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
-import { extractResourceId } from './DataProtection/Encryptor';
 
-import { DecryptionFailed, InternalError, InvalidArgument, PreconditionFailed } from './errors';
+import { InternalError, InvalidArgument, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
-import type { OutputOptions, SharingOptions } from './DataProtection/options';
-
-import { defaultDownloadType, extractOutputOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
+import type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
+import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
 import type { Streams } from './DataProtection/DataProtector';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
+import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/Resource';
 
 import { TANKER_SDK_VERSION } from './version';
-
-// The maximum byte size of a resource encrypted with the "simple" algorithms
-// (different from v4) is obtained by summing the sizes of:
-//  - the version: 1 byte (varint < 128)
-//  - the MAC: 16 bytes
-//  - the IV: 24 bytes
-//  - the data: 5 megabytes (libsodium's hard limit)
-//
-// By reading an input up to this size, we're sure to be able to extract the resource ID.
-const SAFE_RESOURCE_ID_EXTRACTION = 1 + 16 + 24 + 5 * (1024 * 1024);
 
 type TankerDefaultOptions = $Exact<{
   appId?: b64string,
@@ -341,16 +330,11 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.READY, 'get a resource id');
     assertDataType(encryptedData, 'encryptedData');
 
-    const source = await castData(encryptedData, { type: Uint8Array }, SAFE_RESOURCE_ID_EXTRACTION);
+    const castEncryptedData = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
 
-    try {
-      return utils.toBase64(extractResourceId(source));
-    } catch (e) {
-      if (e instanceof DecryptionFailed) {
-        throw new InvalidArgument('"encryptedData" is corrupted');
-      }
-      throw e;
-    }
+    const encryption = extractEncryptionFormat(castEncryptedData);
+
+    return utils.toBase64(encryption.extractResourceId(castEncryptedData));
   }
 
   async revokeDevice(deviceId: b64string): Promise<void> {
@@ -399,17 +383,18 @@ export class Tanker extends EventEmitter {
     return this._session.apis.dataProtector.makeDecryptorStream();
   }
 
-  async encryptData<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T>> = {}): Promise<T> {
+  async encryptData<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     this.assert(statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
+    const progressOptions = extractProgressOptions(options);
     const sharingOptions = extractSharingOptions(options);
 
-    return this._session.apis.dataProtector.encryptData(clearData, sharingOptions, outputOptions);
+    return this._session.apis.dataProtector.encryptData(clearData, sharingOptions, outputOptions, progressOptions);
   }
 
-  async encrypt<T: Data>(plain: string, options?: $Shape<SharingOptions & OutputOptions<T>>): Promise<T> {
+  async encrypt<T: Data>(plain: string, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
     this.assert(statuses.READY, 'encrypt');
 
     if (typeof plain !== 'string')
@@ -418,30 +403,33 @@ export class Tanker extends EventEmitter {
     return this.encryptData(utils.fromString(plain), options);
   }
 
-  async decryptData<T: Data>(encryptedData: Data, options?: $Shape<OutputOptions<T>> = {}): Promise<T> {
+  async decryptData<T: Data>(encryptedData: Data, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     this.assert(statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
     const outputOptions = extractOutputOptions(options, encryptedData);
+    const progressOptions = extractProgressOptions(options);
 
-    return this._session.apis.dataProtector.decryptData(encryptedData, outputOptions);
+    return this._session.apis.dataProtector.decryptData(encryptedData, outputOptions, progressOptions);
   }
 
-  async decrypt(cipher: Data): Promise<string> {
-    return utils.toString(await this.decryptData(cipher, { type: Uint8Array }));
+  async decrypt(cipher: Data, options?: $Shape<ProgressOptions> = {}): Promise<string> {
+    const progressOptions = extractProgressOptions(options);
+    return utils.toString(await this.decryptData(cipher, { ...progressOptions, type: Uint8Array }));
   }
 
-  async upload<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T>> = {}): Promise<string> {
+  async upload<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<string> {
     this.assert(statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
+    const progressOptions = extractProgressOptions(options);
     const sharingOptions = extractSharingOptions(options);
 
-    return this._session.apis.cloudStorageManager.upload(clearData, sharingOptions, outputOptions);
+    return this._session.apis.cloudStorageManager.upload(clearData, sharingOptions, outputOptions, progressOptions);
   }
 
-  async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T>> = {}): Promise<T> {
+  async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     this.assert(statuses.READY, 'download a file');
 
     if (typeof resourceId !== 'string')
@@ -451,8 +439,9 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
 
     const outputOptions = extractOutputOptions({ type: defaultDownloadType, ...options });
+    const progressOptions = extractProgressOptions(options);
 
-    return this._session.apis.cloudStorageManager.download(resourceId, outputOptions);
+    return this._session.apis.cloudStorageManager.download(resourceId, outputOptions, progressOptions);
   }
 }
 

@@ -9,6 +9,8 @@ import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 import * as number from '../number';
 
+const uint32Length = 4;
+
 export type EncryptionData = {
   encryptedData: Uint8Array,
   resourceId: Uint8Array,
@@ -16,10 +18,29 @@ export type EncryptionData = {
   encryptedChunkSize: number,
 };
 
-const version = 4;
-const uint32Length = 4;
+export const version = 4;
+
+export const features = {
+  chunks: true,
+  fixedResourceId: true,
+};
 
 export const overhead = 1 + uint32Length + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
+
+export const defaultMaxEncryptedChunkSize = 1024 * 1024; // 1MB
+
+export const getClearSize = (encryptedSize: number, maxEncryptedChunkSize: number) => {
+  const chunkCount = Math.ceil(encryptedSize / maxEncryptedChunkSize);
+  return encryptedSize - chunkCount * overhead;
+};
+
+export const getEncryptedSize = (clearSize: number, maxEncryptedChunkSize: number) => {
+  const maxClearChunkSize = maxEncryptedChunkSize - overhead;
+  // Note: if clearSize is multiple of maxClearChunkSize, an additional empty chunk is added
+  //       at the end, hence the +1 to compute chunkCount
+  const chunkCount = Math.ceil((clearSize + 1) / maxClearChunkSize);
+  return clearSize + chunkCount * overhead;
+};
 
 export const serialize = (data: EncryptionData): Uint8Array => utils.concatArrays(
   new Uint8Array(varint.encode(version)),
