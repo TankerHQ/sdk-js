@@ -51,6 +51,7 @@ const serverErrorMap = {
   invalid_passphrase: InvalidVerification,
   invalid_verification_code: InvalidVerification,
   too_many_attempts: TooManyAttempts,
+  provisional_identity_already_attached: InvalidArgument,
   verification_code_expired: ExpiredVerification,
   verification_code_not_found: InvalidVerification,
   verification_method_not_set: PreconditionFailed,

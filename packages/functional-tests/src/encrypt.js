@@ -337,7 +337,7 @@ const generateEncryptTests = (args: TestArgs) => {
 
         verificationCode = await args.appHelper.getVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InternalError);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidArgument, 'provisional identity has already been attached');
       });
 
       it('decrypt resource on a new device', async () => {
