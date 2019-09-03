@@ -64,19 +64,22 @@ import FileKit from '@tanker/filekit';
 
 const fileKit = new FileKit({ appId });
 
-// Retrieve the private identities from your server (or use FakeAuthentication, see below)
+// Retrieve the tanker identities from your server (or use FakeAuthentication, see below)
 const email = 'alice@example.com';
-const privateIdentity = { permanentIdentity, provisionalIdentity };
+const tankerIdentity = await yourServer.authenticate(email);
 
 // Start a FileKit session:
 //   * a verification UI will be automatically displayed if needed
 //   * when start() resolves, the FileKit session is ready
-await fileKit.start(email, privateIdentity);
+await fileKit.start(email, { identity: tankerIdentity });
 
 // Encrypt the clear file locally and upload it to the cloud:
 const fileId = await fileKit.upload(file, { shareWithUsers, shareWithGroups });
 
-// Download and decrypt the file locally:
+// Download, decrypt, and save a file to disk
+await fileKit.downloadToDisk(fileId);
+
+// Download, decrypt, and get a File object
 const file = await fileKit.download(fileId);
 ```
 
