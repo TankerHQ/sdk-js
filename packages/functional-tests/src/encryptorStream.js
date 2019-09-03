@@ -1,7 +1,7 @@
 // @flow
 import { errors } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import { type TestArgs } from './TestArgs';
 

@@ -1,8 +1,6 @@
 // @flow
-
 import varint from 'varint';
-
-import { InternalError } from '../errors';
+import { InternalError } from '@tanker/errors';
 
 export type ParseResult<T> = {
   value: T,

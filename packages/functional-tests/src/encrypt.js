@@ -1,11 +1,9 @@
 // @flow
-import sinon from 'sinon';
-import uuid from 'uuid';
 import { errors } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
 import { getConstructor, getConstructorName, getDataLength } from '@tanker/types';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
-import { expect } from './chai';
+import { expect, sinon, uuid } from '@tanker/test-utils';
 
 import { type TestArgs } from './TestArgs';
 
@@ -573,6 +571,15 @@ const generateEncryptTests = (args: TestArgs) => {
     it('throws InvalidArgument if downloading a non existing file', async () => {
       const nonExistingFileId = 'AAAAAAAAAAAAAAAAAAAAAA==';
       await expect(aliceLaptop.download(nonExistingFileId)).to.be.rejectedWith(errors.InvalidArgument);
+    });
+
+    it('throws InvalidArgument if giving an obviously wrong fileId', async () => {
+      const promises = [undefined, null, 'not a resourceId', [], {}].map(async (invalidFileId, i) => {
+        // $FlowExpectedError Giving invalid options
+        await expect(aliceLaptop.download(invalidFileId), `failed test #${i}`).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      await Promise.all(promises);
     });
   });
 };

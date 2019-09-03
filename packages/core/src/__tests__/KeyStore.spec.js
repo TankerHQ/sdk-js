@@ -2,8 +2,8 @@
 
 import { tcrypto, utils } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import type { UserKeys } from '../Blocks/payloads';

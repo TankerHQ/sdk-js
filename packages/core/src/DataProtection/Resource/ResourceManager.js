@@ -1,13 +1,11 @@
 // @flow
 import { utils, type Key } from '@tanker/crypto';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 
-import { InvalidArgument, InternalError } from '../../errors';
-import { KeyDecryptor } from './KeyDecryptor';
-
-import { Client } from '../../Network/Client';
-
-import ResourceStore from './ResourceStore';
 import { newKeyPublish } from './keyPublish';
+import { KeyDecryptor } from './KeyDecryptor';
+import { Client } from '../../Network/Client';
+import ResourceStore from './ResourceStore';
 
 export class ResourceManager {
   _resourceStore: ResourceStore;

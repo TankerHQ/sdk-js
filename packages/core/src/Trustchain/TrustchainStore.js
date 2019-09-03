@@ -1,8 +1,7 @@
 // @flow
 
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
-
-import { InternalError } from '../errors';
+import { InternalError } from '@tanker/errors';
 
 export const TABLE_METADATA = 'trustchain_metadata';
 

@@ -2,8 +2,7 @@
 
 import { utils, encryptionV1, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
-
-import { InternalError, DecryptionFailed } from '../../errors';
+import { DecryptionFailed, InternalError } from '@tanker/errors';
 
 const TABLE = 'resource_keys';
 

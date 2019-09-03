@@ -1,7 +1,7 @@
 // @flow
 /* eslint-disable no-underscore-dangle */
 
-import { expect, assert } from './chai';
+import { assert, expect } from '@tanker/test-utils';
 import { InvalidBlockError } from '../errors.internal';
 import { deviceCreationFromBlock } from '../Blocks/entries';
 import { makeTrustchainBuilder } from './TrustchainBuilder';

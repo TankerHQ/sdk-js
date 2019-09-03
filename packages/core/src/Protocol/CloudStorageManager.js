@@ -1,12 +1,12 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import type { Readable, Writable } from '@tanker/stream-base';
 import streamCloudStorage from '@tanker/stream-cloud-storage';
 import { getDataLength } from '@tanker/types';
 import type { Data } from '@tanker/types';
 
-import { InternalError } from '../errors';
 import type { Client } from '../Network/Client';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';

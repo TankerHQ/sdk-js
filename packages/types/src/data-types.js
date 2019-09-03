@@ -1,5 +1,5 @@
 // @flow
-import { errors } from '@tanker/core';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 import FilePonyfill from '@tanker/file-ponyfill';
 import FileReader from '@tanker/file-reader';
 import globalThis from '@tanker/global-this';
@@ -26,12 +26,12 @@ const dataTypeDefs = (() => {
 
 export const assertDataType = (value: any, argName: string): void => {
   if (!dataTypeDefs.some(def => value instanceof def.type))
-    throw new errors.InvalidArgument(argName, 'ArrayBuffer | Blob | Buffer | File | Uint8Array', value);
+    throw new InvalidArgument(argName, 'ArrayBuffer | Blob | Buffer | File | Uint8Array', value);
 };
 
 export const assertDataTypeClass = (value: any, argName: string): void => {
   if (!dataTypeDefs.some(def => value === def.type))
-    throw new errors.InvalidArgument(argName, 'class in [ArrayBuffer | Blob | Buffer | File | Uint8Array]', value);
+    throw new InvalidArgument(argName, 'class in [ArrayBuffer | Blob | Buffer | File | Uint8Array]', value);
 };
 
 export const getConstructor = <T: Data>(instance: T): * => {
@@ -40,7 +40,7 @@ export const getConstructor = <T: Data>(instance: T): * => {
       return def.type;
     }
   }
-  throw new errors.InternalError('Assertion error: unhandled type');
+  throw new InternalError('Assertion error: unhandled type');
 };
 
 export const getConstructorName = (constructor: Object): string => {
@@ -54,7 +54,7 @@ export const getConstructorName = (constructor: Object): string => {
     return 'File';
   if (globalThis.Blob && constructor === Blob)
     return 'Blob';
-  throw new errors.InternalError('Assertion error: unhandled type');
+  throw new InternalError('Assertion error: unhandled type');
 };
 
 export const getDataLength = (value: Data): number => {
@@ -64,7 +64,7 @@ export const getDataLength = (value: Data): number => {
       return def.lengthOf(value);
     }
   }
-  throw new errors.InternalError('Assertion error: unhandled type');
+  throw new InternalError('Assertion error: unhandled type');
 };
 
 const defaultMime = 'application/octet-stream';

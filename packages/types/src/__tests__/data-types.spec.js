@@ -1,6 +1,6 @@
 // @flow
-import { expect } from 'chai';
 import FilePonyfill from '@tanker/file-ponyfill';
+import { expect } from '@tanker/test-utils';
 
 import { castData, getConstructor, getConstructorName, getDataLength } from '../data-types';
 

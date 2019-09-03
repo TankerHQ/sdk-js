@@ -1,9 +1,8 @@
 // @flow
 import { errors, statuses } from '@tanker/core';
 import { createIdentity } from '@tanker/identity';
+import { expect } from '@tanker/test-utils';
 
-
-import { expect } from './chai';
 import { type TestArgs } from './TestArgs';
 
 const { STOPPED, READY, IDENTITY_REGISTRATION_NEEDED, IDENTITY_VERIFICATION_NEEDED } = statuses;

@@ -1,6 +1,6 @@
 // @flow
 /* eslint-disable */
-import { expect } from 'chai';
+import { expect } from '@tanker/test-utils';
 
 import { globalThis, getGlobalThis } from '../global-this';
 

@@ -2,8 +2,8 @@
 
 import { tcrypto, random, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import TestGenerator from './TestGenerator';
 
 import { type UserKeys } from '../Blocks/payloads';

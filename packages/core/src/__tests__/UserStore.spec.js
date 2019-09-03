@@ -1,7 +1,7 @@
 // @flow
 import { random, tcrypto } from '@tanker/crypto';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import UserStore from '../Users/UserStore';
 import { type User } from '../Users/User';
 

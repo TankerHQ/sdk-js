@@ -1,15 +1,14 @@
 // @flow
-
-import { utils, type b64string } from '@tanker/crypto';
+import EventEmitter from 'events';
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { assertDataType, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
-import EventEmitter from 'events';
 
 import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 
-import { InternalError, InvalidArgument, PreconditionFailed } from './errors';
 import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
@@ -426,7 +425,8 @@ export class Tanker extends EventEmitter {
   async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     this.assert(statuses.READY, 'download a file');
 
-    if (typeof resourceId !== 'string')
+    // Best effort to catch values that can't be a resourceId before reaching the server
+    if (typeof resourceId !== 'string' || utils.fromBase64(resourceId).length !== tcrypto.MAC_SIZE)
       throw new InvalidArgument('resourceId', 'string', resourceId);
 
     if (!isObject(options))

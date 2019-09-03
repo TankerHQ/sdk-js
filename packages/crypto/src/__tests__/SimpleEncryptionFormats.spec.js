@@ -1,6 +1,5 @@
 // @flow
-
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import { random } from '../random';
 import * as tcrypto from '../tcrypto';

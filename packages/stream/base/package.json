@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "@tanker/file-ponyfill": "0.0.1",
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1"
+    "@tanker/test-utils": "0.0.1"
   }
 }

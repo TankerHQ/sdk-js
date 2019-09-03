@@ -2,8 +2,8 @@
 /* eslint-disable no-underscore-dangle */
 
 import { tcrypto, utils } from '@tanker/crypto';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import Generator from './Generator';
 
 import { blockToEntry } from '../Blocks/entries';

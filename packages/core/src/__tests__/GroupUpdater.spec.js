@@ -1,7 +1,7 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import GroupUpdater from '../Groups/GroupUpdater';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
 

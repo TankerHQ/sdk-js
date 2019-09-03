@@ -1,5 +1,5 @@
 // @flow
-import { InvalidArgument } from '../errors';
+import { InvalidArgument } from '@tanker/errors';
 
 export const statusDefs = [
   /* 0 */ { name: 'STOPPED' },

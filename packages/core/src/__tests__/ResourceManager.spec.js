@@ -1,16 +1,12 @@
 // @flow
-
-import sinon from 'sinon';
-
 import { tcrypto, utils, random } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
+import { expect, sinon } from '@tanker/test-utils';
 
-import { expect } from './chai';
-import { InvalidArgument } from '../errors';
+import { serializeBlock } from '../Blocks/payloads';
 import { ResourceManager } from '../DataProtection/Resource/ResourceManager';
 
 import TestGenerator from './TestGenerator';
-
-import { serializeBlock } from '../Blocks/payloads';
 
 class ClientStub {
   send = () => { };

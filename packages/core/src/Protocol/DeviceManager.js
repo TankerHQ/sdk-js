@@ -1,9 +1,9 @@
 // @flow
 
 import { generichash, tcrypto, utils } from '@tanker/crypto';
+import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { type SecretProvisionalIdentity } from '@tanker/identity';
 
-import { InternalError, InvalidArgument, PreconditionFailed } from '../errors';
 import { VerificationNeeded } from '../errors.internal';
 
 import { Client, b64RequestObject } from '../Network/Client';

@@ -26,6 +26,6 @@
     "@tanker/global-this": "0.0.1"
   },
   "devDependencies": {
-    "chai": "^4.2.0"
+    "@tanker/test-utils": "0.0.1"
   }
 }

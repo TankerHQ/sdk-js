@@ -1,7 +1,7 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
-import { InternalError } from '../errors';
 import { Client } from '../Network/Client';
 import { PromiseWrapper } from '../PromiseWrapper';
 import TrustchainStore from './TrustchainStore';

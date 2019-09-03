@@ -1,8 +1,7 @@
 // @flow
 import React from 'react';
-import { expect } from 'chai';
 import { shallow } from 'enzyme';
-import sinon from 'sinon';
+import { expect, sinon } from '@tanker/test-utils';
 
 import makeContextHolder from '../../context/makeContextHolder';
 import VerifyDevice from '../VerifyDevice';

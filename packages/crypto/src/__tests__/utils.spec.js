@@ -1,5 +1,6 @@
 // @flow
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
+
 import {
   concatArrays, equalArray, isNullArray, memzero,
   fromB64Json, fromBase64, fromSafeBase64, toB64Json, toBase64, toSafeBase64,

@@ -1,7 +1,7 @@
 // @flow
 import sodium from 'libsodium-wrappers';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { generichash } from '../hash';
 import { fromString } from '../utils';
 

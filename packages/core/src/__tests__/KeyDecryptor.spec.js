@@ -1,11 +1,11 @@
 // @flow
 
 import { tcrypto } from '@tanker/crypto';
+import { DecryptionFailed, InternalError } from '@tanker/errors';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { toBase64 } from '../index';
 import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
-import { InternalError, DecryptionFailed } from '../errors';
 
 import GroupManager from '../Groups/Manager';
 import LocalUser from '../Session/LocalUser';

@@ -1,6 +1,7 @@
 // @flow
 
 import { generichash, utils, tcrypto, encryptionV2 } from '@tanker/crypto';
+import { DecryptionFailed, InternalError } from '@tanker/errors';
 
 import { type Block } from '../Blocks/Block';
 import { Client, b64RequestObject } from '../Network/Client';
@@ -9,7 +10,6 @@ import LocalUser from './LocalUser';
 import { type UserCreation } from './deviceCreation';
 import { type Verification, type RemoteVerification } from './types';
 import { type GhostDevice } from './ghostDevice';
-import { InternalError, DecryptionFailed } from '../errors';
 
 type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,

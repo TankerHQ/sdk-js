@@ -1,8 +1,8 @@
 // @flow
 import find from 'array-find';
 import { utils, type b64string } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 
-import { InternalError } from '../errors';
 import { InvalidBlockError } from '../errors.internal';
 import { findIndex, compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';

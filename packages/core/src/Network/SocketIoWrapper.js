@@ -1,7 +1,7 @@
 // @flow
 import Socket from 'socket.io-client';
+import { NetworkError } from '@tanker/errors';
 
-import { NetworkError } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 

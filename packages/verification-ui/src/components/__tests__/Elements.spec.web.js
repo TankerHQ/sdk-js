@@ -1,7 +1,7 @@
 // @flow
 import React from 'react';
-import { expect } from 'chai';
 import { shallow } from 'enzyme';
+import { expect } from '@tanker/test-utils';
 
 import Button from '../Button';
 import Check from '../Check';

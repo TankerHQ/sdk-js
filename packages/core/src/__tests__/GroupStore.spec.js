@@ -3,8 +3,8 @@
 import { tcrypto, random } from '@tanker/crypto';
 import { mergeSchemas } from '@tanker/datastore-base';
 import { createUserSecretBinary } from '@tanker/identity';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import GroupStore from '../Groups/GroupStore';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';

@@ -1,7 +1,6 @@
 // @flow
-import uuid from 'uuid';
 import { errors } from '@tanker/core';
-import { expect } from './chai';
+import { expect, uuid } from '@tanker/test-utils';
 
 import { type TestArgs } from './TestArgs';
 

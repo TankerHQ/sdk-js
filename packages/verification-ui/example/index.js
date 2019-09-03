@@ -1,7 +1,11 @@
 // @flow
+
+/* eslint-disable import/no-extraneous-dependencies */
 import { Tanker } from '@tanker/client-browser';
 import { createIdentity, createProvisionalIdentity } from '@tanker/identity';
-import uuid from 'uuid';
+import { uuid } from '@tanker/test-utils';
+/* eslint-enable */
+
 import VerificationUI from '../src';
 
 export const getURIParameter = (name: string): ?string => {

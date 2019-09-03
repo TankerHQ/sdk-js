@@ -1,8 +1,7 @@
 // @flow
 import { utils, encryptionV4, type b64string } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
-
-import { InvalidArgument } from '../errors';
 
 export default class EncryptorStream extends Transform {
   _maxClearChunkSize: number;

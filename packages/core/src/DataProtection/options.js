@@ -1,11 +1,11 @@
 // @flow
 import type { b64string } from '@tanker/crypto';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 import FilePonyfill from '@tanker/file-ponyfill';
 import globalThis from '@tanker/global-this';
 import { getConstructor, type Data } from '@tanker/types';
 
 import type { OnProgress } from './ProgressHandler';
-import { InternalError, InvalidArgument } from '../errors';
 
 export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Array;
 

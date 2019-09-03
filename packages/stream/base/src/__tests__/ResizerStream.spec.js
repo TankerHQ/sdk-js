@@ -1,5 +1,6 @@
 // @flow
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
+
 import ResizerStream from '../ResizerStream';
 
 describe('ResizerStream', () => {

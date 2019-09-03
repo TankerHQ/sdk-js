@@ -1,6 +1,7 @@
 // @flow
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { GroupTooBig, InvalidArgument } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
@@ -9,7 +10,6 @@ import { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
 import { type ExternalGroup } from './types';
 import Trustchain from '../Trustchain/Trustchain';
-import { InvalidArgument, GroupTooBig } from '../errors';
 
 export const MAX_GROUP_SIZE = 1000;
 

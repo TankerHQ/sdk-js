@@ -1,7 +1,8 @@
 // @flow
-import { expect } from './chai';
+import { InvalidArgument } from '@tanker/errors';
+import { expect } from '@tanker/test-utils';
+
 import { toBase64, fromBase64, toString, fromString, findIndex, compareSameSizeUint8Arrays } from '../utils';
-import { errors } from '../index';
 
 const notStringTypes = [undefined, null, 0, {}, [], new Uint8Array(0)];
 const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'wat'];
@@ -12,22 +13,22 @@ describe('utils (core)', () => {
   describe('argument checking for utils from @tanker/crypto', () => {
     it('should throw when toBase64 is given an invalid type', () => {
       // $FlowExpectedError
-      notUint8ArrayTypes.forEach((v, i) => expect(() => toBase64(v), `#${i}`).to.throw(errors.InvalidArgument));
+      notUint8ArrayTypes.forEach((v, i) => expect(() => toBase64(v), `#${i}`).to.throw(InvalidArgument));
     });
 
     it('should throw when fromBase64 is given an invalid type', () => {
       // $FlowExpectedError
-      notStringTypes.forEach((v, i) => expect(() => fromBase64(v), `#${i}`).to.throw(errors.InvalidArgument));
+      notStringTypes.forEach((v, i) => expect(() => fromBase64(v), `#${i}`).to.throw(InvalidArgument));
     });
 
     it('should throw when toString is given an invalid type', () => {
       // $FlowExpectedError
-      notUint8ArrayTypes.forEach((v, i) => expect(() => toString(v), `#${i}`).to.throw(errors.InvalidArgument));
+      notUint8ArrayTypes.forEach((v, i) => expect(() => toString(v), `#${i}`).to.throw(InvalidArgument));
     });
 
     it('should throw when fromString is given an invalid type', () => {
       // $FlowExpectedError
-      notStringTypes.forEach((v, i) => expect(() => fromString(v), `#${i}`).to.throw(errors.InvalidArgument));
+      notStringTypes.forEach((v, i) => expect(() => fromString(v), `#${i}`).to.throw(InvalidArgument));
     });
   });
 

@@ -1,7 +1,7 @@
 // @flow
-import { expect } from './chai';
-import { fromString } from '../utils';
+import { expect } from '@tanker/test-utils';
 
+import { fromString } from '../utils';
 import * as tcrypto from '../tcrypto';
 
 describe('tcrypto', () => {

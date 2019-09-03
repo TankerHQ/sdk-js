@@ -1,5 +1,5 @@
 // @flow
-import { InternalError } from '../errors';
+import { InternalError } from '@tanker/errors';
 
 export const NATURE = Object.freeze({
   trustchain_creation: 1,

@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
-import { InternalError } from '../errors';
+import { InternalError } from '@tanker/errors';
 
 export const CHALLENGE_PREFIX = '\u{0001F512} Auth Challenge. 1234567890.';
 

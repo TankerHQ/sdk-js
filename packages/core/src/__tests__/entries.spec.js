@@ -1,11 +1,10 @@
 // @flow
-
 import { tcrypto, utils } from '@tanker/crypto';
-import makeUint8Array from './makeUint8Array';
-import { expect } from './chai';
+import { expect } from '@tanker/test-utils';
 
 import { entryToDbEntry, dbEntryToEntry, type UnverifiedEntry } from '../Blocks/entries';
 import { NATURE } from '../Blocks/Nature';
+import makeUint8Array from './makeUint8Array';
 
 describe('entryToDbEntry', () => {
   let author;

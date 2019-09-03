@@ -1,10 +1,9 @@
 // @flow
-import sinon from 'sinon';
-
 import { utils, random, tcrypto, encryptionV4 } from '@tanker/crypto';
-import { expect } from './chai';
+import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
+import { expect, sinon } from '@tanker/test-utils';
+
 import DecryptorStream from '../DataProtection/DecryptorStream';
-import { InvalidArgument, DecryptionFailed } from '../errors';
 import PromiseWrapper from '../PromiseWrapper';
 
 describe('Decryptor Stream', () => {

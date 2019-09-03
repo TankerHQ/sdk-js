@@ -1,8 +1,8 @@
 // @flow
 
 import { tcrypto, random } from '@tanker/crypto';
+import { expect } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 import TestGenerator from './TestGenerator';

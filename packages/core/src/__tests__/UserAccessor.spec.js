@@ -1,13 +1,12 @@
 // @flow
-import sinon from 'sinon';
 import { utils } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
 import { createIdentity, getPublicIdentity, _deserializePublicIdentity, type PublicPermanentIdentity } from '@tanker/identity';
+import { expect, sinon } from '@tanker/test-utils';
 
-import { expect } from './chai';
 import { makeUserStoreBuilder } from './UserStoreBuilder';
 import UserAccessor from '../Users/UserAccessor';
 import makeUint8Array from './makeUint8Array';
-import { InvalidArgument } from '../errors';
 
 import Trustchain from '../Trustchain/Trustchain';
 

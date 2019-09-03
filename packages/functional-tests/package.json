@@ -4,9 +4,16 @@
   "private": true,
   "license": "UNLICENSED",
   "dependencies": {
-    "array-find": "^1.0.0",
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
-    "uuid": "^3.3.2"
+    "@tanker/client-node": "0.0.1",
+    "@tanker/client-browser": "0.0.1",
+    "@tanker/core": "0.0.1",
+    "@tanker/crypto": "0.0.1",
+    "@tanker/datastore-pouchdb-memory": "0.0.1",
+    "@tanker/fake-authentication": "0.0.1",
+    "@tanker/file-ponyfill": "0.0.1",
+    "@tanker/identity": "0.0.1",
+    "@tanker/test-utils": "0.0.1",
+    "@tanker/types": "0.0.1",
+    "array-find": "^1.0.0"
   }
 }

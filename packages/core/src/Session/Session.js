@@ -1,11 +1,11 @@
 // @flow
 import EventEmitter from 'events';
+import { InternalError, InvalidVerification, OperationCanceled, NetworkError, TankerError } from '@tanker/errors';
 
 import Trustchain from '../Trustchain/Trustchain';
 import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
-import { InternalError, InvalidVerification, OperationCanceled, TankerError, NetworkError } from '../errors';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { Apis } from '../Protocol/Apis';
 import { type UserData } from './UserData';
