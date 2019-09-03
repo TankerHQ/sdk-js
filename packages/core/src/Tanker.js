@@ -16,7 +16,6 @@ import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
 import type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
 import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
-import type { Streams } from './DataProtection/DataProtector';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/Resource';
@@ -30,7 +29,6 @@ type TankerDefaultOptions = $Exact<{
   url?: string,
   dataStore: DataStoreOptions,
   sdkType: string,
-  streams: Streams,
 }>;
 
 type TankerCoreOptions = $Exact<{
@@ -41,7 +39,6 @@ type TankerCoreOptions = $Exact<{
   connectTimeout?: number,
   dataStore: DataStoreOptions,
   sdkType: string,
-  streams: Streams,
 }>;
 
 export type TankerOptions = $Exact<{
@@ -75,7 +72,6 @@ export class Tanker extends EventEmitter {
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
-  _streams: Streams;
 
   static version = TANKER_SDK_VERSION;
   static statuses = statuses;
@@ -114,8 +110,6 @@ export class Tanker extends EventEmitter {
     }
 
     this._options = options;
-
-    this._streams = options.streams;
 
     const clientOptions: ClientOptions = {
       sdkInfo: {
@@ -211,7 +205,7 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.STOPPED, 'start a session');
     const userData = this._parseIdentity(identityB64);
 
-    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions, this._streams);
+    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
     this._setSession(session);
     return this.status;
   }

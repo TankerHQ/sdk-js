@@ -2,12 +2,10 @@
 import type { TankerOptions } from '@tanker/core';
 import { Tanker as TankerCore, optionsWithDefaults } from '@tanker/core';
 import PouchDB from '@tanker/datastore-pouchdb-node';
-import * as streams from '@tanker/stream-node';
 
 const defaultOptions = {
   dataStore: { adapter: PouchDB },
   sdkType: 'client-node',
-  streams,
 };
 
 class Tanker extends TankerCore {

@@ -1,21 +1,11 @@
 // @flow
 import FilePonyfill from '@tanker/file-ponyfill';
-import FileReader from '@tanker/file-reader';
+import { castData, getConstructorName } from '@tanker/types';
 
 import { expect } from './chai';
-import MergerStream, { getConstructorName } from '../MergerStream';
+import MergerStream from '../MergerStream';
 
-const toUint8Array = async (input: ArrayBuffer | Uint8Array | Blob | File): Promise<Uint8Array> => {
-  if (input instanceof ArrayBuffer)
-    return new Uint8Array(input);
-
-  if (input instanceof Uint8Array)
-    return input;
-
-  return new Uint8Array(await new FileReader(input).readAsArrayBuffer());
-};
-
-describe('MergerStream (web)', () => {
+describe('MergerStream', () => {
   let bytes: Uint8Array;
   let input: Array<Uint8Array>;
 
@@ -29,18 +19,25 @@ describe('MergerStream (web)', () => {
     ];
   });
 
-  it('assumes Uint8Array if no type given', () => {
-    const stream = new MergerStream();
-    expect(stream._type).to.equal(Uint8Array); // eslint-disable-line no-underscore-dangle
-  });
+  const testOptions = [];
 
-  [
-    { type: ArrayBuffer },
-    { type: Uint8Array },
-    { type: Blob },
-    { type: File, name: 'a-file.txt' },
-    { type: FilePonyfill, name: 'a-file-ponyfill.txt' },
-  ].forEach(options => {
+  testOptions.push({ type: ArrayBuffer });
+  testOptions.push({ type: Uint8Array });
+
+  if (global.Buffer) {
+    testOptions.push({ type: Buffer });
+  }
+
+  if (global.Blob) {
+    testOptions.push({ type: Blob, mime: 'application/octet-stream' });
+  }
+
+  if (global.File) {
+    testOptions.push({ type: File, name: 'report.pdf', mime: 'application/pdf' });
+    testOptions.push({ type: FilePonyfill, name: 'report.pdf', mime: 'application/pdf' });
+  }
+
+  testOptions.forEach(options => {
     const { type } = options;
 
     it(`can merge binary chunks into a ${getConstructorName(type)}`, async () => {
@@ -55,9 +52,15 @@ describe('MergerStream (web)', () => {
           try {
             expect(output).to.have.lengthOf(1);
             expect(output[0]).to.be.an.instanceOf(type);
-            const outputBytes = await toUint8Array(output[0]);
+
+            const outputBytes = await castData(output[0], { type: Uint8Array });
             expect(outputBytes).to.deep.equal(bytes);
-            if (type === File || type === FilePonyfill) {
+
+            if (global.Blob && output[0] instanceof global.Blob) {
+              // $FlowExpectedError
+              expect(output[0].type).to.equal(options.mime);
+            }
+            if (global.File && output[0] instanceof global.File) {
               // $FlowExpectedError
               expect(output[0].name).to.equal(options.name);
             }

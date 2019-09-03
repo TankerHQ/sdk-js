@@ -29,7 +29,6 @@ rules:
       - warn
       - error
   no-continue: 0
-  no-else-return: 0
   no-mixed-operators: 0
   no-plusplus:
     - error

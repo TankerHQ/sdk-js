@@ -4,7 +4,7 @@ import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentiti
 import { castData, getDataLength } from '@tanker/types';
 import type { PublicIdentity, PublicProvisionalUser } from '@tanker/identity';
 import type { Data } from '@tanker/types';
-import type { Readable, Transform } from '@tanker/stream-base';
+import { MergerStream, SlicerStream } from '@tanker/stream-base';
 
 import { DecryptionFailed, InternalError } from '../errors';
 import { ResourceManager } from './Resource/ResourceManager';
@@ -29,8 +29,6 @@ import { ProgressHandler } from './ProgressHandler';
 // Stream encryption will be used starting from this clear data size:
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
 
-export type Streams = { MergerStream: Transform, SlicerStream: Readable };
-
 export class DataProtector {
   _resourceManager: ResourceManager;
   _client: Client;
@@ -38,7 +36,6 @@ export class DataProtector {
   _groupManager: GroupManager;
   _localUser: LocalUser;
   _userAccessor: UserAccessor;
-  _streams: Streams;
 
   constructor(
     resourceStore: ResourceStore,
@@ -46,7 +43,6 @@ export class DataProtector {
     groupManager: GroupManager,
     localUser: LocalUser,
     userAccessor: UserAccessor,
-    streams: Streams,
   ) {
     this._resourceManager = new ResourceManager(
       resourceStore,
@@ -60,7 +56,6 @@ export class DataProtector {
     this._groupManager = groupManager;
     this._localUser = localUser;
     this._userAccessor = userAccessor;
-    this._streams = streams;
   }
 
   _makeKeyPublishBlocks(
@@ -181,9 +176,9 @@ export class DataProtector {
   }
 
   async _streamDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
-    const slicer = new this._streams.SlicerStream({ source: encryptedData });
+    const slicer = new SlicerStream({ source: encryptedData });
     const decryptor = await this.makeDecryptorStream();
-    const merger = new this._streams.MergerStream(outputOptions);
+    const merger = new MergerStream(outputOptions);
 
     const progressHandler = new ProgressHandler(progressOptions);
 
@@ -251,7 +246,7 @@ export class DataProtector {
   }
 
   async _streamEncryptData<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, b64ResourceId?: b64string): Promise<T> {
-    const slicer = new this._streams.SlicerStream({ source: clearData });
+    const slicer = new SlicerStream({ source: clearData });
     const encryptor = await this.makeEncryptorStream(sharingOptions, b64ResourceId);
 
     const clearSize = getDataLength(clearData);
@@ -259,7 +254,7 @@ export class DataProtector {
     const progressHandler = new ProgressHandler(progressOptions).start(encryptedSize);
     encryptor.on('data', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
 
-    const merger = new this._streams.MergerStream(outputOptions);
+    const merger = new MergerStream(outputOptions);
 
     return new Promise((resolve, reject) => {
       [slicer, encryptor, merger].forEach(s => s.on('error', reject));

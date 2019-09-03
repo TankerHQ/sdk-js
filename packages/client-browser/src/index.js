@@ -2,12 +2,10 @@
 import type { TankerOptions } from '@tanker/core';
 import { Tanker as TankerCore, optionsWithDefaults } from '@tanker/core';
 import Dexie from '@tanker/datastore-dexie-browser';
-import * as streams from '@tanker/stream-browser';
 
 const defaultOptions = {
   dataStore: { adapter: Dexie },
   sdkType: 'client-browser',
-  streams,
 };
 
 class Tanker extends TankerCore {

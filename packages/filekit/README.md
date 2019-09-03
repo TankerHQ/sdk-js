@@ -25,22 +25,24 @@ Our detailed documentation is available [here](https://docs.tanker.io/filekit/la
 ## Example usage
 
 ```js
-// initialize the FileKit object
+import FileKit from '@tanker/filekit';
+
+// Initialize the FileKit object
 const appId = 'Your app ID';
 const filekit = new FileKit({ appId });
 
-// opening a session
+// Start a session
 const email = 'alice@company.com';
-const tankerIdentity = await yourServer.authenticate();
+const tankerIdentity = await yourServer.authenticate(email);
 await fileKit.start(email, { identity: tankerIdentity });
 
-// encrypt and upload a file from <input type="file" id="fileInput" />
-const formFile = document.getElementById('fileItem').files[0];
-const fileId = await fileKit.upload(formFile);
+// Encrypt and upload a file from <input type="file" id="fileInput" />
+const fileToUpload = document.getElementById('fileInput').files[0];
+const fileId = await fileKit.upload(fileToUpload);
 
-// download and decrypt a file and save it
+// Download, decrypt, and save a file to disk
 await fileKit.downloadToDisk(fileId);
 
-// download and decrypt a file and get a File object
+// Download, decrypt, and get a File object
 const file = await fileKit.download(fileId);
 ```

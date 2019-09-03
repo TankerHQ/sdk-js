@@ -23,6 +23,7 @@
     "@tanker/crypto": "0.0.1",
     "@tanker/datastore-base": "0.0.1",
     "@tanker/errors": "0.0.1",
+    "@tanker/file-ponyfill": "0.0.1",
     "@tanker/global-this": "0.0.1",
     "@tanker/identity": "0.0.1",
     "@tanker/stream-base": "0.0.1",

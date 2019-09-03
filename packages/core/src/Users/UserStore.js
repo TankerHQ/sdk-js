@@ -278,9 +278,9 @@ export default class UserStore {
         selector: { deviceId: utils.toBase64(deviceId) },
       });
       return record;
-    } else {
-      throw new InternalError('Find: invalid argument');
     }
+
+    throw new InternalError('Find: invalid argument');
   }
 
   _findDevicesToUsers = async (args: FindDevicesParameters): Promise<Array<DeviceToUser>> => {
@@ -294,9 +294,9 @@ export default class UserStore {
           deviceId: { $in: hashedDeviceIds.map(utils.toBase64) }
         }
       });
-    } else {
-      throw new InternalError('Find: invalid argument');
     }
+
+    throw new InternalError('Find: invalid argument');
   }
 
   findDevice = async (args: FindDeviceParameters): Promise<?Device> => {

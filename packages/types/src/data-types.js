@@ -29,6 +29,11 @@ export const assertDataType = (value: any, argName: string): void => {
     throw new errors.InvalidArgument(argName, 'ArrayBuffer | Blob | Buffer | File | Uint8Array', value);
 };
 
+export const assertDataTypeClass = (value: any, argName: string): void => {
+  if (!dataTypeDefs.some(def => value === def.type))
+    throw new errors.InvalidArgument(argName, 'class in [ArrayBuffer | Blob | Buffer | File | Uint8Array]', value);
+};
+
 export const getConstructor = <T: Data>(instance: T): * => {
   for (const def of dataTypeDefs) {
     if (instance instanceof def.type) {
@@ -43,14 +48,13 @@ export const getConstructorName = (constructor: Object): string => {
     return 'ArrayBuffer';
   if (globalThis.Buffer && constructor === Buffer)
     return 'Buffer';
-  else if (constructor === Uint8Array)
+  if (constructor === Uint8Array)
     return 'Uint8Array';
-  else if (globalThis.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
+  if (globalThis.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
     return 'File';
-  else if (globalThis.Blob && constructor === Blob)
+  if (globalThis.Blob && constructor === Blob)
     return 'Blob';
-  else
-    throw new errors.InternalError('Assertion error: unhandled type');
+  throw new errors.InternalError('Assertion error: unhandled type');
 };
 
 export const getDataLength = (value: Data): number => {

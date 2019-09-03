@@ -366,7 +366,8 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
           } else if ('$exists' in value) {
             if (value['$exists'] && !(key in record)) { // eslint-disable-line dot-notation
               return false;
-            } else if (!value['$exists'] && (key in record)) { // eslint-disable-line dot-notation
+            }
+            if (!value['$exists'] && (key in record)) { // eslint-disable-line dot-notation
               return false;
             }
           } else {

@@ -43,10 +43,12 @@ describe('ResizerStream', () => {
 
     expect(buffer.length).to.be.equal(0);
 
-    stream.end();
+    stream.on('finish', () => {
+      expect(buffer.length).to.be.equal(1);
+      expect(buffer[0].length).to.be.equal(20);
+    });
 
-    expect(buffer.length).to.be.equal(1);
-    expect(buffer[0].length).to.be.equal(20);
+    stream.end();
   });
 
   it('stores data until outputSize is reached', async () => {
@@ -75,8 +77,11 @@ describe('ResizerStream', () => {
     for (let i = 0; i < data.length; ++i) {
       stream.write(data.subarray(i, i + 1));
     }
-    stream.end();
 
-    expect(buffer[0]).to.deep.equal(data);
+    stream.on('finish', () => {
+      expect(buffer[0]).to.deep.equal(data);
+    });
+
+    stream.end();
   });
 });

@@ -36,7 +36,7 @@ export function compareSameSizeUint8Arrays(left: Uint8Array, right: Uint8Array):
   for (let i = 0; i < left.length; i++) {
     if (left[i] < right[i])
       return -1;
-    else if (left[i] > right[i])
+    if (left[i] > right[i])
       return 1;
   }
   return 0;

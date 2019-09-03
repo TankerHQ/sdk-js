@@ -4,7 +4,7 @@ import { Transform } from 'readable-stream';
 import Uint8Buffer from './Uint8Buffer';
 
 export default class ResizerStream extends Transform {
-  _buffer: Uint8Buffer = new Uint8Buffer();
+  _buffer: Uint8Buffer;
   _outputSize: number;
 
   constructor(outputSize: number) {
@@ -16,6 +16,8 @@ export default class ResizerStream extends Transform {
       readableHighWaterMark: 1,
       readableObjectMode: true
     });
+
+    this._buffer = new Uint8Buffer();
     this._outputSize = outputSize;
   }
 
@@ -26,7 +28,7 @@ export default class ResizerStream extends Transform {
     }
   }
 
-  _pushLastChunk() {
+  async _pushLastChunk() {
     if (this._buffer.byteSize()) {
       const result = this._buffer.consume(this._buffer.byteSize());
       this.push(result);
@@ -39,9 +41,19 @@ export default class ResizerStream extends Transform {
     callback();
   }
 
-  _flush(callback: Function) {
+  // WARNING: implement _final() from Writable because it will delay the 'finish' event until
+  //          the callback is called. Implementing _flush() from Transform won't work as it
+  //          will not delay the 'finish' event if asynchronous.
+  async _final(callback: Function) {
     this._pushChunks();
-    this._pushLastChunk();
+
+    try {
+      await this._pushLastChunk();
+    } catch (error) {
+      callback(error);
+      return;
+    }
+
     callback();
   }
 }
