@@ -41,10 +41,7 @@ export default class ResizerStream extends Transform {
     callback();
   }
 
-  // WARNING: implement _final() from Writable because it will delay the 'finish' event until
-  //          the callback is called. Implementing _flush() from Transform won't work as it
-  //          will not delay the 'finish' event if asynchronous.
-  async _final(callback: Function) {
+  async _flush(callback: Function) {
     this._pushChunks();
 
     try {

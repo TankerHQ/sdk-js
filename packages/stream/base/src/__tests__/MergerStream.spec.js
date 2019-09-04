@@ -48,7 +48,7 @@ describe('MergerStream', () => {
 
       const testPromise = new Promise((resolve, reject) => {
         stream.on('error', reject);
-        stream.on('finish', async () => {
+        stream.on('end', async () => {
           try {
             expect(output).to.have.lengthOf(1);
             expect(output[0]).to.be.an.instanceOf(type);

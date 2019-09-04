@@ -44,7 +44,7 @@ describe('ResizerStream', () => {
 
     expect(buffer.length).to.be.equal(0);
 
-    stream.on('finish', () => {
+    stream.on('end', () => {
       expect(buffer.length).to.be.equal(1);
       expect(buffer[0].length).to.be.equal(20);
     });
@@ -79,7 +79,7 @@ describe('ResizerStream', () => {
       stream.write(data.subarray(i, i + 1));
     }
 
-    stream.on('finish', () => {
+    stream.on('end', () => {
       expect(buffer[0]).to.deep.equal(data);
     });
 
