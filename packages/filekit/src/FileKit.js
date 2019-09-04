@@ -31,6 +31,12 @@ export default class FileKit {
       case Tanker.statuses.IDENTITY_VERIFICATION_NEEDED: {
         throw new errors.InvalidArgument('This identity has already been used, create a new one.');
       }
+      // When hitting back or forward on the browser you can start a disposable
+      // session with the same identity twice because the browser is caching
+      // the xhr request to fake-auth (or another identity server)
+      case Tanker.statuses.READY: {
+        return;
+      }
       default:
         throw new errors.InternalError(`Assertion error: unexpected status ${status}`);
     }
