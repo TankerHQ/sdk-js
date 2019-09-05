@@ -44,8 +44,8 @@ export class CloudStorageManager {
   }
 
   async _decryptMetadata(b64EncryptedMetadata: b64string): Promise<*> {
-    const ecryptedMetadata = utils.fromBase64(b64EncryptedMetadata);
-    const decryptedMetadata = await this._dataProtector.decryptData(ecryptedMetadata, { type: Uint8Array }, {});
+    const encryptedMetadata = utils.fromBase64(b64EncryptedMetadata);
+    const decryptedMetadata = await this._dataProtector.decryptData(encryptedMetadata, { type: Uint8Array }, {});
     const jsonMetadata = utils.toString(decryptedMetadata);
     return JSON.parse(jsonMetadata);
   }
