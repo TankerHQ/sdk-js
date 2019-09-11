@@ -28,7 +28,7 @@ export class ProgressHandler {
   }
 
   start = (total: ?number) => {
-    if (typeof total === 'number' && total > 0)
+    if (typeof total === 'number' && total >= 0)
       this._totalBytes = total;
 
     this.report(0);
@@ -38,7 +38,7 @@ export class ProgressHandler {
   report = (bytesRead: number) => {
     this._currentBytes += bytesRead;
 
-    const progressReport = this._totalBytes
+    const progressReport = typeof this._totalBytes === 'number'
       ? { currentBytes: this._currentBytes, totalBytes: this._totalBytes }
       : { currentBytes: this._currentBytes };
 
