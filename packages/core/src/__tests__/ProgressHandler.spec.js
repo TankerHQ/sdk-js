@@ -76,7 +76,7 @@ describe('ProgressHandler', () => {
     }).not.to.throw();
   });
 
-  it('throws if invalid options given', async () => {
+  it('throws if constructor called with invalid options', async () => {
     [
       null,
       () => {},
@@ -86,6 +86,13 @@ describe('ProgressHandler', () => {
     ].forEach((invalidOptions, i) => {
       // $FlowExpectedError Giving invalid options
       expect(() => new ProgressHandler(invalidOptions), `failed test #${i}`).to.throw(InvalidArgument);
+    });
+  });
+
+  it('throws if start() not called with an integer >= 0', async () => {
+    [null, '42', -1, 42.9].forEach((invalidTotal, i) => {
+      // $FlowExpectedError Giving invalid options
+      expect(() => new ProgressHandler({}).start(invalidTotal), `failed test #${i}`).to.throw(InvalidArgument);
     });
   });
 });

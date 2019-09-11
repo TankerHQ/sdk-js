@@ -27,9 +27,12 @@ export class ProgressHandler {
     }
   }
 
-  start = (total: ?number) => {
-    if (typeof total === 'number' && total >= 0)
-      this._totalBytes = total;
+  start = (totalBytes: ?number) => {
+    if (typeof totalBytes !== 'undefined') {
+      if (typeof totalBytes !== 'number' || totalBytes < 0 || Math.floor(totalBytes) !== totalBytes)
+        throw new InvalidArgument('totalBytes', 'integer >= 0', totalBytes);
+      this._totalBytes = totalBytes;
+    }
 
     this.report(0);
     return this;
