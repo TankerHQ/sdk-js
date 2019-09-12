@@ -16,7 +16,14 @@ describe('Uint8Buffer', () => {
     expect(() => buffer.consume(30)).to.throw(InvalidArgument);
   });
 
-  it('can store/consume data and keeps track of stored size', () => {
+  it('can consume zero bytes from an empty buffer', () => {
+    const buffer = new Uint8Buffer();
+    const emptyUint8Array = new Uint8Array(0);
+    expect(buffer.byteSize()).to.equal(0);
+    expect(buffer.consume(0)).to.deep.equal(emptyUint8Array);
+  });
+
+  it('can store/consume bytes and keeps track of total byte size stored', () => {
     const buffer = new Uint8Buffer();
 
     const data = new Uint8Array([

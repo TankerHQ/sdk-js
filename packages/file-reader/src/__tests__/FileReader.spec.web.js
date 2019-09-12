@@ -9,6 +9,7 @@ describe('FileReader', () => {
   const asciiAsBase64 = 'VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==';
   const utf8 = '古池や蛙飛び込む水の音';
   const type = 'plain/text';
+  const empty = new Uint8Array(0);
   const binary = new Uint8Array([
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -58,6 +59,14 @@ describe('FileReader', () => {
         const content = await reader.readAsArrayBuffer();
         expect(content).to.be.an.instanceOf(ArrayBuffer);
         expect(new Uint8Array(content)).to.deep.equal(binary);
+      });
+
+      it('can read empty content', async () => {
+        const source = builder([empty], 'utf8.txt', { type });
+        const reader = new FileReader(source);
+        const content = await reader.readAsArrayBuffer();
+        expect(content).to.be.an.instanceOf(ArrayBuffer);
+        expect(new Uint8Array(content)).to.deep.equal(empty);
       });
 
       it('can read binary content in chunks of any size', async () => {
