@@ -27,6 +27,23 @@ describe('ProgressHandler', () => {
     ]);
   });
 
+  it('can report progress even if total bytes is zero', async () => {
+    const onProgress = sinon.spy();
+    const totalBytes = 0;
+
+    const handler = new ProgressHandler({ onProgress });
+    expect(onProgress.notCalled).to.be.true;
+
+    handler.start(totalBytes);
+    handler.report(0);
+    expect(onProgress.callCount).to.equal(2);
+
+    expect(onProgress.args).to.deep.equal([
+      [{ currentBytes: 0, totalBytes }],
+      [{ currentBytes: 0, totalBytes }],
+    ]);
+  });
+
   it('can report progress without a total byte size', async () => {
     const onProgress = sinon.spy();
 
@@ -59,7 +76,7 @@ describe('ProgressHandler', () => {
     }).not.to.throw();
   });
 
-  it('throws if invalid options given', async () => {
+  it('throws if constructor called with invalid options', async () => {
     [
       null,
       () => {},
@@ -69,6 +86,13 @@ describe('ProgressHandler', () => {
     ].forEach((invalidOptions, i) => {
       // $FlowExpectedError Giving invalid options
       expect(() => new ProgressHandler(invalidOptions), `failed test #${i}`).to.throw(InvalidArgument);
+    });
+  });
+
+  it('throws if start() not called with an integer >= 0', async () => {
+    [null, '42', -1, 42.9].forEach((invalidTotal, i) => {
+      // $FlowExpectedError Giving invalid options
+      expect(() => new ProgressHandler({}).start(invalidTotal), `failed test #${i}`).to.throw(InvalidArgument);
     });
   });
 });
