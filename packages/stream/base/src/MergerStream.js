@@ -34,10 +34,9 @@ export default class MergerStream<T: Destination> extends ResizerStream {
   }
 
   async _pushLastChunk() {
-    if (this._buffer.byteSize()) {
-      const uint8array = this._buffer.consume(this._buffer.byteSize());
-      const lastChunk = await castData(uint8array, this._options);
-      this.push(lastChunk);
-    }
+    // Always push last chunk even if zero bytes
+    const uint8array = this._buffer.consume(this._buffer.byteSize());
+    const lastChunk = await castData(uint8array, this._options);
+    this.push(lastChunk);
   }
 }

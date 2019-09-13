@@ -8,7 +8,8 @@ import { expect, sinon, uuid } from '@tanker/test-utils';
 import { type TestArgs } from './TestArgs';
 
 const expectProgressReport = (spy, totalBytes, maxBytesPerStep = encryptionV4.defaultMaxEncryptedChunkSize) => {
-  const stepCount = 1 + Math.ceil(totalBytes / maxBytesPerStep);
+  // add 1 for initial progress report (currentBytes = 0)
+  const stepCount = 1 + (totalBytes === 0 ? 1 : Math.ceil(totalBytes / maxBytesPerStep));
   expect(spy.callCount).to.equal(stepCount);
 
   let currentBytes = 0;
@@ -441,7 +442,7 @@ const generateEncryptTests = (args: TestArgs) => {
       await aliceLaptop.stop();
     });
 
-    forEachSize(['small', 'medium', 'big'], size => {
+    forEachSize(['empty', 'small', 'medium', 'big'], size => {
       args.resources[size].forEach(({ type, resource: clear }) => {
         it(`can encrypt and decrypt a ${size} ${getConstructorName(type)}`, async () => {
           const onProgress = sinon.spy();
@@ -513,7 +514,7 @@ const generateEncryptTests = (args: TestArgs) => {
       await aliceLaptop.stop();
     });
 
-    forEachSize(['small', 'medium'], size => {
+    forEachSize(['empty', 'small', 'medium'], size => {
       it(`can upload and download a ${size} file`, async () => {
         const { type: originalType, resource: clear } = args.resources[size][2];
 
