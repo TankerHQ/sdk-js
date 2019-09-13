@@ -64,12 +64,10 @@ describe('MergerStream', () => {
               const outputBytes = await castData(output[0], { type: Uint8Array });
               expect(outputBytes).to.deep.equal(input.bytes);
 
-              if (global.Blob && output[0] instanceof global.Blob) {
-                // $FlowExpectedError
+              if (global.Blob && output[0] instanceof global.Blob && options.mime) {
                 expect(output[0].type).to.equal(options.mime);
               }
-              if (global.File && output[0] instanceof global.File) {
-                // $FlowExpectedError
+              if (global.File && output[0] instanceof global.File && options.name) {
                 expect(output[0].name).to.equal(options.name);
               }
               resolve();
