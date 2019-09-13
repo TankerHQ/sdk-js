@@ -8,6 +8,7 @@ import { getDataLength } from '@tanker/types';
 import type { Data } from '@tanker/types';
 
 import type { Client } from '../Network/Client';
+import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProtection/Resource';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
@@ -67,7 +68,9 @@ export class CloudStorageManager {
     const { UploadStream } = streamCloudStorage[service];
 
     const { type, ...fileMetadata } = outputOptions;
-    const metadata = { ...fileMetadata, clearContentLength: totalClearSize };
+    // clearContentLength shouldn't be used since we may not have that
+    // information. We leave it here only for compatibility with older SDKs
+    const metadata = { ...fileMetadata, clearContentLength: totalClearSize, encryptionFormat: getStreamEncryptionFormatDescription() };
     const encryptedMetadata = await this._encryptAndShareMetadata(metadata, resourceId);
 
     const slicer = new SlicerStream({ source: clearData });
@@ -107,14 +110,18 @@ export class CloudStorageManager {
     const downloadChunkSize = 1024 * 1024;
     const downloader = new DownloadStream(resourceId, url, downloadChunkSize);
 
-    const encryptedMetadata = await downloader.getMetadata();
-    const { clearContentLength, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
+    const { metadata: encryptedMetadata, encryptedContentLength } = await downloader.getMetadata();
+    const { encryptionFormat, clearContentLength, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
     const combinedOutputOptions = extractOutputOptions({ type: defaultDownloadType, ...outputOptions, ...fileMetadata });
     const merger = new MergerStream(combinedOutputOptions);
 
     const decryptor = await this._dataProtector.makeDecryptorStream();
 
-    const progressHandler = new ProgressHandler(progressOptions).start(clearContentLength);
+    // for compatibility
+    const clearSize = encryptionFormat
+      ? getClearSize(encryptionFormat, encryptedContentLength)
+      : clearContentLength;
+    const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
     decryptor.on('data', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
 
     return pipeStreams({ streams: [downloader, decryptor, merger], resolveEvent: 'data' });

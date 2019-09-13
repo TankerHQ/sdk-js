@@ -32,7 +32,7 @@ export class DownloadStream extends Readable {
     }
   }
 
-  async getMetadata() {
+  async getMetadata(): Promise<{ metadata: string, encryptedContentLength: number }> {
     const response = await fetch(this._url, { method: 'HEAD' });
 
     const { ok, status, statusText, headers } = response;
@@ -45,7 +45,7 @@ export class DownloadStream extends Readable {
     }
 
     const metadata = headers.get('x-goog-meta-tanker-metadata');
-    return metadata;
+    return { metadata, encryptedContentLength: parseInt(headers.get('content-length'), 10) };
   }
 
   async _read(/* size: number */) {

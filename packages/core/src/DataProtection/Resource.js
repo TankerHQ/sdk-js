@@ -19,6 +19,11 @@ export type Resource = {
 // By reading an input up to this size, we're sure to be able to extract the resource ID.
 export const SAFE_EXTRACTION_LENGTH = 1 + 16 + 24 + 5 * (1024 * 1024);
 
+type EncryptionFormatDescription = {
+  version: number,
+  encryptedChunkSize?: number,
+};
+
 export function makeResource(): Resource {
   const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
   const resourceId = generichash(key, tcrypto.MAC_SIZE);
@@ -29,7 +34,20 @@ export const getSimpleEncryption = () => encryptionV3;
 
 export const getSimpleEncryptionWithFixedResourceId = () => encryptionV5;
 
+export const getStreamEncryptionFormatDescription = (): EncryptionFormatDescription => ({
+  version: 4,
+  encryptedChunkSize: encryptionV4.defaultMaxEncryptedChunkSize,
+});
+
 const encryptionFormats = [null, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5];
+
+export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescription, encryptedSize: number): number => {
+  const encryption: Object = encryptionFormats[encryptionFormatDescription.version];
+  if (!encryption)
+    throw new InvalidArgument(`Unhandled format version ${encryptionFormatDescription.version} used in encryptedData`);
+
+  return encryption.getClearSize(encryptedSize, encryptionFormatDescription.encryptedChunkSize);
+};
 
 export const extractEncryptionFormat = (encryptedData: Uint8Array) => {
   let version;
