@@ -4,17 +4,22 @@ import ReactDOM from 'react-dom';
 import type { Tanker, b64string, EmailVerification } from '@tanker/client-browser';
 
 import Root from './components/Root';
+import domReady from './domReady';
 
 export class VerificationUI {
   _tanker: Tanker;
   _container: Element;
+  _domReady: Promise<void>;
 
   constructor(tanker: Tanker) {
+    this._domReady = domReady().then(this._initDom);
+    this._tanker = tanker;
+  }
+
+  _initDom = () => {
     this._container = window.document.createElement('div');
     this._container.className = 'tanker-verification-ui';
     window.document.body.appendChild(this._container);
-
-    this._tanker = tanker;
   }
 
   _mountAndWrap = (email: string, func: EmailVerification => Promise<void>): Promise<void> => (
@@ -27,7 +32,9 @@ export class VerificationUI {
     })
   )
 
-  _mount = (email: string, check: Function, exit: Function) => {
+  _mount = async (email: string, check: Function, exit: Function) => {
+    await this._domReady;
+
     ReactDOM.render(<Root appId={this._tanker.appId} url={this._tanker.options.url || 'https://api.tanker.io'} email={email} check={check} exit={exit} />, this._container);
   }
 
