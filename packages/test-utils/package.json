@@ -7,8 +7,8 @@
   "dependencies": {
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "chai-exclude": "^1.0.12",
+    "chai-exclude": "^2.0.2",
     "sinon": "^4.5.0",
-    "uuid": "^3.3.2"
+    "uuid": "^3.3.3"
   }
 }

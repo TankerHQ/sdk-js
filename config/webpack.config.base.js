@@ -63,7 +63,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
   const base = {
     target,
     mode,
-    devtool: devtool || mode === 'development' ? 'source-map' : false,
+    devtool: devtool || (mode === 'development' ? 'source-map' : false),
 
     context: path.resolve(__dirname, '..'),
 
