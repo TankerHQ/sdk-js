@@ -5,7 +5,7 @@ class FileReader {
   _source: Blob;
   _reader: globalThis.FileReader;
   _readPositions: $Exact<{ start: number, end: number }> = { start: 0, end: 0 };
-  _currentRead: ?$Exact<{ resolve: Function, reject: Function }>;
+  _currentRead: ?$Exact<{ resolve: (Uint8Array) => void, reject: (Error) => void }>;
 
   constructor(source: Blob | File) {
     this._source = source;

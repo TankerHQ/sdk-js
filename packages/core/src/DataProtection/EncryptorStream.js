@@ -2,6 +2,7 @@
 import { utils, encryptionV4, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
+import type { DoneCallback } from '@tanker/stream-base';
 
 export default class EncryptorStream extends Transform {
   _maxClearChunkSize: number;
@@ -88,7 +89,7 @@ export default class EncryptorStream extends Transform {
     return encryptedBuffer;
   }
 
-  _transform(clearData: Uint8Array, encoding: ?string, done: Function) {
+  _transform(clearData: Uint8Array, encoding: ?string, done: DoneCallback) {
     if (!(clearData instanceof Uint8Array)) {
       done(new InvalidArgument('clearData', 'Uint8Array', clearData));
     } else {
@@ -96,7 +97,7 @@ export default class EncryptorStream extends Transform {
     }
   }
 
-  _flush(done: Function) {
+  _flush(done: DoneCallback) {
     this._encryptorStream.on('end', done);
     this._resizerStream.end();
   }

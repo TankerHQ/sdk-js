@@ -1,6 +1,7 @@
 // @flow
 import { InvalidArgument, InternalError, NetworkError } from '@tanker/errors';
 import { Writable } from '@tanker/stream-base';
+import type { DoneCallback } from '@tanker/stream-base';
 
 import { fetch } from '../fetch';
 import { retry } from '../retry';
@@ -39,7 +40,7 @@ export class UploadStream extends Writable {
     }
   }
 
-  async _write(chunk: Uint8Array, encoding: ?string, callback: Function) {
+  async _write(chunk: Uint8Array, encoding: ?string, done: DoneCallback) {
     try {
       const chunkLength = chunk.length;
       const prevLength = this._uploadedLength;
@@ -74,13 +75,13 @@ export class UploadStream extends Writable {
 
       this.emit('uploaded', chunk);
     } catch (e) {
-      return callback(e);
+      return done(e);
     }
 
-    callback(null); // success
+    done(null); // success
   }
 
-  async _final(callback: Function) {
+  async _final(done: DoneCallback) {
     try {
       await retry(async () => {
         this.log(`Completing S3 multipart upload of size ${this._contentLength}`);
@@ -97,9 +98,9 @@ export class UploadStream extends Writable {
         retries: 2,
       });
     } catch (e) {
-      return callback(e);
+      return done(e);
     }
-    callback(null);
+    done(null);
   }
 
   makeCompleteMultipartUploadBody(): string {

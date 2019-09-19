@@ -95,7 +95,7 @@ const makeOnKeyDown = (onChange, previousValue) => (
 const padMask = '        ';
 const pad = (string: string) => (string.length >= padMask.length ? string : string + padMask.slice(string.length));
 
-type Props = { id: string, value: string, onChange?: Function };
+type Props = { id: string, value: string, onChange?: (nextValue: string, prevValue: string) => void };
 const VerificationCodeField = ({ id, value, onChange, ...props }: Props) => (
   <Rectangles {...props}>
     <NumberField

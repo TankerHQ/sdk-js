@@ -75,7 +75,7 @@ const findError = error => {
 };
 const getVerificationError = error => findError(error) || 'An unknown error occurred while checking the code.';
 
-type Props = { fetch: Function, appId: string, url: string, email: string, check: string => Promise<void>, context: Context };
+type Props = { fetch: (...Array<any>) => any, appId: string, url: string, email: string, check: string => Promise<void>, context: Context };
 class VerifyDevice extends React.Component<Props> {
   componentDidMount() {
     this.sendVerificationEmail();

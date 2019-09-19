@@ -1,6 +1,8 @@
 // @flow
 import { errors as dbErrors, transform, type DataStore, type SortParams, type Schema, type BaseConfig } from '@tanker/datastore-base';
 
+const { deserializeBinary: fromDB, serializeBinary: toDB } = transform;
+
 export type Config = BaseConfig;
 
 export type { Schema };
@@ -19,17 +21,10 @@ function extractSortKey(sort: SortParams): string {
 
 export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase implements DataStore<PouchDB> {
   /*:: _dbs: { [name: string]: PouchDB }; */
-  fromDB: Function;
-  toDB: Function;
 
   constructor(dbs: { [name: string]: PouchDB }) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_dbs', { value: dbs, writable: true });
-
-    // both levelDB and memory adapters need serialization
-    this.fromDB = transform.deserializeBinary;
-    this.toDB = transform.serializeBinary;
-
     return this;
   }
 
@@ -163,7 +158,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
     try {
       const recordWithoutRev = { ...record };
       delete recordWithoutRev._rev;
-      const result = await this._dbs[table].put(this.toDB(recordWithoutRev));
+      const result = await this._dbs[table].put(toDB(recordWithoutRev));
       return { ...recordWithoutRev, _rev: result.rev };
     } catch (e) {
       if (e.status === 409) {
@@ -186,7 +181,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
           }
         }
       }
-      await this._dbs[table].put(this.toDB(rec));
+      await this._dbs[table].put(toDB(rec));
     } catch (e) {
       if (e.status === 409) {
         throw new dbErrors.RecordNotUnique(e);
@@ -206,7 +201,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
         delete recordWithoutRev._rev;
         return recordWithoutRev;
       });
-      await this._dbs[table].bulkDocs(this.toDB(allWithoutRevs));
+      await this._dbs[table].bulkDocs(toDB(allWithoutRevs));
     } catch (e) {
       if (e.status === 409) {
         throw new dbErrors.RecordNotUnique(e);
@@ -235,7 +230,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
           return rev ? { ...rec, _rev: rev } : rec;
         });
       }
-      await this._dbs[table].bulkDocs(this.toDB(all));
+      await this._dbs[table].bulkDocs(toDB(all));
     } catch (e) {
       if (e.status === 409) {
         throw new dbErrors.RecordNotUnique(e);
@@ -255,7 +250,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
 
   get = async (table: string, id: string) => {
     try {
-      return this.fromDB(await this._dbs[table].get(id));
+      return fromDB(await this._dbs[table].get(id));
     } catch (e) {
       if (e.status === 404) {
         throw new dbErrors.RecordNotFound(e);
@@ -272,7 +267,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
       const { doc } = row;
       // skip _design records stored alongside the data!
       if (doc._id.substr(0, 7) !== '_design') {
-        records.push(this.fromDB(doc));
+        records.push(fromDB(doc));
       }
     });
     return records;
@@ -292,7 +287,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
     }
 
     const { docs } = await this._dbs[table].find({ ...query, selector });
-    const records = this.fromDB(docs);
+    const records = fromDB(docs);
     return records;
   }
 

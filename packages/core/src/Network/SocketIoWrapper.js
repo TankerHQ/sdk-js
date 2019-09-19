@@ -64,9 +64,9 @@ export default class SocketIoWrapper {
 
   isOpen = () => this.socket.connected
 
-  on = (event: string, cb: Function): number => this.synchronizedSocket.on(event, cb);
+  on = (event: string, cb: () => mixed): number => this.synchronizedSocket.on(event, cb);
 
-  once = (event: string, cb: Function): number => this.synchronizedSocket.once(event, cb);
+  once = (event: string, cb: () => mixed): number => this.synchronizedSocket.once(event, cb);
 
   removeListener = async (id: number) => this.synchronizedSocket.removeListener(id);
 

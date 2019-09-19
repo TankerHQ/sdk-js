@@ -1,6 +1,7 @@
 // @flow
 import { InvalidArgument, NetworkError } from '@tanker/errors';
 import { Writable } from '@tanker/stream-base';
+import type { DoneCallback } from '@tanker/stream-base';
 
 import { fetch } from '../fetch';
 import { retry } from '../retry';
@@ -48,7 +49,7 @@ export class UploadStream extends Writable {
     this.log(`using upload URL ${this._uploadUrl}`);
   }
 
-  async _write(chunk: Uint8Array, encoding: ?string, callback: Function) {
+  async _write(chunk: Uint8Array, encoding: ?string, done: DoneCallback) {
     try {
       await this._initializing;
 
@@ -86,10 +87,10 @@ export class UploadStream extends Writable {
 
       this.emit('uploaded', chunk);
     } catch (e) {
-      return callback(e);
+      return done(e);
     }
 
-    callback(null); // success
+    done(null); // success
   }
 }
 

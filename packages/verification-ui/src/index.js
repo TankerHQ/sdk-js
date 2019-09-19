@@ -26,13 +26,13 @@ export class VerificationUI {
     new Promise(resolve => {
       this._mount(
         email,
-        async verificationCode => func({ email, verificationCode }),
+        verificationCode => func({ email, verificationCode }),
         resolve
       );
     })
   )
 
-  _mount = async (email: string, check: Function, exit: Function) => {
+  _mount = async (email: string, check: string => Promise<void>, exit: () => void) => {
     await this._domReady;
 
     ReactDOM.render(<Root appId={this._tanker.appId} url={this._tanker.options.url || 'https://api.tanker.io'} email={email} check={check} exit={exit} />, this._container);

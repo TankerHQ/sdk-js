@@ -3,10 +3,12 @@ import { InternalError } from '@tanker/errors';
 
 import PromiseWrapper from './PromiseWrapper';
 
+type Callback = () => mixed;
+
 // Loose interface that will match any nodeJS EventEmitter or SocketIo client.
 interface EventEmitter {
-  on(eventName: string, cb: Function): any;
-  removeListener(eventName: string, cb: Function): any;
+  on(eventName: string, cb: Callback): any;
+  removeListener(eventName: string, cb: Callback): any;
   emit(eventName: string, ...args: Array<any>): any;
 }
 
@@ -16,9 +18,9 @@ class Listener {
   runningPromises: Array<Promise<void>> = [];
   enabled: bool = true;
   eventName: string;
-  _cb: Function;
+  _cb: Callback;
 
-  constructor(eventName: string, callback: Function) {
+  constructor(eventName: string, callback: Callback) {
     this.eventName = eventName;
     this._cb = callback;
   }
@@ -75,7 +77,7 @@ export default class SynchronizedEventEmitter {
   }
 
   // Same as EventEmitter.prototype.on, but returns an id for removeListener
-  on(eventName: string, callback: Function): number {
+  on(eventName: string, callback: Callback): number {
     const listener = new Listener(eventName, callback);
     const id = this.nextListenerId();
     this.eventListeners[id] = listener;
@@ -83,7 +85,7 @@ export default class SynchronizedEventEmitter {
     return id;
   }
 
-  once(eventName: string, callback: Function): number {
+  once(eventName: string, callback: Callback): number {
     let id;
     const onceCallback = async (...args) => {
       // Unsubscribe listener now, and don't wait for this listener execution

@@ -2,6 +2,7 @@
 import { Transform } from 'readable-stream';
 
 import Uint8Buffer from './Uint8Buffer';
+import type { DoneCallback } from './types';
 
 export default class ResizerStream extends Transform {
   _buffer: Uint8Buffer;
@@ -35,22 +36,22 @@ export default class ResizerStream extends Transform {
     }
   }
 
-  _transform(chunk: Uint8Array, encoding: ?string, callback: Function) {
+  _transform(chunk: Uint8Array, encoding: ?string, done: DoneCallback) {
     this._buffer.push(chunk);
     this._pushChunks();
-    callback();
+    done();
   }
 
-  async _flush(callback: Function) {
+  async _flush(done: DoneCallback) {
     this._pushChunks();
 
     try {
       await this._pushLastChunk();
     } catch (error) {
-      callback(error);
+      done(error);
       return;
     }
 
-    callback();
+    done();
   }
 }
