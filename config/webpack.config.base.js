@@ -59,11 +59,11 @@ const getBabelLoaders = (env) => {
   ];
 };
 
-const makeBaseConfig = ({ mode, target, react, hmre }) => {
+const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
   const base = {
     target,
     mode,
-    devtool: mode === 'development' ? 'source-map' : false,
+    devtool: devtool || (mode === 'development' ? 'source-map' : false),
 
     context: path.resolve(__dirname, '..'),
 
@@ -90,13 +90,12 @@ const makeBaseConfig = ({ mode, target, react, hmre }) => {
       new webpack.DefinePlugin({
         'process.env': {
           NODE_ENV: JSON.stringify(mode),
-          TANKER_TOKEN: JSON.stringify(process.env.TANKER_TOKEN),
-          TANKER_URL: JSON.stringify(process.env.TANKER_URL),
-          CI: JSON.stringify(process.env.CI),
         },
         __DEVELOPMENT__: mode === 'development',
         __PRODUCTION__: mode === 'production',
       }),
+
+      ...(plugins || []),
     ],
 
     node: undefined,

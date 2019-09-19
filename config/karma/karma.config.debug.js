@@ -1,4 +1,6 @@
 // @noflow
+const webpack = require('webpack');
+
 const karmaConfig = require('./karma.config.base');
 const { makeBaseConfig } = require('../webpack.config.base');
 
@@ -6,7 +8,20 @@ module.exports = (config) => {
   config.set({
     ...karmaConfig,
 
-    webpack: makeBaseConfig({ mode: 'development', target: 'web', react: true }),
+    webpack: makeBaseConfig({
+      mode: 'development',
+      target: 'web',
+      react: true,
+      plugins: [
+        new webpack.DefinePlugin({
+          'process.env': {
+            TANKER_TOKEN: JSON.stringify(process.env.TANKER_TOKEN),
+            TANKER_URL: JSON.stringify(process.env.TANKER_URL),
+            CI: JSON.stringify(process.env.CI),
+          },
+        }),
+      ]
+    }),
 
     // level of logging
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG

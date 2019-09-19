@@ -1,4 +1,5 @@
 
+// @noflow
 const customLaunchers = {
   Safari: {
     base: 'SafariNative'
@@ -113,6 +114,6 @@ const customLaunchers = {
     os: 'Android',
     os_version: '5.0',
   },
-}
+};
 
 module.exports = { customLaunchers };
