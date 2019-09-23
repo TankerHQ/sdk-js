@@ -31,7 +31,7 @@ import { type Block } from '../Blocks/Block';
 import TrustchainVerifier from './TrustchainVerifier';
 import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
 
-const uniq = (array: Array<any>): Array<any> => [...new Set(array)];
+const uniq = (array: Array<string>): Array<string> => [...new Set(array)];
 
 export default class TrustchainPuller {
   _catchUpInProgress: ?Promise<void> = null;
@@ -128,7 +128,7 @@ export default class TrustchainPuller {
     return done.promise;
   }
 
-  _catchUp = async (extraUsers: Array<Uint8Array>, extraGroups: Array<Uint8Array>): Promise<void> => {
+  _catchUp = async (extraUsers: Array<b64string>, extraGroups: Array<b64string>): Promise<void> => {
     const blocks = await this.client.send('get blocks 2', {
       index: this._trustchainStore.lastBlockIndex,
       trustchain_id: utils.toBase64(this.client.trustchainId),
