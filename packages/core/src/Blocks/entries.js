@@ -103,11 +103,10 @@ export function dbEntryToEntry(dbEntry: any): any {
 
 function verificationFieldsFromBlock(block: Block): VerificationFields {
   const { index, author, nature, signature } = block;
-  const typeSafeNature: Nature = (nature: any);
 
   return {
     index,
-    nature: typeSafeNature,
+    nature,
     author,
     signature,
     hash: hashBlock(block),
