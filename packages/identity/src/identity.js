@@ -56,6 +56,14 @@ export type ProvisionalUserKeys = {|
 export type SecretIdentity = SecretPermanentIdentity | SecretProvisionalIdentity;
 export type PublicIdentity = PublicPermanentIdentity | PublicProvisionalIdentity;
 
+function isPermanentIdentity(identity: SecretIdentity | PublicIdentity): %checks {
+  return identity.target === 'user';
+}
+
+function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): %checks {
+  return identity.target === 'email';
+}
+
 function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b64string { // eslint-disable-line no-underscore-dangle
   return utils.toB64Json(identity);
 }
@@ -77,7 +85,7 @@ export function _deserializePermanentIdentity(identity: b64string): SecretPerman
     throw new InvalidArgument(`Invalid permanent identity provided: ${identity}`);
   }
 
-  if (result.target !== 'user')
+  if (!isPermanentIdentity(result))
     throw new InvalidArgument(`Expected a permanent identity, but contained target "${result.target}"`);
 
   return result;
@@ -92,7 +100,7 @@ export function _deserializeProvisionalIdentity(identity: b64string): SecretProv
     throw new InvalidArgument(`Invalid provisional identity provided: ${identity}`);
   }
 
-  if (result.target !== 'email')
+  if (!isProvisionalIdentity(result))
     throw new InvalidArgument(`Expected a provisional identity, but contained target "${result.target}"`);
 
   return result;
@@ -106,29 +114,25 @@ export function _deserializePublicIdentity(identity: b64string): PublicIdentity 
   }
 }
 
-export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<PublicIdentity>): * { // eslint-disable-line no-underscore-dangle
+export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<PublicIdentity>) { // eslint-disable-line no-underscore-dangle
   const permanentIdentities: Array<PublicPermanentIdentity> = [];
   const provisionalIdentities: Array<PublicProvisionalIdentity> = [];
 
   for (const identity of identities) {
-    const isPermanent = identity.target === 'user';
-
-    if (isPermanent) {
+    if (isPermanentIdentity(identity)) {
       // Check that the permanent identities are not secret permanent identities
       if ('user_secret' in identity) {
         throw new InvalidArgument('unexpected secret identity, only public identities are allowed');
       }
 
-      const publicIdentity: PublicPermanentIdentity = (identity: any);
-      permanentIdentities.push(publicIdentity);
+      permanentIdentities.push(identity);
     } else {
       // Check that the provisional identities are not secret provisional identities
       if ('private_encryption_key' in identity) {
         throw new InvalidArgument('unexpected secret identity, only public identities are allowed');
       }
 
-      const publicIdentity: PublicProvisionalIdentity = (identity: any);
-      provisionalIdentities.push(publicIdentity);
+      provisionalIdentities.push(identity);
     }
   }
 
@@ -179,7 +183,7 @@ export async function createProvisionalIdentity(trustchainId: b64string, email: 
 export async function getPublicIdentity(tankerIdentity: b64string): Promise<b64string> {
   const identity = _deserializeIdentity(tankerIdentity);
 
-  if (identity.target === 'user') {
+  if (isPermanentIdentity(identity)) {
     const { trustchain_id, target, value } = identity; // eslint-disable-line camelcase
     return _serializeIdentity({ trustchain_id, target, value });
   }
