@@ -1,5 +1,5 @@
 // @flow
-import { InvalidArgument, NetworkError } from '@tanker/errors';
+import { InvalidArgument, InternalError, NetworkError } from '@tanker/errors';
 import { Writable } from '@tanker/stream-base';
 
 import { fetch } from '../fetch';
@@ -8,7 +8,6 @@ import { retry } from '../retry';
 export class UploadStream extends Writable {
   _contentLength: number;
   _headers: Object;
-  _initializing: Promise<void>;
   _urls: Array<string>;
   _uploadedLength: number;
   _recommendedChunkSize: number;
@@ -21,7 +20,7 @@ export class UploadStream extends Writable {
     });
 
     this._urls = urls.slice(0, -1);
-    this._completeUrl = urls.slice(-1)[0];
+    this._completeUrl = urls[urls.length - 1];
     this._headers = headers;
     this._contentLength = contentLength;
     this._uploadedLength = 0;
@@ -29,7 +28,9 @@ export class UploadStream extends Writable {
     this._verbose = verbose;
     this._uploadedPartETags = [];
 
-    this._initializing = this.initialize();
+    const expectedNumChunks = Math.ceil(this._contentLength / this._recommendedChunkSize);
+    if (this._urls.length !== expectedNumChunks)
+      throw new InternalError(`S3 upload request with invalid number of signed chunk URLs: ${this._urls.length} but expected ${expectedNumChunks}`);
   }
 
   log(message: string) {
@@ -38,17 +39,8 @@ export class UploadStream extends Writable {
     }
   }
 
-  async initialize() {
-    this.log('initializing');
-    const expectedNumChunks = Math.ceil(this._contentLength / this._recommendedChunkSize);
-    if (this._urls.length !== expectedNumChunks)
-      throw new InvalidArgument(`S3 upload request with invalid number of signed chunk URLs: ${this._urls.length} but expected ${expectedNumChunks}`);
-  }
-
   async _write(chunk: Uint8Array, encoding: ?string, callback: Function) {
     try {
-      await this._initializing;
-
       const chunkLength = chunk.length;
       const prevLength = this._uploadedLength;
       const nextLength = prevLength + chunkLength;
@@ -66,7 +58,6 @@ export class UploadStream extends Writable {
 
         const response = await fetch(this._urls[curChunkIndex], {
           method: 'PUT',
-          headers: {},
           body: chunk,
         });
 
@@ -97,7 +88,6 @@ export class UploadStream extends Writable {
         const body = this.makeCompleteMultipartUploadBody();
         const response = await fetch(this._completeUrl, {
           method: 'POST',
-          headers: {},
           body,
         });
         const { ok, status, statusText } = response;

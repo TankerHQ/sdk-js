@@ -59,7 +59,7 @@ export class CloudStorageManager {
 
     const { type, ...fileMetadata } = outputOptions;
     // clearContentLength shouldn't be used since we may not have that
-    // information. We leave it here only for compatibility with older SDKs
+    // information. We leave it here only for compatibility with SDKs up to 2.2.1
     const metadata = { ...fileMetadata, clearContentLength: totalClearSize, encryptionFormat: getStreamEncryptionFormatDescription() };
     const encryptedMetadata = await this._encryptAndShareMetadata(metadata, resourceId);
 
@@ -127,7 +127,7 @@ export class CloudStorageManager {
 
     const decryptor = await this._dataProtector.makeDecryptorStream();
 
-    // for compatibility
+    // For compatibility with SDKs up to 2.2.1
     const clearSize = encryptionFormat
       ? getClearSize(encryptionFormat, encryptedContentLength)
       : clearContentLength;
