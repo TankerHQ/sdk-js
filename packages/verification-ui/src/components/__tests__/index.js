@@ -6,5 +6,5 @@ Enzyme.configure({ adapter: new Adapter() });
 
 // require all modules ending in ".spec.js" or ".spec.web.js" from the
 // current directory and all subdirectories
-const testsContext = (require: any).context('.', true, /\.spec(\.web)?\.js$/);
+const testsContext = require.context('.', true, /\.spec(\.web)?\.js$/);
 testsContext.keys().forEach(testsContext);
