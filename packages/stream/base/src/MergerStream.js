@@ -28,7 +28,7 @@ export default class MergerStream<T: Destination> extends ResizerStream {
       throw new InvalidArgument('options.name', 'string', name);
 
     if (lastModified && typeof lastModified !== 'number')
-      throw new InvalidArgument('options.lastModified', 'string', lastModified);
+      throw new InvalidArgument('options.lastModified', 'number', lastModified);
 
     this._options = options;
   }
