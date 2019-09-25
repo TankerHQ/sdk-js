@@ -98,6 +98,18 @@ class UserV2 extends BaseUser {
   getRevocationPromise() {
     return new Promise(resolve => this._tanker.once('deviceRevoked', resolve));
   }
+
+  async upload(file) {
+    return this._tanker.upload(file);
+  }
+
+  async download(fileId) {
+    return this._tanker.download(fileId);
+  }
+
+  async share(resourceId, userId) {
+    return this._tanker.share([resourceId], { shareWithUsers: [userId] });
+  }
 }
 
 function makeTanker(Tanker, adapter, appId, prefix) {
