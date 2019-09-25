@@ -40,7 +40,7 @@ export default class TrustchainPuller {
   _trustchainVerifier: TrustchainVerifier;
   _unverifiedStore: UnverifiedStore;
   client: Client;
-  synchronizedClient: SynchronizedEventEmitter;
+  synchronizedClient: SynchronizedEventEmitter<Client>;
   events: Array<number>;
   _extraUsers: Array<Uint8Array>;
   _extraGroups: Array<Uint8Array>;
