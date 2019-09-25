@@ -102,6 +102,20 @@ describe('SynchronizedEventEmitter', () => {
       registeredCalls.other[0].resolve();
     });
 
+    it('should wait for "once" listener call to complete before resolving', async () => {
+      const id = synchronizedEmitter.once('event', registerCalls('event'));
+
+      source.emit('event');
+      expect(registeredCalls.event).to.have.lengthOf(1);
+
+      const removePromise = synchronizedEmitter.removeListener(id);
+      await expectPending(removePromise, 10);
+
+      // Unblock single listener call
+      registeredCalls.event[0].resolve();
+      await expect(removePromise).to.be.fulfilled;
+    });
+
     it('should prevent the listener to be called during or after its removal', async () => {
       const id = synchronizedEmitter.on('event', registerCalls('event'));
 

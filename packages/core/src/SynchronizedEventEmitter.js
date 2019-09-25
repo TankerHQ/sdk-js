@@ -86,11 +86,11 @@ export default class SynchronizedEventEmitter<T> {
   }
 
   once(eventName: string, listener: ListenerFn): number {
-    const id = this.on(eventName, async (...args) => {
+    const id = this.on(eventName, (...args) => {
       // Unsubscribe listener now, and don't wait for this listener execution
       // to finish after running the listener, or you would dead-lock...
       this.removeListener(id);
-      listener(...args);
+      return listener(...args);
     });
 
     return id;
