@@ -9,7 +9,7 @@ import VerifyDevice from '../VerifyDevice';
 const shallowNoMount = elt => shallow(elt, { disableLifecycleMethods: true });
 const contextHolder = makeContextHolder();
 const defaultProps = {
-  fetch: () => {},
+  fetch: (uri: string, options: { method: string, body: string }) => {}, // eslint-disable-line no-unused-vars
   appId: '1234',
   email: 'a@a.aa',
   url: 'https://thisisatest.test',
@@ -17,7 +17,7 @@ const defaultProps = {
   context: { state: contextHolder.state, actions: contextHolder.actions },
 };
 
-const makeFakeFetch = (status: number, body: Object): Function => {
+const makeFakeFetch = (status: number, body: Object) => {
   let callCount = 0;
   let callArgs;
 

@@ -422,7 +422,7 @@ const generateEncryptTests = (args: TestArgs) => {
   };
 
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
-  const forEachSize = (sizes: Array<string>, fun: Function) => {
+  const forEachSize = (sizes: Array<string>, fun: (size: string) => void) => {
     const availableSizes = Object.keys(args.resources);
     return sizes.filter(size => availableSizes.indexOf(size) !== -1).forEach(fun);
   };

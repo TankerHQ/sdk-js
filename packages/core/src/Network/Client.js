@@ -140,7 +140,7 @@ export class Client extends EventEmitter {
     return this._authenticating;
   }
 
-  registerListener = (event: string, cb: Function): number => {
+  registerListener = (event: string, cb: (...Array<any>) => void): number => {
     const id = this.socket.on(event, cb);
     this.sessionConnections.add(id);
     return id;

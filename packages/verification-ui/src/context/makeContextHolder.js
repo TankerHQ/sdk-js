@@ -19,7 +19,7 @@ export type State = $Exact<{
 }>;
 
 export type BoundActions = $Exact<{
-  setVerificationCode: Function,
+  setVerificationCode: string => void,
   reset: () => void,
   sendStart: number => void,
   sendError: Error => void,

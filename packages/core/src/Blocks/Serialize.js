@@ -2,10 +2,7 @@
 import varint from 'varint';
 import { InternalError } from '@tanker/errors';
 
-export type ParseResult<T> = {
-  value: T,
-  newOffset: number,
-};
+type Unserializer = (src: Uint8Array, offset: number) => { newOffset: number, [name: string]: any };
 
 export function getArray(src: Uint8Array, offset: number, name: string = 'value'): Object {
   let pos = offset;
@@ -21,14 +18,14 @@ export function setStaticArray(src: Uint8Array, dest: Uint8Array, offset: number
   return offset + src.length;
 }
 
-export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: string = 'value'): Object {
+export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: string = 'value'): { newOffset: number, [name: string]: Uint8Array } {
   if (offset + size > buf.length)
     throw new InternalError('Out of bounds read in getStaticArray');
   const arr = new Uint8Array(buf.subarray(offset, offset + size)); // don't use slice, doesn't work on IE11
   return { [name]: arr, newOffset: offset + size };
 }
 
-export function unserializeGenericSub(data: Uint8Array, functions: Array<Function>, offset: number, name: string = 'value'): Object {
+export function unserializeGenericSub(data: Uint8Array, functions: Array<Unserializer>, offset: number, name: string = 'value'): Object {
   let newOffset = offset;
   let result = {};
   for (const f of functions) {
@@ -40,7 +37,7 @@ export function unserializeGenericSub(data: Uint8Array, functions: Array<Functio
   return { [name]: result, newOffset };
 }
 
-export function unserializeGeneric<T>(data: Uint8Array, functions: Array<Function>): T {
+export function unserializeGeneric<T>(data: Uint8Array, functions: Array<Unserializer>): T {
   const result = unserializeGenericSub(data, functions, 0);
 
   if (result.newOffset !== data.length)
@@ -49,7 +46,7 @@ export function unserializeGeneric<T>(data: Uint8Array, functions: Array<Functio
   return ((result.value: any): T);
 }
 
-export function unserializeList(data: Uint8Array, f: Function, offset: number, name: string = 'value') {
+export function unserializeList(data: Uint8Array, f: Unserializer, offset: number, name: string = 'value') {
   let newOffset = offset;
 
   const len = varint.decode(data, newOffset);

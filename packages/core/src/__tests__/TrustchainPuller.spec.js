@@ -1,5 +1,5 @@
 // @flow
-import { random } from '@tanker/crypto';
+import { random, type b64string } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import TrustchainPuller from '../Trustchain/TrustchainPuller';
@@ -66,14 +66,13 @@ describe('TrustchainPuller', () => {
       //   - raise an exception if parallel runs detected
       //   - "run" for 100ms
       //   - counts the number of calls
-      tp._catchUp = (extraUsers: ?Array<Uint8Array>) => { // eslint-disable-line no-underscore-dangle
+      tp._catchUp = (extraUsers: Array<b64string>) => { // eslint-disable-line no-underscore-dangle
         if (running) {
           expect.fail(true, false, 'a catchUp should not run if a previous one is still running');
         }
 
-        if (extraUsers) {
-          extraUsersPulled.push(...extraUsers);
-        }
+        extraUsersPulled.push(...extraUsers);
+
         calls += 1;
         running = true;
         return new Promise(resolve => setTimeout(() => {

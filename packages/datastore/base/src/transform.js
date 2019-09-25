@@ -4,60 +4,29 @@ import { utils } from '@tanker/crypto';
 const base64Prefix = '__BASE64__';
 const base64PrefixLength = base64Prefix.length;
 
-function _isOrCast(value: any, constructor: any, mode: string = 'is') { // eslint-disable-line no-underscore-dangle
-  // Normal check
-  if (value instanceof constructor) {
-    return mode === 'cast' ? value : true;
-  }
+const toString = Object.prototype.toString;
 
-  const { name } = constructor;
+// Fallback method to test if value constructed in another parent frame (instanceof won't work)
+// See Safari issue: https://github.com/feross/buffer/issues/166
+const getType = (value: mixed): string => {
+  if (value == null)
+    return value === undefined ? 'Undefined' : 'Null';
 
-  // Check if value constructed in another parent frame
-  // See Safari issue: https://github.com/feross/buffer/issues/166
-  if (typeof window !== 'undefined') {
-    let w = window;
-    while (w && w.parent && w.parent !== w) {
-      w = w.parent;
-      // Verify that w[name] is a constructor that can be used with instanceof
-      if (w[name] && w[name].prototype && value instanceof w[name]) {
-        return mode === 'cast' ? new constructor(value) : true;
-      }
-    }
-  }
+  return toString.call(value).slice(8, -1);
+};
 
-  if (mode === 'cast')
-    throw new Error(`Unexpectedly trying to cast value into ${name}`);
-
-  return false;
-}
-
-function instanceOf(value: any, constructor: any) {
-  return _isOrCast(value, constructor, 'is');
-}
-
-function cast(value: any, constructor: any) {
-  return _isOrCast(value, constructor, 'cast');
-}
-
-function getTypeAsString(value: any) {
-  if (instanceOf(value, Uint8Array)) return 'uint8';
-  if (instanceOf(value, Array)) return 'array';
-  if (value === null) return 'null';
-  return typeof value;
-}
-
-function walk(value: any, fun: Function) {
+function walk(value: any, fun: (v: any, type: string) => any) {
   let result;
-  const type = getTypeAsString(value);
+  const type = getType(value);
 
   switch (type) {
-    case 'object':
+    case 'Object':
       result = { ...value };
       Object.keys(result).forEach(k => {
         result[k] = walk(result[k], fun);
       });
       break;
-    case 'array':
+    case 'Array':
       result = [...value];
       result.forEach((el, k) => {
         result[k] = walk(el, fun);
@@ -71,8 +40,8 @@ function walk(value: any, fun: Function) {
 }
 
 export function serializeBinary(value: any) {
-  return walk(value, (v: any, type: any) => {
-    if (type === 'uint8') {
+  return walk(value, (v: any, type: string) => {
+    if (type === 'Uint8Array') {
       return base64Prefix + utils.toBase64(v);
     }
     return v;
@@ -80,8 +49,8 @@ export function serializeBinary(value: any) {
 }
 
 export function deserializeBinary(value: any) {
-  return walk(value, (v: any, type: any) => {
-    if (type === 'string') {
+  return walk(value, (v: any, type: string) => {
+    if (type === 'String') {
       if (v.slice(0, base64PrefixLength) === base64Prefix) {
         return utils.fromBase64(v.slice(base64PrefixLength));
       }
@@ -92,10 +61,13 @@ export function deserializeBinary(value: any) {
 
 // Note: "walk()" will also fix/cast Object and Array
 export function fixObjects(value: any) {
-  return walk(value, (v: any, type: any) => {
-    if (type === 'uint8') {
-      return cast(v, Uint8Array);
-    }
+  return walk(value, (v: any, type: string) => {
+    if (type === 'Uint8Array' && !(v instanceof Uint8Array))
+      return new Uint8Array(v);
+
+    if (type === 'Array' && !(v instanceof Array))
+      return new Array(v);
+
     return v;
   });
 }

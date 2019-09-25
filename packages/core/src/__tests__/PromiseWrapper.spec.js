@@ -3,7 +3,7 @@ import { expect } from '@tanker/test-utils';
 
 import PromiseWrapper from '../PromiseWrapper';
 
-const afterSomeTimeDo = (f: Function): TimeoutID => setTimeout(f, 20);
+const afterSomeTimeDo = (f: () => void): TimeoutID => setTimeout(f, 20);
 
 describe('PromiseWrapper', () => {
   let value;

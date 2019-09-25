@@ -3,7 +3,7 @@ import Socket from 'socket.io-client';
 import { NetworkError } from '@tanker/errors';
 
 import PromiseWrapper from '../PromiseWrapper';
-import SynchronizedEventEmitter from '../SynchronizedEventEmitter';
+import SynchronizedEventEmitter, { type ListenerFn } from '../SynchronizedEventEmitter';
 
 class Request extends PromiseWrapper<string> {
   eventName: string;
@@ -47,7 +47,7 @@ type CreationParam = {
 
 export default class SocketIoWrapper {
   socket: Socket;
-  synchronizedSocket: SynchronizedEventEmitter;
+  synchronizedSocket: SynchronizedEventEmitter<Socket>;
   runningRequests: Array<Request> = [];
 
   constructor({ socket, url, connectTimeout, sdkInfo }: CreationParam) {
@@ -64,9 +64,9 @@ export default class SocketIoWrapper {
 
   isOpen = () => this.socket.connected
 
-  on = (event: string, cb: Function): number => this.synchronizedSocket.on(event, cb);
+  on = (event: string, listener: ListenerFn): number => this.synchronizedSocket.on(event, listener);
 
-  once = (event: string, cb: Function): number => this.synchronizedSocket.once(event, cb);
+  once = (event: string, listener: ListenerFn): number => this.synchronizedSocket.once(event, listener);
 
   removeListener = async (id: number) => this.synchronizedSocket.removeListener(id);
 

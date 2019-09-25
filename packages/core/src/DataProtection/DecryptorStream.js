@@ -2,6 +2,8 @@
 import { encryptionV4, utils, type Key } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
+import type { DoneCallback } from '@tanker/stream-base';
+
 
 export type ResourceIdKeyMapper = {
   findKey: (Uint8Array) => Promise<Key>
@@ -99,7 +101,7 @@ export default class DecryptorStream extends Transform {
     this.emit('initialized');
   }
 
-  async _transform(encryptedData: Uint8Array, encoding: ?string, done: Function) {
+  async _transform(encryptedData: Uint8Array, encoding: ?string, done: DoneCallback) {
     if (!(encryptedData instanceof Uint8Array))
       return done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
 
@@ -114,7 +116,7 @@ export default class DecryptorStream extends Transform {
     this._resizerStream.write(encryptedData, done);
   }
 
-  _flush(done: Function) {
+  _flush(done: DoneCallback) {
     // When end() is called before any data has been written:
     if (!this._state.initialized) {
       done();

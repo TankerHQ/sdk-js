@@ -3,38 +3,40 @@ import { InternalError } from '@tanker/errors';
 
 import PromiseWrapper from './PromiseWrapper';
 
+export type ListenerFn = (...args: Array<mixed>) => void | Promise<void>;
+
 // Loose interface that will match any nodeJS EventEmitter or SocketIo client.
-interface EventEmitter {
-  on(eventName: string, cb: Function): any;
-  removeListener(eventName: string, cb: Function): any;
-  emit(eventName: string, ...args: Array<any>): any;
+interface EventEmitter<T> {
+  on(eventName: string, listener: ListenerFn): T;
+  removeListener(eventName: string, listener: ListenerFn): T;
+  emit(eventName: string, ...args: Array<any>): T | bool;
 }
 
-// Wrapper that tracks the callbacks currently running and wait for them to
+// Wrapper that tracks the listeners currently running and wait for them to
 // complete when being disabled.
-class Listener {
+class SynchronizedListener {
   runningPromises: Array<Promise<void>> = [];
   enabled: bool = true;
   eventName: string;
-  _cb: Function;
+  _listener: ListenerFn;
 
-  constructor(eventName: string, callback: Function) {
+  constructor(eventName: string, listener: ListenerFn) {
     this.eventName = eventName;
-    this._cb = callback;
+    this._listener = listener;
   }
 
-  cb = async (...args) => {
-    // callback was disconnected, discard
+  listener = async (...args) => {
+    // listener has been disconnected, discard call
     if (!this.enabled) return;
 
     // create a promise to track the current execution of the listener
     const running = new PromiseWrapper();
     this.runningPromises.push(running.promise);
 
-    // run the callback and resolve the promise when it's finished
+    // run the listener and resolve the promise when it's finished
     try {
-      // works even if cb doesn't return a promise
-      await this._cb(...args);
+      // works even if listener doesn't return a promise
+      await this._listener(...args);
     } finally {
       running.resolve();
 
@@ -57,57 +59,56 @@ class Listener {
 //
 // The wrapped EventEmitter is still usable and must be used to emit signals.
 //
-// Only callbacks registered/unregistered through the SynchronizedEventEmitter
+// Only listeners registered/unregistered through the SynchronizedEventEmitter
 // will receive its guarantees
-export default class SynchronizedEventEmitter {
-  subEmitter: EventEmitter;
-  lastId: number = 0;
+export default class SynchronizedEventEmitter<T> {
+  subEmitter: EventEmitter<T>;
+  lastListenerId: number = 0;
 
-  eventListeners = {};
+  synchronizedListeners = {};
 
-  constructor(eventEmitter: EventEmitter) {
+  constructor(eventEmitter: EventEmitter<T>) {
     this.subEmitter = eventEmitter;
   }
 
   nextListenerId = () => {
-    this.lastId += 1;
-    return this.lastId;
+    this.lastListenerId += 1;
+    return this.lastListenerId;
   }
 
   // Same as EventEmitter.prototype.on, but returns an id for removeListener
-  on(eventName: string, callback: Function): number {
-    const listener = new Listener(eventName, callback);
+  on(eventName: string, listener: ListenerFn): number {
+    const synchronizedListener = new SynchronizedListener(eventName, listener);
     const id = this.nextListenerId();
-    this.eventListeners[id] = listener;
-    this.subEmitter.on(eventName, listener.cb);
+    this.synchronizedListeners[id] = synchronizedListener;
+    this.subEmitter.on(eventName, synchronizedListener.listener);
     return id;
   }
 
-  once(eventName: string, callback: Function): number {
-    let id;
-    const onceCallback = async (...args) => {
+  once(eventName: string, listener: ListenerFn): number {
+    const id = this.on(eventName, (...args) => {
       // Unsubscribe listener now, and don't wait for this listener execution
-      // to finish after running the callback, or you would dead-lock...
+      // to finish after running the listener, or you would dead-lock...
       this.removeListener(id);
-      callback(...args);
-    };
-    id = this.on(eventName, onceCallback);
+      return listener(...args);
+    });
+
     return id;
   }
 
   // Remove a listener
-  // When this function returns, it is guaranteed that no callback is currently
-  // running and no more callback will be run ever again
+  // When this function returns, it is guaranteed that the targeted listener is
+  // not running and will never be run ever again
   async removeListener(id: number) {
-    const listener = this.eventListeners[id];
+    const synchronizedListener = this.synchronizedListeners[id];
 
-    if (!listener)
-      throw new InternalError(`could not find listener with id=${id}`);
+    if (!synchronizedListener)
+      throw new InternalError(`could not find synchronizedListener with id=${id}`);
 
-    this.subEmitter.removeListener(listener.eventName, listener.cb);
+    this.subEmitter.removeListener(synchronizedListener.eventName, synchronizedListener.listener);
 
-    await listener.disable();
+    await synchronizedListener.disable();
 
-    delete this.eventListeners[id];
+    delete this.synchronizedListeners[id];
   }
 }

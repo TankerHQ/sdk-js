@@ -14,26 +14,19 @@ class UnsupportedTypeError extends Error {
   }
 }
 
+const iframe = (typeof window !== 'undefined') && window.parent && window.parent !== window;
+const fromDB = iframe ? transform.fixObjects : transform.identity;
+
 Dexie.dataStoreName = 'DexieBrowser';
 
 export default () => class DexieBrowserStore implements DataStore<Dexie> {
   /*:: _db: Dexie; */
   /*:: _indexes: { [table: string]: { [field: string]: bool } }; */
-  fromDB: Function;
 
   constructor(db: Dexie) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_db', { value: db, writable: true });
     Object.defineProperty(this, '_indexes', { value: {}, writable: true });
-
-    const iframe = (typeof window !== 'undefined') && window.parent && window.parent !== window;
-
-    if (iframe) {
-      this.fromDB = transform.fixObjects;
-    } else {
-      this.fromDB = transform.identity;
-    }
-
     return this;
   }
 
@@ -200,7 +193,7 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
   get = async (table: string, id: string) => {
     let record;
     try {
-      record = this.fromDB(await this._db.table(table).get(id));
+      record = fromDB(await this._db.table(table).get(id));
     } catch (e) {
       throw new dbErrors.UnknownError(e);
     }
@@ -215,7 +208,7 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
 
   getAll = async (table: string) => {
     const records = await this._db.table(table).toArray();
-    return this.fromDB(records);
+    return fromDB(records);
   }
 
   find = async (table: string, query?: { selector?: Object, sort?: SortParams, limit?: number } = {}) => {
@@ -269,7 +262,7 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
       q = q.toArray();
     }
 
-    return this.fromDB(await q);
+    return fromDB(await q);
   }
 
   first = async (table: string, query?: { selector?: Object, sort?: SortParams } = {}) => {

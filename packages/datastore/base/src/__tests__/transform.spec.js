@@ -10,10 +10,9 @@ describe('datastore transform operations', () => {
     expect(identity(obj)).to.equal(obj);
   });
 
-  it('should return the value with correct Uint8Array constructor when calling fixObjects', () => {
-    // not testable without creating a frame, but at least test the normal case.
-    const obj = { array: new Uint8Array(42) };
-    const array = [obj.array];
+  it('should be a no-op when calling fixObjects on objects of the current frame', () => {
+    const obj = { key: new Uint8Array(42) };
+    const array = [new Uint8Array(42)];
 
     expect(fixObjects(obj)).to.deep.equal(obj);
     expect(fixObjects(array)).to.deep.equal(array);

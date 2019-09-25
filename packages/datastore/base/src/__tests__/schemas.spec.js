@@ -3,7 +3,7 @@
 import { expect } from '@tanker/test-utils';
 
 import { SchemaError } from '../errors';
-import { mergeSchemas } from '../index';
+import { mergeSchemas } from '../schemas';
 
 describe('datastore schemas', () => {
   it('should throw when schemas have different versions', () => {

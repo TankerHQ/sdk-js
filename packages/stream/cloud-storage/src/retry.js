@@ -1,7 +1,7 @@
 // @flow
 type RetryOptions = $Exact<{
   retries: number,
-  delayGenerator?: Function,
+  delayGenerator?: (retries: number) => Generator<number, void, void>,
 }>;
 
 function* noDelayGenerator(retries: number): Generator<number, void, void> {
