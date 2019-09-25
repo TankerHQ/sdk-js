@@ -93,6 +93,30 @@ function generateRevocationV2Test(args) {
   });
 }
 
+function generateFilekitTest(args) {
+  it(`uploads with ${args.version} and downloads with current code`, async () => {
+    const buf = Buffer.from('compat tests', 'utf8');
+    const fileId = await args.versionBob.upload(buf);
+    let downloaded = await args.currentBob.download(fileId);
+    expect(downloaded).to.deep.equal(buf);
+
+    await args.versionBob.share(fileId, await args.versionAlice.id);
+    downloaded = await args.currentAlice.download(fileId);
+    expect(downloaded).to.deep.equal(buf);
+  });
+
+  it(`uploads with current code and downloads with ${args.version}`, async () => {
+    const buf = Buffer.from('compat tests', 'utf8');
+    const fileId = await args.currentBob.upload(buf);
+    let downloaded = await args.versionBob.download(fileId);
+    expect(downloaded).to.deep.equal(buf);
+
+    await args.currentBob.share(fileId, await args.versionAlice.id);
+    downloaded = await args.versionAlice.download(fileId);
+    expect(downloaded).to.deep.equal(buf);
+  });
+}
+
 const generatorMap = {
   encrypt: generateEncryptTest,
   group: generateGroupTest,
@@ -100,6 +124,7 @@ const generatorMap = {
   verification: generateVerificationTest,
   revocationV1: generateRevocationV1Test,
   revocationV2: generateRevocationV2Test,
+  filekit: generateFilekitTest,
 };
 
 function generateV1Tests(opts) {
