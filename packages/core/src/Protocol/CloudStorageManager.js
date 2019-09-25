@@ -1,13 +1,14 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
-import { MergerStream, SlicerStream } from '@tanker/stream-base';
+import { MergerStream, ResizerStream, SlicerStream } from '@tanker/stream-base';
 import type { Readable, Writable } from '@tanker/stream-base';
 import streamCloudStorage from '@tanker/stream-cloud-storage';
 import { getDataLength } from '@tanker/types';
 import type { Data } from '@tanker/types';
 
 import type { Client } from '../Network/Client';
+import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProtection/Resource';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
@@ -43,8 +44,8 @@ export class CloudStorageManager {
   }
 
   async _decryptMetadata(b64EncryptedMetadata: b64string): Promise<*> {
-    const ecryptedMetadata = utils.fromBase64(b64EncryptedMetadata);
-    const decryptedMetadata = await this._dataProtector.decryptData(ecryptedMetadata, { type: Uint8Array }, {});
+    const encryptedMetadata = utils.fromBase64(b64EncryptedMetadata);
+    const decryptedMetadata = await this._dataProtector.decryptData(encryptedMetadata, { type: Uint8Array }, {});
     const jsonMetadata = utils.toString(decryptedMetadata);
     return JSON.parse(jsonMetadata);
   }
@@ -56,22 +57,31 @@ export class CloudStorageManager {
     const totalClearSize = getDataLength(clearData);
     const totalEncryptedSize = encryptor.getEncryptedSize(totalClearSize);
 
-    const { url, headers, service } = await this._client.send('get file upload url', {
+    const { type, ...fileMetadata } = outputOptions;
+    // clearContentLength shouldn't be used since we may not have that
+    // information. We leave it here only for compatibility with SDKs up to 2.2.1
+    const metadata = { ...fileMetadata, clearContentLength: totalClearSize, encryptionFormat: getStreamEncryptionFormatDescription() };
+    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, resourceId);
+
+    const {
+      urls,
+      headers,
+      service,
+      recommended_chunk_size: recommendedChunkSize
+    } = await this._client.send('get file upload url', {
       resource_id: resourceId,
+      metadata: encryptedMetadata,
       upload_content_length: totalEncryptedSize,
     });
 
     if (!streamCloudStorage[service])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
 
-    const { UploadStream } = streamCloudStorage[service];
-
-    const { type, ...fileMetadata } = outputOptions;
-    const metadata = { ...fileMetadata, clearContentLength: totalClearSize };
-    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, resourceId);
+    const streamService = streamCloudStorage[service];
+    const { UploadStream } = streamService;
 
     const slicer = new SlicerStream({ source: clearData });
-    const uploader = new UploadStream(url, headers, totalEncryptedSize, encryptedMetadata);
+    const uploader = new UploadStream(urls, headers, totalEncryptedSize, recommendedChunkSize, encryptedMetadata);
 
     const progressHandler = new ProgressHandler(progressOptions).start(totalEncryptedSize);
     uploader.on('uploaded', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
@@ -85,6 +95,9 @@ export class CloudStorageManager {
     if (service === 'GCS' && isEdge()) {
       const merger = new MergerStream({ type: Uint8Array });
       streams.push(merger);
+    } else if (service === 'S3') {
+      const resizer = new ResizerStream(recommendedChunkSize);
+      streams.push(resizer);
     }
 
     streams.push(uploader);
@@ -95,7 +108,7 @@ export class CloudStorageManager {
   }
 
   async download<T: Data>(resourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
-    const { url, service } = await this._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
+    const { head_url: headUrl, get_url: getUrl, service } = await this._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
       resource_id: resourceId,
     });
 
@@ -105,16 +118,20 @@ export class CloudStorageManager {
     const { DownloadStream } = streamCloudStorage[service];
 
     const downloadChunkSize = 1024 * 1024;
-    const downloader = new DownloadStream(resourceId, url, downloadChunkSize);
+    const downloader = new DownloadStream(resourceId, headUrl, getUrl, downloadChunkSize);
 
-    const encryptedMetadata = await downloader.getMetadata();
-    const { clearContentLength, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
+    const { metadata: encryptedMetadata, encryptedContentLength } = await downloader.getMetadata();
+    const { encryptionFormat, clearContentLength, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
     const combinedOutputOptions = extractOutputOptions({ type: defaultDownloadType, ...outputOptions, ...fileMetadata });
     const merger = new MergerStream(combinedOutputOptions);
 
     const decryptor = await this._dataProtector.makeDecryptorStream();
 
-    const progressHandler = new ProgressHandler(progressOptions).start(clearContentLength);
+    // For compatibility with SDKs up to 2.2.1
+    const clearSize = encryptionFormat
+      ? getClearSize(encryptionFormat, encryptedContentLength)
+      : clearContentLength;
+    const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
     decryptor.on('data', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
 
     return pipeStreams({ streams: [downloader, decryptor, merger], resolveEvent: 'data' });

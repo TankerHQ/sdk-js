@@ -1,7 +1,6 @@
 // @flow
 import type { b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
-import FilePonyfill from '@tanker/file-ponyfill';
 import globalThis from '@tanker/global-this';
 import { getConstructor, type Data } from '@tanker/types';
 
@@ -64,30 +63,22 @@ export const extractOutputOptions = <T: Data>(options: Object, input?: Data): Ou
   const outputOptions = {};
   outputOptions.type = outputType;
 
-  if (
-    globalThis.Blob && outputType === globalThis.Blob
-    || globalThis.File && outputType === globalThis.File
-    || FilePonyfill && outputType === FilePonyfill
-  ) {
-    if (input instanceof globalThis.Blob) {
-      outputOptions.mime = input.type;
-    }
-    if (input instanceof globalThis.File && (outputType === globalThis.File || outputType === FilePonyfill)) {
-      outputOptions.name = input.name;
-      outputOptions.lastModified = input.lastModified;
-    }
+  if (globalThis.Blob && input instanceof globalThis.Blob) {
+    outputOptions.mime = input.type;
+  }
+  if (globalThis.File && input instanceof globalThis.File) {
+    outputOptions.name = input.name;
+    outputOptions.lastModified = input.lastModified;
+  }
 
-    if (typeof options.mime === 'string') {
-      outputOptions.mime = options.mime;
-    }
-    if (outputType === globalThis.File || outputType === globalThis.FilePonyfill) {
-      if (typeof options.name === 'string') {
-        outputOptions.name = options.name;
-      }
-      if (typeof options.lastModified === 'number') {
-        outputOptions.lastModified = options.lastModified;
-      }
-    }
+  if (typeof options.mime === 'string') {
+    outputOptions.mime = options.mime;
+  }
+  if (typeof options.name === 'string') {
+    outputOptions.name = options.name;
+  }
+  if (typeof options.lastModified === 'number') {
+    outputOptions.lastModified = options.lastModified;
   }
 
   return outputOptions;
