@@ -27,21 +27,25 @@ export type VerificationMethod = EmailVerificationMethod | PassphraseVerificatio
 export type EmailVerification = $Exact<{ email: string, verificationCode: string }>;
 export type PassphraseVerification = $Exact<{ passphrase: string }>;
 export type KeyVerification = $Exact<{ verificationKey: string }>;
+export type GoogleVerification = $Exact<{ oauthIdToken: string }>;
 
-export type Verification = EmailVerification | PassphraseVerification | KeyVerification;
-export type RemoteVerification = EmailVerification | PassphraseVerification;
+export type Verification = EmailVerification | PassphraseVerification | KeyVerification | GoogleVerification;
+export type RemoteVerification = EmailVerification | PassphraseVerification | GoogleVerification;
+
+const validMethods = ['email', 'passphrase', 'verificationKey', 'oauthIdToken'];
+const validKeys = [...validMethods, 'verificationCode'];
 
 export const assertVerification = (verification: Verification) => {
   if (!verification || typeof verification !== 'object' || verification instanceof Array)
     throw new InvalidArgument('verification', 'object', verification);
 
-  if (Object.keys(verification).some(k => k !== 'verificationKey' && k !== 'email' && k !== 'passphrase' && k !== 'verificationCode'))
-    throw new InvalidArgument('verification', 'should only contain keys in ["email", "passphrase", "verificationCode", "verificationKey"]', verification);
+  if (Object.keys(verification).some(k => validKeys.indexOf(k) === -1))
+    throw new InvalidArgument('verification', `should only contain keys in ${JSON.stringify(validKeys)}`, verification);
 
-  const methodCound = ['email', 'passphrase', 'verificationKey'].reduce((count, key) => count + (key in verification ? 1 : 0), 0);
+  const methodCound = validMethods.reduce((count, key) => count + (key in verification ? 1 : 0), 0);
 
   if (methodCound !== 1)
-    throw new InvalidArgument('verification', 'should contain a single verification method in ["email", "passphrase", "verificationKey"]', verification);
+    throw new InvalidArgument('verification', `should contain a single verification method in ${JSON.stringify(validMethods)}`, verification);
 
   if ('email' in verification) {
     if (typeof verification.email !== 'string')
@@ -54,5 +58,7 @@ export const assertVerification = (verification: Verification) => {
     throw new InvalidArgument('verification', 'passphrase should be a string', verification.passphrase);
   } else if ('verificationKey' in verification && typeof verification.verificationKey !== 'string') {
     throw new InvalidArgument('verification', 'verificationKey should be a string', verification.verificationKey);
+  } else if ('oauthIdToken' in verification && typeof verification.oauthIdToken !== 'string') {
+    throw new InvalidArgument('verification', 'oauthIdToken should be a string', verification.oauthIdToken);
   }
 };

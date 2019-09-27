@@ -2,15 +2,46 @@
 import { errors, statuses, type Tanker, type Verification, type VerificationMethod } from '@tanker/core';
 import { utils, type b64string } from '@tanker/crypto';
 import { expect, uuid } from '@tanker/test-utils';
+import fetchPonyfill from 'fetch-ponyfill';
+import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
 import { type TestArgs } from './TestArgs';
+import { commonSettings } from './Helpers';
+
+const { fetch } = fetchPonyfill({ Promise });
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
+async function getGoogleIdToken(refreshToken: string): Promise<string> {
+  const formData = JSON.stringify({
+    client_id: commonSettings.googleAuth.clientId,
+    client_secret: commonSettings.googleAuth.clientSecret,
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+  });
+
+  const response = await fetch('https://www.googleapis.com/oauth2/v4/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: formData,
+  });
+  const data = await response.json();
+  return data.id_token;
+}
+
 const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod) => {
+  const methodToKey = {
+    email: 'email',
+    passphrase: 'passphrase',
+    oauth: 'oauthIdToken',
+    verificationKey: 'verificationKey',
+  };
+
   // $FlowExpectedError email might not be defined
   const { type, email } = method;
-  expect(type in verification).to.be.true;
+  expect(methodToKey[type] in verification).to.be.true;
 
   if (type === 'email') {
     // $FlowIKnow I tested the 'email' type already
@@ -188,6 +219,93 @@ const generateVerificationTests = (args: TestArgs) => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const verificationCode = await appHelper.getVerificationCode('john@doe.com');
         await expect(expectVerification(bobPhone, bobIdentity, { email: 'john@doe.com', verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
+      });
+    });
+
+    describe('verification by google id token', () => {
+      const martineRefreshToken = commonSettings.googleAuth.martineRefreshToken;
+      const kevinRefreshToken = commonSettings.googleAuth.kevinRefreshToken;
+
+      let martineIdToken: string;
+      let kevinIdToken: string;
+
+      before(async () => {
+        martineIdToken = await getGoogleIdToken(martineRefreshToken);
+        kevinIdToken = await getGoogleIdToken(kevinRefreshToken);
+      });
+
+      it('registers and verifies with a google id token', async () => {
+        await bobLaptop.registerIdentity({ oauthIdToken: martineIdToken });
+        await expect(expectVerification(bobPhone, bobIdentity, { oauthIdToken: martineIdToken })).to.be.fulfilled;
+      });
+
+      it('fails to verify a token with incorrect signature', async () => {
+        await bobLaptop.registerIdentity({ oauthIdToken: martineIdToken });
+        const jwtBinParts = martineIdToken.split('.').map(utils.fromBase64);
+        jwtBinParts[2][5] += 1; // break signature
+        const forgedIdToken = jwtBinParts.map(utils.toSafeBase64).join('.').replace(/=/g, '');
+        await expect(expectVerification(bobPhone, bobIdentity, { oauthIdToken: forgedIdToken })).to.be.rejectedWith(/failed to verify signature/);
+      });
+
+      it('fails to verify a valid token for the wrong user', async () => {
+        await bobLaptop.registerIdentity({ oauthIdToken: martineIdToken });
+        await expect(expectVerification(bobPhone, bobIdentity, { oauthIdToken: kevinIdToken })).to.be.rejectedWith(/Wrong subject/);
+      });
+
+      it('updates and verifies with a google id token', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+        await expect(bobLaptop.setVerificationMethod({ oauthIdToken: martineIdToken })).to.be.fulfilled;
+
+        await bobPhone.start(bobIdentity);
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+        await expect(bobPhone.verifyIdentity({ oauthIdToken: martineIdToken })).to.be.fulfilled;
+        expect(bobPhone.status).to.equal(READY);
+      });
+
+      it('fails to attach a provisional identity for the wrong google account', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+        const aliceIdentity = await args.appHelper.generateIdentity();
+        const aliceLaptop = args.makeTanker();
+        await aliceLaptop.start(aliceIdentity);
+        await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+        const email = 'the-ceo@tanker.io';
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
+
+        const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({
+          status: bobLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'email', email },
+        });
+
+        await expect(bobLaptop.verifyProvisionalIdentity({ oauthIdToken: martineIdToken })).to.be.rejectedWith(/does not match provisional identity/);
+      });
+
+      it('decrypt data shared with an attached provisional identity', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+        const aliceIdentity = await args.appHelper.generateIdentity();
+        const aliceLaptop = args.makeTanker();
+        await aliceLaptop.start(aliceIdentity);
+        await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+        const email = commonSettings.googleAuth.martineEmail;
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
+        const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
+
+        const clearText = 'Rivest Shamir Adleman';
+        const cipherText = await aliceLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({
+          status: bobLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'email', email },
+        });
+
+        await bobLaptop.verifyProvisionalIdentity({ oauthIdToken: martineIdToken });
+
+        const decrypted = await bobLaptop.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
       });
     });
 

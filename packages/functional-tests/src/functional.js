@@ -2,7 +2,7 @@
 import { utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 
-import { AppHelper, tankerUrl, idToken } from './Helpers';
+import { AppHelper, tankerUrl, idToken, commonSettings } from './Helpers';
 import type { TestArgs, TestResources } from './TestArgs';
 
 import generateStreamEncryptor from './encryptorStream';
@@ -22,7 +22,7 @@ export function generateFunctionalTests(
   makeTanker: (appId: b64string) => Tanker,
   generateTestResources: () => TestResources,
 ) {
-  if (!tankerUrl || !idToken) {
+  if (!tankerUrl || !idToken || !commonSettings) {
     // Those functional tests create an app automatically and require a TANKER_TOKEN to run
     // They also require a TANKER_URL to know to which Tanker server they should talk to
     if (process.env.CI) {

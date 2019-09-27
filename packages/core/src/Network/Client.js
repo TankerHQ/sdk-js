@@ -48,6 +48,7 @@ const serverErrorMap = {
   device_not_found: InvalidVerification,
   group_too_big: GroupTooBig,
   invalid_delegation_signature: InvalidVerification,
+  invalid_google_id_token: InvalidVerification,
   invalid_passphrase: InvalidVerification,
   invalid_verification_code: InvalidVerification,
   too_many_attempts: TooManyAttempts,

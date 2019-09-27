@@ -11,7 +11,7 @@ import LocalUser from '../Session/LocalUser';
 import Trustchain from '../Trustchain/Trustchain';
 import Storage from '../Session/Storage';
 import { formatVerificationRequest } from '../Session/requests';
-import { statuses, type EmailVerificationMethod, type Status, type EmailVerification } from '../Session/types';
+import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type GoogleVerification } from '../Session/types';
 import UserAccessor from '../Users/UserAccessor';
 
 type TankerProvisionalKeys = {
@@ -98,15 +98,26 @@ export default class DeviceManager {
     throw new InternalError(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
   }
 
-  async verifyProvisionalIdentity(verification: EmailVerification) {
-    if (!('email' in verification))
+  async verifyProvisionalIdentity(verification: EmailVerification | GoogleVerification) {
+    if (!('email' in verification) && !('oauthIdToken' in verification))
       throw new InternalError(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
 
     if (!this._provisionalIdentity)
       throw new PreconditionFailed('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
 
-    if (this._provisionalIdentity.value !== verification.email)
+    if (verification.email && this._provisionalIdentity.value !== verification.email)
       throw new InvalidArgument('"verification.email" does not match provisional identity');
+
+    if (verification.oauthIdToken) {
+      let jwtPayload;
+      try {
+        jwtPayload = JSON.parse(utils.toString(utils.fromBase64(verification.oauthIdToken.split('.')[1])));
+      } catch (e) {
+        throw new InvalidArgument('Failed to parse "verification.oauthIdToken"');
+      }
+      if (this._provisionalIdentity.value !== jwtPayload.email)
+        throw new InvalidArgument('"verification.oauthIdToken" does not match provisional identity');
+    }
 
     const tankerKeys = await this._verifyAndGetProvisionalIdentityKeys(verification);
     if (tankerKeys)
@@ -133,7 +144,7 @@ export default class DeviceManager {
     return tankerProvisionalKeys(result);
   }
 
-  async _verifyAndGetProvisionalIdentityKeys(verification: EmailVerification): Promise<?TankerProvisionalKeys> {
+  async _verifyAndGetProvisionalIdentityKeys(verification: EmailVerification | GoogleVerification): Promise<?TankerProvisionalKeys> {
     const result = await this._client.send('get provisional identity', b64RequestObject({
       verification: formatVerificationRequest(verification, this._localUser),
     }));
