@@ -139,24 +139,24 @@ export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<
   return { permanentIdentities, provisionalIdentities };
 }
 
-export async function createIdentity(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): Promise<b64string> {
-  if (!trustchainId || typeof trustchainId !== 'string')
-    throw new InvalidArgument('trustchainId', 'b64string', trustchainId);
-  if (!trustchainPrivateKey || typeof trustchainPrivateKey !== 'string')
-    throw new InvalidArgument('trustchainPrivateKey', 'b64string', trustchainPrivateKey);
+export async function createIdentity(appId: b64string, appSecret: b64string, userId: string): Promise<b64string> {
+  if (!appId || typeof appId !== 'string')
+    throw new InvalidArgument('appId', 'b64string', appId);
+  if (!appSecret || typeof appSecret !== 'string')
+    throw new InvalidArgument('appSecret', 'b64string', appSecret);
   if (!userId || typeof userId !== 'string')
     throw new InvalidArgument('email', 'string', email);
-  const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
+  const obfuscatedUserId = obfuscateUserId(utils.fromBase64(appId), userId);
 
   const ephemeralKeyPair = tcrypto.makeSignKeyPair();
 
   const toSign = utils.concatArrays(ephemeralKeyPair.publicKey, obfuscatedUserId);
-  const delegationSignature = tcrypto.sign(toSign, utils.fromBase64(trustchainPrivateKey));
+  const delegationSignature = tcrypto.sign(toSign, utils.fromBase64(appSecret));
 
-  const userSecret = createUserSecretB64(trustchainId, userId);
+  const userSecret = createUserSecretB64(appId, userId);
 
   const permanentIdentity: SecretPermanentIdentity = {
-    trustchain_id: trustchainId,
+    trustchain_id: appId,
     target: 'user',
     value: utils.toBase64(obfuscatedUserId),
     delegation_signature: utils.toBase64(delegationSignature),
@@ -168,16 +168,16 @@ export async function createIdentity(trustchainId: b64string, trustchainPrivateK
   return _serializeIdentity(permanentIdentity);
 }
 
-export async function createProvisionalIdentity(trustchainId: b64string, email: string): Promise<b64string> {
-  if (!trustchainId || typeof trustchainId !== 'string')
-    throw new InvalidArgument('trustchainId', 'b64string', trustchainId);
+export async function createProvisionalIdentity(appId: b64string, email: string): Promise<b64string> {
+  if (!appId || typeof appId !== 'string')
+    throw new InvalidArgument('appId', 'b64string', appId);
   if (!email || typeof email !== 'string')
     throw new InvalidArgument('email', 'string', email);
   const encryptionKeys = tcrypto.makeEncryptionKeyPair();
   const signatureKeys = tcrypto.makeSignKeyPair();
 
   const provisionalIdentity: SecretProvisionalIdentity = {
-    trustchain_id: trustchainId,
+    trustchain_id: appId,
     target: 'email',
     value: email,
     public_encryption_key: utils.toBase64(encryptionKeys.publicKey),
