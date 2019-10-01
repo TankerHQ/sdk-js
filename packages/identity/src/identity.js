@@ -140,6 +140,12 @@ export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<
 }
 
 export async function createIdentity(trustchainId: b64string, trustchainPrivateKey: b64string, userId: string): Promise<b64string> {
+  if (!trustchainId || typeof trustchainId !== 'string')
+    throw new InvalidArgument('trustchainId', 'b64string', trustchainId);
+  if (!trustchainPrivateKey || typeof trustchainPrivateKey !== 'string')
+    throw new InvalidArgument('trustchainPrivateKey', 'b64string', trustchainPrivateKey);
+  if (!userId || typeof userId !== 'string')
+    throw new InvalidArgument('email', 'string', email);
   const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
 
   const ephemeralKeyPair = tcrypto.makeSignKeyPair();
@@ -163,6 +169,10 @@ export async function createIdentity(trustchainId: b64string, trustchainPrivateK
 }
 
 export async function createProvisionalIdentity(trustchainId: b64string, email: string): Promise<b64string> {
+  if (!trustchainId || typeof trustchainId !== 'string')
+    throw new InvalidArgument('trustchainId', 'b64string', trustchainId);
+  if (!email || typeof email !== 'string')
+    throw new InvalidArgument('email', 'string', email);
   const encryptionKeys = tcrypto.makeEncryptionKeyPair();
   const signatureKeys = tcrypto.makeSignKeyPair();
 
@@ -181,6 +191,8 @@ export async function createProvisionalIdentity(trustchainId: b64string, email: 
 
 // Note: tankerIdentity is a Tanker identity created by either createIdentity() or createProvisionalIdentity()
 export async function getPublicIdentity(tankerIdentity: b64string): Promise<b64string> {
+  if (!tankerIdentity || typeof tankerIdentity !== 'string')
+    throw new InvalidArgument('tankerIdentity', 'b64string', tankerIdentity);
   const identity = _deserializeIdentity(tankerIdentity);
 
   if (isPermanentIdentity(identity)) {
