@@ -1,6 +1,7 @@
+dist: bionic
 language: node_js
 node_js:
-  - "11"
+  - "10"
 
 install:
   - yarn
@@ -9,7 +10,7 @@ matrix:
   include:
     - script:
         - yarn build:all
-        - yarn coverage
+        - npm run coverage
         - yarn run codecov
       name: "Coverage"
     - script: yarn karma --browsers ChromeWindows10
