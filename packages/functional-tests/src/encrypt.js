@@ -511,7 +511,10 @@ const generateEncryptTests = (args: TestArgs) => {
     });
 
     after(async () => {
-      await aliceLaptop.stop();
+      await Promise.all([
+        aliceLaptop.stop(),
+        bobLaptop.stop(),
+      ]);
     });
 
     forEachSize(['empty', 'small', 'medium'], size => {
