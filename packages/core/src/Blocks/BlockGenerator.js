@@ -6,7 +6,6 @@ import { type PublicProvisionalUser, type ProvisionalUserKeys } from '@tanker/id
 
 import {
   serializeUserDeviceV3,
-  serializeKeyPublish,
   serializeDeviceRevocationV2,
   serializeUserGroupCreationV2,
   serializeUserGroupAdditionV2,
@@ -19,6 +18,7 @@ import {
   type UserGroupAdditionRecordV2,
 } from './payloads';
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
+import { serializeKeyPublish } from '../DataProtection/Resource/keyPublish';
 
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/UserData';

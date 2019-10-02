@@ -28,10 +28,24 @@ export type KeyPublish = {|
   nature: KeyPublishNature,
 |};
 
+// the recipient is a Device Key
+export type KeyPublishRecord = {|
+  recipient: Uint8Array,
+  resourceId: Uint8Array,
+  key: Uint8Array,
+|};
 
 export const isKeyPublishToUser = (nature: number) => nature === KeyPublishNatures.key_publish_to_user;
 export const isKeyPublishToUserGroup = (nature: number) => nature === KeyPublishNatures.key_publish_to_user_group;
 export const isKeyPublishToProvisionalUser = (nature: number) => nature === KeyPublishNatures.key_publish_to_provisional_user;
+
+export function serializeKeyPublish(keyPublish: KeyPublishRecord): Uint8Array {
+  return utils.concatArrays(
+    keyPublish.recipient,
+    keyPublish.resourceId,
+    keyPublish.key,
+  );
+}
 
 export const unserializeKeyPublish = (src: Uint8Array): KeyPublishAction => unserializeGeneric(src, [
   (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient'),

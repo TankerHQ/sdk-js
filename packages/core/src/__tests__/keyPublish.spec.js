@@ -5,11 +5,7 @@ import { expect } from '@tanker/test-utils';
 
 import makeUint8Array from './makeUint8Array';
 
-import {
-  serializeKeyPublish,
-} from '../Blocks/payloads';
-
-import { unserializeKeyPublish, unserializeKeyPublishToProvisionalUser, SEALED_KEY_SIZE, TWO_TIMES_SEALED_KEY_SIZE } from '../DataProtection/Resource/keyPublish';
+import { serializeKeyPublish, unserializeKeyPublish, unserializeKeyPublishToProvisionalUser, SEALED_KEY_SIZE, TWO_TIMES_SEALED_KEY_SIZE } from '../DataProtection/Resource/keyPublish';
 
 describe('key publish', () => {
   it('correctly deserializes a KeyPublishV2 test vector', async () => {

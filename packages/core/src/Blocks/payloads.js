@@ -50,13 +50,6 @@ export type UserDeviceRecord = {|
   revoked: number,
 |}
 
-// the recipient is a Device Key
-export type KeyPublishRecord = {|
-  recipient: Uint8Array,
-  resourceId: Uint8Array,
-  key: Uint8Array,
-|}
-
 export type DeviceRevocationRecord = {|
   device_id: Uint8Array,
   user_keys?: UserKeys,
@@ -327,14 +320,6 @@ export function unserializeUserDeviceV3(src: Uint8Array): UserDeviceRecord {
     (d, o) => ({ is_ghost_device: !!(d[o] & 0x01), newOffset: o + 1 }), // eslint-disable-line no-bitwise
     (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
-}
-
-export function serializeKeyPublish(keyPublish: KeyPublishRecord): Uint8Array {
-  return utils.concatArrays(
-    keyPublish.recipient,
-    keyPublish.resourceId,
-    keyPublish.key,
-  );
 }
 
 export function serializeDeviceRevocationV1(deviceRevocation: DeviceRevocationRecord): Uint8Array {
