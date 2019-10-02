@@ -123,6 +123,34 @@ describe('Identity', () => {
 
       expect(trail).to.be.empty;
     });
+
+    it('throws with invalid app ID', async () => {
+      // $FlowExpectedError
+      await expect(createIdentity(undefined, trustchain.sk, userId)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(createIdentity([], trustchain.sk, userId)).to.be.rejectedWith(InvalidArgument);
+    });
+
+    it('throws with invalid app secret', async () => {
+      // $FlowExpectedError
+      await expect(createIdentity(trustchain.id, undefined, userId)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(createIdentity(trustchain.id, [], userId)).to.be.rejectedWith(InvalidArgument);
+    });
+
+    it('throws with invalid user ID', async () => {
+      // $FlowExpectedError
+      await expect(createIdentity(trustchain.id, trustchain.sk, undefined)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(createIdentity(trustchain.id, trustchain.sk, [])).to.be.rejectedWith(InvalidArgument);
+    });
+
+    it('throws with invalid identity', async () => {
+      // $FlowExpectedError
+      await expect(getPublicIdentity(undefined)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(getPublicIdentity([])).to.be.rejectedWith(InvalidArgument);
+    });
   });
 
   describe('create provisional', () => {
@@ -159,6 +187,20 @@ describe('Identity', () => {
       expect(public_signature_key).to.equal(provisionalIdentity.public_signature_key);
 
       expect(trail).to.be.empty;
+    });
+
+    it('throws with invalid app ID', async () => {
+      // $FlowExpectedError
+      await expect(createProvisionalIdentity(undefined, userEmail)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(createProvisionalIdentity([], userEmail)).to.be.rejectedWith(InvalidArgument);
+    });
+
+    it('throws with invalid email', async () => {
+      // $FlowExpectedError
+      await expect(createProvisionalIdentity(trustchain.id, undefined)).to.be.rejectedWith(InvalidArgument);
+      // $FlowExpectedError
+      await expect(createProvisionalIdentity(trustchain.id, [])).to.be.rejectedWith(InvalidArgument);
     });
   });
 });
