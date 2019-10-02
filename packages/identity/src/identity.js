@@ -145,7 +145,7 @@ export async function createIdentity(appId: b64string, appSecret: b64string, use
   if (!appSecret || typeof appSecret !== 'string')
     throw new InvalidArgument('appSecret', 'b64string', appSecret);
   if (!userId || typeof userId !== 'string')
-    throw new InvalidArgument('email', 'string', email);
+    throw new InvalidArgument('userId', 'string', userId);
   const obfuscatedUserId = obfuscateUserId(utils.fromBase64(appId), userId);
 
   const ephemeralKeyPair = tcrypto.makeSignKeyPair();
