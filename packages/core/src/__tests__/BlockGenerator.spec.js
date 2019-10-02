@@ -11,7 +11,7 @@ import {
   type UserGroupAdditionRecordV1,
   type UserGroupAdditionRecordV2,
   TWO_TIMES_SEALED_KEY_SIZE,
-} from '../Blocks/payloads';
+} from '../Groups/Serialize';
 import BlockGenerator, {
   getUserGroupCreationBlockSignDataV1,
   getUserGroupCreationBlockSignDataV2,

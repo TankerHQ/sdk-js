@@ -4,8 +4,6 @@ import { InternalError } from '@tanker/errors';
 
 import {
   type Record,
-  type UserGroupCreationRecord,
-  type UserGroupAdditionRecord,
   type UserDeviceRecord,
   type DeviceRevocationRecord,
   type ProvisionalIdentityClaimRecord,
@@ -15,12 +13,17 @@ import {
   unserializeUserDeviceV3,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
+  unserializeProvisionalIdentityClaim,
+} from './payloads';
+
+import {
+  type UserGroupCreationRecord,
+  type UserGroupAdditionRecord,
   unserializeUserGroupCreationV1,
   unserializeUserGroupCreationV2,
   unserializeUserGroupAdditionV1,
-  unserializeUserGroupAdditionV2,
-  unserializeProvisionalIdentityClaim,
-} from './payloads';
+  unserializeUserGroupAdditionV2
+} from '../Groups/Serialize';
 
 import { type Nature, NATURE } from './Nature';
 import { type Block, hashBlock } from './Block';

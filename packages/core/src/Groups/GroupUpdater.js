@@ -12,7 +12,8 @@ import {
   type ProvisionalGroupEncryptedKeyV2,
   type UserGroupCreationRecord,
   type UserGroupAdditionRecord,
-} from '../Blocks/payloads';
+} from './Serialize';
+
 import { NATURE_KIND, natureKind } from '../Blocks/Nature';
 
 function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: KeyStore): ?Object {

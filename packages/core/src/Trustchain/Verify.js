@@ -23,7 +23,7 @@ import {
   type UserGroupAdditionRecordV1,
   type UserGroupAdditionRecordV2,
   type UserGroupAdditionRecord,
-} from '../Blocks/payloads';
+} from '../Groups/Serialize';
 
 import {
   NATURE,

@@ -5,7 +5,7 @@ import { expect } from '@tanker/test-utils';
 import GroupUpdater from '../Groups/GroupUpdater';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
 
-import type { UserGroupAdditionRecord, UserGroupCreationRecord, UserGroupCreationRecordV2 } from '../Blocks/payloads';
+import type { UserGroupAdditionRecord, UserGroupCreationRecord, UserGroupCreationRecordV2 } from '../Groups/Serialize';
 import type { UnverifiedUserGroupCreation } from '../Blocks/entries';
 
 import { makeMemoryGroupStore } from './GroupStore.spec';
