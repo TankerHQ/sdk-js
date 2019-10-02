@@ -17,6 +17,7 @@ module.exports = (config) => {
           'process.env': {
             TANKER_TOKEN: JSON.stringify(process.env.TANKER_TOKEN),
             TANKER_URL: JSON.stringify(process.env.TANKER_URL),
+            TANKER_COMMON_SETTINGS: JSON.stringify(process.env.TANKER_COMMON_SETTINGS),
             CI: JSON.stringify(process.env.CI),
           },
         }),

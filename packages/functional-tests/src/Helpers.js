@@ -11,8 +11,9 @@ import { uuid } from '@tanker/test-utils';
 
 const tankerUrl = process.env.TANKER_URL || '';
 const idToken = process.env.TANKER_TOKEN || '';
+const commonSettings = JSON.parse(process.env.TANKER_COMMON_SETTINGS || 'null');
 
-export { tankerUrl, idToken };
+export { tankerUrl, idToken, commonSettings };
 
 const socket = new Socket(tankerUrl, { transports: ['websocket', 'polling'] });
 
@@ -133,6 +134,11 @@ export class AppHelper {
     await requester.send('create trustchain', message);
 
     const appId = rootBlock.trustchain_id;
+
+    await requester.send('update trustchain', {
+      id: utils.toBase64(appId),
+      google_client_id: commonSettings.googleAuth.clientId,
+    });
 
     return new AppHelper(requester, appId, appKeyPair);
   }
