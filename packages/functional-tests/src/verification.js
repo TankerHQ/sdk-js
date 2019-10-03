@@ -280,6 +280,7 @@ const generateVerificationTests = (args: TestArgs) => {
         });
 
         await expect(bobLaptop.verifyProvisionalIdentity({ oauthIdToken: martineIdToken })).to.be.rejectedWith(/does not match provisional identity/);
+        await aliceLaptop.stop();
       });
 
       it('decrypt data shared with an attached provisional identity', async () => {
@@ -306,6 +307,7 @@ const generateVerificationTests = (args: TestArgs) => {
 
         const decrypted = await bobLaptop.decrypt(cipherText);
         expect(decrypted).to.equal(clearText);
+        await aliceLaptop.stop();
       });
     });
 
