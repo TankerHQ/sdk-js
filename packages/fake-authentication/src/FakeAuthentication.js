@@ -38,14 +38,18 @@ const pathJoin = (...args: Array<string>) => {
 
 type Config = $Exact<{ appId?: string, trustchainId?: string, url?: string }>;
 
-function doFetch(url: string): Promise<*> {
-  return fetch(url,
-    {
-      headers: {
-        'X-Tanker-SdkVersion': TANKER_FAKEAUTH_VERSION,
-        'X-Tanker-SdkType': 'fakeauth-js',
-      }
-    });
+const defaultHeaders = {
+  'X-Tanker-SdkVersion': TANKER_FAKEAUTH_VERSION,
+  'X-Tanker-SdkType': 'fakeauth-js',
+};
+
+function doFetch(url: string, options?: Object = {}): Promise<*> {
+  const fetchOptions = {
+    ...options,
+    headers: { ...options.headers, ...defaultHeaders },
+  };
+
+  return fetch(url, fetchOptions);
 }
 
 export default class FakeAuthentication {
@@ -102,5 +106,21 @@ export default class FakeAuthentication {
     const publicIdentities: PublicIdentitiesResponse = await response.json();
 
     return publicIdentities.map(pubId => pubId.public_identity);
+  }
+
+  async setIdentityRegistered(email: string): Promise<void> {
+    if (typeof email !== 'string')
+      throw new Error(`Invalid email: ${JSON.stringify(email)}`);
+
+    const url = pathJoin(this.baseUrl, `private_identity?email=${encodeURIComponent(email)}`);
+
+    const response = await doFetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registered: true }),
+    });
+
+    if (!response.ok)
+      throw new Error(`Server error: ${await response.text()}`);
   }
 }

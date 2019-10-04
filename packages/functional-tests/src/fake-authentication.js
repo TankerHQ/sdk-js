@@ -65,11 +65,14 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
     it('returns the proper public identity before and after the private identity has been used', async () => {
       const email = makeTestEmail();
 
-      const [publicProvIdentity] = await fa.getPublicIdentities([email]);
+      const [publicProvIdentity1] = await fa.getPublicIdentities([email]);
       const { identity, provisionalIdentity } = await fa.getIdentity(email);
+      const [publicProvIdentity2] = await fa.getPublicIdentities([email]);
+      await fa.setIdentityRegistered(email);
       const [publicPermIdentity] = await fa.getPublicIdentities([email]);
 
-      expectMatchingPublicIdentities(publicProvIdentity, await getPublicIdentity(provisionalIdentity));
+      expectMatchingPublicIdentities(publicProvIdentity1, await getPublicIdentity(provisionalIdentity));
+      expectMatchingPublicIdentities(publicProvIdentity2, await getPublicIdentity(provisionalIdentity));
       expectMatchingPublicIdentities(publicPermIdentity, await getPublicIdentity(identity));
     });
   });
