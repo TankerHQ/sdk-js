@@ -21,6 +21,7 @@ const Dialog = styled.dialog`
   box-shadow: 0 2px 20px 0 ${transparentize(0.7, colors.grey)};
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  transform: translate3d(-50%, -50%, 0) scale(1); /* fallback for IE11, no support for css vars */
   transform: translate3d(-50%, calc(var(--offset) - 50%), 0) scale(var(--scale));
   will-change: transform;
   z-index: 1338;
