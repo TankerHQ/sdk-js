@@ -52,10 +52,12 @@ const StyledSpinner = styled(Spinner)`
 const LinkButton = styled(Button)`
   position: absolute;
   bottom: 30px;
+  left: 50%;
   color: ${colors.blue};
   font-size: 15px;
   font-weight: 400;
   line-height: 1.8;
+  transform: translate(-50%, 0);
 
   &:active,
   &:focus,

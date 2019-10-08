@@ -79,7 +79,11 @@ const Panel = styled.div`
   min-height: 340px;
   height: 100%;
   width: 100%;
+  top: 0;
+  left: 0;
   padding: 0 20px 30px;
+
+  & > * { max-width: 100%; }
 `;
 
 const willEnter = () => ({ opacity: 0, x: 300 });
