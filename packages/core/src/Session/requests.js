@@ -18,7 +18,7 @@ type VerificationRequest = $Exact<{
   encrypted_email: Uint8Array,
   verification_code: string,
 }> | $Exact<{
-  google_id_token: string,
+  oidc_id_token: string,
 }>;
 
 type UserCreationRequest = $Exact<{
@@ -49,9 +49,9 @@ export const formatVerificationRequest = (verification: RemoteVerification, loca
       hashed_passphrase: generichash(utils.fromString(verification.passphrase)),
     };
   }
-  if (verification.oauthIdToken) {
+  if (verification.oidcIdToken) {
     return {
-      google_id_token: verification.oauthIdToken,
+      oidc_id_token: verification.oidcIdToken,
     };
   }
   throw new InternalError('Assertion error: invalid remote verification in formatVerificationRequest');
@@ -91,7 +91,7 @@ export const sendUserCreation = async (client: Client, localUser: LocalUser, use
     first_device_block: firstDevice,
   };
 
-  if (verification.email || verification.passphrase || verification.oauthIdToken) {
+  if (verification.email || verification.passphrase || verification.oidcIdToken) {
     request.encrypted_unlock_key = encryptedUnlockKey;
     request.verification = formatVerificationRequest(verification, localUser);
   }
@@ -126,8 +126,8 @@ export const getVerificationMethods = async (client: Client, localUser: LocalUse
       }
       method.email = utils.toString(encryptionV2.compatDecrypt(localUser.userSecret, encryptedEmail));
       delete method.encrypted_email;
-    } else if (method.type === 'google') {
-      return { type: 'oauth', provider: 'https://accounts.google.com' };
+    } else if (method.type === 'oidc_id_token') {
+      return { type: 'oidcIdToken' };
     }
 
     return method;

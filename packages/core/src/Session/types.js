@@ -27,12 +27,12 @@ export type VerificationMethod = EmailVerificationMethod | PassphraseVerificatio
 export type EmailVerification = $Exact<{ email: string, verificationCode: string }>;
 export type PassphraseVerification = $Exact<{ passphrase: string }>;
 export type KeyVerification = $Exact<{ verificationKey: string }>;
-export type GoogleVerification = $Exact<{ oauthIdToken: string }>;
+export type OIDCVerification = $Exact<{ oidcIdToken: string }>;
 
-export type Verification = EmailVerification | PassphraseVerification | KeyVerification | GoogleVerification;
-export type RemoteVerification = EmailVerification | PassphraseVerification | GoogleVerification;
+export type Verification = EmailVerification | PassphraseVerification | KeyVerification | OIDCVerification;
+export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification;
 
-const validMethods = ['email', 'passphrase', 'verificationKey', 'oauthIdToken'];
+const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken'];
 const validKeys = [...validMethods, 'verificationCode'];
 
 export const assertVerification = (verification: Verification) => {
@@ -58,7 +58,7 @@ export const assertVerification = (verification: Verification) => {
     throw new InvalidArgument('verification', 'passphrase should be a string', verification.passphrase);
   } else if ('verificationKey' in verification && typeof verification.verificationKey !== 'string') {
     throw new InvalidArgument('verification', 'verificationKey should be a string', verification.verificationKey);
-  } else if ('oauthIdToken' in verification && typeof verification.oauthIdToken !== 'string') {
-    throw new InvalidArgument('verification', 'oauthIdToken should be a string', verification.oauthIdToken);
+  } else if ('oidcIdToken' in verification && typeof verification.oidcIdToken !== 'string') {
+    throw new InvalidArgument('verification', 'oidcIdToken should be a string', verification.oidcIdToken);
   }
 };

@@ -9,7 +9,7 @@ import { _deserializeProvisionalIdentity } from '@tanker/identity';
 import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 
-import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type GoogleVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
+import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type OIDCVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
 
 import { extractUserData } from './Session/UserData';
 import { Session } from './Session/Session';
@@ -258,7 +258,7 @@ export class Tanker extends EventEmitter {
     return this._session.apis.deviceManager.attachProvisionalIdentity(provisionalIdentityObj);
   }
 
-  async verifyProvisionalIdentity(verification: EmailVerification | GoogleVerification): Promise<void> {
+  async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification): Promise<void> {
     this.assert(statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
     return this._session.apis.deviceManager.verifyProvisionalIdentity(verification);
