@@ -2,14 +2,12 @@
 import { type DataStore } from '@tanker/datastore-base';
 
 import type {
-  UnverifiedUserGroup, VerifiedUserGroup,
   UnverifiedDeviceCreation, VerifiedDeviceCreation,
   UnverifiedDeviceRevocation, VerifiedDeviceRevocation,
   UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
 } from '../../Blocks/entries';
 import ProvisionalIdentityClaimUnverifiedStore from './ProvisionalIdentityClaimUnverifiedStore';
 import UserUnverifiedStore from './UserUnverifiedStore';
-import UserGroupsUnverifiedStore from './UserGroupsUnverifiedStore';
 
 const schemaTablesV3 = [
   {
@@ -21,7 +19,6 @@ const schemaTablesV3 = [
 const schemaTablesV4 = [
   ...schemaTablesV3,
   ...UserUnverifiedStore.tables,
-  ...UserGroupsUnverifiedStore.tables,
 ];
 
 const schemaTablesV6 = [
@@ -32,7 +29,6 @@ const schemaTablesV6 = [
 // Storage for unverified blocks of different natures
 export default class UnverifiedStore {
   userUnverifiedStore: UserUnverifiedStore;
-  userGroupsUnverifiedStore: UserGroupsUnverifiedStore;
   provisionalIdentityClaimUnverifiedStore: ProvisionalIdentityClaimUnverifiedStore;
 
   static schemas = [
@@ -69,14 +65,12 @@ export default class UnverifiedStore {
   static async open(ds: DataStore<*>): Promise<UnverifiedStore> {
     const store = new UnverifiedStore();
     store.userUnverifiedStore = await UserUnverifiedStore.open(ds);
-    store.userGroupsUnverifiedStore = await UserGroupsUnverifiedStore.open(ds);
     store.provisionalIdentityClaimUnverifiedStore = await ProvisionalIdentityClaimUnverifiedStore.open(ds);
     return store;
   }
 
   async close(): Promise<void> {
     await this.userUnverifiedStore.close();
-    await this.userGroupsUnverifiedStore.close();
     await this.provisionalIdentityClaimUnverifiedStore.close();
   }
 
@@ -105,22 +99,6 @@ export default class UnverifiedStore {
 
   async removeVerifiedUserEntries(entries: $ReadOnlyArray<VerifiedDeviceCreation | VerifiedDeviceRevocation>): Promise<void> {
     return this.userUnverifiedStore.removeVerifiedUserEntries(entries);
-  }
-
-  async addUnverifiedUserGroups(entries: Array<UnverifiedUserGroup>): Promise<void> {
-    return this.userGroupsUnverifiedStore.addUnverifiedUserGroupEntries(entries);
-  }
-
-  async findUnverifiedUserGroup(groupId: Uint8Array): Promise<Array<UnverifiedUserGroup>> {
-    return this.userGroupsUnverifiedStore.findUnverifiedUserGroup(groupId);
-  }
-
-  async findUnverifiedUserGroupByPublicEncryptionKey(pubEncKey: Uint8Array): Promise<Array<UnverifiedUserGroup>> {
-    return this.userGroupsUnverifiedStore.findUnverifiedUserGroupByPublicEncryptionKey(pubEncKey);
-  }
-
-  async removeVerifiedUserGroupEntry(userGroup: VerifiedUserGroup): Promise<void> {
-    return this.userGroupsUnverifiedStore.removeVerifiedUserGroupEntry(userGroup);
   }
 
   async getUserIdFromDeviceId(deviceId: Uint8Array) {

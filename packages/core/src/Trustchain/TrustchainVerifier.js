@@ -7,10 +7,8 @@ import { InvalidBlockError } from '../errors.internal';
 import { findIndex, compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
 import { type User, type Device } from '../Users/User';
-import GroupUpdater from '../Groups/GroupUpdater';
 import type {
   UnverifiedTrustchainCreation,
-  UnverifiedUserGroup, VerifiedUserGroup,
   UnverifiedDeviceCreation, VerifiedDeviceCreation,
   UnverifiedDeviceRevocation, VerifiedDeviceRevocation,
   UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
@@ -27,8 +25,6 @@ import {
   verifyTrustchainCreation,
   verifyDeviceCreation,
   verifyDeviceRevocation,
-  verifyUserGroupCreation,
-  verifyUserGroupAddition,
   verifyProvisionalIdentityClaim,
 } from './Verify';
 
@@ -36,13 +32,11 @@ export default class TrustchainVerifier {
   _verifyQueue: TaskQueue = new TaskQueue();
   _trustchainId: Uint8Array;
   _storage: Storage;
-  _groupUpdater: GroupUpdater;
 
 
-  constructor(trustchainId: Uint8Array, storage: Storage, groupUpdater: GroupUpdater) {
+  constructor(trustchainId: Uint8Array, storage: Storage) {
     this._storage = storage;
     this._trustchainId = trustchainId;
-    this._groupUpdater = groupUpdater;
   }
 
   // Returns a map from entry hash to author entry, if the author could be found, verified, and was not revoked at the given index
@@ -155,50 +149,6 @@ export default class TrustchainVerifier {
     return user;
   }
 
-  async _unlockedVerifySingleUserGroup(entry: UnverifiedUserGroup, author: Device): Promise<VerifiedUserGroup> {
-    switch (natureKind(entry.nature)) {
-      case NATURE_KIND.user_group_creation: {
-        const groupId = (entry: any).public_signature_key;
-        const group = await this._storage.groupStore.findExternal({ groupId });
-        return verifyUserGroupCreation(entry, author, group);
-      }
-      case NATURE_KIND.user_group_addition: {
-        const groupId = (entry: any).group_id;
-        const group = await this._storage.groupStore.findExternal({ groupId });
-        return verifyUserGroupAddition(entry, author, group);
-      }
-      default:
-        throw new InternalError(`Assertion error: unexpected nature ${entry.nature}`);
-    }
-  }
-
-  async _unlockedProcessUserGroups(unverifiedEntries: Array<UnverifiedUserGroup>) {
-    const authors = await this._unlockedGetVerifiedAuthorsByHash(unverifiedEntries);
-
-    for (const unverifiedUserGroup of unverifiedEntries) {
-      const author = authors.get(utils.toBase64(unverifiedUserGroup.hash));
-      if (!author)
-        throw new InvalidBlockError('author_not_found', 'author not found', { unverifiedUserGroup });
-
-      const verifiedEntry = await this._unlockedVerifySingleUserGroup(unverifiedUserGroup, author);
-      await this._groupUpdater.applyEntry(verifiedEntry);
-      await this._storage.unverifiedStore.removeVerifiedUserGroupEntry(verifiedEntry);
-    }
-  }
-
-  async _unlockedProcessUserGroupWithPublicEncryptionKey(key: Uint8Array) {
-    const unverifiedEntries = await this._storage.unverifiedStore.findUnverifiedUserGroupByPublicEncryptionKey(key);
-    if (unverifiedEntries.length === 0)
-      return;
-    return this._unlockedProcessUserGroups(unverifiedEntries);
-  }
-  async _unlockedProcessUserGroup(groupId: Uint8Array) {
-    const unverifiedEntries = await this._storage.unverifiedStore.findUnverifiedUserGroup(groupId);
-    if (unverifiedEntries.length === 0)
-      return;
-    return this._unlockedProcessUserGroups(unverifiedEntries);
-  }
-
   async _unlockedVerifyClaims(claims: Array<UnverifiedProvisionalIdentityClaim>): Promise<Array<VerifiedProvisionalIdentityClaim>> {
     const verifiedClaims = [];
     for (const claim of claims) {
@@ -272,27 +222,12 @@ export default class TrustchainVerifier {
     });
   }
 
-  async updateGroupStore(groupIds: Array<Uint8Array>) {
-    await this._verifyQueue.enqueue(async () => {
-      for (const groupId of groupIds) {
-        await this._unlockedProcessUserGroup(groupId);
-      }
-    });
-  }
-  async updateGroupStoreWithPublicEncryptionKey(publicEncryptionKey: Uint8Array) {
-    await this._verifyQueue.enqueue(async () => {
-      await this._unlockedProcessUserGroupWithPublicEncryptionKey(publicEncryptionKey);
-    });
-  }
-
   async verifyClaimsForUser(userId: Uint8Array) {
     await this._verifyQueue.enqueue(async () => {
       const unverifiedClaims = await this._storage.unverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
 
       const verifiedClaims = await this._unlockedVerifyClaims(unverifiedClaims);
-      const myProvisionalIdentities = await this._storage.userStore.applyProvisionalIdentityClaims(verifiedClaims);
-      for (const myProvisionalIdentity of myProvisionalIdentities)
-        await this._groupUpdater.applyProvisionalIdentityClaim(myProvisionalIdentity);
+      await this._storage.userStore.applyProvisionalIdentityClaims(verifiedClaims);
       await this._storage.unverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(verifiedClaims);
     });
   }

@@ -1,15 +1,13 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
-import { createIdentity, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
+import { createIdentity, type ProvisionalUserKeys } from '@tanker/identity';
 
 import { extractUserData } from '../Session/UserData';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 import Generator, {
   type GeneratorUserResult,
-  type GeneratorUserGroupResult,
-  type GeneratorUserGroupAdditionResult,
   type GeneratorDevice,
   type GeneratorUser,
   type GeneratorProvisionalIdentityClaimResult,
@@ -22,10 +20,9 @@ import Storage from '../Session/Storage';
 import KeyStore from '../Session/KeyStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
-import GroupUpdater from '../Groups/GroupUpdater';
 import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 
-import { userGroupEntryFromBlock, deviceCreationFromBlock, provisionalIdentityClaimFromBlock } from '../Blocks/entries';
+import { deviceCreationFromBlock, provisionalIdentityClaimFromBlock } from '../Blocks/entries';
 
 export default class TrustchainBuilder {
   dataStore: DataStore<*>;
@@ -36,7 +33,6 @@ export default class TrustchainBuilder {
   keyStore: KeyStore;
   userStore: UserStore;
   groupStore: GroupStore;
-  groupUpdater: GroupUpdater;
   unverifiedStore: UnverifiedStore;
   dataStoreConfig: Object;
   trustchainKeyPair: Object;
@@ -81,8 +77,7 @@ export default class TrustchainBuilder {
     this.trustchainStore = storage.trustchainStore;
     this.unverifiedStore = storage.unverifiedStore;
 
-    this.groupUpdater = new GroupUpdater(this.groupStore, this.keyStore);
-    this.trustchainVerifier = new TrustchainVerifier(trustchainId, storage, this.groupUpdater);
+    this.trustchainVerifier = new TrustchainVerifier(trustchainId, storage);
     const trustchainPuller: any = {};
     this.trustchain = new Trustchain(this.trustchainStore, this.trustchainVerifier, trustchainPuller, this.unverifiedStore);
 
@@ -103,18 +98,6 @@ export default class TrustchainBuilder {
     const { id, parentIndex } = args;
     const result = await this.generator.newDeviceCreationV3({ userId: id, parentIndex: parentIndex || 0 });
     await this.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(result.block)]);
-    return result;
-  }
-
-  async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupResult> {
-    const result = await this.generator.newUserGroupCreation(from.device, members, provisionalMembers);
-    await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
-    return result;
-  }
-
-  async addUserGroupAddition(from: GeneratorUserResult, group: GeneratorUserGroupResult, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupAdditionResult> {
-    const result = await this.generator.newUserGroupAddition(from.device, group, members, provisionalMembers);
-    await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
     return result;
   }
 

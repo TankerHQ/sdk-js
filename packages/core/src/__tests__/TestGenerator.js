@@ -8,7 +8,6 @@ import {
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
   provisionalIdentityClaimFromBlock,
-  type UnverifiedUserGroup,
   type UnverifiedDeviceCreation,
   type UnverifiedDeviceRevocation,
   type UnverifiedProvisionalIdentityClaim,
@@ -16,6 +15,7 @@ import {
 } from '../Blocks/entries';
 
 import {
+  type UserGroupEntry,
   getGroupEntryFromBlock,
 } from '../Groups/Serialize';
 
@@ -23,7 +23,7 @@ import { hashBlock, type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
-import { type Group, type ExternalGroup } from '../Groups/types';
+import { type Group } from '../Groups/types';
 import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
 
 import { rootBlockAuthor } from '../Trustchain/Verify';
@@ -96,10 +96,9 @@ export type TestKeyPublish = {
 };
 
 export type TestUserGroup = {
-  unverifiedUserGroup: UnverifiedUserGroup,
+  userGroupEntry: UserGroupEntry,
   block: Block,
-  group: Group,
-  externalGroup: ExternalGroup
+  group: Group
 };
 
 export type TestIdentityClaim = {
@@ -386,7 +385,7 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToGroup = (parentDevice: TestDeviceCreation, recipient: ExternalGroup): TestKeyPublish => {
+  makeKeyPublishToGroup = (parentDevice: TestDeviceCreation, recipient: Group): TestKeyPublish => {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = random(tcrypto.MAC_SIZE);
 
@@ -468,45 +467,18 @@ class TestGenerator {
     const userGroupEntry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
     const group = {
       groupId: signatureKeyPair.publicKey,
+      publicSignatureKey: signatureKeyPair.publicKey,
+      publicEncryptionKey: encryptionKeyPair.publicKey,
       signatureKeyPair,
       encryptionKeyPair,
       lastGroupBlock: userGroupEntry.hash,
       index: userGroupEntry.index,
     };
 
-    const provisionalEncryptionKeys = [];
-    provisionalUsers.forEach((user) => {
-      provisionalEncryptionKeys.push({
-        appPublicSignatureKey: user.appSignaturePublicKey,
-        tankerPublicSignatureKey: user.tankerSignaturePublicKey,
-        encryptedGroupPrivateEncryptionKey: random(tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD + tcrypto.SEAL_OVERHEAD),
-      });
-    });
-
-    const externalGroup = {
-      groupId: signatureKeyPair.publicKey,
-      publicSignatureKey: signatureKeyPair.publicKey,
-      publicEncryptionKey: encryptionKeyPair.publicKey,
-      lastGroupBlock: userGroupEntry.hash,
-      encryptedPrivateSignatureKey: tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey),
-      provisionalEncryptionKeys,
-      index: userGroupEntry.index,
-    };
-
-    // WIP: temp code for compat output
-    const { deviceId: author, ...unverifiedUserGroupBase } = userGroupEntry;
-    const unverifiedUserGroup = {
-      ...unverifiedUserGroupBase,
-      author,
-      // $FlowIKnow We know this is a group creation entry
-      group_id: userGroupEntry.public_signature_key,
-    };
-
     return {
-      unverifiedUserGroup,
+      userGroupEntry,
       block,
-      group,
-      externalGroup
+      group
     };
   }
 
@@ -517,11 +489,18 @@ class TestGenerator {
       parentDevice.testDevice.id,
     );
     this._trustchainIndex += 1;
+
+    const signatureKeyPair = previousGroup.group.signatureKeyPair || null;
+    const encryptionKeyPair = previousGroup.group.encryptionKeyPair || null;
+    if (!signatureKeyPair || !encryptionKeyPair) {
+      throw new Error('This group has no key pairs!');
+    }
+
     const block = blockGenerator.addToUserGroup(
       previousGroup.group.groupId,
-      previousGroup.group.signatureKeyPair.privateKey,
+      signatureKeyPair.privateKey,
       previousGroup.group.lastGroupBlock,
-      previousGroup.group.encryptionKeyPair.privateKey,
+      encryptionKeyPair.privateKey,
       newMembers,
       provisionalUsers
     );
@@ -529,24 +508,14 @@ class TestGenerator {
 
     const userGroupEntry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
 
-    const group: Group = ({ ...previousGroup.group }: any);
+    const group = { ...previousGroup.group };
     group.lastGroupBlock = userGroupEntry.hash;
     group.index = userGroupEntry.index;
 
-    const externalGroup: ExternalGroup = ({ ...previousGroup.externalGroup }: any);
-    externalGroup.lastGroupBlock = userGroupEntry.hash;
-    externalGroup.index = userGroupEntry.index;
-
-    // WIP: temp code for compat output
-    const { deviceId: author, ...unverifiedUserGroupBase } = userGroupEntry;
-    const unverifiedUserGroup = { ...unverifiedUserGroupBase, author };
-
     return {
-      // $FlowIKnow We know this is a group addition entry
-      unverifiedUserGroup,
+      userGroupEntry,
       block,
       group,
-      externalGroup
     };
   }
 

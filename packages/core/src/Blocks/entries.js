@@ -16,15 +16,6 @@ import {
   unserializeProvisionalIdentityClaim,
 } from './payloads';
 
-import {
-  type UserGroupCreationRecord,
-  type UserGroupAdditionRecord,
-  unserializeUserGroupCreationV1,
-  unserializeUserGroupCreationV2,
-  unserializeUserGroupAdditionV1,
-  unserializeUserGroupAdditionV2
-} from '../Groups/Serialize';
-
 import { type Nature, NATURE } from './Nature';
 import { type Block, hashBlock } from './Block';
 
@@ -134,55 +125,6 @@ export type UnverifiedTrustchainCreation = {
   ...VerificationFields,
   public_signature_key: Uint8Array,
 };
-
-export type UnverifiedUserGroupCreation = {
-  ...VerificationFields,
-  ...UserGroupCreationRecord,
-  group_id: Uint8Array
-};
-
-export type UnverifiedUserGroupAddition = {
-  ...VerificationFields,
-  ...UserGroupAdditionRecord,
-};
-
-export type UnverifiedUserGroup = UnverifiedUserGroupCreation | UnverifiedUserGroupAddition;
-export type VerifiedUserGroup = UnverifiedUserGroup;
-
-export function userGroupEntryFromBlock(block: Block): UnverifiedUserGroup {
-  const verificationFields = verificationFieldsFromBlock(block);
-  if (block.nature === NATURE.user_group_creation_v1) {
-    const userGroupAction = unserializeUserGroupCreationV1(block.payload);
-    return {
-      ...verificationFields,
-      ...userGroupAction,
-      group_id: userGroupAction.public_signature_key
-    };
-  }
-  if (block.nature === NATURE.user_group_creation_v2) {
-    const userGroupAction = unserializeUserGroupCreationV2(block.payload);
-    return {
-      ...verificationFields,
-      ...userGroupAction,
-      group_id: userGroupAction.public_signature_key
-    };
-  }
-  if (block.nature === NATURE.user_group_addition_v1) {
-    const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
-    return {
-      ...verificationFields,
-      ...userGroupAction,
-    };
-  }
-  if (block.nature === NATURE.user_group_addition_v2) {
-    const userGroupAction = unserializeUserGroupAdditionV2(block.payload);
-    return {
-      ...verificationFields,
-      ...userGroupAction,
-    };
-  }
-  throw new InternalError('Assertion error: wrong type for userGroupEntryFromBlock');
-}
 
 export type UnverifiedDeviceCreation = {
   ...VerificationFields,

@@ -5,7 +5,6 @@ import TrustchainVerifier from './TrustchainVerifier';
 import { Client } from '../Network/Client';
 import TrustchainStore from './TrustchainStore';
 import Storage from '../Session/Storage';
-import GroupUpdater from '../Groups/GroupUpdater';
 import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 import type { VerifiedDeviceCreation } from '../Blocks/entries';
 
@@ -23,8 +22,7 @@ export default class Trustchain {
   }
 
   static async open(client: Client, trustchainId: Uint8Array, userId: Uint8Array, storage: Storage): Promise<Trustchain> {
-    const groupUpdater = new GroupUpdater(storage.groupStore, storage.keyStore);
-    const trustchainVerifier = new TrustchainVerifier(trustchainId, storage, groupUpdater);
+    const trustchainVerifier = new TrustchainVerifier(trustchainId, storage);
     const trustchainPuller = new TrustchainPuller(client, userId, storage.trustchainStore, storage.unverifiedStore, trustchainVerifier);
     return new Trustchain(storage.trustchainStore, trustchainVerifier, trustchainPuller, storage.unverifiedStore);
   }
@@ -45,14 +43,6 @@ export default class Trustchain {
 
   async sync(userIds?: Array<Uint8Array>, groupIds?: Array<Uint8Array>): Promise<void> {
     return this._trustchainPuller.scheduleCatchUp(userIds, groupIds);
-  }
-
-  async updateGroupStore(groupIds: Array<Uint8Array>) {
-    return this._trustchainVerifier.updateGroupStore(groupIds);
-  }
-
-  async updateGroupStoreWithPublicEncryptionKey(groupPublicEncryptionKey: Uint8Array) {
-    return this._trustchainVerifier.updateGroupStoreWithPublicEncryptionKey(groupPublicEncryptionKey);
   }
 
   async verifyDevice(deviceId: Uint8Array): Promise<?VerifiedDeviceCreation> {

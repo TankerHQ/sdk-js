@@ -84,57 +84,6 @@ describe('UnverifiedStore', () => {
     });
   });
 
-  describe('user groups ', () => {
-    let userGroupCreation;
-    let userGroupAddition;
-
-    beforeEach(async () => {
-      testGenerator.makeTrustchainCreation();
-      const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user]);
-
-      // Second user
-      const userId2 = random(tcrypto.HASH_SIZE);
-      const userCreation2 = await testGenerator.makeUserCreation(userId2);
-      userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroupCreation, [userCreation2.user]);
-
-      await unverifiedStore.addUnverifiedUserGroups([userGroupCreation.unverifiedUserGroup, userGroupAddition.unverifiedUserGroup]);
-    });
-
-    it('returns empty array when fetching a missing user group', async () => {
-      const result = await unverifiedStore.findUnverifiedUserGroup(new Uint8Array(0));
-      expect(result).to.deep.equal([]);
-    });
-
-    it('returns empty array when fetching a missing user group', async () => {
-      const result = await unverifiedStore.findUnverifiedUserGroupByPublicEncryptionKey(new Uint8Array(0));
-      expect(result).to.deep.equal([]);
-    });
-
-    it('finds an unverified user group ', async () => {
-      const result = await unverifiedStore.findUnverifiedUserGroup(userGroupCreation.externalGroup.groupId);
-      expect(result).excluding(['_rev', '_id']).to.deep.equal([userGroupCreation.unverifiedUserGroup, userGroupAddition.unverifiedUserGroup]);
-    });
-
-    it('finds an unverified user group by encryption key', async () => {
-      const result = await unverifiedStore.findUnverifiedUserGroupByPublicEncryptionKey(userGroupCreation.externalGroup.publicEncryptionKey);
-      expect(result).excluding(['_rev', '_id']).to.deep.equal([userGroupCreation.unverifiedUserGroup, userGroupAddition.unverifiedUserGroup]);
-    });
-
-    it('deletes a verified user group creation', async () => {
-      await unverifiedStore.removeVerifiedUserGroupEntry(userGroupCreation.unverifiedUserGroup);
-      const result = await unverifiedStore.findUnverifiedUserGroup(userGroupCreation.externalGroup.groupId);
-      expect(result).excluding(['_rev', '_id']).to.deep.equal([userGroupAddition.unverifiedUserGroup]);
-    });
-
-    it('deletes a verified user group addition', async () => {
-      await unverifiedStore.removeVerifiedUserGroupEntry((userGroupAddition.unverifiedUserGroup));
-      const result = await unverifiedStore.findUnverifiedUserGroup(userGroupCreation.externalGroup.groupId);
-      expect(result).excluding(['_rev', '_id']).to.deep.equal([userGroupCreation.unverifiedUserGroup]);
-    });
-  });
-
   describe('claim provisional identity', () => {
     let claim;
     let userId;

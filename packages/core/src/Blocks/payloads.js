@@ -8,17 +8,6 @@ import { NATURE } from './Nature';
 import { UpgradeRequiredError } from '../errors.internal';
 import { getArray, getStaticArray, encodeArrayLength, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from './Serialize';
 
-import {
-  type UserGroupCreationRecordV1,
-  type UserGroupCreationRecordV2,
-  type UserGroupAdditionRecordV1,
-  type UserGroupAdditionRecordV2,
-  unserializeUserGroupCreationV1,
-  unserializeUserGroupCreationV2,
-  unserializeUserGroupAdditionV1,
-  unserializeUserGroupAdditionV2,
-} from '../Groups/Serialize';
-
 export const SEALED_KEY_SIZE = tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
 export const TWO_TIMES_SEALED_KEY_SIZE = SEALED_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
 
@@ -77,7 +66,6 @@ export type ProvisionalIdentityClaimRecord = {|
 |}
 
 export type Record = TrustchainCreationRecord | UserDeviceRecord | DeviceRevocationRecord | ProvisionalIdentityClaimRecord |
-                      UserGroupCreationRecordV1 | UserGroupCreationRecordV2 | UserGroupAdditionRecordV1 | UserGroupAdditionRecordV2 |
                       ProvisionalIdentityClaimRecord;
 
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
@@ -353,10 +341,6 @@ export function unserializePayload(block: Block): Record {
     case NATURE.device_creation_v3: return unserializeUserDeviceV3(block.payload);
     case NATURE.device_revocation_v1: return unserializeDeviceRevocationV1(block.payload);
     case NATURE.device_revocation_v2: return unserializeDeviceRevocationV2(block.payload);
-    case NATURE.user_group_creation_v1: return unserializeUserGroupCreationV1(block.payload);
-    case NATURE.user_group_creation_v2: return unserializeUserGroupCreationV2(block.payload);
-    case NATURE.user_group_addition_v1: return unserializeUserGroupAdditionV1(block.payload);
-    case NATURE.user_group_addition_v2: return unserializeUserGroupAdditionV2(block.payload);
     case NATURE.provisional_identity_claim: return unserializeProvisionalIdentityClaim(block.payload);
     default: throw new UpgradeRequiredError(`unknown nature: ${block.nature}`);
   }

@@ -4,9 +4,9 @@ import { expect } from '@tanker/test-utils';
 
 import { InvalidBlockError } from '../errors.internal';
 
-import type { UnverifiedUserGroup } from '../Blocks/entries';
-import { type ExternalGroup } from '../Groups/types';
-import { verifyUserGroupCreation, verifyUserGroupAddition } from '../Trustchain/Verify';
+import { type Group } from '../Groups/types';
+import { type UserGroupEntry } from '../Groups/Serialize';
+import { verifyUserGroupCreation, verifyUserGroupAddition } from '../Groups/Verify';
 import { type User } from '../Users/User';
 
 import TestGenerator from './TestGenerator';
@@ -26,8 +26,8 @@ describe('BlockVerification', () => {
 
   describe('group creation', () => {
     let user: User;
-    let externalGroup: ExternalGroup;
-    let unverifiedUserGroup: UnverifiedUserGroup;
+    let group: Group;
+    let userGroupEntry: UserGroupEntry;
 
     beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
@@ -36,35 +36,35 @@ describe('BlockVerification', () => {
       user = userCreation.user;
       const provisionalIdentity = testGenerator.makeProvisionalUser().publicProvisionalUser;
       const userGroup = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
-      unverifiedUserGroup = userGroup.unverifiedUserGroup;
-      externalGroup = userGroup.externalGroup;
+      userGroupEntry = userGroup.userGroupEntry;
+      group = userGroup.group;
     });
 
     it('should accept a valid group creation', async () => {
-      expect(() => verifyUserGroupCreation(unverifiedUserGroup, user.devices[0], null))
+      expect(() => verifyUserGroupCreation(userGroupEntry, user.devices[0], null))
         .to.not.throw();
     });
     it('should reject a group creation if it already exists', async () => {
-      externalGroup.publicEncryptionKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+      group.publicEncryptionKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
       assertFailWithNature(
-        () => verifyUserGroupCreation(unverifiedUserGroup, user.devices[0], externalGroup),
+        () => verifyUserGroupCreation(userGroupEntry, user.devices[0], group),
         'group_already_exists'
       );
     });
 
     it('should reject a group creation with bad signature', async () => {
-      unverifiedUserGroup.signature[0] += 1;
+      userGroupEntry.signature[0] += 1;
       assertFailWithNature(
-        () => verifyUserGroupCreation(unverifiedUserGroup, user.devices[0], null),
+        () => verifyUserGroupCreation(userGroupEntry, user.devices[0], null),
         'invalid_signature'
       );
     });
 
     it('should reject a group creation with bad self-signature', async () => {
       // $FlowIKnow this is a user group creation
-      unverifiedUserGroup.self_signature[0] += 1;
+      userGroupEntry.self_signature[0] += 1;
       assertFailWithNature(
-        () => verifyUserGroupCreation(unverifiedUserGroup, user.devices[0], null),
+        () => verifyUserGroupCreation(userGroupEntry, user.devices[0], null),
         'invalid_self_signature'
       );
     });
@@ -72,8 +72,8 @@ describe('BlockVerification', () => {
 
   describe('group addition', () => {
     let user: User;
-    let externalGroup: ExternalGroup;
-    let unverifiedUserGroup: UnverifiedUserGroup;
+    let group: Group;
+    let userGroupEntry: UserGroupEntry;
 
     beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
@@ -82,49 +82,49 @@ describe('BlockVerification', () => {
       user = userCreation.user;
       const provisionalIdentity = testGenerator.makeProvisionalUser().publicProvisionalUser;
       const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
-      externalGroup = userGroupCreation.externalGroup;
+      group = userGroupCreation.group;
 
       // Second user
       const userId2 = random(tcrypto.HASH_SIZE);
       const userCreation2 = await testGenerator.makeUserCreation(userId2);
       const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroupCreation, [userCreation2.user]);
 
-      unverifiedUserGroup = userGroupAddition.unverifiedUserGroup;
+      userGroupEntry = userGroupAddition.userGroupEntry;
     });
 
     it('should accept a valid group addition', async () => {
-      expect(() => verifyUserGroupAddition(unverifiedUserGroup, user.devices[0], externalGroup))
+      expect(() => verifyUserGroupAddition(userGroupEntry, user.devices[0], group))
         .to.not.throw();
     });
 
     it('should reject a group addition with bad signature', async () => {
-      unverifiedUserGroup.signature[0] += 1;
+      userGroupEntry.signature[0] += 1;
       assertFailWithNature(
-        () => verifyUserGroupAddition(unverifiedUserGroup, user.devices[0], externalGroup),
+        () => verifyUserGroupAddition(userGroupEntry, user.devices[0], group),
         'invalid_signature'
       );
     });
 
     it('should reject a group addition with bad self-signature', async () => {
       // $FlowIKnow this is a user group creation
-      unverifiedUserGroup.self_signature_with_current_key[0] += 1;
+      userGroupEntry.self_signature_with_current_key[0] += 1;
       assertFailWithNature(
-        () => verifyUserGroupAddition(unverifiedUserGroup, user.devices[0], externalGroup),
+        () => verifyUserGroupAddition(userGroupEntry, user.devices[0], group),
         'invalid_self_signature'
       );
     });
 
     it('should reject a group addition if the group does not exist', async () => {
       assertFailWithNature(
-        () => verifyUserGroupAddition(unverifiedUserGroup, user.devices[0], null),
+        () => verifyUserGroupAddition(userGroupEntry, user.devices[0], null),
         'invalid_group_id'
       );
     });
 
     it('should reject a group addition if the group does match', async () => {
-      externalGroup.lastGroupBlock = random(tcrypto.HASH_SIZE);
+      group.lastGroupBlock = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
-        () => verifyUserGroupAddition(unverifiedUserGroup, user.devices[0], externalGroup),
+        () => verifyUserGroupAddition(userGroupEntry, user.devices[0], group),
         'invalid_previous_group_block'
       );
     });

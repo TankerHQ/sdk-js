@@ -7,23 +7,11 @@ import { InternalError } from '@tanker/errors';
 import { InvalidBlockError } from '../errors.internal';
 import { findIndex } from '../utils';
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
-import { type ExternalGroup } from '../Groups/types';
-import { getUserGroupCreationBlockSignDataV1, getUserGroupCreationBlockSignDataV2, getUserGroupAdditionBlockSignDataV1, getUserGroupAdditionBlockSignDataV2 } from '../Blocks/BlockGenerator';
 import type {
   UnverifiedTrustchainCreation,
-  UnverifiedUserGroup, VerifiedUserGroup,
   UnverifiedDeviceCreation, UnverifiedDeviceRevocation,
   UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
 } from '../Blocks/entries';
-
-import {
-  type UserGroupCreationRecord,
-  type UserGroupCreationRecordV1,
-  type UserGroupCreationRecordV2,
-  type UserGroupAdditionRecordV1,
-  type UserGroupAdditionRecordV2,
-  type UserGroupAdditionRecord,
-} from '../Groups/Serialize';
 
 import {
   NATURE,
@@ -120,60 +108,6 @@ export function verifyDeviceRevocation(entry: UnverifiedDeviceRevocation, author
         throw new InvalidBlockError('invalid_new_key', 'missing encrypted private key for an active device', { entry, targetUser });
     }
   }
-}
-
-export function verifyUserGroupCreation(entry: UnverifiedUserGroup, author: Device, existingGroup: ?ExternalGroup): VerifiedUserGroup {
-  const currentPayload: UserGroupCreationRecord = (entry: any);
-
-  if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
-    throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
-
-  if (existingGroup && !utils.equalArray(existingGroup.publicEncryptionKey, currentPayload.public_encryption_key)) {
-    throw new InvalidBlockError('group_already_exists', 'a group with the same public signature key already exists', { entry, author });
-  }
-
-  let selfSigBuffer;
-  if (entry.nature === NATURE.user_group_creation_v1) {
-    const versionedPayload: UserGroupCreationRecordV1 = (currentPayload: any);
-    selfSigBuffer = getUserGroupCreationBlockSignDataV1(versionedPayload);
-  } else if (entry.nature === NATURE.user_group_creation_v2) {
-    const versionedPayload: UserGroupCreationRecordV2 = (currentPayload: any);
-    selfSigBuffer = getUserGroupCreationBlockSignDataV2(versionedPayload);
-  } else {
-    throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
-  }
-  if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature, currentPayload.public_signature_key))
-    throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
-
-  return (entry: VerifiedUserGroup);
-}
-
-export function verifyUserGroupAddition(entry: UnverifiedUserGroup, author: Device, currentGroup: ?ExternalGroup): VerifiedUserGroup {
-  const currentPayload: UserGroupAdditionRecord = (entry: any);
-
-  if (!tcrypto.verifySignature(entry.hash, entry.signature, author.devicePublicSignatureKey))
-    throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
-
-  if (!currentGroup)
-    throw new InvalidBlockError('invalid_group_id', 'cannot find group id', { entry, author });
-
-  if (!utils.equalArray(currentPayload.previous_group_block, currentGroup.lastGroupBlock))
-    throw new InvalidBlockError('invalid_previous_group_block', 'previous group block does not match for this group id', { entry, author, currentGroup });
-
-  let selfSigBuffer;
-  if (entry.nature === NATURE.user_group_addition_v1) {
-    const versionedPayload: UserGroupAdditionRecordV1 = (currentPayload: any);
-    selfSigBuffer = getUserGroupAdditionBlockSignDataV1(versionedPayload);
-  } else if (entry.nature === NATURE.user_group_addition_v2) {
-    const versionedPayload: UserGroupAdditionRecordV2 = (currentPayload: any);
-    selfSigBuffer = getUserGroupAdditionBlockSignDataV2(versionedPayload);
-  } else {
-    throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
-  }
-  if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentGroup.publicSignatureKey))
-    throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', { entry, author });
-
-  return (entry: VerifiedUserGroup);
 }
 
 export function verifyProvisionalIdentityClaim(entry: UnverifiedProvisionalIdentityClaim, author: Device, authorUserId: Uint8Array): VerifiedProvisionalIdentityClaim {

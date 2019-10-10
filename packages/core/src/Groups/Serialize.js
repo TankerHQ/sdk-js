@@ -17,12 +17,12 @@ export const groupNatures = Object.freeze({
   user_group_addition_v2: 16,
 });
 
-export type GroupEncryptedKeyV1 = {|
+type GroupEncryptedKeyV1 = {|
     public_user_encryption_key: Uint8Array,
     encrypted_group_private_encryption_key: Uint8Array,
   |}
 
-export type GroupEncryptedKeyV2 = {|
+type GroupEncryptedKeyV2 = {|
     user_id: Uint8Array,
     public_user_encryption_key: Uint8Array,
     encrypted_group_private_encryption_key: Uint8Array,
