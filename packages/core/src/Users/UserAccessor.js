@@ -46,6 +46,16 @@ export default class UserAccessor {
     return user;
   }
 
+  async findUserByDeviceId(args: $Exact<{ deviceId: Uint8Array }>): Promise<?User> {
+    const { deviceId } = args;
+
+    if (!(deviceId instanceof Uint8Array))
+      throw new InvalidArgument('deviceId', 'Uint8Array', deviceId);
+
+    const user = await this._userStore.findUser(args);
+    return user;
+  }
+
   async findUserDevices(args: $Exact<{ userId: Uint8Array }>): Promise<Array<UserDevice>> {
     const { userId } = args;
 
