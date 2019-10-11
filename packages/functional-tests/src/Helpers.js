@@ -137,7 +137,8 @@ export class AppHelper {
 
     await requester.send('update trustchain', {
       id: utils.toBase64(appId),
-      google_client_id: commonSettings.googleAuth.clientId,
+      oidc_client_id: commonSettings.googleAuth.clientId,
+      oidc_provider: 'google',
     });
 
     return new AppHelper(requester, appId, appKeyPair);

@@ -32,16 +32,9 @@ async function getGoogleIdToken(refreshToken: string): Promise<string> {
 }
 
 const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod) => {
-  const methodToKey = {
-    email: 'email',
-    passphrase: 'passphrase',
-    oauth: 'oauthIdToken',
-    verificationKey: 'verificationKey',
-  };
-
   // $FlowExpectedError email might not be defined
   const { type, email } = method;
-  expect(methodToKey[type] in verification).to.be.true;
+  expect(type in verification).to.be.true;
 
   if (type === 'email') {
     // $FlowIKnow I tested the 'email' type already
@@ -222,7 +215,7 @@ const generateVerificationTests = (args: TestArgs) => {
       });
     });
 
-    describe('verification by google id token', () => {
+    describe('verification by oidc id token', () => {
       const martineRefreshToken = commonSettings.googleAuth.martineRefreshToken;
       const kevinRefreshToken = commonSettings.googleAuth.kevinRefreshToken;
 
@@ -234,36 +227,36 @@ const generateVerificationTests = (args: TestArgs) => {
         kevinIdToken = await getGoogleIdToken(kevinRefreshToken);
       });
 
-      it('registers and verifies with a google id token', async () => {
-        await bobLaptop.registerIdentity({ oauthIdToken: martineIdToken });
-        await expect(expectVerification(bobPhone, bobIdentity, { oauthIdToken: martineIdToken })).to.be.fulfilled;
+      it('registers and verifies with an oidc id token', async () => {
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: martineIdToken })).to.be.fulfilled;
       });
 
       it('fails to verify a token with incorrect signature', async () => {
-        await bobLaptop.registerIdentity({ oauthIdToken: martineIdToken });
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
         const jwtBinParts = martineIdToken.split('.').map(utils.fromBase64);
         jwtBinParts[2][5] += 1; // break signature
         const forgedIdToken = jwtBinParts.map(utils.toSafeBase64).join('.').replace(/=/g, '');
-        await expect(expectVerification(bobPhone, bobIdentity, { oauthIdToken: forgedIdToken })).to.be.rejectedWith(/failed to verify signature/);
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: forgedIdToken })).to.be.rejectedWith(/failed to verify signature/);
       });
 
       it('fails to verify a valid token for the wrong user', async () => {
-        await bobLaptop.registerIdentity({ oauthIdToken: martineIdToken });
-        await expect(expectVerification(bobPhone, bobIdentity, { oauthIdToken: kevinIdToken })).to.be.rejectedWith(/Wrong subject/);
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: kevinIdToken })).to.be.rejectedWith(/Wrong subject/);
       });
 
-      it('updates and verifies with a google id token', async () => {
+      it('updates and verifies with an oidc id token', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-        await expect(bobLaptop.setVerificationMethod({ oauthIdToken: martineIdToken })).to.be.fulfilled;
+        await expect(bobLaptop.setVerificationMethod({ oidcIdToken: martineIdToken })).to.be.fulfilled;
 
         await bobPhone.start(bobIdentity);
         expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
-        await expect(bobPhone.verifyIdentity({ oauthIdToken: martineIdToken })).to.be.fulfilled;
+        await expect(bobPhone.verifyIdentity({ oidcIdToken: martineIdToken })).to.be.fulfilled;
         expect(bobPhone.status).to.equal(READY);
       });
 
-      it('fails to attach a provisional identity for the wrong google account', async () => {
+      it('fails to attach a provisional identity if the oidc id token contains an email different from the provisional email', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const aliceIdentity = await args.appHelper.generateIdentity();
         const aliceLaptop = args.makeTanker();
@@ -279,7 +272,7 @@ const generateVerificationTests = (args: TestArgs) => {
           verificationMethod: { type: 'email', email },
         });
 
-        await expect(bobLaptop.verifyProvisionalIdentity({ oauthIdToken: martineIdToken })).to.be.rejectedWith(/does not match provisional identity/);
+        await expect(bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(/does not match provisional identity/);
         await aliceLaptop.stop();
       });
 
@@ -303,7 +296,7 @@ const generateVerificationTests = (args: TestArgs) => {
           verificationMethod: { type: 'email', email },
         });
 
-        await bobLaptop.verifyProvisionalIdentity({ oauthIdToken: martineIdToken });
+        await bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken });
 
         const decrypted = await bobLaptop.decrypt(cipherText);
         expect(decrypted).to.equal(clearText);
