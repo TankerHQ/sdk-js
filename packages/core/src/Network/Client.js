@@ -2,7 +2,7 @@
 
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
-import { tcrypto, generichash, utils, type b64string } from '@tanker/crypto';
+import { tcrypto, generichash, utils } from '@tanker/crypto';
 import { ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
 import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
@@ -22,10 +22,19 @@ export type ClientOptions = {
   sdkInfo: SdkInfo,
 }
 
+const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
+
 export function b64RequestObject(requestObject: any): any {
+  if (requestObject instanceof Uint8Array) {
+    return utils.toBase64(requestObject);
+  }
+
   if (Array.isArray(requestObject)) {
     return requestObject.map(elem => b64RequestObject(elem));
   }
+
+  if (!isObject(requestObject))
+    throw new InternalError('Assertion error: b64RequestObject operates only on Object, Array and Uint8Array instances');
 
   const result = {};
 
@@ -34,7 +43,7 @@ export function b64RequestObject(requestObject: any): any {
       result[key] = utils.toBase64(value);
     } else if (Array.isArray(value)) {
       result[key] = b64RequestObject(value);
-    } else if (value && typeof value === 'object') {
+    } else if (isObject(value)) {
       result[key] = b64RequestObject(value);
     } else {
       result[key] = value;
@@ -124,12 +133,12 @@ export class Client extends EventEmitter {
 
       const { signature, publicSignatureKey, trustchainId, userId } = this._authenticator(challenge);
 
-      return this._unauthenticatedSend('authenticate device', {
-        signature: utils.toBase64(signature),
-        public_signature_key: utils.toBase64(publicSignatureKey),
-        trustchain_id: utils.toBase64(trustchainId),
-        user_id: utils.toBase64(userId),
-      });
+      return this._unauthenticatedSend('authenticate device', b64RequestObject({
+        signature,
+        public_signature_key: publicSignatureKey,
+        trustchain_id: trustchainId,
+        user_id: userId,
+      }));
     };
 
     this._authenticating = auth().then(() => {
@@ -163,12 +172,12 @@ export class Client extends EventEmitter {
 
   async remoteStatus(trustchainId: Uint8Array, userId: Uint8Array, publicSignatureKey: Uint8Array) {
     const request = {
-      trustchain_id: utils.toBase64(trustchainId),
-      user_id: utils.toBase64(userId),
-      device_public_signature_key: utils.toBase64(publicSignatureKey),
+      trustchain_id: trustchainId,
+      user_id: userId,
+      device_public_signature_key: publicSignatureKey,
     };
 
-    const reply = await this.send('get user status', request);
+    const reply = await this.send('get user status', b64RequestObject(request));
 
     return {
       deviceExists: reply.device_exists,
@@ -258,17 +267,12 @@ export class Client extends EventEmitter {
 
   sendBlock = async (block: Block): Promise<void> => {
     const b2 = { index: 0, ...block };
-    await this.send('push block', utils.toBase64(serializeBlock(b2)));
+    await this.send('push block', b64RequestObject(serializeBlock(b2)));
   }
 
   sendKeyPublishBlocks = async (blocks: Array<Block>): Promise<void> => {
-    const serializedBlocks: Array<b64string> = [];
-    blocks.forEach(block => {
-      const b2 = { index: 0, ...block };
-      serializedBlocks.push(utils.toBase64(serializeBlock(b2)));
-    });
-
-    await this.send('push keys', serializedBlocks);
+    const serializedBlocks = blocks.map(block => serializeBlock({ index: 0, ...block }));
+    await this.send('push keys', b64RequestObject(serializedBlocks));
   }
 
   getProvisionalUsers = async (provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> => {
