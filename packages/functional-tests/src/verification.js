@@ -216,8 +216,8 @@ const generateVerificationTests = (args: TestArgs) => {
     });
 
     describe('verification by oidc id token', () => {
-      const martineRefreshToken = commonSettings.googleAuth.martineRefreshToken;
-      const kevinRefreshToken = commonSettings.googleAuth.kevinRefreshToken;
+      const martineRefreshToken = commonSettings.googleAuth.users.martine.refreshToken;
+      const kevinRefreshToken = commonSettings.googleAuth.users.kevin.refreshToken;
 
       let martineIdToken: string;
       let kevinIdToken: string;
@@ -283,7 +283,7 @@ const generateVerificationTests = (args: TestArgs) => {
         await aliceLaptop.start(aliceIdentity);
         await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-        const email = commonSettings.googleAuth.martineEmail;
+        const email = commonSettings.googleAuth.users.martine.email;
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
