@@ -23,8 +23,8 @@ export function generateFunctionalTests(
   generateTestResources: () => TestResources,
 ) {
   if (!tankerUrl || !idToken || !commonSettings) {
-    // Those functional tests create an app automatically and require a TANKER_TOKEN to run
-    // They also require a TANKER_URL to know to which Tanker server they should talk to
+    // Those functional tests create an app automatically and require a TANKER_CONFIG_NAME
+    // and TANKER_CONFIG_FILEPATH to run
     if (process.env.CI) {
       throw new Error('Functional tests should be running, check the configuration');
     }

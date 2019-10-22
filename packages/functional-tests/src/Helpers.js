@@ -9,9 +9,30 @@ import { random, tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
-const tankerUrl = process.env.TANKER_URL || '';
-const idToken = process.env.TANKER_TOKEN || '';
-const commonSettings = JSON.parse(process.env.TANKER_COMMON_SETTINGS || 'null');
+let tankerUrl; // eslint-disable-line import/no-mutable-exports
+let idToken; // eslint-disable-line import/no-mutable-exports
+let commonSettings; // eslint-disable-line import/no-mutable-exports
+
+// $FlowIKnow
+if (process.browser) {
+  // $FlowIKnow
+  const testConfig = TANKER_TEST_CONFIG; // eslint-disable-line no-undef
+  tankerUrl = testConfig.url;
+  idToken = testConfig.idToken;
+  commonSettings = testConfig.oidc;
+} else if (process.env.TANKER_CONFIG_FILEPATH && process.env.TANKER_CONFIG_NAME) {
+  const fs = require('fs'); // eslint-disable-line global-require
+
+  const config = JSON.parse(fs.readFileSync(process.env.TANKER_CONFIG_FILEPATH, { encoding: 'utf-8' }));
+  tankerUrl = config[process.env.TANKER_CONFIG_NAME].url;
+  idToken = config[process.env.TANKER_CONFIG_NAME].idToken;
+  commonSettings = config.oidc;
+} else {
+  const testConfig = JSON.parse(process.env.TANKER_CI_CONFIG || '');
+  tankerUrl = testConfig.url;
+  idToken = testConfig.idToken;
+  commonSettings = testConfig.oidc;
+}
 
 export { tankerUrl, idToken, commonSettings };
 

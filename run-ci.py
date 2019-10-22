@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 import argparse
 import os
 import re
@@ -10,10 +10,11 @@ import cli_ui as ui
 from path import Path
 import psutil
 
-import ci.js
-import ci.endtoend
-import ci.conan
 import ci.cpp
+import ci.conan
+import ci.endtoend
+import ci.js
+import ci.tanker_configs
 
 
 class TestFailed(Exception):
@@ -123,8 +124,15 @@ def run_tests_in_browser_ten_times(*, env: str, runner: str) -> None:
         raise TestFailed
 
 
+def get_run_env(env: str) -> Dict[str, str]:
+    run_env = os.environ.copy()
+    run_env["TANKER_CONFIG_NAME"] = env
+    run_env["TANKER_CONFIG_FILEPATH"] = ci.tanker_configs.get_path()
+    return run_env
+
+
 def run_tests_in_browser(*, env: str, runner: str) -> None:
-    run_env = ci.js.get_run_env(project_config=env)
+    run_env = get_run_env(env)
     if runner == "linux":
         ci.js.run_yarn("karma", "--browsers", "ChromiumInDocker", env=run_env)
     elif runner == "macos":
@@ -141,7 +149,7 @@ def run_tests_in_browser(*, env: str, runner: str) -> None:
 
 
 def run_sdk_compat_tests(*, env: str) -> None:
-    run_env = ci.js.get_run_env(project_config=env)
+    run_env = get_run_env(env)
     cwd = Path.getcwd() / "ci/compat"
     ci.js.yarn_install_deps(cwd=cwd)
     ci.js.run_yarn("proof", cwd=cwd, env=run_env)
@@ -176,7 +184,7 @@ def run_linters() -> None:
 
 
 def run_tests_in_node(*, env: str) -> None:
-    run_env = ci.js.get_run_env(project_config=env)
+    run_env = get_run_env(env)
     ci.js.run_yarn("coverage", env=run_env)
 
 
