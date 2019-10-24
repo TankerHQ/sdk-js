@@ -315,7 +315,7 @@ describe('BlockVerification', () => {
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = await testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      const provisionalIdentity = testGenerator.makeProvisionalUser();
+      const provisionalIdentity = testGenerator.makeProvisionalUser().publicProvisionalUser;
       const userGroup = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
       unverifiedUserGroup = userGroup.unverifiedUserGroup;
       externalGroup = userGroup.externalGroup;
@@ -361,7 +361,7 @@ describe('BlockVerification', () => {
       const userId = random(tcrypto.HASH_SIZE);
       const userCreation = await testGenerator.makeUserCreation(userId);
       user = userCreation.user;
-      const provisionalIdentity = testGenerator.makeProvisionalUser();
+      const provisionalIdentity = testGenerator.makeProvisionalUser().publicProvisionalUser;
       const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
       externalGroup = userGroupCreation.externalGroup;
 

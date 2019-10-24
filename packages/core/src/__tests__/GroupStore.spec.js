@@ -126,7 +126,7 @@ describe('GroupStore', () => {
   });
 
   it('can find a group by provisional public signature keys', async () => {
-    const provisionalUser = testGenerator.makeProvisionalUser();
+    const provisionalUser = testGenerator.makeProvisionalUser().publicProvisionalUser;
     const groupWithProvisional = testGenerator.makeUserGroupCreation(testUserCreation, [], [provisionalUser]);
     await groupStore.putExternal(groupWithProvisional.externalGroup);
 

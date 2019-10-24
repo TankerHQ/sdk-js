@@ -150,15 +150,29 @@ class TestGenerator {
     this._trustchainIndex += 1;
   }
 
-  makeProvisionalUser = () => ({
-    trustchainId: random(tcrypto.HASH_SIZE),
-    target: 'email',
-    value: 'email@example.com',
-    appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-    appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-    tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-    tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-  });
+  makeProvisionalUser = () => {
+    const appSignatureKeyPair = tcrypto.makeSignKeyPair();
+    const appEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
+    const tankerSignatureKeyPair = tcrypto.makeSignKeyPair();
+    const tankerEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
+    return {
+      publicProvisionalUser: {
+        trustchainId: this._trustchainId,
+        target: 'email',
+        value: 'email@example.com',
+        appSignaturePublicKey: appSignatureKeyPair.publicKey,
+        appEncryptionPublicKey: appEncryptionKeyPair.publicKey,
+        tankerSignaturePublicKey: tankerSignatureKeyPair.publicKey,
+        tankerEncryptionPublicKey: tankerEncryptionKeyPair.publicKey,
+      },
+      provisionalUserKeys: {
+        appSignatureKeyPair,
+        appEncryptionKeyPair,
+        tankerSignatureKeyPair,
+        tankerEncryptionKeyPair,
+      }
+    };
+  };
 
   makeUserCreation = async (userId: Uint8Array): Promise<TestDeviceCreation> => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
