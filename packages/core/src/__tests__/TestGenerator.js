@@ -1,7 +1,8 @@
 // @flow
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
-import { type PublicProvisionalUser, createIdentity, getPublicIdentity } from '@tanker/identity';
+import { type PublicProvisionalUser, type ProvisionalUserKeys, createIdentity, getPublicIdentity } from '@tanker/identity';
+import KeyStore from '../Session/KeyStore';
 
 import {
   deviceCreationFromBlock,
@@ -115,6 +116,37 @@ function createDelegationToken(userId: Uint8Array, trustchainPrivateKey: Uint8Ar
     delegation_signature: tcrypto.sign(delegationBuffer, trustchainPrivateKey),
     last_reset: new Uint8Array(32),
   };
+}
+
+// TODO: test this horror
+export async function getKeyStoreOfDevice(user: TestUser, device: TestDevice, provisionalIdentities: Array<ProvisionalUserKeys> = []): Promise<KeyStore> {
+  /* eslint-disable no-underscore-dangle */
+
+  // $FlowExpectedError we are making a read-only key store for tests, no need for a real database
+  const keystore = new KeyStore(null);
+  keystore._safe = {
+    deviceId: utils.toBase64(device.id),
+    signaturePair: device.signKeys,
+    encryptionPair: device.encryptionKeys,
+    userKeys: user.userKeys.map(({ index, ...userKeyPair }) => userKeyPair),
+    encryptedUserKeys: [],
+    provisionalUserKeys: {},
+    userSecret: new Uint8Array(32),
+  };
+  keystore._userKeys = {};
+  if (user.userKeys) {
+    const lastUserKey = user.userKeys.slice(-1)[0];
+    const { publicKey, privateKey } = lastUserKey;
+    keystore._userKeys[utils.toBase64(publicKey)] = { publicKey, privateKey };
+  }
+  for (const ident of provisionalIdentities) {
+    const id = utils.toBase64(utils.concatArrays(ident.appSignatureKeyPair.publicKey, ident.tankerSignatureKeyPair.publicKey));
+    const keys = { id, appEncryptionKeyPair: ident.appEncryptionKeyPair, tankerEncryptionKeyPair: ident.tankerEncryptionKeyPair };
+    keystore._safe.provisionalUserKeys[id] = keys;
+  }
+  return keystore;
+
+  /* eslint-enable no-underscore-dangle */
 }
 
 class TestGenerator {
