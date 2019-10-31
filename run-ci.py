@@ -210,6 +210,7 @@ def e2e(args) -> None:
         base_path = ci.git.prepare_sources(
             repos=["sdk-native", "sdk-python", "sdk-js", "qa-python-js"]
         )
+    ci.conan.set_home_isolation()
     ci.cpp.update_conan_config()
     ci.conan.export(src_path=base_path / "sdk-native", ref_or_channel="tanker/dev")
     ci.endtoend.test(
