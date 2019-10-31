@@ -4,6 +4,17 @@ const webpack = require('webpack');
 const karmaConfig = require('./karma.config.base');
 const { makeBaseConfig } = require('../webpack.config.base');
 
+const getConfig = () => {
+  if (process.env.TANKER_CONFIG_FILEPATH && process.env.TANKER_CONFIG_NAME) {
+    const config = JSON.parse(fs.readFileSync(process.env.TANKER_CONFIG_FILEPATH, { encoding: 'utf-8' }));
+    const envConfig = config[process.env.TANKER_CONFIG_NAME];
+    envConfig.oidc = config.oidc;
+    return envConfig
+  } else if (process.env.TANKER_CI_CONFIG) {
+    return JSON.parse(process.env.TANKER_CI_CONFIG, { encoding: 'utf-8' });
+  }
+}
+
 module.exports = (config) => {
   config.set({
     ...karmaConfig,
@@ -14,14 +25,9 @@ module.exports = (config) => {
       react: true,
       plugins: [
         new webpack.DefinePlugin({
-          'process.env': {
-            TANKER_TOKEN: JSON.stringify(process.env.TANKER_TOKEN),
-            TANKER_URL: JSON.stringify(process.env.TANKER_URL),
-            TANKER_COMMON_SETTINGS: JSON.stringify(process.env.TANKER_COMMON_SETTINGS),
-            CI: JSON.stringify(process.env.CI),
-          },
+          TANKER_TEST_CONFIG: JSON.stringify(getConfig()),
         }),
-      ]
+      ],
     }),
 
     // level of logging

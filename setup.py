@@ -13,4 +13,10 @@ setup(
     install_requires=[
         "ci",
     ],
+    extras_require={
+        "dev": [
+            "flake8",
+            "mypy",
+        ],
+    },
 )
