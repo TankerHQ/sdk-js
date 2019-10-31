@@ -78,6 +78,10 @@ export default class UserStore {
       version: 7,
       ...schemaV2
     },
+    {
+      version: 8,
+      ...schemaV2
+    },
   ];
 
   constructor(ds: DataStore<*>, userId: Uint8Array) {

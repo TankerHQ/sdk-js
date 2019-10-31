@@ -1,5 +1,5 @@
 // @flow
-import { type DataStore } from '@tanker/datastore-base';
+import { type DataStore, type TableSchema } from '@tanker/datastore-base';
 
 import type {
   UnverifiedDeviceCreation, VerifiedDeviceCreation,
@@ -19,12 +19,24 @@ const schemaTablesV3 = [
 const schemaTablesV4 = [
   ...schemaTablesV3,
   ...UserUnverifiedStore.tables,
+  // Legacy tables from now removed UserGroupsUnverifiedStore:
+  {
+    name: 'unverified_user_groups',
+    indexes: [['index'], ['group_id']]
+  }, {
+    name: 'encryption_key_to_group_id',
+  }
 ];
 
 const schemaTablesV6 = [
   ...schemaTablesV4,
   ...ProvisionalIdentityClaimUnverifiedStore.tables,
 ];
+
+const schemaTablesV8 = schemaTablesV6.map<TableSchema>(def => {
+  const deleted = ['unverified_user_groups', 'encryption_key_to_group_id'].indexOf(def.name) !== -1;
+  return deleted ? ({ ...def, deleted: true }) : def;
+});
 
 // Storage for unverified blocks of different natures
 export default class UnverifiedStore {
@@ -59,6 +71,10 @@ export default class UnverifiedStore {
     {
       version: 7,
       tables: schemaTablesV6,
+    },
+    {
+      version: 8,
+      tables: schemaTablesV8,
     },
   ];
 
