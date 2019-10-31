@@ -1,5 +1,5 @@
 // @flow
-
+import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
@@ -22,12 +22,18 @@ import {
 
 import Trustchain from '../Trustchain/Trustchain';
 
+type CachedPublicKeysResult = {
+  cachedKeys: Array<Uint8Array>,
+  missingGroupIds: Array<Uint8Array>,
+}
+
 export default class GroupManager {
   _localUser: LocalUser
   _trustchain: Trustchain;
   _keystore: KeyStore;
   _userAccessor: UserAccessor;
   _client: Client;
+  _groupStore: GroupStore;
 
   constructor(
     localUser: LocalUser,
@@ -42,6 +48,7 @@ export default class GroupManager {
     this._keystore = keystore;
     this._userAccessor = userAccessor;
     this._client = client;
+    this._groupStore = groupStore;
   }
 
   async createGroup(publicIdentities: Array<b64string>): Promise<b64string> {
@@ -94,17 +101,35 @@ export default class GroupManager {
   }
 
   async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {
-    if (groupIds.length === 0) {
-      return [];
-    }
-    const blocks = await this._getGroupsBlocksById(groupIds);
-    const groups = await this._groupsFromBlocks(blocks);
-    assertExpectedGroups(groups, groupIds);
+    if (groupIds.length === 0) return [];
 
-    return groups.map(g => g.publicEncryptionKey);
+    const { cachedKeys, missingGroupIds } = await this._getCachedGroupsPublicKeys(groupIds);
+    const newKeys = [];
+
+    if (missingGroupIds.length > 0) {
+      const blocks = await this._getGroupsBlocksById(missingGroupIds);
+      const groups = await this._groupsFromBlocks(blocks);
+      assertExpectedGroups(groups, missingGroupIds);
+
+      const records = [];
+      for (const group of groups) {
+        const { groupId, publicEncryptionKey } = group;
+        records.push({ groupId, publicEncryptionKey });
+        newKeys.push(publicEncryptionKey);
+      }
+
+      await this._groupStore.saveGroupsPublicKeys(records);
+    }
+
+    return cachedKeys.concat(newKeys);
   }
 
   async getGroupEncryptionKeyPair(groupPublicEncryptionKey: Uint8Array) {
+    const cachedEncryptionKeyPair = await this._groupStore.findGroupKeyPair(groupPublicEncryptionKey);
+    if (cachedEncryptionKeyPair) {
+      return cachedEncryptionKeyPair;
+    }
+
     const blocks = await this._getGroupBlocksByPublicKey(groupPublicEncryptionKey);
     const groups = await this._groupsFromBlocks(blocks);
     assertExpectedGroupsByPublicKey(groups, groupPublicEncryptionKey);
@@ -114,6 +139,7 @@ export default class GroupManager {
       throw new InvalidArgument('Current user is not a group member');
     }
 
+    await this._groupStore.saveGroupKeyPair(group.groupId, group.encryptionKeyPair);
     return group.encryptionKeyPair;
   }
 
@@ -159,5 +185,21 @@ export default class GroupManager {
     };
 
     return this._client.send('get groups blocks', b64RequestObject(request));
+  }
+
+  async _getCachedGroupsPublicKeys(groupsIds: Array<Uint8Array>): Promise<CachedPublicKeysResult> {
+    const cacheResults = await this._groupStore.findGroupsPublicKeys(groupsIds);
+    const missingGroupIds = [];
+
+    groupsIds.forEach(groupId => {
+      const resultFromCache = find(cacheResults, result => utils.equalArray(result.groupId, groupId));
+      if (!resultFromCache) {
+        missingGroupIds.push(groupId);
+      }
+    });
+    return {
+      cachedKeys: cacheResults.map(res => res.publicEncryptionKey),
+      missingGroupIds,
+    };
   }
 }
