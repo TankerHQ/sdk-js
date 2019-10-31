@@ -2,7 +2,6 @@ from typing import Any, Callable, Dict
 import argparse
 import os
 import re
-import subprocess
 import sys
 import time
 
@@ -138,7 +137,6 @@ def run_tests_in_browser(*, env: str, runner: str) -> None:
     elif runner == "macos":
         ci.run("killall", "Safari", check=False)
         delete_safari_state()
-        this_path = Path(__file__).parent
         ci.js.run_yarn("karma", "--browsers", "Safari", env=run_env)
     elif runner == "windows-edge":
         delete_edge_state()
