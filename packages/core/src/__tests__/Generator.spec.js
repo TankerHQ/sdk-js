@@ -7,8 +7,8 @@ import { expect } from '@tanker/test-utils';
 import Generator from './Generator';
 
 import { blockToEntry } from '../Blocks/entries';
-import { type UserDeviceRecord, unserializePayload } from '../Blocks/payloads';
-import { isDeviceCreation, isDeviceRevocation, NATURE, isTrustchainCreation } from '../Blocks/Nature';
+import { type UserDeviceRecord } from '../Blocks/payloads';
+import { isDeviceCreation, isTrustchainCreation } from '../Blocks/Nature';
 
 describe('trustchain-generator', () => {
   let generator;
@@ -79,76 +79,5 @@ describe('trustchain-generator', () => {
     expect(generator.users['47'].devices[1].id).to.deep.equal(deviceAddBlock.hash);
     expect(tcrypto.verifySignature(delegationBuffer, deviceAddBlockPayload.delegation_signature, publicKey)).to.equal(true);
     expect(tcrypto.verifySignature(deviceAddBlock.hash, signature, deviceAddBlockPayload.ephemeral_public_signature_key)).to.equal(true);
-  });
-
-  it('should revoke a device', async () => {
-    await generator.newUserCreationV3('47');
-    await generator.newDeviceCreationV3({ userId: '47', parentIndex: 0 });
-    await generator.newDeviceCreationV3({ userId: '47', parentIndex: 1 });
-    const firstDevice = generator.users['47'].devices[0];
-    const secondDevice = generator.users['47'].devices[1];
-
-    const { block: revocationBlock, entry: revocationEntry } = await generator.newDeviceRevocationV2(firstDevice, secondDevice);
-
-    expect(isDeviceRevocation(revocationEntry.nature)).to.be.true;
-    expect(revocationEntry.author).to.equal(firstDevice.id);
-    expect(tcrypto.verifySignature(
-      revocationEntry.hash,
-      revocationBlock.signature,
-      firstDevice.signKeys.publicKey
-    )).to.equal(true);
-  });
-
-  it('should be able to add a user through user creationV1', async () => {
-    const firstDeviceBlock = (await generator.newUserCreationV1('user47')).block;
-    expect(generator.pushedBlocks.length).to.equal(2);
-    expect(Object.keys(generator.users)).to.have.a.lengthOf(1);
-    expect(generator.users.user47.devices).to.have.a.lengthOf(1);
-    expect(firstDeviceBlock.nature).to.equal(NATURE.device_creation_v1);
-    const userRecord = unserializePayload(firstDeviceBlock);
-    // $FlowExpectedError userRecord is expected to be a UserDeviceRecord here.
-    expect(userRecord.user_key_pair).to.be.null;
-  });
-
-  it('should refuse to revoke a Device V3 with a DR1', async () => {
-    await generator.newUserCreationV3('user47');
-    await generator.newDeviceCreationV3({ userId: 'user47', parentIndex: 1 });
-    const firstDevice = generator.users.user47.devices[0];
-    const secondDevice = generator.users.user47.devices[1];
-    await expect(generator.newDeviceRevocationV1(firstDevice, secondDevice)).to.be.rejected;
-  });
-
-  it('should not be able to add a device creation V3 on a user V1', async () => {
-    await generator.newUserCreationV1('user47');
-    await expect(generator.newDeviceCreationV3({ userId: 'user47', parentIndex: 1 })).to.be.rejected;
-  });
-
-  it('should be able to add a device creation V1 to an user V1', async () => {
-    await generator.newUserCreationV1('user47');
-    const device = await generator.newDeviceCreationV1({ userId: 'user47', parentIndex: 1 });
-    expect(generator.pushedBlocks.length).to.equal(3);
-    expect(Object.keys(generator.users)).to.have.a.lengthOf(1);
-    expect(generator.users.user47.devices).to.have.a.lengthOf(2);
-    expect(device.block.nature).to.equal(NATURE.device_creation_v1);
-    const userRecord = unserializePayload(device.block);
-    // $FlowExpectedError userRecord is expected to be a UserDeviceRecord here.
-    expect(userRecord.user_key_pair).to.be.null;
-  });
-
-  it('should be able to revoke a Device V1 with a DR1', async () => {
-    await generator.newUserCreationV1('user47');
-    await generator.newDeviceCreationV1({ userId: 'user47', parentIndex: 1 });
-    const firstDevice = generator.users.user47.devices[0];
-    const secondDevice = generator.users.user47.devices[1];
-
-    const { block: revocationBlock, entry: revocationEntry } = await generator.newDeviceRevocationV1(firstDevice, secondDevice);
-
-    expect(revocationBlock.nature).to.equal(NATURE.device_revocation_v1);
-    expect(revocationEntry.author).to.equal(firstDevice.id);
-    expect(tcrypto.verifySignature(
-      revocationEntry.hash,
-      revocationBlock.signature,
-      firstDevice.signKeys.publicKey
-    )).to.equal(true);
   });
 });

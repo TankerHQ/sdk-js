@@ -1,18 +1,14 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
-import { obfuscateUserId, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
+import { obfuscateUserId } from '@tanker/identity';
 
 import { blockToEntry } from '../Blocks/entries';
-import type { UnverifiedEntry, UnverifiedDeviceCreation, UnverifiedDeviceRevocation, UnverifiedProvisionalIdentityClaim } from '../Blocks/entries';
-import BlockGenerator from '../Blocks/BlockGenerator';
-import type { Device, User } from '../Users/User';
+import type { UnverifiedEntry, UnverifiedDeviceCreation } from '../Blocks/entries';
+import type { Device } from '../Users/User';
 
-import { signBlock, hashBlock, type Block } from '../Blocks/Block';
+import { signBlock, type Block } from '../Blocks/Block';
 import { serializeTrustchainCreation,
   serializeUserDeviceV3,
-  serializeDeviceRevocationV1,
-  serializeDeviceRevocationV2,
-  serializeProvisionalIdentityClaim,
   type UserDeviceRecord,
   SEALED_KEY_SIZE } from '../Blocks/payloads';
 
@@ -51,14 +47,6 @@ export function generatorDeviceToDevice(u: GeneratorDevice): Device {
   };
 }
 
-export function generatorUserToUser(trustchainId: Uint8Array, u: GeneratorUser): User {
-  return {
-    userId: utils.toBase64(obfuscateUserId(trustchainId, u.id)),
-    userPublicKeys: u.userKeys ? [{ index: 1, userPublicKey: u.userKeys.publicKey }] : [],
-    devices: u.devices.map(generatorDeviceToDevice),
-  };
-}
-
 export type GeneratorUserResult = {
   entry: UnverifiedEntry,
   block: Block,
@@ -66,35 +54,6 @@ export type GeneratorUserResult = {
   device: GeneratorDevice,
   blockPrivateSignatureKey: Uint8Array,
   unverifiedDeviceCreation: UnverifiedDeviceCreation,
-}
-
-export type GeneratorRevocationResult = {
-  entry: UnverifiedEntry,
-  block: Block,
-  user: GeneratorUser,
-  blockPrivateSignatureKey: Uint8Array,
-  unverifiedDeviceRevocation: UnverifiedDeviceRevocation,
-}
-
-export type GeneratorUserGroupResult = {
-  entry: UnverifiedEntry,
-  block: Block,
-  groupSignatureKeyPair: tcrypto.SodiumKeyPair,
-  groupEncryptionKeyPair: tcrypto.SodiumKeyPair,
-  blockPrivateSignatureKey: Uint8Array,
-}
-
-export type GeneratorUserGroupAdditionResult = {
-  entry: UnverifiedEntry,
-  block: Block,
-  blockPrivateSignatureKey: Uint8Array,
-}
-
-export type GeneratorProvisionalIdentityClaimResult = {
-  entry: UnverifiedEntry,
-  block: Block,
-  provisionalUserKeys: ProvisionalUserKeys,
-  unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim,
 }
 
 type CreateUserResult = {
@@ -196,21 +155,6 @@ class Generator {
     return { block, entry, device, blockPrivateSignatureKey: ephemeralKeys.privateKey, unverifiedDeviceCreation };
   }
 
-  async newUserCreationV1(userId: string, { unsafe }: { unsafe: bool } = {}): Promise<GeneratorUserResult> {
-    if (!unsafe && this.users[userId])
-      throw new Error(`Generator: user ${userId} already exists`);
-    const result = this.createUser({ userId, userKeys: tcrypto.makeEncryptionKeyPair(), nature: NATURE.device_creation_v1 });
-
-    const user = { id: userId, devices: [result.device] };
-    this.users[userId] = user;
-    this.usersDevices[utils.toBase64(result.entry.hash)] = userId;
-
-    this.pushedBlocks.push(result.block);
-    return {
-      ...result,
-      user,
-    };
-  }
 
   async newUserCreationV3(userId: string, { unsafe }: { unsafe?: bool } = {}): Promise<GeneratorUserResult> {
     if (!unsafe && this.users[userId])
@@ -273,191 +217,6 @@ class Generator {
     return {
       ...result,
       user: { ...this.users[userId] },
-    };
-  }
-
-  async newDeviceRevocationV1(from: GeneratorDevice, to: { id: Uint8Array }, { unsafe }: { unsafe: bool } = {}): Promise<GeneratorRevocationResult> {
-    const deviceId = utils.toBase64(to.id);
-    const userId = this.usersDevices[deviceId];
-    const { userKeys } = this.users[userId];
-    if (!unsafe && userKeys)
-      throw new Error('Generator: cannot add a deviceRevocationV1 on a device V2');
-
-    const payload = {
-      device_id: to.id,
-    };
-    this.trustchainIndex += 1;
-    const block = signBlock({
-      index: this.trustchainIndex,
-      trustchain_id: this.trustchainId,
-      nature: NATURE.device_revocation_v1,
-      author: from.id,
-      payload: serializeDeviceRevocationV1(payload)
-    }, from.signKeys.privateKey);
-    this.pushedBlocks.push(block);
-    this.users[userId].devices = this.users[userId].devices.filter(d => !utils.equalArray(d.id, to.id));
-
-    const hashedUserId = obfuscateUserId(this.trustchainId, userId);
-    const entry: UnverifiedEntry = { ...blockToEntry(block), user_id: hashedUserId };
-    const unverifiedDeviceRevocation = { ...entry, ...entry.payload_unverified };
-    return {
-      block,
-      entry,
-      user: { ...this.users[userId] },
-      blockPrivateSignatureKey: from.signKeys.privateKey,
-      unverifiedDeviceRevocation,
-    };
-  }
-
-  async newDeviceRevocationV2(from: GeneratorDevice, to: { id: Uint8Array }): Promise<GeneratorRevocationResult> {
-    const deviceId = utils.toBase64(to.id);
-    const userId = this.usersDevices[deviceId];
-
-    const newUserKey = tcrypto.makeEncryptionKeyPair();
-    let { userKeys } = this.users[userId];
-    if (!userKeys)
-      userKeys = {
-        publicKey: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        privateKey: new Uint8Array(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
-      };
-
-    const remainingDevices = this.users[userId].devices.filter(d => !utils.equalArray(d.id, to.id));
-    const encryptedPrivateKeys = remainingDevices.map(d => ({
-      recipient: d.id,
-      key: tcrypto.sealEncrypt(newUserKey.privateKey, d.encryptionKeys.publicKey),
-    }));
-
-    let encryptedPreviousEncryptionKey = tcrypto.sealEncrypt(userKeys.privateKey, newUserKey.publicKey);
-    if (!this.users[userId].userKeys)
-      encryptedPreviousEncryptionKey = new Uint8Array(SEALED_KEY_SIZE);
-    const payload = {
-      device_id: to.id,
-      user_keys: {
-        public_encryption_key: newUserKey.publicKey,
-        previous_public_encryption_key: userKeys.publicKey,
-        encrypted_previous_encryption_key: encryptedPreviousEncryptionKey,
-        private_keys: encryptedPrivateKeys,
-      },
-    };
-    this.users[userId].userKeys = newUserKey;
-    this.trustchainIndex += 1;
-    const block = signBlock({
-      index: this.trustchainIndex,
-      trustchain_id: this.trustchainId,
-      nature: NATURE.device_revocation_v2,
-      author: from.id,
-      payload: serializeDeviceRevocationV2(payload)
-    }, from.signKeys.privateKey);
-    this.pushedBlocks.push(block);
-    this.users[userId].devices = this.users[userId].devices.filter(d => !utils.equalArray(d.id, to.id));
-
-    const hashedUserId = obfuscateUserId(this.trustchainId, userId);
-    const entry: UnverifiedEntry = { ...blockToEntry(block), user_id: hashedUserId };
-    const unverifiedDeviceRevocation = { ...entry, ...entry.payload_unverified };
-    return {
-      block,
-      entry,
-      user: { ...this.users[userId] },
-      blockPrivateSignatureKey: from.signKeys.privateKey,
-      unverifiedDeviceRevocation,
-    };
-  }
-
-  async newUserGroupCreation(from: GeneratorDevice, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupResult> {
-    const blockGenerator = new BlockGenerator(
-      this.trustchainId,
-      from.signKeys.privateKey,
-      from.id
-    );
-
-    const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
-    const groupEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
-
-    const fullUsers = members.map(m => generatorUserToUser(this.trustchainId, this.users[m]));
-
-    const block = blockGenerator.createUserGroup(groupSignatureKeyPair, groupEncryptionKeyPair, fullUsers, provisionalMembers);
-
-    this.trustchainIndex += 1;
-    block.index = this.trustchainIndex;
-    this.pushedBlocks.push(block);
-
-    const entry: UnverifiedEntry = blockToEntry(block);
-    return {
-      block,
-      entry,
-      groupSignatureKeyPair,
-      groupEncryptionKeyPair,
-      blockPrivateSignatureKey: from.signKeys.privateKey,
-    };
-  }
-
-  async newUserGroupAddition(from: GeneratorDevice, group: GeneratorUserGroupResult, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupAdditionResult> {
-    const blockGenerator = new BlockGenerator(
-      this.trustchainId,
-      from.signKeys.privateKey,
-      from.id
-    );
-
-    const fullUsers = members.map(m => generatorUserToUser(this.trustchainId, this.users[m]));
-    const block = blockGenerator.addToUserGroup(group.groupSignatureKeyPair.publicKey, group.groupSignatureKeyPair.privateKey, hashBlock(group.block), group.groupEncryptionKeyPair.privateKey, fullUsers, provisionalMembers);
-
-    this.trustchainIndex += 1;
-    block.index = this.trustchainIndex;
-    this.pushedBlocks.push(block);
-
-    const entry: UnverifiedEntry = blockToEntry(block);
-    return {
-      block,
-      entry,
-      blockPrivateSignatureKey: group.blockPrivateSignatureKey,
-    };
-  }
-
-  async newProvisionalIdentityClaim(from: GeneratorDevice, provisionalUserKeys: ProvisionalUserKeys): Promise<GeneratorProvisionalIdentityClaimResult> {
-    const deviceId = utils.toBase64(from.id);
-    const userId = this.usersDevices[deviceId];
-    const { userKeys } = this.users[userId];
-    if (!userKeys)
-      throw new Error('Generator: cannot add a ProvisionalIdentityClaim on a device pre-V3');
-
-    const multiSignedPayload = utils.concatArrays(
-      from.id,
-      provisionalUserKeys.appSignatureKeyPair.publicKey,
-      provisionalUserKeys.tankerSignatureKeyPair.publicKey,
-    );
-    const appSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.appSignatureKeyPair.privateKey);
-    const tankerSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.tankerSignatureKeyPair.privateKey);
-
-    const keysToEncrypt = utils.concatArrays(provisionalUserKeys.appEncryptionKeyPair.privateKey, provisionalUserKeys.tankerEncryptionKeyPair.privateKey);
-    const encryptedprovisionalUserKeys = tcrypto.sealEncrypt(keysToEncrypt, userKeys.publicKey);
-
-    const obfuscatedUserId = obfuscateUserId(this.trustchainId, userId);
-    const payload = {
-      user_id: obfuscatedUserId,
-      app_provisional_identity_signature_public_key: provisionalUserKeys.appSignatureKeyPair.publicKey,
-      tanker_provisional_identity_signature_public_key: provisionalUserKeys.tankerSignatureKeyPair.publicKey,
-      author_signature_by_app_key: appSignature,
-      author_signature_by_tanker_key: tankerSignature,
-      recipient_user_public_key: userKeys.publicKey,
-      encrypted_provisional_identity_private_keys: encryptedprovisionalUserKeys,
-    };
-    this.trustchainIndex += 1;
-    const block = signBlock({
-      index: this.trustchainIndex,
-      trustchain_id: this.trustchainId,
-      nature: NATURE.provisional_identity_claim,
-      author: from.id,
-      payload: serializeProvisionalIdentityClaim(payload)
-    }, from.signKeys.privateKey);
-    this.pushedBlocks.push(block);
-
-    const entry: UnverifiedEntry = { ...blockToEntry(block) };
-    const unverifiedProvisionalIdentityClaim = { ...entry, ...entry.payload_unverified };
-    return {
-      block,
-      entry,
-      unverifiedProvisionalIdentityClaim,
-      provisionalUserKeys,
     };
   }
 
