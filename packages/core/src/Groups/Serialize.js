@@ -1,8 +1,11 @@
 // @flow
-import { tcrypto, utils } from '@tanker/crypto';
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength } from '../Blocks/Serialize';
+import { unserializeBlock } from '../Blocks/payloads';
+import { hashBlock } from '../Blocks/Block';
+import { type Nature } from '../Blocks/Nature';
 
 export const SEALED_KEY_SIZE = tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
 export const TWO_TIMES_SEALED_KEY_SIZE = SEALED_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
@@ -85,6 +88,35 @@ export type UserGroupAdditionRecord = {|
   |};
 
 export type UserGroupRecord = UserGroupCreationRecord | UserGroupAdditionRecord;
+
+type UserGroupCreationEntry = {|
+  public_encryption_key: Uint8Array,
+  public_signature_key: Uint8Array,
+  encrypted_group_private_signature_key: Uint8Array,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKey>,
+  encrypted_group_private_encryption_keys_for_provisional_users?: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
+  self_signature: Uint8Array,
+  deviceId: Uint8Array,
+  signature: Uint8Array,
+  nature: Nature,
+  hash: Uint8Array,
+  index: number,
+|};
+
+type UserGroupAdditionEntry = {|
+  group_id: Uint8Array,
+  previous_group_block: Uint8Array,
+  encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKey>,
+  encrypted_group_private_encryption_keys_for_provisional_users?: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
+  self_signature_with_current_key: Uint8Array,
+  deviceId: Uint8Array,
+  signature: Uint8Array,
+  nature: Nature,
+  hash: Uint8Array,
+  index: number,
+|};
+
+export type UserGroupEntry = UserGroupCreationEntry | UserGroupAdditionEntry;
 
 function serializeGroupEncryptedKeyV1(gek: GroupEncryptedKeyV1): Uint8Array {
   return utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key);
@@ -273,4 +305,32 @@ export function unserializeUserGroupAdditionV2(src: Uint8Array): UserGroupAdditi
     (d, o) => unserializeList(d, unserializeProvisionalGroupEncryptedKeyV2, o, 'encrypted_group_private_encryption_keys_for_provisional_users'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'self_signature_with_current_key'),
   ]);
+}
+
+export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
+  const block = unserializeBlock(utils.fromBase64(b64Block));
+  const deviceId = block.author;
+  const signature = block.signature;
+  const nature = block.nature;
+  const hash = hashBlock(block);
+  const index = block.index;
+
+  if (block.nature === groupNatures.user_group_creation_v1) {
+    const userGroupAction = unserializeUserGroupCreationV1(block.payload);
+    return { ...userGroupAction, deviceId, signature, nature, hash, index };
+  }
+  if (block.nature === groupNatures.user_group_creation_v2) {
+    const userGroupAction = unserializeUserGroupCreationV2(block.payload);
+    return { ...userGroupAction, deviceId, signature, nature, hash, index };
+  }
+  if (block.nature === groupNatures.user_group_addition_v1) {
+    const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
+    return { ...userGroupAction, deviceId, signature, nature, hash, index };
+  }
+  if (block.nature === groupNatures.user_group_addition_v2) {
+    const userGroupAction = unserializeUserGroupAdditionV2(block.payload);
+    return { ...userGroupAction, deviceId, signature, nature, hash, index };
+  }
+
+  throw new InternalError('Assertion error: wrong type for getGroupEntryFromBlock');
 }

@@ -7,7 +7,6 @@ import KeyStore from '../Session/KeyStore';
 import {
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
-  userGroupEntryFromBlock,
   provisionalIdentityClaimFromBlock,
   type UnverifiedUserGroup,
   type UnverifiedDeviceCreation,
@@ -15,6 +14,10 @@ import {
   type UnverifiedProvisionalIdentityClaim,
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
+
+import {
+  getGroupEntryFromBlock,
+} from '../Groups/Serialize';
 
 import { hashBlock, type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
@@ -462,13 +465,13 @@ class TestGenerator {
     const block = blockGenerator.createUserGroup(signatureKeyPair, encryptionKeyPair, members, provisionalUsers);
     block.index = this._trustchainIndex;
 
-    const unverifiedUserGroup = userGroupEntryFromBlock(block);
+    const userGroupEntry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
     const group = {
       groupId: signatureKeyPair.publicKey,
       signatureKeyPair,
       encryptionKeyPair,
-      lastGroupBlock: unverifiedUserGroup.hash,
-      index: unverifiedUserGroup.index,
+      lastGroupBlock: userGroupEntry.hash,
+      index: userGroupEntry.index,
     };
 
     const provisionalEncryptionKeys = [];
@@ -484,11 +487,21 @@ class TestGenerator {
       groupId: signatureKeyPair.publicKey,
       publicSignatureKey: signatureKeyPair.publicKey,
       publicEncryptionKey: encryptionKeyPair.publicKey,
-      lastGroupBlock: unverifiedUserGroup.hash,
+      lastGroupBlock: userGroupEntry.hash,
       encryptedPrivateSignatureKey: tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey),
       provisionalEncryptionKeys,
-      index: unverifiedUserGroup.index,
+      index: userGroupEntry.index,
     };
+
+    // WIP: temp code for compat output
+    const { deviceId: author, ...unverifiedUserGroupBase } = userGroupEntry;
+    const unverifiedUserGroup = {
+      ...unverifiedUserGroupBase,
+      author,
+      // $FlowIKnow We know this is a group creation entry
+      group_id: userGroupEntry.public_signature_key,
+    };
+
     return {
       unverifiedUserGroup,
       block,
@@ -514,17 +527,22 @@ class TestGenerator {
     );
     block.index = this._trustchainIndex;
 
-    const unverifiedUserGroup = userGroupEntryFromBlock(block);
+    const userGroupEntry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
 
     const group: Group = ({ ...previousGroup.group }: any);
-    group.lastGroupBlock = unverifiedUserGroup.hash;
-    group.index = unverifiedUserGroup.index;
+    group.lastGroupBlock = userGroupEntry.hash;
+    group.index = userGroupEntry.index;
 
     const externalGroup: ExternalGroup = ({ ...previousGroup.externalGroup }: any);
-    externalGroup.lastGroupBlock = unverifiedUserGroup.hash;
-    externalGroup.index = unverifiedUserGroup.index;
+    externalGroup.lastGroupBlock = userGroupEntry.hash;
+    externalGroup.index = userGroupEntry.index;
+
+    // WIP: temp code for compat output
+    const { deviceId: author, ...unverifiedUserGroupBase } = userGroupEntry;
+    const unverifiedUserGroup = { ...unverifiedUserGroupBase, author };
 
     return {
+      // $FlowIKnow We know this is a group addition entry
       unverifiedUserGroup,
       block,
       group,
