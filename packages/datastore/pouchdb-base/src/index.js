@@ -92,15 +92,22 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
 
     for (const schema of reversedSchemas) {
       for (const table of schema.tables) {
-        const { name } = table;
+        const { name, deleted } = table;
 
         // Open db only if not already opening
         if (!(name in openingDatabases)) {
           openingDatabases[name] = (async () => {
-            openedDatabases[name] = await this._openDatabase({
+            const db = await this._openDatabase({
               dbName,
               tableName: name,
             });
+
+            // Immediately destroy deleted databases
+            if (deleted) {
+              await db.destroy();
+            } else {
+              openedDatabases[name] = db;
+            }
           })();
         }
       }
@@ -151,9 +158,10 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
     const { tables } = schema;
 
     for (const table of tables) {
-      const { name, indexes } = table;
+      const { name, indexes, deleted } = table;
 
-      if (indexes) {
+      // Skip deleted tables
+      if (!deleted && indexes) {
         for (const index of indexes) {
           await this._dbs[name].createIndex({ index: { fields: index } });
         }

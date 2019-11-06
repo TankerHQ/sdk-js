@@ -3,7 +3,8 @@ export type TableSchema = {|
   name: string,
   primaryKey?: { name: string, autoIncrement: bool },
   indexes?: Array<Array<string>>,
-  persistent?: bool
+  persistent?: bool,
+  deleted?: bool,
 |};
 
 export type Schema = {|

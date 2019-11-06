@@ -106,20 +106,25 @@ export default () => class DexieBrowserStore implements DataStore<Dexie> {
       const definitions = {};
 
       for (const table of tables) {
-        const { name, indexes } = table;
-        const definition = ['_id']; // non auto-incremented primaryKey
+        const { name, indexes, deleted } = table;
 
-        if (indexes) {
-          for (const i of indexes) {
-            if (!this._indexes[name]) {
-              this._indexes[name] = {};
+        if (deleted) {
+          definitions[name] = null; // Dexie's way to delete a collection
+        } else {
+          const definition = ['_id']; // non auto-incremented primaryKey
+
+          if (indexes) {
+            for (const i of indexes) {
+              if (!this._indexes[name]) {
+                this._indexes[name] = {};
+              }
+              this._indexes[name][i[0]] = true; // remember indexed fields
+              definition.push(i.length === 1 ? i[0] : `[${i.join('+')}]`);
             }
-            this._indexes[name][i[0]] = true; // remember indexed fields
-            definition.push(i.length === 1 ? i[0] : `[${i.join('+')}]`);
           }
-        }
 
-        definitions[name] = definition.join(',');
+          definitions[name] = definition.join(',');
+        }
       }
 
       this._db.version(version).stores(definitions);
