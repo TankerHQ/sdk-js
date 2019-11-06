@@ -5,17 +5,18 @@ const webpack = require('webpack');
 const karmaConfig = require('./karma.config.base');
 const { makeBaseConfig } = require('../webpack.config.base');
 
-
 const getConfig = () => {
   if (process.env.TANKER_CONFIG_FILEPATH && process.env.TANKER_CONFIG_NAME) {
     const config = JSON.parse(fs.readFileSync(process.env.TANKER_CONFIG_FILEPATH, { encoding: 'utf-8' }));
     const envConfig = config[process.env.TANKER_CONFIG_NAME];
     envConfig.oidc = config.oidc;
-    return envConfig
-  } else if (process.env.TANKER_CI_CONFIG) {
+    return envConfig;
+  }
+  if (process.env.TANKER_CI_CONFIG) {
     return JSON.parse(process.env.TANKER_CI_CONFIG);
   }
-}
+  throw new Error('Missing env variables: TANKER_CONFIG_FILEPATH & TANKER_CONFIG_NAME or TANKER_CI_CONFIG must be set');
+};
 
 module.exports = (config) => {
   config.set({
