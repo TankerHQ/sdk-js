@@ -145,16 +145,17 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
   }
 
   async defineSchemas(schemas: Array<Schema>): Promise<void> {
-    for (const schema of schemas) {
-      const { tables } = schema;
+    // Create indexes from the latest schema only
+    const schema = schemas[schemas.length - 1];
 
-      for (const table of tables) {
-        const { name, indexes } = table;
+    const { tables } = schema;
 
-        if (indexes) {
-          for (const index of indexes) {
-            await this._dbs[name].createIndex({ index: { fields: index } });
-          }
+    for (const table of tables) {
+      const { name, indexes } = table;
+
+      if (indexes) {
+        for (const index of indexes) {
+          await this._dbs[name].createIndex({ index: { fields: index } });
         }
       }
     }
