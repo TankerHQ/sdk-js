@@ -26,7 +26,7 @@ import { getLastUserPublicKey, type User, type Device } from '../Users/User';
 import { type Group } from '../Groups/types';
 import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
 
-import { rootBlockAuthor } from '../Trustchain/Verify';
+import { rootBlockAuthor } from '../Session/Verify';
 
 import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { BlockGenerator } from '../Blocks/BlockGenerator';

@@ -23,10 +23,14 @@ import Storage from '../Session/Storage';
 
 import {
   verifyTrustchainCreation,
+  verifyProvisionalIdentityClaim,
+} from '../Session/Verify';
+
+
+import {
   verifyDeviceCreation,
   verifyDeviceRevocation,
-  verifyProvisionalIdentityClaim,
-} from './Verify';
+} from '../Users/Verify';
 
 export default class TrustchainVerifier {
   _verifyQueue: TaskQueue = new TaskQueue();
