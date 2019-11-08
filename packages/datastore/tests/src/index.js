@@ -6,7 +6,7 @@ import { expect, uuid } from '@tanker/test-utils';
 
 export type { DataStore, BaseConfig };
 
-const { RecordNotFound, RecordNotUnique } = dbErrors;
+const { RecordNotFound, RecordNotUnique, UnknownError } = dbErrors;
 
 type TestRecord = {|
   _id: string,
@@ -57,7 +57,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
     let storeConfig;
 
     beforeEach(() => {
-      storeConfig = { dbName: makeDBName(), schemas };
+      storeConfig = { dbName: makeDBName(), schemas: [...schemas] };
     });
 
     it('persists data after reopening', async () => {
@@ -86,8 +86,6 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await store.put(tableName, record1);
       await store.put(tableName, record2);
       await store.put(tableName, record3);
-      // const res = await store.find(tableName, { selector: { e: record2.e } });
-      // expect(res.map(cleanRecord)).to.deep.equal([record2, record3]);
       await store.close();
 
       // Upgrade the schema
@@ -104,6 +102,28 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       // Check new index on 'e' is usable
       const result = await storeWithNewSchema.find(tableName, { selector: { e: record2.e } });
       expect(result.map(cleanRecord)).to.deep.equal([record2, record3]);
+      await storeWithNewSchema.close();
+    });
+
+    it('can delete a table with a new schema', async () => {
+      // Populate store
+      const store = await generator(storeConfig);
+      await store.put(tableName, record1);
+      await store.close();
+
+      // Upgrade the schema
+      storeConfig.schemas.push({
+        version: 2,
+        tables: [{
+          name: tableName,
+          deleted: true, // delete the only table
+        }]
+      });
+
+      const storeWithNewSchema = await generator(storeConfig);
+
+      // Check the table can't be used anymore
+      await expect(storeWithNewSchema.get(tableName, record1._id)).to.be.rejectedWith(UnknownError);
       await storeWithNewSchema.close();
     });
   });

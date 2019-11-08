@@ -82,28 +82,41 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
       throw new Error('The PouchDB adapter requires schemas in open()\'s config');
     }
 
-    const dbs = {};
-    const promises = [];
+    const openingDatabases = {};
+    const openedDatabases = {};
 
-    // In PouchDB, each table requires its own database
-    for (const schema of schemas) {
+    // In PouchDB, each table requires its own database. We'll start creating
+    // databases starting from the latest schema and going back in time to
+    // delete flagged tables.
+    const reversedSchemas = [...schemas].reverse();
+
+    for (const schema of reversedSchemas) {
       for (const table of schema.tables) {
-        const { name } = table;
-        if (!(name in dbs)) {
-          promises.push((async () => {
-            dbs[name] = await this._openDatabase({
+        const { name, deleted } = table;
+
+        // Open db only if not already opening
+        if (!(name in openingDatabases)) {
+          openingDatabases[name] = (async () => {
+            const db = await this._openDatabase({
               dbName,
-              tableName: name
+              tableName: name,
             });
-          })());
+
+            // Immediately destroy deleted databases
+            if (deleted) {
+              await db.destroy();
+            } else {
+              openedDatabases[name] = db;
+            }
+          })();
         }
       }
     }
 
     // Waiting for parallel opening to finish
-    await Promise.all(promises);
+    await Promise.all(Object.values(openingDatabases));
 
-    const store = new PouchDBStoreBase(dbs);
+    const store = new PouchDBStoreBase(openedDatabases);
     await store.defineSchemas(schemas);
 
     return store;
@@ -139,16 +152,18 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
   }
 
   async defineSchemas(schemas: Array<Schema>): Promise<void> {
-    for (const schema of schemas) {
-      const { tables } = schema;
+    // Create indexes from the latest schema only
+    const schema = schemas[schemas.length - 1];
 
-      for (const table of tables) {
-        const { name, indexes } = table;
+    const { tables } = schema;
 
-        if (indexes) {
-          for (const index of indexes) {
-            await this._dbs[name].createIndex({ index: { fields: index } });
-          }
+    for (const table of tables) {
+      const { name, indexes, deleted } = table;
+
+      // Skip deleted tables
+      if (!deleted && indexes) {
+        for (const index of indexes) {
+          await this._dbs[name].createIndex({ index: { fields: index } });
         }
       }
     }

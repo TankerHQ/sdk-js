@@ -123,7 +123,7 @@ export default class Storage {
 
   async cleanupCaches() {
     const currentSchema = this._schemas[this._schemas.length - 1];
-    const cacheTables = currentSchema.tables.filter(t => !t.persistent).map(t => t.name);
+    const cacheTables = currentSchema.tables.filter(t => !t.persistent && !t.deleted).map(t => t.name);
     for (const table of cacheTables) {
       await this._datastore.clear(table);
     }
