@@ -95,7 +95,7 @@ const customLaunchers = {
   },
   Android9: {
     base: 'BrowserStack',
-    device: 'Samsung Galaxy S9 Plus',
+    device: 'Samsung Galaxy S10',
     real_mobile: 'true',
     os: 'Android',
     os_version: '9.0',
