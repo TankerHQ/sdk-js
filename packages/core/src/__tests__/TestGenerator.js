@@ -5,14 +5,17 @@ import { type PublicProvisionalUser, type ProvisionalUserKeys, createIdentity, g
 import KeyStore from '../Session/KeyStore';
 
 import {
-  deviceCreationFromBlock,
-  deviceRevocationFromBlock,
   provisionalIdentityClaimFromBlock,
-  type UnverifiedDeviceCreation,
-  type UnverifiedDeviceRevocation,
   type UnverifiedProvisionalIdentityClaim,
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
+
+import {
+  deviceCreationFromBlock,
+  deviceRevocationFromBlock,
+  type DeviceCreationEntry,
+  type DeviceRevocationEntry,
+} from '../Users/Serialize';
 
 import {
   type UserGroupEntry,
@@ -22,7 +25,7 @@ import {
 import { hashBlock, type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 
-import { getLastUserPublicKey, type User, type Device } from '../Users/User';
+import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 import { type Group } from '../Groups/types';
 import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
 
@@ -73,8 +76,8 @@ export type TestTrustchainCreation = {
 }
 
 export type TestDeviceCreation = {
-  unverifiedDeviceCreation: UnverifiedDeviceCreation,
-  unverifiedDeviceCreationV1: UnverifiedDeviceCreation,
+  unverifiedDeviceCreation: DeviceCreationEntry,
+  unverifiedDeviceCreationV1: DeviceCreationEntry,
   block: Block,
   testUser: TestUser,
   testDevice: TestDevice,
@@ -82,7 +85,7 @@ export type TestDeviceCreation = {
 }
 
 export type TestDeviceRevocation = {
-  unverifiedDeviceRevocation: UnverifiedDeviceRevocation,
+  unverifiedDeviceRevocation: DeviceRevocationEntry,
   block: Block,
   testUser: TestUser,
   user: User,
@@ -536,7 +539,7 @@ class TestGenerator {
     };
   }
 
-  _deviceCreationV1(deviceCreation: UnverifiedDeviceCreation): UnverifiedDeviceCreation {
+  _deviceCreationV1(deviceCreation: DeviceCreationEntry): DeviceCreationEntry {
     const deviceCreationV1 = { ...deviceCreation };
     deviceCreationV1.nature = NATURE.device_creation_v1;
     deviceCreationV1.user_key_pair = null;

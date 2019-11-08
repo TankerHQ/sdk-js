@@ -158,7 +158,7 @@ export default class GroupManager {
 
   async _populateDevices(groupsData: Array<GroupData>): Promise<Array<GroupDataWithDevices>> {
     const promises = groupsData.map(groupData => Promise.all(groupData.map(async g => {
-      const device = await fetchDeviceByDeviceId(g.entry.deviceId, this._userAccessor, this._trustchain, g.group.groupId);
+      const device = await fetchDeviceByDeviceId(g.entry.author, this._userAccessor, this._trustchain, g.group.groupId);
       return { ...g, device };
     })));
     return Promise.all(promises);

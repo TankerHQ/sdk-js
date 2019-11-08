@@ -7,7 +7,8 @@ import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/ide
 
 import KeyStore from './KeyStore';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import type { VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
 import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../utils';
 import type { UserData, DelegationToken } from './UserData';
@@ -68,7 +69,7 @@ export class LocalUser extends EventEmitter {
     return { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
   }
 
-  applyDeviceCreation = async (deviceCreation: VerifiedDeviceCreation) => {
+  applyDeviceCreation = async (deviceCreation: DeviceCreationEntry) => {
     // Does is concern our device?
     if (!utils.equalArray(this.publicEncryptionKey, deviceCreation.public_encryption_key)) {
       return;
@@ -118,7 +119,7 @@ export class LocalUser extends EventEmitter {
     }
   }
 
-  applyDeviceRevocation = async (deviceRevocation: VerifiedDeviceRevocation) => {
+  applyDeviceRevocation = async (deviceRevocation: DeviceRevocationEntry) => {
     if (this._wasRevoked)
       return;
     const deviceId = this._deviceId;

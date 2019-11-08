@@ -1,36 +1,12 @@
 // @flow
 /* eslint-disable no-underscore-dangle */
 
-import { assert, expect } from '@tanker/test-utils';
-import { InvalidBlockError } from '../errors.internal';
-import { deviceCreationFromBlock } from '../Blocks/entries';
+import { expect } from '@tanker/test-utils';
 import { makeTrustchainBuilder } from './TrustchainBuilder';
-
-async function assertFailsWithNature(promise: Promise<*>, nature: string): Promise<void> {
-  try {
-    await promise;
-  } catch (e) {
-    expect(e).to.be.an.instanceOf(InvalidBlockError);
-    expect(e.nature).to.deep.equal(nature);
-    return;
-  }
-  assert.fail('Exception not thrown');
-}
 
 describe('TrustchainVerifier', function () { // eslint-disable-line func-names
   // Running with PouchDB memory in the browser is very slow
   this.timeout(30000);
-
-  describe('block validation', () => {
-    it('should reject a block with an unknown author', async () => {
-      const builder = await makeTrustchainBuilder();
-      const { generator } = builder;
-      await generator.newUserCreationV3('alice');
-      const alice = await generator.newDeviceCreationV3({ userId: 'alice', parentIndex: 0 });
-      await builder.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(alice.block)]);
-      await assertFailsWithNature(builder.trustchainVerifier._throwingVerifyDeviceCreation(alice.unverifiedDeviceCreation), 'unknown_author');
-    });
-  });
 
   describe('verifyUser', () => {
     it('only marks all the necessary entries of a user as verified', async () => {

@@ -5,7 +5,7 @@ import { InternalError, InvalidArgument } from '@tanker/errors';
 import { type PublicPermanentIdentity } from '@tanker/identity';
 
 import UserStore, { type FindUsersParameters } from './UserStore';
-import { type User } from './User';
+import { type User } from './types';
 import Trustchain from '../Trustchain/Trustchain';
 
 export type UserDevice = {|

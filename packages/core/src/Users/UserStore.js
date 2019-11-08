@@ -4,11 +4,15 @@ import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 import { InternalError } from '@tanker/errors';
 
-import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
+
+import type { User, Device } from './types';
+import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
-import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import type { VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import type { DeviceCreationEntry, DeviceRevocationEntry, UserEntry } from './Serialize';
+
 import type { ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 type DeviceToUser = {
@@ -22,8 +26,8 @@ export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
 export type FindDevicesParameters = $Exact<{ hashedDeviceIds: Array<Uint8Array> }>;
 
 export type Callbacks = {
-  deviceCreation: (entry: VerifiedDeviceCreation) => Promise<void>,
-  deviceRevocation: (entry: VerifiedDeviceRevocation) => Promise<void>,
+  deviceCreation: (entry: DeviceCreationEntry) => Promise<void>,
+  deviceRevocation: (entry: DeviceRevocationEntry) => Promise<void>,
   claim: (entry: VerifiedProvisionalIdentityClaim) => Promise<ProvisionalUserKeyPairs>,
 };
 
@@ -106,13 +110,13 @@ export default class UserStore {
   }
 
   // all entries are verified
-  async applyEntry(entry: VerifiedDeviceCreation | VerifiedDeviceRevocation): Promise<User> {
+  async applyEntry(entry: UserEntry): Promise<User> {
     const updatedUsers = await this.applyEntries([entry]);
     return updatedUsers[0];
   }
 
   // all entries are verified
-  async applyEntries(entries: Array<VerifiedDeviceCreation | VerifiedDeviceRevocation>): Promise<Array<User>> {
+  async applyEntries(entries: Array<UserEntry>): Promise<Array<User>> {
     const toBeStored = {
       [USERS_TABLE]: [],
       [DEVICES_USER_TABLE]: [],
@@ -150,7 +154,7 @@ export default class UserStore {
     return updatedUsers;
   }
 
-  async _prepareEntry(entry: VerifiedDeviceCreation | VerifiedDeviceRevocation) {
+  async _prepareEntry(entry: UserEntry) {
     switch (entry.nature) {
       case NATURE.device_creation_v1:
       case NATURE.device_creation_v2:
@@ -170,7 +174,7 @@ export default class UserStore {
     }
   }
 
-  async _prepareDeviceCreation(deviceCreation: VerifiedDeviceCreation) {
+  async _prepareDeviceCreation(deviceCreation: DeviceCreationEntry) {
     const b64Id = utils.toBase64(deviceCreation.user_id);
     const existing = await this.findUser({ userId: deviceCreation.user_id });
     const { updatedUser, newDevice } = applyDeviceCreationToUser(deviceCreation, existing);
@@ -198,7 +202,7 @@ export default class UserStore {
     return storeableEntry;
   }
 
-  async _prepareDeviceRevocation(deviceRevocation: VerifiedDeviceRevocation) {
+  async _prepareDeviceRevocation(deviceRevocation: DeviceRevocationEntry) {
     if (!deviceRevocation.user_id) {
       throw new InternalError('Missing user_id in the record');
     }

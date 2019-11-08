@@ -10,7 +10,7 @@ import { InvalidBlockError } from '../errors.internal';
 
 import { NATURE } from '../Blocks/Nature';
 
-import { type Device } from '../Users/User';
+import { type Device } from '../Users/types';
 
 import {
   type UserGroupCreationRecord,

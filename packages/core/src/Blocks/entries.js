@@ -4,15 +4,8 @@ import { InternalError } from '@tanker/errors';
 
 import {
   type Record,
-  type UserDeviceRecord,
-  type DeviceRevocationRecord,
   type ProvisionalIdentityClaimRecord,
   unserializePayload,
-  unserializeUserDeviceV1,
-  unserializeUserDeviceV2,
-  unserializeUserDeviceV3,
-  unserializeDeviceRevocationV1,
-  unserializeDeviceRevocationV2,
   unserializeProvisionalIdentityClaim,
 } from './payloads';
 
@@ -125,68 +118,6 @@ export type UnverifiedTrustchainCreation = {
   ...VerificationFields,
   public_signature_key: Uint8Array,
 };
-
-export type UnverifiedDeviceCreation = {
-  ...VerificationFields,
-  ...UserDeviceRecord,
-};
-
-export type VerifiedDeviceCreation = {
-  ...UserDeviceRecord,
-  hash: Uint8Array,
-  nature: Nature,
-  index: number,
-};
-
-export function deviceCreationFromBlock(block: Block): UnverifiedDeviceCreation {
-  const verificationFields = verificationFieldsFromBlock(block);
-  let userEntry;
-
-  switch (block.nature) {
-    case NATURE.device_creation_v1:
-      userEntry = unserializeUserDeviceV1(block.payload);
-      break;
-    case NATURE.device_creation_v2:
-      userEntry = unserializeUserDeviceV2(block.payload);
-      break;
-    case NATURE.device_creation_v3:
-      userEntry = unserializeUserDeviceV3(block.payload);
-      break;
-    default: throw new InternalError('Assertion error: wrong type for deviceCreationFromBlock');
-  }
-  return {
-    ...verificationFields,
-    ...userEntry,
-  };
-}
-
-export type UnverifiedDeviceRevocation = {
-  ...VerificationFields,
-  ...DeviceRevocationRecord,
-  user_id: Uint8Array
-};
-
-export type VerifiedDeviceRevocation = UnverifiedDeviceRevocation;
-
-export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): UnverifiedDeviceRevocation {
-  const verificationFields = verificationFieldsFromBlock(block);
-  let userEntry;
-
-  switch (block.nature) {
-    case NATURE.device_revocation_v1:
-      userEntry = unserializeDeviceRevocationV1(block.payload);
-      break;
-    case NATURE.device_revocation_v2:
-      userEntry = unserializeDeviceRevocationV2(block.payload);
-      break;
-    default: throw new InternalError('Assertion error: wrong type for deviceRevocationFromBlock');
-  }
-  return {
-    ...verificationFields,
-    ...userEntry,
-    user_id: userId
-  };
-}
 
 
 export type UnverifiedProvisionalIdentityClaim = {

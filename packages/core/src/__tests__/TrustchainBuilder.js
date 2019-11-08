@@ -19,7 +19,7 @@ import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 
-import { deviceCreationFromBlock } from '../Blocks/entries';
+import { deviceCreationFromBlock } from '../Users/Serialize';
 
 export default class TrustchainBuilder {
   dataStore: DataStore<*>;

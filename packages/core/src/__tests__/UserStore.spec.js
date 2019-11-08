@@ -3,10 +3,10 @@ import { random, tcrypto } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import UserStore from '../Users/UserStore';
-import { type User } from '../Users/User';
+import { type User } from '../Users/types';
 
 import { NATURE } from '../Blocks/Nature';
-import { type VerifiedDeviceCreation } from '../Blocks/entries';
+import { type DeviceCreationEntry } from '../Users/Serialize';
 
 import { makeMemoryDataStore } from './TestDataStore';
 import TestGenerator, { type TestDeviceCreation } from './TestGenerator';
@@ -23,8 +23,8 @@ describe('UserStore', () => {
 
   let userId: Uint8Array;
   let userStore: UserStore;
-  let deviceCreation: VerifiedDeviceCreation;
-  let deviceCreationV1: VerifiedDeviceCreation;
+  let deviceCreation: DeviceCreationEntry;
+  let deviceCreationV1: DeviceCreationEntry;
 
   let user: User;
   let testUserCreation: TestDeviceCreation;

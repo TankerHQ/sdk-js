@@ -9,7 +9,7 @@ import type {
   VerifiedProvisionalIdentityClaim,
 } from '../Blocks/entries';
 
-import { type Device } from '../Users/User';
+import { type Device } from '../Users/types';
 import {
   isTrustchainCreation,
 } from '../Blocks/Nature';

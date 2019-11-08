@@ -6,7 +6,7 @@ import { Client } from '../Network/Client';
 import TrustchainStore from './TrustchainStore';
 import Storage from '../Session/Storage';
 import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
-import type { VerifiedDeviceCreation } from '../Blocks/entries';
+import type { DeviceCreationEntry } from '../Users/Serialize';
 
 export default class Trustchain {
   _trustchainStore: TrustchainStore;
@@ -45,7 +45,7 @@ export default class Trustchain {
     return this._trustchainPuller.scheduleCatchUp(userIds, groupIds);
   }
 
-  async verifyDevice(deviceId: Uint8Array): Promise<?VerifiedDeviceCreation> {
+  async verifyDevice(deviceId: Uint8Array): Promise<?DeviceCreationEntry> {
     const unverifiedDevice = await this._unverifiedStore.findUnverifiedDeviceByHash(deviceId);
     if (!unverifiedDevice)
       return null;

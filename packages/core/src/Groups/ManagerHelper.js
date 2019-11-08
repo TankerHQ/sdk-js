@@ -10,7 +10,7 @@ import { verifyGroupAction } from './Verify';
 
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 import KeyStore from '../Session/KeyStore';
-import { type Device } from '../Users/User';
+import { type Device } from '../Users/types';
 import UserAccessor from '../Users/UserAccessor';
 import Trustchain from '../Trustchain/Trustchain';
 

@@ -3,7 +3,7 @@
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 import { entryToDbEntry, dbEntryToEntry } from '../../Blocks/entries';
-import type { UnverifiedDeviceCreation, VerifiedDeviceCreation, UnverifiedDeviceRevocation, VerifiedDeviceRevocation } from '../../Blocks/entries';
+import type { UserEntry, DeviceCreationEntry, DeviceRevocationEntry } from '../../Users/Serialize';
 import { isDeviceCreation } from '../../Blocks/Nature';
 
 const TABLE_USER_BLOCKS = 0; // Contains both user devices & revocations
@@ -49,7 +49,7 @@ export default class UserUnverifiedStore {
     return lastIndexes;
   }
 
-  async addUnverifiedUserEntries(entries: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>) {
+  async addUnverifiedUserEntries(entries: Array<UserEntry>) {
     if (entries.length === 0)
       return;
 
@@ -87,7 +87,7 @@ export default class UserUnverifiedStore {
     await this._ds.bulkPut(UserUnverifiedStore.tables[TABLE_LAST_INDEXES].name, [...newIndexes.values()]);
   }
 
-  async findUnverifiedDevicesByHash(deviceIds: Array<Uint8Array>): Promise<Array<UnverifiedDeviceCreation>> {
+  async findUnverifiedDevicesByHash(deviceIds: Array<Uint8Array>): Promise<Array<DeviceCreationEntry>> {
     const entries = await this._ds.find(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, {
       selector: {
         hash: { $in: deviceIds.map(utils.toBase64) },
@@ -97,7 +97,7 @@ export default class UserUnverifiedStore {
     return entries.map(dbEntryToEntry);
   }
 
-  async findUnverifiedDeviceRevocationByHash(hash: Uint8Array): Promise<?UnverifiedDeviceRevocation> {
+  async findUnverifiedDeviceRevocationByHash(hash: Uint8Array): Promise<?DeviceRevocationEntry> {
     const entry = await this._ds.first(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, {
       selector: {
         hash: utils.toBase64(hash),
@@ -107,7 +107,7 @@ export default class UserUnverifiedStore {
     return entry ? dbEntryToEntry(entry) : null;
   }
 
-  async findUnverifiedUserEntries(userIds: Array<Uint8Array>, stopBeforeIndex?: number): Promise<Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>> {
+  async findUnverifiedUserEntries(userIds: Array<Uint8Array>, stopBeforeIndex?: number): Promise<Array<UserEntry>> {
     const selector: Object = {
       user_id: { $in: userIds.map(utils.toBase64) },
     };
@@ -120,7 +120,7 @@ export default class UserUnverifiedStore {
     return entries.map(dbEntryToEntry);
   }
 
-  async removeVerifiedUserEntries(entries: $ReadOnlyArray<VerifiedDeviceCreation | VerifiedDeviceRevocation>): Promise<void> {
+  async removeVerifiedUserEntries(entries: $ReadOnlyArray<UserEntry>): Promise<void> {
     for (const entry of entries) {
       await this._ds.delete(UserUnverifiedStore.tables[TABLE_USER_BLOCKS].name, utils.toBase64(entry.hash));
     }

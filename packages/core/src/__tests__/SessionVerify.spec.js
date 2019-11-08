@@ -1,13 +1,13 @@
 // @flow
 import { expect } from '@tanker/test-utils';
 
-import { tcrypto, random, utils } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 
 import { InvalidBlockError } from '../errors.internal';
 
 import makeUint8Array from './makeUint8Array';
 
-import { type User } from '../Users/User';
+import { type User } from '../Users/types';
 import {
   verifyTrustchainCreation,
   verifyProvisionalIdentityClaim,

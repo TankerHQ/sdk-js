@@ -9,11 +9,9 @@ import {
   verifyDeviceRevocation,
 } from '../Users/Verify';
 
-import { type User } from '../Users/User';
+import { type User } from '../Users/types';
 
-import type {
-  UnverifiedDeviceCreation, UnverifiedDeviceRevocation, UnverifiedProvisionalIdentityClaim,
-} from '../Blocks/entries';
+import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
 
 import { NATURE } from '../Blocks/Nature';
 
@@ -34,8 +32,8 @@ describe('BlockVerification', () => {
 
   describe('device creation', () => {
     let user: User;
-    let unverifiedUserCreation: UnverifiedDeviceCreation;
-    let unverifiedDeviceCreation: UnverifiedDeviceCreation;
+    let unverifiedUserCreation: DeviceCreationEntry;
+    let unverifiedDeviceCreation: DeviceCreationEntry;
     let trustchainKeys: tcrypto.SodiumKeyPair;
 
     beforeEach(async () => {
@@ -131,7 +129,7 @@ describe('BlockVerification', () => {
 
   describe('device revocation', () => {
     let user: User;
-    let unverifiedDeviceRevocation: UnverifiedDeviceRevocation;
+    let unverifiedDeviceRevocation: DeviceRevocationEntry;
     let authorKey: Uint8Array;
     beforeEach(async () => {
       testGenerator.makeTrustchainCreation();

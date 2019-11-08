@@ -6,16 +6,15 @@ import { InternalError } from '@tanker/errors';
 
 import { InvalidBlockError } from '../errors.internal';
 import { findIndex } from '../utils';
-import { getLastUserPublicKey, type User, type Device } from './User';
-import type {
-  UnverifiedDeviceCreation, UnverifiedDeviceRevocation,
-} from '../Blocks/entries';
+
+import { type User, type Device, getLastUserPublicKey } from './types';
+import type { DeviceCreationEntry, DeviceRevocationEntry } from './Serialize';
 
 import {
   NATURE,
 } from '../Blocks/Nature';
 
-export function verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser: ?User, authorDevice: ?Device, authorKey: Uint8Array, user: ?User) {
+export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?User, authorDevice: ?Device, authorKey: Uint8Array, user: ?User) {
   if (!utils.isNullArray(entry.last_reset))
     throw new InvalidBlockError('invalid_last_reset', 'last_reset is not null', { entry });
 
@@ -54,7 +53,7 @@ export function verifyDeviceCreation(entry: UnverifiedDeviceCreation, authorUser
   }
 }
 
-export function verifyDeviceRevocation(entry: UnverifiedDeviceRevocation, authorUserId: b64string, authorKey: Uint8Array, targetUser: ?User) {
+export function verifyDeviceRevocation(entry: DeviceRevocationEntry, authorUserId: b64string, authorKey: Uint8Array, targetUser: ?User) {
   if (!tcrypto.verifySignature(entry.hash, entry.signature, authorKey))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, authorKey });
 

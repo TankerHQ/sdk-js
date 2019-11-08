@@ -5,12 +5,15 @@ import { InternalError } from '@tanker/errors';
 import { type PublicProvisionalUser, type ProvisionalUserKeys } from '@tanker/identity';
 
 import {
-  serializeUserDeviceV3,
-  serializeDeviceRevocationV2,
   serializeProvisionalIdentityClaim,
-  type UserDeviceRecord,
-  type UserKeys,
 } from './payloads';
+
+import {
+  type DeviceCreationRecord,
+  type UserKeys,
+  serializeUserDeviceV3,
+  serializeDeviceRevocationV2
+} from '../Users/Serialize';
 
 import {
   type UserGroupCreationRecordV1,
@@ -26,7 +29,7 @@ import { serializeKeyPublish } from '../DataProtection/Resource/keyPublish';
 
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/UserData';
-import { getLastUserPublicKey, type User, type Device } from '../Users/User';
+import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 
 export function getUserGroupCreationBlockSignDataV1(record: UserGroupCreationRecordV1): Uint8Array {
   return utils.concatArrays(
@@ -130,7 +133,7 @@ export class BlockGenerator {
       args.userKeys.privateKey,
       args.publicEncryptionKey,
     );
-    const userDevice: UserDeviceRecord = {
+    const userDevice: DeviceCreationRecord = {
       ephemeral_public_signature_key: args.ephemeralKey,
       user_id: args.userId,
       delegation_signature: args.delegationSignature,

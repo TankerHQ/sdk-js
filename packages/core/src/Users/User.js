@@ -1,38 +1,14 @@
 // @flow
-import { utils, type b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { findIndex } from '../utils';
 import { NATURE } from '../Blocks/Nature';
-import type { VerifiedDeviceCreation, VerifiedDeviceRevocation } from '../Blocks/entries';
+import { type DeviceCreationEntry, type DeviceRevocationEntry } from './Serialize';
 
-export type IndexUserKey = {|
-  userPublicKey: Uint8Array,
-  index: number,
-|};
+import type { User, Device } from './types';
 
-export type Device = {
-  deviceId: b64string,
-  devicePublicEncryptionKey: Uint8Array,
-  devicePublicSignatureKey: Uint8Array,
-  isGhostDevice: bool,
-  createdAt: number,
-  revokedAt: number,
-};
-
-export type User = {
-  userId: b64string,
-  userPublicKeys: Array<IndexUserKey>,
-  devices: Array<Device>,
-};
-
-export function getLastUserPublicKey(user: User): ?Uint8Array {
-  if (user.userPublicKeys.length === 0)
-    return;
-  return user.userPublicKeys.slice(-1)[0].userPublicKey;
-}
-
-export function applyDeviceCreationToUser(deviceCreation: VerifiedDeviceCreation, user: ?User) {
+export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, user: ?User) {
   const b64Id = utils.toBase64(deviceCreation.user_id);
   let oldDevices = [];
   let userPublicKeys = deviceCreation.user_key_pair ? [{ userPublicKey: deviceCreation.user_key_pair.public_encryption_key, index: deviceCreation.index }] : [];
@@ -64,7 +40,7 @@ export function applyDeviceCreationToUser(deviceCreation: VerifiedDeviceCreation
   return { updatedUser, newDevice };
 }
 
-export function applyDeviceRevocationToUser(deviceRevocation: VerifiedDeviceRevocation, user: User) {
+export function applyDeviceRevocationToUser(deviceRevocation: DeviceRevocationEntry, user: User) {
   const b64DevId = utils.toBase64(deviceRevocation.device_id);
   const deviceIndex = findIndex(user.devices, (d) => d.deviceId === b64DevId);
   if (deviceIndex === -1)

@@ -9,11 +9,14 @@ import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 
 import {
   blockToEntry,
-  deviceCreationFromBlock,
-  deviceRevocationFromBlock,
   provisionalIdentityClaimFromBlock,
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
+
+import {
+  deviceCreationFromBlock,
+  deviceRevocationFromBlock,
+} from '../Users/Serialize';
 
 import {
   isKeyPublish,

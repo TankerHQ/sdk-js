@@ -17,7 +17,7 @@ import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
-import { type User, getLastUserPublicKey } from '../Users/User';
+import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './Resource';
 import type { Resource } from './Resource';
