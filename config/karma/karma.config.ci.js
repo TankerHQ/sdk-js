@@ -10,6 +10,7 @@ const getConfig = () => {
     const config = JSON.parse(fs.readFileSync(process.env.TANKER_CONFIG_FILEPATH, { encoding: 'utf-8' }));
     const envConfig = config[process.env.TANKER_CONFIG_NAME];
     envConfig.oidc = config.oidc;
+    envConfig.storage = config.storage;
     return envConfig;
   }
   if (process.env.TANKER_CI_CONFIG) {

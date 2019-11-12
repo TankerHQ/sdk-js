@@ -12,6 +12,7 @@ import { uuid } from '@tanker/test-utils';
 let tankerUrl; // eslint-disable-line import/no-mutable-exports
 let idToken; // eslint-disable-line import/no-mutable-exports
 let commonSettings; // eslint-disable-line import/no-mutable-exports
+let storageSettings;
 
 // $FlowIKnow
 if (process.browser) {
@@ -20,6 +21,7 @@ if (process.browser) {
   tankerUrl = testConfig.url;
   idToken = testConfig.idToken;
   commonSettings = testConfig.oidc;
+  storageSettings = testConfig.storage;
 } else if (process.env.TANKER_CONFIG_FILEPATH && process.env.TANKER_CONFIG_NAME) {
   const fs = require('fs'); // eslint-disable-line global-require
 
@@ -27,11 +29,13 @@ if (process.browser) {
   tankerUrl = config[process.env.TANKER_CONFIG_NAME].url;
   idToken = config[process.env.TANKER_CONFIG_NAME].idToken;
   commonSettings = config.oidc;
+  storageSettings = config.storage;
 } else {
   const testConfig = JSON.parse(process.env.TANKER_CI_CONFIG || '');
   tankerUrl = testConfig.url;
   idToken = testConfig.idToken;
   commonSettings = testConfig.oidc;
+  storageSettings = testConfig.storage;
 }
 
 export { tankerUrl, idToken, commonSettings };
@@ -163,6 +167,17 @@ export class AppHelper {
     });
 
     return new AppHelper(requester, appId, appKeyPair);
+  }
+
+  async setupS3() {
+    await this._requester.send('update trustchain', {
+      id: utils.toBase64(this.appId),
+      storage_provider: 's3',
+      storage_bucket_name: storageSettings.s3.bucketName,
+      storage_bucket_region: storageSettings.s3.bucketRegion,
+      storage_client_id: storageSettings.s3.clientId,
+      storage_client_secret: storageSettings.s3.clientSecret,
+    });
   }
 
   generateIdentity(userId?: string): Promise<b64string> {
