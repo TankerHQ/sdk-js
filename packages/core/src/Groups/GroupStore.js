@@ -1,165 +1,41 @@
 // @flow
+import { type DataStore } from '@tanker/datastore-base';
+import { InternalError } from '@tanker/errors';
 
-import varint from 'varint';
-import { tcrypto, utils, encryptionV2, type b64string } from '@tanker/crypto';
-import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
-import { DecryptionFailed, InternalError } from '@tanker/errors';
+import { tcrypto, utils, encryptionV2 } from '@tanker/crypto';
 
-import { type Group, type ExternalGroup, type ProvisionalEncryptionKeys } from './types';
-import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-
-type EncryptedPrivateKeys = {|
-  signatureKey: Uint8Array,
-  encryptionKey: Uint8Array,
-|};
-
-type DbGroupProvisionalKey = {|
-  _id: b64string,
-  publicSignatureKeys: b64string, // concat(app_public_signature_key, tanker_public_signature_key)
-  groupId: b64string,
-  encryptedGroupPrivateEncryptionKey: Uint8Array,
-|};
-
-type DbGroup = {|
-  _id: b64string,
-  publicSignatureKey: b64string,
-  publicEncryptionKey: b64string,
-  encryptedPrivateKeys: ?Uint8Array,
-  encryptedPrivateSignatureKey: ?b64string,
-  lastGroupBlock: b64string,
-  index: number,
-|};
-
-function encryptGroupKeys(userSecret: Uint8Array, group: Group): Uint8Array {
-  const ad = utils.concatArrays(
-    group.groupId,
-    group.signatureKeyPair.publicKey,
-    group.encryptionKeyPair.publicKey,
-    group.lastGroupBlock,
-    new Uint8Array(varint.encode(group.index)),
-  );
-  const data = utils.concatArrays(group.signatureKeyPair.privateKey, group.encryptionKeyPair.privateKey);
-  return encryptionV2.serialize(encryptionV2.encrypt(userSecret, data, ad));
-}
-
-async function decryptGroupKeys(userSecret: Uint8Array, dbGroup: DbGroup): Promise<EncryptedPrivateKeys> {
-  const encryptedPrivateKeys = dbGroup.encryptedPrivateKeys;
-  if (!encryptedPrivateKeys)
-    throw new InternalError('Group not fullgroup');
-
-  const ad = utils.concatArrays(
-    utils.fromBase64(dbGroup._id), // eslint-disable-line no-underscore-dangle
-    utils.fromBase64(dbGroup.publicSignatureKey),
-    utils.fromBase64(dbGroup.publicEncryptionKey),
-    utils.fromBase64(dbGroup.lastGroupBlock),
-    new Uint8Array(varint.encode(dbGroup.index)),
-  );
-
-  if (encryptedPrivateKeys.length < encryptionV2.overhead) {
-    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
-  }
-
-  const ec = encryptionV2.compatDecrypt(userSecret, encryptedPrivateKeys, ad);
-  return unserializeGeneric(ec, [
-    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PRIVATE_KEY_SIZE, o, 'signatureKey'),
-    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE, o, 'encryptionKey'),
-  ]);
-}
-
-
-function groupToDbGroup(userSecret: Uint8Array, group: Group): DbGroup {
-  const dbGroup = {
-    _id: utils.toBase64(group.groupId),
-    publicSignatureKey: utils.toBase64(group.signatureKeyPair.publicKey),
-    publicEncryptionKey: utils.toBase64(group.encryptionKeyPair.publicKey),
-    encryptedPrivateSignatureKey: null,
-    lastGroupBlock: utils.toBase64(group.lastGroupBlock),
-    index: group.index,
-  };
-  const encryptedPrivateKeys = encryptGroupKeys(userSecret, group);
-  return { ...dbGroup, encryptedPrivateKeys };
-}
-
-function externalGroupToDbGroup(group: ExternalGroup): { dbGroup: DbGroup, dbGroupProvisionalKeys: Array<DbGroupProvisionalKey> } {
-  const { encryptedPrivateSignatureKey } = group;
-
-  if (!encryptedPrivateSignatureKey)
-    throw new InternalError('Assertion error: trying to add external group without encrypted private signature key');
-
-  return {
-    dbGroup: {
-      _id: utils.toBase64(group.groupId),
-      publicSignatureKey: utils.toBase64(group.publicSignatureKey),
-      publicEncryptionKey: utils.toBase64(group.publicEncryptionKey),
-      encryptedPrivateKeys: null,
-      encryptedPrivateSignatureKey: utils.toBase64(encryptedPrivateSignatureKey),
-      lastGroupBlock: utils.toBase64(group.lastGroupBlock),
-      index: group.index,
-    },
-    dbGroupProvisionalKeys: group.provisionalEncryptionKeys.map(provisionalKey => ({
-      _id: utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey, group.groupId)),
-      publicSignatureKeys: utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey)),
-      groupId: utils.toBase64(group.groupId),
-      encryptedGroupPrivateEncryptionKey: provisionalKey.encryptedGroupPrivateEncryptionKey,
-    })),
-  };
-}
-
-async function dbGroupToGroup(userSecret: Uint8Array, dbGroup: DbGroup): Promise<Group> {
-  if (!dbGroup.encryptedPrivateKeys)
-    throw new InternalError(`no private key found for group ${dbGroup.publicSignatureKey}`);
-
-  const encryptedPrivateKeys = await decryptGroupKeys(userSecret, dbGroup);
-  return {
-    groupId: utils.fromBase64(dbGroup._id), // eslint-disable-line no-underscore-dangle,
-    signatureKeyPair: {
-      publicKey: utils.fromBase64(dbGroup.publicSignatureKey),
-      privateKey: encryptedPrivateKeys.signatureKey,
-    },
-    encryptionKeyPair: {
-      publicKey: utils.fromBase64(dbGroup.publicEncryptionKey),
-      privateKey: encryptedPrivateKeys.encryptionKey,
-    },
-    lastGroupBlock: utils.fromBase64(dbGroup.lastGroupBlock),
-    index: dbGroup.index,
-  };
-}
-
-function dbGroupToExternalGroup(group: DbGroup, provisionalKeys: Array<DbGroupProvisionalKey>): ExternalGroup {
-  return {
-    groupId: utils.fromBase64(group._id), // eslint-disable-line no-underscore-dangle
-    publicSignatureKey: utils.fromBase64(group.publicSignatureKey),
-    publicEncryptionKey: utils.fromBase64(group.publicEncryptionKey),
-    encryptedPrivateSignatureKey: group.encryptedPrivateSignatureKey ? utils.fromBase64(group.encryptedPrivateSignatureKey) : null,
-    provisionalEncryptionKeys: provisionalKeys.map(provisionalKey => {
-      const publicSignatureKeys = utils.fromBase64(provisionalKey.publicSignatureKeys);
-      return {
-        appPublicSignatureKey: publicSignatureKeys.subarray(0, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-        tankerPublicSignatureKey: publicSignatureKeys.subarray(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-        encryptedGroupPrivateEncryptionKey: provisionalKey.encryptedGroupPrivateEncryptionKey,
-      };
-    }),
-    lastGroupBlock: utils.fromBase64(group.lastGroupBlock),
-    index: group.index,
-  };
-}
-
-const GROUPS_TABLE = 'groups';
-const GROUPS_PROVISIONAL_ENCRYPTION_KEYS_TABLE = 'groups_pending_encryption_keys';
+const GROUP_ENCRYPTION_KEY_PAIRS_TABLE = 'group_encryption_key_pairs';
 
 const schemaV3 = {
   tables: [{
-    name: GROUPS_TABLE,
+    name: 'groups',
     indexes: [['publicEncryptionKey']],
   }]
 };
 
 const schemaV7 = {
   tables: [...schemaV3.tables, {
-    name: GROUPS_PROVISIONAL_ENCRYPTION_KEYS_TABLE,
+    name: 'groups_pending_encryption_keys',
     indexes: [['publicSignatureKeys']],
   }]
 };
+
+const schemaV8 = {
+  tables: [
+    // Delete all previous tables
+    ...schemaV7.tables.map(t => ({ ...t, deleted: true })),
+    // And replace by the new table
+    {
+      name: GROUP_ENCRYPTION_KEY_PAIRS_TABLE,
+      indexes: [['publicEncryptionKey']],
+    },
+  ]
+};
+
+type GroupKeyRecord = {
+  groupId: Uint8Array,
+  publicEncryptionKey: Uint8Array,
+}
 
 export default class GroupStore {
   /*:: _ds: DataStore<*>; */
@@ -169,26 +45,12 @@ export default class GroupStore {
     // this store didn't exist in schema version 1 and 2
     { version: 1, tables: [] },
     { version: 2, tables: [] },
-    {
-      version: 3,
-      ...schemaV3
-    },
-    {
-      version: 4,
-      ...schemaV3
-    },
-    {
-      version: 5,
-      ...schemaV3
-    },
-    {
-      version: 6,
-      ...schemaV3
-    },
-    {
-      version: 7,
-      ...schemaV7
-    },
+    { version: 3, ...schemaV3 },
+    { version: 4, ...schemaV3 },
+    { version: 5, ...schemaV3 },
+    { version: 6, ...schemaV3 },
+    { version: 7, ...schemaV7 },
+    { version: 8, ...schemaV8 },
   ];
 
   constructor(ds: DataStore<*>, userSecret: Uint8Array) {
@@ -209,117 +71,84 @@ export default class GroupStore {
     this._ds = null;
   }
 
-  async updateLastGroupBlock(args: { groupId: Uint8Array, currentLastGroupBlock: Uint8Array, currentLastGroupIndex: number }): Promise<void> {
-    const record = await this._findDbGroup(args.groupId);
-    if (!record)
-      throw new InternalError(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
-    if (record.encryptedPrivateKeys) {
-      const group = await dbGroupToGroup(this._userSecret, record);
-      group.lastGroupBlock = args.currentLastGroupBlock;
-      group.index = args.currentLastGroupIndex;
-      await this._ds.put(GROUPS_TABLE, groupToDbGroup(this._userSecret, group));
-    } else {
-      record.lastGroupBlock = utils.toBase64(args.currentLastGroupBlock);
-      record.index = args.currentLastGroupIndex;
-      await this._ds.put(GROUPS_TABLE, record);
-    }
-  }
+  saveGroupKeyPair = async (groupId: Uint8Array, groupEncryptionKeyPair: tcrypto.SodiumKeyPair) => {
+    const encryptedPrivateKey = encryptionV2.serialize(encryptionV2.encrypt(this._userSecret, groupEncryptionKeyPair.privateKey));
 
-  async updateProvisionalEncryptionKeys(args: { groupId: Uint8Array, provisionalEncryptionKeys: Array<ProvisionalEncryptionKeys> }): Promise<void> {
-    const record = await this._findDbGroup(args.groupId);
-    if (!record)
-      throw new InternalError(`updateLastGroupBlock: could not find group ${utils.toBase64(args.groupId)}`);
-    await this._ds.bulkPut(GROUPS_PROVISIONAL_ENCRYPTION_KEYS_TABLE, args.provisionalEncryptionKeys.map(provisionalKey => ({
-      _id: utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey, args.groupId)),
-      publicSignatureKeys: utils.toBase64(utils.concatArrays(provisionalKey.appPublicSignatureKey, provisionalKey.tankerPublicSignatureKey)),
-      groupId: utils.toBase64(args.groupId),
-      encryptedGroupPrivateEncryptionKey: provisionalKey.encryptedGroupPrivateEncryptionKey,
-    })));
-  }
+    const b64GroupId = utils.toBase64(groupId);
+    const b64PublicEncryptionKey = utils.toBase64(groupEncryptionKeyPair.publicKey);
+    const b64PrivateEncryptionKey = utils.toBase64(encryptedPrivateKey);
 
-  async putExternal(group: ExternalGroup): Promise<void> {
-    const { dbGroup, dbGroupProvisionalKeys } = externalGroupToDbGroup(group);
-    await this._ds.put(GROUPS_TABLE, dbGroup);
-    await this._ds.bulkPut(GROUPS_PROVISIONAL_ENCRYPTION_KEYS_TABLE, dbGroupProvisionalKeys);
-  }
-
-  async put(group: Group): Promise<void> {
-    return this._ds.put(GROUPS_TABLE, groupToDbGroup(this._userSecret, group));
-  }
-
-  async bulkPut(groups: Array<Group>): Promise<void> {
-    return this._ds.bulkPut(GROUPS_TABLE, groups.map(g => groupToDbGroup(this._userSecret, g)));
-  }
-
-  async _findDbGroup(groupId: Uint8Array): Promise<?DbGroup> {
-    try {
-      return await this._ds.get(GROUPS_TABLE, utils.toBase64(groupId));
-    } catch (e) {
-      if (!(e instanceof dbErrors.RecordNotFound)) {
-        throw e;
+    // We never want to overwrite a key
+    const existingKey = await this._ds.first(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
+      selector: {
+        publicEncryptionKey: { $eq: b64PublicEncryptionKey },
       }
+    });
+
+    if (existingKey && existingKey.privateEncryptionKey) {
+      return;
     }
-    return null;
+
+    await this._ds.put(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
+      _id: b64GroupId,
+      publicEncryptionKey: b64PublicEncryptionKey,
+      privateEncryptionKey: b64PrivateEncryptionKey
+    });
   }
 
-  findFull = async (args: { groupId?: Uint8Array, groupPublicEncryptionKey?: Uint8Array }): Promise<?Group> => {
-    if (Object.keys(args).length !== 1)
-      throw new InternalError(`findFull: expected exactly one argument, got ${Object.keys(args).length}`);
+  saveGroupsPublicKeys = async (groupKeys: Array<GroupKeyRecord>) => {
+    const b64GroupIds = [];
+    const b64GroupKeys = [];
 
-    const { groupId, groupPublicEncryptionKey } = args;
+    groupKeys.forEach(gk => {
+      const groupId = utils.toBase64(gk.groupId); //eslint-disable-line no-underscore-dangle
+      const publicEncryptionKey = utils.toBase64(gk.publicEncryptionKey);
 
-    let record;
+      b64GroupIds.push(groupId);
+      b64GroupKeys.push({ _id: groupId, publicEncryptionKey });
+    });
 
-    if (groupId) {
-      record = await this._findDbGroup(groupId);
-    } else if (groupPublicEncryptionKey) {
-      record = await this._ds.first(GROUPS_TABLE, { selector: { publicEncryptionKey: utils.toBase64(groupPublicEncryptionKey) } });
-    } else
-      throw new InternalError('Assertion failed: findFull: both selectors are null');
+    // We never want to overwrite a key
+    const existingB64GroupIds = (await this._ds.find(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
+      selector: {
+        _id: { $in: b64GroupIds },
+      }
+    })).map(record => record._id); //eslint-disable-line no-underscore-dangle
 
-    if (!record || !record.encryptedPrivateKeys)
+    const groupKeysToSave = b64GroupKeys.filter(gkr => existingB64GroupIds.indexOf(gkr._id) === -1); //eslint-disable-line no-underscore-dangle
+
+    await this._ds.bulkPut(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, groupKeysToSave);
+  }
+
+  async findGroupKeyPair(publicKey: Uint8Array): Promise<?tcrypto.SodiumKeyPair> {
+    const b64PublicKey = utils.toBase64(publicKey);
+
+    const existingKey = await this._ds.first(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
+      selector: {
+        publicEncryptionKey: { $eq: b64PublicKey },
+      }
+    });
+
+    if (!existingKey || !existingKey.privateEncryptionKey) {
       return null;
-
-    return dbGroupToGroup(this._userSecret, record);
-  }
-
-  // This function retrieves an external group, but without its provisional keys, use
-  // findExternalsByProvisionalSignaturePublicKeys to get those
-  findExternal = async (args: { groupId?: Uint8Array, groupPublicEncryptionKey?: Uint8Array }): Promise<?ExternalGroup> => {
-    if (Object.keys(args).length !== 1)
-      throw new InternalError(`findExternal: expected exactly one argument, got ${Object.keys(args).length}`);
-
-    const { groupId, groupPublicEncryptionKey } = args;
-
-    let record;
-
-    if (groupId) {
-      record = await this._findDbGroup(groupId);
-    } else if (groupPublicEncryptionKey) {
-      record = await this._ds.first(GROUPS_TABLE, { selector: { publicEncryptionKey: utils.toBase64(groupPublicEncryptionKey) } });
-    } else {
-      throw new InternalError('findExternal: invalid argument');
     }
 
-    if (record)
-      return dbGroupToExternalGroup(record, []);
+    const encryptedPrivateEncryptionKey = utils.fromBase64(existingKey.privateEncryptionKey);
+    const privateKey = encryptionV2.decrypt(this._userSecret, encryptionV2.unserialize(encryptedPrivateEncryptionKey));
 
-    return null;
+    return { publicKey, privateKey };
   }
 
-  findExternalsByProvisionalId = async (args: { id: string }): Promise<Array<ExternalGroup>> => {
-    const requestedId = args.id;
-    const provisionalKeys = await this._ds.find(GROUPS_PROVISIONAL_ENCRYPTION_KEYS_TABLE, { selector: { publicSignatureKeys: requestedId } });
+  async findGroupsPublicKeys(groupIds: Array<Uint8Array>): Promise<Array<GroupKeyRecord>> {
+    const records = await this._ds.find(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
+      selector: {
+        _id: { $in: groupIds.map(utils.toBase64) },
+      }
+    });
 
-    const groups = (await this._ds.find(GROUPS_TABLE, { selector: { _id: { $in: provisionalKeys.map(k => k.groupId) } } })).reduce((map, group) => { // eslint-disable-line no-underscore-dangle
-      map[group._id] = group; // eslint-disable-line no-underscore-dangle,no-param-reassign
-      return map;
-    }, {});
-    return provisionalKeys.map(provisionalKey => dbGroupToExternalGroup(groups[provisionalKey.groupId], [provisionalKey]));
-  }
-
-  findExternalsByProvisionalSignaturePublicKeys = async (args: { appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array }): Promise<Array<ExternalGroup>> => {
-    const requestedId = utils.toBase64(utils.concatArrays(args.appPublicSignatureKey, args.tankerPublicSignatureKey));
-    return this.findExternalsByProvisionalId({ id: requestedId });
+    return records.map(r => ({
+      groupId: utils.fromBase64(r._id), //eslint-disable-line no-underscore-dangle
+      publicEncryptionKey: utils.fromBase64(r.publicEncryptionKey),
+    }));
   }
 }

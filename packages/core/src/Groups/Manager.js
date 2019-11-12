@@ -1,44 +1,58 @@
 // @flow
-
+import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { GroupTooBig, InvalidArgument } from '@tanker/errors';
+import { InvalidArgument } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
-import { Client } from '../Network/Client';
+import { Client, b64RequestObject } from '../Network/Client';
 import GroupStore from './GroupStore';
-import { type ExternalGroup } from './types';
+import KeyStore from '../Session/KeyStore';
+import type { InternalGroup, Group } from './types';
+import type { GroupData, GroupDataWithDevices } from './ManagerHelper';
+import {
+  assertExpectedGroups,
+  assertExpectedGroupsByPublicKey,
+  assertPublicIdentities,
+  fetchDeviceByDeviceId,
+  inflateFromBlocks,
+  verifyGroup,
+} from './ManagerHelper';
+
 import Trustchain from '../Trustchain/Trustchain';
 
-export const MAX_GROUP_SIZE = 1000;
+type CachedPublicKeysResult = {
+  cachedKeys: Array<Uint8Array>,
+  missingGroupIds: Array<Uint8Array>,
+}
 
 export default class GroupManager {
   _localUser: LocalUser
   _trustchain: Trustchain;
-  _groupStore: GroupStore;
+  _keystore: KeyStore;
   _userAccessor: UserAccessor;
   _client: Client;
+  _groupStore: GroupStore;
 
   constructor(
     localUser: LocalUser,
     trustchain: Trustchain,
     groupStore: GroupStore,
+    keystore: KeyStore,
     userAccessor: UserAccessor,
     client: Client
   ) {
     this._localUser = localUser;
     this._trustchain = trustchain;
-    this._groupStore = groupStore;
+    this._keystore = keystore;
     this._userAccessor = userAccessor;
     this._client = client;
+    this._groupStore = groupStore;
   }
 
   async createGroup(publicIdentities: Array<b64string>): Promise<b64string> {
-    if (publicIdentities.length === 0)
-      throw new InvalidArgument('A group cannot be created empty');
-    if (publicIdentities.length > MAX_GROUP_SIZE)
-      throw new GroupTooBig(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
+    assertPublicIdentities(publicIdentities);
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
@@ -47,7 +61,6 @@ export default class GroupManager {
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
-    // no need to keep the keys, we will get them when we receive the group block
     const userGroupCreationBlock = this._localUser.blockGenerator.createUserGroup(
       groupSignatureKeyPair,
       tcrypto.makeEncryptionKeyPair(),
@@ -56,21 +69,15 @@ export default class GroupManager {
     );
 
     await this._client.sendBlock(userGroupCreationBlock);
-    await this._trustchain.sync();
 
     return utils.toBase64(groupSignatureKeyPair.publicKey);
   }
 
   async updateGroupMembers(groupId: string, publicIdentities: Array<b64string>): Promise<void> {
-    if (publicIdentities.length === 0)
-      throw new InvalidArgument(`Cannot add no member to group ${groupId}`);
-    if (publicIdentities.length > MAX_GROUP_SIZE)
-      throw new GroupTooBig(`Cannot add more than ${MAX_GROUP_SIZE} members to ${groupId}`);
+    assertPublicIdentities(publicIdentities);
 
     const internalGroupId = utils.fromBase64(groupId);
-    await this._fetchGroups([internalGroupId]);
-
-    const existingGroup = await this._groupStore.findFull({ groupId: internalGroupId });
+    const existingGroup = await this._getInternalGroupById(internalGroupId);
 
     if (!existingGroup) {
       throw new InvalidArgument('groupId', 'string', groupId);
@@ -81,7 +88,6 @@ export default class GroupManager {
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
 
-    // no need to keep the keys, we will get them when we receive the group block
     const userGroupAdditionBlock = this._localUser.blockGenerator.addToUserGroup(
       internalGroupId,
       existingGroup.signatureKeyPair.privateKey,
@@ -92,63 +98,108 @@ export default class GroupManager {
     );
 
     await this._client.sendBlock(userGroupAdditionBlock);
-    await this._trustchain.sync();
   }
 
-  async _fetchGroups(groupIds: Array<Uint8Array>) {
-    await this._trustchain.sync([], groupIds);
-    await this._trustchain.updateGroupStore(groupIds);
-  }
+  async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {
+    if (groupIds.length === 0) return [];
 
-  async getGroups(groupIds: Array<Uint8Array>): Promise<Array<ExternalGroup>> {
-    const groups: Array<ExternalGroup> = [];
-    const externalGroups: Array<Uint8Array> = [];
-    for (const groupId of groupIds) {
-      const group = await this._groupStore.findFull({ groupId });
-      if (group) {
-        groups.push({
-          groupId: group.groupId,
-          publicSignatureKey: group.signatureKeyPair.publicKey,
-          publicEncryptionKey: group.encryptionKeyPair.publicKey,
-          encryptedPrivateSignatureKey: null,
-          provisionalEncryptionKeys: [],
-          lastGroupBlock: group.lastGroupBlock,
-          index: group.index,
-        });
-      } else {
-        externalGroups.push(groupId);
-      }
-    }
-
-    const missingGroupIds = [];
-    if (externalGroups.length)
-      await this._fetchGroups(externalGroups);
-    for (const groupId of externalGroups) {
-      const group = await this._groupStore.findExternal({ groupId });
-      if (group)
-        groups.push(group);
-      else
-        missingGroupIds.push(utils.toBase64(groupId));
-    }
+    const { cachedKeys, missingGroupIds } = await this._getCachedGroupsPublicKeys(groupIds);
+    const newKeys = [];
 
     if (missingGroupIds.length > 0) {
-      const message = `The following groups do not exist on the trustchain: "${missingGroupIds.join('", "')}"`;
-      throw new InvalidArgument(message);
+      const blocks = await this._getGroupsBlocksById(missingGroupIds);
+      const groups = await this._groupsFromBlocks(blocks);
+      assertExpectedGroups(groups, missingGroupIds);
+
+      const records = [];
+      for (const group of groups) {
+        const { groupId, publicEncryptionKey } = group;
+        records.push({ groupId, publicEncryptionKey });
+        newKeys.push(publicEncryptionKey);
+      }
+
+      await this._groupStore.saveGroupsPublicKeys(records);
     }
 
-    return groups;
+    return cachedKeys.concat(newKeys);
   }
 
   async getGroupEncryptionKeyPair(groupPublicEncryptionKey: Uint8Array) {
-    let group = await this._groupStore.findFull({ groupPublicEncryptionKey });
-    if (group)
-      return group.encryptionKeyPair;
+    const cachedEncryptionKeyPair = await this._groupStore.findGroupKeyPair(groupPublicEncryptionKey);
+    if (cachedEncryptionKeyPair) {
+      return cachedEncryptionKeyPair;
+    }
 
-    await this._trustchain.updateGroupStoreWithPublicEncryptionKey(groupPublicEncryptionKey);
-    group = await this._groupStore.findFull({ groupPublicEncryptionKey });
-    if (group)
-      return group.encryptionKeyPair;
+    const blocks = await this._getGroupBlocksByPublicKey(groupPublicEncryptionKey);
+    const groups = await this._groupsFromBlocks(blocks);
+    assertExpectedGroupsByPublicKey(groups, groupPublicEncryptionKey);
 
-    return null;
+    const group = groups[0];
+    if (!group.encryptionKeyPair) {
+      throw new InvalidArgument('Current user is not a group member');
+    }
+
+    await this._groupStore.saveGroupKeyPair(group.groupId, group.encryptionKeyPair);
+    return group.encryptionKeyPair;
+  }
+
+  async _getInternalGroupById(groupId: Uint8Array): Promise<InternalGroup> {
+    const blocks = await this._getGroupsBlocksById([groupId]);
+    const groups = await this._groupsFromBlocks(blocks);
+    assertExpectedGroups(groups, [groupId]);
+
+    const group = groups[0];
+    if (!group.encryptionKeyPair) {
+      throw new InvalidArgument('Current user is not a group member');
+    }
+
+    return group;
+  }
+
+  async _populateDevices(groupsData: Array<GroupData>): Promise<Array<GroupDataWithDevices>> {
+    const promises = groupsData.map(groupData => Promise.all(groupData.map(async g => {
+      const device = await fetchDeviceByDeviceId(g.entry.deviceId, this._userAccessor, this._trustchain, g.group.groupId);
+      return { ...g, device };
+    })));
+    return Promise.all(promises);
+  }
+
+  async _groupsFromBlocks(blocks: Array<b64string>): Promise<Array<Group>> {
+    const groupsData = inflateFromBlocks(blocks, this._keystore);
+    const groupsDataWithDevices = await this._populateDevices(groupsData);
+    groupsDataWithDevices.forEach(g => verifyGroup(g));
+    return groupsDataWithDevices.map(g => g[g.length - 1].group);
+  }
+
+  _getGroupBlocksByPublicKey(groupPublicEncryptionKey: Uint8Array) {
+    const request = {
+      group_public_key: groupPublicEncryptionKey,
+    };
+
+    return this._client.send('get groups blocks', b64RequestObject(request));
+  }
+
+  _getGroupsBlocksById(groupsIds: Array<Uint8Array>) {
+    const request = {
+      groups_ids: groupsIds,
+    };
+
+    return this._client.send('get groups blocks', b64RequestObject(request));
+  }
+
+  async _getCachedGroupsPublicKeys(groupsIds: Array<Uint8Array>): Promise<CachedPublicKeysResult> {
+    const cacheResults = await this._groupStore.findGroupsPublicKeys(groupsIds);
+    const missingGroupIds = [];
+
+    groupsIds.forEach(groupId => {
+      const resultFromCache = find(cacheResults, result => utils.equalArray(result.groupId, groupId));
+      if (!resultFromCache) {
+        missingGroupIds.push(groupId);
+      }
+    });
+    return {
+      cachedKeys: cacheResults.map(res => res.publicEncryptionKey),
+      missingGroupIds,
+    };
   }
 }

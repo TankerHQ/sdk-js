@@ -1,18 +1,13 @@
 // @flow
 import { tcrypto, utils } from '@tanker/crypto';
 import { type DataStore, mergeSchemas } from '@tanker/datastore-base';
-import { createIdentity, type ProvisionalUserKeys, type PublicProvisionalUser } from '@tanker/identity';
+import { createIdentity } from '@tanker/identity';
 
 import { extractUserData } from '../Session/UserData';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 import Generator, {
   type GeneratorUserResult,
-  type GeneratorUserGroupResult,
-  type GeneratorUserGroupAdditionResult,
-  type GeneratorDevice,
-  type GeneratorUser,
-  type GeneratorProvisionalIdentityClaimResult,
 } from './Generator';
 import TrustchainStore from '../Trustchain/TrustchainStore';
 import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
@@ -22,10 +17,9 @@ import Storage from '../Session/Storage';
 import KeyStore from '../Session/KeyStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
-import GroupUpdater from '../Groups/GroupUpdater';
 import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
 
-import { userGroupEntryFromBlock, deviceCreationFromBlock, provisionalIdentityClaimFromBlock } from '../Blocks/entries';
+import { deviceCreationFromBlock } from '../Blocks/entries';
 
 export default class TrustchainBuilder {
   dataStore: DataStore<*>;
@@ -36,7 +30,6 @@ export default class TrustchainBuilder {
   keyStore: KeyStore;
   userStore: UserStore;
   groupStore: GroupStore;
-  groupUpdater: GroupUpdater;
   unverifiedStore: UnverifiedStore;
   dataStoreConfig: Object;
   trustchainKeyPair: Object;
@@ -81,8 +74,7 @@ export default class TrustchainBuilder {
     this.trustchainStore = storage.trustchainStore;
     this.unverifiedStore = storage.unverifiedStore;
 
-    this.groupUpdater = new GroupUpdater(this.groupStore, this.keyStore);
-    this.trustchainVerifier = new TrustchainVerifier(trustchainId, storage, this.groupUpdater);
+    this.trustchainVerifier = new TrustchainVerifier(trustchainId, storage);
     const trustchainPuller: any = {};
     this.trustchain = new Trustchain(this.trustchainStore, this.trustchainVerifier, trustchainPuller, this.unverifiedStore);
 
@@ -104,51 +96,6 @@ export default class TrustchainBuilder {
     const result = await this.generator.newDeviceCreationV3({ userId: id, parentIndex: parentIndex || 0 });
     await this.unverifiedStore.addUnverifiedUserEntries([deviceCreationFromBlock(result.block)]);
     return result;
-  }
-
-  async addUserGroupCreation(from: GeneratorUserResult, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupResult> {
-    const result = await this.generator.newUserGroupCreation(from.device, members, provisionalMembers);
-    await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
-    return result;
-  }
-
-  async addUserGroupAddition(from: GeneratorUserResult, group: GeneratorUserGroupResult, members: Array<string>, provisionalMembers: Array<PublicProvisionalUser> = []): Promise<GeneratorUserGroupAdditionResult> {
-    const result = await this.generator.newUserGroupAddition(from.device, group, members, provisionalMembers);
-    await this.unverifiedStore.addUnverifiedUserGroups([userGroupEntryFromBlock(result.block)]);
-    return result;
-  }
-
-  async addProvisionalIdentityClaim(from: GeneratorUserResult, provisionalUserKeys: ProvisionalUserKeys): Promise<GeneratorProvisionalIdentityClaimResult> {
-    const result = await this.generator.newProvisionalIdentityClaim(from.device, provisionalUserKeys);
-    await this.unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries([provisionalIdentityClaimFromBlock(result.block)]);
-    return result;
-  }
-
-  async getKeyStoreOfDevice(user: GeneratorUser, device: GeneratorDevice, provisionalIdentities: Array<ProvisionalUserKeys> = []): Promise<KeyStore> {
-    /* eslint-disable no-underscore-dangle */
-
-    // $FlowExpectedError we are making a read-only key store for tests, no need for a real database
-    const keystore = new KeyStore(null);
-    keystore._safe = {
-      deviceId: utils.toBase64(device.id),
-      signaturePair: device.signKeys,
-      encryptionPair: device.encryptionKeys,
-      userKeys: user.userKeys ? [user.userKeys] : [],
-      encryptedUserKeys: [],
-      provisionalUserKeys: {},
-      userSecret: new Uint8Array(32),
-    };
-    keystore._userKeys = {};
-    if (user.userKeys)
-      keystore._userKeys[utils.toBase64(user.userKeys.publicKey)] = user.userKeys;
-    for (const ident of provisionalIdentities) {
-      const id = utils.toBase64(utils.concatArrays(ident.appSignatureKeyPair.publicKey, ident.tankerSignatureKeyPair.publicKey));
-      const keys = { id, appEncryptionKeyPair: ident.appEncryptionKeyPair, tankerEncryptionKeyPair: ident.tankerEncryptionKeyPair };
-      keystore._safe.provisionalUserKeys[id] = keys;
-    }
-    return keystore;
-
-    /* eslint-enable no-underscore-dangle */
   }
 }
 

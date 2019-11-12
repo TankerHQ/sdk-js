@@ -27,6 +27,7 @@ export class Apis {
       localUser,
       trustchain,
       storage.groupStore,
+      storage.keyStore,
       this.userAccessor,
       client,
     );

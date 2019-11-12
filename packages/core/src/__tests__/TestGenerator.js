@@ -1,25 +1,29 @@
 // @flow
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
-import { type PublicProvisionalUser, createIdentity, getPublicIdentity } from '@tanker/identity';
+import { type PublicProvisionalUser, type ProvisionalUserKeys, createIdentity, getPublicIdentity } from '@tanker/identity';
+import KeyStore from '../Session/KeyStore';
 
 import {
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
-  userGroupEntryFromBlock,
   provisionalIdentityClaimFromBlock,
-  type UnverifiedUserGroup,
   type UnverifiedDeviceCreation,
   type UnverifiedDeviceRevocation,
   type UnverifiedProvisionalIdentityClaim,
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
 
+import {
+  type UserGroupEntry,
+  getGroupEntryFromBlock,
+} from '../Groups/Serialize';
+
 import { hashBlock, type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 
 import { getLastUserPublicKey, type User, type Device } from '../Users/User';
-import { type Group, type ExternalGroup } from '../Groups/types';
+import { type Group } from '../Groups/types';
 import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
 
 import { rootBlockAuthor } from '../Trustchain/Verify';
@@ -92,10 +96,9 @@ export type TestKeyPublish = {
 };
 
 export type TestUserGroup = {
-  unverifiedUserGroup: UnverifiedUserGroup,
+  userGroupEntry: UserGroupEntry,
   block: Block,
-  group: Group,
-  externalGroup: ExternalGroup
+  group: Group
 };
 
 export type TestIdentityClaim = {
@@ -115,6 +118,37 @@ function createDelegationToken(userId: Uint8Array, trustchainPrivateKey: Uint8Ar
     delegation_signature: tcrypto.sign(delegationBuffer, trustchainPrivateKey),
     last_reset: new Uint8Array(32),
   };
+}
+
+// TODO: test this horror
+export async function getKeyStoreOfDevice(user: TestUser, device: TestDevice, provisionalIdentities: Array<ProvisionalUserKeys> = []): Promise<KeyStore> {
+  /* eslint-disable no-underscore-dangle */
+
+  // $FlowExpectedError we are making a read-only key store for tests, no need for a real database
+  const keystore = new KeyStore(null);
+  keystore._safe = {
+    deviceId: utils.toBase64(device.id),
+    signaturePair: device.signKeys,
+    encryptionPair: device.encryptionKeys,
+    userKeys: user.userKeys.map(({ index, ...userKeyPair }) => userKeyPair),
+    encryptedUserKeys: [],
+    provisionalUserKeys: {},
+    userSecret: new Uint8Array(32),
+  };
+  keystore._userKeys = {};
+  if (user.userKeys) {
+    const lastUserKey = user.userKeys.slice(-1)[0];
+    const { publicKey, privateKey } = lastUserKey;
+    keystore._userKeys[utils.toBase64(publicKey)] = { publicKey, privateKey };
+  }
+  for (const ident of provisionalIdentities) {
+    const id = utils.toBase64(utils.concatArrays(ident.appSignatureKeyPair.publicKey, ident.tankerSignatureKeyPair.publicKey));
+    const keys = { id, appEncryptionKeyPair: ident.appEncryptionKeyPair, tankerEncryptionKeyPair: ident.tankerEncryptionKeyPair };
+    keystore._safe.provisionalUserKeys[id] = keys;
+  }
+  return keystore;
+
+  /* eslint-enable no-underscore-dangle */
 }
 
 class TestGenerator {
@@ -150,15 +184,29 @@ class TestGenerator {
     this._trustchainIndex += 1;
   }
 
-  makeProvisionalUser = () => ({
-    trustchainId: random(tcrypto.HASH_SIZE),
-    target: 'email',
-    value: 'email@example.com',
-    appSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-    appEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-    tankerSignaturePublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-    tankerEncryptionPublicKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-  });
+  makeProvisionalUser = () => {
+    const appSignatureKeyPair = tcrypto.makeSignKeyPair();
+    const appEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
+    const tankerSignatureKeyPair = tcrypto.makeSignKeyPair();
+    const tankerEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
+    return {
+      publicProvisionalUser: {
+        trustchainId: this._trustchainId,
+        target: 'email',
+        value: 'email@example.com',
+        appSignaturePublicKey: appSignatureKeyPair.publicKey,
+        appEncryptionPublicKey: appEncryptionKeyPair.publicKey,
+        tankerSignaturePublicKey: tankerSignatureKeyPair.publicKey,
+        tankerEncryptionPublicKey: tankerEncryptionKeyPair.publicKey,
+      },
+      provisionalUserKeys: {
+        appSignatureKeyPair,
+        appEncryptionKeyPair,
+        tankerSignatureKeyPair,
+        tankerEncryptionKeyPair,
+      }
+    };
+  };
 
   makeUserCreation = async (userId: Uint8Array): Promise<TestDeviceCreation> => {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
@@ -337,7 +385,7 @@ class TestGenerator {
     };
   }
 
-  makeKeyPublishToGroup = (parentDevice: TestDeviceCreation, recipient: ExternalGroup): TestKeyPublish => {
+  makeKeyPublishToGroup = (parentDevice: TestDeviceCreation, recipient: Group): TestKeyPublish => {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = random(tcrypto.MAC_SIZE);
 
@@ -416,38 +464,21 @@ class TestGenerator {
     const block = blockGenerator.createUserGroup(signatureKeyPair, encryptionKeyPair, members, provisionalUsers);
     block.index = this._trustchainIndex;
 
-    const unverifiedUserGroup = userGroupEntryFromBlock(block);
+    const userGroupEntry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
     const group = {
-      groupId: signatureKeyPair.publicKey,
-      signatureKeyPair,
-      encryptionKeyPair,
-      lastGroupBlock: unverifiedUserGroup.hash,
-      index: unverifiedUserGroup.index,
-    };
-
-    const provisionalEncryptionKeys = [];
-    provisionalUsers.forEach((user) => {
-      provisionalEncryptionKeys.push({
-        appPublicSignatureKey: user.appSignaturePublicKey,
-        tankerPublicSignatureKey: user.tankerSignaturePublicKey,
-        encryptedGroupPrivateEncryptionKey: random(tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD + tcrypto.SEAL_OVERHEAD),
-      });
-    });
-
-    const externalGroup = {
       groupId: signatureKeyPair.publicKey,
       publicSignatureKey: signatureKeyPair.publicKey,
       publicEncryptionKey: encryptionKeyPair.publicKey,
-      lastGroupBlock: unverifiedUserGroup.hash,
-      encryptedPrivateSignatureKey: tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey),
-      provisionalEncryptionKeys,
-      index: unverifiedUserGroup.index,
+      signatureKeyPair,
+      encryptionKeyPair,
+      lastGroupBlock: userGroupEntry.hash,
+      index: userGroupEntry.index,
     };
+
     return {
-      unverifiedUserGroup,
+      userGroupEntry,
       block,
-      group,
-      externalGroup
+      group
     };
   }
 
@@ -458,31 +489,33 @@ class TestGenerator {
       parentDevice.testDevice.id,
     );
     this._trustchainIndex += 1;
+
+    const signatureKeyPair = previousGroup.group.signatureKeyPair || null;
+    const encryptionKeyPair = previousGroup.group.encryptionKeyPair || null;
+    if (!signatureKeyPair || !encryptionKeyPair) {
+      throw new Error('This group has no key pairs!');
+    }
+
     const block = blockGenerator.addToUserGroup(
       previousGroup.group.groupId,
-      previousGroup.group.signatureKeyPair.privateKey,
+      signatureKeyPair.privateKey,
       previousGroup.group.lastGroupBlock,
-      previousGroup.group.encryptionKeyPair.privateKey,
+      encryptionKeyPair.privateKey,
       newMembers,
       provisionalUsers
     );
     block.index = this._trustchainIndex;
 
-    const unverifiedUserGroup = userGroupEntryFromBlock(block);
+    const userGroupEntry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
 
-    const group: Group = ({ ...previousGroup.group }: any);
-    group.lastGroupBlock = unverifiedUserGroup.hash;
-    group.index = unverifiedUserGroup.index;
-
-    const externalGroup: ExternalGroup = ({ ...previousGroup.externalGroup }: any);
-    externalGroup.lastGroupBlock = unverifiedUserGroup.hash;
-    externalGroup.index = unverifiedUserGroup.index;
+    const group = { ...previousGroup.group };
+    group.lastGroupBlock = userGroupEntry.hash;
+    group.index = userGroupEntry.index;
 
     return {
-      unverifiedUserGroup,
+      userGroupEntry,
       block,
       group,
-      externalGroup
     };
   }
 

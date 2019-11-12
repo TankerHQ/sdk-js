@@ -18,7 +18,6 @@ import LocalUser from '../Session/LocalUser';
 import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/User';
-import { type ExternalGroup } from '../Groups/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './Resource';
 import type { Resource } from './Resource';
@@ -91,13 +90,11 @@ export class DataProtector {
     resource: Array<Resource>,
     recipientUsers: Array<User>,
     recipientProvisionalUsers: Array<PublicProvisionalUser>,
-    recipientGroups: Array<ExternalGroup>
+    recipientGroupsEncryptionKeys: Array<Uint8Array>
   ): Promise<void> {
     let blocks: Array<Block> = [];
-    if (recipientGroups.length > 0) {
-      const keys = recipientGroups.map(group => group.publicEncryptionKey);
-
-      blocks = blocks.concat(this._makeKeyPublishBlocks(resource, keys, NATURE_KIND.key_publish_to_user_group));
+    if (recipientGroupsEncryptionKeys.length > 0) {
+      blocks = blocks.concat(this._makeKeyPublishBlocks(resource, recipientGroupsEncryptionKeys, NATURE_KIND.key_publish_to_user_group));
     }
 
     if (recipientProvisionalUsers.length > 0) {
@@ -133,7 +130,7 @@ export class DataProtector {
 
   async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, sharingOptions: SharingOptions, shareWithSelf: bool): Promise<void> {
     const groupIds = (sharingOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
-    const groups = await this._groupManager.getGroups(groupIds);
+    const groupsKeys = await this._groupManager.getGroupsPublicEncryptionKeys(groupIds);
     const deserializedIdentities = (sharingOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
     const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, shareWithSelf);
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesWithSelf);
@@ -145,7 +142,7 @@ export class DataProtector {
       await this._resourceManager.saveResourceKey(resourceId, key);
     }
 
-    return this._publishKeys(keys, users, provisionalUsers, groups);
+    return this._publishKeys(keys, users, provisionalUsers, groupsKeys);
   }
 
   async _simpleDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {

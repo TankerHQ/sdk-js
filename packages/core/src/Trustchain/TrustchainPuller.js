@@ -9,7 +9,6 @@ import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 
 import {
   blockToEntry,
-  userGroupEntryFromBlock,
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
   provisionalIdentityClaimFromBlock,
@@ -145,13 +144,11 @@ export default class TrustchainPuller {
 
   _processNewBlocks = async (b64Blocks: Array<string>) => {
     const userEntries = [];
-    const userGroups = [];
     const claims = [];
     let trustchainCreationEntry = null;
     let maxBlockIndex = 0;
 
-    let mustUpdateOurselves = false;
-
+    const userIds = [];
     // Separate our entries for each store
     for (const b64Block of b64Blocks) {
       const block = unserializeBlock(utils.fromBase64(b64Block));
@@ -159,26 +156,20 @@ export default class TrustchainPuller {
         maxBlockIndex = block.index;
       }
 
-      if (isUserGroup(block.nature)) {
-        userGroups.push(userGroupEntryFromBlock(block));
-      } else if (isDeviceCreation(block.nature)) {
+      if (isDeviceCreation(block.nature)) {
         const userEntry = deviceCreationFromBlock(block);
         userEntries.push(userEntry);
-        if (utils.equalArray(this._userId, userEntry.user_id)) {
-          mustUpdateOurselves = true;
-        }
         this._deviceIdToUserId.set(utils.toBase64(userEntry.hash), utils.toBase64(userEntry.user_id));
+        userIds.push(userEntry.user_id);
       } else if (isDeviceRevocation(block.nature)) {
         const userEntry = await this._deviceRevocationFromBlock(block);
         userEntries.push(userEntry);
-        if (utils.equalArray(this._userId, userEntry.user_id)) {
-          mustUpdateOurselves = true;
-        }
+        userIds.push(userEntry.user_id);
       } else if (isProvisionalIdentityClaim(block.nature)) {
         claims.push(provisionalIdentityClaimFromBlock(block));
       } else if (isTrustchainCreation(block.nature)) {
         trustchainCreationEntry = blockToEntry(block);
-      } else if (!isKeyPublish(block.nature)) {
+      } else if (!isKeyPublish(block.nature) && !isUserGroup(block.nature)) {
         throw new InternalError('Assertion error: Unexpected nature in trustchain puller callback');
       }
     }
@@ -190,12 +181,11 @@ export default class TrustchainPuller {
     }
 
     await this._unverifiedStore.addUnverifiedUserEntries(userEntries);
-    await this._unverifiedStore.addUnverifiedUserGroups(userGroups);
     await this._unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries(claims);
     await this._trustchainStore.updateLastBlockIndex(maxBlockIndex);
 
-    if (mustUpdateOurselves) {
-      await this._trustchainVerifier.updateUserStore([this._userId]);
+    if (userIds.length) {
+      await this._trustchainVerifier.updateUserStore(userIds);
     }
     if (claims.length) {
       await this._trustchainVerifier.verifyClaimsForUser(this._userId);

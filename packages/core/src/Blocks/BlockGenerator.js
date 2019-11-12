@@ -6,19 +6,23 @@ import { type PublicProvisionalUser, type ProvisionalUserKeys } from '@tanker/id
 
 import {
   serializeUserDeviceV3,
-  serializeKeyPublish,
   serializeDeviceRevocationV2,
-  serializeUserGroupCreationV2,
-  serializeUserGroupAdditionV2,
   serializeProvisionalIdentityClaim,
   type UserDeviceRecord,
   type UserKeys,
+} from './payloads';
+
+import {
   type UserGroupCreationRecordV1,
   type UserGroupCreationRecordV2,
   type UserGroupAdditionRecordV1,
   type UserGroupAdditionRecordV2,
-} from './payloads';
+  serializeUserGroupCreationV2,
+  serializeUserGroupAdditionV2,
+} from '../Groups/Serialize';
+
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
+import { serializeKeyPublish } from '../DataProtection/Resource/keyPublish';
 
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/UserData';

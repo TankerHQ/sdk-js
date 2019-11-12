@@ -4,14 +4,18 @@ import { tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import makeUint8Array from './makeUint8Array';
-import { blockToEntry } from '../Blocks/entries';
+
 import {
   type UserGroupCreationRecordV1,
   type UserGroupCreationRecordV2,
   type UserGroupAdditionRecordV1,
   type UserGroupAdditionRecordV2,
   TWO_TIMES_SEALED_KEY_SIZE,
-} from '../Blocks/payloads';
+  getGroupEntryFromBlock,
+} from '../Groups/Serialize';
+
+import { serializeBlock } from '../Blocks/payloads';
+
 import BlockGenerator, {
   getUserGroupCreationBlockSignDataV1,
   getUserGroupCreationBlockSignDataV2,
@@ -130,8 +134,8 @@ describe('BlockGenerator', () => {
       []
     );
 
-    const entry = blockToEntry(block);
-    const record: UserGroupCreationRecordV2 = (entry.payload_unverified: any);
+    const entry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
+    const record: UserGroupCreationRecordV2 = (entry: any);
     expect(record.public_signature_key).to.deep.equal(groupSignatureKeyPair.publicKey);
     expect(record.public_encryption_key).to.deep.equal(groupEncryptionKeyPair.publicKey);
     expect(tcrypto.sealDecrypt(record.encrypted_group_private_signature_key, groupEncryptionKeyPair)).to.deep.equal(groupSignatureKeyPair.privateKey);
@@ -230,8 +234,8 @@ describe('BlockGenerator', () => {
       []
     );
 
-    const entry = blockToEntry(block);
-    const record: UserGroupAdditionRecordV2 = (entry.payload_unverified: any);
+    const entry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
+    const record: UserGroupAdditionRecordV2 = (entry: any);
     expect(record.group_id).to.deep.equal(groupSignatureKeyPair.publicKey);
     expect(record.previous_group_block).to.deep.equal(previousGroupBlock);
     expect(record.encrypted_group_private_encryption_keys_for_users.length).to.deep.equal(1);

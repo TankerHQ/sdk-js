@@ -1,139 +1,140 @@
 // @flow
-
-import { tcrypto, random } from '@tanker/crypto';
-import { mergeSchemas } from '@tanker/datastore-base';
+import { random, tcrypto } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
+import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
+
 import GroupStore from '../Groups/GroupStore';
 
-import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
-import TestGenerator, { type TestUserGroup, type TestDeviceCreation } from './TestGenerator';
-
-import makeUint8Array from './makeUint8Array';
-
-export async function makeMemoryGroupStore() {
-  const schemas = mergeSchemas(GroupStore.schemas);
-  const userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
-
-  const baseConfig = { ...dataStoreConfig, schemas };
-  const config = { ...baseConfig, dbName: `group-store-test-${makePrefix()}` };
-  const dataStore = await openDataStore(config);
-  const groupStore = await GroupStore.open(dataStore, userSecret);
-  return groupStore;
-}
-
 describe('GroupStore', () => {
+  let dbName;
+  let userSecret;
+  let groupStoreConfig;
   let groupStore;
-  let testGenerator;
-
-  let groupId: Uint8Array;
-  let testUserCreation: TestDeviceCreation;
-  let testGroup: TestUserGroup;
-
-  before(async () => {
-    testGenerator = new TestGenerator();
-    testGenerator.makeTrustchainCreation();
-    groupStore = await makeMemoryGroupStore();
-  });
+  let datastore;
 
   beforeEach(async () => {
-    testUserCreation = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
-    testGroup = testGenerator.makeUserGroupCreation(testUserCreation, [testUserCreation.user]);
-    groupId = testGroup.group.groupId;
+    dbName = `groupStore-test-${makePrefix()}`;
+    userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
+    groupStoreConfig = { dbName, ...dataStoreConfig, schemas: GroupStore.schemas };
+    datastore = await openDataStore(groupStoreConfig);
+    groupStore = await GroupStore.open(datastore, userSecret);
   });
 
-  it('can add a full group', async () => {
-    await expect(groupStore.put(testGroup.group)).to.be.fulfilled;
-    expect(await groupStore.findFull({ groupId })).to.deep.equal(testGroup.group);
+  it('saves and finds group key pairs', async () => {
+    const groupKeyPair = tcrypto.makeEncryptionKeyPair();
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+
+    await groupStore.saveGroupKeyPair(groupId, groupKeyPair);
+    const resKeyPair = await groupStore.findGroupKeyPair(groupKeyPair.publicKey);
+    expect(resKeyPair).to.deep.equal(groupKeyPair);
   });
 
-  it('can add a full group and get an external group', async () => {
-    await expect(groupStore.put(testGroup.group)).to.be.fulfilled;
-    expect(await groupStore.findExternal({ groupId })).excluding(['encryptedPrivateSignatureKey']).to.deep.equal(testGroup.externalGroup);
+  it('saves and finds group public key', async () => {
+    const publicEncryptionKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+
+    await groupStore.saveGroupsPublicKeys([{ groupId, publicEncryptionKey }]);
+    const resKey = await groupStore.findGroupsPublicKeys([groupId]);
+    expect(resKey).to.deep.equal([{ groupId, publicEncryptionKey }]);
   });
 
-  it('can add an external group', async () => {
-    await groupStore.putExternal(testGroup.externalGroup);
-    expect(await groupStore.findExternal({ groupId })).to.deep.equal(testGroup.externalGroup);
+  it('saves a key pair and finds group public key', async () => {
+    const groupKeyPair = tcrypto.makeEncryptionKeyPair();
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+
+    await groupStore.saveGroupKeyPair(groupId, groupKeyPair);
+    const resKey = await groupStore.findGroupsPublicKeys([groupId]);
+    expect(resKey).to.deep.equal([{ groupId, publicEncryptionKey: groupKeyPair.publicKey }]);
   });
 
-  it('cannot find a group that was not added', async () => {
-    expect(await groupStore.findFull({ groupId: new Uint8Array(10) })).to.equal(null);
-    expect(await groupStore.findExternal({ groupId: new Uint8Array(10) })).to.equal(null);
+  it('can set a group private key', async () => {
+    const groupKeyPair = tcrypto.makeEncryptionKeyPair();
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+
+    await groupStore.saveGroupsPublicKeys([{ groupId, publicEncryptionKey: groupKeyPair.publicKey }]);
+    await groupStore.saveGroupKeyPair(groupId, groupKeyPair);
+
+    const resKeyPair = await groupStore.findGroupKeyPair(groupKeyPair.publicKey);
+    expect(resKeyPair).to.deep.equal(groupKeyPair);
   });
 
-  it('cannot find a full group if we only have an external group', async () => {
-    await groupStore.putExternal(testGroup.externalGroup);
-    expect(await groupStore.findFull({ groupId })).to.equal(null);
+  it('ignores updates to a group public key', async () => {
+    const publicEncryptionKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+    const publicEncryptionKey2 = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+
+    await groupStore.saveGroupsPublicKeys([{ groupId, publicEncryptionKey }]);
+    await groupStore.saveGroupsPublicKeys([{ groupId, publicEncryptionKey: publicEncryptionKey2 }]);
+
+    const resKey = await groupStore.findGroupsPublicKeys([groupId]);
+    expect(resKey).to.deep.equal([{ groupId, publicEncryptionKey }]);
   });
 
-  it('can find a group by public encryption key', async () => {
-    await groupStore.put(testGroup.group);
-    expect(await groupStore.findFull({ groupPublicEncryptionKey: testGroup.group.encryptionKeyPair.publicKey })).to.deep.equal(testGroup.group);
+  it('still stores non duplicate group public keys', async () => {
+    const publicEncryptionKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+    const publicEncryptionKey2 = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+    const publicEncryptionKey3 = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    const groupId2 = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+
+    await groupStore.saveGroupsPublicKeys([{ groupId, publicEncryptionKey }]);
+    await groupStore.saveGroupsPublicKeys([
+      { groupId, publicEncryptionKey: publicEncryptionKey2 },
+      { groupId: groupId2, publicEncryptionKey: publicEncryptionKey3 }
+    ]);
+
+    const resKey = await groupStore.findGroupsPublicKeys([groupId2]);
+    expect(resKey).to.deep.equal([{ groupId: groupId2, publicEncryptionKey: publicEncryptionKey3 }]);
   });
 
-  it('cannot find an external group by public encryption key', async () => {
-    await groupStore.putExternal(testGroup.externalGroup);
-    expect(await groupStore.findFull({ groupPublicEncryptionKey: testGroup.group.encryptionKeyPair.publicKey })).to.deep.equal(null);
+  it('ignores updates to a group private key', async () => {
+    const groupKeyPair = tcrypto.makeEncryptionKeyPair();
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    const groupId2 = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    const groupKeyPair2 = {
+      publicKey: groupKeyPair.publicKey,
+      privateKey: random(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
+    };
+
+    await groupStore.saveGroupKeyPair(groupId, groupKeyPair);
+    await groupStore.saveGroupKeyPair(groupId2, groupKeyPair2);
+
+    const resKeyPair = await groupStore.findGroupKeyPair(groupKeyPair.publicKey);
+    expect(resKeyPair).to.deep.equal(groupKeyPair);
   });
 
-  it('can extend a group from external to normal', async () => {
-    await groupStore.putExternal(testGroup.externalGroup);
-    await groupStore.put(testGroup.group);
+  it('returns null when asked for non existing group key pair', async () => {
+    const groupKeyPair = tcrypto.makeEncryptionKeyPair();
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    await groupStore.saveGroupKeyPair(groupId, groupKeyPair);
+    const publicKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
 
-    expect(await groupStore.findFull({ groupId })).to.deep.equal(testGroup.group);
+    const resKeyPair = await groupStore.findGroupKeyPair(publicKey);
+    expect(resKeyPair).to.be.null;
   });
 
-  it('can override groups', async () => {
-    const testGroup2 = testGenerator.makeUserGroupAddition(testUserCreation, testGroup, []);
-    await groupStore.put(testGroup.group);
-    await groupStore.put(testGroup2.group);
+  it('returns null when asked for non existing group key pair', async () => {
+    const groupKeyPair = tcrypto.makeEncryptionKeyPair();
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    await groupStore.saveGroupsPublicKeys([{ groupId, publicEncryptionKey: groupKeyPair.publicKey }]);
 
-    expect(await groupStore.findFull({ groupId })).to.deep.equal(testGroup2.group);
+    const resKeyPair = await groupStore.findGroupKeyPair(groupKeyPair.publicKey);
+    expect(resKeyPair).to.be.null;
   });
 
-  it('can update the last group block of an external group', async () => {
-    await groupStore.putExternal(testGroup.externalGroup);
+  it('returns empty array when asked for non existing group public key', async () => {
+    const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
-    const newBlockHash = makeUint8Array('new hash', tcrypto.HASH_SIZE);
-    const newBlockIndex = 1337;
-    await groupStore.updateLastGroupBlock({ groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex });
+    // Populate the store with data not targeted by the query
+    const anotherGroupKeyPair = tcrypto.makeEncryptionKeyPair();
+    const anotherGroupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    await groupStore.saveGroupKeyPair(anotherGroupId, anotherGroupKeyPair);
 
-    const got = await groupStore.findExternal({ groupId });
-    expect(got.lastGroupBlock).to.deep.equal(newBlockHash);
-    expect(got.index).to.deep.equal(newBlockIndex);
-  });
-
-  it('can update the last group block of a full group', async () => {
-    await groupStore.put(testGroup.group);
-
-    const newBlockHash = makeUint8Array('new hash', tcrypto.HASH_SIZE);
-    const newBlockIndex = 1337;
-    await expect(groupStore.updateLastGroupBlock({ groupId, currentLastGroupBlock: newBlockHash, currentLastGroupIndex: newBlockIndex })).to.be.fulfilled;
-
-    const got = await groupStore.findFull({ groupId });
-    expect(got.lastGroupBlock).to.deep.equal(newBlockHash);
-    expect(got.index).to.deep.equal(newBlockIndex);
-  });
-
-  it('cannot find a group by unknown provisional public signature keys', async () => {
-    const got = await groupStore.findExternalsByProvisionalSignaturePublicKeys({
-      appPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-      tankerPublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
-    });
-    expect(got).to.have.lengthOf(0);
-  });
-
-  it('can find a group by provisional public signature keys', async () => {
-    const provisionalUser = testGenerator.makeProvisionalUser();
-    const groupWithProvisional = testGenerator.makeUserGroupCreation(testUserCreation, [], [provisionalUser]);
-    await groupStore.putExternal(groupWithProvisional.externalGroup);
-
-    const got = await groupStore.findExternalsByProvisionalSignaturePublicKeys({
-      appPublicSignatureKey: provisionalUser.appSignaturePublicKey,
-      tankerPublicSignatureKey: provisionalUser.tankerSignaturePublicKey,
-    });
-    expect(got).to.deep.equal([groupWithProvisional.externalGroup]);
+    const result = await groupStore.findGroupsPublicKeys([groupId]);
+    expect(result).to.deep.equal([]);
   });
 });
