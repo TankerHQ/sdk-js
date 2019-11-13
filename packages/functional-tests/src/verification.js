@@ -6,7 +6,7 @@ import fetchPonyfill from 'fetch-ponyfill';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
 import { type TestArgs } from './TestArgs';
-import { commonSettings } from './Helpers';
+import { oidcSettings } from './Helpers';
 
 const { fetch } = fetchPonyfill({ Promise });
 
@@ -14,8 +14,8 @@ const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = st
 
 async function getGoogleIdToken(refreshToken: string): Promise<string> {
   const formData = JSON.stringify({
-    client_id: commonSettings.googleAuth.clientId,
-    client_secret: commonSettings.googleAuth.clientSecret,
+    client_id: oidcSettings.googleAuth.clientId,
+    client_secret: oidcSettings.googleAuth.clientSecret,
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
   });
@@ -216,8 +216,8 @@ const generateVerificationTests = (args: TestArgs) => {
     });
 
     describe('verification by oidc id token', () => {
-      const martineRefreshToken = commonSettings.googleAuth.users.martine.refreshToken;
-      const kevinRefreshToken = commonSettings.googleAuth.users.kevin.refreshToken;
+      const martineRefreshToken = oidcSettings.googleAuth.users.martine.refreshToken;
+      const kevinRefreshToken = oidcSettings.googleAuth.users.kevin.refreshToken;
 
       let martineIdToken: string;
       let kevinIdToken: string;
@@ -283,7 +283,7 @@ const generateVerificationTests = (args: TestArgs) => {
         await aliceLaptop.start(aliceIdentity);
         await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-        const email = commonSettings.googleAuth.users.martine.email;
+        const email = oidcSettings.googleAuth.users.martine.email;
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
