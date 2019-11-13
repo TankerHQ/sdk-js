@@ -11,7 +11,7 @@ import { uuid } from '@tanker/test-utils';
 
 let tankerUrl; // eslint-disable-line import/no-mutable-exports
 let idToken; // eslint-disable-line import/no-mutable-exports
-let commonSettings; // eslint-disable-line import/no-mutable-exports
+let oidcSettings; // eslint-disable-line import/no-mutable-exports
 let storageSettings;
 
 // $FlowIKnow
@@ -20,7 +20,7 @@ if (process.browser) {
   const testConfig = TANKER_TEST_CONFIG; // eslint-disable-line no-undef
   tankerUrl = testConfig.url;
   idToken = testConfig.idToken;
-  commonSettings = testConfig.oidc;
+  oidcSettings = testConfig.oidc;
   storageSettings = testConfig.storage;
 } else if (process.env.TANKER_CONFIG_FILEPATH && process.env.TANKER_CONFIG_NAME) {
   const fs = require('fs'); // eslint-disable-line global-require
@@ -28,17 +28,17 @@ if (process.browser) {
   const config = JSON.parse(fs.readFileSync(process.env.TANKER_CONFIG_FILEPATH, { encoding: 'utf-8' }));
   tankerUrl = config[process.env.TANKER_CONFIG_NAME].url;
   idToken = config[process.env.TANKER_CONFIG_NAME].idToken;
-  commonSettings = config.oidc;
+  oidcSettings = config.oidc;
   storageSettings = config.storage;
 } else {
   const testConfig = JSON.parse(process.env.TANKER_CI_CONFIG || '');
   tankerUrl = testConfig.url;
   idToken = testConfig.idToken;
-  commonSettings = testConfig.oidc;
+  oidcSettings = testConfig.oidc;
   storageSettings = testConfig.storage;
 }
 
-export { tankerUrl, idToken, commonSettings };
+export { tankerUrl, idToken, oidcSettings };
 
 const socket = new Socket(tankerUrl, { transports: ['websocket', 'polling'] });
 
@@ -162,7 +162,7 @@ export class AppHelper {
 
     await requester.send('update trustchain', {
       id: utils.toBase64(appId),
-      oidc_client_id: commonSettings.googleAuth.clientId,
+      oidc_client_id: oidcSettings.googleAuth.clientId,
       oidc_provider: 'google',
     });
 
