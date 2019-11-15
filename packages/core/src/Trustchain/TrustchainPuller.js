@@ -134,6 +134,7 @@ export default class TrustchainPuller {
       extra_users: extraUsers,
       extra_groups: extraGroups,
       on_demand_key_publishes: true,
+      on_demand_user_groups: true,
     });
     await this._processNewBlocks(blocks);
 
