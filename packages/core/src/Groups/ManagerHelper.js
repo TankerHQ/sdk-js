@@ -68,7 +68,7 @@ export async function fetchDeviceByDeviceId(deviceId: Uint8Array, userAccessor: 
       throw new InternalError('Assertion error: unknown user');
     }
   }
-  const device = find(user.devices, dev => dev.deviceId === utils.toBase64(deviceId));
+  const device = find(user.devices, d => utils.equalArray(d.deviceId, deviceId));
   if (!device) {
     throw new InternalError('Assertion error: device not found');
   }

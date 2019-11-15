@@ -1,4 +1,5 @@
 // @flow
+import find from 'array-find';
 
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
@@ -23,7 +24,6 @@ type DeviceToUser = {
 export type FindUserParameters = $Exact<{ deviceId: Uint8Array }> | $Exact<{ userId: Uint8Array }> | $Exact<{ userPublicKey: Uint8Array }>;
 export type FindUsersParameters = $Exact<{ hashedUserIds: Array<Uint8Array> }>;
 export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
-export type FindDevicesParameters = $Exact<{ hashedDeviceIds: Array<Uint8Array> }>;
 
 export type Callbacks = {
   deviceCreation: (entry: DeviceCreationEntry) => Promise<void>,
@@ -189,9 +189,10 @@ export default class UserStore {
       });
 
       user.devices.forEach(d => {
+        const b64DeviceId = utils.toBase64(d.deviceId);
         deviceUserRecordsToInsert.push({
-          _id: d.deviceId,
-          deviceId: d.deviceId,
+          _id: b64DeviceId,
+          deviceId: b64DeviceId,
           userId: b64UserId,
           isGhostDevice: d.isGhostDevice,
         });
@@ -216,7 +217,7 @@ export default class UserStore {
     return result.map(userFromRecord);
   }
 
-  async findUser(args: FindUserParameters): Promise<?User> {
+  async findUser(args: FindUserParameters) {
     if (Object.keys(args).length !== 1)
       throw new InternalError(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
@@ -264,22 +265,6 @@ export default class UserStore {
     throw new InternalError('Find: invalid argument');
   }
 
-  _findDevicesToUsers = async (args: FindDevicesParameters): Promise<Array<DeviceToUser>> => {
-    const { hashedDeviceIds } = args;
-    if (Object.keys(args).length !== 1)
-      throw new InternalError(`findDevicesToUsers: expected exactly one argument, got ${Object.keys(args).length}`);
-
-    if (hashedDeviceIds) {
-      return this._ds.find(DEVICES_USER_TABLE, {
-        selector: {
-          deviceId: { $in: hashedDeviceIds.map(utils.toBase64) }
-        }
-      });
-    }
-
-    throw new InternalError('Find: invalid argument');
-  }
-
   findDevice = async (args: FindDeviceParameters): Promise<?Device> => {
     const deviceToUser = await this._findDeviceToUser(args);
     if (!deviceToUser)
@@ -287,33 +272,31 @@ export default class UserStore {
     const { deviceId, userId } = deviceToUser;
     const user = await this.findUser({ userId: utils.fromBase64(userId) });
     if (!user)
-      throw new InternalError('Find: no such userId'); // not supposed to be trigerred (here for flow)
-    const deviceIndex = findIndex(user.devices, (d) => d.deviceId === deviceId);
+      throw new InternalError('Assertion error: Find: no such userId'); // not supposed to be trigerred (here for flow)
+    const deviceIndex = findIndex(user.devices, (d) => utils.toBase64(d.deviceId) === deviceId);
     if (deviceIndex === -1)
-      throw new InternalError('Device not found!');
+      throw new InternalError('Assertion error: Device not found!');
     return user.devices[deviceIndex];
   }
 
-  findDevices = async (args: FindDevicesParameters): Promise<Map<b64string, Device>> => {
-    const devicesToUsers = await this._findDevicesToUsers(args);
-    const users = await this.findUsers(devicesToUsers.map((e) => utils.fromBase64(e.userId)));
-    const devicesToUsersMap = users.reduce((map, user) => {
-      for (const device of user.devices)
-        map.set(device.deviceId, user);
-      return map;
-    }, new Map());
+  findDevices = async (deviceIds: Array<Uint8Array>): Promise<Map<b64string, Device>> => {
+    const records = await this._ds.find(DEVICES_USER_TABLE, {
+      selector: {
+        deviceId: { $in: deviceIds.map(utils.toBase64) }
+      }
+    });
 
-    const devices = devicesToUsers.reduce((map, elem) => {
-      const user = devicesToUsersMap.get(elem.deviceId);
-      if (!user)
-        return map;
-      const deviceIndex = findIndex(user.devices, (d) => d.deviceId === elem.deviceId);
-      if (deviceIndex === -1)
-        throw new InternalError('Device not found!');
-      const device = user.devices[deviceIndex];
-      map.set(device.deviceId, device);
-      return map;
-    }, new Map());
-    return devices;
+    const users = await this.findUsers(records.map((e) => utils.fromBase64(e.userId)));
+
+    const devicesMap = new Map<b64string, Device>();
+
+    users.forEach(user => {
+      user.devices.forEach(device => {
+        if (find(deviceIds, deviceId => utils.equalArray(deviceId, device.deviceId))) {
+          devicesMap.set(utils.toBase64(device.deviceId), device);
+        }
+      });
+    });
+    return devicesMap;
   }
 }

@@ -39,7 +39,7 @@ export function serializeUserDeviceV1(userDevice: DeviceCreationRecord): Uint8Ar
 
 export function generatorDeviceToDevice(u: GeneratorDevice): Device {
   return {
-    deviceId: utils.toBase64(u.id),
+    deviceId: u.id,
     devicePublicEncryptionKey: u.encryptionKeys.publicKey,
     devicePublicSignatureKey: u.signKeys.publicKey,
     isGhostDevice: false,

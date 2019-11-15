@@ -196,7 +196,7 @@ export class BlockGenerator {
         device.devicePublicEncryptionKey,
       );
       return {
-        recipient: utils.fromBase64(device.deviceId),
+        recipient: device.deviceId,
         key: encryptedUserKey,
       };
     });
@@ -209,13 +209,14 @@ export class BlockGenerator {
     };
   }
 
-  makeDeviceRevocationBlock(user: User, currentUserKeys: tcrypto.SodiumKeyPair, deviceIdToRevoke: b64string) {
+  makeDeviceRevocationBlock(user: User, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: b64string) {
+    const deviceIdToRevoke = utils.fromBase64(deviceId);
     const remainingDevices = user.devices
-      .filter(device => device.revokedAt === Number.MAX_SAFE_INTEGER && device.deviceId !== deviceIdToRevoke);
+      .filter(device => device.revokedAt === Number.MAX_SAFE_INTEGER && !utils.equalArray(device.deviceId, deviceIdToRevoke));
 
     const userKeys = this._rotateUserKeys(remainingDevices, currentUserKeys);
     const revocationRecord = {
-      device_id: utils.fromBase64(deviceIdToRevoke),
+      device_id: deviceIdToRevoke,
       user_keys: userKeys
     };
 

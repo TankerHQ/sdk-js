@@ -8,12 +8,6 @@ import UserStore, { type FindUsersParameters } from './UserStore';
 import { type User } from './types';
 import Trustchain from '../Trustchain/Trustchain';
 
-export type UserDevice = {|
-    id: string,
-    isGhostDevice: bool,
-    isRevoked: bool
-|}
-
 // ensure that the UserStore is always up-to-date before requesting it.
 export default class UserAccessor {
   _userStore: UserStore;
@@ -35,15 +29,9 @@ export default class UserAccessor {
     await this._trustchain.updateUserStore(userIdsWithoutMe);
   }
 
-  async findUser(args: $Exact<{ userId: Uint8Array }>): Promise<?User> {
-    const { userId } = args;
-
-    if (!(userId instanceof Uint8Array))
-      throw new InvalidArgument('userId', 'Uint8Array', userId);
-
+  async findUser(userId: Uint8Array) {
     await this._fetchUsers([userId]);
-    const user = await this._userStore.findUser(args);
-    return user;
+    return this._userStore.findUser({ userId });
   }
 
   async findUserByDeviceId(args: $Exact<{ deviceId: Uint8Array }>): Promise<?User> {
@@ -52,25 +40,7 @@ export default class UserAccessor {
     if (!(deviceId instanceof Uint8Array))
       throw new InvalidArgument('deviceId', 'Uint8Array', deviceId);
 
-    const user = await this._userStore.findUser(args);
-    return user;
-  }
-
-  async findUserDevices(args: $Exact<{ userId: Uint8Array }>): Promise<Array<UserDevice>> {
-    const { userId } = args;
-
-    if (!(userId instanceof Uint8Array))
-      throw new InvalidArgument('userId', 'Uint8Array', userId);
-
-    const user = await this.findUser({ userId });
-    if (!user)
-      throw new InternalError(`No such user ${utils.toString(userId)}`);
-
-    return user.devices.map(device => ({
-      id: device.deviceId,
-      isGhostDevice: device.isGhostDevice,
-      isRevoked: device.revokedAt !== Number.MAX_SAFE_INTEGER,
-    }));
+    return this._userStore.findUser(args);
   }
 
   async findUsers(args: FindUsersParameters): Promise<Array<User>> {
@@ -80,8 +50,7 @@ export default class UserAccessor {
 
     await this._fetchUsers(hashedUserIds);
 
-    const users = await this._userStore.findUsers(hashedUserIds);
-    return users;
+    return this._userStore.findUsers(hashedUserIds);
   }
 
   async getUsers({ publicIdentities }: { publicIdentities: Array<PublicPermanentIdentity> }): Promise<Array<User>> {

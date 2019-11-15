@@ -28,7 +28,7 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
   const delegationBuffer = utils.concatArrays(entry.ephemeral_public_signature_key, entry.user_id);
 
   if (authorUser) {
-    const authorDevice: Device = find(authorUser.devices, d => utils.equalArray(utils.fromBase64(d.deviceId), entry.author));
+    const authorDevice: Device = find(authorUser.devices, d => utils.equalArray(d.deviceId, entry.author));
     if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, authorDevice.devicePublicSignatureKey))
       throw new InvalidBlockError('invalid_delegation_signature', 'invalid signature from device creation author', { entry, authorDevice });
 
@@ -52,19 +52,18 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
       return;
 
     // If we're already verified, then it's not an error
-    const entryDeviceId = utils.toBase64(entry.hash);
-    if (!authorUser.devices.some(device => device.deviceId === entryDeviceId))
+    if (!authorUser.devices.some(device => utils.equalArray(device.deviceId, entry.hash)))
       throw new InvalidBlockError('forbidden', 'the user already has a device, this can\'t be the first device', { entry });
   }
 }
 
 export function verifyDeviceRevocation(entry: DeviceRevocationEntry, authorUser: User) {
-  const authorDevice: Device = find(authorUser.devices, d => utils.equalArray(utils.fromBase64(d.deviceId), entry.author));
+  const authorDevice: Device = find(authorUser.devices, d => utils.equalArray(d.deviceId, entry.author));
 
   if (!tcrypto.verifySignature(entry.hash, entry.signature, authorDevice.devicePublicSignatureKey))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, authorUser });
 
-  const revokedDevice = find(authorUser.devices, d => utils.equalArray(utils.fromBase64(d.deviceId), entry.device_id));
+  const revokedDevice = find(authorUser.devices, d => utils.equalArray(d.deviceId, entry.device_id));
   if (!revokedDevice)
     throw new InvalidBlockError('invalid_revoked_device', 'can\'t find target of device revocation block', { entry });
   if (revokedDevice.revokedAt < entry.index)
@@ -81,12 +80,11 @@ export function verifyDeviceRevocation(entry: DeviceRevocationEntry, authorUser:
     if (userPublicKey && !utils.equalArray(newKeys.previous_public_encryption_key, userPublicKey))
       throw new InvalidBlockError('invalid_previous_key', 'previous public user encryption key does not match', { entry, authorUser });
 
-    const activeDevices = authorUser.devices.filter(d => d.revokedAt > entry.index && d.deviceId !== utils.toBase64(entry.device_id));
+    const activeDevices = authorUser.devices.filter(d => d.revokedAt > entry.index && !utils.equalArray(d.deviceId, entry.device_id));
     if (activeDevices.length !== newKeys.private_keys.length)
       throw new InvalidBlockError('invalid_new_key', 'device number mismatch', { entry, authorUser, activeDeviceCount: activeDevices.length, userKeysCount: newKeys.private_keys.length });
     for (const device of activeDevices) {
-      const devId = utils.fromBase64(device.deviceId);
-      if (findIndex(newKeys.private_keys, k => utils.equalArray(k.recipient, devId)) === -1)
+      if (findIndex(newKeys.private_keys, k => utils.equalArray(k.recipient, device.deviceId)) === -1)
         throw new InvalidBlockError('invalid_new_key', 'missing encrypted private key for an active device', { entry, authorUser });
     }
   }

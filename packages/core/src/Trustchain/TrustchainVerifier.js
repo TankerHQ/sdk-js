@@ -1,9 +1,11 @@
 // @flow
+import find from 'array-find';
+
 import { utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { InvalidBlockError } from '../errors.internal';
-import { findIndex, compareSameSizeUint8Arrays } from '../utils';
+import { compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
 import { type User, type Device } from '../Users/types';
 import type {
@@ -59,7 +61,7 @@ export default class TrustchainVerifier {
       }
     }
 
-    const foundAuthors = await this._storage.userStore.findDevices({ hashedDeviceIds: entries.map((e) => e.author) });
+    const foundAuthors = await this._storage.userStore.findDevices(entries.map((e) => e.author));
     return entries.reduce((result, entry) => {
       const author = foundAuthors.get(utils.toBase64(entry.author));
       if (!author || author.revokedAt < entry.index)
@@ -154,8 +156,9 @@ export default class TrustchainVerifier {
         if (!authorUser)
           throw new InvalidBlockError('author_not_found', 'author not found', { claim });
 
-        const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(claim.author));
-        const authorDevice = authorUser.devices[deviceIndex];
+        const authorDevice = find(authorUser.devices, d => utils.equalArray(d.deviceId, claim.author));
+        if (!authorDevice)
+          throw new InvalidBlockError('author_not_found', 'author not found', { claim });
 
         verifiedClaims.push(verifyProvisionalIdentityClaim(claim, authorDevice, authorUser.userId));
       } catch (e) {

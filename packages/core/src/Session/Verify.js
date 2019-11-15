@@ -38,7 +38,7 @@ export function verifyProvisionalIdentityClaim(entry: UnverifiedProvisionalIdent
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, author });
 
   const multiSignedPayload = utils.concatArrays(
-    utils.fromBase64(author.deviceId),
+    author.deviceId,
     entry.app_provisional_identity_signature_public_key,
     entry.tanker_provisional_identity_signature_public_key,
   );

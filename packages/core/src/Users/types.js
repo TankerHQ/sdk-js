@@ -1,5 +1,4 @@
 // @flow
-import { type b64string } from '@tanker/crypto';
 
 export type IndexUserKey = {|
   userPublicKey: Uint8Array,
@@ -7,7 +6,7 @@ export type IndexUserKey = {|
 |};
 
 export type Device = {
-  deviceId: b64string,
+  deviceId: Uint8Array,
   devicePublicEncryptionKey: Uint8Array,
   devicePublicSignatureKey: Uint8Array,
   isGhostDevice: bool,

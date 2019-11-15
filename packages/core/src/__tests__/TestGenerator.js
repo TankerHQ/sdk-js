@@ -523,7 +523,7 @@ class TestGenerator {
   }
 
   _testDeviceToDevice = (testDevice: TestDevice): Device => ({
-    deviceId: utils.toBase64(testDevice.id),
+    deviceId: testDevice.id,
     devicePublicEncryptionKey: testDevice.encryptionKeys.publicKey,
     devicePublicSignatureKey: testDevice.signKeys.publicKey,
     isGhostDevice: false,

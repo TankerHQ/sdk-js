@@ -19,7 +19,7 @@ export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, u
     userPublicKeys = user.userPublicKeys; // eslint-disable-line prefer-destructuring
   }
   const newDevice: Device = {
-    deviceId: utils.toBase64(deviceCreation.hash),
+    deviceId: deviceCreation.hash,
     devicePublicEncryptionKey: deviceCreation.public_encryption_key,
     devicePublicSignatureKey: deviceCreation.public_signature_key,
     createdAt: deviceCreation.index,
@@ -40,8 +40,7 @@ export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, u
 }
 
 export function applyDeviceRevocationToUser(deviceRevocation: DeviceRevocationEntry, user: User): User {
-  const b64DevId = utils.toBase64(deviceRevocation.device_id);
-  const deviceIndex = findIndex(user.devices, (d) => d.deviceId === b64DevId);
+  const deviceIndex = findIndex(user.devices, (d) => utils.equalArray(d.deviceId, deviceRevocation.device_id));
   if (deviceIndex === -1)
     throw new InternalError('Device not found!');
   const updatedUser = { ...user };
