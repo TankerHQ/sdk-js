@@ -1,5 +1,4 @@
 // @flow
-import find from 'array-find';
 import { utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
@@ -72,28 +71,22 @@ export default class TrustchainVerifier {
   }
 
   async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: DeviceCreationEntry): Promise<DeviceCreationEntry> {
+    const trustchainPublicKey = this._storage.trustchainStore.trustchainPublicKey;
     if (utils.equalArray(entry.author, this._trustchainId)) {
-      const authorKey = this._storage.trustchainStore.trustchainPublicKey;
-      verifyDeviceCreation(entry, null, null, authorKey, user);
+      verifyDeviceCreation(entry, null, trustchainPublicKey);
     } else {
       if (!user)
         throw new InvalidBlockError('unknown_author', 'can\'t find block author\'s user', { entry });
-      const author = find(user.devices, d => utils.equalArray(utils.fromBase64(d.deviceId), entry.author));
-      const authorKey = author.devicePublicSignatureKey;
-      verifyDeviceCreation(entry, user, author, authorKey, user);
+      verifyDeviceCreation(entry, user, trustchainPublicKey);
     }
 
     return entry;
   }
 
   async _unlockedVerifySingleUserDeviceRevocation(targetUser: ?User, entry: DeviceRevocationEntry): Promise<DeviceRevocationEntry> {
-    const authorUser = await this._storage.userStore.findUser({ deviceId: entry.author });
-    if (!authorUser)
-      throw new InternalError('Assertion error: User has a device in userstore, but findUser failed!'); // Mostly just for flow. Should Never Happen™
-    const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(entry.author));
-    const authorDevice = authorUser.devices[deviceIndex];
-
-    verifyDeviceRevocation(entry, authorUser.userId, authorDevice.devicePublicSignatureKey, targetUser);
+    if (!targetUser)
+      throw new InternalError('Cannot revoke device of non existing user');
+    verifyDeviceRevocation(entry, targetUser);
     return entry;
   }
 
@@ -164,7 +157,7 @@ export default class TrustchainVerifier {
         const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(claim.author));
         const authorDevice = authorUser.devices[deviceIndex];
 
-        verifiedClaims.push(verifyProvisionalIdentityClaim(claim, authorDevice, utils.fromBase64(authorUser.userId)));
+        verifiedClaims.push(verifyProvisionalIdentityClaim(claim, authorDevice, authorUser.userId));
       } catch (e) {
         if (!(e instanceof InvalidBlockError)) {
           throw e;

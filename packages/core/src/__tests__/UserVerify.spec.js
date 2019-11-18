@@ -1,5 +1,5 @@
 // @flow
-import { tcrypto, random, utils } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { InvalidBlockError } from '../errors.internal';
@@ -49,42 +49,42 @@ describe('BlockVerification', () => {
     });
 
     it('should accept a valid user creation', () => {
-      expect(() => verifyDeviceCreation(unverifiedUserCreation, null, null, trustchainKeys.publicKey, null))
+      expect(() => verifyDeviceCreation(unverifiedUserCreation, null, trustchainKeys.publicKey))
         .not.to.throw();
     });
 
     it('should reject an incorrectly signed delegation for a device', () => {
       unverifiedUserCreation.delegation_signature[0] += 1;
       assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedUserCreation, null, null, trustchainKeys.publicKey, null),
+        () => verifyDeviceCreation(unverifiedUserCreation, null, trustchainKeys.publicKey),
         'invalid_delegation_signature'
       );
     });
     it('should reject an incorrectly signed user creation', () => {
       unverifiedUserCreation.signature[0] += 1;
       assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedUserCreation, null, null, trustchainKeys.publicKey, null),
+        () => verifyDeviceCreation(unverifiedUserCreation, null, trustchainKeys.publicKey),
         'invalid_signature'
       );
     });
 
     it('should accept a second deviceCreationV3 if all requirements are met', () => {
-      expect(() => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user))
+      expect(() => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey))
         .not.to.throw();
     });
 
     it('should reject a device creation by a revoked author', () => {
       user.devices[0].revokedAt = 1;
       assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
+        () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey),
         'revoked_author_error'
       );
     });
 
     it('should reject a second device if the parent has a different user_id', () => {
-      user.userId = utils.toBase64(random(tcrypto.HASH_SIZE));
+      user.userId = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
+        () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey),
         'forbidden'
       );
     });
@@ -92,7 +92,7 @@ describe('BlockVerification', () => {
     it('should reject a deviceCreationV3 if the userPublicKey is not the same as it\'s parent one', () => {
       user.userPublicKeys[0].userPublicKey = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
+        () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey),
         'invalid_public_user_key'
       );
     });
@@ -100,7 +100,7 @@ describe('BlockVerification', () => {
     it('should reject a deviceCreationV3 if last_reset is not null', () => {
       unverifiedDeviceCreation.last_reset = new Uint8Array([1]);
       assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
+        () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey),
         'invalid_last_reset'
       );
     });
@@ -108,21 +108,21 @@ describe('BlockVerification', () => {
     it('should reject a deviceCreationV1 if the user_key is not null', () => {
       unverifiedDeviceCreation.nature = NATURE.device_creation_v1;
       assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user),
+        () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey),
         'forbidden'
       );
     });
 
     it('should accept a deviceCreationV1 if all requirements are met', () => {
       unverifiedUserCreation.nature = NATURE.device_creation_v1;
-      expect(() => verifyDeviceCreation(unverifiedUserCreation, null, null, trustchainKeys.publicKey, null))
+      expect(() => verifyDeviceCreation(unverifiedUserCreation, null, trustchainKeys.publicKey))
         .to.not.throw();
     });
 
     it('should accept a second deviceCreationV1 if all requirements are met', () => {
       unverifiedDeviceCreation.nature = NATURE.device_creation_v1;
       user.userPublicKeys = [];
-      expect(() => verifyDeviceCreation(unverifiedDeviceCreation, user, user.devices[0], user.devices[0].devicePublicSignatureKey, user))
+      expect(() => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey))
         .to.not.throw();
     });
   });
@@ -130,7 +130,6 @@ describe('BlockVerification', () => {
   describe('device revocation', () => {
     let user: User;
     let unverifiedDeviceRevocation: DeviceRevocationEntry;
-    let authorKey: Uint8Array;
     beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
@@ -139,25 +138,16 @@ describe('BlockVerification', () => {
       user = deviceCreation.user;
       const deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation, deviceCreation.testDevice.id);
       unverifiedDeviceRevocation = deviceRevocation.unverifiedDeviceRevocation;
-      authorKey = user.devices[1].devicePublicSignatureKey;
     });
 
     it('should accept a revocation v2 when all requirements are met', () => {
-      expect(() => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user)).not.to.throw();
-    });
-
-    it('should reject a revocation with an author that is another user', () => {
-      const otherUserId = utils.toBase64(random(tcrypto.HASH_SIZE));
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, otherUserId, authorKey, user),
-        'forbidden'
-      );
+      expect(() => verifyDeviceRevocation(unverifiedDeviceRevocation, user)).not.to.throw();
     });
 
     it('should reject a revocation of a device that doesn\'t exist', () => {
-      user.devices = [user.devices[0]];
+      unverifiedDeviceRevocation.device_id = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'invalid_revoked_device'
       );
     });
@@ -165,7 +155,7 @@ describe('BlockVerification', () => {
     it('should reject a revocation with an invalid signature', () => {
       unverifiedDeviceRevocation.signature[0] += 1;
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'invalid_signature'
       );
     });
@@ -173,7 +163,7 @@ describe('BlockVerification', () => {
     it('should reject a revocation of an already revoked device', () => {
       user.devices[1].revokedAt = 1;
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'device_already_revoked'
       );
     });
@@ -182,7 +172,7 @@ describe('BlockVerification', () => {
       // $FlowIKnow user_keys is not null
       unverifiedDeviceRevocation.user_keys.private_keys.push(unverifiedDeviceRevocation.user_keys.private_keys[0]);
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'invalid_new_key'
       );
     });
@@ -191,7 +181,7 @@ describe('BlockVerification', () => {
       // $FlowIKnow user_keys is not null
       unverifiedDeviceRevocation.user_keys.private_keys = [];
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'invalid_new_key'
       );
     });
@@ -200,15 +190,8 @@ describe('BlockVerification', () => {
       // $FlowIKnow user_keys is not null
       unverifiedDeviceRevocation.user_keys.private_keys[0].recipient = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'invalid_new_key'
-      );
-    });
-
-    it('should reject a revocation v2 if could not find revoked user in user store', () => {
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, null),
-        'invalid_revoked_user'
       );
     });
 
@@ -216,7 +199,7 @@ describe('BlockVerification', () => {
       // $FlowExpectedError
       unverifiedDeviceRevocation.user_keys = null;
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'missing_user_keys'
       );
     });
@@ -225,7 +208,7 @@ describe('BlockVerification', () => {
       // $FlowIKnow user_keys is not null
       unverifiedDeviceRevocation.user_keys.previous_public_encryption_key = new Uint8Array([1]);
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'invalid_previous_key'
       );
     });
@@ -234,7 +217,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.nature = NATURE.device_revocation_v1;
       delete unverifiedDeviceRevocation.user_keys;
       assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user),
+        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'invalid_revocation_version'
       );
     });
@@ -243,7 +226,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.nature = NATURE.device_revocation_v1;
       delete unverifiedDeviceRevocation.user_keys;
       user.userPublicKeys = [];
-      expect(() => verifyDeviceRevocation(unverifiedDeviceRevocation, user.userId, authorKey, user))
+      expect(() => verifyDeviceRevocation(unverifiedDeviceRevocation, user))
         .to.not.throw();
     });
   });

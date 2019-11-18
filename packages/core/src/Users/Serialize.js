@@ -257,7 +257,6 @@ export function deviceCreationFromBlock(block: Block): DeviceCreationEntry {
   };
 }
 
-
 export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): DeviceRevocationEntry {
   const author = block.author;
   const signature = block.signature;
@@ -284,4 +283,12 @@ export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): Dev
     index,
     user_id: userId
   };
+}
+
+export function isDeviceCreation(block: Block): bool {
+  return block.nature === userNatures.device_creation_v1 || block.nature === userNatures.device_creation_v2 || block.nature === userNatures.device_creation_v3;
+}
+
+export function isDeviceRevocation(block: Block): bool {
+  return block.nature === userNatures.device_revocation_v1 || block.nature === userNatures.device_revocation_v2;
 }

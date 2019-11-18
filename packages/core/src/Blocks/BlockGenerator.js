@@ -292,7 +292,7 @@ export class BlockGenerator {
       if (!userPublicKey)
         throw new InternalError('createUserGroup: user does not have user keys');
       return {
-        user_id: utils.fromBase64(u.userId),
+        user_id: u.userId,
         public_user_encryption_key: userPublicKey,
         encrypted_group_private_encryption_key: tcrypto.sealEncrypt(encryptionKeyPair.privateKey, userPublicKey),
       };
@@ -343,7 +343,7 @@ export class BlockGenerator {
       if (!userPublicKey)
         throw new InternalError('addToUserGroup: user does not have user keys');
       return {
-        user_id: utils.fromBase64(u.userId),
+        user_id: u.userId,
         public_user_encryption_key: userPublicKey,
         encrypted_group_private_encryption_key: tcrypto.sealEncrypt(privateEncryptionKey, userPublicKey),
       };

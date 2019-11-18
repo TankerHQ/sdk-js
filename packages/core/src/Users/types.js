@@ -16,7 +16,7 @@ export type Device = {
 };
 
 export type User = {
-  userId: b64string,
+  userId: Uint8Array,
   userPublicKeys: Array<IndexUserKey>,
   devices: Array<Device>,
 };

@@ -80,7 +80,7 @@ export default class UserAccessor {
 
     await this._fetchUsers(hashedUserIds);
 
-    const users = await this._userStore.findUsers(args);
+    const users = await this._userStore.findUsers(hashedUserIds);
     return users;
   }
 

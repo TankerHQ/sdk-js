@@ -57,7 +57,7 @@ describe('Users', () => {
       const alice = await builder.newUserCreationV3('alice');
       const user = await users.findUser({ userId: alice.entry.user_id });
 
-      expect(user && user.userId).to.equal(utils.toBase64(alice.entry.user_id));
+      expect(user && user.userId).to.deep.equal(alice.entry.user_id);
     });
 
     it('fetches a user', async () => {
@@ -80,7 +80,7 @@ describe('Users', () => {
 
       const user = await users.findUser({ userId: hashedBobId });
 
-      expect(user && user.userId).to.equal(utils.toBase64(hashedBobId));
+      expect(user && user.userId).to.deep.equal(hashedBobId);
     });
   });
 
@@ -104,7 +104,7 @@ describe('Users', () => {
 
       const hashedUserIds = [alice.entry.user_id, bob.entry.user_id];
       const retUsers = await users.findUsers({ hashedUserIds });
-      const retUserIds = retUsers.map(u => u.userId);
+      const retUserIds = retUsers.map(u => utils.toBase64(u.userId));
       const expectedUserIds = hashedUserIds.map(id => utils.toBase64(id));
       expect(retUserIds).to.have.members(expectedUserIds);
     });
@@ -123,7 +123,7 @@ describe('Users', () => {
 
       const hashedUserIds = [merlin.entry.user_id, merlette.entry.user_id, hashedBobId, hashedAliceId];
       const retUsers = await users.findUsers({ hashedUserIds });
-      const retUserIds = retUsers.map(u => u.userId);
+      const retUserIds = retUsers.map(u => utils.toBase64(u.userId));
       const expectedUserIds = hashedUserIds.map(id => utils.toBase64(id));
       expect(retUserIds).to.have.members(expectedUserIds);
     });
@@ -145,7 +145,7 @@ describe('Users', () => {
 
       const publicIdentities = await toPublicIdentities([aliceIdentity, bobIdentity]);
       const retUsers = await users.getUsers({ publicIdentities });
-      const retUserIds = retUsers.map(u => u.userId);
+      const retUserIds = retUsers.map(u => utils.toBase64(u.userId));
       const expectedUserIds = [alice, bob].map(u => utils.toBase64(u.entry.user_id));
       expect(retUserIds).to.have.members(expectedUserIds);
     });

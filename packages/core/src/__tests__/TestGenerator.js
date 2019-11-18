@@ -533,7 +533,7 @@ class TestGenerator {
 
   _testUserToUser(user: TestUser): User {
     return {
-      userId: utils.toBase64(user.id),
+      userId: user.id,
       userPublicKeys: user.userKeys ? user.userKeys.map(key => ({ index: key.index, userPublicKey: key.publicKey })) : [],
       devices: user.devices.map(this._testDeviceToDevice),
     };
