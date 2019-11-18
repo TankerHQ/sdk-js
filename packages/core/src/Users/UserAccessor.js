@@ -75,16 +75,4 @@ export default class UserAccessor {
     const message = `The following identities are invalid or do not exist on the trustchain: "${invalidPublicIdentities.join('", "')}"`;
     throw new InvalidArgument(message);
   }
-
-  async getDevicePublicEncryptionKey(deviceId: Uint8Array): Promise<?Uint8Array> {
-    const device = await this._userStore.findDevice({ deviceId });
-    if (device)
-      return device.devicePublicEncryptionKey;
-
-    const newlyVerifiedDevice = await this._trustchain.verifyDevice(deviceId);
-    if (newlyVerifiedDevice)
-      return newlyVerifiedDevice.public_encryption_key;
-
-    return null;
-  }
 }
