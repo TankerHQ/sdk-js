@@ -8,7 +8,7 @@ import UserStore from '../Users/UserStore';
 import Generator, { makeGenerator } from './Generator';
 import makeUint8Array from './makeUint8Array';
 
-import { deviceCreationFromBlock } from '../Blocks/entries';
+import { deviceCreationFromBlock } from '../Users/Serialize';
 
 export async function makeMemoryDataStore(): Promise<DataStore<*>> {
   const schemas = mergeSchemas(UserStore.schemas);

@@ -5,14 +5,17 @@ import { type PublicProvisionalUser, type ProvisionalUserKeys, createIdentity, g
 import KeyStore from '../Session/KeyStore';
 
 import {
-  deviceCreationFromBlock,
-  deviceRevocationFromBlock,
   provisionalIdentityClaimFromBlock,
-  type UnverifiedDeviceCreation,
-  type UnverifiedDeviceRevocation,
   type UnverifiedProvisionalIdentityClaim,
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
+
+import {
+  deviceCreationFromBlock,
+  deviceRevocationFromBlock,
+  type DeviceCreationEntry,
+  type DeviceRevocationEntry,
+} from '../Users/Serialize';
 
 import {
   type UserGroupEntry,
@@ -22,11 +25,11 @@ import {
 import { hashBlock, type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
 
-import { getLastUserPublicKey, type User, type Device } from '../Users/User';
+import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 import { type Group } from '../Groups/types';
 import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
 
-import { rootBlockAuthor } from '../Trustchain/Verify';
+import { rootBlockAuthor } from '../Session/Verify';
 
 import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
@@ -73,8 +76,8 @@ export type TestTrustchainCreation = {
 }
 
 export type TestDeviceCreation = {
-  unverifiedDeviceCreation: UnverifiedDeviceCreation,
-  unverifiedDeviceCreationV1: UnverifiedDeviceCreation,
+  unverifiedDeviceCreation: DeviceCreationEntry,
+  unverifiedDeviceCreationV1: DeviceCreationEntry,
   block: Block,
   testUser: TestUser,
   testDevice: TestDevice,
@@ -82,7 +85,7 @@ export type TestDeviceCreation = {
 }
 
 export type TestDeviceRevocation = {
-  unverifiedDeviceRevocation: UnverifiedDeviceRevocation,
+  unverifiedDeviceRevocation: DeviceRevocationEntry,
   block: Block,
   testUser: TestUser,
   user: User,
@@ -520,7 +523,7 @@ class TestGenerator {
   }
 
   _testDeviceToDevice = (testDevice: TestDevice): Device => ({
-    deviceId: utils.toBase64(testDevice.id),
+    deviceId: testDevice.id,
     devicePublicEncryptionKey: testDevice.encryptionKeys.publicKey,
     devicePublicSignatureKey: testDevice.signKeys.publicKey,
     isGhostDevice: false,
@@ -530,13 +533,13 @@ class TestGenerator {
 
   _testUserToUser(user: TestUser): User {
     return {
-      userId: utils.toBase64(user.id),
+      userId: user.id,
       userPublicKeys: user.userKeys ? user.userKeys.map(key => ({ index: key.index, userPublicKey: key.publicKey })) : [],
       devices: user.devices.map(this._testDeviceToDevice),
     };
   }
 
-  _deviceCreationV1(deviceCreation: UnverifiedDeviceCreation): UnverifiedDeviceCreation {
+  _deviceCreationV1(deviceCreation: DeviceCreationEntry): DeviceCreationEntry {
     const deviceCreationV1 = { ...deviceCreation };
     deviceCreationV1.nature = NATURE.device_creation_v1;
     deviceCreationV1.user_key_pair = null;

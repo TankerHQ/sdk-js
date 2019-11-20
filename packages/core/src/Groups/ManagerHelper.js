@@ -10,7 +10,7 @@ import { verifyGroupAction } from './Verify';
 
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 import KeyStore from '../Session/KeyStore';
-import { type Device } from '../Users/User';
+import { type Device } from '../Users/types';
 import UserAccessor from '../Users/UserAccessor';
 import Trustchain from '../Trustchain/Trustchain';
 
@@ -68,7 +68,7 @@ export async function fetchDeviceByDeviceId(deviceId: Uint8Array, userAccessor: 
       throw new InternalError('Assertion error: unknown user');
     }
   }
-  const device = find(user.devices, dev => dev.deviceId === utils.toBase64(deviceId));
+  const device = find(user.devices, d => utils.equalArray(d.deviceId, deviceId));
   if (!device) {
     throw new InternalError('Assertion error: device not found');
   }

@@ -4,36 +4,14 @@ import { InternalError } from '@tanker/errors';
 
 import { findIndex } from '../utils';
 import { NATURE } from '../Blocks/Nature';
-import type { VerifiedDeviceCreation, VerifiedDeviceRevocation } from '../Blocks/entries';
+import { unserializeBlock } from '../Blocks/payloads';
 
-export type IndexUserKey = {|
-  userPublicKey: Uint8Array,
-  index: number,
-|};
+import { type DeviceCreationEntry, type DeviceRevocationEntry, isDeviceCreation, deviceCreationFromBlock, isDeviceRevocation, deviceRevocationFromBlock } from './Serialize';
 
-export type Device = {
-  deviceId: b64string,
-  devicePublicEncryptionKey: Uint8Array,
-  devicePublicSignatureKey: Uint8Array,
-  isGhostDevice: bool,
-  createdAt: number,
-  revokedAt: number,
-};
+import type { User, Device } from './types';
+import { verifyDeviceCreation, verifyDeviceRevocation } from './Verify';
 
-export type User = {
-  userId: b64string,
-  userPublicKeys: Array<IndexUserKey>,
-  devices: Array<Device>,
-};
-
-export function getLastUserPublicKey(user: User): ?Uint8Array {
-  if (user.userPublicKeys.length === 0)
-    return;
-  return user.userPublicKeys.slice(-1)[0].userPublicKey;
-}
-
-export function applyDeviceCreationToUser(deviceCreation: VerifiedDeviceCreation, user: ?User) {
-  const b64Id = utils.toBase64(deviceCreation.user_id);
+export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, user: ?User): User {
   let oldDevices = [];
   let userPublicKeys = deviceCreation.user_key_pair ? [{ userPublicKey: deviceCreation.user_key_pair.public_encryption_key, index: deviceCreation.index }] : [];
   if (user) {
@@ -41,7 +19,7 @@ export function applyDeviceCreationToUser(deviceCreation: VerifiedDeviceCreation
     userPublicKeys = user.userPublicKeys; // eslint-disable-line prefer-destructuring
   }
   const newDevice: Device = {
-    deviceId: utils.toBase64(deviceCreation.hash),
+    deviceId: deviceCreation.hash,
     devicePublicEncryptionKey: deviceCreation.public_encryption_key,
     devicePublicSignatureKey: deviceCreation.public_signature_key,
     createdAt: deviceCreation.index,
@@ -54,19 +32,15 @@ export function applyDeviceCreationToUser(deviceCreation: VerifiedDeviceCreation
       throw new InternalError('Assertion error: Adding an already existing device.');
   }
 
-  const updatedUser = {
-    _id: b64Id,
-    userId: b64Id,
+  return {
+    userId: deviceCreation.user_id,
     userPublicKeys,
     devices: [...oldDevices, newDevice],
   };
-
-  return { updatedUser, newDevice };
 }
 
-export function applyDeviceRevocationToUser(deviceRevocation: VerifiedDeviceRevocation, user: User) {
-  const b64DevId = utils.toBase64(deviceRevocation.device_id);
-  const deviceIndex = findIndex(user.devices, (d) => d.deviceId === b64DevId);
+export function applyDeviceRevocationToUser(deviceRevocation: DeviceRevocationEntry, user: User): User {
+  const deviceIndex = findIndex(user.devices, (d) => utils.equalArray(d.deviceId, deviceRevocation.device_id));
   if (deviceIndex === -1)
     throw new InternalError('Device not found!');
   const updatedUser = { ...user };
@@ -77,8 +51,31 @@ export function applyDeviceRevocationToUser(deviceRevocation: VerifiedDeviceRevo
     if (!deviceRevocation.user_keys)
       throw new InternalError('Somehow we have a DR2 without a new user key?');
     userPublicKey = deviceRevocation.user_keys.public_encryption_key;
-    user.userPublicKeys.push({ userPublicKey, index: deviceRevocation.index });
+    updatedUser.userPublicKeys.push({ userPublicKey, index: deviceRevocation.index });
   }
 
-  return { updatedUser, userPublicKey };
+  return updatedUser;
+}
+
+export function userFromBlocks(userBlocks: Array<b64string>, trustchainPublicKey: Uint8Array): User {
+  let user = null;
+  userBlocks.forEach(b => {
+    const block = unserializeBlock(utils.fromBase64(b));
+    if (isDeviceCreation(block)) {
+      const deviceCreation = deviceCreationFromBlock(block);
+      verifyDeviceCreation(deviceCreation, user, trustchainPublicKey);
+      user = applyDeviceCreationToUser(deviceCreation, user);
+    } else if (isDeviceRevocation(block)) {
+      if (!user) {
+        throw new InternalError('Assertion error: Cannot revoke device of non existing user');
+      }
+      const deviceRevocation = deviceRevocationFromBlock(block, user.userId);
+      verifyDeviceRevocation(deviceRevocation, user);
+      user = applyDeviceRevocationToUser(deviceRevocation, user);
+    }
+  });
+  if (!user) {
+    throw new InternalError('Assertion error: user cannot be null');
+  }
+  return user;
 }

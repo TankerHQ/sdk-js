@@ -7,7 +7,7 @@ import { InvalidBlockError } from '../errors.internal';
 import { type Group } from '../Groups/types';
 import { type UserGroupEntry } from '../Groups/Serialize';
 import { verifyUserGroupCreation, verifyUserGroupAddition } from '../Groups/Verify';
-import { type User } from '../Users/User';
+import { type User } from '../Users/types';
 
 import TestGenerator from './TestGenerator';
 

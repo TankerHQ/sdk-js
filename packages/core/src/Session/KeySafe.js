@@ -2,7 +2,7 @@
 import { tcrypto, utils, encryptionV1, type b64string } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 
-import { type UserKeys } from '../Blocks/payloads';
+import { type UserKeys } from '../Users/Serialize';
 
 export type ProvisionalUserKeyPairs = {|
   id: string,

@@ -33,7 +33,7 @@ describe('BlockGenerator', () => {
     userKeys = tcrypto.makeEncryptionKeyPair();
     signatureKeys = tcrypto.makeSignKeyPair();
     user = {
-      userId: utils.toBase64(random(tcrypto.HASH_SIZE)),
+      userId: random(tcrypto.HASH_SIZE),
       userPublicKeys: [{ index: 0, userPublicKey: userKeys.publicKey }],
       devices: []
     };

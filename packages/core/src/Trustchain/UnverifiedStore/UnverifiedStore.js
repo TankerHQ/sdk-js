@@ -2,12 +2,12 @@
 import { type DataStore, type TableSchema } from '@tanker/datastore-base';
 
 import type {
-  UnverifiedDeviceCreation, VerifiedDeviceCreation,
-  UnverifiedDeviceRevocation, VerifiedDeviceRevocation,
   UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
 } from '../../Blocks/entries';
 import ProvisionalIdentityClaimUnverifiedStore from './ProvisionalIdentityClaimUnverifiedStore';
 import UserUnverifiedStore from './UserUnverifiedStore';
+
+import type { UserEntry, DeviceCreationEntry, DeviceRevocationEntry } from '../../Users/Serialize';
 
 const schemaTablesV3 = [
   {
@@ -90,30 +90,30 @@ export default class UnverifiedStore {
     await this.provisionalIdentityClaimUnverifiedStore.close();
   }
 
-  async addUnverifiedUserEntries(entries: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>): Promise<void> {
+  async addUnverifiedUserEntries(entries: Array<UserEntry>): Promise<void> {
     return this.userUnverifiedStore.addUnverifiedUserEntries(entries);
   }
 
-  async findUnverifiedDeviceByHash(deviceId: Uint8Array): Promise<?UnverifiedDeviceCreation> {
+  async findUnverifiedDeviceByHash(deviceId: Uint8Array): Promise<?DeviceCreationEntry> {
     const results = await this.userUnverifiedStore.findUnverifiedDevicesByHash([deviceId]);
     if (results.length !== 0)
       return results[0];
     return null;
   }
 
-  async findUnverifiedDevicesByHash(deviceIds: Array<Uint8Array>): Promise<Array<UnverifiedDeviceCreation>> {
+  async findUnverifiedDevicesByHash(deviceIds: Array<Uint8Array>): Promise<Array<DeviceCreationEntry>> {
     return this.userUnverifiedStore.findUnverifiedDevicesByHash(deviceIds);
   }
 
-  async findUnverifiedDeviceRevocationByHash(hash: Uint8Array): Promise<?UnverifiedDeviceRevocation> {
+  async findUnverifiedDeviceRevocationByHash(hash: Uint8Array): Promise<?DeviceRevocationEntry> {
     return this.userUnverifiedStore.findUnverifiedDeviceRevocationByHash(hash);
   }
 
-  async findUnverifiedUserEntries(userIds: Array<Uint8Array>, stopBeforeIndex?: number): Promise<Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>> {
+  async findUnverifiedUserEntries(userIds: Array<Uint8Array>, stopBeforeIndex?: number): Promise<Array<UserEntry>> {
     return this.userUnverifiedStore.findUnverifiedUserEntries(userIds, stopBeforeIndex);
   }
 
-  async removeVerifiedUserEntries(entries: $ReadOnlyArray<VerifiedDeviceCreation | VerifiedDeviceRevocation>): Promise<void> {
+  async removeVerifiedUserEntries(entries: $ReadOnlyArray<UserEntry>): Promise<void> {
     return this.userUnverifiedStore.removeVerifiedUserEntries(entries);
   }
 

@@ -55,16 +55,16 @@ describe('Users', () => {
     it('returns a user', async () => {
       const { users, builder } = await makeTestUsers();
       const alice = await builder.newUserCreationV3('alice');
-      const user = await users.findUser({ userId: alice.entry.user_id });
+      const user = await users.findUser(alice.entry.user_id);
 
-      expect(user && user.userId).to.equal(utils.toBase64(alice.entry.user_id));
+      expect(user && user.userId).to.deep.equal(alice.entry.user_id);
     });
 
     it('fetches a user', async () => {
       const { users, stubs } = await makeTestUsers();
       const hashedBobId = new Uint8Array(32);
 
-      await users.findUser({ userId: hashedBobId });
+      await users.findUser(hashedBobId);
 
       expect(stubs.sync.withArgs([hashedBobId]).calledOnce).to.be.true;
       expect(stubs.updateUserStore.withArgs([hashedBobId]).calledOnce).to.be.true;
@@ -78,9 +78,9 @@ describe('Users', () => {
         await builder.newUserCreationV3('bob');
       });
 
-      const user = await users.findUser({ userId: hashedBobId });
+      const user = await users.findUser(hashedBobId);
 
-      expect(user && user.userId).to.equal(utils.toBase64(hashedBobId));
+      expect(user && user.userId).to.deep.equal(hashedBobId);
     });
   });
 
@@ -104,7 +104,7 @@ describe('Users', () => {
 
       const hashedUserIds = [alice.entry.user_id, bob.entry.user_id];
       const retUsers = await users.findUsers({ hashedUserIds });
-      const retUserIds = retUsers.map(u => u.userId);
+      const retUserIds = retUsers.map(u => utils.toBase64(u.userId));
       const expectedUserIds = hashedUserIds.map(id => utils.toBase64(id));
       expect(retUserIds).to.have.members(expectedUserIds);
     });
@@ -123,7 +123,7 @@ describe('Users', () => {
 
       const hashedUserIds = [merlin.entry.user_id, merlette.entry.user_id, hashedBobId, hashedAliceId];
       const retUsers = await users.findUsers({ hashedUserIds });
-      const retUserIds = retUsers.map(u => u.userId);
+      const retUserIds = retUsers.map(u => utils.toBase64(u.userId));
       const expectedUserIds = hashedUserIds.map(id => utils.toBase64(id));
       expect(retUserIds).to.have.members(expectedUserIds);
     });
@@ -145,7 +145,7 @@ describe('Users', () => {
 
       const publicIdentities = await toPublicIdentities([aliceIdentity, bobIdentity]);
       const retUsers = await users.getUsers({ publicIdentities });
-      const retUserIds = retUsers.map(u => u.userId);
+      const retUserIds = retUsers.map(u => utils.toBase64(u.userId));
       const expectedUserIds = [alice, bob].map(u => utils.toBase64(u.entry.user_id));
       expect(retUserIds).to.have.members(expectedUserIds);
     });
@@ -161,22 +161,6 @@ describe('Users', () => {
 
       const publicIdentities = await toPublicIdentities([aliceIdentity, bobIdentity, casperUnregisteredIdentity]);
       await expect(users.getUsers({ publicIdentities })).to.be.rejectedWith(InvalidArgument);
-    });
-  });
-
-  describe('getDevicePublicEncryptionKey', () => {
-    it('returns device public encryption key', async () => {
-      const { users, builder } = await makeTestUsers();
-      const alice = await builder.newUserCreationV3('alice');
-      const expected = alice.device.encryptionKeys.publicKey;
-      const devicePublicEncryptionKey = await users.getDevicePublicEncryptionKey(alice.device.id);
-      expect(devicePublicEncryptionKey).to.deep.equal(expected);
-    });
-
-    it('returns null if device does not exist', async () => {
-      const { users, builder } = await makeTestUsers();
-      await builder.newUserCreationV3('alice');
-      expect(await users.getDevicePublicEncryptionKey(new Uint8Array(0))).to.be.equal(null);
     });
   });
 });

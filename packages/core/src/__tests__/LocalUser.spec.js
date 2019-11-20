@@ -6,7 +6,7 @@ import { expect } from '@tanker/test-utils';
 
 import TestGenerator from './TestGenerator';
 
-import { type UserKeys } from '../Blocks/payloads';
+import { type UserKeys } from '../Users/Serialize';
 import LocalUser from '../Session/LocalUser';
 import { extractUserData } from '../Session/UserData';
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';

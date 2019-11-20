@@ -62,7 +62,7 @@ export default class DeviceManager {
     // sync the trustchain to be sure we have all our devices, in case we just
     // added one, or generated an unlock key
     await this._trustchain.sync();
-    const user = await this._userAccessor.findUser({ userId: this._localUser.userId });
+    const user = await this._userAccessor.findUser(this._localUser.userId);
     if (!user)
       throw new InternalError('Cannot find the current user in the users');
 

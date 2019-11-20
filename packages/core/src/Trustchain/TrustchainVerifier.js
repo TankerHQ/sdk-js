@@ -1,18 +1,19 @@
 // @flow
 import find from 'array-find';
+
 import { utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { InvalidBlockError } from '../errors.internal';
-import { findIndex, compareSameSizeUint8Arrays } from '../utils';
+import { compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
-import { type User, type Device } from '../Users/User';
+import { type User, type Device } from '../Users/types';
 import type {
   UnverifiedTrustchainCreation,
-  UnverifiedDeviceCreation, VerifiedDeviceCreation,
-  UnverifiedDeviceRevocation, VerifiedDeviceRevocation,
   UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
 } from '../Blocks/entries';
+
+import type { UserEntry, DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
 
 import {
   NATURE_KIND,
@@ -23,10 +24,14 @@ import Storage from '../Session/Storage';
 
 import {
   verifyTrustchainCreation,
+  verifyProvisionalIdentityClaim,
+} from '../Session/Verify';
+
+
+import {
   verifyDeviceCreation,
   verifyDeviceRevocation,
-  verifyProvisionalIdentityClaim,
-} from './Verify';
+} from '../Users/Verify';
 
 export default class TrustchainVerifier {
   _verifyQueue: TaskQueue = new TaskQueue();
@@ -56,7 +61,7 @@ export default class TrustchainVerifier {
       }
     }
 
-    const foundAuthors = await this._storage.userStore.findDevices({ hashedDeviceIds: entries.map((e) => e.author) });
+    const foundAuthors = await this._storage.userStore.findDevices(entries.map((e) => e.author));
     return entries.reduce((result, entry) => {
       const author = foundAuthors.get(utils.toBase64(entry.author));
       if (!author || author.revokedAt < entry.index)
@@ -67,37 +72,31 @@ export default class TrustchainVerifier {
     }, new Map());
   }
 
-  async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
+  async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: DeviceCreationEntry): Promise<DeviceCreationEntry> {
+    const trustchainPublicKey = this._storage.trustchainStore.trustchainPublicKey;
     if (utils.equalArray(entry.author, this._trustchainId)) {
-      const authorKey = this._storage.trustchainStore.trustchainPublicKey;
-      verifyDeviceCreation(entry, null, null, authorKey, user);
+      verifyDeviceCreation(entry, null, trustchainPublicKey);
     } else {
       if (!user)
         throw new InvalidBlockError('unknown_author', 'can\'t find block author\'s user', { entry });
-      const author = find(user.devices, d => utils.equalArray(utils.fromBase64(d.deviceId), entry.author));
-      const authorKey = author.devicePublicSignatureKey;
-      verifyDeviceCreation(entry, user, author, authorKey, user);
+      verifyDeviceCreation(entry, user, trustchainPublicKey);
     }
 
     return entry;
   }
 
-  async _unlockedVerifySingleUserDeviceRevocation(targetUser: ?User, entry: UnverifiedDeviceRevocation): Promise<VerifiedDeviceRevocation> {
-    const authorUser = await this._storage.userStore.findUser({ deviceId: entry.author });
-    if (!authorUser)
-      throw new InternalError('Assertion error: User has a device in userstore, but findUser failed!'); // Mostly just for flow. Should Never Happen™
-    const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(entry.author));
-    const authorDevice = authorUser.devices[deviceIndex];
-
-    verifyDeviceRevocation(entry, authorUser.userId, authorDevice.devicePublicSignatureKey, targetUser);
+  async _unlockedVerifySingleUserDeviceRevocation(targetUser: ?User, entry: DeviceRevocationEntry): Promise<DeviceRevocationEntry> {
+    if (!targetUser)
+      throw new InternalError('Cannot revoke device of non existing user');
+    verifyDeviceRevocation(entry, targetUser);
     return entry;
   }
 
-  async _unlockedVerifySingleUser(user: ?User, entry: UnverifiedDeviceCreation | UnverifiedDeviceRevocation): Promise<VerifiedDeviceCreation | VerifiedDeviceRevocation> {
+  async _unlockedVerifySingleUser(user: ?User, entry: UserEntry): Promise<UserEntry> {
     switch (natureKind(entry.nature)) {
       case NATURE_KIND.device_creation: {
         // $FlowIKnow The type is checked by the switch
-        const deviceEntry: UnverifiedDeviceCreation = entry;
+        const deviceEntry: DeviceCreationEntry = entry;
         return this._unlockedVerifySingleUserDeviceCreation(user, deviceEntry);
       }
       case NATURE_KIND.device_revocation: {
@@ -110,23 +109,23 @@ export default class TrustchainVerifier {
     }
   }
 
-  async _unlockedVerifyAndApplySingleUserEntry(user: ?User, entry: UnverifiedDeviceCreation | UnverifiedDeviceRevocation): Promise<VerifiedDeviceCreation | VerifiedDeviceRevocation> {
+  async _unlockedVerifyAndApplySingleUserEntry(user: ?User, entry: UserEntry): Promise<UserEntry> {
     const verifiedEntry = await this._unlockedVerifySingleUser(user, entry);
     await this._storage.userStore.applyEntry(verifiedEntry);
     await this._storage.unverifiedStore.removeVerifiedUserEntries([verifiedEntry]);
     return verifiedEntry;
   }
 
-  async _throwingVerifyDeviceCreation(entry: UnverifiedDeviceCreation): Promise<VerifiedDeviceCreation> {
+  async _throwingVerifyDeviceCreation(entry: DeviceCreationEntry): Promise<DeviceCreationEntry> {
     return this._verifyQueue.enqueue(async () => {
       let user = await this._storage.userStore.findUser({ userId: entry.user_id });
       user = await this._unlockedProcessUser(entry.user_id, user, entry.index);
-      const promise: Promise<VerifiedDeviceCreation> = (this._unlockedVerifyAndApplySingleUserEntry(user, entry): any);
+      const promise: Promise<DeviceCreationEntry> = (this._unlockedVerifyAndApplySingleUserEntry(user, entry): any);
       return promise;
     });
   }
 
-  async verifyDeviceCreation(entry: UnverifiedDeviceCreation): Promise<?VerifiedDeviceCreation> {
+  async verifyDeviceCreation(entry: DeviceCreationEntry): Promise<?DeviceCreationEntry> {
     try {
       return await this._throwingVerifyDeviceCreation(entry);
     } catch (e) {
@@ -157,10 +156,11 @@ export default class TrustchainVerifier {
         if (!authorUser)
           throw new InvalidBlockError('author_not_found', 'author not found', { claim });
 
-        const deviceIndex = findIndex(authorUser.devices, (d) => d.deviceId === utils.toBase64(claim.author));
-        const authorDevice = authorUser.devices[deviceIndex];
+        const authorDevice = find(authorUser.devices, d => utils.equalArray(d.deviceId, claim.author));
+        if (!authorDevice)
+          throw new InvalidBlockError('author_not_found', 'author not found', { claim });
 
-        verifiedClaims.push(verifyProvisionalIdentityClaim(claim, authorDevice, utils.fromBase64(authorUser.userId)));
+        verifiedClaims.push(verifyProvisionalIdentityClaim(claim, authorDevice, authorUser.userId));
       } catch (e) {
         if (!(e instanceof InvalidBlockError)) {
           throw e;
@@ -181,8 +181,8 @@ export default class TrustchainVerifier {
   }
 
   async _takeOneDeviceOfEachUsers(
-    nextDevicesToVerify: Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>
-  ): Promise<Array<Array<UnverifiedDeviceCreation | UnverifiedDeviceRevocation>>> {
+    nextDevicesToVerify: Array<UserEntry>
+  ): Promise<Array<Array<UserEntry>>> {
     const remainingDevices = [];
     const firstDeviceOfEachUser = nextDevicesToVerify.filter((entry, index, array) => {
       if (index && utils.equalArray(array[index - 1].user_id, entry.user_id)) {

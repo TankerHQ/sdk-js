@@ -5,12 +5,15 @@ import { InternalError } from '@tanker/errors';
 import { type PublicProvisionalUser, type ProvisionalUserKeys } from '@tanker/identity';
 
 import {
-  serializeUserDeviceV3,
-  serializeDeviceRevocationV2,
   serializeProvisionalIdentityClaim,
-  type UserDeviceRecord,
-  type UserKeys,
 } from './payloads';
+
+import {
+  type DeviceCreationRecord,
+  type UserKeys,
+  serializeUserDeviceV3,
+  serializeDeviceRevocationV2
+} from '../Users/Serialize';
 
 import {
   type UserGroupCreationRecordV1,
@@ -26,7 +29,7 @@ import { serializeKeyPublish } from '../DataProtection/Resource/keyPublish';
 
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/UserData';
-import { getLastUserPublicKey, type User, type Device } from '../Users/User';
+import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 
 export function getUserGroupCreationBlockSignDataV1(record: UserGroupCreationRecordV1): Uint8Array {
   return utils.concatArrays(
@@ -130,7 +133,7 @@ export class BlockGenerator {
       args.userKeys.privateKey,
       args.publicEncryptionKey,
     );
-    const userDevice: UserDeviceRecord = {
+    const userDevice: DeviceCreationRecord = {
       ephemeral_public_signature_key: args.ephemeralKey,
       user_id: args.userId,
       delegation_signature: args.delegationSignature,
@@ -193,7 +196,7 @@ export class BlockGenerator {
         device.devicePublicEncryptionKey,
       );
       return {
-        recipient: utils.fromBase64(device.deviceId),
+        recipient: device.deviceId,
         key: encryptedUserKey,
       };
     });
@@ -206,13 +209,14 @@ export class BlockGenerator {
     };
   }
 
-  makeDeviceRevocationBlock(user: User, currentUserKeys: tcrypto.SodiumKeyPair, deviceIdToRevoke: b64string) {
+  makeDeviceRevocationBlock(user: User, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: b64string) {
+    const deviceIdToRevoke = utils.fromBase64(deviceId);
     const remainingDevices = user.devices
-      .filter(device => device.revokedAt === Number.MAX_SAFE_INTEGER && device.deviceId !== deviceIdToRevoke);
+      .filter(device => device.revokedAt === Number.MAX_SAFE_INTEGER && !utils.equalArray(device.deviceId, deviceIdToRevoke));
 
     const userKeys = this._rotateUserKeys(remainingDevices, currentUserKeys);
     const revocationRecord = {
-      device_id: utils.fromBase64(deviceIdToRevoke),
+      device_id: deviceIdToRevoke,
       user_keys: userKeys
     };
 
@@ -289,7 +293,7 @@ export class BlockGenerator {
       if (!userPublicKey)
         throw new InternalError('createUserGroup: user does not have user keys');
       return {
-        user_id: utils.fromBase64(u.userId),
+        user_id: u.userId,
         public_user_encryption_key: userPublicKey,
         encrypted_group_private_encryption_key: tcrypto.sealEncrypt(encryptionKeyPair.privateKey, userPublicKey),
       };
@@ -340,7 +344,7 @@ export class BlockGenerator {
       if (!userPublicKey)
         throw new InternalError('addToUserGroup: user does not have user keys');
       return {
-        user_id: utils.fromBase64(u.userId),
+        user_id: u.userId,
         public_user_encryption_key: userPublicKey,
         encrypted_group_private_encryption_key: tcrypto.sealEncrypt(privateEncryptionKey, userPublicKey),
       };

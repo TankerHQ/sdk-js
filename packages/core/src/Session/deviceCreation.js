@@ -4,7 +4,7 @@ import { utils, tcrypto } from '@tanker/crypto';
 
 import {
   serializeUserDeviceV3,
-} from '../Blocks/payloads';
+} from '../Users/Serialize';
 
 import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 

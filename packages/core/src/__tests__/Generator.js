@@ -3,14 +3,15 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { obfuscateUserId } from '@tanker/identity';
 
 import { blockToEntry } from '../Blocks/entries';
-import type { UnverifiedEntry, UnverifiedDeviceCreation } from '../Blocks/entries';
-import type { Device } from '../Users/User';
+import type { UnverifiedEntry } from '../Blocks/entries';
+
+import { serializeTrustchainCreation, SEALED_KEY_SIZE } from '../Blocks/payloads';
+import type { Device } from '../Users/types';
 
 import { signBlock, type Block } from '../Blocks/Block';
-import { serializeTrustchainCreation,
-  serializeUserDeviceV3,
-  type UserDeviceRecord,
-  SEALED_KEY_SIZE } from '../Blocks/payloads';
+
+
+import { serializeUserDeviceV3, type DeviceCreationRecord, type DeviceCreationEntry, deviceCreationFromBlock } from '../Users/Serialize';
 
 import { preferredNature, NATURE, NATURE_KIND, type Nature } from '../Blocks/Nature';
 
@@ -26,7 +27,7 @@ export type GeneratorUser = {
   devices: Array<GeneratorDevice>,
 }
 
-export function serializeUserDeviceV1(userDevice: UserDeviceRecord): Uint8Array {
+export function serializeUserDeviceV1(userDevice: DeviceCreationRecord): Uint8Array {
   return utils.concatArrays(
     userDevice.ephemeral_public_signature_key,
     userDevice.user_id,
@@ -38,7 +39,7 @@ export function serializeUserDeviceV1(userDevice: UserDeviceRecord): Uint8Array 
 
 export function generatorDeviceToDevice(u: GeneratorDevice): Device {
   return {
-    deviceId: utils.toBase64(u.id),
+    deviceId: u.id,
     devicePublicEncryptionKey: u.encryptionKeys.publicKey,
     devicePublicSignatureKey: u.signKeys.publicKey,
     isGhostDevice: false,
@@ -53,7 +54,7 @@ export type GeneratorUserResult = {
   user: GeneratorUser,
   device: GeneratorDevice,
   blockPrivateSignatureKey: Uint8Array,
-  unverifiedDeviceCreation: UnverifiedDeviceCreation,
+  unverifiedDeviceCreation: DeviceCreationEntry,
 }
 
 type CreateUserResult = {
@@ -61,7 +62,7 @@ type CreateUserResult = {
   entry: UnverifiedEntry,
   device: GeneratorDevice,
   blockPrivateSignatureKey: Uint8Array,
-  unverifiedDeviceCreation: UnverifiedDeviceCreation,
+  unverifiedDeviceCreation: DeviceCreationEntry,
 }
 
 const rootBlockAuthor = new Uint8Array(32);
@@ -121,7 +122,7 @@ class Generator {
         encrypted_private_encryption_key: new Uint8Array(SEALED_KEY_SIZE),
       };
     }
-    const payload: UserDeviceRecord = {
+    const payload: DeviceCreationRecord = {
       last_reset: new Uint8Array(tcrypto.HASH_SIZE),
       ephemeral_public_signature_key: ephemeralKeys.publicKey,
       user_id: obfuscatedUserId,
@@ -149,10 +150,10 @@ class Generator {
       payload: serializedPayload,
     }, ephemeralKeys.privateKey);
 
-    const entry = blockToEntry(block);
+    const entry = deviceCreationFromBlock(block);
     const device = { id: entry.hash, signKeys, encryptionKeys };
-    const unverifiedDeviceCreation: UnverifiedDeviceCreation = ({ ...entry, ...entry.payload_unverified }: any);
-    return { block, entry, device, blockPrivateSignatureKey: ephemeralKeys.privateKey, unverifiedDeviceCreation };
+    // $FlowIKnow
+    return { block, entry, device, blockPrivateSignatureKey: ephemeralKeys.privateKey, unverifiedDeviceCreation: entry };
   }
 
 

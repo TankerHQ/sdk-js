@@ -1,14 +1,19 @@
 // @flow
+import find from 'array-find';
 
 import { utils, type b64string } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 import { InternalError } from '@tanker/errors';
 
-import { type Device, type User, applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
+
+import type { User, Device } from './types';
+import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
-import type { VerifiedDeviceCreation, VerifiedDeviceRevocation, VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import type { VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+import type { DeviceCreationEntry, DeviceRevocationEntry, UserEntry } from './Serialize';
+
 import type { ProvisionalUserKeyPairs } from '../Session/KeySafe';
 
 type DeviceToUser = {
@@ -19,13 +24,20 @@ type DeviceToUser = {
 export type FindUserParameters = $Exact<{ deviceId: Uint8Array }> | $Exact<{ userId: Uint8Array }> | $Exact<{ userPublicKey: Uint8Array }>;
 export type FindUsersParameters = $Exact<{ hashedUserIds: Array<Uint8Array> }>;
 export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
-export type FindDevicesParameters = $Exact<{ hashedDeviceIds: Array<Uint8Array> }>;
 
 export type Callbacks = {
-  deviceCreation: (entry: VerifiedDeviceCreation) => Promise<void>,
-  deviceRevocation: (entry: VerifiedDeviceRevocation) => Promise<void>,
+  deviceCreation: (entry: DeviceCreationEntry) => Promise<void>,
+  deviceRevocation: (entry: DeviceRevocationEntry) => Promise<void>,
   claim: (entry: VerifiedProvisionalIdentityClaim) => Promise<ProvisionalUserKeyPairs>,
 };
+
+function recordFromUser(user: User) {
+  const b64UserId = utils.toBase64(user.userId);
+  return { ...user, userId: b64UserId, _id: b64UserId };
+}
+function userFromRecord(record: any): User {
+  return { ...record, userId: utils.fromBase64(record.userId) };
+}
 
 const USERS_TABLE = 'users';
 const DEVICES_USER_TABLE = 'devices_to_user';
@@ -106,22 +118,15 @@ export default class UserStore {
   }
 
   // all entries are verified
-  async applyEntry(entry: VerifiedDeviceCreation | VerifiedDeviceRevocation): Promise<User> {
+  async applyEntry(entry: UserEntry): Promise<User> {
     const updatedUsers = await this.applyEntries([entry]);
     return updatedUsers[0];
   }
 
   // all entries are verified
-  async applyEntries(entries: Array<VerifiedDeviceCreation | VerifiedDeviceRevocation>): Promise<Array<User>> {
-    const toBeStored = {
-      [USERS_TABLE]: [],
-      [DEVICES_USER_TABLE]: [],
-      [USER_KEY_TABLE]: [],
-    };
+  async applyEntries(entries: Array<UserEntry>): Promise<Array<User>> {
     const updatedUsers: Array<User> = [];
     for (const entry of entries) {
-      const storeableEntry = await this._prepareEntry(entry);
-
       if (utils.equalArray(entry.user_id, this._userId)) {
         if (natureKind(entry.nature) === NATURE_KIND.device_creation) {
         // $FlowIKnow Type is checked by the switch
@@ -134,105 +139,94 @@ export default class UserStore {
         }
       }
 
-      if (storeableEntry[USERS_TABLE]) {
-        toBeStored[USERS_TABLE].push(storeableEntry[USERS_TABLE]);
-        updatedUsers.push(storeableEntry[USERS_TABLE]);
-      }
-      if (storeableEntry[DEVICES_USER_TABLE])
-        toBeStored[DEVICES_USER_TABLE].push(storeableEntry[DEVICES_USER_TABLE]);
-      if (storeableEntry[USER_KEY_TABLE])
-        toBeStored[USER_KEY_TABLE].push(storeableEntry[USER_KEY_TABLE]);
+      updatedUsers.push(await this._applyEntrytoUser(entry));
     }
+    await this.storeUsers(updatedUsers);
 
-    await this._ds.bulkPut(USERS_TABLE, toBeStored[USERS_TABLE]);
-    await this._ds.bulkPut(DEVICES_USER_TABLE, toBeStored[DEVICES_USER_TABLE]);
-    await this._ds.bulkPut(USER_KEY_TABLE, toBeStored[USER_KEY_TABLE]);
     return updatedUsers;
   }
 
-  async _prepareEntry(entry: VerifiedDeviceCreation | VerifiedDeviceRevocation) {
+  async _applyEntrytoUser(entry: UserEntry): Promise<User> {
+    const existingUser = await this.findUser({ userId: entry.user_id });
+
     switch (entry.nature) {
       case NATURE.device_creation_v1:
       case NATURE.device_creation_v2:
       case NATURE.device_creation_v3: {
         // $FlowIKnow Type is checked by the switch
         const deviceEntry: VerifiedDeviceCreation = entry;
-        return this._prepareDeviceCreation(deviceEntry);
+        return applyDeviceCreationToUser(deviceEntry, existingUser);
       }
       case NATURE.device_revocation_v1:
       case NATURE.device_revocation_v2: {
+        if (!existingUser)
+          throw new InternalError('User not found!');
         // $FlowIKnow Type is checked by the switch
         const revocationEntry: VerifiedDeviceRevocation = entry;
-        return this._prepareDeviceRevocation(revocationEntry);
+        return applyDeviceRevocationToUser(revocationEntry, existingUser);
       }
       default:
         throw new InternalError(`Invalid nature: ${entry.nature}`);
     }
   }
 
-  async _prepareDeviceCreation(deviceCreation: VerifiedDeviceCreation) {
-    const b64Id = utils.toBase64(deviceCreation.user_id);
-    const existing = await this.findUser({ userId: deviceCreation.user_id });
-    const { updatedUser, newDevice } = applyDeviceCreationToUser(deviceCreation, existing);
-    const deviceToUser = {
-      _id: newDevice.deviceId,
-      deviceId: newDevice.deviceId,
-      userId: b64Id,
-      isGhostDevice: newDevice.isGhostDevice,
-    };
+  async storeUsers(users: Array<User>) {
+    const userRecordsToInsert = [];
+    const userPublicKeysRecordsToInsert = [];
+    const deviceUserRecordsToInsert = [];
 
-    const storeableEntry: Object = {
-      [USERS_TABLE]: updatedUser,
-      [DEVICES_USER_TABLE]: deviceToUser,
-    };
+    users.forEach(async user => {
+      const b64UserId = utils.toBase64(user.userId);
+      userRecordsToInsert.push(recordFromUser(user));
 
-    if (deviceCreation.user_key_pair) {
-      const userPublicKey = utils.toBase64(deviceCreation.user_key_pair.public_encryption_key);
-      const userPublicKeyToUser = {
-        _id: userPublicKey,
-        userPublicKey,
-        userId: b64Id,
-      };
-      storeableEntry[USER_KEY_TABLE] = userPublicKeyToUser;
-    }
-    return storeableEntry;
+      user.userPublicKeys.forEach(uk => {
+        const b64UserPublicKey = utils.toBase64(uk.userPublicKey);
+        userPublicKeysRecordsToInsert.push({
+          _id: b64UserPublicKey,
+          userPublicKey: b64UserPublicKey,
+          userId: b64UserId,
+        });
+      });
+
+      user.devices.forEach(d => {
+        const b64DeviceId = utils.toBase64(d.deviceId);
+        deviceUserRecordsToInsert.push({
+          _id: b64DeviceId,
+          deviceId: b64DeviceId,
+          userId: b64UserId,
+          isGhostDevice: d.isGhostDevice,
+        });
+      });
+    });
+
+    const promises = [];
+    promises.push(this._ds.bulkPut(USERS_TABLE, userRecordsToInsert));
+    promises.push(this._ds.bulkPut(USER_KEY_TABLE, userPublicKeysRecordsToInsert));
+    promises.push(this._ds.bulkPut(DEVICES_USER_TABLE, deviceUserRecordsToInsert));
+
+    return Promise.all(promises);
   }
 
-  async _prepareDeviceRevocation(deviceRevocation: VerifiedDeviceRevocation) {
-    if (!deviceRevocation.user_id) {
-      throw new InternalError('Missing user_id in the record');
-    }
-
-    const user = await this.findUser({ userId: deviceRevocation.user_id });
-    if (!user)
-      throw new InternalError('User not found!');
-
-    const { updatedUser, userPublicKey } = applyDeviceRevocationToUser(deviceRevocation, user);
-
-    const storeableEntry: Object = {
-      [USERS_TABLE]: updatedUser,
-    };
-    if (userPublicKey) {
-      const b64UserPublicKey = utils.toBase64(userPublicKey);
-      const userPublicKeyToUser = {
-        _id: b64UserPublicKey,
-        userPublicKey: b64UserPublicKey,
-        userId: user.userId,
-      };
-      storeableEntry[USER_KEY_TABLE] = userPublicKeyToUser;
-    }
-    return storeableEntry;
+  async findUsers(userIds: Array<Uint8Array>): Promise<Array<User>> {
+    const b64HashedUserIds = userIds.map(id => utils.toBase64(id));
+    const result = await this._ds.find(USERS_TABLE, {
+      selector: {
+        userId: { $in: b64HashedUserIds },
+      },
+    });
+    return result.map(userFromRecord);
   }
 
-  async findUser(args: FindUserParameters): Promise<?User> {
+  async findUser(args: FindUserParameters) {
     if (Object.keys(args).length !== 1)
       throw new InternalError(`findUser: expected exactly one argument, got ${Object.keys(args).length}`);
 
     if (args.userId) {
+      const b64UserId = utils.toBase64(args.userId);
       const record = await this._ds.first(USERS_TABLE, {
-        selector: { userId: utils.toBase64(args.userId) },
+        selector: { userId: { $eq: b64UserId } },
       });
-      return record;
+      return record && userFromRecord(record);
     }
 
     if (args.deviceId) {
@@ -245,7 +239,7 @@ export default class UserStore {
 
     if (args.userPublicKey) {
       const publicKeyToUser = await this._ds.first(USER_KEY_TABLE, {
-        selector: { userPublicKey: utils.toBase64(args.userPublicKey) },
+        selector: { userPublicKey: { $eq: utils.toBase64(args.userPublicKey) } },
       });
       if (!publicKeyToUser)
         return null;
@@ -254,22 +248,6 @@ export default class UserStore {
     }
 
     throw new InternalError('Find: invalid argument');
-  }
-
-  async findUsers(args: FindUsersParameters): Promise<Array<User>> {
-    const { hashedUserIds } = args;
-    if (Object.keys(args).length !== 1)
-      throw new InternalError(`findUsers: expected exactly one argument, got ${Object.keys(args).length}`);
-
-    if (!hashedUserIds)
-      throw new InternalError('Find: invalid argument');
-
-    const b64HashedUserIds = hashedUserIds.map(id => utils.toBase64(id));
-    return this._ds.find(USERS_TABLE, {
-      selector: {
-        userId: { $in: b64HashedUserIds },
-      },
-    });
   }
 
   _findDeviceToUser = async (args: FindDeviceParameters): Promise<?DeviceToUser> => {
@@ -287,22 +265,6 @@ export default class UserStore {
     throw new InternalError('Find: invalid argument');
   }
 
-  _findDevicesToUsers = async (args: FindDevicesParameters): Promise<Array<DeviceToUser>> => {
-    const { hashedDeviceIds } = args;
-    if (Object.keys(args).length !== 1)
-      throw new InternalError(`findDevicesToUsers: expected exactly one argument, got ${Object.keys(args).length}`);
-
-    if (hashedDeviceIds) {
-      return this._ds.find(DEVICES_USER_TABLE, {
-        selector: {
-          deviceId: { $in: hashedDeviceIds.map(utils.toBase64) }
-        }
-      });
-    }
-
-    throw new InternalError('Find: invalid argument');
-  }
-
   findDevice = async (args: FindDeviceParameters): Promise<?Device> => {
     const deviceToUser = await this._findDeviceToUser(args);
     if (!deviceToUser)
@@ -310,33 +272,31 @@ export default class UserStore {
     const { deviceId, userId } = deviceToUser;
     const user = await this.findUser({ userId: utils.fromBase64(userId) });
     if (!user)
-      throw new InternalError('Find: no such userId'); // not supposed to be trigerred (here for flow)
-    const deviceIndex = findIndex(user.devices, (d) => d.deviceId === deviceId);
+      throw new InternalError('Assertion error: Find: no such userId'); // not supposed to be trigerred (here for flow)
+    const deviceIndex = findIndex(user.devices, (d) => utils.toBase64(d.deviceId) === deviceId);
     if (deviceIndex === -1)
-      throw new InternalError('Device not found!');
+      throw new InternalError('Assertion error: Device not found!');
     return user.devices[deviceIndex];
   }
 
-  findDevices = async (args: FindDevicesParameters): Promise<Map<b64string, Device>> => {
-    const devicesToUsers = await this._findDevicesToUsers(args);
-    const users = await this.findUsers({ hashedUserIds: devicesToUsers.map((e) => utils.fromBase64(e.userId)) });
-    const devicesToUsersMap = users.reduce((map, user) => {
-      for (const device of user.devices)
-        map.set(device.deviceId, user);
-      return map;
-    }, new Map());
+  findDevices = async (deviceIds: Array<Uint8Array>): Promise<Map<b64string, Device>> => {
+    const records = await this._ds.find(DEVICES_USER_TABLE, {
+      selector: {
+        deviceId: { $in: deviceIds.map(utils.toBase64) }
+      }
+    });
 
-    const devices = devicesToUsers.reduce((map, elem) => {
-      const user = devicesToUsersMap.get(elem.deviceId);
-      if (!user)
-        return map;
-      const deviceIndex = findIndex(user.devices, (d) => d.deviceId === elem.deviceId);
-      if (deviceIndex === -1)
-        throw new InternalError('Device not found!');
-      const device = user.devices[deviceIndex];
-      map.set(device.deviceId, device);
-      return map;
-    }, new Map());
-    return devices;
+    const users = await this.findUsers(records.map((e) => utils.fromBase64(e.userId)));
+
+    const devicesMap = new Map<b64string, Device>();
+
+    users.forEach(user => {
+      user.devices.forEach(device => {
+        if (find(deviceIds, deviceId => utils.equalArray(deviceId, device.deviceId))) {
+          devicesMap.set(utils.toBase64(device.deviceId), device);
+        }
+      });
+    });
+    return devicesMap;
   }
 }

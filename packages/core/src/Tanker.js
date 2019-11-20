@@ -296,8 +296,11 @@ export class Tanker extends EventEmitter {
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
     this.assert(statuses.READY, 'get the device list');
-    const allDevices = await this._session.apis.userAccessor.findUserDevices({ userId: this._session.localUser.userId });
-    return allDevices.filter(d => !d.isGhostDevice).map(d => ({ id: d.id, isRevoked: d.isRevoked }));
+    const localUser = await this._session.apis.userAccessor.findUser(this._session.localUser.userId);
+    if (!localUser) {
+      throw new InternalError('Assertion error: cannot find local user');
+    }
+    return localUser.devices.filter(d => !d.isGhostDevice).map(d => ({ id: utils.toBase64(d.deviceId), isRevoked: d.revokedAt !== Number.MAX_SAFE_INTEGER }));
   }
 
   async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {
