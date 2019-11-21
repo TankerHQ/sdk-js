@@ -1,5 +1,4 @@
 // @flow
-import find from 'array-find';
 
 import { utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
@@ -22,9 +21,6 @@ import {
 
 import Storage from '../Session/Storage';
 
-
-import { verifyProvisionalIdentityClaim } from '../Session/ProvisionalIdentity/Verify';
-import { type ClaimEntry } from '../Session/ProvisionalIdentity/Serialize';
 
 export default class TrustchainVerifier {
   _verifyQueue: TaskQueue = new TaskQueue();
@@ -141,32 +137,6 @@ export default class TrustchainVerifier {
     return user;
   }
 
-  async _unlockedVerifyClaims(claims: Array<ClaimEntry>): Promise<Array<ClaimEntry>> {
-    const verifiedClaims = [];
-    for (const claim of claims) {
-      try {
-        const authorUser = await this._storage.userStore.findUser({ deviceId: claim.author });
-        if (!authorUser)
-          throw new InvalidBlockError('author_not_found', 'author not found', { claim });
-
-        const authorDevice = find(authorUser.devices, d => utils.equalArray(d.deviceId, claim.author));
-        if (!authorDevice)
-          throw new InvalidBlockError('author_not_found', 'author not found', { claim });
-
-        verifyProvisionalIdentityClaim(claim, authorDevice.devicePublicSignatureKey, authorUser.userId);
-        verifiedClaims.push(claim);
-      } catch (e) {
-        if (!(e instanceof InvalidBlockError)) {
-          throw e;
-        } else {
-          console.error('invalid block', e);
-        }
-        continue;
-      }
-    }
-    return verifiedClaims;
-  }
-
   async verifyTrustchainCreation(unverifiedTrustchainCreation: TrustchainCreationEntry) {
     return this._verifyQueue.enqueue(async () => {
       verifyTrustchainCreation(unverifiedTrustchainCreation, this._trustchainId);
@@ -213,16 +183,6 @@ export default class TrustchainVerifier {
         await this._storage.userStore.applyEntries(verifiedDevices);
         await this._storage.unverifiedStore.removeVerifiedUserEntries(verifiedDevices);
       } while (nextDevicesToVerify.length > 0);
-    });
-  }
-
-  async verifyClaimsForUser(userId: Uint8Array) {
-    await this._verifyQueue.enqueue(async () => {
-      const unverifiedClaims = await this._storage.unverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
-
-      const verifiedClaims = await this._unlockedVerifyClaims(unverifiedClaims);
-      await this._storage.userStore.applyProvisionalIdentityClaims(verifiedClaims);
-      await this._storage.unverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(verifiedClaims);
     });
   }
 }

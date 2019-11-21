@@ -58,7 +58,6 @@ export class Session extends EventEmitter {
     storage.userStore.setCallbacks({
       deviceCreation: localUser.applyDeviceCreation,
       deviceRevocation: localUser.applyDeviceRevocation,
-      claim: localUser.applyProvisionalIdentityClaim,
     });
 
     const trustchain = await Trustchain.open(client, userData.trustchainId, userData.userId, storage);

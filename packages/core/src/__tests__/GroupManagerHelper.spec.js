@@ -10,6 +10,7 @@ import { type ExternalGroup } from '../Groups/types';
 import { serializeBlock } from '../Blocks/payloads';
 import TestGenerator, { getKeyStoreOfDevice, type TestDeviceCreation, type TestUserGroup } from './TestGenerator';
 import KeyStore from '../Session/LocalUser/KeyStore';
+import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
 describe('GroupManagerHelper', () => {
   describe('assertPublicIdentities()', () => {
@@ -48,8 +49,11 @@ describe('GroupManagerHelper', () => {
       return externalGroup;
     }
 
+    let provisionalIdentityManager;
+
     beforeEach(() => {
       testGenerator = new TestGenerator();
+      provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
     });
 
     describe('with internal groups', () => {
@@ -65,36 +69,41 @@ describe('GroupManagerHelper', () => {
         userGroup = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user], []);
         keyStore = await getKeyStoreOfDevice(userCreation.testUser, userCreation.testDevice);
         userGroupCreation = (userGroup.userGroupEntry: any);
+        provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
       });
 
-      it('can create a group with a userGroupCreation action', () => {
-        const group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
+      it('can create a group with a userGroupCreation action', async () => {
+        const group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroup.group);
       });
 
       it('can create a group with a userGroupCreation action from a provisional user', async () => {
         const provisionalResult = await testGenerator.makeProvisionalUser();
+        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => provisionalResult.provisionalUserKeys }: any): ProvisionalIdentityManager);
+
         keyStore = await getKeyStoreOfDevice(userCreation.testUser, userCreation.testDevice, [provisionalResult.provisionalUserKeys]);
         userGroup = testGenerator.makeUserGroupCreation(userCreation, [], [provisionalResult.publicProvisionalUser]);
-        const group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
+        const group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroup.group);
       });
 
       it('can update a group with a userGroupAddition', async () => {
-        let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
+        let group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
         const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup, [userCreation2.user]);
         keyStore = await getKeyStoreOfDevice(userCreation2.testUser, userCreation2.testDevice);
-        group = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, keyStore);
+        group = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, keyStore, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroupAddition.group);
       });
 
       it('can update a group with a userGroupAddition from a provisional user', async () => {
-        let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
+        let group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
         const provisionalResult = await testGenerator.makeProvisionalUser();
+        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => provisionalResult.provisionalUserKeys }: any): ProvisionalIdentityManager);
+
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup, [], [provisionalResult.publicProvisionalUser]);
         keyStore = await getKeyStoreOfDevice(userCreation.testUser, userCreation.testDevice);
-        group = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, keyStore);
+        group = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, keyStore, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroupAddition.group);
       });
 
@@ -102,7 +111,7 @@ describe('GroupManagerHelper', () => {
         const encryptedGroupPrivateEncryptionKey = userGroupCreation.encrypted_group_private_encryption_keys_for_users[0];
         userGroup.userGroupEntry.encrypted_group_private_encryption_keys_for_users = [];
         keyStore = await getKeyStoreOfDevice(userCreation.testUser, userCreation.testDevice);
-        let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
+        let group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
         const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
 
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup, [userCreation2.user]);
@@ -111,7 +120,7 @@ describe('GroupManagerHelper', () => {
         encryptedGroupPrivateEncryptionKeyForUsers.push(encryptedGroupPrivateEncryptionKey);
         userGroupAddition.userGroupEntry.encrypted_group_private_encryption_keys_for_users = encryptedGroupPrivateEncryptionKeyForUsers;
 
-        group = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, keyStore);
+        group = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, keyStore, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroupAddition.group);
       });
     });
@@ -131,10 +140,11 @@ describe('GroupManagerHelper', () => {
         const userId = random(tcrypto.HASH_SIZE);
         userCreation = await testGenerator.makeUserCreation(userId);
         userGroup = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user], []);
+        provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
       });
 
-      it('can create an external group from a userGroupCreation action', () => {
-        const externalGroup = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
+      it('can create an external group from a userGroupCreation action', async () => {
+        const externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
         expect(externalGroup).to.deep.equal(getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry));
       });
 
@@ -145,27 +155,30 @@ describe('GroupManagerHelper', () => {
         let resultGroup = getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry);
         resultGroup = getExternalGroupFromUserGroupAddition(userGroupAddition.userGroupEntry, resultGroup);
 
-        let externalGroup = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
-        externalGroup = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, externalGroup, keyStore);
+        let externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
+        externalGroup = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, externalGroup, keyStore, provisionalIdentityManager);
         expect(externalGroup).to.deep.equal(resultGroup);
       });
 
       it('can create an external group from a userGroupCreation action with a provisional user', async () => {
         const provisionalResult = await testGenerator.makeProvisionalUser();
+        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => null }: any): ProvisionalIdentityManager);
+
         userGroup = testGenerator.makeUserGroupCreation(userCreation, [], [provisionalResult.publicProvisionalUser]);
-        const externalGroup = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
+        const externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
         expect(externalGroup).to.deep.equal(getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry));
       });
 
       it('can update an external group from a userGroupCreation action with a provisional user', async () => {
         const provisionalResult = await testGenerator.makeProvisionalUser();
+        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => null }: any): ProvisionalIdentityManager);
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup, [], [provisionalResult.publicProvisionalUser]);
 
         let resultGroup = getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry);
         resultGroup = getExternalGroupFromUserGroupAddition(userGroupAddition.userGroupEntry, resultGroup);
 
-        let externalGroup = groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore);
-        externalGroup = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, externalGroup, keyStore);
+        let externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, keyStore, provisionalIdentityManager);
+        externalGroup = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, externalGroup, keyStore, provisionalIdentityManager);
         expect(externalGroup).to.deep.equal(resultGroup);
       });
     });
@@ -186,10 +199,11 @@ describe('GroupManagerHelper', () => {
       const userGroupAddition3 = testGenerator.makeUserGroupAddition(userCreation, userGroup2, [userCreation3.user]);
 
       const keyStore = await getKeyStoreOfDevice(userCreation.testUser, userCreation.testDevice);
+      const provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
 
       const blocks = [userGroup.block, userGroup2.block, userGroupAddition2.block, userGroupAddition.block, userGroupAddition3.block].map(b => utils.toBase64(serializeBlock(b)));
 
-      const resultGroups = inflateFromBlocks(blocks, keyStore);
+      const resultGroups = await inflateFromBlocks(blocks, keyStore, provisionalIdentityManager);
 
       expect(resultGroups.length).to.deep.equal(2);
       const groupData = resultGroups[0];

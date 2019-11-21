@@ -1,8 +1,6 @@
 // @flow
 import { type DataStore, type TableSchema } from '@tanker/datastore-base';
 
-import type { ClaimEntry } from '../../Session/ProvisionalIdentity/Serialize';
-import ProvisionalIdentityClaimUnverifiedStore from './ProvisionalIdentityClaimUnverifiedStore';
 import UserUnverifiedStore from './UserUnverifiedStore';
 
 import type { UserEntry, DeviceCreationEntry, DeviceRevocationEntry } from '../../Users/Serialize';
@@ -28,8 +26,10 @@ const schemaTablesV4 = [
 
 const schemaTablesV6 = [
   ...schemaTablesV4,
-  ...ProvisionalIdentityClaimUnverifiedStore.tables,
-];
+  {
+    name: 'unverified_invite_claims',
+    indexes: [['index'], ['user_id']]
+  }];
 
 const schemaTablesV8 = schemaTablesV6.map<TableSchema>(def => {
   const deleted = ['unverified_user_groups', 'encryption_key_to_group_id'].indexOf(def.name) !== -1;
@@ -39,7 +39,6 @@ const schemaTablesV8 = schemaTablesV6.map<TableSchema>(def => {
 // Storage for unverified blocks of different natures
 export default class UnverifiedStore {
   userUnverifiedStore: UserUnverifiedStore;
-  provisionalIdentityClaimUnverifiedStore: ProvisionalIdentityClaimUnverifiedStore;
 
   static schemas = [
     {
@@ -79,13 +78,11 @@ export default class UnverifiedStore {
   static async open(ds: DataStore<*>): Promise<UnverifiedStore> {
     const store = new UnverifiedStore();
     store.userUnverifiedStore = await UserUnverifiedStore.open(ds);
-    store.provisionalIdentityClaimUnverifiedStore = await ProvisionalIdentityClaimUnverifiedStore.open(ds);
     return store;
   }
 
   async close(): Promise<void> {
     await this.userUnverifiedStore.close();
-    await this.provisionalIdentityClaimUnverifiedStore.close();
   }
 
   async addUnverifiedUserEntries(entries: Array<UserEntry>): Promise<void> {
@@ -117,17 +114,5 @@ export default class UnverifiedStore {
 
   async getUserIdFromDeviceId(deviceId: Uint8Array) {
     return this.userUnverifiedStore.getUserIdFromDeviceId(deviceId);
-  }
-
-  async addUnverifiedProvisionalIdentityClaimEntries(entries: Array<ClaimEntry>): Promise<void> {
-    return this.provisionalIdentityClaimUnverifiedStore.addUnverifiedProvisionalIdentityClaimEntries(entries);
-  }
-
-  async removeVerifiedProvisionalIdentityClaimEntries(entries: Array<ClaimEntry>): Promise<void> {
-    return this.provisionalIdentityClaimUnverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(entries);
-  }
-
-  async findUnverifiedProvisionalIdentityClaims(userId: Uint8Array): Promise<Array<ClaimEntry>> {
-    return this.provisionalIdentityClaimUnverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
   }
 }

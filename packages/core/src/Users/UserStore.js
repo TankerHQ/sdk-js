@@ -13,9 +13,6 @@ import { findIndex } from '../utils';
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
 import type { DeviceCreationEntry, DeviceRevocationEntry, UserEntry } from './Serialize';
 
-import type { ProvisionalUserKeyPairs } from '../Session/LocalUser/KeySafe';
-import { type ClaimEntry } from '../Session/ProvisionalIdentity/Serialize';
-
 type DeviceToUser = {
   deviceId: b64string,
   userId: b64string,
@@ -28,7 +25,6 @@ export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
 export type Callbacks = {
   deviceCreation: (entry: DeviceCreationEntry) => Promise<void>,
   deviceRevocation: (entry: DeviceRevocationEntry) => Promise<void>,
-  claim: (entry: ClaimEntry) => Promise<ProvisionalUserKeyPairs>,
 };
 
 function recordFromUser(user: User) {
@@ -104,17 +100,6 @@ export default class UserStore {
 
   setCallbacks = (callbacks: Callbacks) => {
     this._callbacks = callbacks;
-  }
-
-  async applyProvisionalIdentityClaims(entries: Array<ClaimEntry>): Promise<Array<ProvisionalUserKeyPairs>> {
-    const provisionalUserKeyPairs: Array<ProvisionalUserKeyPairs> = [];
-    for (const entry of entries) {
-      if (utils.equalArray(entry.user_id, this._userId)) {
-        const provisionalUserKeyPair = await this._callbacks.claim(entry);
-        provisionalUserKeyPairs.push(provisionalUserKeyPair);
-      }
-    }
-    return provisionalUserKeyPairs;
   }
 
   // all entries are verified

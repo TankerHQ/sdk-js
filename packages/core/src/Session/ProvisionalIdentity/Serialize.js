@@ -2,9 +2,10 @@
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import { type Block, hashBlock } from '../../Blocks/Block';
+import { hashBlock } from '../../Blocks/Block';
 import { type VerificationFields } from '../../Blocks/entries';
 import { getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
+import { unserializeBlock } from '../../Blocks/payloads';
 
 export type ProvisionalIdentityClaimRecord = {|
   user_id: Uint8Array,
@@ -63,7 +64,8 @@ export function unserializeProvisionalIdentityClaim(src: Uint8Array): Provisiona
   ]);
 }
 
-export function provisionalIdentityClaimFromBlock(block: Block): ClaimEntry {
+export function provisionalIdentityClaimFromBlock(b64Block: string): ClaimEntry {
+  const block = unserializeBlock(utils.fromBase64(b64Block));
   const author = block.author;
   const signature = block.signature;
   const nature = block.nature;

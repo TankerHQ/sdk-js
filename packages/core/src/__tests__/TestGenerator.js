@@ -451,7 +451,7 @@ class TestGenerator {
     block.index = this._trustchainIndex;
 
     return {
-      unverifiedProvisionalIdentityClaim: provisionalIdentityClaimFromBlock(block),
+      unverifiedProvisionalIdentityClaim: provisionalIdentityClaimFromBlock(utils.toBase64(serializeBlock(block))),
       block,
     };
   }

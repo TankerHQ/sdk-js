@@ -169,7 +169,7 @@ export default class GroupManager {
   }
 
   async _groupsFromBlocks(blocks: Array<b64string>): Promise<Array<Group>> {
-    const groupsData = inflateFromBlocks(blocks, this._keystore);
+    const groupsData = await inflateFromBlocks(blocks, this._keystore, this._provisionalIdentityManager);
     const groupsDataWithDevices = await this._populateDevices(groupsData);
     groupsDataWithDevices.forEach(g => verifyGroup(g));
     return groupsDataWithDevices.map(g => g[g.length - 1].group);

@@ -17,16 +17,11 @@ import {
 } from '../Users/Serialize';
 
 import {
-  provisionalIdentityClaimFromBlock,
-} from '../Session/ProvisionalIdentity/Serialize';
-
-import {
   isKeyPublish,
   isUserGroup,
   isDeviceCreation,
   isDeviceRevocation,
   isTrustchainCreation,
-  isProvisionalIdentityClaim,
 } from '../Blocks/Nature';
 
 import { unserializeBlock } from '../Blocks/payloads';
@@ -140,6 +135,7 @@ export default class TrustchainPuller {
       extra_groups: extraGroups,
       on_demand_key_publishes: true,
       on_demand_user_groups: true,
+      on_demand_claims: true,
     });
     await this._processNewBlocks(blocks);
 
@@ -150,7 +146,6 @@ export default class TrustchainPuller {
 
   _processNewBlocks = async (b64Blocks: Array<string>) => {
     const userEntries = [];
-    const claims = [];
     let trustchainCreationEntry = null;
     let maxBlockIndex = 0;
 
@@ -171,8 +166,6 @@ export default class TrustchainPuller {
         const userEntry = await this._deviceRevocationFromBlock(block);
         userEntries.push(userEntry);
         userIds.push(userEntry.user_id);
-      } else if (isProvisionalIdentityClaim(block.nature)) {
-        claims.push(provisionalIdentityClaimFromBlock(block));
       } else if (isTrustchainCreation(block.nature)) {
         trustchainCreationEntry = trustchainCreationFromBlock(b64Block);
       } else if (!isKeyPublish(block.nature) && !isUserGroup(block.nature)) {
@@ -185,14 +178,10 @@ export default class TrustchainPuller {
     }
 
     await this._unverifiedStore.addUnverifiedUserEntries(userEntries);
-    await this._unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries(claims);
     await this._trustchainStore.updateLastBlockIndex(maxBlockIndex);
 
     if (userIds.length) {
       await this._trustchainVerifier.updateUserStore(userIds);
-    }
-    if (claims.length) {
-      await this._trustchainVerifier.verifyClaimsForUser(this._userId);
     }
   };
 

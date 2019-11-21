@@ -7,12 +7,13 @@ import { type SecretProvisionalIdentity, type PublicProvisionalIdentity, type Pu
 import { VerificationNeeded } from '../../errors.internal';
 
 import { Client, b64RequestObject } from '../../Network/Client';
-import LocalUser from '../LocalUser/LocalUser';
-import Trustchain from '../../Trustchain/Trustchain';
-import Storage from '../Storage';
+import LocalUser, { type PrivateProvisionalKeys } from '../LocalUser/LocalUser';
 import { formatVerificationRequest } from '../requests';
 import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../types';
 import UserAccessor from '../../Users/UserAccessor';
+
+import { provisionalIdentityClaimFromBlock } from './Serialize';
+import { verifyProvisionalIdentityClaim } from './Verify';
 
 type TankerProvisionalKeys = {
   tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
@@ -37,28 +38,23 @@ const tankerProvisionalKeys = (serverResult) => {
 };
 
 export default class ProvisionalIdentityManager {
-  _trustchain: Trustchain;
   _client: Client;
   _localUser: LocalUser;
-  _storage: Storage;
   _userAccessor: UserAccessor;
   _provisionalIdentity: SecretProvisionalIdentity;
 
   constructor(
-    trustchain: Trustchain,
     client: Client,
     localUser: LocalUser,
-    storage: Storage,
     userAccessor: UserAccessor,
   ) {
-    this._trustchain = trustchain;
     this._client = client;
-    this._storage = storage;
     this._localUser = localUser;
     this._userAccessor = userAccessor;
   }
 
   async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: EmailVerificationMethod }> {
+    await this._refreshProvisionalPrivateKeys();
     const hasClaimed = this._localUser.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
 
     if (hasClaimed) {
@@ -113,6 +109,16 @@ export default class ProvisionalIdentityManager {
     delete this._provisionalIdentity;
   }
 
+  async getPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): Promise<?PrivateProvisionalKeys> {
+    const provisionalUserKeyPairs = this._localUser.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
+
+    if (provisionalUserKeyPairs) {
+      return provisionalUserKeyPairs;
+    }
+    await this._refreshProvisionalPrivateKeys();
+    return this._localUser.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
+  }
+
   async getProvisionalUsers(provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> {
     if (provisionalIdentities.length === 0)
       return [];
@@ -157,6 +163,35 @@ export default class ProvisionalIdentityManager {
     return tankerProvisionalKeys(result);
   }
 
+  async _refreshProvisionalPrivateKeys() {
+    const claimBlocks = await this._client.send('get my claim blocks');
+
+    for (const claimBlock of claimBlocks) {
+      const claimEntry = provisionalIdentityClaimFromBlock(claimBlock);
+      const authorDevice = await this._userAccessor.fetchDeviceByDeviceId(claimEntry.author);
+      verifyProvisionalIdentityClaim(claimEntry, authorDevice, this._localUser.userId);
+
+      const privateProvisionalKeys = this._decryptPrivateProvisionalKeys(claimEntry.recipient_user_public_key, claimEntry.encrypted_provisional_identity_private_keys);
+
+      await this._localUser.storeProvisionalUserKey(
+        claimEntry.app_provisional_identity_signature_public_key,
+        claimEntry.tanker_provisional_identity_signature_public_key,
+        privateProvisionalKeys
+      );
+    }
+  }
+
+  _decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): PrivateProvisionalKeys {
+    const userKeyPair = this._localUser.findUserKey(recipientUserPublicKey);
+
+    const provisionalUserPrivateKeys = tcrypto.sealDecrypt(encryptedPrivateProvisionalKeys, userKeyPair);
+    const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
+
+    const tankerEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
+
+    return { appEncryptionKeyPair, tankerEncryptionKeyPair };
+  }
+
   async _verifyAndGetProvisionalIdentityKeys(verification: EmailVerification | OIDCVerification): Promise<?TankerProvisionalKeys> {
     const result = await this._client.send('get provisional identity', b64RequestObject({
       verification: formatVerificationRequest(verification, this._localUser),
@@ -177,6 +212,5 @@ export default class ProvisionalIdentityManager {
     const block = this._localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this._localUser.userId, userPubKey, provisionalUserKeys);
 
     await this._client.sendBlock(block);
-    await this._trustchain.sync();
   }
 }
