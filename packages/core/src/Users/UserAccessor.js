@@ -1,4 +1,5 @@
 // @flow
+import find from 'array-find';
 
 import { utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
@@ -74,5 +75,25 @@ export default class UserAccessor {
 
     const message = `The following identities are invalid or do not exist on the trustchain: "${invalidPublicIdentities.join('", "')}"`;
     throw new InvalidArgument(message);
+  }
+
+  async fetchDeviceByDeviceId(deviceId: Uint8Array, groupId: ?Uint8Array) {
+    let user = await this.findUserByDeviceId({ deviceId });
+    if (!user) {
+      if (groupId) {
+        await this._trustchain.sync([], [groupId]);
+      } else {
+        await this._trustchain.sync([], []);
+      }
+      user = await this.findUserByDeviceId({ deviceId });
+      if (!user) {
+        throw new InternalError('Assertion error: unknown user');
+      }
+    }
+    const device = find(user.devices, d => utils.equalArray(d.deviceId, deviceId));
+    if (!device) {
+      throw new InternalError('Assertion error: device not found');
+    }
+    return device;
   }
 }
