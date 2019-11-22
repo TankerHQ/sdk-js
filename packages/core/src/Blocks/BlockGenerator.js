@@ -6,7 +6,7 @@ import { type PublicProvisionalUser, type ProvisionalUserKeys } from '@tanker/id
 
 import {
   serializeProvisionalIdentityClaim,
-} from './payloads';
+} from '../Session/ProvisionalIdentity/Serialize';
 
 import {
   type DeviceCreationRecord,

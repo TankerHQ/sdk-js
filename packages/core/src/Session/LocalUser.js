@@ -7,7 +7,8 @@ import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/ide
 
 import KeyStore from './KeyStore';
 import BlockGenerator from '../Blocks/BlockGenerator';
-import type { VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
+
+import type { ClaimEntry } from './ProvisionalIdentity/Serialize';
 import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
 import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../utils';
@@ -57,7 +58,7 @@ export class LocalUser extends EventEmitter {
     this._deviceId = this._keyStore.deviceId;
   }
 
-  applyProvisionalIdentityClaim = async (provisionalIdentityClaim: VerifiedProvisionalIdentityClaim): Promise<ProvisionalUserKeyPairs> => {
+  applyProvisionalIdentityClaim = async (provisionalIdentityClaim: ClaimEntry): Promise<ProvisionalUserKeyPairs> => {
     if (!utils.equalArray(provisionalIdentityClaim.user_id, this.userId))
       throw new InternalError('Assertion error: can not apply a claim to another user');
 

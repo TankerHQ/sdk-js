@@ -1,9 +1,7 @@
 // @flow
 import { type DataStore, type TableSchema } from '@tanker/datastore-base';
 
-import type {
-  UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim,
-} from '../../Blocks/entries';
+import type { ClaimEntry } from '../../Session/ProvisionalIdentity/Serialize';
 import ProvisionalIdentityClaimUnverifiedStore from './ProvisionalIdentityClaimUnverifiedStore';
 import UserUnverifiedStore from './UserUnverifiedStore';
 
@@ -121,15 +119,15 @@ export default class UnverifiedStore {
     return this.userUnverifiedStore.getUserIdFromDeviceId(deviceId);
   }
 
-  async addUnverifiedProvisionalIdentityClaimEntries(entries: Array<UnverifiedProvisionalIdentityClaim>): Promise<void> {
+  async addUnverifiedProvisionalIdentityClaimEntries(entries: Array<ClaimEntry>): Promise<void> {
     return this.provisionalIdentityClaimUnverifiedStore.addUnverifiedProvisionalIdentityClaimEntries(entries);
   }
 
-  async removeVerifiedProvisionalIdentityClaimEntries(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<void> {
+  async removeVerifiedProvisionalIdentityClaimEntries(entries: Array<ClaimEntry>): Promise<void> {
     return this.provisionalIdentityClaimUnverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(entries);
   }
 
-  async findUnverifiedProvisionalIdentityClaims(userId: Uint8Array): Promise<Array<UnverifiedProvisionalIdentityClaim>> {
+  async findUnverifiedProvisionalIdentityClaims(userId: Uint8Array): Promise<Array<ClaimEntry>> {
     return this.provisionalIdentityClaimUnverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
   }
 }

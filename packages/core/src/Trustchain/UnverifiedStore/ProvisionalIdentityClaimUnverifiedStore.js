@@ -4,7 +4,7 @@ import { utils } from '@tanker/crypto';
 import { type DataStore } from '@tanker/datastore-base';
 
 import { entryToDbEntry, dbEntryToEntry } from '../../Blocks/entries';
-import type { UnverifiedProvisionalIdentityClaim, VerifiedProvisionalIdentityClaim } from '../../Blocks/entries';
+import type { ClaimEntry } from '../../Session/ProvisionalIdentity/Serialize';
 
 const UNVERIFIED_CLAIMS_TABLE = 'unverified_invite_claims'; // Table that stores our unverified claim blocks
 
@@ -30,7 +30,7 @@ export default class ProvisionalIdentityClaimUnverifiedStore {
     this._ds = null;
   }
 
-  async addUnverifiedProvisionalIdentityClaimEntries(entries: Array<UnverifiedProvisionalIdentityClaim>): Promise<void> {
+  async addUnverifiedProvisionalIdentityClaimEntries(entries: Array<ClaimEntry>): Promise<void> {
     if (entries.length === 0)
       return;
     const mapEntry = new Map();
@@ -41,7 +41,7 @@ export default class ProvisionalIdentityClaimUnverifiedStore {
     await this._ds.bulkAdd(UNVERIFIED_CLAIMS_TABLE, [...mapEntry.values()]);
   }
 
-  async findUnverifiedProvisionalIdentityClaims(userId: Uint8Array): Promise<Array<UnverifiedProvisionalIdentityClaim>> {
+  async findUnverifiedProvisionalIdentityClaims(userId: Uint8Array): Promise<Array<ClaimEntry>> {
     const userIdBase64 = utils.toBase64(userId);
     const entries = await this._ds.find(UNVERIFIED_CLAIMS_TABLE, {
       selector: {
@@ -53,7 +53,7 @@ export default class ProvisionalIdentityClaimUnverifiedStore {
     return entries.map(dbEntryToEntry);
   }
 
-  async removeVerifiedProvisionalIdentityClaimEntries(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<void> {
+  async removeVerifiedProvisionalIdentityClaimEntries(entries: Array<ClaimEntry>): Promise<void> {
     for (const entry of entries) {
       await this._ds.delete(UNVERIFIED_CLAIMS_TABLE, utils.toBase64(entry.author_signature_by_app_key));
     }

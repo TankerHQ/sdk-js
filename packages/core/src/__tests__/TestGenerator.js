@@ -6,7 +6,10 @@ import KeyStore from '../Session/KeyStore';
 
 import {
   provisionalIdentityClaimFromBlock,
-  type UnverifiedProvisionalIdentityClaim,
+  type ClaimEntry,
+} from '../Session/ProvisionalIdentity/Serialize';
+
+import {
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
 
@@ -105,7 +108,7 @@ export type TestUserGroup = {
 };
 
 export type TestIdentityClaim = {
-  unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim,
+  unverifiedProvisionalIdentityClaim: ClaimEntry,
   block: Block,
 };
 
