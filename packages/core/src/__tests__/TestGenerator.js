@@ -27,7 +27,7 @@ import { serializeBlock } from '../Blocks/payloads';
 
 import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 import { type Group } from '../Groups/types';
-import { type KeyPublish, newKeyPublish } from '../DataProtection/Resource/keyPublish';
+import { type KeyPublishEntry, getKeyPublishEntryFromBlock } from '../DataProtection/Resource/keyPublish';
 
 import { rootBlockAuthor } from '../Session/Verify';
 
@@ -93,7 +93,7 @@ export type TestDeviceRevocation = {
 
 export type TestKeyPublish = {
   block: Block,
-  keyPublish: KeyPublish,
+  keyPublish: KeyPublishEntry,
   resourceId: Uint8Array,
   resourceKey: Uint8Array
 };
@@ -379,7 +379,7 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishBlock(lastUserKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user);
     block.index = this._trustchainIndex;
 
-    const keyPublish = newKeyPublish(utils.toBase64(serializeBlock(block)));
+    const keyPublish = getKeyPublishEntryFromBlock(utils.toBase64(serializeBlock(block)));
     return {
       keyPublish,
       block,
@@ -401,7 +401,7 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishBlock(recipient.publicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
     block.index = this._trustchainIndex;
 
-    const keyPublish = newKeyPublish(utils.toBase64(serializeBlock(block)));
+    const keyPublish = getKeyPublishEntryFromBlock(utils.toBase64(serializeBlock(block)));
     return {
       keyPublish,
       block,
@@ -424,7 +424,7 @@ class TestGenerator {
     const block = blockGenerator.makeKeyPublishToProvisionalUserBlock(recipient, resourceKey, resourceId);
     block.index = this._trustchainIndex;
 
-    const keyPublish = newKeyPublish(utils.toBase64(serializeBlock(block)));
+    const keyPublish = getKeyPublishEntryFromBlock(utils.toBase64(serializeBlock(block)));
     return {
       keyPublish,
       block,

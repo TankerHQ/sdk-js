@@ -13,6 +13,11 @@ import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../utils';
 import type { UserData, DelegationToken } from './UserData';
 
+export type PrivateProvisionalKeys = {|
+  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
+  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
+|}
+
 export class LocalUser extends EventEmitter {
   _userData: UserData;
   _deviceId: ?Uint8Array;
@@ -198,7 +203,31 @@ export class LocalUser extends EventEmitter {
 
   findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
 
-  findProvisionalUserKey = (recipient: Uint8Array) => this._keyStore.provisionalUserKeys[utils.toBase64(recipient)]
+  findProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): ?PrivateProvisionalKeys => {
+    const id = utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey);
+    const result = this._keyStore.provisionalUserKeys[utils.toBase64(id)];
+    if (result) {
+      const { appEncryptionKeyPair, tankerEncryptionKeyPair } = result;
+      return { appEncryptionKeyPair, tankerEncryptionKeyPair };
+    }
+    return null;
+  }
+
+  storeProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array, privateProvisionalKeys: PrivateProvisionalKeys) => {
+    const id = utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey);
+    return this._keyStore.addProvisionalUserKeys(utils.toBase64(id), privateProvisionalKeys.appEncryptionKeyPair, privateProvisionalKeys.tankerEncryptionKeyPair);
+  }
+
+  decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): PrivateProvisionalKeys {
+    const userKeyPair = this.findUserKey(recipientUserPublicKey);
+
+    const provisionalUserPrivateKeys = tcrypto.sealDecrypt(encryptedPrivateProvisionalKeys, userKeyPair);
+    const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
+
+    const tankerEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
+
+    return { appEncryptionKeyPair, tankerEncryptionKeyPair };
+  }
 
   hasClaimedProvisionalIdentity = (provisionalIdentity: SecretProvisionalIdentity) => {
     const appPublicEncryptionKey = provisionalIdentity.public_encryption_key;

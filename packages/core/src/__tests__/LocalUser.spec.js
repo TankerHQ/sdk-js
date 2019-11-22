@@ -105,13 +105,6 @@ describe('Local User', () => {
       expect([deviceRevocation.testUser.userKeys[1], deviceRevocation.testUser.userKeys[0]]).excluding('index').to.deep.equal(keyStore.userKeys);
       expect(deviceRevocation.testUser.userKeys[1]).excluding('index').to.deep.equal(localUser.currentUserKey);
     });
-
-    it('stores provisional identity keys', async () => {
-      await localUser.applyDeviceCreation(deviceCreation2.unverifiedDeviceCreation);
-      const claim = testGenerator.makeProvisionalIdentityClaim(deviceCreation1, localUser.userId, localUser.currentUserKey.publicKey);
-      await localUser.applyProvisionalIdentityClaim(claim.unverifiedProvisionalIdentityClaim);
-      expect(keyStore.provisionalUserKeys.length).to.equal(1);
-    });
   });
 
   describe('with revocation after own creation', () => {
