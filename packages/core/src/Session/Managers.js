@@ -11,6 +11,7 @@ import { Client } from '../Network/Client';
 import { DataProtector } from '../DataProtection/DataProtector';
 import DeviceManager from './DeviceManager';
 import CloudStorageManager from '../CloudStorage/CloudStorageManager';
+import ProvisionalIdentityManager from './ProvisionalIdentity/ProvisionalIdentityManager';
 
 export class Managers {
   userAccessor: UserAccessor;
@@ -19,9 +20,11 @@ export class Managers {
   dataProtector: DataProtector;
   deviceManager: DeviceManager;
   cloudStorageManager: CloudStorageManager;
+  provisionalIdentityManager: ProvisionalIdentityManager;
 
   constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client) {
     this.userAccessor = new UserAccessor(storage.userStore, trustchain, localUser.trustchainId, localUser.userId);
+    this.provisionalIdentityManager = new ProvisionalIdentityManager(trustchain, client, localUser, storage, this.userAccessor);
 
     this.groupManager = new GroupManager(
       localUser,
@@ -29,6 +32,7 @@ export class Managers {
       storage.groupStore,
       storage.keyStore,
       this.userAccessor,
+      this.provisionalIdentityManager,
       client,
     );
 
@@ -38,6 +42,7 @@ export class Managers {
       this.groupManager,
       localUser,
       this.userAccessor,
+      this.provisionalIdentityManager
     );
 
     this.deviceManager = new DeviceManager(

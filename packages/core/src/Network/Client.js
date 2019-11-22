@@ -2,9 +2,8 @@
 
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
-import { tcrypto, generichash, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
-import { type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { type Block } from '../Blocks/Block';
 import { serializeBlock } from '../Blocks/payloads';
@@ -273,31 +272,5 @@ export class Client extends EventEmitter {
   sendKeyPublishBlocks = async (blocks: Array<Block>): Promise<void> => {
     const serializedBlocks = blocks.map(block => serializeBlock({ index: 0, ...block }));
     await this.send('push keys', b64RequestObject(serializedBlocks));
-  }
-
-  getProvisionalUsers = async (provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> => {
-    if (provisionalIdentities.length === 0)
-      return [];
-
-    const request = provisionalIdentities.map(provisionalIdentity => {
-      if (provisionalIdentity.target !== 'email') {
-        throw new InvalidArgument(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
-      }
-      const email = generichash(utils.fromString(provisionalIdentity.value));
-      return { type: 'email', hashed_email: email };
-    });
-
-    // Note: public keys are returned in an array matching the original order of provisional identities in the request
-    const tankerPublicKeys = await this.send('get public provisional identities', b64RequestObject(request));
-
-    return tankerPublicKeys.map((tpk, i) => ({
-      trustchainId: utils.fromBase64(provisionalIdentities[i].trustchain_id),
-      target: provisionalIdentities[i].target,
-      value: provisionalIdentities[i].value,
-      appEncryptionPublicKey: utils.fromBase64(provisionalIdentities[i].public_encryption_key),
-      appSignaturePublicKey: utils.fromBase64(provisionalIdentities[i].public_signature_key),
-      tankerEncryptionPublicKey: utils.fromBase64(tpk.encryption_public_key),
-      tankerSignaturePublicKey: utils.fromBase64(tpk.signature_public_key),
-    }));
   }
 }

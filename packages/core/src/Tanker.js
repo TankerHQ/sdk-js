@@ -255,13 +255,13 @@ export class Tanker extends EventEmitter {
 
     const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
 
-    return this._session.deviceManager.attachProvisionalIdentity(provisionalIdentityObj);
+    return this._session.provisionalIdentityManager.attachProvisionalIdentity(provisionalIdentityObj);
   }
 
   async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification): Promise<void> {
     this.assert(statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
-    return this._session.deviceManager.verifyProvisionalIdentity(verification);
+    return this._session.provisionalIdentityManager.verifyProvisionalIdentity(verification);
   }
 
   _parseIdentity(identityB64: b64string) {

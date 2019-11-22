@@ -201,6 +201,7 @@ export class Session extends EventEmitter {
   }
 
   get userAccessor() { return this._managers.userAccessor; }
+  get provisionalIdentityManager() { return this._managers.provisionalIdentityManager; }
   get deviceManager() { return this._managers.deviceManager; }
   get groupManager() { return this._managers.groupManager; }
   get cloudStorageManager() { return this._managers.cloudStorageManager; }
