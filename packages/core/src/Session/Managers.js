@@ -2,18 +2,17 @@
 
 import Trustchain from '../Trustchain/Trustchain';
 import UserAccessor from '../Users/UserAccessor';
-import Storage from '../Session/Storage';
+import Storage from './Storage';
 
-import LocalUser from '../Session/LocalUser';
+import LocalUser from './LocalUser';
 import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';
 import { DataProtector } from '../DataProtection/DataProtector';
 import DeviceManager from './DeviceManager';
-import CloudStorageManager from './CloudStorageManager';
+import CloudStorageManager from '../CloudStorage/CloudStorageManager';
 
-
-export class Apis {
+export class Managers {
   userAccessor: UserAccessor;
   groupManager: GroupManager;
 
@@ -23,6 +22,7 @@ export class Apis {
 
   constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client) {
     this.userAccessor = new UserAccessor(storage.userStore, trustchain, localUser.trustchainId, localUser.userId);
+
     this.groupManager = new GroupManager(
       localUser,
       trustchain,

@@ -7,11 +7,11 @@ import { type SecretProvisionalIdentity } from '@tanker/identity';
 import { VerificationNeeded } from '../errors.internal';
 
 import { Client, b64RequestObject } from '../Network/Client';
-import LocalUser from '../Session/LocalUser';
+import LocalUser from './LocalUser';
 import Trustchain from '../Trustchain/Trustchain';
-import Storage from '../Session/Storage';
-import { formatVerificationRequest } from '../Session/requests';
-import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../Session/types';
+import Storage from './Storage';
+import { formatVerificationRequest } from './requests';
+import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from './types';
 import UserAccessor from '../Users/UserAccessor';
 
 type TankerProvisionalKeys = {
