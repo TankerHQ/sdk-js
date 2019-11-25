@@ -8,9 +8,8 @@ import TrustchainStore from './TrustchainStore';
 import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 
 import {
-  blockToEntry,
-  type UnverifiedTrustchainCreation,
-} from '../Blocks/entries';
+  trustchainCreationFromBlock
+} from '../Session/LocalUser/Serialize';
 
 import {
   deviceCreationFromBlock,
@@ -175,16 +174,14 @@ export default class TrustchainPuller {
       } else if (isProvisionalIdentityClaim(block.nature)) {
         claims.push(provisionalIdentityClaimFromBlock(block));
       } else if (isTrustchainCreation(block.nature)) {
-        trustchainCreationEntry = blockToEntry(block);
+        trustchainCreationEntry = trustchainCreationFromBlock(b64Block);
       } else if (!isKeyPublish(block.nature) && !isUserGroup(block.nature)) {
         throw new InternalError('Assertion error: Unexpected nature in trustchain puller callback');
       }
     }
 
     if (trustchainCreationEntry) {
-      const trustchainCreation: UnverifiedTrustchainCreation = { ...trustchainCreationEntry, ...trustchainCreationEntry.payload_unverified };
-      // force trustchain creation verification (to avoid corner cases)
-      await this._trustchainVerifier.verifyTrustchainCreation(trustchainCreation);
+      await this._trustchainVerifier.verifyTrustchainCreation(trustchainCreationEntry);
     }
 
     await this._unverifiedStore.addUnverifiedUserEntries(userEntries);

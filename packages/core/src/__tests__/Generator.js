@@ -2,13 +2,13 @@
 import { tcrypto, utils } from '@tanker/crypto';
 import { obfuscateUserId } from '@tanker/identity';
 
-import { blockToEntry } from '../Blocks/entries';
 import type { UnverifiedEntry } from '../Blocks/entries';
 
-import { serializeTrustchainCreation, SEALED_KEY_SIZE } from '../Blocks/payloads';
+import { SEALED_KEY_SIZE, serializeBlock } from '../Blocks/payloads';
+import { type TrustchainCreationEntry, serializeTrustchainCreation, trustchainCreationFromBlock } from '../Session/LocalUser/Serialize';
 import type { Device } from '../Users/types';
 
-import { signBlock, type Block } from '../Blocks/Block';
+import { signBlock, hashBlock, type Block } from '../Blocks/Block';
 
 
 import { serializeUserDeviceV3, type DeviceCreationRecord, type DeviceCreationEntry, deviceCreationFromBlock } from '../Users/Serialize';
@@ -72,7 +72,7 @@ class Generator {
   trustchainIndex: number = 1;
   appSignKeys: Object;
   pushedBlocks: Array<Block>;
-  root: { block: Block, entry: UnverifiedEntry };
+  root: { block: Block, entry: TrustchainCreationEntry };
   users: { [userId: string]: GeneratorUser } = {};
   usersDevices: { [deviceId: string]: string } = {};
 
@@ -82,7 +82,7 @@ class Generator {
     this.pushedBlocks = [rootBlock];
     this.root = {
       block: rootBlock,
-      entry: blockToEntry(rootBlock),
+      entry: trustchainCreationFromBlock(utils.toBase64(serializeBlock(rootBlock))),
     };
   }
 
@@ -96,7 +96,7 @@ class Generator {
       author: rootBlockAuthor,
       payload: serializeTrustchainCreation(payload),
       signature: new Uint8Array(tcrypto.SIGNATURE_SIZE) };
-    rootBlock.trustchain_id = blockToEntry(rootBlock).hash;
+    rootBlock.trustchain_id = hashBlock(rootBlock);
     return new Generator(rootBlock.trustchain_id, rootBlock, appSignKeys);
   }
 

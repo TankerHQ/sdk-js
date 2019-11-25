@@ -2,13 +2,9 @@
 import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import {
-  type Record,
-  unserializePayload,
-} from './payloads';
+import { type Record } from './payloads';
 
 import { type Nature } from './Nature';
-import { type Block, hashBlock } from './Block';
 
 export type VerificationFields = {|
   index: number,
@@ -85,34 +81,3 @@ export function dbEntryToEntry(dbEntry: any): any {
   });
   return result;
 }
-
-function verificationFieldsFromBlock(block: Block): VerificationFields {
-  const { index, author, nature, signature } = block;
-
-  return {
-    index,
-    nature,
-    author,
-    signature,
-    hash: hashBlock(block),
-  };
-}
-
-export function blockToEntry(block: Block): UnverifiedEntry { /* eslint-disable camelcase */
-  const verificationFields = verificationFieldsFromBlock(block);
-  const payload_unverified = unserializePayload(block);
-  // $FlowFixMe flow is right, Record may or may not contain any of these fields
-  const { user_id, public_signature_key } = payload_unverified;
-
-  return {
-    ...verificationFields,
-    payload_unverified,
-    public_signature_key,
-    user_id,
-  };
-}
-
-export type UnverifiedTrustchainCreation = {
-  ...VerificationFields,
-  public_signature_key: Uint8Array,
-};
