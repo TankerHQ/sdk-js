@@ -133,7 +133,7 @@ def get_run_env(env: str) -> Dict[str, str]:
 def run_tests_in_browser(*, env: str, runner: str) -> None:
     run_env = get_run_env(env)
     if runner == "linux":
-        ci.js.run_yarn("karma", "--browsers", "ChromiumInDocker", env=run_env)
+        ci.js.run_yarn("karma", "--browsers", "ChromeInDocker", env=run_env)
     elif runner == "macos":
         ci.run("killall", "Safari", check=False)
         delete_safari_state()
