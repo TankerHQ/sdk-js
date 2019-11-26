@@ -3,7 +3,6 @@ import Socket from 'socket.io-client';
 import { NetworkError } from '@tanker/errors';
 
 import PromiseWrapper from '../PromiseWrapper';
-import SynchronizedEventEmitter, { type ListenerFn } from '../SynchronizedEventEmitter';
 
 class Request extends PromiseWrapper<string> {
   eventName: string;
@@ -25,11 +24,6 @@ function logSocketError(err: any, eventName?: string): void {
  *
  *     The original emit() takes a callback and the callback is only called on
  *     success, which usually leads to deadlocks.
- *
- *   - on() returns an id which can be used to remove the listener
- *
- *   - removeListener() takes a listener id as argument, is asynchronous and will wait
- *     for the running callbacks to complete before returning.
  */
 
 export type SdkInfo = {
@@ -45,30 +39,32 @@ type CreationParam = {
   sdkInfo: SdkInfo,
 };
 
+type Handler = (...args: Array<mixed>) => void | Promise<void>;
+
+export type Listener = $Exact<{ event: string, handler: Handler }>;
+
 export default class SocketIoWrapper {
   socket: Socket;
-  synchronizedSocket: SynchronizedEventEmitter<Socket>;
   runningRequests: Array<Request> = [];
 
   constructor({ socket, url, connectTimeout, sdkInfo }: CreationParam) {
     this.socket = socket || new Socket(url, { timeout: connectTimeout, transports: ['websocket', 'polling'], autoConnect: false, query: sdkInfo });
     this.socket.on('error', e => logSocketError(e, 'error'));
-    this.socket.on('session error', reason => this.abortRequests(new NetworkError(`socket disconnected by server: ${reason}`)));
     this.socket.on('disconnect', reason => this.abortRequests(new NetworkError(`socket disconnected: ${reason}`)));
-    this.synchronizedSocket = new SynchronizedEventEmitter(this.socket);
+    this.socket.on('session error', reason => this.abortRequests(new NetworkError(`socket disconnected by server: ${reason}`)));
   }
 
-  open = () => { this.socket.open(); }
+  open = () => this.socket.open();
 
-  close = () => { this.socket.close(); }
+  close = () => this.socket.close();
 
-  isOpen = () => this.socket.connected
+  isOpen = () => this.socket.connected;
 
-  on = (event: string, listener: ListenerFn): number => this.synchronizedSocket.on(event, listener);
+  on = (event: string, handler: Handler): number => this.socket.on(event, handler);
 
-  once = (event: string, listener: ListenerFn): number => this.synchronizedSocket.once(event, listener);
+  once = (event: string, handler: Handler): number => this.socket.once(event, handler);
 
-  removeListener = async (id: number) => this.synchronizedSocket.removeListener(id);
+  removeListener = async (event: string, handler: Handler) => this.socket.removeListener(event, handler);
 
   abortRequests = (error: Error): void => {
     // reject all running requests and mark them as done
