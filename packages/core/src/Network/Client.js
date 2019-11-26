@@ -95,6 +95,18 @@ export class Client extends EventEmitter {
     if (!opts.url) { opts.url = defaultApiAddress; }
 
     this.socket = new SocketIoWrapper(opts);
+
+    this.registerListener('session error', (reason) => {
+      const error = new PreconditionFailed(`socket disconnected by server: ${reason}`);
+
+      this.socket.abortRequests(error);
+
+      // Avoid firing unhandled events when the client is opening and
+      // the enclosing session is not available yet.
+      if (this.listenerCount('error') > 0) {
+        this.emit('error', error);
+      }
+    });
   }
 
   authenticate = async (userId: Uint8Array, signatureKeyPair: tcrypto.SodiumKeyPair) => {
@@ -108,7 +120,7 @@ export class Client extends EventEmitter {
     });
 
     this.registerListener('reconnect', () => {
-      this._authenticate().catch((e) => this.emit('authentication_failed', e));
+      this._authenticate().catch(error => this.emit('error', error));
     });
     return this._authenticate();
   }

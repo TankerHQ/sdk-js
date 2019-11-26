@@ -38,8 +38,10 @@ export class Session extends EventEmitter {
     this._client = client;
     this._status = statuses.STOPPED;
 
+    this._client.on('error', (e) => this.onError(e));
+
     this._localUserManager = new LocalUserManager(userData, client, storage.keyStore);
-    this._localUserManager.on('authentication_failed', this.close);
+    this._localUserManager.on('error', (e) => this.onError(e));
 
     this._userManager = new UserManager(client, this._localUserManager.localUser);
     this._provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, this._localUserManager, this._userManager);
@@ -87,6 +89,14 @@ export class Session extends EventEmitter {
     await this._storage.nuke();
     this._status = statuses.STOPPED;
   }
+
+  onError = (e: Error) => {
+    // OperationCanceled: thrown if you never managed to authenticate and the session gets closed
+    if (!(e instanceof NetworkError) && !(e instanceof OperationCanceled)) {
+      console.error(e);
+      this.emit('fatal_error', e);
+    }
+  };
 
   createUser = async (...args: any) => {
     await this._localUserManager.createUser(...args);

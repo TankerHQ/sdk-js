@@ -51,7 +51,6 @@ export default class SocketIoWrapper {
     this.socket = socket || new Socket(url, { timeout: connectTimeout, transports: ['websocket', 'polling'], autoConnect: false, query: sdkInfo });
     this.socket.on('error', e => logSocketError(e, 'error'));
     this.socket.on('disconnect', reason => this.abortRequests(new NetworkError(`socket disconnected: ${reason}`)));
-    this.socket.on('session error', reason => this.abortRequests(new NetworkError(`socket disconnected by server: ${reason}`)));
   }
 
   open = () => this.socket.open();

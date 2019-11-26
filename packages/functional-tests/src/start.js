@@ -34,7 +34,7 @@ const generateStartTests = (args: TestArgs) => {
       const userId = 'bob';
       bobIdentity = await createIdentity(nonExistentB64AppId, nonExistentB64AppSecret, userId);
       bobLaptop = args.makeTanker(nonExistentB64AppId);
-      await expect(bobLaptop.start(bobIdentity)).to.be.rejectedWith(errors.NetworkError, 'trustchain_not_found');
+      await expect(bobLaptop.start(bobIdentity)).to.be.rejectedWith(errors.PreconditionFailed, 'trustchain_not_found');
     });
 
     it('throws when giving invalid arguments', async () => {

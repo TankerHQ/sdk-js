@@ -1,7 +1,7 @@
 // @flow
 import EventEmitter from 'events';
 
-import { InternalError, InvalidVerification, OperationCanceled, NetworkError, TankerError } from '@tanker/errors';
+import { InternalError, InvalidVerification, TankerError } from '@tanker/errors';
 import { utils, tcrypto } from '@tanker/crypto';
 
 import LocalUser from './LocalUser';
@@ -42,8 +42,6 @@ export class LocalUserManager extends EventEmitter {
     this._localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
     this._delegationToken = userData.delegationToken;
     this._provisionalUserKeys = provisionalUserKeys;
-
-    client.on('authentication_failed', (e) => this.authenticationError(e));
   }
 
   init = async (): Promise<Status> => {
@@ -62,7 +60,8 @@ export class LocalUserManager extends EventEmitter {
       return statuses.READY;
     }
 
-    this.authenticate().catch((e) => this.authenticationError(e));
+    // Avoid swallowing authentication errors, re-emit them
+    this.authenticate().catch((e) => this.emit('error', e));
     return statuses.READY;
   }
 
@@ -72,14 +71,6 @@ export class LocalUserManager extends EventEmitter {
       return this.updateLocalUser();
     }
   }
-
-  authenticationError = (e: Error) => {
-    // OperationCanceled: thrown if you never managed to authenticate and the session gets closed
-    if (!(e instanceof NetworkError) && !(e instanceof OperationCanceled)) {
-      console.error(e);
-      this.emit('authentication_failed');
-    }
-  };
 
   getVerificationMethods = async (): Promise<Array<VerificationMethod>> => getVerificationMethods(this._client, this._localUser)
 
