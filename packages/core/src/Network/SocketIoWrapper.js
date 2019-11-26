@@ -62,8 +62,6 @@ export default class SocketIoWrapper {
 
   on = (event: string, handler: Handler): number => this.socket.on(event, handler);
 
-  once = (event: string, handler: Handler): number => this.socket.once(event, handler);
-
   removeListener = async (event: string, handler: Handler) => this.socket.removeListener(event, handler);
 
   abortRequests = (error: Error): void => {
