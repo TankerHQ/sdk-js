@@ -1,22 +1,13 @@
 // @flow
 import { expect } from '@tanker/test-utils';
 
-import { tcrypto, random } from '@tanker/crypto';
-
 import { InvalidBlockError } from '../errors.internal';
 
 import makeUint8Array from './makeUint8Array';
 
-import { type User } from '../Users/types';
-import {
-  verifyTrustchainCreation,
-  verifyProvisionalIdentityClaim,
-} from '../Session/Verify';
+import { verifyTrustchainCreation } from '../Session/Verify';
 
-import type {
-  UnverifiedTrustchainCreation,
-  UnverifiedProvisionalIdentityClaim,
-} from '../Blocks/entries';
+import type { UnverifiedTrustchainCreation } from '../Blocks/entries';
 
 import { NATURE } from '../Blocks/Nature';
 
@@ -79,59 +70,6 @@ describe('BlockVerification', () => {
     it('should accept a root block if all the requirements are met', () => {
       expect(() => verifyTrustchainCreation(unverifiedTrustchainCreation, trustchainId))
         .not.to.throw();
-    });
-  });
-
-  describe('claim provisional identity', () => {
-    let user: User;
-    let unverifiedProvisionalIdentityClaim: UnverifiedProvisionalIdentityClaim;
-    let userId: Uint8Array;
-
-    beforeEach(async () => {
-      testGenerator.makeTrustchainCreation();
-      userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      user = userCreation.user;
-      const userPublicKey = userCreation.testUser.userKeys.slice(-1)[0].publicKey;
-      const claim = testGenerator.makeProvisionalIdentityClaim(userCreation, userId, userPublicKey);
-      unverifiedProvisionalIdentityClaim = claim.unverifiedProvisionalIdentityClaim;
-    });
-
-    it('should accept a valid claim', async () => {
-      expect(() => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId))
-        .to.not.throw();
-    });
-
-    it('should reject a claim with an invalid author', async () => {
-      unverifiedProvisionalIdentityClaim.user_id[0] += 1;
-      assertFailWithNature(
-        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
-        'invalid_author'
-      );
-    });
-
-    it('should reject a claim with an invalid signature', async () => {
-      unverifiedProvisionalIdentityClaim.signature[0] += 1;
-      assertFailWithNature(
-        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
-        'invalid_signature'
-      );
-    });
-
-    it('should reject a claim with an invalid app signature', async () => {
-      unverifiedProvisionalIdentityClaim.author_signature_by_app_key[0] += 1;
-      assertFailWithNature(
-        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
-        'invalid_signature'
-      );
-    });
-
-    it('should reject a claim with an invalid tanker signature', async () => {
-      unverifiedProvisionalIdentityClaim.author_signature_by_tanker_key[0] += 1;
-      assertFailWithNature(
-        () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0], userId),
-        'invalid_signature'
-      );
     });
   });
 });

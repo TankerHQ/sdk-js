@@ -12,6 +12,8 @@ import { ResourceManager } from './Resource/ResourceManager';
 import ResourceStore from './Resource/ResourceStore';
 import { KeyDecryptor } from './Resource/KeyDecryptor';
 
+import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
+
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser';
@@ -36,6 +38,7 @@ export class DataProtector {
   _groupManager: GroupManager;
   _localUser: LocalUser;
   _userAccessor: UserAccessor;
+  _provisionalIdentityManager: ProvisionalIdentityManager
 
   constructor(
     resourceStore: ResourceStore,
@@ -43,6 +46,7 @@ export class DataProtector {
     groupManager: GroupManager,
     localUser: LocalUser,
     userAccessor: UserAccessor,
+    provisionalIdentityManager: ProvisionalIdentityManager,
   ) {
     this._resourceManager = new ResourceManager(
       resourceStore,
@@ -56,6 +60,7 @@ export class DataProtector {
     this._groupManager = groupManager;
     this._localUser = localUser;
     this._userAccessor = userAccessor;
+    this._provisionalIdentityManager = provisionalIdentityManager;
   }
 
   _makeKeyPublishBlocks(
@@ -135,7 +140,7 @@ export class DataProtector {
     const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, shareWithSelf);
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesWithSelf);
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
-    const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
+    const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     if (shareWithSelf) {
       const [{ resourceId, key }] = keys;

@@ -9,7 +9,6 @@ import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 
 import {
   blockToEntry,
-  provisionalIdentityClaimFromBlock,
   type UnverifiedTrustchainCreation,
 } from '../Blocks/entries';
 
@@ -17,6 +16,10 @@ import {
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
 } from '../Users/Serialize';
+
+import {
+  provisionalIdentityClaimFromBlock,
+} from '../Session/ProvisionalIdentity/Serialize';
 
 import {
   isKeyPublish,

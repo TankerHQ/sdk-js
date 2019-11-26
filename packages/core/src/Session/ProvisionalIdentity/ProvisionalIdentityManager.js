@@ -2,17 +2,17 @@
 
 import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
-import { type SecretProvisionalIdentity } from '@tanker/identity';
+import { type SecretProvisionalIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
-import { VerificationNeeded } from '../errors.internal';
+import { VerificationNeeded } from '../../errors.internal';
 
-import { Client, b64RequestObject } from '../Network/Client';
-import LocalUser from '../Session/LocalUser';
-import Trustchain from '../Trustchain/Trustchain';
-import Storage from '../Session/Storage';
-import { formatVerificationRequest } from '../Session/requests';
-import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../Session/types';
-import UserAccessor from '../Users/UserAccessor';
+import { Client, b64RequestObject } from '../../Network/Client';
+import LocalUser from '../LocalUser';
+import Trustchain from '../../Trustchain/Trustchain';
+import Storage from '../Storage';
+import { formatVerificationRequest } from '../requests';
+import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../types';
+import UserAccessor from '../../Users/UserAccessor';
 
 type TankerProvisionalKeys = {
   tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
@@ -36,7 +36,7 @@ const tankerProvisionalKeys = (serverResult) => {
   };
 };
 
-export default class DeviceManager {
+export default class ProvisionalIdentityManager {
   _trustchain: Trustchain;
   _client: Client;
   _localUser: LocalUser;
@@ -56,19 +56,6 @@ export default class DeviceManager {
     this._storage = storage;
     this._localUser = localUser;
     this._userAccessor = userAccessor;
-  }
-
-  async revokeDevice(revokedDeviceId: string): Promise<void> {
-    // sync the trustchain to be sure we have all our devices, in case we just
-    // added one, or generated an unlock key
-    await this._trustchain.sync();
-    const user = await this._userAccessor.findUser(this._localUser.userId);
-    if (!user)
-      throw new InternalError('Cannot find the current user in the users');
-
-    const revokeDeviceBlock = this._localUser.blockGenerator.makeDeviceRevocationBlock(user, this._storage.keyStore.currentUserKey, revokedDeviceId);
-    await this._client.sendBlock(revokeDeviceBlock);
-    await this._trustchain.sync();
   }
 
   async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: EmailVerificationMethod }> {
@@ -124,6 +111,32 @@ export default class DeviceManager {
       await this._claimProvisionalIdentity(this._provisionalIdentity, tankerKeys);
 
     delete this._provisionalIdentity;
+  }
+
+  async getProvisionalUsers(provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> {
+    if (provisionalIdentities.length === 0)
+      return [];
+
+    const request = provisionalIdentities.map(provisionalIdentity => {
+      if (provisionalIdentity.target !== 'email') {
+        throw new InvalidArgument(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
+      }
+      const email = generichash(utils.fromString(provisionalIdentity.value));
+      return { type: 'email', hashed_email: email };
+    });
+
+    // Note: public keys are returned in an array matching the original order of provisional identities in the request
+    const tankerPublicKeys = await this._client.send('get public provisional identities', b64RequestObject(request));
+
+    return tankerPublicKeys.map((tpk, i) => ({
+      trustchainId: utils.fromBase64(provisionalIdentities[i].trustchain_id),
+      target: provisionalIdentities[i].target,
+      value: provisionalIdentities[i].value,
+      appEncryptionPublicKey: utils.fromBase64(provisionalIdentities[i].public_encryption_key),
+      appSignaturePublicKey: utils.fromBase64(provisionalIdentities[i].public_signature_key),
+      tankerEncryptionPublicKey: utils.fromBase64(tpk.encryption_public_key),
+      tankerSignaturePublicKey: utils.fromBase64(tpk.signature_public_key),
+    }));
   }
 
   async _getProvisionalIdentityKeys(email: string): Promise<?TankerProvisionalKeys> {

@@ -4,12 +4,10 @@ import { InternalError } from '@tanker/errors';
 
 import {
   type Record,
-  type ProvisionalIdentityClaimRecord,
   unserializePayload,
-  unserializeProvisionalIdentityClaim,
 } from './payloads';
 
-import { type Nature, NATURE } from './Nature';
+import { type Nature } from './Nature';
 import { type Block, hashBlock } from './Block';
 
 export type VerificationFields = {|
@@ -118,27 +116,3 @@ export type UnverifiedTrustchainCreation = {
   ...VerificationFields,
   public_signature_key: Uint8Array,
 };
-
-
-export type UnverifiedProvisionalIdentityClaim = {
-  ...VerificationFields,
-  ...ProvisionalIdentityClaimRecord,
-};
-
-export type VerifiedProvisionalIdentityClaim = UnverifiedProvisionalIdentityClaim;
-
-export function provisionalIdentityClaimFromBlock(block: Block): UnverifiedProvisionalIdentityClaim {
-  const verificationFields = verificationFieldsFromBlock(block);
-  let userEntry;
-
-  switch (block.nature) {
-    case NATURE.provisional_identity_claim:
-      userEntry = unserializeProvisionalIdentityClaim(block.payload);
-      break;
-    default: throw new InternalError('Assertion error: wrong type for provisionalIdentityClaimFromBlock');
-  }
-  return {
-    ...verificationFields,
-    ...userEntry,
-  };
-}

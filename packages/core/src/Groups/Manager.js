@@ -6,6 +6,8 @@ import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentiti
 
 import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser';
+import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
+
 import { Client, b64RequestObject } from '../Network/Client';
 import GroupStore from './GroupStore';
 import KeyStore from '../Session/KeyStore';
@@ -15,7 +17,6 @@ import {
   assertExpectedGroups,
   assertExpectedGroupsByPublicKey,
   assertPublicIdentities,
-  fetchDeviceByDeviceId,
   inflateFromBlocks,
   verifyGroup,
 } from './ManagerHelper';
@@ -32,6 +33,7 @@ export default class GroupManager {
   _trustchain: Trustchain;
   _keystore: KeyStore;
   _userAccessor: UserAccessor;
+  _provisionalIdentityManager: ProvisionalIdentityManager;
   _client: Client;
   _groupStore: GroupStore;
 
@@ -41,6 +43,7 @@ export default class GroupManager {
     groupStore: GroupStore,
     keystore: KeyStore,
     userAccessor: UserAccessor,
+    provisionalIdentityManager: ProvisionalIdentityManager,
     client: Client
   ) {
     this._localUser = localUser;
@@ -49,6 +52,7 @@ export default class GroupManager {
     this._userAccessor = userAccessor;
     this._client = client;
     this._groupStore = groupStore;
+    this._provisionalIdentityManager = provisionalIdentityManager;
   }
 
   async createGroup(publicIdentities: Array<b64string>): Promise<b64string> {
@@ -57,7 +61,7 @@ export default class GroupManager {
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
-    const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
+    const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
@@ -86,7 +90,7 @@ export default class GroupManager {
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
     const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
-    const provisionalUsers = await this._client.getProvisionalUsers(provisionalIdentities);
+    const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     const userGroupAdditionBlock = this._localUser.blockGenerator.addToUserGroup(
       internalGroupId,
@@ -158,7 +162,7 @@ export default class GroupManager {
 
   async _populateDevices(groupsData: Array<GroupData>): Promise<Array<GroupDataWithDevices>> {
     const promises = groupsData.map(groupData => Promise.all(groupData.map(async g => {
-      const device = await fetchDeviceByDeviceId(g.entry.author, this._userAccessor, this._trustchain, g.group.groupId);
+      const device = await this._userAccessor.fetchDeviceByDeviceId(g.entry.author, g.group.groupId);
       return { ...g, device };
     })));
     return Promise.all(promises);

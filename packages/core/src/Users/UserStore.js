@@ -11,10 +11,10 @@ import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
-import type { VerifiedProvisionalIdentityClaim } from '../Blocks/entries';
 import type { DeviceCreationEntry, DeviceRevocationEntry, UserEntry } from './Serialize';
 
 import type { ProvisionalUserKeyPairs } from '../Session/KeySafe';
+import { type ClaimEntry } from '../Session/ProvisionalIdentity/Serialize';
 
 type DeviceToUser = {
   deviceId: b64string,
@@ -28,7 +28,7 @@ export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
 export type Callbacks = {
   deviceCreation: (entry: DeviceCreationEntry) => Promise<void>,
   deviceRevocation: (entry: DeviceRevocationEntry) => Promise<void>,
-  claim: (entry: VerifiedProvisionalIdentityClaim) => Promise<ProvisionalUserKeyPairs>,
+  claim: (entry: ClaimEntry) => Promise<ProvisionalUserKeyPairs>,
 };
 
 function recordFromUser(user: User) {
@@ -106,7 +106,7 @@ export default class UserStore {
     this._callbacks = callbacks;
   }
 
-  async applyProvisionalIdentityClaims(entries: Array<VerifiedProvisionalIdentityClaim>): Promise<Array<ProvisionalUserKeyPairs>> {
+  async applyProvisionalIdentityClaims(entries: Array<ClaimEntry>): Promise<Array<ProvisionalUserKeyPairs>> {
     const provisionalUserKeyPairs: Array<ProvisionalUserKeyPairs> = [];
     for (const entry of entries) {
       if (utils.equalArray(entry.user_id, this._userId)) {

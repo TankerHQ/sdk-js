@@ -10,7 +10,7 @@ import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
 import GroupManager from '../Groups/Manager';
 import LocalUser from '../Session/LocalUser';
 
-import { type KeyPublish, type KeyPublishNature, KeyPublishNatures } from '../DataProtection/Resource/keyPublish';
+import { type KeyPublishEntry, type KeyPublishNature, KeyPublishNatures } from '../DataProtection/Resource/keyPublish';
 
 const refDeviceId = new Uint8Array([0, 0, 7]);
 
@@ -33,7 +33,7 @@ class LocalUserStub {
   }
 }
 
-function makeKeyPublish(nature: KeyPublishNature, key): KeyPublish {
+function makeKeyPublish(nature: KeyPublishNature, key): KeyPublishEntry {
   return {
     recipient: refDeviceId,
     resourceId: refDeviceId,
@@ -91,7 +91,7 @@ describe('KeyDecryptor', () => {
   });
 
   it('throws when not called with a key publish', async () => {
-    const badKeyPublish = (({ nature: 42 }: any): KeyPublish);
+    const badKeyPublish = (({ nature: 42 }: any): KeyPublishEntry);
 
     await expect(decryptor.keyFromKeyPublish(badKeyPublish)).to.be.rejectedWith(InternalError);
   });

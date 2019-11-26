@@ -2,7 +2,7 @@
 import { utils, type Key } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 
-import { newKeyPublish } from './keyPublish';
+import { getKeyPublishEntryFromBlock } from './keyPublish';
 import { KeyDecryptor } from './KeyDecryptor';
 import { Client } from '../../Network/Client';
 import ResourceStore from './ResourceStore';
@@ -42,7 +42,7 @@ export class ResourceManager {
     if (response.length === 0) {
       throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
     }
-    return newKeyPublish(response[0]);
+    return getKeyPublishEntryFromBlock(response[0]);
   };
 
   saveResourceKey = async (resourceId: Uint8Array, key: Uint8Array): Promise<void> => this._resourceStore.saveResourceKey(resourceId, key)

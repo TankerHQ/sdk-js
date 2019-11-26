@@ -7,7 +7,7 @@ import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
-import { Apis } from '../Protocol/Apis';
+import { Managers } from './Managers';
 import { type UserData } from './UserData';
 
 import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
@@ -24,7 +24,7 @@ export class Session extends EventEmitter {
 
   _status: Status;
 
-  apis: Apis;
+  _managers: Managers;
 
   constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client, status: Status) {
     super();
@@ -37,7 +37,7 @@ export class Session extends EventEmitter {
 
     localUser.on('device_revoked', () => this.emit('device_revoked'));
     client.on('authentication_failed', (e) => this.authenticationError(e));
-    this.apis = new Apis(localUser, storage, trustchain, client);
+    this._managers = new Managers(localUser, storage, trustchain, client);
   }
 
   get status(): Status {
@@ -199,4 +199,11 @@ export class Session extends EventEmitter {
     await this._client.close();
     await this.storage.nuke();
   }
+
+  get userAccessor() { return this._managers.userAccessor; }
+  get provisionalIdentityManager() { return this._managers.provisionalIdentityManager; }
+  get deviceManager() { return this._managers.deviceManager; }
+  get groupManager() { return this._managers.groupManager; }
+  get cloudStorageManager() { return this._managers.cloudStorageManager; }
+  get dataProtector() { return this._managers.dataProtector; }
 }

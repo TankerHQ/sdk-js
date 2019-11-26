@@ -11,8 +11,6 @@ import { verifyGroupAction } from './Verify';
 import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
 import KeyStore from '../Session/KeyStore';
 import { type Device } from '../Users/types';
-import UserAccessor from '../Users/UserAccessor';
-import Trustchain from '../Trustchain/Trustchain';
 
 export const MAX_GROUP_SIZE = 1000;
 
@@ -53,26 +51,6 @@ export function assertExpectedGroupsByPublicKey(groups: Array<Group>, expectedGr
     const message = `The following group do not exist on the trustchain. Public encryption key: "${utils.toBase64(expectedGroupPublicKey)}"`;
     throw new InvalidArgument(message);
   }
-}
-
-export async function fetchDeviceByDeviceId(deviceId: Uint8Array, userAccessor: UserAccessor, trustchain: Trustchain, groupId: ?Uint8Array) {
-  let user = await userAccessor.findUserByDeviceId({ deviceId });
-  if (!user) {
-    if (groupId) {
-      await trustchain.sync([], [groupId]);
-    } else {
-      await trustchain.sync([], []);
-    }
-    user = await userAccessor.findUserByDeviceId({ deviceId });
-    if (!user) {
-      throw new InternalError('Assertion error: unknown user');
-    }
-  }
-  const device = find(user.devices, d => utils.equalArray(d.deviceId, deviceId));
-  if (!device) {
-    throw new InternalError('Assertion error: device not found');
-  }
-  return device;
 }
 
 function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: KeyStore): ?Object {
