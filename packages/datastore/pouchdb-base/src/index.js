@@ -127,28 +127,25 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
     const name = `${dbName}_${tableName}`;
 
     // wait for the db to be ready before returning the store
-    return Promise.race([
-      new Promise((resolve, reject) => {
-        try {
-          const db = new PouchDB(prefix ? prefix + name : name);
-
-          db.addListener('created', () => resolve(db));
-
-          // resolve if already created
-          if (db.taskqueue.isReady) {
-            resolve(db);
-          }
-        } catch (e) {
-          reject(e);
-        }
-      }),
+    return new Promise((resolve, reject) => {
       // but timeout after 30s if db not ready yet
-      new Promise((_resolve, reject) => {
-        // declare error outside the setTimeout for a better callstack
-        const error = new Error(`Could not open PouchDB for: ${name}`);
-        setTimeout(() => reject(error), 30000);
-      })
-    ]);
+      // declare error outside the setTimeout for a better callstack
+      const error = new Error(`Could not open PouchDB for: ${name}`);
+      const timeout = setTimeout(() => reject(error), 30000);
+      try {
+        const db = new PouchDB(prefix ? prefix + name : name);
+
+        db.addListener('created', () => resolve(db));
+
+        // resolve if already created
+        if (db.taskqueue.isReady) {
+          resolve(db);
+        }
+      } catch (e) {
+        reject(e);
+      }
+      clearTimeout(timeout);
+    });
   }
 
   async defineSchemas(schemas: Array<Schema>): Promise<void> {
