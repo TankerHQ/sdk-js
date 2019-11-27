@@ -7,7 +7,6 @@ import { type PublicPermanentIdentity } from '@tanker/identity';
 
 import { Client, b64RequestObject } from '../Network/Client';
 import { type User } from './types';
-import Trustchain from '../Trustchain/Trustchain';
 import LocalUser from '../Session/LocalUser/LocalUser';
 import { usersFromBlocks } from './ManagerHelper';
 
@@ -15,7 +14,6 @@ import { usersFromBlocks } from './ManagerHelper';
 export default class UserManager {
   _client: Client;
   _localUser: LocalUser;
-  _trustchain: Trustchain;
 
   constructor(client: Client, localUser: LocalUser) {
     this._client = client;

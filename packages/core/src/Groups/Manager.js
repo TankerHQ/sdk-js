@@ -19,8 +19,6 @@ import {
   groupsFromEntries,
 } from './ManagerHelper';
 
-import Trustchain from '../Trustchain/Trustchain';
-
 type CachedPublicKeysResult = {
   cachedKeys: Array<Uint8Array>,
   missingGroupIds: Array<Uint8Array>,
@@ -28,7 +26,6 @@ type CachedPublicKeysResult = {
 
 export default class GroupManager {
   _localUser: LocalUser
-  _trustchain: Trustchain;
   _UserManager: UserManager;
   _provisionalIdentityManager: ProvisionalIdentityManager;
   _client: Client;
@@ -36,14 +33,12 @@ export default class GroupManager {
 
   constructor(
     localUser: LocalUser,
-    trustchain: Trustchain,
     groupStore: GroupStore,
     userManager: UserManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
     client: Client
   ) {
     this._localUser = localUser;
-    this._trustchain = trustchain;
     this._UserManager = userManager;
     this._client = client;
     this._groupStore = groupStore;

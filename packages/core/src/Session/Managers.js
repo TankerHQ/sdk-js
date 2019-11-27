@@ -1,6 +1,5 @@
 // @flow
 
-import Trustchain from '../Trustchain/Trustchain';
 import UserManager from '../Users/Manager';
 import Storage from './Storage';
 
@@ -20,13 +19,12 @@ export class Managers {
   cloudStorageManager: CloudStorageManager;
   provisionalIdentityManager: ProvisionalIdentityManager;
 
-  constructor(localUser: LocalUser, storage: Storage, trustchain: Trustchain, client: Client) {
+  constructor(localUser: LocalUser, storage: Storage, client: Client) {
     this.userManager = new UserManager(client, localUser);
     this.provisionalIdentityManager = new ProvisionalIdentityManager(client, localUser, this.userManager);
 
     this.groupManager = new GroupManager(
       localUser,
-      trustchain,
       storage.groupStore,
       this.userManager,
       this.provisionalIdentityManager,

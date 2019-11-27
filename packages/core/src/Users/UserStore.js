@@ -55,34 +55,14 @@ export default class UserStore {
   static schemas = [
     // this store didn't exist in schema version 1
     { version: 1, tables: [] },
-    {
-      version: 2,
-      ...schemaV2
-    },
-    {
-      version: 3,
-      ...schemaV2
-    },
-    {
-      version: 4,
-      ...schemaV2
-    },
-    {
-      version: 5,
-      ...schemaV2
-    },
-    {
-      version: 6,
-      ...schemaV2
-    },
-    {
-      version: 7,
-      ...schemaV2
-    },
-    {
-      version: 8,
-      ...schemaV2
-    },
+    { version: 2, ...schemaV2 },
+    { version: 3, ...schemaV2 },
+    { version: 4, ...schemaV2 },
+    { version: 5, ...schemaV2 },
+    { version: 6, ...schemaV2 },
+    { version: 7, ...schemaV2 },
+    { version: 8, ...schemaV2 },
+    { version: 9, ...schemaV2 },
   ];
 
   constructor(ds: DataStore<*>, userId: Uint8Array) {
