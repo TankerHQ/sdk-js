@@ -10,8 +10,8 @@ import type { User, Device } from './types';
 import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { findIndex } from '../utils';
 
-import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
-import type { DeviceCreationEntry, DeviceRevocationEntry, UserEntry } from './Serialize';
+import { NATURE } from '../Blocks/Nature';
+import type { UserEntry } from './Serialize';
 
 type DeviceToUser = {
   deviceId: b64string,
@@ -21,11 +21,6 @@ type DeviceToUser = {
 export type FindUserParameters = $Exact<{ deviceId: Uint8Array }> | $Exact<{ userId: Uint8Array }> | $Exact<{ userPublicKey: Uint8Array }>;
 export type FindUsersParameters = $Exact<{ hashedUserIds: Array<Uint8Array> }>;
 export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
-
-export type Callbacks = {
-  deviceCreation: (entry: DeviceCreationEntry) => Promise<void>,
-  deviceRevocation: (entry: DeviceRevocationEntry) => Promise<void>,
-};
 
 function recordFromUser(user: User) {
   const b64UserId = utils.toBase64(user.userId);
@@ -56,7 +51,6 @@ const schemaV2 = {
 
 export default class UserStore {
   /*:: _ds: DataStore<*>; */
-  _callbacks: Callbacks;
   _userId: Uint8Array;
 
   static schemas = [
@@ -98,10 +92,6 @@ export default class UserStore {
     this._userId = userId;
   }
 
-  setCallbacks = (callbacks: Callbacks) => {
-    this._callbacks = callbacks;
-  }
-
   // all entries are verified
   async applyEntry(entry: UserEntry): Promise<User> {
     const updatedUsers = await this.applyEntries([entry]);
@@ -112,18 +102,6 @@ export default class UserStore {
   async applyEntries(entries: Array<UserEntry>): Promise<Array<User>> {
     const updatedUsers: Array<User> = [];
     for (const entry of entries) {
-      if (utils.equalArray(entry.user_id, this._userId)) {
-        if (natureKind(entry.nature) === NATURE_KIND.device_creation) {
-        // $FlowIKnow Type is checked by the switch
-          const deviceEntry: VerifiedDeviceCreation = entry;
-          await this._callbacks.deviceCreation(deviceEntry);
-        } else if (entry.user_keys) {
-        // $FlowIKnow Type is checked by the switch
-          const deviceEntry: VerifiedDeviceRevocation = entry;
-          await this._callbacks.deviceRevocation(deviceEntry);
-        }
-      }
-
       updatedUsers.push(await this._applyEntrytoUser(entry));
     }
     await this.storeUsers(updatedUsers);

@@ -13,6 +13,7 @@ import TrustchainStore from '../Trustchain/TrustchainStore';
 import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
 
+import LocalUser from '../Session/LocalUser/LocalUser';
 import Storage from '../Session/Storage';
 import KeyStore from '../Session/LocalUser/KeyStore';
 import UserStore from '../Users/UserStore';
@@ -57,15 +58,6 @@ export default class TrustchainBuilder {
 
     const storage = new Storage(this.dataStoreConfig);
     await storage.open(userData.userId, userData.userSecret);
-    storage.userStore.setCallbacks({
-      deviceCreation: async () => {},
-      deviceRevocation: async () => {},
-      claim: async () => ({
-        id: '',
-        appEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
-        tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair()
-      })
-    });
 
     this.dataStore = storage._datastore; // eslint-disable-line no-underscore-dangle
     this.keyStore = storage.keyStore;
@@ -74,7 +66,8 @@ export default class TrustchainBuilder {
     this.trustchainStore = storage.trustchainStore;
     this.unverifiedStore = storage.unverifiedStore;
 
-    this.trustchainVerifier = new TrustchainVerifier(trustchainId, storage);
+    const localUser = new LocalUser(userData, this.keyStore);
+    this.trustchainVerifier = new TrustchainVerifier(trustchainId, storage, localUser);
     const trustchainPuller: any = {};
     this.trustchain = new Trustchain(this.trustchainStore, this.trustchainVerifier, trustchainPuller, this.unverifiedStore);
 

@@ -9,7 +9,6 @@ import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';
 import { DataProtector } from '../DataProtection/DataProtector';
-import DeviceManager from './DeviceManager';
 import CloudStorageManager from '../CloudStorage/CloudStorageManager';
 import ProvisionalIdentityManager from './ProvisionalIdentity/ProvisionalIdentityManager';
 
@@ -18,7 +17,6 @@ export class Managers {
   groupManager: GroupManager;
 
   dataProtector: DataProtector;
-  deviceManager: DeviceManager;
   cloudStorageManager: CloudStorageManager;
   provisionalIdentityManager: ProvisionalIdentityManager;
 
@@ -43,14 +41,6 @@ export class Managers {
       localUser,
       this.userAccessor,
       this.provisionalIdentityManager
-    );
-
-    this.deviceManager = new DeviceManager(
-      trustchain,
-      client,
-      localUser,
-      storage,
-      this.userAccessor,
     );
 
     this.cloudStorageManager = new CloudStorageManager(

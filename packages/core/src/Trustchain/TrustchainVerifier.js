@@ -8,6 +8,7 @@ import { compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
 import { type User, type Device } from '../Users/types';
 
+import LocalUser from '../Session/LocalUser/LocalUser';
 import type { UserEntry, DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../Users/Verify';
 
@@ -23,11 +24,13 @@ export default class TrustchainVerifier {
   _verifyQueue: TaskQueue = new TaskQueue();
   _trustchainId: Uint8Array;
   _storage: Storage;
+  _localUser: LocalUser;
 
 
-  constructor(trustchainId: Uint8Array, storage: Storage) {
+  constructor(trustchainId: Uint8Array, storage: Storage, localUser: LocalUser) {
     this._storage = storage;
     this._trustchainId = trustchainId;
+    this._localUser = localUser;
   }
 
   // Returns a map from entry hash to author entry, if the author could be found, verified, and was not revoked at the given index
@@ -59,7 +62,7 @@ export default class TrustchainVerifier {
   }
 
   async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: DeviceCreationEntry): Promise<DeviceCreationEntry> {
-    const trustchainPublicKey = this._storage.trustchainStore.trustchainPublicKey;
+    const trustchainPublicKey = this._localUser.trustchainPublicKey;
     if (utils.equalArray(entry.author, this._trustchainId)) {
       verifyDeviceCreation(entry, null, trustchainPublicKey);
     } else {

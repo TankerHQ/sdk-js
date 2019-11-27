@@ -7,6 +7,7 @@ import TrustchainStore from './TrustchainStore';
 import Storage from '../Session/Storage';
 import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 import type { DeviceCreationEntry } from '../Users/Serialize';
+import LocalUser from '../Session/LocalUser/LocalUser';
 
 export default class Trustchain {
   _trustchainStore: TrustchainStore;
@@ -21,8 +22,8 @@ export default class Trustchain {
     this._unverifiedStore = unverifiedStore;
   }
 
-  static async open(client: Client, trustchainId: Uint8Array, userId: Uint8Array, storage: Storage): Promise<Trustchain> {
-    const trustchainVerifier = new TrustchainVerifier(trustchainId, storage);
+  static async open(client: Client, trustchainId: Uint8Array, userId: Uint8Array, storage: Storage, localUser: LocalUser): Promise<Trustchain> {
+    const trustchainVerifier = new TrustchainVerifier(trustchainId, storage, localUser);
     const trustchainPuller = new TrustchainPuller(client, userId, storage.trustchainStore, storage.unverifiedStore, trustchainVerifier);
     return new Trustchain(storage.trustchainStore, trustchainVerifier, trustchainPuller, storage.unverifiedStore);
   }

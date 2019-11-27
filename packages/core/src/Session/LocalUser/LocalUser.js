@@ -2,7 +2,7 @@
 
 import EventEmitter from 'events';
 import { tcrypto, utils, type Key } from '@tanker/crypto';
-import { InternalError } from '@tanker/errors';
+import { InternalError, DeviceRevoked } from '@tanker/errors';
 
 import KeyStore from './KeyStore';
 import BlockGenerator from '../../Blocks/BlockGenerator';
@@ -184,6 +184,7 @@ export class LocalUser extends EventEmitter {
 
   _initializeWithUserBlocks = async (userBlocks: Array<string>) => {
     delete this._currentUserKey;
+    this._userKeys = {};
 
     let user = null;
     const encryptedUserKeys: Array<UserKeys | UserKeyPair> = [];
@@ -208,8 +209,7 @@ export class LocalUser extends EventEmitter {
         verifyDeviceRevocation(deviceRevocationEntry, user);
         user = applyDeviceRevocationToUser(deviceRevocationEntry, user);
         if (this._deviceId && utils.equalArray(deviceRevocationEntry.device_id, this._deviceId)) {
-          this.emit('device_revoked');
-          return;
+          throw new DeviceRevoked();
         }
         if (deviceRevocationEntry.user_keys) {
           encryptedUserKeys.unshift(deviceRevocationEntry.user_keys);

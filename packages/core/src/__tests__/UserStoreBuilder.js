@@ -31,7 +31,6 @@ export default class UserStoreBuilder {
     const { generator } = await makeGenerator();
     const dataStore = await makeMemoryDataStore();
     const userStore = new UserStore(dataStore, makeUint8Array('userID', 32));
-    userStore.setCallbacks(({ applyDeviceCreation: () => {} }: any));
     return new UserStoreBuilder(userStore, generator);
   }
 

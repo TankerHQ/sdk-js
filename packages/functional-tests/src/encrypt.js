@@ -172,7 +172,6 @@ const generateEncryptTests = (args: TestArgs) => {
         const bobPhone = args.makeTanker();
         await bobPhone.start(bobIdentity);
         await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
-
         const decrypted = await bobPhone.decrypt(encrypted);
         expect(decrypted).to.equal(clearText);
         await bobPhone.stop();
