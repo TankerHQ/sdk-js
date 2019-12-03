@@ -153,7 +153,7 @@ export default class TrustchainVerifier {
         if (!authorDevice)
           throw new InvalidBlockError('author_not_found', 'author not found', { claim });
 
-        verifyProvisionalIdentityClaim(claim, authorDevice, authorUser.userId);
+        verifyProvisionalIdentityClaim(claim, authorDevice.devicePublicSignatureKey, authorUser.userId);
         verifiedClaims.push(claim);
       } catch (e) {
         if (!(e instanceof InvalidBlockError)) {

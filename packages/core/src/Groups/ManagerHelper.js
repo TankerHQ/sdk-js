@@ -10,7 +10,6 @@ import { verifyGroupAction } from './Verify';
 
 import { type ProvisionalUserKeyPairs } from '../Session/LocalUser/KeySafe';
 import KeyStore from '../Session/LocalUser/KeyStore';
-import { type Device } from '../Users/types';
 
 export const MAX_GROUP_SIZE = 1000;
 
@@ -22,7 +21,7 @@ export type GroupData = Array<{|
 export type GroupDataWithDevices = Array<{|
   entry: UserGroupEntry,
   group: Group,
-  device: Device
+  devicePublicSignatureKey: Uint8Array
 |}>
 
 export function assertPublicIdentities(publicIdentities: Array<b64string>) {
@@ -176,7 +175,7 @@ export function inflateFromBlocks(blocks: Array<b64string>, keystore: KeyStore):
 export function verifyGroup(groupDataWithDevices: GroupDataWithDevices) {
   let previousGroup;
   groupDataWithDevices.forEach(g => {
-    verifyGroupAction(g.entry, g.device.devicePublicSignatureKey, previousGroup);
+    verifyGroupAction(g.entry, g.devicePublicSignatureKey, previousGroup);
     previousGroup = g.group;
   });
 }
