@@ -176,7 +176,7 @@ export function inflateFromBlocks(blocks: Array<b64string>, keystore: KeyStore):
 export function verifyGroup(groupDataWithDevices: GroupDataWithDevices) {
   let previousGroup;
   groupDataWithDevices.forEach(g => {
-    verifyGroupAction(g.entry, g.device, previousGroup);
+    verifyGroupAction(g.entry, g.device.devicePublicSignatureKey, previousGroup);
     previousGroup = g.group;
   });
 }
