@@ -8,20 +8,22 @@ import UserAccessor from '../Users/UserAccessor';
 import LocalUser from '../Session/LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
+import { getGroupEntryFromBlock } from './Serialize';
 import { Client, b64RequestObject } from '../Network/Client';
 import GroupStore from './GroupStore';
 import KeyStore from '../Session/LocalUser/KeyStore';
 import type { InternalGroup, Group } from './types';
-import type { GroupData, GroupDataWithDevices } from './ManagerHelper';
+import type { GroupDataWithDevices } from './ManagerHelper';
 import {
   assertExpectedGroups,
   assertExpectedGroupsByPublicKey,
   assertPublicIdentities,
-  inflateFromBlocks,
   verifyGroup,
+  groupFromUserGroupEntry
 } from './ManagerHelper';
 
 import Trustchain from '../Trustchain/Trustchain';
+import { InternalError } from '../../../errors/src/index';
 
 type CachedPublicKeysResult = {
   cachedKeys: Array<Uint8Array>,
@@ -160,19 +162,35 @@ export default class GroupManager {
     return group;
   }
 
-  async _populateDevices(groupsData: Array<GroupData>): Promise<Array<GroupDataWithDevices>> {
-    const promises = groupsData.map(groupData => Promise.all(groupData.map(async g => {
-      const devicePublicSignatureKey = await this._userAccessor.fetchDeviceByDeviceId(g.entry.author, g.group.groupId);
-      return { ...g, devicePublicSignatureKey };
-    })));
-    return Promise.all(promises);
-  }
-
   async _groupsFromBlocks(blocks: Array<b64string>): Promise<Array<Group>> {
-    const groupsData = await inflateFromBlocks(blocks, this._keystore, this._provisionalIdentityManager);
-    const groupsDataWithDevices = await this._populateDevices(groupsData);
-    groupsDataWithDevices.forEach(g => verifyGroup(g));
-    return groupsDataWithDevices.map(g => g[g.length - 1].group);
+    const entries = blocks.map(block => getGroupEntryFromBlock(block));
+
+    const deviceIds = entries.map(entry => entry.author);
+    const devicePublicSignatureKeyMap = await this._userAccessor.getDeviceKeysByDevicesIds(deviceIds);
+
+    const groupsMap: Map<b64string, GroupDataWithDevices> = new Map();
+
+    for (const entry of entries) {
+      const b64groupId = utils.toBase64(entry.group_id ? entry.group_id : entry.public_signature_key);
+      const previousData: GroupDataWithDevices = groupsMap.get(b64groupId) || [];
+      const previousGroup = previousData.length ? previousData[previousData.length - 1].group : null;
+
+      const group = await groupFromUserGroupEntry(entry, previousGroup, this._keystore, this._provisionalIdentityManager);
+      const devicePublicSignatureKey = devicePublicSignatureKeyMap.get(utils.toBase64(entry.author));
+      if (!devicePublicSignatureKey) {
+        throw new InternalError('author device publicSignatureKey missing');
+      }
+      previousData.push({ group, entry, devicePublicSignatureKey });
+
+      groupsMap.set(b64groupId, previousData);
+    }
+
+    const groups: Array<Group> = [];
+    for (const groupData of groupsMap.values()) {
+      verifyGroup(groupData);
+      groups.push(groupData[groupData.length - 1].group);
+    }
+    return groups;
   }
 
   _getGroupBlocksByPublicKey(groupPublicEncryptionKey: Uint8Array) {

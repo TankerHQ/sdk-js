@@ -1,24 +1,35 @@
 // @flow
 import find from 'array-find';
 
-import { utils } from '@tanker/crypto';
+import { utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { type PublicPermanentIdentity } from '@tanker/identity';
 
+import { unserializeBlock } from '../Blocks/payloads';
+import { isDeviceCreation, isDeviceRevocation, deviceCreationFromBlock, deviceRevocationFromBlock } from './Serialize';
+import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
+import { verifyDeviceCreation, verifyDeviceRevocation } from './Verify';
+
+import { Client, b64RequestObject } from '../Network/Client';
 import UserStore, { type FindUsersParameters } from './UserStore';
 import { type User } from './types';
 import Trustchain from '../Trustchain/Trustchain';
+import LocalUser from '../Session/LocalUser/LocalUser';
 
 // ensure that the UserStore is always up-to-date before requesting it.
 export default class UserAccessor {
   _userStore: UserStore;
+  _client: Client;
+  _localUser: LocalUser;
   _trustchain: Trustchain;
   _trustchainId: Uint8Array;
   _userId: Uint8Array;
 
-  constructor(userStore: UserStore, trustchainAPI: Trustchain, trustchainId: Uint8Array, userId: Uint8Array) {
+  constructor(userStore: UserStore, trustchainAPI: Trustchain, client: Client, localUser: LocalUser, trustchainId: Uint8Array, userId: Uint8Array) {
     this._userStore = userStore;
     this._trustchain = trustchainAPI;
+    this._client = client;
+    this._localUser = localUser;
     this._trustchainId = trustchainId;
     this._userId = userId;
   }
@@ -75,23 +86,79 @@ export default class UserAccessor {
     throw new InvalidArgument(message);
   }
 
-  async fetchDeviceByDeviceId(deviceId: Uint8Array, groupId: ?Uint8Array) {
-    let user = await this.findUserByDeviceId({ deviceId });
-    if (!user) {
-      if (groupId) {
-        await this._trustchain.sync([], [groupId]);
-      } else {
-        await this._trustchain.sync([], []);
+  async getDeviceKeysByDevicesIds(devicesIds: Array<Uint8Array>) {
+    const blocks = await this._getUserBlocksByDeviceIds(devicesIds);
+
+    const { userIdToUserMap, deviceIdToUserIdMap } = await this._usersFromBlocks(blocks);
+    return this._getDeviceKeysFromIds(userIdToUserMap, deviceIdToUserIdMap, devicesIds);
+  }
+
+  _getDeviceKeysFromIds(userIdToUserMap: Map<b64string, User>, deviceIdToUserIdMap: Map<b64string, b64string>, devicesIds: Array<Uint8Array>): Map<b64string, Uint8Array> {
+    const devicesPublicSignatureKeys: Map<b64string, Uint8Array> = new Map();
+    for (const deviceId of devicesIds) {
+      const userId = deviceIdToUserIdMap.get(utils.toBase64(deviceId));
+      if (!userId) {
+        throw new InternalError('no such author user id');
       }
-      user = await this.findUserByDeviceId({ deviceId });
+      const user = userIdToUserMap.get(userId);
       if (!user) {
-        throw new InternalError('Assertion error: unknown user');
+        throw new InternalError('no such author user');
+      }
+      const device = find(user.devices, userDevice => utils.equalArray(userDevice.deviceId, deviceId));
+      devicesPublicSignatureKeys.set(utils.toBase64(deviceId), device.devicePublicSignatureKey);
+    }
+    return devicesPublicSignatureKeys;
+  }
+
+  async _usersFromBlocks(userBlocks: Array<b64string>) {
+    const userIdToUserMap: Map<b64string, User> = new Map();
+    const deviceIdToUserIdMap: Map<b64string, b64string> = new Map();
+
+    for (const b64Block of userBlocks) {
+      const block = unserializeBlock(utils.fromBase64(b64Block));
+      if (isDeviceCreation(block.nature)) {
+        const deviceCreationEntry = deviceCreationFromBlock(block);
+        const base64UserId = utils.toBase64(deviceCreationEntry.user_id);
+        let user = userIdToUserMap.get(base64UserId);
+
+        verifyDeviceCreation(deviceCreationEntry, user, this._localUser.trustchainPublicKey);
+        user = applyDeviceCreationToUser(deviceCreationEntry, user);
+
+        userIdToUserMap.set(base64UserId, user);
+        deviceIdToUserIdMap.set(utils.toBase64(deviceCreationEntry.hash), base64UserId);
+      } if (isDeviceRevocation(block.nature)) {
+        const authorUserId = deviceIdToUserIdMap.get(utils.toBase64(block.author));
+        if (!authorUserId) {
+          throw new InternalError('can\'t find author device id for revocation');
+        }
+        let user = userIdToUserMap.get(authorUserId);
+        if (!user) {
+          throw new InternalError('can\'t find author device for revocation');
+        }
+        const deviceRevocationEntry = deviceRevocationFromBlock(block, utils.fromBase64(authorUserId));
+        verifyDeviceRevocation(deviceRevocationEntry, user);
+        user = applyDeviceRevocationToUser(deviceRevocationEntry, user);
+
+        userIdToUserMap.set(authorUserId, user);
       }
     }
-    const device = find(user.devices, d => utils.equalArray(d.deviceId, deviceId));
-    if (!device) {
-      throw new InternalError('Assertion error: device not found');
-    }
-    return device.devicePublicSignatureKey;
+
+    return { userIdToUserMap, deviceIdToUserIdMap };
+  }
+
+  _getUserBlocksByUserIds(userIds: Array<Uint8Array>) {
+    const request = {
+      user_ids: userIds,
+    };
+
+    return this._client.send('get users blocks', b64RequestObject(request));
+  }
+
+  _getUserBlocksByDeviceIds(deviceIds: Array<Uint8Array>) {
+    const request = {
+      device_ids: deviceIds,
+    };
+
+    return this._client.send('get users blocks', b64RequestObject(request));
   }
 }
