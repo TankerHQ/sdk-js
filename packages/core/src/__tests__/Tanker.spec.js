@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, utils, random, type b64string } from '@tanker/crypto';
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
@@ -27,7 +27,7 @@ describe('Tanker', () => {
 
   before(() => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
-    appId = random(tcrypto.HASH_SIZE);
+    appId = utils.generateAppID(trustchainKeyPair.publicKey);
     userId = 'winnie';
 
     badVerifications = [
@@ -165,7 +165,7 @@ describe('Tanker', () => {
 
       it('should throw when identity\'s trustchain does not match tanker\'s', async () => {
         const otherAppKeyPair = tcrypto.makeSignKeyPair();
-        const otherAppId = random(tcrypto.HASH_SIZE);
+        const otherAppId = utils.generateAppID(otherAppKeyPair.publicKey);
         const identity = await createIdentity(
           utils.toBase64(otherAppId),
           utils.toBase64(otherAppKeyPair.privateKey),

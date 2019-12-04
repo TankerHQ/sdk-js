@@ -2,6 +2,7 @@
 import { errors, statuses } from '@tanker/core';
 import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
+import { utils } from '@tanker/crypto';
 
 import { type TestArgs } from './TestArgs';
 
@@ -26,8 +27,10 @@ const generateStartTests = (args: TestArgs) => {
     });
 
     it('throws when having configured a non existing app', async () => {
-      const nonExistentB64AppId = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
       const nonExistentB64AppSecret = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+      const publicKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+      const publicKeyBytes = utils.fromBase64(publicKey);
+      const nonExistentB64AppId = utils.toBase64(utils.generateAppID(publicKeyBytes));
       const userId = 'bob';
       bobIdentity = await createIdentity(nonExistentB64AppId, nonExistentB64AppSecret, userId);
       bobLaptop = args.makeTanker(nonExistentB64AppId);

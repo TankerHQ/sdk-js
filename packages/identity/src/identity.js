@@ -139,6 +139,11 @@ export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<
   return { permanentIdentities, provisionalIdentities };
 }
 
+function _generateAppId(appSecret: Uint8Array): b64string { // eslint-disable-line no-underscore-dangle
+  const publicKey = appSecret.subarray(tcrypto.SIGNATURE_PRIVATE_KEY_SIZE - tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, tcrypto.SIGNATURE_PRIVATE_KEY_SIZE);
+  return utils.toBase64(utils.generateAppID(publicKey));
+}
+
 export async function createIdentity(appId: b64string, appSecret: b64string, userId: string): Promise<b64string> {
   if (!appId || typeof appId !== 'string')
     throw new InvalidArgument('appId', 'b64string', appId);
@@ -148,10 +153,15 @@ export async function createIdentity(appId: b64string, appSecret: b64string, use
     throw new InvalidArgument('userId', 'string', userId);
   const obfuscatedUserId = obfuscateUserId(utils.fromBase64(appId), userId);
 
+  const appSecretBytes = utils.fromBase64(appSecret);
+  const gerenatedAppId = _generateAppId(appSecretBytes);
+  if (gerenatedAppId !== appId)
+    throw new InvalidArgument('app secret and app ID mismatch');
+
   const ephemeralKeyPair = tcrypto.makeSignKeyPair();
 
   const toSign = utils.concatArrays(ephemeralKeyPair.publicKey, obfuscatedUserId);
-  const delegationSignature = tcrypto.sign(toSign, utils.fromBase64(appSecret));
+  const delegationSignature = tcrypto.sign(toSign, appSecretBytes);
 
   const userSecret = createUserSecretB64(appId, userId);
 

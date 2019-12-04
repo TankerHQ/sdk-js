@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, random, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
@@ -48,8 +48,8 @@ describe('Local User', () => {
   let userData;
 
   before(async () => {
-    trustchainId = random(tcrypto.HASH_SIZE);
     trustchainKeyPair = tcrypto.makeSignKeyPair();
+    trustchainId = utils.generateAppID(trustchainKeyPair.publicKey);
     userIdString = 'clear user id';
     identity = await createIdentity(utils.toBase64(trustchainId), utils.toBase64(trustchainKeyPair.privateKey), userIdString);
     userData = extractUserData(identity);
