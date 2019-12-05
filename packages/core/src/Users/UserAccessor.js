@@ -11,42 +11,25 @@ import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { verifyDeviceCreation, verifyDeviceRevocation } from './Verify';
 
 import { Client, b64RequestObject } from '../Network/Client';
-import UserStore from './UserStore';
 import { type User } from './types';
 import Trustchain from '../Trustchain/Trustchain';
 import LocalUser from '../Session/LocalUser/LocalUser';
 
 // ensure that the UserStore is always up-to-date before requesting it.
 export default class UserAccessor {
-  _userStore: UserStore;
   _client: Client;
   _localUser: LocalUser;
   _trustchain: Trustchain;
-  _trustchainId: Uint8Array;
-  _userId: Uint8Array;
 
-  constructor(userStore: UserStore, trustchainAPI: Trustchain, client: Client, localUser: LocalUser, trustchainId: Uint8Array, userId: Uint8Array) {
-    this._userStore = userStore;
-    this._trustchain = trustchainAPI;
+  constructor(client: Client, localUser: LocalUser) {
     this._client = client;
     this._localUser = localUser;
-    this._trustchainId = trustchainId;
-    this._userId = userId;
   }
 
   async findUser(userId: Uint8Array) {
     const blocks = await this._getUserBlocksByUserIds([userId]);
     const { userIdToUserMap } = await this._usersFromBlocks(blocks);
     return userIdToUserMap.get(utils.toBase64(userId));
-  }
-
-  async findUserByDeviceId(args: $Exact<{ deviceId: Uint8Array }>): Promise<?User> {
-    const { deviceId } = args;
-
-    if (!(deviceId instanceof Uint8Array))
-      throw new InvalidArgument('deviceId', 'Uint8Array', deviceId);
-
-    return this._userStore.findUser(args);
   }
 
   async findUsers(hashedUserIds: Array<Uint8Array>): Promise<Array<User>> {
