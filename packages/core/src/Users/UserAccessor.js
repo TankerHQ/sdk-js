@@ -11,7 +11,7 @@ import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { verifyDeviceCreation, verifyDeviceRevocation } from './Verify';
 
 import { Client, b64RequestObject } from '../Network/Client';
-import UserStore, { type FindUsersParameters } from './UserStore';
+import UserStore from './UserStore';
 import { type User } from './types';
 import Trustchain from '../Trustchain/Trustchain';
 import LocalUser from '../Session/LocalUser/LocalUser';
@@ -34,14 +34,10 @@ export default class UserAccessor {
     this._userId = userId;
   }
 
-  async _fetchUsers(userIds: Array<Uint8Array>) {
-    await this._trustchain.sync(userIds, []);
-    await this._trustchain.updateUserStore(userIds);
-  }
-
   async findUser(userId: Uint8Array) {
-    await this._fetchUsers([userId]);
-    return this._userStore.findUser({ userId });
+    const blocks = await this._getUserBlocksByUserIds([userId]);
+    const { userIdToUserMap } = await this._usersFromBlocks(blocks);
+    return userIdToUserMap.get(utils.toBase64(userId));
   }
 
   async findUserByDeviceId(args: $Exact<{ deviceId: Uint8Array }>): Promise<?User> {
@@ -53,14 +49,16 @@ export default class UserAccessor {
     return this._userStore.findUser(args);
   }
 
-  async findUsers(args: FindUsersParameters): Promise<Array<User>> {
-    const { hashedUserIds } = args;
+  async findUsers(hashedUserIds: Array<Uint8Array>): Promise<Array<User>> {
     if (!hashedUserIds)
       throw new InternalError('Expected hashedUserIds parameter, but was missing');
 
-    await this._fetchUsers(hashedUserIds);
-
-    return this._userStore.findUsers(hashedUserIds);
+    if (!hashedUserIds.length) {
+      return [];
+    }
+    const blocks = await this._getUserBlocksByUserIds(hashedUserIds);
+    const { userIdToUserMap } = await this._usersFromBlocks(blocks);
+    return Array.from(userIdToUserMap.values());
   }
 
   async getUsers({ publicIdentities }: { publicIdentities: Array<PublicPermanentIdentity> }): Promise<Array<User>> {
@@ -70,7 +68,7 @@ export default class UserAccessor {
       return utils.fromBase64(u.value);
     });
 
-    const fullUsers = await this.findUsers({ hashedUserIds: obfuscatedUserIds });
+    const fullUsers = await this.findUsers(obfuscatedUserIds);
 
     if (fullUsers.length === obfuscatedUserIds.length)
       return fullUsers;

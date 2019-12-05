@@ -19,7 +19,6 @@ type DeviceToUser = {
 };
 
 export type FindUserParameters = $Exact<{ deviceId: Uint8Array }> | $Exact<{ userId: Uint8Array }> | $Exact<{ userPublicKey: Uint8Array }>;
-export type FindUsersParameters = $Exact<{ hashedUserIds: Array<Uint8Array> }>;
 export type FindDeviceParameters = $Exact<{ deviceId: Uint8Array }>;
 
 function recordFromUser(user: User) {
