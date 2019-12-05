@@ -1,6 +1,7 @@
 // @flow
 import sodium from 'libsodium-wrappers';
 import { type b64string, type safeb64string } from './aliases';
+import { generichash } from './hash';
 
 function assertArrayTypes(a: Uint8Array, b: Uint8Array) {
   if (!(a instanceof Uint8Array) || !(b instanceof Uint8Array)) {
@@ -115,4 +116,8 @@ export function memzero(bytes: Uint8Array) {
     throw new TypeError('"bytes" is not a Uint8Array');
 
   sodium.memzero(bytes);
+}
+
+export function generateAppID(publicKey: Uint8Array): Uint8Array {
+  return generichash(concatArrays(new Uint8Array([1]), new Uint8Array(32), publicKey));
 }

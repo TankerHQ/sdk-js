@@ -202,5 +202,10 @@ describe('Identity', () => {
       // $FlowExpectedError
       await expect(createProvisionalIdentity(trustchain.id, [])).to.be.rejectedWith(InvalidArgument);
     });
+
+    it('throws with mismatching app ID and app secret', async () => {
+      const mismatchingAppId = 'rB0/yEJWCUVYRtDZLtXaJqtneXQOsCSKrtmWw+V+ysc=';
+      await expect(createIdentity(mismatchingAppId, trustchain.sk, userId)).to.be.rejectedWith(InvalidArgument);
+    });
   });
 });
