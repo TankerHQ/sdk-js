@@ -3,7 +3,6 @@ import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument, InternalError } from '@tanker/errors';
 
-import { getGroupEntryFromBlock } from './Serialize';
 import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, UserGroupEntry } from './Serialize';
 import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
@@ -159,29 +158,36 @@ export async function groupFromUserGroupEntry(
   return externalGroup;
 }
 
-export async function inflateFromBlocks(blocks: Array<b64string>, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): Promise<Array<GroupData>> {
-  let group;
-
-  const groupsMap: Map<b64string, GroupData> = new Map();
-
-  for (const block of blocks) {
-    const entry = getGroupEntryFromBlock(block);
-    const b64groupId = utils.toBase64(entry.group_id ? entry.group_id : entry.public_signature_key);
-    const previousData: GroupData = groupsMap.get(b64groupId) || [];
-    const previousGroup = previousData.length ? previousData[previousData.length - 1].group : null;
-
-    group = await groupFromUserGroupEntry(entry, previousGroup, localUser, provisionalIdentityManager);
-    previousData.push({ group, entry });
-
-    groupsMap.set(b64groupId, previousData);
-  }
-  return [...groupsMap.values()];
-}
-
 export function verifyGroup(groupDataWithDevices: GroupDataWithDevices) {
   let previousGroup;
   groupDataWithDevices.forEach(g => {
     verifyGroupAction(g.entry, g.devicePublicSignatureKey, previousGroup);
     previousGroup = g.group;
   });
+}
+
+export async function groupsFromEntries(entries: Array<UserGroupEntry>, devicePublicSignatureKeyMap: Map<b64string, Uint8Array>, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): Promise<Array<Group>> {
+  const groupsMap: Map<b64string, GroupDataWithDevices> = new Map();
+
+  for (const entry of entries) {
+    const b64groupId = utils.toBase64(entry.group_id ? entry.group_id : entry.public_signature_key);
+    const previousData: GroupDataWithDevices = groupsMap.get(b64groupId) || [];
+    const previousGroup = previousData.length ? previousData[previousData.length - 1].group : null;
+
+    const group = await groupFromUserGroupEntry(entry, previousGroup, localUser, provisionalIdentityManager);
+    const devicePublicSignatureKey = devicePublicSignatureKeyMap.get(utils.toBase64(entry.author));
+    if (!devicePublicSignatureKey) {
+      throw new InternalError('author device publicSignatureKey missing');
+    }
+    previousData.push({ group, entry, devicePublicSignatureKey });
+
+    groupsMap.set(b64groupId, previousData);
+  }
+
+  const groups: Array<Group> = [];
+  for (const groupData of groupsMap.values()) {
+    verifyGroup(groupData);
+    groups.push(groupData[groupData.length - 1].group);
+  }
+  return groups;
 }

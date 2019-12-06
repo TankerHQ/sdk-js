@@ -12,17 +12,14 @@ import { getGroupEntryFromBlock } from './Serialize';
 import { Client, b64RequestObject } from '../Network/Client';
 import GroupStore from './GroupStore';
 import type { InternalGroup, Group } from './types';
-import type { GroupDataWithDevices } from './ManagerHelper';
 import {
   assertExpectedGroups,
   assertExpectedGroupsByPublicKey,
   assertPublicIdentities,
-  verifyGroup,
-  groupFromUserGroupEntry
+  groupsFromEntries,
 } from './ManagerHelper';
 
 import Trustchain from '../Trustchain/Trustchain';
-import { InternalError } from '../../../errors/src/index';
 
 type CachedPublicKeysResult = {
   cachedKeys: Array<Uint8Array>,
@@ -164,29 +161,7 @@ export default class GroupManager {
     const deviceIds = entries.map(entry => entry.author);
     const devicePublicSignatureKeyMap = await this._userAccessor.getDeviceKeysByDevicesIds(deviceIds);
 
-    const groupsMap: Map<b64string, GroupDataWithDevices> = new Map();
-
-    for (const entry of entries) {
-      const b64groupId = utils.toBase64(entry.group_id ? entry.group_id : entry.public_signature_key);
-      const previousData: GroupDataWithDevices = groupsMap.get(b64groupId) || [];
-      const previousGroup = previousData.length ? previousData[previousData.length - 1].group : null;
-
-      const group = await groupFromUserGroupEntry(entry, previousGroup, this._localUser, this._provisionalIdentityManager);
-      const devicePublicSignatureKey = devicePublicSignatureKeyMap.get(utils.toBase64(entry.author));
-      if (!devicePublicSignatureKey) {
-        throw new InternalError('author device publicSignatureKey missing');
-      }
-      previousData.push({ group, entry, devicePublicSignatureKey });
-
-      groupsMap.set(b64groupId, previousData);
-    }
-
-    const groups: Array<Group> = [];
-    for (const groupData of groupsMap.values()) {
-      verifyGroup(groupData);
-      groups.push(groupData[groupData.length - 1].group);
-    }
-    return groups;
+    return groupsFromEntries(entries, devicePublicSignatureKeyMap, this._localUser, this._provisionalIdentityManager);
   }
 
   _getGroupBlocksByPublicKey(groupPublicEncryptionKey: Uint8Array) {

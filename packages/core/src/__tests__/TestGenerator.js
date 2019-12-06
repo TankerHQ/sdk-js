@@ -454,7 +454,7 @@ class TestGenerator {
     };
   }
 
-  makeUserGroupAddition = (parentDevice: TestDeviceCreation, previousGroup: TestUserGroup, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
+  makeUserGroupAddition = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
     const blockGenerator = new BlockGenerator(
       this._trustchainId,
       parentDevice.testDevice.signKeys.privateKey,
@@ -462,16 +462,16 @@ class TestGenerator {
     );
     this._trustchainIndex += 1;
 
-    const signatureKeyPair = previousGroup.group.signatureKeyPair || null;
-    const encryptionKeyPair = previousGroup.group.encryptionKeyPair || null;
+    const signatureKeyPair = previousGroup.signatureKeyPair || null;
+    const encryptionKeyPair = previousGroup.encryptionKeyPair || null;
     if (!signatureKeyPair || !encryptionKeyPair) {
       throw new Error('This group has no key pairs!');
     }
 
     const block = blockGenerator.addToUserGroup(
-      previousGroup.group.groupId,
+      previousGroup.groupId,
       signatureKeyPair.privateKey,
-      previousGroup.group.lastGroupBlock,
+      previousGroup.lastGroupBlock,
       encryptionKeyPair.privateKey,
       newMembers,
       provisionalUsers
@@ -480,7 +480,7 @@ class TestGenerator {
 
     const userGroupEntry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
 
-    const group = { ...previousGroup.group };
+    const group = { ...previousGroup };
     group.lastGroupBlock = userGroupEntry.hash;
     group.index = userGroupEntry.index;
 
