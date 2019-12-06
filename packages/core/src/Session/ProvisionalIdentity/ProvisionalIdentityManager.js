@@ -7,7 +7,7 @@ import { type SecretProvisionalIdentity, type PublicProvisionalIdentity, type Pu
 import { VerificationNeeded } from '../../errors.internal';
 
 import { Client, b64RequestObject } from '../../Network/Client';
-import LocalUser from '../LocalUser';
+import LocalUser from '../LocalUser/LocalUser';
 import Trustchain from '../../Trustchain/Trustchain';
 import Storage from '../Storage';
 import { formatVerificationRequest } from '../requests';

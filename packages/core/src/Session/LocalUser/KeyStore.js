@@ -6,7 +6,7 @@ import { InternalError } from '@tanker/errors';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
 import type { KeySafe, IndexedProvisionalUserKeyPairs, ProvisionalUserKeyPairs } from './KeySafe';
-import type { UserKeys } from '../Users/Serialize';
+import type { UserKeys } from '../../Users/Serialize';
 
 const TABLE = 'device';
 

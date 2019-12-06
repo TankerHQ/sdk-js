@@ -7,9 +7,9 @@ import { expect } from '@tanker/test-utils';
 import TestGenerator from './TestGenerator';
 
 import { type UserKeys } from '../Users/Serialize';
-import LocalUser from '../Session/LocalUser';
+import LocalUser from '../Session/LocalUser/LocalUser';
 import { extractUserData } from '../Session/UserData';
-import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
+import { type ProvisionalUserKeyPairs } from '../Session/LocalUser/KeySafe';
 
 class FakeKeyStore {
   signatureKeyPair: tcrypto.SodiumKeyPair;

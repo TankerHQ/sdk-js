@@ -6,13 +6,13 @@ import { InternalError } from '@tanker/errors';
 import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/identity';
 
 import KeyStore from './KeyStore';
-import BlockGenerator from '../Blocks/BlockGenerator';
+import BlockGenerator from '../../Blocks/BlockGenerator';
 
-import type { ClaimEntry } from './ProvisionalIdentity/Serialize';
-import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
+import type { DeviceCreationEntry, DeviceRevocationEntry } from '../../Users/Serialize';
 import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
-import { findIndex } from '../utils';
-import type { UserData, DelegationToken } from './UserData';
+import { findIndex } from '../../utils';
+import type { UserData, DelegationToken } from '../UserData';
+import { type ClaimEntry } from '../ProvisionalIdentity/Serialize';
 
 export type PrivateProvisionalKeys = {|
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
@@ -217,17 +217,6 @@ export class LocalUser extends EventEmitter {
   storeProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array, privateProvisionalKeys: PrivateProvisionalKeys) => {
     const id = utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey);
     return this._keyStore.addProvisionalUserKeys(utils.toBase64(id), privateProvisionalKeys.appEncryptionKeyPair, privateProvisionalKeys.tankerEncryptionKeyPair);
-  }
-
-  decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): PrivateProvisionalKeys {
-    const userKeyPair = this.findUserKey(recipientUserPublicKey);
-
-    const provisionalUserPrivateKeys = tcrypto.sealDecrypt(encryptedPrivateProvisionalKeys, userKeyPair);
-    const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
-
-    const tankerEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
-
-    return { appEncryptionKeyPair, tankerEncryptionKeyPair };
   }
 
   hasClaimedProvisionalIdentity = (provisionalIdentity: SecretProvisionalIdentity) => {

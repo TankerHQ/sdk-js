@@ -2,7 +2,7 @@
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
 import { type PublicProvisionalUser, type ProvisionalUserKeys, createIdentity, getPublicIdentity } from '@tanker/identity';
-import KeyStore from '../Session/KeyStore';
+import KeyStore from '../Session/LocalUser/KeyStore';
 
 import {
   provisionalIdentityClaimFromBlock,

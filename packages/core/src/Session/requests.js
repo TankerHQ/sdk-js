@@ -6,10 +6,10 @@ import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { type Block } from '../Blocks/Block';
 import { Client, b64RequestObject } from '../Network/Client';
 
-import LocalUser from './LocalUser';
-import { type UserCreation } from './deviceCreation';
+import LocalUser from './LocalUser/LocalUser';
+import { type UserCreation } from './LocalUser/deviceCreation';
 import { type Verification, type RemoteVerification } from './types';
-import { type GhostDevice } from './ghostDevice';
+import { type GhostDevice } from './LocalUser/ghostDevice';
 
 type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,

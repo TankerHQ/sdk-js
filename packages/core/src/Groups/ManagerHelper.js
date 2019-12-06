@@ -8,8 +8,8 @@ import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, UserGroupEntry 
 import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
 
-import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
-import KeyStore from '../Session/KeyStore';
+import { type ProvisionalUserKeyPairs } from '../Session/LocalUser/KeySafe';
+import KeyStore from '../Session/LocalUser/KeyStore';
 import { type Device } from '../Users/types';
 
 export const MAX_GROUP_SIZE = 1000;

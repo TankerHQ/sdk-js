@@ -4,7 +4,7 @@ import { InternalError, InvalidVerification, OperationCanceled, NetworkError, Ta
 
 import Trustchain from '../Trustchain/Trustchain';
 import Storage, { type DataStoreOptions } from './Storage';
-import LocalUser from './LocalUser';
+import LocalUser from './LocalUser/LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { Managers } from './Managers';
@@ -12,8 +12,8 @@ import { type UserData } from './UserData';
 
 import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
 
-import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './ghostDevice';
-import { generateDeviceFromGhostDevice, generateUserCreation } from './deviceCreation';
+import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './LocalUser/ghostDevice';
+import { generateDeviceFromGhostDevice, generateUserCreation } from './LocalUser/deviceCreation';
 
 export class Session extends EventEmitter {
   localUser: LocalUser;

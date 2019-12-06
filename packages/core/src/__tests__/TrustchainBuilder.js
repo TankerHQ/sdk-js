@@ -14,7 +14,7 @@ import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
 
 import Storage from '../Session/Storage';
-import KeyStore from '../Session/KeyStore';
+import KeyStore from '../Session/LocalUser/KeyStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';

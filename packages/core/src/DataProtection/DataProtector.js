@@ -16,7 +16,7 @@ import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/Provision
 
 import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
-import LocalUser from '../Session/LocalUser';
+import LocalUser from '../Session/LocalUser/LocalUser';
 import GroupManager from '../Groups/Manager';
 import UserAccessor from '../Users/UserAccessor';
 import { type User, getLastUserPublicKey } from '../Users/types';

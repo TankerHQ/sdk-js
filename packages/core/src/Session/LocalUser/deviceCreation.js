@@ -4,12 +4,12 @@ import { utils, tcrypto } from '@tanker/crypto';
 
 import {
   serializeUserDeviceV3,
-} from '../Users/Serialize';
+} from '../../Users/Serialize';
 
-import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
+import { preferredNature, NATURE_KIND } from '../../Blocks/Nature';
 
-import { signBlock, hashBlock, type Block } from '../Blocks/Block';
-import { type DelegationToken } from './UserData';
+import { signBlock, hashBlock, type Block } from '../../Blocks/Block';
+import { type DelegationToken } from '../UserData';
 
 import { type DeviceKeys } from './KeySafe';
 import { type GhostDevice, type GhostDeviceKeys } from './ghostDevice';

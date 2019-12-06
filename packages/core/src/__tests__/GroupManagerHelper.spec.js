@@ -9,7 +9,7 @@ import { type ExternalGroup } from '../Groups/types';
 
 import { serializeBlock } from '../Blocks/payloads';
 import TestGenerator, { getKeyStoreOfDevice, type TestDeviceCreation, type TestUserGroup } from './TestGenerator';
-import KeyStore from '../Session/KeyStore';
+import KeyStore from '../Session/LocalUser/KeyStore';
 
 describe('GroupManagerHelper', () => {
   describe('assertPublicIdentities()', () => {

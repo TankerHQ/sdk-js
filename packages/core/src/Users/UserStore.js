@@ -13,7 +13,7 @@ import { findIndex } from '../utils';
 import { NATURE, NATURE_KIND, natureKind } from '../Blocks/Nature';
 import type { DeviceCreationEntry, DeviceRevocationEntry, UserEntry } from './Serialize';
 
-import type { ProvisionalUserKeyPairs } from '../Session/KeySafe';
+import type { ProvisionalUserKeyPairs } from '../Session/LocalUser/KeySafe';
 import { type ClaimEntry } from '../Session/ProvisionalIdentity/Serialize';
 
 type DeviceToUser = {

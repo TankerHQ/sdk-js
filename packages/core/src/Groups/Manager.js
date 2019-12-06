@@ -5,12 +5,12 @@ import { InvalidArgument } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 
 import UserAccessor from '../Users/UserAccessor';
-import LocalUser from '../Session/LocalUser';
+import LocalUser from '../Session/LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
 import { Client, b64RequestObject } from '../Network/Client';
 import GroupStore from './GroupStore';
-import KeyStore from '../Session/KeyStore';
+import KeyStore from '../Session/LocalUser/KeyStore';
 import type { InternalGroup, Group } from './types';
 import type { GroupData, GroupDataWithDevices } from './ManagerHelper';
 import {
