@@ -3,16 +3,19 @@
 import EventEmitter from 'events';
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
-import { type PublicIdentity, type SecretProvisionalIdentity } from '@tanker/identity';
+import { type SecretProvisionalIdentity } from '@tanker/identity';
 
 import KeyStore from './KeyStore';
 import BlockGenerator from '../../Blocks/BlockGenerator';
 
 import type { DeviceCreationEntry, DeviceRevocationEntry } from '../../Users/Serialize';
-import type { DeviceKeys, ProvisionalUserKeyPairs } from './KeySafe';
+import type { ProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../../utils';
-import type { UserData, DelegationToken } from '../UserData';
+import type { UserData } from '../UserData';
 import { type ClaimEntry } from '../ProvisionalIdentity/Serialize';
+
+import { type GhostDevice, type GhostDeviceKeys, ghostDeviceToEncryptedUnlockKey } from './ghostDevice';
+import { makeDeviceBlock, type EncryptedUserKeyForGhostDevice } from './deviceCreation';
 
 export type PrivateProvisionalKeys = {|
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
@@ -37,16 +40,16 @@ export class LocalUser extends EventEmitter {
 
     this._keyStore = keyStore;
     this._userData = userData;
-    this.loadStoredData();
+    this._loadStoredData();
 
     this._blockGenerator = new BlockGenerator(
       this.trustchainId,
-      this.privateSignatureKey,
+      this._deviceSignatureKeyPair.privateKey,
       this._deviceId ? this._deviceId : new Uint8Array(0),
     );
   }
 
-  loadStoredData = () => {
+  _loadStoredData = () => {
     this._userKeys = {};
     const userKeys = this._keyStore.userKeys;
     for (const userKey of userKeys) {
@@ -73,11 +76,101 @@ export class LocalUser extends EventEmitter {
 
     await this._keyStore.addProvisionalUserKeys(id, appEncryptionKeyPair, tankerEncryptionKeyPair);
     return { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
+  };
+
+  generateDeviceFromGhostDevice = (ghostDevice: GhostDevice, encryptedUserKey: EncryptedUserKeyForGhostDevice) => {
+    const ghostDeviceEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey);
+
+    const decryptedUserPrivateKey = tcrypto.sealDecrypt(
+      encryptedUserKey.encryptedPrivateUserKey,
+      ghostDeviceEncryptionKeyPair
+    );
+
+    const userKeys = tcrypto.getEncryptionKeyPairFromPrivateKey(decryptedUserPrivateKey);
+
+    const ephemeralKeys = tcrypto.makeSignKeyPair();
+    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, this._userData.userId);
+
+    const { deviceBlock } = makeDeviceBlock({
+      trustchainId: this._userData.trustchainId,
+      userId: this._userData.userId,
+      userKeys,
+      author: encryptedUserKey.deviceId,
+      ephemeralKey: ephemeralKeys.publicKey,
+      delegationSignature: tcrypto.sign(delegationBuffer, ghostDevice.privateSignatureKey),
+      publicSignatureKey: this._deviceSignatureKeyPair.publicKey,
+      publicEncryptionKey: this._deviceEncryptionKeyPair.publicKey,
+      blockSignatureKey: ephemeralKeys.privateKey,
+      isGhost: false
+    });
+    return deviceBlock;
+  };
+
+  generateUserCreation = (ghostDeviceKeys: GhostDeviceKeys) => {
+    const userKeys = tcrypto.makeEncryptionKeyPair();
+
+    const { deviceBlock, deviceId } = makeDeviceBlock({
+      trustchainId: this._userData.trustchainId,
+      userId: this._userData.userId,
+      userKeys,
+      author: this.trustchainId,
+      ephemeralKey: this._userData.delegationToken.ephemeral_public_signature_key,
+      delegationSignature: this._userData.delegationToken.delegation_signature,
+      publicSignatureKey: ghostDeviceKeys.signatureKeyPair.publicKey,
+      publicEncryptionKey: ghostDeviceKeys.encryptionKeyPair.publicKey,
+      blockSignatureKey: this._userData.delegationToken.ephemeral_private_signature_key,
+      isGhost: true,
+    });
+
+    const encryptedUserKey = {
+      publicUserKey: userKeys.publicKey,
+      encryptedPrivateUserKey: tcrypto.sealEncrypt(userKeys.privateKey, ghostDeviceKeys.encryptionKeyPair.publicKey),
+      deviceId
+    };
+
+    const ghostDevice = {
+      privateSignatureKey: ghostDeviceKeys.signatureKeyPair.privateKey,
+      privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
+    };
+
+    const firstDeviceBlock = this.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
+    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._userData.userSecret);
+    return {
+      userCreationBlock: deviceBlock,
+      firstDeviceBlock,
+      ghostDevice,
+      encryptedUnlockKey,
+    };
+  };
+
+  get blockGenerator(): BlockGenerator {
+    return this._blockGenerator;
+  }
+  get publicSignatureKey(): Key {
+    return this._deviceSignatureKeyPair.publicKey;
+  }
+  get userId(): Uint8Array {
+    return this._userData.userId;
+  }
+  get trustchainId(): Uint8Array {
+    return this._userData.trustchainId;
+  }
+  get userSecret(): Uint8Array {
+    return this._userData.userSecret;
+  }
+  get publicIdentity() {
+    return { trustchain_id: utils.toBase64(this._userData.trustchainId), target: 'user', value: utils.toBase64(this._userData.userId) };
+  }
+
+  findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
+
+  get currentUserKey(): tcrypto.SodiumKeyPair {
+    return this._currentUserKey;
   }
 
   applyDeviceCreation = async (deviceCreation: DeviceCreationEntry) => {
     // Does is concern our device?
-    if (!utils.equalArray(this.publicEncryptionKey, deviceCreation.public_encryption_key)) {
+    if (!utils.equalArray(this._deviceEncryptionKeyPair.publicKey, deviceCreation.public_encryption_key)) {
       return;
     }
 
@@ -86,7 +179,7 @@ export class LocalUser extends EventEmitter {
 
     this._blockGenerator = new BlockGenerator(
       this.trustchainId,
-      this.privateSignatureKey,
+      this._deviceSignatureKeyPair.privateKey,
       deviceCreation.hash,
     );
 
@@ -160,50 +253,6 @@ export class LocalUser extends EventEmitter {
     this._userKeys[utils.toBase64(userKey.publicKey)] = userKey;
   }
 
-  get blockGenerator(): BlockGenerator {
-    return this._blockGenerator;
-  }
-  get publicSignatureKey(): Key {
-    return this._deviceSignatureKeyPair.publicKey;
-  }
-  get privateSignatureKey(): Key {
-    return this._deviceSignatureKeyPair.privateKey;
-  }
-  get publicEncryptionKey(): Key {
-    return this._deviceEncryptionKeyPair.publicKey;
-  }
-  get privateEncryptionKey(): Key {
-    return this._deviceEncryptionKeyPair.privateKey;
-  }
-  get currentUserKey(): tcrypto.SodiumKeyPair {
-    return this._currentUserKey;
-  }
-  get deviceId(): Uint8Array {
-    if (!this._deviceId)
-      throw new InternalError('Assertion error: device ID not set');
-    return this._deviceId;
-  }
-  get userId(): Uint8Array {
-    return this._userData.userId;
-  }
-  get trustchainId(): Uint8Array {
-    return this._userData.trustchainId;
-  }
-  get delegationToken(): DelegationToken {
-    return this._userData.delegationToken;
-  }
-  get userSecret(): Uint8Array {
-    return this._userData.userSecret;
-  }
-  get wasRevoked(): bool {
-    return this._wasRevoked;
-  }
-  get publicIdentity(): PublicIdentity {
-    return { trustchain_id: utils.toBase64(this._userData.trustchainId), target: 'user', value: utils.toBase64(this._userData.userId) };
-  }
-
-  findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
-
   findProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): ?PrivateProvisionalKeys => {
     const id = utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey);
     const result = this._keyStore.provisionalUserKeys[utils.toBase64(id)];
@@ -229,12 +278,6 @@ export class LocalUser extends EventEmitter {
     }
     return false;
   }
-
-  deviceKeys = (): DeviceKeys => ({
-    signaturePair: this._deviceSignatureKeyPair,
-    encryptionPair: this._deviceEncryptionKeyPair,
-    deviceId: this._deviceId ? utils.toBase64(this._deviceId) : null
-  });
 }
 
 export default LocalUser;

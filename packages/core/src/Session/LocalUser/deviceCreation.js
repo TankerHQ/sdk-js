@@ -1,28 +1,16 @@
 // @flow
 
-import { utils, tcrypto } from '@tanker/crypto';
+import { tcrypto } from '@tanker/crypto';
 
-import {
-  serializeUserDeviceV3,
-} from '../../Users/Serialize';
+import { serializeUserDeviceV3 } from '../../Users/Serialize';
 
 import { preferredNature, NATURE_KIND } from '../../Blocks/Nature';
 
-import { signBlock, hashBlock, type Block } from '../../Blocks/Block';
-import { type DelegationToken } from '../UserData';
-
-import { type DeviceKeys } from './KeySafe';
-import { type GhostDevice, type GhostDeviceKeys } from './ghostDevice';
+import { signBlock, hashBlock } from '../../Blocks/Block';
 
 export type EncryptedUserKeyForGhostDevice = {
   deviceId: Uint8Array,
   encryptedPrivateUserKey: Uint8Array,
-}
-
-export type UserCreation = {
-  ghostDevice: GhostDevice,
-  encryptedUserKey: EncryptedUserKeyForGhostDevice,
-  userCreationBlock: Block,
 }
 
 type MakeDeviceParams = {
@@ -38,7 +26,7 @@ type MakeDeviceParams = {
   isGhost: bool,
 };
 
-const makeDeviceBlock = (args: MakeDeviceParams) => {
+export const makeDeviceBlock = (args: MakeDeviceParams) => {
   const encryptedUserKey = tcrypto.sealEncrypt(
     args.userKeys.privateKey,
     args.publicEncryptionKey,
@@ -58,85 +46,14 @@ const makeDeviceBlock = (args: MakeDeviceParams) => {
     revoked: Number.MAX_SAFE_INTEGER,
   };
 
-  return signBlock({
+  const deviceBlock = signBlock({
     index: 0,
     trustchain_id: args.trustchainId,
     nature: preferredNature(NATURE_KIND.device_creation),
     author: args.author,
     payload: serializeUserDeviceV3(userDevice)
   }, args.blockSignatureKey);
-};
 
-export const generateUserCreation = (
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-  delegationToken: DelegationToken,
-  ghostDeviceKeys: GhostDeviceKeys,
-) => {
-  const userKeys = tcrypto.makeEncryptionKeyPair();
-
-  const userCreationBlock = makeDeviceBlock({
-    trustchainId,
-    userId,
-    userKeys,
-    author: trustchainId,
-    ephemeralKey: delegationToken.ephemeral_public_signature_key,
-    delegationSignature: delegationToken.delegation_signature,
-    publicSignatureKey: ghostDeviceKeys.signatureKeyPair.publicKey,
-    publicEncryptionKey: ghostDeviceKeys.encryptionKeyPair.publicKey,
-    blockSignatureKey: delegationToken.ephemeral_private_signature_key,
-    isGhost: true,
-  });
-
-  const encryptedUserKey = {
-    publicUserKey: userKeys.publicKey,
-    encryptedPrivateUserKey: tcrypto.sealEncrypt(userKeys.privateKey, ghostDeviceKeys.encryptionKeyPair.publicKey),
-    deviceId: hashBlock(userCreationBlock)
-  };
-
-  return {
-    userCreationBlock,
-    ghostDevice: {
-      privateSignatureKey: ghostDeviceKeys.signatureKeyPair.privateKey,
-      privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
-    },
-    encryptedUserKey,
-  };
-};
-
-export const generateDeviceFromGhostDevice = (
-  trustchainId: Uint8Array,
-  userId: Uint8Array,
-  deviceKeys: DeviceKeys,
-  ghostDevice: GhostDevice,
-  encryptedUserKey: EncryptedUserKeyForGhostDevice,
-) => {
-  const ghostDeviceEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey);
-
-  const decryptedUserPrivateKey = tcrypto.sealDecrypt(
-    encryptedUserKey.encryptedPrivateUserKey,
-    ghostDeviceEncryptionKeyPair
-  );
-
-  const userKeys = tcrypto.getEncryptionKeyPairFromPrivateKey(decryptedUserPrivateKey);
-
-  const ephemeralKeys = tcrypto.makeSignKeyPair();
-  const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, userId);
-
-  const deviceBlock = makeDeviceBlock({
-    trustchainId,
-    userId,
-    userKeys,
-    author: encryptedUserKey.deviceId,
-    ephemeralKey: ephemeralKeys.publicKey,
-    delegationSignature: tcrypto.sign(delegationBuffer, ghostDevice.privateSignatureKey),
-    publicSignatureKey: deviceKeys.signaturePair.publicKey,
-    publicEncryptionKey: deviceKeys.encryptionPair.publicKey,
-    blockSignatureKey: ephemeralKeys.privateKey,
-    isGhost: false
-  });
-  return {
-    deviceBlock,
-    deviceId: hashBlock(deviceBlock)
-  };
+  const deviceId = hashBlock(deviceBlock);
+  return { deviceBlock, deviceId };
 };

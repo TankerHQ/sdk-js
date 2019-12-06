@@ -12,8 +12,7 @@ import { type UserData } from './UserData';
 
 import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
 
-import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUnlockKey } from './LocalUser/ghostDevice';
-import { generateDeviceFromGhostDevice, generateUserCreation } from './LocalUser/deviceCreation';
+import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, decryptUnlockKey } from './LocalUser/ghostDevice';
 
 export class Session extends EventEmitter {
   localUser: LocalUser;
@@ -120,51 +119,21 @@ export class Session extends EventEmitter {
       ghostDeviceKeys = generateGhostDeviceKeys();
     }
 
-    const userCreation = generateUserCreation(
-      this.localUser.trustchainId,
-      this.localUser.userId,
-      this.localUser.delegationToken,
-      ghostDeviceKeys
-    );
-
-    const firstDevice = generateDeviceFromGhostDevice(
-      this.localUser.trustchainId,
-      this.localUser.userId,
-      this.localUser.deviceKeys(),
-      userCreation.ghostDevice,
-      userCreation.encryptedUserKey,
-    );
-
-    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(userCreation.ghostDevice, this.localUser.userSecret);
-
-    await sendUserCreation(this._client, this.localUser, userCreation, firstDevice.deviceBlock, verification, encryptedUnlockKey);
+    const { userCreationBlock, firstDeviceBlock, encryptedUnlockKey } = this.localUser.generateUserCreation(ghostDeviceKeys);
+    await sendUserCreation(this._client, this.localUser, userCreationBlock, firstDeviceBlock, verification, encryptedUnlockKey);
 
     await this.authenticate();
   }
 
   unlockUser = async (verification: Verification) => {
     let newDevice;
-    let unlockKey;
 
     try {
-      if (verification.verificationKey) {
-        unlockKey = verification.verificationKey;
-      } else {
-        const remoteVerification: RemoteVerification = (verification: any);
-        const encryptedUnlockKey = await sendGetVerificationKey(this.localUser, this._client, remoteVerification);
-        unlockKey = decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
-      }
-
+      const unlockKey = await this._getUnlockKey(verification);
       const ghostDevice = extractGhostDevice(unlockKey);
-      const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
 
-      newDevice = generateDeviceFromGhostDevice(
-        this.localUser.trustchainId,
-        this.localUser.userId,
-        this.localUser.deviceKeys(),
-        ghostDevice,
-        encryptedUserKey,
-      );
+      const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
+      newDevice = this.localUser.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
     } catch (e) {
       if (e instanceof TankerError) {
         throw e;
@@ -175,7 +144,7 @@ export class Session extends EventEmitter {
       throw new InternalError(e);
     }
 
-    await this._client.sendBlock(newDevice.deviceBlock);
+    await this._client.sendBlock(newDevice);
     await this.authenticate();
   }
 
@@ -198,6 +167,15 @@ export class Session extends EventEmitter {
     await this._trustchain.close();
     await this._client.close();
     await this.storage.nuke();
+  }
+
+  _getUnlockKey = async (verification: Verification) => {
+    if (verification.verificationKey) {
+      return verification.verificationKey;
+    }
+    const remoteVerification: RemoteVerification = (verification: any);
+    const encryptedUnlockKey = await sendGetVerificationKey(this.localUser, this._client, remoteVerification);
+    return decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
   }
 
   get userAccessor() { return this._managers.userAccessor; }

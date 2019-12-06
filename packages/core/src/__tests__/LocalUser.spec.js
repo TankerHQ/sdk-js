@@ -69,10 +69,6 @@ describe('Local User', () => {
     expect(keyStore.deviceId).to.be.undefined;
   });
 
-  it('throws if asked for deviceID when its not set', async () => {
-    expect(() => localUser.deviceId).to.throw();
-  });
-
   it('saves our device ID', async () => {
     await localUser.applyDeviceCreation(deviceCreation2.unverifiedDeviceCreation);
     expect(keyStore.deviceId).to.deep.equal(deviceCreation2.unverifiedDeviceCreation.hash);

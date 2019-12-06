@@ -7,7 +7,6 @@ import { type Block } from '../Blocks/Block';
 import { Client, b64RequestObject } from '../Network/Client';
 
 import LocalUser from './LocalUser/LocalUser';
-import { type UserCreation } from './LocalUser/deviceCreation';
 import { type Verification, type RemoteVerification } from './types';
 import { type GhostDevice } from './LocalUser/ghostDevice';
 
@@ -83,11 +82,11 @@ export const getLastUserKey = async (client: Client, trustchainId: Uint8Array, g
   };
 };
 
-export const sendUserCreation = async (client: Client, localUser: LocalUser, userCreation: UserCreation, firstDevice: Block, verification: Verification, encryptedUnlockKey: Uint8Array) => {
+export const sendUserCreation = async (client: Client, localUser: LocalUser, userCreationBlock: Block, firstDevice: Block, verification: Verification, encryptedUnlockKey: Uint8Array) => {
   const request: UserCreationRequest = {
     trustchain_id: localUser.trustchainId,
     user_id: localUser.userId,
-    user_creation_block: userCreation.userCreationBlock,
+    user_creation_block: userCreationBlock,
     first_device_block: firstDevice,
   };
 
