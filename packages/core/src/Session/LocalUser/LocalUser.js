@@ -3,7 +3,6 @@
 import EventEmitter from 'events';
 import { tcrypto, utils, type Key } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
-import { type SecretProvisionalIdentity } from '@tanker/identity';
 
 import KeyStore from './KeyStore';
 import BlockGenerator from '../../Blocks/BlockGenerator';
@@ -268,15 +267,9 @@ export class LocalUser extends EventEmitter {
     return this._keyStore.addProvisionalUserKeys(utils.toBase64(id), privateProvisionalKeys.appEncryptionKeyPair, privateProvisionalKeys.tankerEncryptionKeyPair);
   }
 
-  hasClaimedProvisionalIdentity = (provisionalIdentity: SecretProvisionalIdentity) => {
-    const appPublicEncryptionKey = provisionalIdentity.public_encryption_key;
+  hasProvisionalUserKey = (appPublicEncryptionKey: Uint8Array) => {
     const puks: Array<ProvisionalUserKeyPairs> = (Object.values(this._keyStore.provisionalUserKeys): any);
-    for (const puk of puks) {
-      if (utils.toBase64(puk.appEncryptionKeyPair.publicKey) === appPublicEncryptionKey) {
-        return true;
-      }
-    }
-    return false;
+    return puks.some(puk => utils.equalArray(puk.appEncryptionKeyPair.publicKey, appPublicEncryptionKey));
   }
 }
 
