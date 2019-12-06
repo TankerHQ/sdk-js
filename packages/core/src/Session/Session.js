@@ -125,14 +125,15 @@ export class Session extends EventEmitter {
   }
 
   unlockUser = async (verification: Verification) => {
-    let newDevice;
-
     try {
       const unlockKey = await this._getUnlockKey(verification);
       const ghostDevice = extractGhostDevice(unlockKey);
 
       const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
-      newDevice = this.localUser.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
+
+      const newDeviceBlock = this.localUser.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
+      await this._client.send('create device', newDeviceBlock, true);
+      await this.authenticate();
     } catch (e) {
       if (e instanceof TankerError) {
         throw e;
@@ -142,9 +143,6 @@ export class Session extends EventEmitter {
       }
       throw new InternalError(e);
     }
-
-    await this._client.sendBlock(newDevice);
-    await this.authenticate();
   }
 
   generateVerificationKey = async () => {

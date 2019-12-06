@@ -1,12 +1,12 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 
 import { serializeUserDeviceV3 } from '../../Users/Serialize';
 
 import { preferredNature, NATURE_KIND } from '../../Blocks/Nature';
-
 import { signBlock, hashBlock } from '../../Blocks/Block';
+import { serializeBlock } from '../../Blocks/payloads';
 
 export type EncryptedUserKeyForGhostDevice = {
   deviceId: Uint8Array,
@@ -46,14 +46,14 @@ export const makeDeviceBlock = (args: MakeDeviceParams) => {
     revoked: Number.MAX_SAFE_INTEGER,
   };
 
-  const deviceBlock = signBlock({
+  const block = signBlock({
     index: 0,
     trustchain_id: args.trustchainId,
     nature: preferredNature(NATURE_KIND.device_creation),
     author: args.author,
     payload: serializeUserDeviceV3(userDevice)
   }, args.blockSignatureKey);
+  const deviceId = hashBlock(block);
 
-  const deviceId = hashBlock(deviceBlock);
-  return { deviceBlock, deviceId };
+  return { deviceBlock: utils.toBase64(serializeBlock(block)), deviceId };
 };
