@@ -7,9 +7,9 @@ import { expect } from '@tanker/test-utils';
 import TestGenerator from './TestGenerator';
 
 import { type UserKeys } from '../Users/Serialize';
-import LocalUser from '../Session/LocalUser';
+import LocalUser from '../Session/LocalUser/LocalUser';
 import { extractUserData } from '../Session/UserData';
-import { type ProvisionalUserKeyPairs } from '../Session/KeySafe';
+import { type ProvisionalUserKeyPairs } from '../Session/LocalUser/KeySafe';
 
 class FakeKeyStore {
   signatureKeyPair: tcrypto.SodiumKeyPair;
@@ -67,10 +67,6 @@ describe('Local User', () => {
   it('doesnt save our device ID if the key is for another device', async () => {
     await localUser.applyDeviceCreation(deviceCreation1.unverifiedDeviceCreation);
     expect(keyStore.deviceId).to.be.undefined;
-  });
-
-  it('throws if asked for deviceID when its not set', async () => {
-    expect(() => localUser.deviceId).to.throw();
   });
 
   it('saves our device ID', async () => {

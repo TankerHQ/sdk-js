@@ -8,7 +8,7 @@ import { toBase64 } from '../index';
 import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
 
 import GroupManager from '../Groups/Manager';
-import LocalUser from '../Session/LocalUser';
+import LocalUser from '../Session/LocalUser/LocalUser';
 
 import { type KeyPublishEntry, type KeyPublishNature, KeyPublishNatures } from '../DataProtection/Resource/keyPublish';
 

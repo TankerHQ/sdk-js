@@ -4,7 +4,7 @@ import Trustchain from '../Trustchain/Trustchain';
 import UserAccessor from '../Users/UserAccessor';
 import Storage from './Storage';
 
-import LocalUser from './LocalUser';
+import LocalUser from './LocalUser/LocalUser';
 import GroupManager from '../Groups/Manager';
 
 import { Client } from '../Network/Client';

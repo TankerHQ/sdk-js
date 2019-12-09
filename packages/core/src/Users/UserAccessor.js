@@ -94,6 +94,6 @@ export default class UserAccessor {
     if (!device) {
       throw new InternalError('Assertion error: device not found');
     }
-    return device;
+    return device.devicePublicSignatureKey;
   }
 }

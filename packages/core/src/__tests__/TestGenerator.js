@@ -2,16 +2,14 @@
 import find from 'array-find';
 import { tcrypto, utils, random } from '@tanker/crypto';
 import { type PublicProvisionalUser, type ProvisionalUserKeys, createIdentity, getPublicIdentity } from '@tanker/identity';
-import KeyStore from '../Session/KeyStore';
+import KeyStore from '../Session/LocalUser/KeyStore';
 
 import {
   provisionalIdentityClaimFromBlock,
   type ClaimEntry,
 } from '../Session/ProvisionalIdentity/Serialize';
 
-import {
-  type UnverifiedTrustchainCreation,
-} from '../Blocks/entries';
+import { type TrustchainCreationEntry, trustchainCreationFromBlock } from '../Session/LocalUser/Serialize';
 
 import {
   deviceCreationFromBlock,
@@ -32,7 +30,7 @@ import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 import { type Group } from '../Groups/types';
 import { type KeyPublishEntry, getKeyPublishEntryFromBlock } from '../DataProtection/Resource/keyPublish';
 
-import { rootBlockAuthor } from '../Session/Verify';
+import { rootBlockAuthor } from '../Session/LocalUser/Verify';
 
 import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { BlockGenerator } from '../Blocks/BlockGenerator';
@@ -72,7 +70,7 @@ export type TestUser = {
 }
 
 export type TestTrustchainCreation = {
-  unverifiedTrustchainCreation: UnverifiedTrustchainCreation,
+  unverifiedTrustchainCreation: TrustchainCreationEntry,
   block: Block,
   trustchainId: Uint8Array;
   trustchainKeys: tcrypto.SodiumKeyPair,
@@ -175,7 +173,7 @@ class TestGenerator {
     };
 
     rootBlock.trustchain_id = hashBlock(rootBlock);
-    const unverifiedTrustchainCreation: UnverifiedTrustchainCreation = { ...rootBlock, hash: rootBlock.trustchain_id, public_signature_key: this._trustchainKeys.publicKey };
+    const unverifiedTrustchainCreation: TrustchainCreationEntry = trustchainCreationFromBlock(utils.toBase64(serializeBlock(rootBlock)));
 
     this._trustchainId = rootBlock.trustchain_id;
     return {

@@ -5,9 +5,9 @@ import { InvalidBlockError } from '../errors.internal';
 
 import makeUint8Array from './makeUint8Array';
 
-import { verifyTrustchainCreation } from '../Session/Verify';
+import { verifyTrustchainCreation } from '../Session/LocalUser/Verify';
 
-import type { UnverifiedTrustchainCreation } from '../Blocks/entries';
+import type { TrustchainCreationEntry } from '../Session/LocalUser/Serialize';
 
 import { NATURE } from '../Blocks/Nature';
 
@@ -27,7 +27,7 @@ describe('BlockVerification', () => {
   });
 
   describe('Trustchain creation', () => {
-    let unverifiedTrustchainCreation: UnverifiedTrustchainCreation;
+    let unverifiedTrustchainCreation: TrustchainCreationEntry;
     let trustchainId: Uint8Array;
     beforeEach(() => {
       const testTrustchainCreation = testGenerator.makeTrustchainCreation();

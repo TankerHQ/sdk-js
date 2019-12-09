@@ -4,7 +4,7 @@ import { tcrypto, type Key } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 
 import GroupManager from '../../Groups/Manager';
-import LocalUser from '../../Session/LocalUser';
+import LocalUser from '../../Session/LocalUser/LocalUser';
 
 import { type KeyPublishEntry, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './keyPublish';
 

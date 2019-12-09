@@ -7,7 +7,7 @@ import { type SecretProvisionalIdentity, type PublicProvisionalIdentity, type Pu
 import { VerificationNeeded } from '../../errors.internal';
 
 import { Client, b64RequestObject } from '../../Network/Client';
-import LocalUser from '../LocalUser';
+import LocalUser from '../LocalUser/LocalUser';
 import Trustchain from '../../Trustchain/Trustchain';
 import Storage from '../Storage';
 import { formatVerificationRequest } from '../requests';
@@ -59,7 +59,7 @@ export default class ProvisionalIdentityManager {
   }
 
   async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: EmailVerificationMethod }> {
-    const hasClaimed = this._localUser.hasClaimedProvisionalIdentity(provisionalIdentity);
+    const hasClaimed = this._localUser.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
 
     if (hasClaimed) {
       return { status: statuses.READY };

@@ -18,7 +18,8 @@ export type ProvisionalIdentityClaimRecord = {|
 
 export type ClaimEntry = {|
   ...ProvisionalIdentityClaimRecord,
-  ...VerificationFields
+  ...VerificationFields,
+  device_id: Uint8Array
 |}
 
 export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: ProvisionalIdentityClaimRecord): Uint8Array {
@@ -77,5 +78,6 @@ export function provisionalIdentityClaimFromBlock(block: Block): ClaimEntry {
     nature,
     hash,
     index,
+    device_id: block.author,
   };
 }

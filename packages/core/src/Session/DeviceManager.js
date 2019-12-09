@@ -5,7 +5,7 @@ import { type SecretProvisionalIdentity } from '@tanker/identity';
 
 
 import { Client } from '../Network/Client';
-import LocalUser from './LocalUser';
+import LocalUser from './LocalUser/LocalUser';
 import Trustchain from '../Trustchain/Trustchain';
 import Storage from './Storage';
 import UserAccessor from '../Users/UserAccessor';

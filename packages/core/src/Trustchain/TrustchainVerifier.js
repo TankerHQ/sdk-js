@@ -8,11 +8,12 @@ import { InvalidBlockError } from '../errors.internal';
 import { compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
 import { type User, type Device } from '../Users/types';
-import type {
-  UnverifiedTrustchainCreation,
-} from '../Blocks/entries';
+
+import type { TrustchainCreationEntry } from '../Session/LocalUser/Serialize';
+import { verifyTrustchainCreation } from '../Session/LocalUser/Verify';
 
 import type { UserEntry, DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
+import { verifyDeviceCreation, verifyDeviceRevocation } from '../Users/Verify';
 
 import {
   NATURE_KIND,
@@ -21,14 +22,6 @@ import {
 
 import Storage from '../Session/Storage';
 
-import {
-  verifyTrustchainCreation,
-} from '../Session/Verify';
-
-import {
-  verifyDeviceCreation,
-  verifyDeviceRevocation,
-} from '../Users/Verify';
 
 import { verifyProvisionalIdentityClaim } from '../Session/ProvisionalIdentity/Verify';
 import { type ClaimEntry } from '../Session/ProvisionalIdentity/Serialize';
@@ -160,7 +153,7 @@ export default class TrustchainVerifier {
         if (!authorDevice)
           throw new InvalidBlockError('author_not_found', 'author not found', { claim });
 
-        verifyProvisionalIdentityClaim(claim, authorDevice, authorUser.userId);
+        verifyProvisionalIdentityClaim(claim, authorDevice.devicePublicSignatureKey, authorUser.userId);
         verifiedClaims.push(claim);
       } catch (e) {
         if (!(e instanceof InvalidBlockError)) {
@@ -174,7 +167,7 @@ export default class TrustchainVerifier {
     return verifiedClaims;
   }
 
-  async verifyTrustchainCreation(unverifiedTrustchainCreation: UnverifiedTrustchainCreation) {
+  async verifyTrustchainCreation(unverifiedTrustchainCreation: TrustchainCreationEntry) {
     return this._verifyQueue.enqueue(async () => {
       verifyTrustchainCreation(unverifiedTrustchainCreation, this._trustchainId);
       return this._storage.trustchainStore.setTrustchainPublicKey(unverifiedTrustchainCreation.public_signature_key);

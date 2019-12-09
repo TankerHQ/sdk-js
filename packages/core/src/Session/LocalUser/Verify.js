@@ -2,14 +2,14 @@
 
 import { utils } from '@tanker/crypto';
 
-import { InvalidBlockError } from '../errors.internal';
-import type { UnverifiedTrustchainCreation } from '../Blocks/entries';
+import { InvalidBlockError } from '../../errors.internal';
+import { isTrustchainCreation } from '../../Blocks/Nature';
 
-import { isTrustchainCreation } from '../Blocks/Nature';
+import type { TrustchainCreationEntry } from './Serialize';
 
 export const rootBlockAuthor = new Uint8Array(32);
 
-export function verifyTrustchainCreation(trustchainCreation: UnverifiedTrustchainCreation, trustchainId: Uint8Array) {
+export function verifyTrustchainCreation(trustchainCreation: TrustchainCreationEntry, trustchainId: Uint8Array) {
   if (!isTrustchainCreation(trustchainCreation.nature))
     throw new InvalidBlockError('invalid_nature', 'invalid nature for trustchain creation', { trustchainCreation });
 

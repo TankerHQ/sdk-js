@@ -14,7 +14,7 @@ import TrustchainVerifier from '../Trustchain/TrustchainVerifier';
 import Trustchain from '../Trustchain/Trustchain';
 
 import Storage from '../Session/Storage';
-import KeyStore from '../Session/KeyStore';
+import KeyStore from '../Session/LocalUser/KeyStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
@@ -81,7 +81,7 @@ export default class TrustchainBuilder {
     // add the root entry to the trustchain
     if (!skipRootBlock) {
       const rootEntry = this.generator.root.entry;
-      await this.trustchainStore.setTrustchainPublicKey((rootEntry.payload_unverified: any).public_signature_key);
+      await this.trustchainStore.setTrustchainPublicKey((rootEntry.public_signature_key: any).public_signature_key);
     }
   }
 

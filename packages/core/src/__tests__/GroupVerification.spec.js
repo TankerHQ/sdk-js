@@ -41,13 +41,13 @@ describe('BlockVerification', () => {
     });
 
     it('should accept a valid group creation', async () => {
-      expect(() => verifyUserGroupCreation(userGroupEntry, user.devices[0], null))
+      expect(() => verifyUserGroupCreation(userGroupEntry, user.devices[0].devicePublicSignatureKey, null))
         .to.not.throw();
     });
     it('should reject a group creation if it already exists', async () => {
       group.publicEncryptionKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
       assertFailWithNature(
-        () => verifyUserGroupCreation(userGroupEntry, user.devices[0], group),
+        () => verifyUserGroupCreation(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
         'group_already_exists'
       );
     });
@@ -55,7 +55,7 @@ describe('BlockVerification', () => {
     it('should reject a group creation with bad signature', async () => {
       userGroupEntry.signature[0] += 1;
       assertFailWithNature(
-        () => verifyUserGroupCreation(userGroupEntry, user.devices[0], null),
+        () => verifyUserGroupCreation(userGroupEntry, user.devices[0].devicePublicSignatureKey, null),
         'invalid_signature'
       );
     });
@@ -64,7 +64,7 @@ describe('BlockVerification', () => {
       // $FlowIKnow this is a user group creation
       userGroupEntry.self_signature[0] += 1;
       assertFailWithNature(
-        () => verifyUserGroupCreation(userGroupEntry, user.devices[0], null),
+        () => verifyUserGroupCreation(userGroupEntry, user.devices[0].devicePublicSignatureKey, null),
         'invalid_self_signature'
       );
     });
@@ -93,14 +93,14 @@ describe('BlockVerification', () => {
     });
 
     it('should accept a valid group addition', async () => {
-      expect(() => verifyUserGroupAddition(userGroupEntry, user.devices[0], group))
+      expect(() => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group))
         .to.not.throw();
     });
 
     it('should reject a group addition with bad signature', async () => {
       userGroupEntry.signature[0] += 1;
       assertFailWithNature(
-        () => verifyUserGroupAddition(userGroupEntry, user.devices[0], group),
+        () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
         'invalid_signature'
       );
     });
@@ -109,14 +109,14 @@ describe('BlockVerification', () => {
       // $FlowIKnow this is a user group creation
       userGroupEntry.self_signature_with_current_key[0] += 1;
       assertFailWithNature(
-        () => verifyUserGroupAddition(userGroupEntry, user.devices[0], group),
+        () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
         'invalid_self_signature'
       );
     });
 
     it('should reject a group addition if the group does not exist', async () => {
       assertFailWithNature(
-        () => verifyUserGroupAddition(userGroupEntry, user.devices[0], null),
+        () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, null),
         'invalid_group_id'
       );
     });
@@ -124,7 +124,7 @@ describe('BlockVerification', () => {
     it('should reject a group addition if the group does match', async () => {
       group.lastGroupBlock = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
-        () => verifyUserGroupAddition(userGroupEntry, user.devices[0], group),
+        () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
         'invalid_previous_group_block'
       );
     });

@@ -5,7 +5,7 @@ import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
-import KeyStore from '../Session/KeyStore';
+import KeyStore from '../Session/LocalUser/KeyStore';
 import UserStore from '../Users/UserStore';
 import TrustchainStore from '../Trustchain/TrustchainStore';
 

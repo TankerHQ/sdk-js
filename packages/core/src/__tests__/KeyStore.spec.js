@@ -7,7 +7,7 @@ import { expect } from '@tanker/test-utils';
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
 import type { UserKeys } from '../Users/Serialize';
-import KeyStore from '../Session/KeyStore';
+import KeyStore from '../Session/LocalUser/KeyStore';
 
 describe('KeyStore', () => {
   let dbName;

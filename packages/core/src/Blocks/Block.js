@@ -3,7 +3,7 @@ import varint from 'varint';
 import { generichash, tcrypto, utils, type Key } from '@tanker/crypto';
 import { type Nature } from './Nature';
 
-export type BlockNoSignature = {
+type BlockNoSignature = {
   trustchain_id: Uint8Array,
   index: number,
   nature: Nature,

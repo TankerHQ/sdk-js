@@ -2,7 +2,7 @@
 import { tcrypto, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { entryToDbEntry, dbEntryToEntry, type UnverifiedEntry } from '../Blocks/entries';
+import { entryToDbEntry, dbEntryToEntry } from '../Blocks/entries';
 import { NATURE } from '../Blocks/Nature';
 import makeUint8Array from './makeUint8Array';
 
@@ -11,7 +11,7 @@ describe('entryToDbEntry', () => {
   let hash;
   let signature;
   let key;
-  let simpleEntry: UnverifiedEntry;
+  let simpleEntry;
   let transformedSimpleEntry;
   let restoredSimpleEntry;
   let userPrivKey;

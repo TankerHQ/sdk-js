@@ -4,7 +4,6 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { type Block } from './Block';
-import { NATURE } from './Nature';
 import { UpgradeRequiredError } from '../errors.internal';
 import { getArray, getStaticArray, encodeArrayLength } from './Serialize';
 
@@ -71,24 +70,4 @@ export function unserializeBlock(src: Uint8Array): Block {
   const signature = value;
 
   return { index, trustchain_id, nature, payload, author, signature };
-}
-
-export function serializeTrustchainCreation(trustchainCreation: TrustchainCreationRecord): Uint8Array {
-  if (trustchainCreation.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
-    throw new InternalError('Assertion error: invalid trustchain public key size');
-
-  return trustchainCreation.public_signature_key;
-}
-
-export function unserializeTrustchainCreation(src: Uint8Array): TrustchainCreationRecord {
-  const { value } = getStaticArray(src, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, 0);
-  return { public_signature_key: value };
-}
-
-
-export function unserializePayload(block: Block) {
-  switch (block.nature) {
-    case NATURE.trustchain_creation: return unserializeTrustchainCreation(block.payload);
-    default: throw new UpgradeRequiredError(`unknown nature: ${block.nature}`);
-  }
 }

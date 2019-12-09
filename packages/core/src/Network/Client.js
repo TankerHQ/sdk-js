@@ -238,19 +238,19 @@ export class Client extends EventEmitter {
     await this.socket.close();
   }
 
-  async send(route: string, payload: any): Promise<any> {
+  async send(route: string, payload: any, rawData: bool = false): Promise<any> {
     await this.open();
     await this._authenticate();
-    return this._send(route, payload);
+    return this._send(route, payload, rawData);
   }
 
   async _unauthenticatedSend(route: string, payload: any): Promise<any> {
     await this.open();
-    return this._send(route, payload);
+    return this._send(route, payload, false);
   }
 
-  async _send(route: string, payload: any): Promise<any> {
-    const jdata = route !== 'push block' ? JSON.stringify(payload) : payload;
+  async _send(route: string, payload: any, rawData: bool): Promise<any> {
+    const jdata = rawData ? payload : JSON.stringify(payload);
     const jresult = await this.socket.emit(route, jdata);
     const result = JSON.parse(jresult);
     if (result && result.error) {
@@ -266,11 +266,11 @@ export class Client extends EventEmitter {
 
   sendBlock = async (block: Block): Promise<void> => {
     const b2 = { index: 0, ...block };
-    await this.send('push block', b64RequestObject(serializeBlock(b2)));
+    await this.send('push block', b64RequestObject(serializeBlock(b2)), true);
   }
 
   sendKeyPublishBlocks = async (blocks: Array<Block>): Promise<void> => {
     const serializedBlocks = blocks.map(block => serializeBlock({ index: 0, ...block }));
-    await this.send('push keys', b64RequestObject(serializedBlocks));
+    await this.send('push keys', b64RequestObject(serializedBlocks), false);
   }
 }
