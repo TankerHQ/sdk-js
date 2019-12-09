@@ -4,7 +4,7 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 
-import UserAccessor from '../Users/UserAccessor';
+import UserManager from '../Users/Manager';
 import LocalUser from '../Session/LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
@@ -29,7 +29,7 @@ type CachedPublicKeysResult = {
 export default class GroupManager {
   _localUser: LocalUser
   _trustchain: Trustchain;
-  _userAccessor: UserAccessor;
+  _UserManager: UserManager;
   _provisionalIdentityManager: ProvisionalIdentityManager;
   _client: Client;
   _groupStore: GroupStore;
@@ -38,13 +38,13 @@ export default class GroupManager {
     localUser: LocalUser,
     trustchain: Trustchain,
     groupStore: GroupStore,
-    userAccessor: UserAccessor,
+    userManager: UserManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
     client: Client
   ) {
     this._localUser = localUser;
     this._trustchain = trustchain;
-    this._userAccessor = userAccessor;
+    this._UserManager = userManager;
     this._client = client;
     this._groupStore = groupStore;
     this._provisionalIdentityManager = provisionalIdentityManager;
@@ -55,7 +55,7 @@ export default class GroupManager {
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
-    const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
+    const users = await this._UserManager.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
@@ -84,7 +84,7 @@ export default class GroupManager {
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
-    const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
+    const users = await this._UserManager.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     const userGroupAdditionBlock = this._localUser.blockGenerator.addToUserGroup(
@@ -159,7 +159,7 @@ export default class GroupManager {
     const entries = blocks.map(block => getGroupEntryFromBlock(block));
 
     const deviceIds = entries.map(entry => entry.author);
-    const devicePublicSignatureKeyMap = await this._userAccessor.getDeviceKeysByDevicesIds(deviceIds);
+    const devicePublicSignatureKeyMap = await this._UserManager.getDeviceKeysByDevicesIds(deviceIds);
 
     return groupsFromEntries(entries, devicePublicSignatureKeyMap, this._localUser, this._provisionalIdentityManager);
   }

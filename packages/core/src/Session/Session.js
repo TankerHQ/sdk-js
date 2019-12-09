@@ -143,7 +143,7 @@ export class Session extends EventEmitter {
 
   async revokeDevice(revokedDeviceId: string): Promise<void> {
     await this._updateLocalUser();
-    const user = await this._managers.userAccessor.findUser(this.localUser.userId);
+    const user = await this._managers.userManager.findUser(this.localUser.userId);
     if (!user)
       throw new InternalError('Cannot find the current user in the users');
 
@@ -213,7 +213,7 @@ export class Session extends EventEmitter {
   createGroup = (...args: any) => this._forward(this._managers.groupManager, 'createGroup', ...args)
   updateGroupMembers = (...args: any) => this._forward(this._managers.groupManager, 'updateGroupMembers', ...args)
 
-  findUser = (...args: any) => this._forward(this._managers.userAccessor, 'findUser', ...args)
+  findUser = (...args: any) => this._forward(this._managers.userManager, 'findUser', ...args)
 
   _forward = async (manager: any, func: string, ...args: any) => {
     try {
