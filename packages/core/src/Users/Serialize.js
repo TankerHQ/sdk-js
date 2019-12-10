@@ -5,6 +5,8 @@ import { InternalError } from '@tanker/errors';
 import { getStaticArray, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from '../Blocks/Serialize';
 import { hashBlock, type Block } from '../Blocks/Block';
 import { type VerificationFields } from '../Blocks/entries';
+import { unserializeBlock } from '../Blocks/payloads';
+
 
 const userNatures = Object.freeze({
   device_creation_v1: 2,
@@ -23,7 +25,7 @@ type UserPrivateKey = {|
   key: Uint8Array,
 |}
 
-type UserKeyPair = {|
+export type UserKeyPair = {|
   public_encryption_key: Uint8Array,
   encrypted_private_encryption_key: Uint8Array,
 |}
@@ -285,10 +287,26 @@ export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): Dev
   };
 }
 
-export function isDeviceCreation(block: Block): bool {
-  return block.nature === userNatures.device_creation_v1 || block.nature === userNatures.device_creation_v2 || block.nature === userNatures.device_creation_v3;
+export function isDeviceCreation(nature: number): bool {
+  return nature === userNatures.device_creation_v1 || nature === userNatures.device_creation_v2 || nature === userNatures.device_creation_v3;
 }
 
-export function isDeviceRevocation(block: Block): bool {
-  return block.nature === userNatures.device_revocation_v1 || block.nature === userNatures.device_revocation_v2;
+export function isDeviceRevocation(nature: number): bool {
+  return nature === userNatures.device_revocation_v1 || nature === userNatures.device_revocation_v2;
+}
+
+
+export function userEntryFromBlock(b64Block: string, userId: ?Uint8Array): UserEntry {
+  const block = unserializeBlock(utils.fromBase64(b64Block));
+
+  if (isDeviceCreation(block.nature)) {
+    return deviceCreationFromBlock(block);
+  } if (isDeviceRevocation(block.nature)) {
+    if (!userId) {
+      throw new InternalError('Assertion error: no user id for revocation block');
+    }
+    return deviceRevocationFromBlock(block, userId);
+  }
+
+  throw new InternalError('Assertion error: wrong block nature for userEntryFromBlock');
 }

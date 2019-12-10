@@ -24,6 +24,7 @@ export type KeySafe = {|
   userKeys: Array<tcrypto.SodiumKeyPair>,
   encryptedUserKeys: Array<UserKeys>,
   provisionalUserKeys: IndexedProvisionalUserKeyPairs,
+  trustchainPublicKey: ?b64string
 |};
 
 function startsWith(haystack: string, needle: string) {
@@ -66,6 +67,7 @@ export function generateKeySafe(userSecret: Uint8Array): KeySafe {
     userKeys: [],
     encryptedUserKeys: [],
     provisionalUserKeys: {},
+    trustchainPublicKey: null,
   };
 }
 

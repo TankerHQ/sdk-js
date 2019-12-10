@@ -1,7 +1,7 @@
 // @flow
 
 import { generichash, tcrypto, utils } from '@tanker/crypto';
-import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
+import { InternalError, InvalidArgument, PreconditionFailed, DeviceRevoked } from '@tanker/errors';
 import { type SecretProvisionalIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { VerificationNeeded } from '../../errors.internal';
@@ -200,6 +200,7 @@ export default class ProvisionalIdentityManager {
   }
 
   async _claimProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity, tankerKeys: TankerProvisionalKeys): Promise<void> {
+    await this._updateLocalUser();
     const appProvisionalUserPrivateSignatureKey = utils.fromBase64(provisionalIdentity.private_signature_key);
     const appProvisionalUserPrivateEncryptionKey = utils.fromBase64(provisionalIdentity.private_encryption_key);
 
@@ -212,5 +213,16 @@ export default class ProvisionalIdentityManager {
     const block = this._localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this._localUser.userId, userPubKey, provisionalUserKeys);
 
     await this._client.sendBlock(block);
+  }
+
+  _updateLocalUser = async () => {
+    try {
+      const localUserBlocks = await this._client.send('get my user blocks');
+      await this._localUser.initializeWithBlocks(localUserBlocks);
+    } catch (e) {
+      if (e instanceof DeviceRevoked) {
+        throw new InternalError('Cannot update local user: device revoked');
+      }
+    }
   }
 }

@@ -138,6 +138,7 @@ export async function getKeyStoreOfDevice(user: TestUser, device: TestDevice, pr
     encryptedUserKeys: [],
     provisionalUserKeys: {},
     userSecret: new Uint8Array(32),
+    trustchainPublicKey: utils.toBase64(new Uint8Array(32)),
   };
   keystore._userKeys = {};
   if (user.userKeys) {

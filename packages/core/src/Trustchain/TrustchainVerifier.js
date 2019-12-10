@@ -8,9 +8,6 @@ import { compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
 import { type User, type Device } from '../Users/types';
 
-import type { TrustchainCreationEntry } from '../Session/LocalUser/Serialize';
-import { verifyTrustchainCreation } from '../Session/LocalUser/Verify';
-
 import type { UserEntry, DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../Users/Verify';
 
@@ -135,13 +132,6 @@ export default class TrustchainVerifier {
     }
     await this._storage.unverifiedStore.removeVerifiedUserEntries(unverifiedEntries);
     return user;
-  }
-
-  async verifyTrustchainCreation(unverifiedTrustchainCreation: TrustchainCreationEntry) {
-    return this._verifyQueue.enqueue(async () => {
-      verifyTrustchainCreation(unverifiedTrustchainCreation, this._trustchainId);
-      return this._storage.trustchainStore.setTrustchainPublicKey(unverifiedTrustchainCreation.public_signature_key);
-    });
   }
 
   async _takeOneDeviceOfEachUsers(

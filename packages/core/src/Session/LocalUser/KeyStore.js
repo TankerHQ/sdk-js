@@ -80,6 +80,12 @@ export default class KeyStore {
     return utils.fromBase64(this._safe.deviceId);
   }
 
+  get trustchainPublicKey(): ?Uint8Array {
+    if (!this._safe.trustchainPublicKey)
+      return;
+    return utils.fromBase64(this._safe.trustchainPublicKey);
+  }
+
   get provisionalUserKeys(): IndexedProvisionalUserKeyPairs {
     return this._safe.provisionalUserKeys;
   }
@@ -101,6 +107,7 @@ export default class KeyStore {
   // remove everything except private device keys.
   clearCache(): Promise<void> {
     delete this._safe.deviceId;
+    delete this._safe.trustchainPublicKey;
     this._safe.userKeys = [];
     this._safe.encryptedUserKeys = [];
     this._safe.provisionalUserKeys = {};
@@ -115,7 +122,8 @@ export default class KeyStore {
     utils.memzero(this._safe.signaturePair.privateKey);
     utils.memzero(this._safe.encryptionPair.publicKey);
     utils.memzero(this._safe.signaturePair.publicKey);
-    this._safe.deviceId = '';
+    delete this._safe.deviceId;
+    delete this._safe.trustchainPublicKey;
 
     // Then let GC do its job
     // $FlowIKnow
@@ -175,6 +183,11 @@ export default class KeyStore {
 
   setDeviceId(hash: Uint8Array): Promise<void> {
     this._safe.deviceId = utils.toBase64(hash);
+    return this.saveSafe();
+  }
+
+  setTrustchainPublicKey(trustchainPublicKey: Uint8Array): Promise<void> {
+    this._safe.trustchainPublicKey = utils.toBase64(trustchainPublicKey);
     return this.saveSafe();
   }
 

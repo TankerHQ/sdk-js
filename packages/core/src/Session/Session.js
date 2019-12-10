@@ -55,11 +55,6 @@ export class Session extends EventEmitter {
     await storage.open(userData.userId, userData.userSecret);
 
     const localUser = new LocalUser(userData, storage.keyStore);
-    storage.userStore.setCallbacks({
-      deviceCreation: localUser.applyDeviceCreation,
-      deviceRevocation: localUser.applyDeviceRevocation,
-    });
-
     const trustchain = await Trustchain.open(client, userData.trustchainId, userData.userId, storage);
 
     if (!storage.hasLocalDevice()) {
@@ -88,7 +83,10 @@ export class Session extends EventEmitter {
 
   authenticate = async () => {
     await this._client.authenticate(this.localUser.userId, this.storage.keyStore.signatureKeyPair);
-    await this._trustchain.ready();
+    if (!this.localUser.isInitialized) {
+      const localUserBlocks = await this._client.send('get user blocks');
+      await this.localUser.initializeWithBlocks(localUserBlocks);
+    }
     this._status = statuses.READY;
   }
 
@@ -120,7 +118,6 @@ export class Session extends EventEmitter {
 
     const { userCreationBlock, firstDeviceBlock, encryptedUnlockKey } = this.localUser.generateUserCreation(ghostDeviceKeys);
     await sendUserCreation(this._client, this.localUser, userCreationBlock, firstDeviceBlock, verification, encryptedUnlockKey);
-
     await this.authenticate();
   }
 
@@ -133,7 +130,6 @@ export class Session extends EventEmitter {
 
       const newDeviceBlock = this.localUser.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
       await this._client.send('create device', newDeviceBlock, true);
-      await this.authenticate();
     } catch (e) {
       if (e instanceof TankerError) {
         throw e;
@@ -143,6 +139,7 @@ export class Session extends EventEmitter {
       }
       throw new InternalError(e);
     }
+    await this.authenticate();
   }
 
   generateVerificationKey = async () => {

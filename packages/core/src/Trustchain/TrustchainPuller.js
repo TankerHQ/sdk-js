@@ -8,20 +8,13 @@ import TrustchainStore from './TrustchainStore';
 import UnverifiedStore from './UnverifiedStore/UnverifiedStore';
 
 import {
-  trustchainCreationFromBlock
-} from '../Session/LocalUser/Serialize';
-
-import {
   deviceCreationFromBlock,
   deviceRevocationFromBlock,
 } from '../Users/Serialize';
 
 import {
-  isKeyPublish,
-  isUserGroup,
   isDeviceCreation,
   isDeviceRevocation,
-  isTrustchainCreation,
 } from '../Blocks/Nature';
 
 import { unserializeBlock } from '../Blocks/payloads';
@@ -146,7 +139,6 @@ export default class TrustchainPuller {
 
   _processNewBlocks = async (b64Blocks: Array<string>) => {
     const userEntries = [];
-    let trustchainCreationEntry = null;
     let maxBlockIndex = 0;
 
     const userIds = [];
@@ -166,15 +158,7 @@ export default class TrustchainPuller {
         const userEntry = await this._deviceRevocationFromBlock(block);
         userEntries.push(userEntry);
         userIds.push(userEntry.user_id);
-      } else if (isTrustchainCreation(block.nature)) {
-        trustchainCreationEntry = trustchainCreationFromBlock(b64Block);
-      } else if (!isKeyPublish(block.nature) && !isUserGroup(block.nature)) {
-        throw new InternalError('Assertion error: Unexpected nature in trustchain puller callback');
       }
-    }
-
-    if (trustchainCreationEntry) {
-      await this._trustchainVerifier.verifyTrustchainCreation(trustchainCreationEntry);
     }
 
     await this._unverifiedStore.addUnverifiedUserEntries(userEntries);

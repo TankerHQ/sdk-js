@@ -5,6 +5,7 @@ export { DecryptionFailed } from './errors/DecryptionFailed';
 export { ExpiredVerification } from './errors/ExpiredVerification';
 export { GroupTooBig } from './errors/GroupTooBig';
 export { InternalError } from './errors/InternalError';
+export { DeviceRevoked } from './errors/DeviceRevoked';
 export { InvalidArgument } from './errors/InvalidArgument';
 export { InvalidVerification } from './errors/InvalidVerification';
 export { NetworkError } from './errors/NetworkError';
