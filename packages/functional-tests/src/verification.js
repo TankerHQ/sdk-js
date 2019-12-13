@@ -237,12 +237,12 @@ const generateVerificationTests = (args: TestArgs) => {
         const jwtBinParts = martineIdToken.split('.').map(utils.fromBase64);
         jwtBinParts[2][5] += 1; // break signature
         const forgedIdToken = jwtBinParts.map(utils.toSafeBase64).join('.').replace(/=/g, '');
-        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: forgedIdToken })).to.be.rejectedWith(/failed to verify signature/);
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: forgedIdToken })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('fails to verify a valid token for the wrong user', async () => {
         await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
-        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: kevinIdToken })).to.be.rejectedWith(/Wrong subject/);
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: kevinIdToken })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('updates and verifies with an oidc id token', async () => {
@@ -272,7 +272,7 @@ const generateVerificationTests = (args: TestArgs) => {
           verificationMethod: { type: 'email', email },
         });
 
-        await expect(bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(/does not match provisional identity/);
+        await expect(bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument);
         await aliceLaptop.stop();
       });
 
