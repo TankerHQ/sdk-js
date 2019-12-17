@@ -4,7 +4,7 @@ import FakeAuthentication from '@tanker/fake-authentication';
 import { getPublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
 import { expect, uuid } from '@tanker/test-utils';
 
-import { tankerUrl } from './Helpers';
+import { fakeAuthUrl } from './Helpers';
 import type { TestArgs } from './TestArgs';
 
 const generateFakeAuthenticationTests = (args: TestArgs) => {
@@ -21,8 +21,7 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
 
     before(async () => {
       const appId = utils.toBase64(args.appHelper.appId);
-      const url = tankerUrl.replace('api.', 'fakeauth.');
-      fa = new FakeAuthentication({ appId, url });
+      fa = new FakeAuthentication({ appId, url: fakeAuthUrl });
     });
 
     it('returns a disposable permanent identity without an email', async () => {

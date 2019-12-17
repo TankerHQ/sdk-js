@@ -10,15 +10,24 @@ import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
 let tankerUrl; // eslint-disable-line import/no-mutable-exports
+let fakeAuthUrl; // eslint-disable-line import/no-mutable-exports
 let idToken; // eslint-disable-line import/no-mutable-exports
 let oidcSettings; // eslint-disable-line import/no-mutable-exports
 let storageSettings;
+
+const getFakeAuthUrl = (apiUrl) => {
+  if (apiUrl.indexOf('api.') !== -1) {
+    return apiUrl.replace('api.', 'fakeauth.');
+  }
+  return 'http://127.0.0.1:8080';
+};
 
 // $FlowIKnow
 if (process.browser) {
   // $FlowIKnow
   const testConfig = TANKER_TEST_CONFIG; // eslint-disable-line no-undef
   tankerUrl = testConfig.url;
+  fakeAuthUrl = getFakeAuthUrl(tankerUrl);
   idToken = testConfig.idToken;
   oidcSettings = testConfig.oidc;
   storageSettings = testConfig.storage;
@@ -27,18 +36,20 @@ if (process.browser) {
 
   const config = JSON.parse(fs.readFileSync(process.env.TANKER_CONFIG_FILEPATH, { encoding: 'utf-8' }));
   tankerUrl = config[process.env.TANKER_CONFIG_NAME].url;
+  fakeAuthUrl = getFakeAuthUrl(tankerUrl);
   idToken = config[process.env.TANKER_CONFIG_NAME].idToken;
   oidcSettings = config.oidc;
   storageSettings = config.storage;
 } else {
   const testConfig = JSON.parse(process.env.TANKER_CI_CONFIG || '');
   tankerUrl = testConfig.url;
+  fakeAuthUrl = getFakeAuthUrl(tankerUrl);
   idToken = testConfig.idToken;
   oidcSettings = testConfig.oidc;
   storageSettings = testConfig.storage;
 }
 
-export { tankerUrl, idToken, oidcSettings };
+export { tankerUrl, fakeAuthUrl, idToken, oidcSettings };
 
 const socket = new Socket(tankerUrl, { transports: ['websocket', 'polling'] });
 
