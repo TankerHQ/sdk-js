@@ -1,12 +1,12 @@
 // @flow
-import { errors, statuses, type Tanker, type Verification, type VerificationMethod } from '@tanker/core';
+import { errors, statuses, type Tanker, type Verification, type VerificationMethod, toBase64 } from '@tanker/core';
 import { utils, type b64string } from '@tanker/crypto';
 import { expect, uuid } from '@tanker/test-utils';
 import fetchPonyfill from 'fetch-ponyfill';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
 import { type TestArgs } from './TestArgs';
-import { oidcSettings } from './Helpers';
+import { oidcSettings, tankerUrl } from './Helpers';
 
 const { fetch } = fetchPonyfill({ Promise });
 
@@ -389,6 +389,33 @@ const generateVerificationTests = (args: TestArgs) => {
             const badKey = badKeys[i];
             await expect(bobPhone.verifyIdentity({ verificationKey: badKey }), `bad verification key #${i}`).to.be.rejectedWith(errors.InvalidVerification);
           }
+        });
+      });
+
+
+      describe('/verification/email/code HTTP request', () => {
+        it('works', async () => {
+          const appId = toBase64(args.appHelper.appId);
+          const url = `${tankerUrl}/verification/email/code`;
+          const body = {
+            email: 'bob@tanker.io',
+            app_id: appId,
+            auth_token: args.appHelper.authToken
+          };
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          });
+          expect(response.status).to.eq(200);
+          const res = await response.json();
+          const verificationCode = res.verification_code;
+          expect(verificationCode).to.not.be.undefined;
+          await bobLaptop.registerIdentity({ email: 'bob@tanker.io', verificationCode });
+          const actualMethods = await bobLaptop.getVerificationMethods();
+          expect(actualMethods).to.deep.have.members([{ type: 'email', email: 'bob@tanker.io' }]);
         });
       });
     });
