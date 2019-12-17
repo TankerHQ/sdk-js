@@ -150,11 +150,13 @@ export class AppHelper {
   _requester: AuthenticatedRequester;
   appId: Uint8Array;
   appKeyPair: Object;
+  authToken: string;
 
-  constructor(requester: AuthenticatedRequester, appId: Uint8Array, appKeyPair: Object) {
+  constructor(requester: AuthenticatedRequester, appId: Uint8Array, appKeyPair: Object, authToken: string) {
     this._requester = requester;
     this.appId = appId;
     this.appKeyPair = appKeyPair;
+    this.authToken = authToken;
   }
 
   static async newApp(): Promise<AppHelper> {
@@ -167,7 +169,8 @@ export class AppHelper {
       private_signature_key: utils.toBase64(appKeyPair.privateKey),
     };
     const requester = await AuthenticatedRequester.open();
-    await requester.send('create trustchain', message);
+    const createResponse = await requester.send('create trustchain', message);
+    const authToken = createResponse.auth_token;
 
     const appId = rootBlock.trustchain_id;
 
@@ -177,7 +180,7 @@ export class AppHelper {
       oidc_provider: 'google',
     });
 
-    return new AppHelper(requester, appId, appKeyPair);
+    return new AppHelper(requester, appId, appKeyPair, authToken);
   }
 
   async setupS3() {
