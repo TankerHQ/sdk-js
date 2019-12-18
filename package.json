@@ -91,9 +91,9 @@
     "rollup-plugin-babel": "4.3.3",
     "rollup-plugin-flow": "1.1.1",
     "rollup-plugin-local-resolve": "1.0.7",
-    "webpack": "4.40.2",
-    "webpack-cli": "3.3.9",
-    "webpack-dev-server": "3.8.1"
+    "webpack": "4.41.3",
+    "webpack-cli": "3.3.10",
+    "webpack-dev-server": "3.9.0"
   },
   "workspaces": [
     "packages/*",
