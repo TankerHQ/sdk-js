@@ -1,19 +1,16 @@
 // @flow
 
-import { tcrypto, utils, type Key } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
-import { InternalError } from '@tanker/errors';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
-import type { KeySafe, IndexedProvisionalUserKeyPairs, ProvisionalUserKeyPairs } from './KeySafe';
-import type { UserKeys } from '../../Users/Serialize';
+import type { KeySafe, IndexedProvisionalUserKeyPairs } from './KeySafe';
 
 const TABLE = 'device';
 
 export default class KeyStore {
   /*:: _ds: DataStore<*>; */
   /*:: _safe: KeySafe; */
-  _userKeys: { [string]: tcrypto.SodiumKeyPair };
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE, persistent: true }] },
@@ -39,22 +36,6 @@ export default class KeyStore {
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
   }
 
-  get publicSignatureKey(): Key {
-    return this._safe.signaturePair.publicKey;
-  }
-
-  get privateSignatureKey(): Key {
-    return this._safe.signaturePair.privateKey;
-  }
-
-  get publicEncryptionKey(): Key {
-    return this._safe.encryptionPair.publicKey;
-  }
-
-  get privateEncryptionKey(): Key {
-    return this._safe.encryptionPair.privateKey;
-  }
-
   get encryptionKeyPair(): tcrypto.SodiumKeyPair {
     return this._safe.encryptionPair;
   }
@@ -65,13 +46,6 @@ export default class KeyStore {
 
   get userKeys(): Array<tcrypto.SodiumKeyPair> {
     return this._safe.userKeys;
-  }
-
-  get currentUserKey(): tcrypto.SodiumKeyPair {
-    const index = this.userKeys.length - 1;
-    if (index < 0)
-      throw new InternalError('No user key for this user');
-    return this.userKeys[index];
   }
 
   get deviceId(): ?Uint8Array {
@@ -90,14 +64,6 @@ export default class KeyStore {
     return this._safe.provisionalUserKeys;
   }
 
-  findUserKey(userPublicKey: Uint8Array): ?tcrypto.SodiumKeyPair {
-    return this._userKeys[utils.toBase64(userPublicKey)];
-  }
-
-  findProvisionalKey(id: string): ProvisionalUserKeyPairs {
-    return this._safe.provisionalUserKeys[id];
-  }
-
   async saveSafe(): Promise<void> {
     const encryptedSafe = await serializeKeySafe(this._safe);
     const record = { _id: 'keySafe', encryptedSafe };
@@ -111,7 +77,6 @@ export default class KeyStore {
     this._safe.userKeys = [];
     this._safe.encryptedUserKeys = [];
     this._safe.provisionalUserKeys = {};
-    this._userKeys = {};
     return this.saveSafe();
   }
 
@@ -173,12 +138,6 @@ export default class KeyStore {
 
     // Read-only (non writable, non enumerable, non reconfigurable)
     Object.defineProperty(this, '_safe', { value: safe });
-
-    const userKeys = {};
-    for (const userKey of safe.userKeys) {
-      userKeys[utils.toBase64(userKey.publicKey)] = userKey;
-    }
-    this._userKeys = userKeys;
   }
 
   setDeviceId(hash: Uint8Array): Promise<void> {
@@ -198,25 +157,6 @@ export default class KeyStore {
 
   addUserKey(keyPair: tcrypto.SodiumKeyPair): Promise<void> {
     this._safe.userKeys.push(keyPair);
-    this._userKeys[utils.toBase64(keyPair.publicKey)] = keyPair;
     return this.saveSafe();
-  }
-
-  prependUserKey(keyPair: tcrypto.SodiumKeyPair): Promise<void> {
-    this._safe.userKeys.unshift(keyPair);
-    this._userKeys[utils.toBase64(keyPair.publicKey)] = keyPair;
-    return this.saveSafe();
-  }
-
-  prependEncryptedUserKey(keys: UserKeys): Promise<void> {
-    this._safe.encryptedUserKeys.unshift(keys);
-    return this.saveSafe();
-  }
-
-  async takeEncryptedUserKeys(): Promise<Array<UserKeys>> {
-    const keys = this._safe.encryptedUserKeys;
-    this._safe.encryptedUserKeys = [];
-    await this.saveSafe();
-    return keys;
   }
 }

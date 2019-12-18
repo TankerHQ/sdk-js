@@ -11,7 +11,6 @@ import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/Provision
 import { getGroupEntryFromBlock } from './Serialize';
 import { Client, b64RequestObject } from '../Network/Client';
 import GroupStore from './GroupStore';
-import KeyStore from '../Session/LocalUser/KeyStore';
 import type { InternalGroup, Group } from './types';
 import type { GroupDataWithDevices } from './ManagerHelper';
 import {
@@ -33,7 +32,6 @@ type CachedPublicKeysResult = {
 export default class GroupManager {
   _localUser: LocalUser
   _trustchain: Trustchain;
-  _keystore: KeyStore;
   _userAccessor: UserAccessor;
   _provisionalIdentityManager: ProvisionalIdentityManager;
   _client: Client;
@@ -43,14 +41,12 @@ export default class GroupManager {
     localUser: LocalUser,
     trustchain: Trustchain,
     groupStore: GroupStore,
-    keystore: KeyStore,
     userAccessor: UserAccessor,
     provisionalIdentityManager: ProvisionalIdentityManager,
     client: Client
   ) {
     this._localUser = localUser;
     this._trustchain = trustchain;
-    this._keystore = keystore;
     this._userAccessor = userAccessor;
     this._client = client;
     this._groupStore = groupStore;
@@ -175,7 +171,7 @@ export default class GroupManager {
       const previousData: GroupDataWithDevices = groupsMap.get(b64groupId) || [];
       const previousGroup = previousData.length ? previousData[previousData.length - 1].group : null;
 
-      const group = await groupFromUserGroupEntry(entry, previousGroup, this._keystore, this._provisionalIdentityManager);
+      const group = await groupFromUserGroupEntry(entry, previousGroup, this._localUser, this._provisionalIdentityManager);
       const devicePublicSignatureKey = devicePublicSignatureKeyMap.get(utils.toBase64(entry.author));
       if (!devicePublicSignatureKey) {
         throw new InternalError('author device publicSignatureKey missing');

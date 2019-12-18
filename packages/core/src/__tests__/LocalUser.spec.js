@@ -114,6 +114,36 @@ describe('Local User', () => {
     });
   });
 
+
+  describe('with revocation before own creation', () => {
+    let deviceRevocation;
+    let deviceCreation3Block;
+    let deviceRevocationBlock;
+    let deviceRevocation2;
+    let deviceRevocationBlock2;
+
+    beforeEach(() => {
+      deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation1, deviceCreation2.testDevice.id);
+      deviceRevocationBlock = utils.toBase64(serializeBlock(deviceRevocation.block));
+
+      deviceCreation1.testUser = deviceRevocation.testUser;
+      const deviceCreation3 = testGenerator.makeDeviceCreation(deviceCreation1);
+      deviceCreation3Block = utils.toBase64(serializeBlock(deviceCreation3.block));
+
+      deviceRevocation2 = testGenerator.makeDeviceRevocation(deviceCreation3, deviceCreation1.testDevice.id);
+      deviceRevocationBlock2 = utils.toBase64(serializeBlock(deviceRevocation2.block));
+
+      keyStore = new FakeKeyStore(deviceCreation3.testDevice.signKeys, deviceCreation3.testDevice.encryptionKeys);
+      localUser = new LocalUser(userData, (keyStore: any));
+    });
+
+    it('decrypts encrypted user keys', async () => {
+      await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block, deviceRevocationBlock, deviceCreation3Block, deviceRevocationBlock2]);
+      expect([deviceRevocation2.testUser.userKeys[2], deviceRevocation2.testUser.userKeys[1], deviceRevocation2.testUser.userKeys[0]]).excluding('index').to.deep.equal(keyStore.userKeys);
+      expect(deviceRevocation2.testUser.userKeys[2]).excluding('index').to.deep.equal(localUser.currentUserKey);
+    });
+  });
+
   describe('with revocation after own creation', () => {
     it('decrypts new user keys', async () => {
       const deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation2, deviceCreation1.testDevice.id);

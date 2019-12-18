@@ -28,7 +28,6 @@ export class Managers {
       localUser,
       trustchain,
       storage.groupStore,
-      storage.keyStore,
       this.userAccessor,
       this.provisionalIdentityManager,
       client,
