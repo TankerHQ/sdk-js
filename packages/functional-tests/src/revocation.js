@@ -4,7 +4,6 @@ import { getPublicIdentity } from '@tanker/identity';
 import { expect, sinon } from '@tanker/test-utils';
 
 import { type TestArgs } from './TestArgs';
-import { syncTankers } from './Helpers';
 
 const isIE = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\./);
 
@@ -128,8 +127,6 @@ const generateRevocationTests = (args: TestArgs) => {
 
 
       await bobLaptop.revokeDevice(bobPhone.deviceId);
-
-      await syncTankers(aliceLaptop, bobLaptop);
 
       const message = 'I love you';
       const encrypted = await aliceLaptop.encrypt(message, { shareWithUsers: [bobPublicIdentity] });

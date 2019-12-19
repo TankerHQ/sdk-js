@@ -7,8 +7,7 @@ import KeyStore from './LocalUser/KeyStore';
 import ResourceStore from '../DataProtection/Resource/ResourceStore';
 import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
-import TrustchainStore, { TABLE_METADATA } from '../Trustchain/TrustchainStore';
-import UnverifiedStore from '../Trustchain/UnverifiedStore/UnverifiedStore';
+import { GlobalSchema, TABLE_METADATA } from './schema';
 
 const STORAGE_VERSION_KEY = 'storageVersion';
 const CURRENT_STORAGE_VERSION = 1;
@@ -27,8 +26,6 @@ export default class Storage {
   _resourceStore: ResourceStore;
   _userStore: UserStore;
   _groupStore: GroupStore;
-  _unverifiedStore: UnverifiedStore;
-  _trustchainStore: TrustchainStore;
   _schemas: any;
 
   constructor(options: DataStoreOptions) {
@@ -51,24 +48,15 @@ export default class Storage {
     return this._groupStore;
   }
 
-  get unverifiedStore(): UnverifiedStore {
-    return this._unverifiedStore;
-  }
-
-  get trustchainStore(): TrustchainStore {
-    return this._trustchainStore;
-  }
-
   async open(userId: Uint8Array, userSecret: Uint8Array): Promise<void> {
     const { adapter, prefix, dbPath, url } = this._options;
 
     const schemas = mergeSchemas(
+      GlobalSchema,
       KeyStore.schemas,
       ResourceStore.schemas,
-      TrustchainStore.schemas,
       UserStore.schemas,
       GroupStore.schemas,
-      UnverifiedStore.schemas,
     );
 
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
@@ -80,8 +68,6 @@ export default class Storage {
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
     this._userStore = new UserStore(this._datastore, userId);
     this._groupStore = await GroupStore.open(this._datastore, userSecret);
-    this._trustchainStore = await TrustchainStore.open(this._datastore);
-    this._unverifiedStore = await UnverifiedStore.open(this._datastore);
 
     await this._checkVersion();
   }
@@ -99,7 +85,6 @@ export default class Storage {
   }
 
   async _closeSubStores() {
-    await this._unverifiedStore.close();
     await this._groupStore.close();
     await this._resourceStore.close();
     await this._keyStore.close();
@@ -128,7 +113,6 @@ export default class Storage {
       await this._datastore.clear(table);
     }
     await this._keyStore.clearCache();
-    await this._trustchainStore.initData();
   }
 
   hasLocalDevice() {

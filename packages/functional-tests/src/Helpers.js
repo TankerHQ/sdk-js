@@ -1,7 +1,7 @@
 // @flow
 import Socket from 'socket.io-client'; // eslint-disable-line import/no-extraneous-dependencies
 
-import type { Tanker, b64string } from '@tanker/core';
+import type { b64string } from '@tanker/core';
 import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
@@ -108,10 +108,6 @@ class AuthenticatedRequester {
     this._tries = 0;
     return ret;
   }
-}
-
-export async function syncTankers(...tankers: Array<Tanker>): Promise<void> {
-  await Promise.all(tankers.map(t => t._session._trustchain && t._session._trustchain.ready())); // eslint-disable-line no-underscore-dangle
 }
 
 export const makePrefix = (length: number = 12) => uuid.v4().replace('-', '').slice(0, length);

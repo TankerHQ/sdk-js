@@ -10,7 +10,7 @@ import { Client, b64RequestObject } from '../../Network/Client';
 import LocalUser, { type PrivateProvisionalKeys } from '../LocalUser/LocalUser';
 import { formatVerificationRequest } from '../requests';
 import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../types';
-import UserAccessor from '../../Users/UserAccessor';
+import UserManager from '../../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';
@@ -40,17 +40,17 @@ const tankerProvisionalKeys = (serverResult) => {
 export default class ProvisionalIdentityManager {
   _client: Client;
   _localUser: LocalUser;
-  _userAccessor: UserAccessor;
+  _UserManager: UserManager;
   _provisionalIdentity: SecretProvisionalIdentity;
 
   constructor(
     client: Client,
     localUser: LocalUser,
-    userAccessor: UserAccessor,
+    userManager: UserManager,
   ) {
     this._client = client;
     this._localUser = localUser;
-    this._userAccessor = userAccessor;
+    this._UserManager = userManager;
   }
 
   async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: EmailVerificationMethod }> {
@@ -168,7 +168,7 @@ export default class ProvisionalIdentityManager {
 
     for (const claimBlock of claimBlocks) {
       const claimEntry = provisionalIdentityClaimFromBlock(claimBlock);
-      const authorDeviceKeysMap = await this._userAccessor.getDeviceKeysByDevicesIds([claimEntry.author]);
+      const authorDeviceKeysMap = await this._UserManager.getDeviceKeysByDevicesIds([claimEntry.author]);
       if (authorDeviceKeysMap.size !== 1) {
         throw new InternalError('refreshProvisionalPrivateKeys: zero or multiple keys for one device');
       }

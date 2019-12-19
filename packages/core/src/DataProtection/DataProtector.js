@@ -18,7 +18,7 @@ import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser/LocalUser';
 import GroupManager from '../Groups/Manager';
-import UserAccessor from '../Users/UserAccessor';
+import UserManager from '../Users/Manager';
 import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './Resource';
@@ -37,7 +37,7 @@ export class DataProtector {
 
   _groupManager: GroupManager;
   _localUser: LocalUser;
-  _userAccessor: UserAccessor;
+  _userManager: UserManager;
   _provisionalIdentityManager: ProvisionalIdentityManager
 
   constructor(
@@ -45,7 +45,7 @@ export class DataProtector {
     client: Client,
     groupManager: GroupManager,
     localUser: LocalUser,
-    userAccessor: UserAccessor,
+    userManager: UserManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
   ) {
     this._resourceManager = new ResourceManager(
@@ -60,7 +60,7 @@ export class DataProtector {
     this._client = client;
     this._groupManager = groupManager;
     this._localUser = localUser;
-    this._userAccessor = userAccessor;
+    this._userManager = userManager;
     this._provisionalIdentityManager = provisionalIdentityManager;
   }
 
@@ -140,7 +140,7 @@ export class DataProtector {
     const deserializedIdentities = (sharingOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
     const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, shareWithSelf);
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesWithSelf);
-    const users = await this._userAccessor.getUsers({ publicIdentities: permanentIdentities });
+    const users = await this._userManager.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     if (shareWithSelf) {

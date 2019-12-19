@@ -87,7 +87,7 @@ describe('BlockVerification', () => {
       // Second user
       const userId2 = random(tcrypto.HASH_SIZE);
       const userCreation2 = await testGenerator.makeUserCreation(userId2);
-      const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroupCreation, [userCreation2.user]);
+      const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroupCreation.group, [userCreation2.user]);
 
       userGroupEntry = userGroupAddition.userGroupEntry;
     });

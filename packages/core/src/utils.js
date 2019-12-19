@@ -1,6 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
-import { InternalError, InvalidArgument } from '@tanker/errors';
+import { InvalidArgument } from '@tanker/errors';
 
 export function toBase64(bytes: Uint8Array): b64string {
   if (!(bytes instanceof Uint8Array))
@@ -14,32 +14,6 @@ export function fromBase64(str: b64string): Uint8Array {
     throw new InvalidArgument('str', 'b64string', str);
 
   return utils.fromBase64(str);
-}
-
-export function toString(bytes: Uint8Array): string {
-  if (!(bytes instanceof Uint8Array))
-    throw new InvalidArgument('bytes', 'Uint8Array', bytes);
-
-  return utils.toString(bytes);
-}
-
-export function fromString(str: string): Uint8Array {
-  if (typeof str !== 'string')
-    throw new InvalidArgument('str', 'string', str);
-
-  return utils.fromString(str);
-}
-
-export function compareSameSizeUint8Arrays(left: Uint8Array, right: Uint8Array): number {
-  if (left.length !== right.length)
-    throw new InternalError('AssertionError: arguments in compareSameSizeArrays do not have the same size');
-  for (let i = 0; i < left.length; i++) {
-    if (left[i] < right[i])
-      return -1;
-    if (left[i] > right[i])
-      return 1;
-  }
-  return 0;
 }
 
 // Because IE11: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex#Browser_compatibility
