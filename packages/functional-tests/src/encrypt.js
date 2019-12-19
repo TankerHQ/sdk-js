@@ -172,7 +172,6 @@ const generateEncryptTests = (args: TestArgs) => {
         const bobPhone = args.makeTanker();
         await bobPhone.start(bobIdentity);
         await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
-
         const decrypted = await bobPhone.decrypt(encrypted);
         expect(decrypted).to.equal(clearText);
         await bobPhone.stop();
@@ -340,6 +339,21 @@ const generateEncryptTests = (args: TestArgs) => {
         verificationCode = await args.appHelper.getVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidArgument, 'provisional identity has already been attached');
+      });
+
+      it('can attach a provisional identity after a revocation', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const bobPhone = args.makeTanker();
+        await bobPhone.start(bobIdentity);
+        await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
+
+        const deviceID = bobPhone.deviceId;
+        await bobPhone.revokeDevice(deviceID);
+
+        const verificationCode = await args.appHelper.getVerificationCode(email);
+        await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await bobLaptop.verifyProvisionalIdentity({ email, verificationCode });
       });
 
       it('decrypt resource on a new device', async () => {

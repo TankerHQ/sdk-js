@@ -83,34 +83,4 @@ describe('UnverifiedStore', () => {
       expect(result).to.be.null;
     });
   });
-
-  describe('claim provisional identity', () => {
-    let claim;
-    let userId;
-
-    before(async () => {
-      userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      claim = testGenerator.makeProvisionalIdentityClaim(userCreation, userId, random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE));
-
-      await unverifiedStore.addUnverifiedProvisionalIdentityClaimEntries([claim.unverifiedProvisionalIdentityClaim]);
-    });
-
-    it('returns null when fetching a missing claim provisional identity', async () => {
-      const result = await unverifiedStore.findUnverifiedProvisionalIdentityClaims(new Uint8Array(0));
-      expect(result.length).to.equal(0);
-    });
-
-    it('finds a claim provisional identity', async () => {
-      const result = await unverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
-      expect(result.length).to.equal(1);
-      expect(result[0]).excluding('_rev').to.deep.equal(claim.unverifiedProvisionalIdentityClaim);
-    });
-
-    it('removes a claim provisional identity', async () => {
-      await unverifiedStore.removeVerifiedProvisionalIdentityClaimEntries([claim.unverifiedProvisionalIdentityClaim]);
-      const result = await unverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
-      expect(result.length).to.equal(0);
-    });
-  });
 });

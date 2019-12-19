@@ -14,7 +14,6 @@ import TestGenerator, { type TestDeviceCreation } from './TestGenerator';
 async function makeUserStore(userId: Uint8Array): Promise<UserStore> {
   const dataStore = await makeMemoryDataStore(UserStore.schemas, 'user-store-test');
   const userStore = new UserStore(dataStore, userId);
-  userStore.setCallbacks(({ userId, applyDeviceCreation: () => {} }: any));
   return userStore;
 }
 

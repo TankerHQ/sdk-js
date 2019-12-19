@@ -6,7 +6,6 @@ import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
-import type { UserKeys } from '../Users/Serialize';
 import KeyStore from '../Session/LocalUser/KeyStore';
 
 describe('KeyStore', () => {
@@ -25,10 +24,10 @@ describe('KeyStore', () => {
 
   it('creates a safe when first opened that can be re-opened later', async () => {
     const getAllKeys = (k) => ({
-      privateSignatureKey: k.privateSignatureKey,
-      publicSignatureKey: k.publicSignatureKey,
-      privateEncryptionKey: k.privateEncryptionKey,
-      publicEncryptionKey: k.publicEncryptionKey
+      privateSignatureKey: k.signatureKeyPair.privateKey,
+      publicSignatureKey: k.signatureKeyPair.publicKey,
+      privateEncryptionKey: k.encryptionKeyPair.privateKey,
+      publicEncryptionKey: k.encryptionKeyPair.publicKey,
     });
 
     const keystore1 = await KeyStore.open(datastore, secret);
@@ -53,44 +52,12 @@ describe('KeyStore', () => {
   it('can insert user keys in the right order', async () => {
     const keystore = await KeyStore.open(datastore, secret);
 
-    const key1 = tcrypto.makeEncryptionKeyPair();
     const key2 = tcrypto.makeEncryptionKeyPair();
     const key3 = tcrypto.makeEncryptionKeyPair();
 
     await keystore.addUserKey(key2);
-    await keystore.prependUserKey(key1);
     await keystore.addUserKey(key3);
 
-    expect(keystore.userKeys).to.deep.eq([key1, key2, key3]);
-  });
-
-  it('can prepend then take all encrypted user keys', async () => {
-    const keystore = await KeyStore.open(datastore, secret);
-
-    const key1: UserKeys = ('key1': any);
-    const key2: UserKeys = ('key2': any);
-
-    await keystore.prependEncryptedUserKey(key2);
-    await keystore.prependEncryptedUserKey(key1);
-
-    let keys = await keystore.takeEncryptedUserKeys();
-    expect(keys).to.deep.eq([key1, key2]);
-
-    keys = await keystore.takeEncryptedUserKeys();
-    expect(keys).to.deep.eq([]);
-  });
-
-  it('can find a user key', async () => {
-    const keystore = await KeyStore.open(datastore, secret);
-
-    const key1 = tcrypto.makeEncryptionKeyPair();
-    const key2 = tcrypto.makeEncryptionKeyPair();
-    const key3 = tcrypto.makeEncryptionKeyPair();
-
-    await keystore.addUserKey(key1); //eslint-disable-line no-underscore-dangle
-    await keystore.addUserKey(key2); //eslint-disable-line no-underscore-dangle
-    await keystore.addUserKey(key3); //eslint-disable-line no-underscore-dangle
-
-    expect(keystore.findUserKey(key2.publicKey)).to.deep.eq(key2);
+    expect(keystore.userKeys).to.deep.eq([key2, key3]);
   });
 });

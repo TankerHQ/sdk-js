@@ -1,5 +1,4 @@
 // @flow
-import find from 'array-find';
 
 import { utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
@@ -9,9 +8,7 @@ import { compareSameSizeUint8Arrays } from '../utils';
 import TaskQueue from '../TaskQueue';
 import { type User, type Device } from '../Users/types';
 
-import type { TrustchainCreationEntry } from '../Session/LocalUser/Serialize';
-import { verifyTrustchainCreation } from '../Session/LocalUser/Verify';
-
+import LocalUser from '../Session/LocalUser/LocalUser';
 import type { UserEntry, DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../Users/Verify';
 
@@ -23,18 +20,17 @@ import {
 import Storage from '../Session/Storage';
 
 
-import { verifyProvisionalIdentityClaim } from '../Session/ProvisionalIdentity/Verify';
-import { type ClaimEntry } from '../Session/ProvisionalIdentity/Serialize';
-
 export default class TrustchainVerifier {
   _verifyQueue: TaskQueue = new TaskQueue();
   _trustchainId: Uint8Array;
   _storage: Storage;
+  _localUser: LocalUser;
 
 
-  constructor(trustchainId: Uint8Array, storage: Storage) {
+  constructor(trustchainId: Uint8Array, storage: Storage, localUser: LocalUser) {
     this._storage = storage;
     this._trustchainId = trustchainId;
+    this._localUser = localUser;
   }
 
   // Returns a map from entry hash to author entry, if the author could be found, verified, and was not revoked at the given index
@@ -66,7 +62,7 @@ export default class TrustchainVerifier {
   }
 
   async _unlockedVerifySingleUserDeviceCreation(user: ?User, entry: DeviceCreationEntry): Promise<DeviceCreationEntry> {
-    const trustchainPublicKey = this._storage.trustchainStore.trustchainPublicKey;
+    const trustchainPublicKey = this._localUser.trustchainPublicKey;
     if (utils.equalArray(entry.author, this._trustchainId)) {
       verifyDeviceCreation(entry, null, trustchainPublicKey);
     } else {
@@ -141,39 +137,6 @@ export default class TrustchainVerifier {
     return user;
   }
 
-  async _unlockedVerifyClaims(claims: Array<ClaimEntry>): Promise<Array<ClaimEntry>> {
-    const verifiedClaims = [];
-    for (const claim of claims) {
-      try {
-        const authorUser = await this._storage.userStore.findUser({ deviceId: claim.author });
-        if (!authorUser)
-          throw new InvalidBlockError('author_not_found', 'author not found', { claim });
-
-        const authorDevice = find(authorUser.devices, d => utils.equalArray(d.deviceId, claim.author));
-        if (!authorDevice)
-          throw new InvalidBlockError('author_not_found', 'author not found', { claim });
-
-        verifyProvisionalIdentityClaim(claim, authorDevice.devicePublicSignatureKey, authorUser.userId);
-        verifiedClaims.push(claim);
-      } catch (e) {
-        if (!(e instanceof InvalidBlockError)) {
-          throw e;
-        } else {
-          console.error('invalid block', e);
-        }
-        continue;
-      }
-    }
-    return verifiedClaims;
-  }
-
-  async verifyTrustchainCreation(unverifiedTrustchainCreation: TrustchainCreationEntry) {
-    return this._verifyQueue.enqueue(async () => {
-      verifyTrustchainCreation(unverifiedTrustchainCreation, this._trustchainId);
-      return this._storage.trustchainStore.setTrustchainPublicKey(unverifiedTrustchainCreation.public_signature_key);
-    });
-  }
-
   async _takeOneDeviceOfEachUsers(
     nextDevicesToVerify: Array<UserEntry>
   ): Promise<Array<Array<UserEntry>>> {
@@ -213,16 +176,6 @@ export default class TrustchainVerifier {
         await this._storage.userStore.applyEntries(verifiedDevices);
         await this._storage.unverifiedStore.removeVerifiedUserEntries(verifiedDevices);
       } while (nextDevicesToVerify.length > 0);
-    });
-  }
-
-  async verifyClaimsForUser(userId: Uint8Array) {
-    await this._verifyQueue.enqueue(async () => {
-      const unverifiedClaims = await this._storage.unverifiedStore.findUnverifiedProvisionalIdentityClaims(userId);
-
-      const verifiedClaims = await this._unlockedVerifyClaims(unverifiedClaims);
-      await this._storage.userStore.applyProvisionalIdentityClaims(verifiedClaims);
-      await this._storage.unverifiedStore.removeVerifiedProvisionalIdentityClaimEntries(verifiedClaims);
     });
   }
 }

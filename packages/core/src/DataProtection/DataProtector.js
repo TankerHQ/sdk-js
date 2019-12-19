@@ -53,7 +53,8 @@ export class DataProtector {
       client,
       new KeyDecryptor(
         localUser,
-        groupManager
+        groupManager,
+        provisionalIdentityManager
       ),
     );
     this._client = client;

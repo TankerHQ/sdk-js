@@ -5,19 +5,23 @@ import { DecryptionFailed, InternalError } from '@tanker/errors';
 
 import GroupManager from '../../Groups/Manager';
 import LocalUser from '../../Session/LocalUser/LocalUser';
+import ProvisionalIdentityManager from '../../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
 import { type KeyPublishEntry, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './keyPublish';
 
 export class KeyDecryptor {
   _localUser: LocalUser;
   _groupManager: GroupManager;
+  _provisionalIdentityManager: ProvisionalIdentityManager;
 
   constructor(
     localUser: LocalUser,
-    groupManager: GroupManager
+    groupManager: GroupManager,
+    provisionalIdentityManager: ProvisionalIdentityManager
   ) {
     this._localUser = localUser;
     this._groupManager = groupManager;
+    this._provisionalIdentityManager = provisionalIdentityManager;
   }
 
   async decryptResourceKeyPublishedToUser(keyPublishEntry: KeyPublishEntry): Promise<Key> {
@@ -44,7 +48,7 @@ export class KeyDecryptor {
     if (!keyPublishEntry.recipientAppPublicKey || !keyPublishEntry.recipientTankerPublicKey) {
       throw new InternalError('Assertion error: key publish without recipient');
     }
-    const keys = this._localUser.findProvisionalUserKey(keyPublishEntry.recipientAppPublicKey, keyPublishEntry.recipientTankerPublicKey);
+    const keys = await this._provisionalIdentityManager.getPrivateProvisionalKeys(keyPublishEntry.recipientAppPublicKey, keyPublishEntry.recipientTankerPublicKey);
     if (!keys)
       throw new DecryptionFailed({ message: 'Provisional user key not found' });
     const d1 = tcrypto.sealDecrypt(keyPublishEntry.key, keys.tankerEncryptionKeyPair);

@@ -9,6 +9,7 @@ import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
 
 import GroupManager from '../Groups/Manager';
 import LocalUser from '../Session/LocalUser/LocalUser';
+import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
 import { type KeyPublishEntry, type KeyPublishNature, KeyPublishNatures } from '../DataProtection/Resource/keyPublish';
 
@@ -47,6 +48,8 @@ describe('KeyDecryptor', () => {
   let decryptor: KeyDecryptor;
   let localUser: LocalUserStub;
   let groupManager;
+  const provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
+
 
   before(() => {
     const kp = tcrypto.makeEncryptionKeyPair();
@@ -63,7 +66,7 @@ describe('KeyDecryptor', () => {
     groupManager = { getGroupEncryptionKeyPair: () => null };
     const castedGroupManager = ((groupManager: any): GroupManager);
 
-    decryptor = new KeyDecryptor(castedLocalUser, castedGroupManager);
+    decryptor = new KeyDecryptor(castedLocalUser, castedGroupManager, provisionalIdentityManager);
   });
 
   it('can decrypt key published to user', async () => {

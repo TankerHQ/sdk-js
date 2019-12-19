@@ -25,7 +25,7 @@ import {
 } from '../Groups/Serialize';
 
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
-import { serializeKeyPublish } from '../DataProtection/Resource/keyPublish';
+import { serializeKeyPublish, serializeKeyPublishToProvisionalUser } from '../DataProtection/Resource/keyPublish';
 
 import { signBlock, type Block } from './Block';
 import { type DelegationToken } from '../Session/UserData';
@@ -266,7 +266,8 @@ export class BlockGenerator {
     );
 
     const payload = {
-      recipient: utils.concatArrays(publicProvisionalUser.appSignaturePublicKey, publicProvisionalUser.tankerSignaturePublicKey),
+      recipientAppPublicKey: publicProvisionalUser.appSignaturePublicKey,
+      recipientTankerPublicKey: publicProvisionalUser.tankerSignaturePublicKey,
       resourceId,
       key: encryptedKey,
     };
@@ -277,7 +278,7 @@ export class BlockGenerator {
         trustchain_id: this.trustchainId,
         nature: preferredNature(NATURE_KIND.key_publish_to_provisional_user),
         author: this.deviceId,
-        payload: serializeKeyPublish(payload)
+        payload: serializeKeyPublishToProvisionalUser(payload)
       },
       this.privateSignatureKey
     );

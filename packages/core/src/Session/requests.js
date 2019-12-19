@@ -1,9 +1,8 @@
 // @flow
 
-import { generichash, utils, tcrypto, encryptionV2 } from '@tanker/crypto';
+import { generichash, utils, tcrypto, encryptionV2, type b64string } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 
-import { type Block } from '../Blocks/Block';
 import { Client, b64RequestObject } from '../Network/Client';
 
 import LocalUser from './LocalUser/LocalUser';
@@ -23,8 +22,8 @@ type VerificationRequest = $Exact<{
 type UserCreationRequest = $Exact<{
   trustchain_id: Uint8Array,
   user_id: Uint8Array,
-  user_creation_block: Block,
-  first_device_block: Block,
+  user_creation_block: b64string,
+  first_device_block: b64string,
   encrypted_unlock_key?: Uint8Array,
   verification?: VerificationRequest
 }>;
@@ -82,12 +81,12 @@ export const getLastUserKey = async (client: Client, trustchainId: Uint8Array, g
   };
 };
 
-export const sendUserCreation = async (client: Client, localUser: LocalUser, userCreationBlock: Block, firstDevice: Block, verification: Verification, encryptedUnlockKey: Uint8Array) => {
+export const sendUserCreation = async (client: Client, localUser: LocalUser, userCreationBlock: b64string, firstDeviceBlock: b64string, verification: Verification, encryptedUnlockKey: Uint8Array) => {
   const request: UserCreationRequest = {
     trustchain_id: localUser.trustchainId,
     user_id: localUser.userId,
     user_creation_block: userCreationBlock,
-    first_device_block: firstDevice,
+    first_device_block: firstDeviceBlock,
   };
 
   if (verification.email || verification.passphrase || verification.oidcIdToken) {
@@ -95,7 +94,7 @@ export const sendUserCreation = async (client: Client, localUser: LocalUser, use
     request.verification = formatVerificationRequest(verification, localUser);
   }
 
-  await client.send('create user', b64RequestObject(request));
+  await client.send('create user 2', b64RequestObject(request));
 };
 
 export const sendSetVerificationMethod = async (client: Client, localUser: LocalUser, verification: RemoteVerification) => {

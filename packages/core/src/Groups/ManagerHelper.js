@@ -9,7 +9,8 @@ import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } f
 import { verifyGroupAction } from './Verify';
 
 import { type ProvisionalUserKeyPairs } from '../Session/LocalUser/KeySafe';
-import KeyStore from '../Session/LocalUser/KeyStore';
+import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
+import LocalUser from '../Session/LocalUser/LocalUser';
 
 export const MAX_GROUP_SIZE = 1000;
 
@@ -52,9 +53,9 @@ export function assertExpectedGroupsByPublicKey(groups: Array<Group>, expectedGr
   }
 }
 
-function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: KeyStore): ?Object {
+function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, localUser: LocalUser): ?Object {
   for (const gek of groupKeys) {
-    const correspondingPair = keystore.findUserKey(gek.public_user_encryption_key);
+    const correspondingPair = localUser.findUserKey(gek.public_user_encryption_key);
     if (correspondingPair) {
       return {
         userKeyPair: correspondingPair,
@@ -65,10 +66,9 @@ function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, keystore: 
   return null;
 }
 
-function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>, keystore: KeyStore): ?Object {
+async function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>, provisionalIdentityManager: ProvisionalIdentityManager): Promise<?Object> {
   for (const gek of groupKeys) {
-    const id = utils.toBase64(utils.concatArrays(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key));
-    const correspondingPair = keystore.findProvisionalKey(id);
+    const correspondingPair = await provisionalIdentityManager.getPrivateProvisionalKeys(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key);
     if (correspondingPair)
       return {
         provisionalKeyPair: correspondingPair,
@@ -83,15 +83,15 @@ function provisionalUnseal(ciphertext: Uint8Array, keys: ProvisionalUserKeyPairs
   return tcrypto.sealDecrypt(intermediate, keys.appEncryptionKeyPair);
 }
 
-function findGroupPrivateEncryptionKey(entry: UserGroupEntry, keystore: KeyStore): ?Uint8Array {
-  const userKeys = findMyUserKeys(entry.encrypted_group_private_encryption_keys_for_users, keystore);
+async function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): Promise<?Uint8Array> {
+  const userKeys = findMyUserKeys(entry.encrypted_group_private_encryption_keys_for_users, localUser);
 
   if (userKeys) {
     return tcrypto.sealDecrypt(userKeys.groupEncryptedKey, userKeys.userKeyPair);
   }
 
   if (entry.encrypted_group_private_encryption_keys_for_provisional_users) {
-    const provisionalKeys = findMyProvisionalKeys(entry.encrypted_group_private_encryption_keys_for_provisional_users, keystore);
+    const provisionalKeys = await findMyProvisionalKeys(entry.encrypted_group_private_encryption_keys_for_provisional_users, provisionalIdentityManager);
     if (provisionalKeys) {
       return provisionalUnseal(provisionalKeys.groupEncryptedKey, provisionalKeys.provisionalKeyPair);
     }
@@ -114,7 +114,13 @@ function externalToInternal(externalGroup: ExternalGroup, groupPrivateEncryption
     }
   };
 }
-export function groupFromUserGroupEntry(entry: UserGroupEntry, previousGroup: ?Group, keystore: KeyStore): Group {
+
+export async function groupFromUserGroupEntry(
+  entry: UserGroupEntry,
+  previousGroup: ?Group,
+  localUser: LocalUser,
+  provisionalIdentityManager: ProvisionalIdentityManager
+): Promise<Group> {
   // Previous group already has every field we need
   if (previousGroup && isInternalGroup(previousGroup)) {
     return {
@@ -142,7 +148,7 @@ export function groupFromUserGroupEntry(entry: UserGroupEntry, previousGroup: ?G
     encryptedPrivateSignatureKey,
   };
 
-  const groupPrivateEncryptionKey = findGroupPrivateEncryptionKey(entry, keystore);
+  const groupPrivateEncryptionKey = await findGroupPrivateEncryptionKey(entry, localUser, provisionalIdentityManager);
 
   // If found, return an internal group
   if (groupPrivateEncryptionKey) {
@@ -153,7 +159,7 @@ export function groupFromUserGroupEntry(entry: UserGroupEntry, previousGroup: ?G
   return externalGroup;
 }
 
-export function inflateFromBlocks(blocks: Array<b64string>, keystore: KeyStore): Array<GroupData> {
+export async function inflateFromBlocks(blocks: Array<b64string>, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): Promise<Array<GroupData>> {
   let group;
 
   const groupsMap: Map<b64string, GroupData> = new Map();
@@ -164,7 +170,7 @@ export function inflateFromBlocks(blocks: Array<b64string>, keystore: KeyStore):
     const previousData: GroupData = groupsMap.get(b64groupId) || [];
     const previousGroup = previousData.length ? previousData[previousData.length - 1].group : null;
 
-    group = groupFromUserGroupEntry(entry, previousGroup, keystore);
+    group = await groupFromUserGroupEntry(entry, previousGroup, localUser, provisionalIdentityManager);
     previousData.push({ group, entry });
 
     groupsMap.set(b64groupId, previousData);

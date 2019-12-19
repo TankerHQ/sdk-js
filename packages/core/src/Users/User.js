@@ -1,15 +1,13 @@
 // @flow
-import { utils, type b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { findIndex } from '../utils';
 import { NATURE } from '../Blocks/Nature';
-import { unserializeBlock } from '../Blocks/payloads';
 
-import { type DeviceCreationEntry, type DeviceRevocationEntry, isDeviceCreation, deviceCreationFromBlock, isDeviceRevocation, deviceRevocationFromBlock } from './Serialize';
+import { type DeviceCreationEntry, type DeviceRevocationEntry } from './Serialize';
 
 import type { User, Device } from './types';
-import { verifyDeviceCreation, verifyDeviceRevocation } from './Verify';
 
 export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, user: ?User): User {
   let oldDevices = [];
@@ -55,27 +53,4 @@ export function applyDeviceRevocationToUser(deviceRevocation: DeviceRevocationEn
   }
 
   return updatedUser;
-}
-
-export function userFromBlocks(userBlocks: Array<b64string>, trustchainPublicKey: Uint8Array): User {
-  let user = null;
-  userBlocks.forEach(b => {
-    const block = unserializeBlock(utils.fromBase64(b));
-    if (isDeviceCreation(block)) {
-      const deviceCreation = deviceCreationFromBlock(block);
-      verifyDeviceCreation(deviceCreation, user, trustchainPublicKey);
-      user = applyDeviceCreationToUser(deviceCreation, user);
-    } else if (isDeviceRevocation(block)) {
-      if (!user) {
-        throw new InternalError('Assertion error: Cannot revoke device of non existing user');
-      }
-      const deviceRevocation = deviceRevocationFromBlock(block, user.userId);
-      verifyDeviceRevocation(deviceRevocation, user);
-      user = applyDeviceRevocationToUser(deviceRevocation, user);
-    }
-  });
-  if (!user) {
-    throw new InternalError('Assertion error: user cannot be null');
-  }
-  return user;
 }
