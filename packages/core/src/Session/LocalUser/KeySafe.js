@@ -10,6 +10,8 @@ export type ProvisionalUserKeyPairs = {|
   tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
 |};
 
+export type LocalUserKeys = { currentUserKey: tcrypto.SodiumKeyPair, userKeys: { [string]: tcrypto.SodiumKeyPair }};
+
 export type IndexedProvisionalUserKeyPairs = { [id: string]: ProvisionalUserKeyPairs };
 
 export type DeviceKeys = {|
@@ -24,7 +26,8 @@ export type KeySafe = {|
   userKeys: Array<tcrypto.SodiumKeyPair>,
   encryptedUserKeys: Array<UserKeys>,
   provisionalUserKeys: IndexedProvisionalUserKeyPairs,
-  trustchainPublicKey: ?b64string
+  trustchainPublicKey: ?b64string,
+  localUserKeys: ?LocalUserKeys,
 |};
 
 function startsWith(haystack: string, needle: string) {
@@ -68,6 +71,7 @@ export function generateKeySafe(userSecret: Uint8Array): KeySafe {
     encryptedUserKeys: [],
     provisionalUserKeys: {},
     trustchainPublicKey: null,
+    localUserKeys: null,
   };
 }
 

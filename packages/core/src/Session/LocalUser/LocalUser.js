@@ -12,7 +12,7 @@ import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from '../../
 import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../../Users/User';
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../../Users/Verify';
 
-import type { ProvisionalUserKeyPairs } from './KeySafe';
+import type { ProvisionalUserKeyPairs, LocalUserKeys } from './KeySafe';
 import { findIndex } from '../../utils';
 import type { UserData } from '../UserData';
 
@@ -57,16 +57,17 @@ export class LocalUser extends EventEmitter {
   }
 
   _loadStoredData = () => {
-    this._userKeys = {};
-    const userKeys = this._keyStore.userKeys;
-    for (const userKey of userKeys) {
-      this._userKeys[utils.toBase64(userKey.publicKey)] = userKey;
-      this._currentUserKey = userKey;
+    const localUserKeys = this._keyStore.localUserKeys;
+
+    if (localUserKeys) {
+      this._userKeys = localUserKeys.userKeys;
+      this._currentUserKey = localUserKeys.currentUserKey;
+      this._deviceId = this._keyStore.deviceId;
+      this._trustchainPublicKey = this._keyStore.trustchainPublicKey;
     }
+
     this._deviceSignatureKeyPair = this._keyStore.signatureKeyPair;
     this._deviceEncryptionKeyPair = this._keyStore.encryptionKeyPair;
-    this._deviceId = this._keyStore.deviceId;
-    this._trustchainPublicKey = this._keyStore.trustchainPublicKey;
   }
 
   generateDeviceFromGhostDevice = (ghostDevice: GhostDevice, encryptedUserKey: EncryptedUserKeyForGhostDevice) => {
@@ -183,11 +184,9 @@ export class LocalUser extends EventEmitter {
   }
 
   _initializeWithUserBlocks = async (userBlocks: Array<string>) => {
-    delete this._currentUserKey;
-    this._userKeys = {};
-
     let user = null;
     const encryptedUserKeys: Array<UserKeys | UserKeyPair> = [];
+    let deviceId;
 
     for (const b64Block of userBlocks) {
       const userEntry = userEntryFromBlock(b64Block, user && user.userId);
@@ -196,7 +195,7 @@ export class LocalUser extends EventEmitter {
         verifyDeviceCreation(deviceCreationEntry, user, this.trustchainPublicKey);
         user = applyDeviceCreationToUser(deviceCreationEntry, user);
         if (utils.equalArray(this._deviceEncryptionKeyPair.publicKey, deviceCreationEntry.public_encryption_key)) {
-          await this._setDeviceId(deviceCreationEntry.hash);
+          deviceId = deviceCreationEntry.hash;
           if (deviceCreationEntry.user_key_pair) {
             encryptedUserKeys.unshift(deviceCreationEntry.user_key_pair);
           }
@@ -217,7 +216,18 @@ export class LocalUser extends EventEmitter {
       }
     }
 
-    await this._decryptUserKeys(encryptedUserKeys);
+    if (!deviceId) {
+      throw new InternalError('Assertion error: Cannot decrypt keys: current device not found');
+    }
+    const localUserKeys = this._decryptUserKeys(encryptedUserKeys, deviceId);
+
+    if (!localUserKeys.currentUserKey) {
+      throw new InternalError('Assertion error: No current user key');
+    }
+    this._userKeys = localUserKeys.userKeys;
+    this._currentUserKey = localUserKeys.currentUserKey;
+    await this._keyStore.setLocalUserKeys(localUserKeys);
+    await this._setDeviceId(deviceId);
   }
 
   _setDeviceId = async (deviceId: Uint8Array) => {
@@ -231,14 +241,31 @@ export class LocalUser extends EventEmitter {
     );
   }
 
-  _decryptUserKeys = async (encryptedUserKeys: Array<UserKeys | UserKeyPair>) => {
+  _localUserKeysFromPrivateKey = (encryptedPrivateKey: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, existingLocalUserKeys: ?LocalUserKeys): LocalUserKeys => {
+    const privateKey = tcrypto.sealDecrypt(encryptedPrivateKey, encryptionKeyPair);
+    const keyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(privateKey);
+    const b64PublicKey = utils.toBase64(keyPair.publicKey);
+    const res = {};
+    res[b64PublicKey] = keyPair;
+
+    if (existingLocalUserKeys) {
+      return {
+        userKeys: { ...existingLocalUserKeys.userKeys, ...res },
+        currentUserKey: existingLocalUserKeys.currentUserKey,
+      };
+    }
+    return {
+      userKeys: res,
+      currentUserKey: keyPair,
+    };
+  }
+
+  _decryptUserKeys = (encryptedUserKeys: Array<UserKeys | UserKeyPair>, deviceId: Uint8Array): LocalUserKeys => {
+    let localUserKeys;
     for (const encryptedUserKey of encryptedUserKeys) {
       // Key for local device
       if (encryptedUserKey.encrypted_private_encryption_key) {
-        await this._updateUserKeys({
-          privateKey: tcrypto.sealDecrypt(encryptedUserKey.encrypted_private_encryption_key, this._deviceEncryptionKeyPair),
-          publicKey: encryptedUserKey.public_encryption_key,
-        });
+        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_private_encryption_key, this._deviceEncryptionKeyPair, localUserKeys);
         continue;
       }
 
@@ -247,38 +274,22 @@ export class LocalUser extends EventEmitter {
         continue;
 
       // Key encrypted before our device creation
-      const keyPair = this.findUserKey(encryptedUserKey.public_encryption_key);
-      if (keyPair) {
-        await this._updateUserKeys(
-          tcrypto.getEncryptionKeyPairFromPrivateKey(
-            tcrypto.sealDecrypt(encryptedUserKey.encrypted_previous_encryption_key, keyPair)
-          )
-        );
+      const existingUserKey = localUserKeys && localUserKeys.userKeys[utils.toBase64(encryptedUserKey.public_encryption_key)];
+      if (existingUserKey) {
+        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_previous_encryption_key, existingUserKey, localUserKeys);
       // Key encrypted after our device creation
       } else {
-        const deviceId = this._deviceId;
-        if (!deviceId) {
-          throw new InternalError('Assertion error: Cannot decrypt keys from revocation: deviceId not set');
-        }
         const privKeyIndex = findIndex(encryptedUserKey.private_keys, k => utils.equalArray(k.recipient, deviceId));
         if (privKeyIndex === -1)
           throw new InternalError('Assertion error: Couldn\'t decrypt user keys from revocation');
 
-        await this._updateUserKeys(
-          tcrypto.getEncryptionKeyPairFromPrivateKey(
-            tcrypto.sealDecrypt(encryptedUserKey.private_keys[privKeyIndex].key, this._deviceEncryptionKeyPair)
-          )
-        );
+        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.private_keys[privKeyIndex].key, this._deviceEncryptionKeyPair, localUserKeys);
       }
     }
-  }
-
-  _updateUserKeys = async (userKey: tcrypto.SodiumKeyPair) => {
-    this._userKeys[utils.toBase64(userKey.publicKey)] = userKey;
-    await this._keyStore.addUserKey(userKey);
-    if (!this._currentUserKey) {
-      this._currentUserKey = userKey;
+    if (!localUserKeys) {
+      throw new InternalError('Assertion error: no user keys');
     }
+    return localUserKeys;
   }
 
   findProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): ?PrivateProvisionalKeys => {

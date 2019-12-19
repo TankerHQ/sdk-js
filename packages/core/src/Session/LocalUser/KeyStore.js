@@ -4,9 +4,10 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
-import type { KeySafe, IndexedProvisionalUserKeyPairs } from './KeySafe';
+import type { KeySafe, IndexedProvisionalUserKeyPairs, LocalUserKeys } from './KeySafe';
 
 const TABLE = 'device';
+
 
 export default class KeyStore {
   /*:: _ds: DataStore<*>; */
@@ -158,5 +159,14 @@ export default class KeyStore {
   addUserKey(keyPair: tcrypto.SodiumKeyPair): Promise<void> {
     this._safe.userKeys.push(keyPair);
     return this.saveSafe();
+  }
+
+  async setLocalUserKeys(localUserKeys: LocalUserKeys) {
+    this._safe.localUserKeys = localUserKeys;
+    await this.saveSafe();
+  }
+
+  get localUserKeys(): ?LocalUserKeys {
+    return this._safe.localUserKeys;
   }
 }
