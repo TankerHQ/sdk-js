@@ -4,22 +4,22 @@ import { tcrypto, type Key } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 
 import GroupManager from '../../Groups/Manager';
-import LocalUser from '../../Session/LocalUser/LocalUser';
+import LocalUserManager from '../../Session/LocalUser/Manager';
 import ProvisionalIdentityManager from '../../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
 import { type KeyPublishEntry, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './Serialize';
 
 export class KeyDecryptor {
-  _localUser: LocalUser;
+  _localUserManager: LocalUserManager;
   _groupManager: GroupManager;
   _provisionalIdentityManager: ProvisionalIdentityManager;
 
   constructor(
-    localUser: LocalUser,
+    localUserManager: LocalUserManager,
     groupManager: GroupManager,
     provisionalIdentityManager: ProvisionalIdentityManager
   ) {
-    this._localUser = localUser;
+    this._localUserManager = localUserManager;
     this._groupManager = groupManager;
     this._provisionalIdentityManager = provisionalIdentityManager;
   }
@@ -28,7 +28,7 @@ export class KeyDecryptor {
     if (!keyPublishEntry.recipient) {
       throw new InternalError('Assertion error: key publish without recipient');
     }
-    const userKey = this._localUser.findUserKey(keyPublishEntry.recipient);
+    const userKey = await this._localUserManager.findUserKey(keyPublishEntry.recipient);
     if (!userKey)
       throw new DecryptionFailed({ message: 'User key not found' });
     return tcrypto.sealDecrypt(keyPublishEntry.key, userKey);

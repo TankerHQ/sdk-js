@@ -6,25 +6,20 @@ import { InternalError, DeviceRevoked } from '@tanker/errors';
 
 import type { DeviceCreationEntry, DeviceRevocationEntry, UserKeys, UserKeyPair } from '../../Users/Serialize';
 import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from '../../Users/Serialize';
+import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../../Users/User';
+import { verifyDeviceCreation, verifyDeviceRevocation } from '../../Users/Verify';
+import { type Device } from '../../Users/types';
 
 import { type LocalData } from './KeyStore';
 
 import { createBlock } from '../../Blocks/Block';
 import { type Nature } from '../../Blocks/Nature';
 
-import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../../Users/User';
-import { verifyDeviceCreation, verifyDeviceRevocation } from '../../Users/Verify';
-
-import type { ProvisionalUserKeyPairs, LocalUserKeys, IndexedProvisionalUserKeyPairs } from './KeySafe';
+import type { LocalUserKeys } from './KeySafe';
 import { findIndex } from '../../utils';
 
 import { trustchainCreationFromBlock } from './Serialize';
 import { verifyTrustchainCreation } from './Verify';
-
-export type PrivateProvisionalKeys = {|
-  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
-  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
-|}
 
 export class LocalUser extends EventEmitter {
   _trustchainId: Uint8Array;
@@ -35,12 +30,12 @@ export class LocalUser extends EventEmitter {
   _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
   _currentUserKey: ?tcrypto.SodiumKeyPair;
-  _provisionalUserKeys: IndexedProvisionalUserKeyPairs;
+  _devices: Array<Device>
 
   _deviceId: ?Uint8Array;
   _trustchainPublicKey: ?Uint8Array;
 
-  constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, localData: LocalData, provisionalUserKeys: IndexedProvisionalUserKeyPairs) {
+  constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, localData: LocalData) {
     super();
 
     this._trustchainId = trustchainId;
@@ -53,7 +48,7 @@ export class LocalUser extends EventEmitter {
     this._currentUserKey = localData.currentUserKey;
     this._trustchainPublicKey = localData.trustchainPublicKey;
     this._deviceId = localData.deviceId;
-    this._provisionalUserKeys = provisionalUserKeys;
+    this._devices = localData.devices;
   }
 
   get localData() {
@@ -64,6 +59,7 @@ export class LocalUser extends EventEmitter {
       currentUserKey: this._currentUserKey,
       trustchainPublicKey: this._trustchainPublicKey,
       deviceId: this._deviceId,
+      devices: this._devices,
     };
   }
 
@@ -96,6 +92,9 @@ export class LocalUser extends EventEmitter {
   }
   get userSecret(): Uint8Array {
     return this._userSecret;
+  }
+  get devices(): Array<Device> {
+    return this._devices;
   }
 
   findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
@@ -164,12 +163,16 @@ export class LocalUser extends EventEmitter {
     }
     const localUserKeys = this._decryptUserKeys(encryptedUserKeys, deviceId);
 
+    if (!user) {
+      throw new InternalError('Assertion error: No user');
+    }
     if (!localUserKeys.currentUserKey) {
       throw new InternalError('Assertion error: No current user key');
     }
     this._userKeys = localUserKeys.userKeys;
     this._currentUserKey = localUserKeys.currentUserKey;
     this._deviceId = deviceId;
+    this._devices = user.devices;
   }
 
   _localUserKeysFromPrivateKey = (encryptedPrivateKey: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, existingLocalUserKeys: ?LocalUserKeys): LocalUserKeys => {
@@ -221,34 +224,6 @@ export class LocalUser extends EventEmitter {
       throw new InternalError('Assertion error: no user keys');
     }
     return localUserKeys;
-  }
-
-  get provisionalUserKeys() {
-    return this._provisionalUserKeys;
-  }
-
-  findProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): ?PrivateProvisionalKeys => {
-    const id = utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey);
-    const result = this._provisionalUserKeys[utils.toBase64(id)];
-    if (result) {
-      const { appEncryptionKeyPair, tankerEncryptionKeyPair } = result;
-      return { appEncryptionKeyPair, tankerEncryptionKeyPair };
-    }
-    return null;
-  }
-
-  addProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array, privateProvisionalKeys: PrivateProvisionalKeys) => {
-    const id = utils.toBase64(utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey));
-    this._provisionalUserKeys[id] = {
-      id,
-      appEncryptionKeyPair: privateProvisionalKeys.appEncryptionKeyPair,
-      tankerEncryptionKeyPair: privateProvisionalKeys.tankerEncryptionKeyPair,
-    };
-  }
-
-  hasProvisionalUserKey = (appPublicEncryptionKey: Uint8Array) => {
-    const puks: Array<ProvisionalUserKeyPairs> = (Object.values(this._provisionalUserKeys): any);
-    return puks.some(puk => utils.equalArray(puk.appEncryptionKeyPair.publicKey, appPublicEncryptionKey));
   }
 }
 

@@ -3,9 +3,9 @@
 import { generichash, utils, tcrypto, encryptionV2, type b64string } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 
-import { Client, b64RequestObject } from '../Network/Client';
+import { Client, b64RequestObject } from '../../Network/Client';
 
-import LocalUser from './LocalUser/LocalUser';
+import LocalUser from './LocalUser';
 import { type Verification, type RemoteVerification } from './types';
 import { type GhostDevice } from './ghostDevice';
 

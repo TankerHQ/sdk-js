@@ -9,9 +9,9 @@ import { _deserializeProvisionalIdentity } from '@tanker/identity';
 import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 
-import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type OIDCVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/types';
+import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type OIDCVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './Session/LocalUser/types';
 
-import { extractUserData } from './Session/UserData';
+import { extractUserData } from './Session/LocalUser/UserData';
 import { Session } from './Session/Session';
 import type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
 import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
@@ -186,10 +186,12 @@ export class Tanker extends EventEmitter {
 
   get deviceId(): b64string {
     this.assert(statuses.READY, 'get the device id');
-    if (!this._session.localUser.deviceId)
+
+    const deviceId = this._session.deviceId();
+    if (!deviceId)
       throw new InternalError('Tried to get our device hash, but could not find it!');
 
-    return utils.toBase64(this._session.localUser.deviceId);
+    return utils.toBase64(deviceId);
   }
 
   assert(status: number, to: string): void {
@@ -219,7 +221,7 @@ export class Tanker extends EventEmitter {
   async verifyIdentity(verification: Verification): Promise<void> {
     this.assert(statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
     assertVerification(verification);
-    await this._session.unlockUser(verification);
+    await this._session.createNewDevice(verification);
     this.emit('statusChange', this.status);
   }
 
@@ -292,11 +294,8 @@ export class Tanker extends EventEmitter {
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
     this.assert(statuses.READY, 'get the device list');
-    const localUser = await this._session.findUser(this._session.localUser.userId);
-    if (!localUser) {
-      throw new InternalError('Assertion error: cannot find local user');
-    }
-    return localUser.devices.filter(d => !d.isGhostDevice).map(d => ({ id: utils.toBase64(d.deviceId), isRevoked: d.revoked }));
+    const devices = await this._session.listDevices();
+    return devices.map(d => ({ id: utils.toBase64(d.deviceId), isRevoked: d.revoked }));
   }
 
   async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {

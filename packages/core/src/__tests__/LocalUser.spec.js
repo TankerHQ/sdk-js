@@ -7,7 +7,7 @@ import { expect } from '@tanker/test-utils';
 import TestGenerator, { type TestUser } from './TestGenerator';
 
 import LocalUser from '../Session/LocalUser/LocalUser';
-import { extractUserData } from '../Session/UserData';
+import { extractUserData } from '../Session/LocalUser/UserData';
 
 const localUserKeysFromTestUser = (user: TestUser) => {
   const userKeys = {};
@@ -61,10 +61,11 @@ describe('Local User', () => {
       deviceEncryptionKeyPair: deviceCreation2.testDevice.encryptionKeys,
       userKeys: {},
       currentUserKey: null,
+      devices: [],
       deviceId: null,
       trustchainPublicKey: null
     };
-    localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData, {});
+    localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
   });
 
   it('initializes data correctly', async () => {
@@ -99,10 +100,11 @@ describe('Local User', () => {
         deviceEncryptionKeyPair: deviceCreation2.testDevice.encryptionKeys,
         userKeys: {},
         currentUserKey: null,
+        devices: [],
         deviceId: null,
-        trustchainPublicKey: null
+        trustchainPublicKey: null,
       };
-      localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData, {});
+      localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
     });
 
     it('decrypts encrypted user keys', async () => {

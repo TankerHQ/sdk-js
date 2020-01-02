@@ -23,10 +23,10 @@ import { type Group } from '../Groups/types';
 
 import { rootBlockAuthor } from '../Session/LocalUser/Verify';
 
-import { generateGhostDeviceKeys, type GhostDevice } from '../Session/ghostDevice';
-import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from '../Session/UserCreation';
+import { generateGhostDeviceKeys, type GhostDevice } from '../Session/LocalUser/ghostDevice';
+import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from '../Session/LocalUser/UserCreation';
 
-import { type DelegationToken } from '../Session/UserData';
+import { type DelegationToken } from '../Session/LocalUser/UserData';
 
 
 export type TestDevice = {
@@ -244,7 +244,7 @@ class TestGenerator {
   }
 
   makeDeviceRevocation = (parentDevice: TestDeviceCreation, deviceIdToRevoke: Uint8Array): TestDeviceRevocation => {
-    const { payload, nature } = makeDeviceRevocation(parentDevice.user, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], deviceIdToRevoke);
+    const { payload, nature } = makeDeviceRevocation(parentDevice.user.devices, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], deviceIdToRevoke);
 
     this._trustchainIndex += 1;
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);

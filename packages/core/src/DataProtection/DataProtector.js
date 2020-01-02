@@ -17,6 +17,8 @@ import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/Provision
 
 import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser/LocalUser';
+
+import LocalUserManager from '../Session/LocalUser/Manager';
 import GroupManager from '../Groups/Manager';
 import UserManager from '../Users/Manager';
 import { type User, getLastUserPublicKey } from '../Users/types';
@@ -44,7 +46,7 @@ export class DataProtector {
     resourceStore: ResourceStore,
     client: Client,
     groupManager: GroupManager,
-    localUser: LocalUser,
+    localUserManager: LocalUserManager,
     userManager: UserManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
   ) {
@@ -52,14 +54,14 @@ export class DataProtector {
       resourceStore,
       client,
       new KeyDecryptor(
-        localUser,
+        localUserManager,
         groupManager,
         provisionalIdentityManager
       ),
     );
     this._client = client;
     this._groupManager = groupManager;
-    this._localUser = localUser;
+    this._localUser = localUserManager.localUser;
     this._userManager = userManager;
     this._provisionalIdentityManager = provisionalIdentityManager;
   }

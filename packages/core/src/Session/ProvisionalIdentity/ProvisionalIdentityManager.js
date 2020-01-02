@@ -1,16 +1,17 @@
 // @flow
 
 import { generichash, tcrypto, utils } from '@tanker/crypto';
-import { InternalError, InvalidArgument, PreconditionFailed, DeviceRevoked } from '@tanker/errors';
+import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { type SecretProvisionalIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
 import { VerificationNeeded } from '../../errors.internal';
 
 import { Client, b64RequestObject } from '../../Network/Client';
-import LocalUser, { type PrivateProvisionalKeys } from '../LocalUser/LocalUser';
+import LocalUserManager, { type PrivateProvisionalKeys } from '../LocalUser/Manager';
+
 import KeyStore from '../LocalUser/KeyStore';
-import { formatVerificationRequest } from '../requests';
-import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../types';
+import { formatVerificationRequest } from '../LocalUser/requests';
+import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../LocalUser/types';
 import UserManager from '../../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
@@ -41,26 +42,28 @@ const tankerProvisionalKeys = (serverResult) => {
 export default class ProvisionalIdentityManager {
   _client: Client;
   _keyStore: KeyStore;
-  _localUser: LocalUser;
+  _localUserManager: LocalUserManager;
   _userManager: UserManager;
   _provisionalIdentity: SecretProvisionalIdentity;
   _keyStore: KeyStore;
 
+  _provisionalIdentity: SecretProvisionalIdentity;
+
   constructor(
     client: Client,
     keyStore: KeyStore,
-    localUser: LocalUser,
+    localUserManager: LocalUserManager,
     userManager: UserManager,
   ) {
     this._client = client;
-    this._keyStore = keyStore;
-    this._localUser = localUser;
+    this._localUserManager = localUserManager;
     this._userManager = userManager;
+    this._keyStore = keyStore;
   }
 
   async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: EmailVerificationMethod }> {
     await this._refreshProvisionalPrivateKeys();
-    const hasClaimed = this._localUser.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
+    const hasClaimed = this._localUserManager.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
 
     if (hasClaimed) {
       return { status: statuses.READY };
@@ -115,13 +118,13 @@ export default class ProvisionalIdentityManager {
   }
 
   async getPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): Promise<?PrivateProvisionalKeys> {
-    const provisionalUserKeyPairs = this._localUser.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
+    const provisionalUserKeyPairs = this._localUserManager.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
 
     if (provisionalUserKeyPairs) {
       return provisionalUserKeyPairs;
     }
     await this._refreshProvisionalPrivateKeys();
-    return this._localUser.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
+    return this._localUserManager.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
   }
 
   async getProvisionalUsers(provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> {
@@ -181,21 +184,20 @@ export default class ProvisionalIdentityManager {
       if (!authorDevicePublicSignatureKey) {
         throw new InternalError('refreshProvisionalPrivateKeys: author device should have a public signature key');
       }
-      verifyProvisionalIdentityClaim(claimEntry, authorDevicePublicSignatureKey, this._localUser.userId);
+      verifyProvisionalIdentityClaim(claimEntry, authorDevicePublicSignatureKey, this._localUserManager.localUser.userId);
 
-      const privateProvisionalKeys = this._decryptPrivateProvisionalKeys(claimEntry.recipient_user_public_key, claimEntry.encrypted_provisional_identity_private_keys);
+      const privateProvisionalKeys = await this._decryptPrivateProvisionalKeys(claimEntry.recipient_user_public_key, claimEntry.encrypted_provisional_identity_private_keys);
 
-      this._localUser.addProvisionalUserKey(
+      await this._localUserManager.addProvisionalUserKey(
         claimEntry.app_provisional_identity_signature_public_key,
         claimEntry.tanker_provisional_identity_signature_public_key,
         privateProvisionalKeys
       );
     }
-    return this._keyStore.saveProvisionalUserKeys(this._localUser.provisionalUserKeys, this._localUser.userSecret);
   }
 
-  _decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): PrivateProvisionalKeys {
-    const userKeyPair = this._localUser.findUserKey(recipientUserPublicKey);
+  async _decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): Promise<PrivateProvisionalKeys> {
+    const userKeyPair = await this._localUserManager.findUserKey(recipientUserPublicKey);
 
     const provisionalUserPrivateKeys = tcrypto.sealDecrypt(encryptedPrivateProvisionalKeys, userKeyPair);
     const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
@@ -207,13 +209,14 @@ export default class ProvisionalIdentityManager {
 
   async _verifyAndGetProvisionalIdentityKeys(verification: EmailVerification | OIDCVerification): Promise<?TankerProvisionalKeys> {
     const result = await this._client.send('get provisional identity', b64RequestObject({
-      verification: formatVerificationRequest(verification, this._localUser),
+      verification: formatVerificationRequest(verification, this._localUserManager.localUser),
     }));
     return tankerProvisionalKeys(result);
   }
 
   async _claimProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity, tankerKeys: TankerProvisionalKeys): Promise<void> {
-    await this._updateLocalUser();
+    await this._localUserManager.updateLocalUser();
+
     const appProvisionalUserPrivateSignatureKey = utils.fromBase64(provisionalIdentity.private_signature_key);
     const appProvisionalUserPrivateEncryptionKey = utils.fromBase64(provisionalIdentity.private_encryption_key);
 
@@ -222,20 +225,10 @@ export default class ProvisionalIdentityManager {
       appEncryptionKeyPair: tcrypto.getEncryptionKeyPairFromPrivateKey(appProvisionalUserPrivateEncryptionKey),
       appSignatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(appProvisionalUserPrivateSignatureKey),
     };
-    const userPubKey = this._localUser.currentUserKey.publicKey;
-    const { payload, nature } = makeProvisionalIdentityClaim(this._localUser.userId, this._localUser.deviceId, userPubKey, provisionalUserKeys);
 
-    await this._client.send('push block', this._localUser.makeBlock(payload, nature), true);
-  }
+    const { userId, deviceId, currentUserKey } = this._localUserManager.localUser;
+    const { payload, nature } = makeProvisionalIdentityClaim(userId, deviceId, currentUserKey.publicKey, provisionalUserKeys);
 
-  _updateLocalUser = async () => {
-    try {
-      const localUserBlocks = await this._client.send('get my user blocks');
-      await this._localUser.initializeWithBlocks(localUserBlocks);
-    } catch (e) {
-      if (e instanceof DeviceRevoked) {
-        throw new InternalError('Cannot update local user: device revoked');
-      }
-    }
+    await this._client.send('push block', this._localUserManager.localUser.makeBlock(payload, nature), true);
   }
 }

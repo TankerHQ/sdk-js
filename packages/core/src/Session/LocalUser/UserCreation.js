@@ -5,12 +5,12 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { serializeUserDeviceV3,
   type UserKeys,
   serializeDeviceRevocationV2
-} from '../Users/Serialize';
+} from '../../Users/Serialize';
 
-import { type User, type Device } from '../Users/types';
+import { type Device } from '../../Users/types';
 
-import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
-import { createBlock } from '../Blocks/Block';
+import { preferredNature, NATURE_KIND } from '../../Blocks/Nature';
+import { createBlock } from '../../Blocks/Block';
 
 import { type GhostDevice, type GhostDeviceKeys } from './ghostDevice';
 import { type DelegationToken } from './UserData';
@@ -143,9 +143,8 @@ const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKe
   };
 };
 
-export const makeDeviceRevocation = (user: User, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
-  const remainingDevices = user.devices
-    .filter(device => device.revoked === false && !utils.equalArray(device.deviceId, deviceId));
+export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
+  const remainingDevices = devices.filter(device => device.revoked === false && !utils.equalArray(device.deviceId, deviceId));
 
   const userKeys = rotateUserKeys(remainingDevices, currentUserKeys);
   const revocationRecord = {

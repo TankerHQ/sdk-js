@@ -3,8 +3,8 @@
 import UserManager from '../Users/Manager';
 import Storage from './Storage';
 
-import LocalUser from './LocalUser/LocalUser';
 import GroupManager from '../Groups/Manager';
+import LocalUserManager from './LocalUser/Manager';
 
 import { Client } from '../Network/Client';
 import { DataProtector } from '../DataProtection/DataProtector';
@@ -19,12 +19,12 @@ export class Managers {
   cloudStorageManager: CloudStorageManager;
   provisionalIdentityManager: ProvisionalIdentityManager;
 
-  constructor(localUser: LocalUser, storage: Storage, client: Client) {
-    this.userManager = new UserManager(client, localUser);
-    this.provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, localUser, this.userManager);
+  constructor(localUserManager: LocalUserManager, storage: Storage, client: Client) {
+    this.userManager = new UserManager(client, localUserManager.localUser);
+    this.provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, localUserManager.localUser, this.userManager);
 
     this.groupManager = new GroupManager(
-      localUser,
+      localUserManager.localUser,
       storage.groupStore,
       this.userManager,
       this.provisionalIdentityManager,
@@ -35,7 +35,7 @@ export class Managers {
       storage.resourceStore,
       client,
       this.groupManager,
-      localUser,
+      localUserManager,
       this.userManager,
       this.provisionalIdentityManager
     );

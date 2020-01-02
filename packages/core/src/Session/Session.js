@@ -1,48 +1,43 @@
 // @flow
 import EventEmitter from 'events';
 
-import { InternalError, InvalidVerification, OperationCanceled, NetworkError, TankerError, DeviceRevoked } from '@tanker/errors';
-import { utils } from '@tanker/crypto';
+import { OperationCanceled, NetworkError, DeviceRevoked, InternalError } from '@tanker/errors';
 
 import Storage, { type DataStoreOptions } from './Storage';
-import LocalUser from './LocalUser/LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
-import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
+import { type Status, statuses } from './LocalUser/types';
 import { Managers } from './Managers';
-import { type UserData, type DelegationToken } from './UserData';
+import { type UserData, type DelegationToken } from './LocalUser/UserData';
 
-import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
-
-import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
-
-import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, decryptUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUserKeyForGhostDevice } from './ghostDevice';
+import { LocalUserManager } from './LocalUser/Manager';
 
 export class Session extends EventEmitter {
-  localUser: LocalUser;
-
-  storage: Storage;
+  _storage: Storage;
   _client: Client;
+
+  _localUserManager: LocalUserManager;
 
   _status: Status;
   _delegationToken: ?DelegationToken;
 
   _managers: Managers;
 
-  constructor(localUser: LocalUser, storage: Storage, client: Client, status: Status, delegationToken: ?DelegationToken) {
+  constructor(localUserManager: LocalUserManager, storage: Storage, client: Client) {
     super();
 
-    this.storage = storage;
-    this.localUser = localUser;
+    this._storage = storage;
+    this._localUserManager = localUserManager;
     this._client = client;
-    this._status = status;
-    this._delegationToken = delegationToken;
+    this._status = statuses.STOPPED;
 
-    client.on('authentication_failed', (e) => this.authenticationError(e));
-    this._managers = new Managers(localUser, storage, client);
+    this._managers = new Managers(localUserManager, storage, client);
   }
 
   get status(): Status {
     return this._status;
+  }
+  set status(status: Status) {
+    this._status = status;
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
@@ -58,159 +53,42 @@ export class Session extends EventEmitter {
     const storage = new Storage(storeOptions);
     await storage.open(userId, userSecret);
 
-    const localUser = new LocalUser(trustchainId, userId, userSecret, storage.keyStore.localData, storage.keyStore.provisionalUserKeys);
-    if (!localUser.isInitialized) {
-      const { deviceExists, userExists } = await client.remoteStatus(localUser.trustchainId, localUser.userId, localUser.deviceSignatureKeyPair.publicKey);
+    const localUserManager = new LocalUserManager(userData, client, storage.keyStore);
+    const session = new Session(localUserManager, storage, client);
 
-      if (!userExists) {
-        return new Session(localUser, storage, client, statuses.IDENTITY_REGISTRATION_NEEDED, userData.delegationToken);
-      }
+    localUserManager.on('authentication_failed', session.close);
 
-      if (!deviceExists) {
-        return new Session(localUser, storage, client, statuses.IDENTITY_VERIFICATION_NEEDED);
-      }
-
-      // Device registered on the trustchain, but device creation block not pulled yet...
-      // Wait for the pull to catch missing blocks.
-      const session = new Session(localUser, storage, client, statuses.STOPPED);
-      await session.authenticate();
-      return session;
-    }
-
-    const session = new Session(localUser, storage, client, statuses.READY);
-
-    session.authenticate().catch((e) => session.authenticationError(e));
+    session.status = await localUserManager.init();
     return session;
-  }
-
-  authenticate = async () => {
-    await this._client.authenticate(this.localUser.userId, this.localUser.deviceSignatureKeyPair);
-    if (!this.localUser.isInitialized) {
-      await this._updateLocalUser();
-    }
-    this._status = statuses.READY;
-  }
-
-  authenticationError = (e: Error) => {
-    // OperationCanceled: thrown if you never managed to authenticate and the session gets closed
-    if (!(e instanceof NetworkError) && !(e instanceof OperationCanceled)) {
-      console.error(e);
-      this.emit('authentication_failed');
-    }
-  };
-
-  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => getVerificationMethods(this._client, this.localUser)
-
-  setVerificationMethod = async (verification: RemoteVerification): Promise<void> => {
-    await sendSetVerificationMethod(this._client, this.localUser, verification);
-  }
-
-  createUser = async (verification: Verification) => {
-    let ghostDeviceKeys;
-    if (verification.verificationKey) {
-      try {
-        ghostDeviceKeys = ghostDeviceKeysFromUnlockKey(verification.verificationKey);
-      } catch (e) {
-        throw new InvalidVerification(e);
-      }
-    } else {
-      ghostDeviceKeys = generateGhostDeviceKeys();
-    }
-
-    if (!this._delegationToken) {
-      throw new InternalError('Assertion error, no delegation token for user creation');
-    }
-
-    const { trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair } = this.localUser;
-    const { userCreationBlock, firstDeviceBlock, ghostDevice } = generateUserCreation(trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair, ghostDeviceKeys, this._delegationToken);
-    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this.localUser.userSecret);
-
-    await sendUserCreation(this._client, this.localUser, userCreationBlock, firstDeviceBlock, verification, encryptedUnlockKey);
-    await this.authenticate();
-  }
-
-  unlockUser = async (verification: Verification) => {
-    try {
-      const unlockKey = await this._getUnlockKey(verification);
-      const ghostDevice = extractGhostDevice(unlockKey);
-
-      const { trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair } = this.localUser;
-      const encryptedUserKey = await getLastUserKey(this._client, trustchainId, ghostDevice);
-      const userKey = decryptUserKeyForGhostDevice(ghostDevice, encryptedUserKey);
-      const newDeviceBlock = await generateDeviceFromGhostDevice(
-        trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair,
-        ghostDevice, encryptedUserKey.deviceId, userKey
-      );
-      await this._client.send('create device', newDeviceBlock, true);
-    } catch (e) {
-      if (e instanceof TankerError) {
-        throw e;
-      }
-      if (verification.verificationKey) {
-        throw new InvalidVerification(e);
-      }
-      throw new InternalError(e);
-    }
-    await this.authenticate();
-  }
-
-
-  async revokeDevice(revokedDeviceId: string): Promise<void> {
-    await this._updateLocalUser();
-    const user = await this._managers.userManager.findUser(this.localUser.userId);
-    if (!user)
-      throw new InternalError('Cannot find the current user in the users');
-
-    const { payload, nature } = makeDeviceRevocation(user, this.localUser.currentUserKey, utils.fromBase64(revokedDeviceId));
-    await this._client.send('push block', this.localUser.makeBlock(payload, nature), true);
-
-    await this._updateLocalUser();
-  }
-
-  _updateLocalUser = async () => {
-    try {
-      const localUserBlocks = await this._client.send('get my user blocks');
-      this.localUser.initializeWithBlocks(localUserBlocks);
-      await this.storage.keyStore.save(this.localUser.localData, this.localUser.userSecret);
-    } catch (e) {
-      if (e instanceof DeviceRevoked) {
-        await this._nuke();
-        this.emit('device_revoked');
-      } else {
-        throw e;
-      }
-    }
-  }
-
-  generateVerificationKey = async () => {
-    const ghostDeviceKeys = generateGhostDeviceKeys();
-
-    return ghostDeviceToUnlockKey({
-      privateSignatureKey: ghostDeviceKeys.signatureKeyPair.privateKey,
-      privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
-    });
   }
 
   close = async () => {
     await this._client.close();
-    await this.storage.close();
+    await this._storage.close();
     this._status = statuses.STOPPED;
   }
 
-  _nuke = async () => {
+  nuke = async () => {
     await this._client.close();
-    await this.storage.nuke();
+    await this._storage.nuke();
     this._status = statuses.STOPPED;
   }
 
-  _getUnlockKey = async (verification: Verification) => {
-    if (verification.verificationKey) {
-      return verification.verificationKey;
-    }
-    const remoteVerification: RemoteVerification = (verification: any);
-    const encryptedUnlockKey = await sendGetVerificationKey(this.localUser, this._client, remoteVerification);
-    return decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
+  createUser = async (...args: any) => {
+    await this._localUserManager.createUser(...args);
+    this._status = statuses.READY;
   }
+  createNewDevice = async (...args: any) => {
+    await this._localUserManager.createNewDevice(...args);
+    this._status = statuses.READY;
+  }
+  revokeDevice = (...args: any) => this._forward(this._localUserManager, 'revokeDevice', ...args)
+  listDevices = (...args: any) => this._forward(this._localUserManager, 'listDevices', ...args)
+  deviceId = () => this._localUserManager.localUser.deviceId
+
+  setVerificationMethod = (...args: any) => this._forward(this._localUserManager, 'setVerificationMethod', ...args)
+  getVerificationMethods = (...args: any) => this._forward(this._localUserManager, 'getVerificationMethods', ...args)
+  generateVerificationKey = (...args: any) => this._forward(this._localUserManager, 'generateVerificationKey', ...args)
 
   upload = (...args: any) => this._forward(this._managers.cloudStorageManager, 'upload', ...args)
   download = (...args: any) => this._forward(this._managers.cloudStorageManager, 'download', ...args)
@@ -229,13 +107,26 @@ export class Session extends EventEmitter {
 
   findUser = (...args: any) => this._forward(this._managers.userManager, 'findUser', ...args)
 
+  _handleDeviceRevoked = async () => {
+    try {
+      await this._localUserManager.updateLocalUser();
+      throw new InternalError('Assertion error: the server is rejecting us but we are not revoked');
+    } catch (e) {
+      if (e instanceof DeviceRevoked) {
+        await this.nuke();
+        this.emit('device_revoked');
+      }
+      throw e;
+    }
+  }
+
   _forward = async (manager: any, func: string, ...args: any) => {
     try {
       const res = await manager[func].call(manager, ...args);
       return res;
     } catch (e) {
       if (e instanceof DeviceRevoked) {
-        await this._updateLocalUser();
+        await this._handleDeviceRevoked();
       }
       throw e;
     }

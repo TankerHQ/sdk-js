@@ -5,6 +5,7 @@ import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
 import type { KeySafe, IndexedProvisionalUserKeyPairs } from './KeySafe';
+import { type Device } from '../../Users/types';
 
 const TABLE = 'device';
 
@@ -14,7 +15,8 @@ export type LocalData = {|
   userKeys: { [string]: tcrypto.SodiumKeyPair };
   currentUserKey: ?tcrypto.SodiumKeyPair;
   deviceId: ?Uint8Array,
-  trustchainPublicKey: ?Uint8Array
+  trustchainPublicKey: ?Uint8Array,
+  devices: Array<Device>,
 |};
 
 export default class KeyStore {
@@ -31,6 +33,7 @@ export default class KeyStore {
     { version: 7, tables: [{ name: TABLE, persistent: true }] },
     { version: 8, tables: [{ name: TABLE, persistent: true }] },
     { version: 9, tables: [{ name: TABLE, persistent: true }] },
+    { version: 10, tables: [{ name: TABLE, persistent: true }] },
     // {
     //   version: 8,
     //   tables: [{
@@ -51,7 +54,7 @@ export default class KeyStore {
   }
 
   get localData(): LocalData {
-    const { signaturePair, encryptionPair, localUserKeys, deviceId, trustchainPublicKey } = this._safe;
+    const { signaturePair, encryptionPair, localUserKeys, deviceId, trustchainPublicKey, devices } = this._safe;
     return {
       deviceSignatureKeyPair: signaturePair,
       deviceEncryptionKeyPair: encryptionPair,
@@ -59,6 +62,7 @@ export default class KeyStore {
       currentUserKey: localUserKeys ? localUserKeys.currentUserKey : null,
       deviceId: deviceId ? utils.fromBase64(deviceId) : null,
       trustchainPublicKey: trustchainPublicKey ? utils.fromBase64(trustchainPublicKey) : null,
+      devices,
     };
   }
 
@@ -67,7 +71,7 @@ export default class KeyStore {
       this._safe.localUserKeys = { userKeys: localData.userKeys, currentUserKey: localData.currentUserKey };
     this._safe.deviceId = localData.deviceId ? utils.toBase64(localData.deviceId) : null;
     this._safe.trustchainPublicKey = localData.trustchainPublicKey ? utils.toBase64(localData.trustchainPublicKey) : null;
-
+    this._safe.devices = localData.devices;
     return this._saveSafe(userSecret);
   }
 

@@ -15,6 +15,14 @@ describe('KeyStore', () => {
   let secret;
   const { schemas } = KeyStore;
 
+  const fakeDevice = {
+    deviceId: random(tcrypto.HASH_SIZE),
+    devicePublicEncryptionKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+    devicePublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    isGhostDevice: true,
+    revoked: true,
+  };
+
   beforeEach(async () => {
     dbName = `keystore-test-${makePrefix()}`;
     keystoreConfig = { ...dataStoreConfig, dbName, schemas };
@@ -42,6 +50,7 @@ describe('KeyStore', () => {
       deviceEncryptionKeyPair: keystore.localData.deviceEncryptionKeyPair,
       userKeys: { AAAAAAAA: tcrypto.makeEncryptionKeyPair() },
       currentUserKey: tcrypto.makeEncryptionKeyPair(),
+      devices: [fakeDevice, fakeDevice],
       deviceId: random(tcrypto.HASH_SIZE),
       trustchainPublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
     };
@@ -64,6 +73,7 @@ describe('KeyStore', () => {
       deviceEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
       userKeys: { AAAAAAAA: tcrypto.makeEncryptionKeyPair() },
       currentUserKey: tcrypto.makeEncryptionKeyPair(),
+      devices: [fakeDevice, fakeDevice],
       deviceId: random(tcrypto.HASH_SIZE),
       trustchainPublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
     };

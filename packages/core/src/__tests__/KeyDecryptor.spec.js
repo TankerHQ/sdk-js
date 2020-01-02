@@ -8,7 +8,7 @@ import { toBase64 } from '../index';
 import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
 
 import GroupManager from '../Groups/Manager';
-import LocalUser from '../Session/LocalUser/LocalUser';
+import LocalUserManager from '../Session/LocalUser/Manager';
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 import { type Nature, NATURE } from '../Blocks/Nature';
 
@@ -62,7 +62,7 @@ describe('KeyDecryptor', () => {
 
   beforeEach(() => {
     localUser = new LocalUserStub(refDeviceId, keys);
-    const castedLocalUser = ((localUser: any): LocalUser);
+    const castedLocalUser = ((localUser: any): LocalUserManager);
 
     groupManager = { getGroupEncryptionKeyPair: () => null };
     const castedGroupManager = ((groupManager: any): GroupManager);
