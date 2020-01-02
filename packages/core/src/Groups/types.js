@@ -7,7 +7,6 @@ type GroupBase = {|
   publicSignatureKey: Uint8Array,
   publicEncryptionKey: Uint8Array,
   lastGroupBlock: Uint8Array,
-  index: number,
 |};
 
 export type ExternalGroup = {|

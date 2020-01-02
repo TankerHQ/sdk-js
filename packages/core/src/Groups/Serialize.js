@@ -288,23 +288,22 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   const signature = block.signature;
   const nature = block.nature;
   const hash = hashBlock(block);
-  const index = block.index;
 
   if (block.nature === NATURE.user_group_creation_v1) {
     const userGroupAction = unserializeUserGroupCreationV1(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash, index };
+    return { ...userGroupAction, author, signature, nature, hash };
   }
   if (block.nature === NATURE.user_group_creation_v2) {
     const userGroupAction = unserializeUserGroupCreationV2(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash, index };
+    return { ...userGroupAction, author, signature, nature, hash };
   }
   if (block.nature === NATURE.user_group_addition_v1) {
     const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash, index };
+    return { ...userGroupAction, author, signature, nature, hash };
   }
   if (block.nature === NATURE.user_group_addition_v2) {
     const userGroupAction = unserializeUserGroupAdditionV2(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash, index };
+    return { ...userGroupAction, author, signature, nature, hash };
   }
 
   throw new InternalError('Assertion error: wrong type for getGroupEntryFromBlock');

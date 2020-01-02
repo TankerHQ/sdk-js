@@ -14,7 +14,6 @@ describe('payloads', () => {
       signature: random(tcrypto.SIGNATURE_SIZE),
       trustchain_id: random(tcrypto.HASH_SIZE),
       payload: new Uint8Array(0),
-      index: 0,
       nature: NATURE_KIND.key_publish_to_device,
     };
     const serializedBlock = serializeBlock(block);
@@ -25,7 +24,6 @@ describe('payloads', () => {
   it('should serialize/unserialize a Block', async () => {
     const block = {
       trustchain_id: new Uint8Array(tcrypto.HASH_SIZE),
-      index: 999,
       nature: preferredNature(NATURE_KIND.key_publish_to_device),
       payload: random(450),
       author: random(tcrypto.HASH_SIZE),

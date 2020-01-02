@@ -145,7 +145,7 @@ const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKe
 
 export const makeDeviceRevocation = (user: User, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
   const remainingDevices = user.devices
-    .filter(device => device.revokedAt === Number.MAX_SAFE_INTEGER && !utils.equalArray(device.deviceId, deviceId));
+    .filter(device => device.revoked === false && !utils.equalArray(device.deviceId, deviceId));
 
   const userKeys = rotateUserKeys(remainingDevices, currentUserKeys);
   const revocationRecord = {

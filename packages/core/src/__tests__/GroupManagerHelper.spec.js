@@ -21,7 +21,6 @@ function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): 
     publicEncryptionKey: userGroupCreation.public_encryption_key,
     lastGroupBlock: userGroupEntry.hash,
     encryptedPrivateSignatureKey: userGroupCreation.encrypted_group_private_signature_key,
-    index: userGroupEntry.index,
   };
 }
 
@@ -29,7 +28,6 @@ function getExternalGroupFromUserGroupAddition(userGroupEntry: UserGroupEntry, p
   const externalGroup: ExternalGroup = {
     ...previousGroup,
     lastGroupBlock: userGroupEntry.hash,
-    index: userGroupEntry.index,
   };
   return externalGroup;
 }

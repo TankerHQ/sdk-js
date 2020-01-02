@@ -32,6 +32,7 @@ describe('UserManagerHelper', () => {
       expect(deviceIdToUserIdMap.size).to.deep.equal(5); // revoked device still is a device
       const b64UserId = utils.toBase64(userCreation.user.userId);
       const b64UserId2 = utils.toBase64(userCreation2.user.userId);
+
       expect(userIdToUserMap.get(b64UserId)).to.deep.equal(deviceRevocation.user);
       expect(userIdToUserMap.get(b64UserId2)).to.deep.equal(deviceCreationUser2.user);
 

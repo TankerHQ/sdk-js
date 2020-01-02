@@ -6,7 +6,6 @@ import { type Nature } from './Nature';
 import { type Block, type BlockNoSignature, serializeBlock } from './payloads';
 
 export type VerificationFields = {|
-  index: number,
   nature: Nature,
   author: Uint8Array,
   hash: Uint8Array,
@@ -27,7 +26,6 @@ export function hashBlock(block: Block | BlockNoSignature): Uint8Array {
 
 export function createBlock(payload: Uint8Array, nature: Nature, trustchainId: Uint8Array, author: Uint8Array, signatureKey: Uint8Array) {
   const block = {
-    index: 0,
     trustchain_id: trustchainId,
     nature,
     author,

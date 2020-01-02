@@ -74,7 +74,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a device creation by a revoked author', () => {
-      user.devices[0].revokedAt = 1;
+      user.devices[0].revoked = true;
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey),
         'revoked_author_error'
@@ -90,7 +90,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a deviceCreationV3 if the userPublicKey is not the same as it\'s parent one', () => {
-      user.userPublicKeys[0].userPublicKey = random(tcrypto.HASH_SIZE);
+      user.userPublicKeys[0] = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainKeys.publicKey),
         'invalid_public_user_key'
@@ -161,7 +161,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a revocation of an already revoked device', () => {
-      user.devices[1].revokedAt = 1;
+      user.devices[1].revoked = true;
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
         'device_already_revoked'

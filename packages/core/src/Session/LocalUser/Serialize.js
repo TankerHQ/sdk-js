@@ -35,12 +35,11 @@ export function trustchainCreationFromBlock(b64Block: string): TrustchainCreatio
   const signature = block.signature;
   const nature = block.nature;
   const hash = hashBlock(block);
-  const index = block.index;
 
   if (block.nature !== NATURE.trustchain_creation) {
     throw new InternalError(`Assertion error: invalid block nature ${block.nature} for trustchainCreationFromBlock`);
   }
 
   const trustchainCreationRecord = unserializeTrustchainCreation(block.payload);
-  return { ...trustchainCreationRecord, author, signature, nature, hash, index };
+  return { ...trustchainCreationRecord, author, signature, nature, hash };
 }

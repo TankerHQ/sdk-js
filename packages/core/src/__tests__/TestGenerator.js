@@ -15,8 +15,8 @@ import { type UserGroupEntry, getGroupEntryFromBlock, makeUserGroupCreation, mak
 import { type KeyPublishEntry, getKeyPublishEntryFromBlock, makeKeyPublish, makeKeyPublishToProvisionalUser } from '../DataProtection/Resource/Serialize';
 
 import { hashBlock, createBlock } from '../Blocks/Block';
-import { serializeBlock, unserializeBlock } from '../Blocks/payloads';
-import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
+import { serializeBlock } from '../Blocks/payloads';
+import { NATURE_KIND, preferredNature } from '../Blocks/Nature';
 
 import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 import { type Group } from '../Groups/types';
@@ -33,8 +33,7 @@ export type TestDevice = {
   id: Uint8Array,
   signKeys: tcrypto.SodiumKeyPair,
   encryptionKeys: tcrypto.SodiumKeyPair,
-  createdAt: number;
-  revokedAt: number;
+  revoked: bool;
   isGhost: bool;
 }
 
@@ -49,7 +48,6 @@ export type TestProvisionalUser = {
 }
 
 type TestUserKeys = {
-  index: number,
   publicKey: Uint8Array,
   privateKey: Uint8Array,
 }
@@ -72,7 +70,6 @@ export type TestTrustchainCreation = {
 
 export type TestDeviceCreation = {
   unverifiedDeviceCreation: DeviceCreationEntry,
-  unverifiedDeviceCreationV1: DeviceCreationEntry,
   block: b64string,
   testUser: TestUser,
   testDevice: TestDevice,
@@ -127,7 +124,6 @@ class TestGenerator {
     this._trustchainKeys = tcrypto.makeSignKeyPair();
     this._trustchainIndex += 1;
     const rootBlock = {
-      index: this._trustchainIndex,
       trustchain_id: new Uint8Array(0),
       nature: preferredNature(NATURE_KIND.trustchain_creation),
       author: rootBlockAuthor,
@@ -183,35 +179,25 @@ class TestGenerator {
     const ghostDeviceKeys = generateGhostDeviceKeys();
 
     const { userCreationBlock, ghostDevice } = generateUserCreation(this._trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair, ghostDeviceKeys, delegationToken);
+    const unverifiedDeviceCreation = ((userEntryFromBlock(userCreationBlock): any): DeviceCreationEntry);
 
-    this._trustchainIndex += 1;
-    const block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(userCreationBlock)), index: this._trustchainIndex }));
-
-    const unverifiedDeviceCreation = ((userEntryFromBlock(block): any): DeviceCreationEntry);
-
-    const userKeyPair = unverifiedDeviceCreation.user_key_pair;
-    if (!userKeyPair) {
-      throw new Error('flow check');
-    }
-    const privateUserKey = tcrypto.sealDecrypt(userKeyPair.encrypted_private_encryption_key, ghostDeviceKeys.encryptionKeyPair);
+    const privateUserKey = tcrypto.sealDecrypt(unverifiedDeviceCreation.user_key_pair.encrypted_private_encryption_key, ghostDeviceKeys.encryptionKeyPair);
 
     const testDevice: TestDevice = {
       id: unverifiedDeviceCreation.hash,
       signKeys: ghostDeviceKeys.signatureKeyPair,
       encryptionKeys: ghostDeviceKeys.encryptionKeyPair,
-      createdAt: unverifiedDeviceCreation.index,
-      revokedAt: Number.MAX_SAFE_INTEGER,
+      revoked: false,
       isGhost: true,
     };
     const identity = await createIdentity(utils.toBase64(this._trustchainId), utils.toBase64(this._trustchainKeys.privateKey), utils.toBase64(userId));
     const publicIdentity = await getPublicIdentity(identity);
 
-    const testUser = {
+    const testUser: TestUser = {
       id: userId,
       userKeys: [{
-        publicKey: userKeyPair.public_encryption_key,
+        publicKey: unverifiedDeviceCreation.user_key_pair.public_encryption_key,
         privateKey: privateUserKey,
-        index: unverifiedDeviceCreation.index
       }],
       devices: [testDevice],
       ghostDevice,
@@ -221,8 +207,7 @@ class TestGenerator {
 
     return {
       unverifiedDeviceCreation,
-      unverifiedDeviceCreationV1: this._deviceCreationV1(unverifiedDeviceCreation),
-      block,
+      block: userCreationBlock,
       testUser,
       testDevice,
       user: this._testUserToUser(testUser)
@@ -237,17 +222,13 @@ class TestGenerator {
 
     const newDeviceBlock = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, deviceEncryptionKeyPair, deviceSignatureKeyPair, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0].id, userKeys);
 
-    this._trustchainIndex += 1;
-    const block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(newDeviceBlock)), index: this._trustchainIndex }));
-
-    const unverifiedDeviceCreation = ((userEntryFromBlock(block): any): DeviceCreationEntry);
+    const unverifiedDeviceCreation = ((userEntryFromBlock(newDeviceBlock): any): DeviceCreationEntry);
 
     const testDevice: TestDevice = {
       id: unverifiedDeviceCreation.hash,
       signKeys: deviceSignatureKeyPair,
       encryptionKeys: deviceEncryptionKeyPair,
-      createdAt: unverifiedDeviceCreation.index,
-      revokedAt: Number.MAX_SAFE_INTEGER,
+      revoked: false,
       isGhost: false,
     };
     const testUser = { ...parentDevice.testUser };
@@ -255,8 +236,7 @@ class TestGenerator {
 
     return {
       unverifiedDeviceCreation,
-      unverifiedDeviceCreationV1: this._deviceCreationV1(unverifiedDeviceCreation),
-      block,
+      block: newDeviceBlock,
       testUser,
       testDevice,
       user: this._testUserToUser(testUser)
@@ -267,15 +247,13 @@ class TestGenerator {
     const { payload, nature } = makeDeviceRevocation(parentDevice.user, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], deviceIdToRevoke);
 
     this._trustchainIndex += 1;
-    let { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(block)), index: this._trustchainIndex }));
-
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
     const unverifiedDeviceRevocation = ((userEntryFromBlock(block): any): DeviceRevocationEntry);
 
     const testUser = { ...parentDevice.testUser,
       devices: parentDevice.testUser.devices.map(d => {
         if (utils.equalArray(d.id, deviceIdToRevoke)) {
-          return { ...d, revokedAt: unverifiedDeviceRevocation.index };
+          return { ...d, revoked: true };
         }
         return { ...d };
       }),
@@ -289,14 +267,12 @@ class TestGenerator {
         // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
         publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
         privateKey: tcrypto.sealDecrypt(keyForParentDevice.key, parentDevice.testDevice.encryptionKeys),
-        index: unverifiedDeviceRevocation.index
       });
     } else {
       testUser.userKeys.push({
         // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
         publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
         privateKey: random(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
-        index: unverifiedDeviceRevocation.index
       });
     }
 
@@ -316,11 +292,9 @@ class TestGenerator {
       throw new Error('flow check');
     }
     const { payload, nature } = makeKeyPublish(lastUserKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user);
-    this._trustchainIndex += 1;
-    let { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(block)), index: this._trustchainIndex }));
-
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
     const keyPublish = getKeyPublishEntryFromBlock(block);
+
     return {
       keyPublish,
       block,
@@ -334,9 +308,7 @@ class TestGenerator {
     const resourceId = random(tcrypto.MAC_SIZE);
 
     const { payload, nature } = makeKeyPublish(recipient.publicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
-    this._trustchainIndex += 1;
-    let { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(block)), index: this._trustchainIndex }));
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
 
     const keyPublish = getKeyPublishEntryFromBlock(block);
 
@@ -352,11 +324,8 @@ class TestGenerator {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = random(tcrypto.MAC_SIZE);
 
-    this._trustchainIndex += 1;
-
     const { payload, nature } = makeKeyPublishToProvisionalUser(recipient, resourceKey, resourceId);
-    let { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(block)), index: this._trustchainIndex }));
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
 
     const keyPublish = getKeyPublishEntryFromBlock(block);
     return {
@@ -375,10 +344,8 @@ class TestGenerator {
       tankerEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
     };
 
-    this._trustchainIndex += 1;
     const { payload, nature } = makeProvisionalIdentityClaim(userId, parentDevice.testDevice.id, userPublicKey, provisionalIdentityPrivateKeys);
-    let { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(block)), index: this._trustchainIndex }));
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
 
     return {
       unverifiedProvisionalIdentityClaim: provisionalIdentityClaimFromBlock(block),
@@ -390,12 +357,8 @@ class TestGenerator {
     const signatureKeyPair = tcrypto.makeSignKeyPair();
     const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
 
-
-    this._trustchainIndex += 1;
-
     const { payload, nature } = makeUserGroupCreation(signatureKeyPair, encryptionKeyPair, members, provisionalUsers);
-    let { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(block)), index: this._trustchainIndex }));
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
 
     const userGroupEntry = getGroupEntryFromBlock(block);
     const group = {
@@ -405,7 +368,6 @@ class TestGenerator {
       signatureKeyPair,
       encryptionKeyPair,
       lastGroupBlock: userGroupEntry.hash,
-      index: userGroupEntry.index,
     };
 
     return {
@@ -431,14 +393,11 @@ class TestGenerator {
       newMembers,
       provisionalUsers
     );
-    let { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    block = utils.toBase64(serializeBlock({ ...unserializeBlock(utils.fromBase64(block)), index: this._trustchainIndex }));
-
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
     const userGroupEntry = getGroupEntryFromBlock(block);
 
     const group = { ...previousGroup };
     group.lastGroupBlock = userGroupEntry.hash;
-    group.index = userGroupEntry.index;
 
     return {
       userGroupEntry,
@@ -451,24 +410,16 @@ class TestGenerator {
     deviceId: testDevice.id,
     devicePublicEncryptionKey: testDevice.encryptionKeys.publicKey,
     devicePublicSignatureKey: testDevice.signKeys.publicKey,
+    revoked: testDevice.revoked,
     isGhostDevice: testDevice.isGhost,
-    createdAt: testDevice.createdAt,
-    revokedAt: testDevice.revokedAt,
   })
 
   _testUserToUser(user: TestUser): User {
     return {
       userId: user.id,
-      userPublicKeys: user.userKeys ? user.userKeys.map(key => ({ index: key.index, userPublicKey: key.publicKey })) : [],
+      userPublicKeys: user.userKeys.map(key => (key.publicKey)),
       devices: user.devices.map(this._testDeviceToDevice),
     };
-  }
-
-  _deviceCreationV1(deviceCreation: DeviceCreationEntry): DeviceCreationEntry {
-    const deviceCreationV1 = { ...deviceCreation };
-    deviceCreationV1.nature = NATURE.device_creation_v1;
-    deviceCreationV1.user_key_pair = null;
-    return deviceCreationV1;
   }
 }
 export default TestGenerator;

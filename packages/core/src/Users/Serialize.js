@@ -31,7 +31,7 @@ export type DeviceCreationRecord = {|
   delegation_signature: Uint8Array,
   public_signature_key: Uint8Array,
   public_encryption_key: Uint8Array,
-  user_key_pair: ?UserKeyPair,
+  user_key_pair: UserKeyPair,
   is_ghost_device: bool,
 
   revoked: number,
@@ -230,7 +230,6 @@ export function userEntryFromBlock(b64Block: string): UserEntry {
   const signature = block.signature;
   const nature = block.nature;
   const hash = hashBlock(block);
-  const index = block.index;
 
   const toCreationEntry = (record: DeviceCreationRecord): UserEntry => ({
     ...record,
@@ -238,7 +237,6 @@ export function userEntryFromBlock(b64Block: string): UserEntry {
     signature,
     nature,
     hash,
-    index
   });
 
   const toRevocationEntry = (record: DeviceRevocationRecord): UserEntry => ({
@@ -247,7 +245,6 @@ export function userEntryFromBlock(b64Block: string): UserEntry {
     signature,
     nature,
     hash,
-    index,
   });
   switch (block.nature) {
     case NATURE.device_creation_v1:

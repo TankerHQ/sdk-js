@@ -12,20 +12,9 @@ import {
   serializeDeviceRevocationV2,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
-  type DeviceCreationRecord,
 } from '../Users/Serialize';
 
 import makeUint8Array from './makeUint8Array';
-
-function serializeUserDeviceV1(userDevice: DeviceCreationRecord): Uint8Array {
-  return utils.concatArrays(
-    userDevice.ephemeral_public_signature_key,
-    userDevice.user_id,
-    userDevice.delegation_signature,
-    userDevice.public_signature_key,
-    userDevice.public_encryption_key,
-  );
-}
 
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
@@ -239,25 +228,6 @@ describe('payload test vectors', () => {
 });
 
 describe('payloads', () => {
-  it('should serialize/unserialize a UserDeviceV1', async () => {
-    const ephemeralKeys = tcrypto.makeSignKeyPair();
-    const signatureKeys = tcrypto.makeSignKeyPair();
-    const encryptionKeys = tcrypto.makeEncryptionKeyPair();
-    const userDevice = {
-      last_reset: new Uint8Array(tcrypto.HASH_SIZE),
-      ephemeral_public_signature_key: ephemeralKeys.publicKey,
-      user_id: utils.fromString('12341234123412341234123412341234'),
-      delegation_signature: utils.fromString('1234123412341234123412341234123412341234123412341234123412341234'),
-      public_signature_key: signatureKeys.publicKey,
-      public_encryption_key: encryptionKeys.publicKey,
-      user_key_pair: null,
-      is_ghost_device: false,
-      revoked: Number.MAX_SAFE_INTEGER,
-    };
-
-    expect(unserializeUserDeviceV1(serializeUserDeviceV1(userDevice))).to.deep.equal(userDevice);
-  });
-
   it('should serialize/unserialize a UserDeviceV3', async () => {
     const ephemeralKeys = tcrypto.makeSignKeyPair();
     const signatureKeys = tcrypto.makeSignKeyPair();

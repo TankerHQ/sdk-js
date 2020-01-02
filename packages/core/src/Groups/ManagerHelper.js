@@ -125,7 +125,6 @@ export async function groupFromUserGroupEntry(
     return {
       ...previousGroup,
       lastGroupBlock: entry.hash,
-      index: entry.index,
     };
   }
 
@@ -143,7 +142,6 @@ export async function groupFromUserGroupEntry(
     publicSignatureKey,
     publicEncryptionKey,
     lastGroupBlock: entry.hash,
-    index: entry.index,
     encryptedPrivateSignatureKey,
   };
 

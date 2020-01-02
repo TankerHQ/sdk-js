@@ -12,15 +12,11 @@ import { extractUserData } from '../Session/UserData';
 const localUserKeysFromTestUser = (user: TestUser) => {
   const userKeys = {};
   let currentUserKey;
-  let highKeyIndex = 0;
 
   user.userKeys.forEach(userKey => {
     const keyPair = { publicKey: userKey.publicKey, privateKey: userKey.privateKey };
     userKeys[utils.toBase64(userKey.publicKey)] = keyPair;
-    if (userKey.index > highKeyIndex) {
-      highKeyIndex = userKey.index;
-      currentUserKey = keyPair;
-    }
+    currentUserKey = keyPair;
   });
   return { userKeys, currentUserKey };
 };

@@ -296,7 +296,7 @@ export class Tanker extends EventEmitter {
     if (!localUser) {
       throw new InternalError('Assertion error: cannot find local user');
     }
-    return localUser.devices.filter(d => !d.isGhostDevice).map(d => ({ id: utils.toBase64(d.deviceId), isRevoked: d.revokedAt !== Number.MAX_SAFE_INTEGER }));
+    return localUser.devices.filter(d => !d.isGhostDevice).map(d => ({ id: utils.toBase64(d.deviceId), isRevoked: d.revoked }));
   }
 
   async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {

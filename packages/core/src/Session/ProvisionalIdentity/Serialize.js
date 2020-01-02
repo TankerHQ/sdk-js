@@ -74,7 +74,6 @@ export function provisionalIdentityClaimFromBlock(b64Block: string): ClaimEntry 
   const signature = block.signature;
   const nature = block.nature;
   const hash = hashBlock(block);
-  const index = block.index;
   const claimEntry = unserializeProvisionalIdentityClaim(block.payload);
 
   return {
@@ -83,7 +82,6 @@ export function provisionalIdentityClaimFromBlock(b64Block: string): ClaimEntry 
     signature,
     nature,
     hash,
-    index,
     device_id: block.author,
   };
 }

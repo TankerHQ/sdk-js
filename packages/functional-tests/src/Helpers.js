@@ -129,7 +129,6 @@ export const makeRandomUint8Array = (sizeOfData: number) => {
 
 export function makeRootBlock(appKeyPair: Object) {
   const rootBlock = {
-    index: 1,
     trustchain_id: new Uint8Array(0),
     nature: preferredNature(NATURE_KIND.trustchain_creation),
     author: new Uint8Array(32),
