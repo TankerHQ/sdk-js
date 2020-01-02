@@ -4,15 +4,15 @@ import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { type SecretProvisionalIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
 
-import { VerificationNeeded } from '../../errors.internal';
+import { VerificationNeeded } from '../errors.internal';
 
-import { Client, b64RequestObject } from '../../Network/Client';
+import { Client, b64RequestObject } from '../Network/Client';
 import LocalUserManager, { type PrivateProvisionalKeys } from '../LocalUser/Manager';
 
 import KeyStore from '../LocalUser/KeyStore';
 import { formatVerificationRequest } from '../LocalUser/requests';
 import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../LocalUser/types';
-import UserManager from '../../Users/Manager';
+import UserManager from '../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';

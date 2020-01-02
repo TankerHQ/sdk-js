@@ -3,9 +3,9 @@
 import { tcrypto, type Key } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 
-import GroupManager from '../../Groups/Manager';
-import LocalUserManager from '../../Session/LocalUser/Manager';
-import ProvisionalIdentityManager from '../../Session/ProvisionalIdentity/ProvisionalIdentityManager';
+import GroupManager from '../Groups/Manager';
+import LocalUserManager from '../LocalUser/Manager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
 
 import { type KeyPublishEntry, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './Serialize';
 

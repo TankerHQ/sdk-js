@@ -8,7 +8,7 @@ import { getDataLength } from '@tanker/types';
 import type { Data } from '@tanker/types';
 
 import type { Client } from '../Network/Client';
-import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProtection/Resource';
+import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';

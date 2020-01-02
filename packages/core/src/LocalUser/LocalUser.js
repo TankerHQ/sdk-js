@@ -4,19 +4,18 @@ import EventEmitter from 'events';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError, DeviceRevoked } from '@tanker/errors';
 
-import type { DeviceCreationEntry, DeviceRevocationEntry, UserKeys, UserKeyPair } from '../../Users/Serialize';
-import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from '../../Users/Serialize';
-import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../../Users/User';
-import { verifyDeviceCreation, verifyDeviceRevocation } from '../../Users/Verify';
-import { type Device } from '../../Users/types';
+import type { DeviceCreationEntry, DeviceRevocationEntry, UserKeys, UserKeyPair } from '../Users/Serialize';
+import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from '../Users/Serialize';
+import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../Users/User';
+import { verifyDeviceCreation, verifyDeviceRevocation } from '../Users/Verify';
+import { type Device } from '../Users/types';
+
+import { createBlock } from '../Blocks/Block';
+import { type Nature } from '../Blocks/Nature';
 
 import { type LocalData } from './KeyStore';
-
-import { createBlock } from '../../Blocks/Block';
-import { type Nature } from '../../Blocks/Nature';
-
 import type { LocalUserKeys } from './KeySafe';
-import { findIndex } from '../../utils';
+import { findIndex } from '../utils';
 
 import { trustchainCreationFromBlock } from './Serialize';
 import { verifyTrustchainCreation } from './Verify';

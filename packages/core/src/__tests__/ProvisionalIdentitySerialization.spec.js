@@ -6,7 +6,7 @@ import { expect } from '@tanker/test-utils';
 import {
   serializeProvisionalIdentityClaim,
   unserializeProvisionalIdentityClaim,
-} from '../Session/ProvisionalIdentity/Serialize';
+} from '../ProvisionalIdentity/Serialize';
 
 import makeUint8Array from './makeUint8Array';
 

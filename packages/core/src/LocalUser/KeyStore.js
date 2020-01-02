@@ -5,7 +5,7 @@ import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
 import type { KeySafe, IndexedProvisionalUserKeyPairs } from './KeySafe';
-import { type Device } from '../../Users/types';
+import { type Device } from '../Users/types';
 
 const TABLE = 'device';
 

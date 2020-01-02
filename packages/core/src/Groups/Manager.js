@@ -5,8 +5,8 @@ import { InvalidArgument } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 
 import UserManager from '../Users/Manager';
-import LocalUser from '../Session/LocalUser/LocalUser';
-import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
+import LocalUser from '../LocalUser/LocalUser';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
 
 import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAddition } from './Serialize';
 import { Client, b64RequestObject } from '../Network/Client';

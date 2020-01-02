@@ -3,8 +3,8 @@
 import { utils } from '@tanker/crypto';
 import { errors as dbErrors, mergeSchemas, type DataStore } from '@tanker/datastore-base';
 
-import KeyStore from './LocalUser/KeyStore';
-import ResourceStore from '../DataProtection/Resource/ResourceStore';
+import KeyStore from '../LocalUser/KeyStore';
+import ResourceStore from '../Resources/ResourceStore';
 import GroupStore from '../Groups/GroupStore';
 import { GlobalSchema, TABLE_METADATA } from './schema';
 

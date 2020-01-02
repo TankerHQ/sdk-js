@@ -3,7 +3,7 @@ import { tcrypto, random } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect, sinon } from '@tanker/test-utils';
 
-import { ResourceManager } from '../DataProtection/Resource/ResourceManager';
+import { ResourceManager } from '../Resources/ResourceManager';
 
 import TestGenerator from './TestGenerator';
 

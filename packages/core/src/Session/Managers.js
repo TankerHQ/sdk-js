@@ -4,12 +4,12 @@ import UserManager from '../Users/Manager';
 import Storage from './Storage';
 
 import GroupManager from '../Groups/Manager';
-import LocalUserManager from './LocalUser/Manager';
+import LocalUserManager from '../LocalUser/Manager';
 
 import { Client } from '../Network/Client';
 import { DataProtector } from '../DataProtection/DataProtector';
 import CloudStorageManager from '../CloudStorage/CloudStorageManager';
-import ProvisionalIdentityManager from './ProvisionalIdentity/ProvisionalIdentityManager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
 
 export class Managers {
   userManager: UserManager;

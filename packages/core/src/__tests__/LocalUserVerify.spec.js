@@ -5,9 +5,9 @@ import { InvalidBlockError } from '../errors.internal';
 
 import makeUint8Array from './makeUint8Array';
 
-import { verifyTrustchainCreation } from '../Session/LocalUser/Verify';
+import { verifyTrustchainCreation } from '../LocalUser/Verify';
 
-import type { TrustchainCreationEntry } from '../Session/LocalUser/Serialize';
+import type { TrustchainCreationEntry } from '../LocalUser/Serialize';
 
 import { NATURE } from '../Blocks/Nature';
 

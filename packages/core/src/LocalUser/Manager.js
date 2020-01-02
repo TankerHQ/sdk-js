@@ -8,10 +8,10 @@ import LocalUser from './LocalUser';
 import KeyStore from './KeyStore';
 import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './KeySafe';
 
-import { Client } from '../../Network/Client';
+import { Client } from '../Network/Client';
 import { type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { type UserData, type DelegationToken } from './UserData';
-import { type Device } from '../../Users/types';
+import { type Device } from '../Users/types';
 
 import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
 

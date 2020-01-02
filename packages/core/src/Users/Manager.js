@@ -7,7 +7,7 @@ import { type PublicPermanentIdentity } from '@tanker/identity';
 
 import { Client, b64RequestObject } from '../Network/Client';
 import { type User } from './types';
-import LocalUser from '../Session/LocalUser/LocalUser';
+import LocalUser from '../LocalUser/LocalUser';
 import { usersFromBlocks } from './ManagerHelper';
 
 // ensure that the UserStore is always up-to-date before requesting it.

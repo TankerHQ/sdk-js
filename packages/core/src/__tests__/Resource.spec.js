@@ -4,7 +4,7 @@ import { utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import { extractEncryptionFormat } from '../DataProtection/Resource';
+import { extractEncryptionFormat } from '../DataProtection/types';
 
 describe('Resource', () => {
   const configs = [

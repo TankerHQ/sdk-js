@@ -6,8 +6,8 @@ import { tcrypto, random } from '@tanker/crypto';
 import { InvalidBlockError } from '../errors.internal';
 
 import { type User } from '../Users/types';
-import type { ClaimEntry } from '../Session/ProvisionalIdentity/Serialize';
-import { verifyProvisionalIdentityClaim } from '../Session/ProvisionalIdentity/Verify';
+import type { ClaimEntry } from '../ProvisionalIdentity/Serialize';
+import { verifyProvisionalIdentityClaim } from '../ProvisionalIdentity/Verify';
 
 import TestGenerator from './TestGenerator';
 

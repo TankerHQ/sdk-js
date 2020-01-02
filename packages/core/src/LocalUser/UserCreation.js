@@ -5,12 +5,12 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { serializeUserDeviceV3,
   type UserKeys,
   serializeDeviceRevocationV2
-} from '../../Users/Serialize';
+} from '../Users/Serialize';
 
-import { type Device } from '../../Users/types';
+import { type Device } from '../Users/types';
 
-import { preferredNature, NATURE_KIND } from '../../Blocks/Nature';
-import { createBlock } from '../../Blocks/Block';
+import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
+import { createBlock } from '../Blocks/Block';
 
 import { type GhostDevice, type GhostDeviceKeys } from './ghostDevice';
 import { type DelegationToken } from './UserData';

@@ -5,11 +5,11 @@ import { OperationCanceled, NetworkError, DeviceRevoked, InternalError } from '@
 
 import Storage, { type DataStoreOptions } from './Storage';
 import { Client, type ClientOptions } from '../Network/Client';
-import { type Status, statuses } from './LocalUser/types';
+import { type Status, statuses } from '../LocalUser/types';
 import { Managers } from './Managers';
-import { type UserData, type DelegationToken } from './LocalUser/UserData';
+import { type UserData, type DelegationToken } from '../LocalUser/UserData';
 
-import { LocalUserManager } from './LocalUser/Manager';
+import { LocalUserManager } from '../LocalUser/Manager';
 
 export class Session extends EventEmitter {
   _storage: Storage;

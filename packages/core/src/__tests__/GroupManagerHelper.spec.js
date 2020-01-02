@@ -8,8 +8,8 @@ import { type UserGroupCreationRecord, type UserGroupEntry } from '../Groups/Ser
 import { type ExternalGroup } from '../Groups/types';
 
 import TestGenerator, { type TestDeviceCreation, type TestUserGroup } from './TestGenerator';
-import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
-import LocalUser from '../Session/LocalUser/LocalUser';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
+import LocalUser from '../LocalUser/LocalUser';
 
 
 function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): ExternalGroup {

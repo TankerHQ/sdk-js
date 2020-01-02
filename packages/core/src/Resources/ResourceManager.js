@@ -4,7 +4,7 @@ import { InternalError, InvalidArgument } from '@tanker/errors';
 
 import { getKeyPublishEntryFromBlock } from './Serialize';
 import { KeyDecryptor } from './KeyDecryptor';
-import { Client } from '../../Network/Client';
+import { Client } from '../Network/Client';
 import ResourceStore from './ResourceStore';
 
 export class ResourceManager {

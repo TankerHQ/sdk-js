@@ -2,8 +2,8 @@
 
 import { utils } from '@tanker/crypto';
 
-import { InvalidBlockError } from '../../errors.internal';
-import { type Nature, natureKind, NATURE_KIND } from '../../Blocks/Nature';
+import { InvalidBlockError } from '../errors.internal';
+import { type Nature, natureKind, NATURE_KIND } from '../Blocks/Nature';
 
 import type { TrustchainCreationEntry } from './Serialize';
 

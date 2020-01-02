@@ -5,7 +5,7 @@ import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
 
-import SharedKeystore from '../DataProtection/Resource/ResourceStore';
+import SharedKeystore from '../Resources/ResourceStore';
 
 describe('ResourceStore', () => {
   let dbName;

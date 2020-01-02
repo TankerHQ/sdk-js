@@ -2,7 +2,7 @@
 
 import { tcrypto, utils } from '@tanker/crypto';
 
-import { InvalidBlockError } from '../../errors.internal';
+import { InvalidBlockError } from '../errors.internal';
 import type { ClaimEntry } from './Serialize';
 
 export function verifyProvisionalIdentityClaim(entry: ClaimEntry, devicePublicSignatureKey: Uint8Array, authorUserId: Uint8Array) {

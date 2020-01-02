@@ -6,8 +6,8 @@ import { expect } from '@tanker/test-utils';
 
 import TestGenerator, { type TestUser } from './TestGenerator';
 
-import LocalUser from '../Session/LocalUser/LocalUser';
-import { extractUserData } from '../Session/LocalUser/UserData';
+import LocalUser from '../LocalUser/LocalUser';
+import { extractUserData } from '../LocalUser/UserData';
 
 const localUserKeysFromTestUser = (user: TestUser) => {
   const userKeys = {};

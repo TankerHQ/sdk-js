@@ -8,23 +8,26 @@ import { castData, getDataLength } from '@tanker/types';
 import type { PublicIdentity, PublicProvisionalUser } from '@tanker/identity';
 import type { Data } from '@tanker/types';
 
-import { ResourceManager } from './Resource/ResourceManager';
-import ResourceStore from './Resource/ResourceStore';
-import { KeyDecryptor } from './Resource/KeyDecryptor';
-import { makeKeyPublish, makeKeyPublishToProvisionalUser } from './Resource/Serialize';
+import { ResourceManager } from '../Resources/ResourceManager';
+import ResourceStore from '../Resources/ResourceStore';
+import { KeyDecryptor } from '../Resources/KeyDecryptor';
+import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
 
-import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
+import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './types';
+import type { Resource } from './types';
+
+import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
 
 import { Client } from '../Network/Client';
-import LocalUser from '../Session/LocalUser/LocalUser';
+import LocalUser from '../LocalUser/LocalUser';
 
-import LocalUserManager from '../Session/LocalUser/Manager';
+import LocalUserManager from '../LocalUser/Manager';
 import GroupManager from '../Groups/Manager';
 import UserManager from '../Users/Manager';
 import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './Resource';
-import type { Resource } from './Resource';
+
+
 import type { OutputOptions, ProgressOptions, SharingOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';

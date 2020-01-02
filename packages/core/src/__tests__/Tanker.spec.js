@@ -9,7 +9,7 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
 
-import { type EmailVerification, type RemoteVerification, statuses } from '../Session/LocalUser/types';
+import { type EmailVerification, type RemoteVerification, statuses } from '../LocalUser/types';
 import { type SharingOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {

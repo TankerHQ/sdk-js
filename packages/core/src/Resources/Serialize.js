@@ -2,9 +2,9 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import type { PublicProvisionalUser } from '@tanker/identity';
 
-import { getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
-import { unserializeBlock } from '../../Blocks/payloads';
-import { preferredNature, type Nature, type NatureKind, NATURE_KIND, NATURE } from '../../Blocks/Nature';
+import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
+import { unserializeBlock } from '../Blocks/payloads';
+import { preferredNature, type Nature, type NatureKind, NATURE_KIND, NATURE } from '../Blocks/Nature';
 
 type KeyPublishRecord = {|
   recipient: Uint8Array,

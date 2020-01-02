@@ -5,14 +5,14 @@ import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
 import { toBase64 } from '../index';
-import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
+import { KeyDecryptor } from '../Resources/KeyDecryptor';
 
 import GroupManager from '../Groups/Manager';
-import LocalUserManager from '../Session/LocalUser/Manager';
-import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
+import LocalUserManager from '../LocalUser/Manager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
 import { type Nature, NATURE } from '../Blocks/Nature';
 
-import { type KeyPublishEntry } from '../DataProtection/Resource/Serialize';
+import { type KeyPublishEntry } from '../Resources/Serialize';
 
 const refDeviceId = new Uint8Array([0, 0, 7]);
 
