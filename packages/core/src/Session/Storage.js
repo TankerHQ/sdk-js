@@ -61,7 +61,7 @@ export default class Storage {
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
     this._groupStore = await GroupStore.open(this._datastore, userSecret);
 
-    await this._checkVersion();
+    await this._checkVersion(userSecret);
   }
 
   async close() {
@@ -82,7 +82,7 @@ export default class Storage {
     await this._keyStore.close();
   }
 
-  async _checkVersion(): Promise<void> {
+  async _checkVersion(userSecret: Uint8Array): Promise<void> {
     let currentVersion;
     try {
       const record = await this._datastore.get(TABLE_METADATA, STORAGE_VERSION_KEY);
@@ -93,17 +93,17 @@ export default class Storage {
       }
     }
     if (!currentVersion || currentVersion < CURRENT_STORAGE_VERSION) {
-      await this.cleanupCaches();
+      await this.cleanupCaches(userSecret);
       await this._datastore.put(TABLE_METADATA, { _id: STORAGE_VERSION_KEY, storageVersion: CURRENT_STORAGE_VERSION });
     }
   }
 
-  async cleanupCaches() {
+  async cleanupCaches(userSecret: Uint8Array) {
     const currentSchema = this._schemas[this._schemas.length - 1];
     const cacheTables = currentSchema.tables.filter(t => !t.persistent && !t.deleted).map(t => t.name);
     for (const table of cacheTables) {
       await this._datastore.clear(table);
     }
-    await this._keyStore.clearCache();
+    await this._keyStore.clearCache(userSecret);
   }
 }

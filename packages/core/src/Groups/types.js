@@ -2,13 +2,7 @@
 
 import { tcrypto } from '@tanker/crypto';
 
-export type ProvisionalEncryptionKeys = {|
-  appPublicSignatureKey: Uint8Array,
-  tankerPublicSignatureKey: Uint8Array,
-  encryptedGroupPrivateEncryptionKey: Uint8Array,
-|};
-
-export type GroupBase = {|
+type GroupBase = {|
   groupId: Uint8Array,
   publicSignatureKey: Uint8Array,
   publicEncryptionKey: Uint8Array,

@@ -40,7 +40,7 @@ export class LocalUser extends EventEmitter {
   _deviceId: ?Uint8Array;
   _trustchainPublicKey: ?Uint8Array;
 
-  constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, localData: LocalData) {
+  constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, localData: LocalData, provisionalUserKeys: IndexedProvisionalUserKeyPairs) {
     super();
 
     this._trustchainId = trustchainId;
@@ -53,7 +53,7 @@ export class LocalUser extends EventEmitter {
     this._currentUserKey = localData.currentUserKey;
     this._trustchainPublicKey = localData.trustchainPublicKey;
     this._deviceId = localData.deviceId;
-    this._provisionalUserKeys = localData.provisionalUserKeys;
+    this._provisionalUserKeys = provisionalUserKeys;
   }
 
   get localData() {
@@ -64,7 +64,6 @@ export class LocalUser extends EventEmitter {
       currentUserKey: this._currentUserKey,
       trustchainPublicKey: this._trustchainPublicKey,
       deviceId: this._deviceId,
-      provisionalUserKeys: this._provisionalUserKeys,
     };
   }
 

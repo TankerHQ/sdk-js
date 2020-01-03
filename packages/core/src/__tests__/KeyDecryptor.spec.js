@@ -10,8 +10,9 @@ import { KeyDecryptor } from '../DataProtection/Resource/KeyDecryptor';
 import GroupManager from '../Groups/Manager';
 import LocalUser from '../Session/LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
+import { type Nature, NATURE } from '../Blocks/Nature';
 
-import { type KeyPublishEntry, type KeyPublishNature, KeyPublishNatures } from '../DataProtection/Resource/keyPublish';
+import { type KeyPublishEntry } from '../DataProtection/Resource/Serialize';
 
 const refDeviceId = new Uint8Array([0, 0, 7]);
 
@@ -34,7 +35,7 @@ class LocalUserStub {
   }
 }
 
-function makeKeyPublish(nature: KeyPublishNature, key): KeyPublishEntry {
+function makeKeyPublish(nature: Nature, key): KeyPublishEntry {
   return {
     recipient: refDeviceId,
     resourceId: refDeviceId,
@@ -71,7 +72,7 @@ describe('KeyDecryptor', () => {
 
   it('can decrypt key published to user', async () => {
     const keyPublish = makeKeyPublish(
-      KeyPublishNatures.key_publish_to_user,
+      NATURE.key_publish_to_user,
       tcrypto.sealEncrypt(keys.publicKey, keys.publicKey)
     );
 
@@ -82,7 +83,7 @@ describe('KeyDecryptor', () => {
 
   it('can decrypt key published to group', async () => {
     const keyPublish = makeKeyPublish(
-      KeyPublishNatures.key_publish_to_user_group,
+      NATURE.key_publish_to_user_group,
       tcrypto.sealEncrypt(keys.publicKey, keys.publicKey)
     );
 
@@ -101,7 +102,7 @@ describe('KeyDecryptor', () => {
 
   it('throws when user key cannot be found', async () => {
     const keyPublish = makeKeyPublish(
-      KeyPublishNatures.key_publish_to_user,
+      NATURE.key_publish_to_user,
       new Uint8Array([0])
     );
     localUser.empty();
@@ -111,7 +112,7 @@ describe('KeyDecryptor', () => {
 
   it('throws when group key cannot be found', async () => {
     const keyPublish = makeKeyPublish(
-      KeyPublishNatures.key_publish_to_user_group,
+      NATURE.key_publish_to_user_group,
       new Uint8Array([0])
     );
     localUser.empty();

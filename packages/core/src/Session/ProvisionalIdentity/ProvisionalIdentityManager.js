@@ -191,7 +191,7 @@ export default class ProvisionalIdentityManager {
         privateProvisionalKeys
       );
     }
-    return this._keyStore.saveProvisionalUserKeys(this._localUser.provisionalUserKeys);
+    return this._keyStore.saveProvisionalUserKeys(this._localUser.provisionalUserKeys, this._localUser.userSecret);
   }
 
   _decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): PrivateProvisionalKeys {

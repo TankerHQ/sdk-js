@@ -5,8 +5,7 @@ import { InternalError } from '@tanker/errors';
 import { getStaticArray } from '../../Blocks/Serialize';
 import { NATURE } from '../../Blocks/Nature';
 import { unserializeBlock } from '../../Blocks/payloads';
-import { hashBlock } from '../../Blocks/Block';
-import { type VerificationFields } from '../../Blocks/entries';
+import { type VerificationFields, hashBlock } from '../../Blocks/Block';
 
 export type TrustchainCreationRecord = {|
   public_signature_key: Uint8Array,

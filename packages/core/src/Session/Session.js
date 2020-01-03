@@ -58,7 +58,7 @@ export class Session extends EventEmitter {
     const storage = new Storage(storeOptions);
     await storage.open(userId, userSecret);
 
-    const localUser = new LocalUser(trustchainId, userId, userSecret, storage.keyStore.localData);
+    const localUser = new LocalUser(trustchainId, userId, userSecret, storage.keyStore.localData, storage.keyStore.provisionalUserKeys);
     if (!localUser.isInitialized) {
       const { deviceExists, userExists } = await client.remoteStatus(localUser.trustchainId, localUser.userId, localUser.deviceSignatureKeyPair.publicKey);
 
@@ -171,7 +171,7 @@ export class Session extends EventEmitter {
     try {
       const localUserBlocks = await this._client.send('get my user blocks');
       this.localUser.initializeWithBlocks(localUserBlocks);
-      await this.storage.keyStore.save(this.localUser.localData);
+      await this.storage.keyStore.save(this.localUser.localData, this.localUser.userSecret);
     } catch (e) {
       if (e instanceof DeviceRevoked) {
         await this._nuke();

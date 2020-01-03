@@ -3,22 +3,9 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { getStaticArray, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from '../Blocks/Serialize';
-import { hashBlock } from '../Blocks/Block';
-import { type VerificationFields } from '../Blocks/entries';
+import { type VerificationFields, hashBlock } from '../Blocks/Block';
 import { unserializeBlock } from '../Blocks/payloads';
-
-
-const userNatures = Object.freeze({
-  device_creation_v1: 2,
-  device_revocation_v1: 4,
-  device_creation_v2: 6,
-  device_creation_v3: 7,
-  device_revocation_v2: 9,
-});
-
-const SEALED_KEY_SIZE = tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
-
-const hashSize = tcrypto.HASH_SIZE;
+import { NATURE } from '../Blocks/Nature';
 
 type UserPrivateKey = {|
   recipient: Uint8Array,
@@ -103,7 +90,7 @@ export function serializeUserDeviceV3(userDevice: DeviceCreationRecord): Uint8Ar
     throw new InternalError('Assertion error: invalid user device user key pair');
   if (userDevice.user_key_pair.public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
     throw new InternalError('Assertion error: invalid user device user public encryption key size');
-  if (userDevice.user_key_pair.encrypted_private_encryption_key.length !== SEALED_KEY_SIZE)
+  if (userDevice.user_key_pair.encrypted_private_encryption_key.length !== tcrypto.SEALED_KEY_SIZE)
     throw new InternalError('Assertion error: invalid user device user encrypted private encryption key size');
 
   const deviceFlags = new Uint8Array(1);
@@ -124,14 +111,14 @@ export function serializeUserDeviceV3(userDevice: DeviceCreationRecord): Uint8Ar
 function unserializePrivateKey(src: Uint8Array, offset: number) {
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'recipient'),
-    (d, o) => getStaticArray(d, SEALED_KEY_SIZE, o, 'key'),
+    (d, o) => getStaticArray(d, tcrypto.SEALED_KEY_SIZE, o, 'key'),
   ], offset);
 }
 
 function unserializeUserKeyPair(src: Uint8Array, offset: number) {
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
-    (d, o) => getStaticArray(d, SEALED_KEY_SIZE, o, 'encrypted_private_encryption_key'),
+    (d, o) => getStaticArray(d, tcrypto.SEALED_KEY_SIZE, o, 'encrypted_private_encryption_key'),
   ], offset, 'user_key_pair');
 }
 
@@ -139,7 +126,7 @@ function unserializeUserKeys(src: Uint8Array, offset: number) {
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'previous_public_encryption_key'),
-    (d, o) => getStaticArray(d, SEALED_KEY_SIZE, o, 'encrypted_previous_encryption_key'),
+    (d, o) => getStaticArray(d, tcrypto.SEALED_KEY_SIZE, o, 'encrypted_previous_encryption_key'),
     (d, o) => unserializeList(d, unserializePrivateKey, o, 'private_keys'),
   ], offset, 'user_keys');
 }
@@ -187,14 +174,14 @@ export function unserializeUserDeviceV3(src: Uint8Array): DeviceCreationRecord {
 }
 
 export function serializeDeviceRevocationV1(deviceRevocation: DeviceRevocationRecord): Uint8Array {
-  if (deviceRevocation.device_id.length !== hashSize)
+  if (deviceRevocation.device_id.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid device revocation device_id size');
 
   return deviceRevocation.device_id;
 }
 
 export function serializeDeviceRevocationV2(deviceRevocation: DeviceRevocationRecord): Uint8Array {
-  if (deviceRevocation.device_id.length !== hashSize)
+  if (deviceRevocation.device_id.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid device revocation device_id size');
   if (!deviceRevocation.user_keys)
     throw new InternalError('Assertion error: invalid user device user keys');
@@ -202,12 +189,12 @@ export function serializeDeviceRevocationV2(deviceRevocation: DeviceRevocationRe
     throw new InternalError('Assertion error: invalid user device user public encryption key size');
   if (deviceRevocation.user_keys.previous_public_encryption_key.length !== tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)
     throw new InternalError('Assertion error: invalid user device user previous public encryption key size');
-  if (deviceRevocation.user_keys.encrypted_previous_encryption_key.length !== SEALED_KEY_SIZE)
+  if (deviceRevocation.user_keys.encrypted_previous_encryption_key.length !== tcrypto.SEALED_KEY_SIZE)
     throw new InternalError('Assertion error: invalid user device user previous encrypted private encryption key size');
   for (const key of deviceRevocation.user_keys.private_keys) {
     if (key.recipient.length !== tcrypto.HASH_SIZE)
       throw new InternalError('Assertion error: invalid user device encrypted key recipient size');
-    if (key.key.length !== SEALED_KEY_SIZE)
+    if (key.key.length !== tcrypto.SEALED_KEY_SIZE)
       throw new InternalError('Assertion error: invalid user device user encrypted private encryption key size');
   }
 
@@ -218,22 +205,22 @@ export function serializeDeviceRevocationV2(deviceRevocation: DeviceRevocationRe
 }
 
 export function unserializeDeviceRevocationV1(src: Uint8Array): DeviceRevocationRecord {
-  return { device_id: getStaticArray(src, hashSize, 0).value };
+  return { device_id: getStaticArray(src, tcrypto.HASH_SIZE, 0).value };
 }
 
 export function unserializeDeviceRevocationV2(src: Uint8Array): DeviceRevocationRecord {
   return unserializeGeneric(src, [
-    (d, o) => getStaticArray(d, hashSize, o, 'device_id'),
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'device_id'),
     (d, o) => unserializeUserKeys(d, o),
   ]);
 }
 
 export function isDeviceCreation(nature: number): bool {
-  return nature === userNatures.device_creation_v1 || nature === userNatures.device_creation_v2 || nature === userNatures.device_creation_v3;
+  return nature === NATURE.device_creation_v1 || nature === NATURE.device_creation_v2 || nature === NATURE.device_creation_v3;
 }
 
 export function isDeviceRevocation(nature: number): bool {
-  return nature === userNatures.device_revocation_v1 || nature === userNatures.device_revocation_v2;
+  return nature === NATURE.device_revocation_v1 || nature === NATURE.device_revocation_v2;
 }
 
 export function userEntryFromBlock(b64Block: string): UserEntry {
@@ -263,15 +250,15 @@ export function userEntryFromBlock(b64Block: string): UserEntry {
     index,
   });
   switch (block.nature) {
-    case userNatures.device_creation_v1:
+    case NATURE.device_creation_v1:
       return toCreationEntry(unserializeUserDeviceV1(block.payload));
-    case userNatures.device_creation_v2:
+    case NATURE.device_creation_v2:
       return toCreationEntry(unserializeUserDeviceV2(block.payload));
-    case userNatures.device_creation_v3:
+    case NATURE.device_creation_v3:
       return toCreationEntry(unserializeUserDeviceV3(block.payload));
-    case userNatures.device_revocation_v1:
+    case NATURE.device_revocation_v1:
       return toRevocationEntry(unserializeDeviceRevocationV1(block.payload));
-    case userNatures.device_revocation_v2:
+    case NATURE.device_revocation_v2:
       return toRevocationEntry(unserializeDeviceRevocationV2(block.payload));
     default:
       throw new InternalError('Assertion error: wrong block nature for userEntryFromBlock');

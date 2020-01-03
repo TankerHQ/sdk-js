@@ -4,7 +4,6 @@ import { tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { encodeListLength } from '../Blocks/Serialize';
-import { SEALED_KEY_SIZE } from '../Blocks/payloads';
 import {
   serializeUserDeviceV3,
   unserializeUserDeviceV1,
@@ -164,7 +163,7 @@ describe('payload test vectors', () => {
       public_encryption_key: makeUint8Array('public enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
       user_key_pair: {
         public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeUint8Array('user enc key', SEALED_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       revoked: Number.MAX_SAFE_INTEGER,
@@ -272,7 +271,7 @@ describe('payloads', () => {
       public_encryption_key: encryptionKeys.publicKey,
       user_key_pair: {
         public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeUint8Array('user enc priv key', SEALED_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc priv key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       revoked: Number.MAX_SAFE_INTEGER,
@@ -287,7 +286,7 @@ describe('payloads', () => {
       user_keys: {
         public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
         previous_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_previous_encryption_key: random(SEALED_KEY_SIZE),
+        encrypted_previous_encryption_key: random(tcrypto.SEALED_KEY_SIZE),
         private_keys: [],
       },
     };
@@ -301,10 +300,10 @@ describe('payloads', () => {
       user_keys: {
         public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
         previous_public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_previous_encryption_key: new Uint8Array(SEALED_KEY_SIZE),
+        encrypted_previous_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
         private_keys: [{
           recipient: new Uint8Array(tcrypto.HASH_SIZE),
-          key: new Uint8Array(SEALED_KEY_SIZE),
+          key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
         }],
       },
     });
@@ -351,7 +350,7 @@ describe('payloads', () => {
       public_encryption_key: encryptionKeys.publicKey,
       user_key_pair: {
         public_encryption_key: makeUint8Array('user pub enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_private_encryption_key: makeUint8Array('user enc priv key', SEALED_KEY_SIZE),
+        encrypted_private_encryption_key: makeUint8Array('user enc priv key', tcrypto.SEALED_KEY_SIZE),
       },
       is_ghost_device: true,
       revoked: Number.MAX_SAFE_INTEGER,
@@ -373,7 +372,7 @@ describe('payloads', () => {
         public_encryption_key: new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
         user_key_pair: {
           public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_private_encryption_key: new Uint8Array(SEALED_KEY_SIZE),
+          encrypted_private_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
         },
         is_ghost_device: true,
         revoked: Number.MAX_SAFE_INTEGER,

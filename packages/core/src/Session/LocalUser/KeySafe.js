@@ -2,8 +2,6 @@
 import { tcrypto, utils, encryptionV1, type b64string } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 
-import { type UserKeys } from '../../Users/Serialize';
-
 export type ProvisionalUserKeyPairs = {|
   id: string,
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
@@ -14,18 +12,11 @@ export type LocalUserKeys = { currentUserKey: tcrypto.SodiumKeyPair, userKeys: {
 
 export type IndexedProvisionalUserKeyPairs = { [id: string]: ProvisionalUserKeyPairs };
 
-export type DeviceKeys = {|
-  deviceId: ?b64string,
+export type KeySafe = {|
   signaturePair: tcrypto.SodiumKeyPair,
   encryptionPair: tcrypto.SodiumKeyPair,
-|};
-
-export type KeySafe = {|
-  ...DeviceKeys,
-  userSecret: Uint8Array,
-  userKeys: Array<tcrypto.SodiumKeyPair>,
-  encryptedUserKeys: Array<UserKeys>,
   provisionalUserKeys: IndexedProvisionalUserKeyPairs,
+  deviceId: ?b64string,
   trustchainPublicKey: ?b64string,
   localUserKeys: ?LocalUserKeys,
 |};
@@ -61,22 +52,19 @@ async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<O
   });
 }
 
-export function generateKeySafe(userSecret: Uint8Array): KeySafe {
+export function generateKeySafe(): KeySafe {
   return {
     deviceId: null,
-    userSecret,
     signaturePair: tcrypto.makeSignKeyPair(),
     encryptionPair: tcrypto.makeEncryptionKeyPair(),
-    userKeys: [],
-    encryptedUserKeys: [],
     provisionalUserKeys: {},
     trustchainPublicKey: null,
     localUserKeys: null,
   };
 }
 
-export async function serializeKeySafe(keySafe: KeySafe): Promise<b64string> {
-  const encrypted = await encryptObject(keySafe.userSecret, keySafe);
+export async function serializeKeySafe(keySafe: KeySafe, userSecret: Uint8Array): Promise<b64string> {
+  const encrypted = await encryptObject(userSecret, keySafe);
   return utils.toBase64(encrypted);
 }
 
@@ -101,7 +89,7 @@ export async function deserializeKeySafe(serializedSafe: b64string, userSecret: 
   }
 
   // Validation of keys
-  if (!safe.signaturePair || !safe.encryptionPair || !safe.userSecret || !safe.userKeys || !safe.encryptedUserKeys || !safe.provisionalUserKeys) {
+  if (!safe.signaturePair || !safe.encryptionPair) {
     throw new InternalError('Invalid key safe');
   }
 

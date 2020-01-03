@@ -6,21 +6,10 @@ import { type PublicProvisionalUser } from '@tanker/identity';
 
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
-import { hashBlock } from '../Blocks/Block';
-import { type VerificationFields } from '../Blocks/entries';
-import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
+import { type VerificationFields, hashBlock } from '../Blocks/Block';
+import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
 
 import { getLastUserPublicKey, type User } from '../Users/types';
-
-export const SEALED_KEY_SIZE = tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
-export const TWO_TIMES_SEALED_KEY_SIZE = SEALED_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
-
-const groupNatures = Object.freeze({
-  user_group_creation_v1: 10,
-  user_group_addition_v1: 12,
-  user_group_creation_v2: 15,
-  user_group_addition_v2: 16,
-});
 
 type GroupEncryptedKeyV1 = {|
     public_user_encryption_key: Uint8Array,
@@ -144,7 +133,7 @@ function unserializeProvisionalGroupEncryptedKeyV2(src: Uint8Array, offset: numb
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'app_provisional_user_public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_provisional_user_public_signature_key'),
-    (d, o) => getStaticArray(d, TWO_TIMES_SEALED_KEY_SIZE, o, 'encrypted_group_private_encryption_key'),
+    (d, o) => getStaticArray(d, tcrypto.TWO_TIMES_SEALED_KEY_SIZE, o, 'encrypted_group_private_encryption_key'),
   ], offset);
 }
 
@@ -180,7 +169,7 @@ function checkProvisionalGroupEncryptedKeyV2(blockType: string, key: Provisional
     throw new InternalError(`Assertion error: invalid ${blockType} app signature public key size`);
   if (key.tanker_provisional_user_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
     throw new InternalError(`Assertion error: invalid ${blockType} tanker signature public key size`);
-  if (key.encrypted_group_private_encryption_key.length !== TWO_TIMES_SEALED_KEY_SIZE)
+  if (key.encrypted_group_private_encryption_key.length !== tcrypto.TWO_TIMES_SEALED_KEY_SIZE)
     throw new InternalError(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
 }
 
@@ -301,19 +290,19 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   const hash = hashBlock(block);
   const index = block.index;
 
-  if (block.nature === groupNatures.user_group_creation_v1) {
+  if (block.nature === NATURE.user_group_creation_v1) {
     const userGroupAction = unserializeUserGroupCreationV1(block.payload);
     return { ...userGroupAction, author, signature, nature, hash, index };
   }
-  if (block.nature === groupNatures.user_group_creation_v2) {
+  if (block.nature === NATURE.user_group_creation_v2) {
     const userGroupAction = unserializeUserGroupCreationV2(block.payload);
     return { ...userGroupAction, author, signature, nature, hash, index };
   }
-  if (block.nature === groupNatures.user_group_addition_v1) {
+  if (block.nature === NATURE.user_group_addition_v1) {
     const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
     return { ...userGroupAction, author, signature, nature, hash, index };
   }
-  if (block.nature === groupNatures.user_group_addition_v2) {
+  if (block.nature === NATURE.user_group_addition_v2) {
     const userGroupAction = unserializeUserGroupAdditionV2(block.payload);
     return { ...userGroupAction, author, signature, nature, hash, index };
   }

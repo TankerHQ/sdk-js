@@ -7,7 +7,7 @@ import GroupManager from '../../Groups/Manager';
 import LocalUser from '../../Session/LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
-import { type KeyPublishEntry, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './keyPublish';
+import { type KeyPublishEntry, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './Serialize';
 
 export class KeyDecryptor {
   _localUser: LocalUser;

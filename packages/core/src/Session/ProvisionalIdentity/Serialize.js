@@ -6,8 +6,7 @@ import { InternalError } from '@tanker/errors';
 
 import { preferredNature, NATURE_KIND } from '../../Blocks/Nature';
 
-import { hashBlock } from '../../Blocks/Block';
-import { type VerificationFields } from '../../Blocks/entries';
+import { type VerificationFields, hashBlock } from '../../Blocks/Block';
 import { getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
 import { unserializeBlock } from '../../Blocks/payloads';
 

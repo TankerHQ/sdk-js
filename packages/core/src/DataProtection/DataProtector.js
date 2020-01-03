@@ -11,7 +11,7 @@ import type { Data } from '@tanker/types';
 import { ResourceManager } from './Resource/ResourceManager';
 import ResourceStore from './Resource/ResourceStore';
 import { KeyDecryptor } from './Resource/KeyDecryptor';
-import { makeKeyPublish, makeKeyPublishToProvisionalUser } from './Resource/keyPublish';
+import { makeKeyPublish, makeKeyPublishToProvisionalUser } from './Resource/Serialize';
 
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 

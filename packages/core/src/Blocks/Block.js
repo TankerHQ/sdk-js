@@ -5,7 +5,15 @@ import { type Nature } from './Nature';
 
 import { type Block, type BlockNoSignature, serializeBlock } from './payloads';
 
-function natureToVarint(nature: number): Uint8Array {
+export type VerificationFields = {|
+  index: number,
+  nature: Nature,
+  author: Uint8Array,
+  hash: Uint8Array,
+  signature: Uint8Array
+|};
+
+function natureToVarint(nature: Nature): Uint8Array {
   const out = new Uint8Array(8);
   varint.encode(nature, out, 0);
   return out.subarray(0, varint.encode.bytes);

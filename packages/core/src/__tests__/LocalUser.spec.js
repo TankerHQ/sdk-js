@@ -68,7 +68,7 @@ describe('Local User', () => {
       deviceId: null,
       trustchainPublicKey: null
     };
-    localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
+    localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData, {});
   });
 
   it('initializes data correctly', async () => {
@@ -106,7 +106,7 @@ describe('Local User', () => {
         deviceId: null,
         trustchainPublicKey: null
       };
-      localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
+      localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData, {});
     });
 
     it('decrypts encrypted user keys', async () => {

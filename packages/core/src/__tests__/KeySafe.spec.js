@@ -11,11 +11,10 @@ describe('KeySafe', () => {
 
   beforeEach(() => {
     secret = createUserSecretBinary('trustchainid', 'user-id');
-    safe = generateKeySafe(secret);
+    safe = generateKeySafe();
   });
 
   it('should create a new valid safe when asked to', () => {
-    expect(safe.userSecret).to.deep.equal(secret);
     expect(safe.deviceId).to.equal(null);
     expect(safe.encryptionPair.privateKey).to.be.an.instanceof(Uint8Array);
     expect(safe.encryptionPair.publicKey).to.be.an.instanceof(Uint8Array);
@@ -25,7 +24,7 @@ describe('KeySafe', () => {
   });
 
   it('should be able to serialize / deserialize a safe', async () => {
-    const serializedSafe = await serializeKeySafe(safe);
+    const serializedSafe = await serializeKeySafe(safe, secret);
     const deserializedSafe = await deserializeKeySafe(serializedSafe, secret);
     expect(deserializedSafe).to.deep.equal(deserializedSafe);
   });

@@ -6,7 +6,6 @@ import { expect } from '@tanker/test-utils';
 import makeUint8Array from './makeUint8Array';
 
 import {
-  TWO_TIMES_SEALED_KEY_SIZE,
   serializeUserGroupCreationV1,
   unserializeUserGroupCreationV1,
   serializeUserGroupCreationV2,
@@ -119,12 +118,12 @@ describe('groups blocks', () => {
         {
           app_provisional_user_public_signature_key: makeUint8Array('app provisional user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_provisional_user_public_signature_key: makeUint8Array('tanker provisional user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeUint8Array('provisional user encrypted group priv key', TWO_TIMES_SEALED_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('provisional user encrypted group priv key', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
         },
         {
           app_provisional_user_public_signature_key: makeUint8Array('2nd app provisional user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_provisional_user_public_signature_key: makeUint8Array('2nd tanker provisional user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeUint8Array('2nd provisional user encrypted group priv key', TWO_TIMES_SEALED_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('2nd provisional user encrypted group priv key', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
         }],
       self_signature: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
@@ -366,12 +365,12 @@ describe('groups blocks', () => {
         {
           app_provisional_user_public_signature_key: makeUint8Array('app provisional user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_provisional_user_public_signature_key: makeUint8Array('tanker provisional user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeUint8Array('provisional encrypted group priv key', TWO_TIMES_SEALED_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('provisional encrypted group priv key', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
         },
         {
           app_provisional_user_public_signature_key: makeUint8Array('2nd app provisional user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_provisional_user_public_signature_key: makeUint8Array('2nd tanker provisional user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: makeUint8Array('2nd provisional encrypted group priv key', TWO_TIMES_SEALED_KEY_SIZE),
+          encrypted_group_private_encryption_key: makeUint8Array('2nd provisional encrypted group priv key', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
         }],
       self_signature_with_current_key: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };

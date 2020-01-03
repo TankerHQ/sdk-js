@@ -62,43 +62,40 @@ export default class KeyStore {
     };
   }
 
-  async save(localData: LocalData) {
+  async save(localData: LocalData, userSecret: Uint8Array) {
     if (localData.currentUserKey)
       this._safe.localUserKeys = { userKeys: localData.userKeys, currentUserKey: localData.currentUserKey };
     this._safe.deviceId = localData.deviceId ? utils.toBase64(localData.deviceId) : null;
     this._safe.trustchainPublicKey = localData.trustchainPublicKey ? utils.toBase64(localData.trustchainPublicKey) : null;
 
-    return this.saveSafe();
+    return this._saveSafe(userSecret);
   }
 
   get provisionalUserKeys() {
     return this._safe.provisionalUserKeys;
   }
 
-  async saveProvisionalUserKeys(provisionalUserKeys: IndexedProvisionalUserKeyPairs) {
+  async saveProvisionalUserKeys(provisionalUserKeys: IndexedProvisionalUserKeyPairs, userSecret: Uint8Array) {
     this._safe.provisionalUserKeys = provisionalUserKeys;
-    return this.saveSafe();
+    return this._saveSafe(userSecret);
   }
 
-  async saveSafe(): Promise<void> {
-    const encryptedSafe = await serializeKeySafe(this._safe);
+  async _saveSafe(userSecret: Uint8Array): Promise<void> {
+    const encryptedSafe = await serializeKeySafe(this._safe, userSecret);
     const record = { _id: 'keySafe', encryptedSafe };
     return this._ds.put(TABLE, record);
   }
 
   // remove everything except private device keys.
-  clearCache(): Promise<void> {
+  clearCache(userSecret: Uint8Array): Promise<void> {
     delete this._safe.deviceId;
     delete this._safe.trustchainPublicKey;
-    this._safe.userKeys = [];
-    this._safe.encryptedUserKeys = [];
     this._safe.provisionalUserKeys = {};
-    return this.saveSafe();
+    return this._saveSafe(userSecret);
   }
 
   async close(): Promise<void> {
     // First erase traces of critical data in memory
-    utils.memzero(this._safe.userSecret);
     utils.memzero(this._safe.encryptionPair.privateKey);
     utils.memzero(this._safe.signaturePair.privateKey);
     utils.memzero(this._safe.encryptionPair.publicKey);
@@ -147,8 +144,8 @@ export default class KeyStore {
 
     // New device or broken device: create a new safe
     if (!safe) {
-      safe = generateKeySafe(userSecret);
-      record = { _id: 'keySafe', encryptedSafe: await serializeKeySafe(safe) };
+      safe = generateKeySafe();
+      record = { _id: 'keySafe', encryptedSafe: await serializeKeySafe(safe, userSecret) };
       await this._ds.put(TABLE, record);
     }
 

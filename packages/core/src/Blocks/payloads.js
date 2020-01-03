@@ -21,20 +21,6 @@ export type Block = {|
   signature: Uint8Array,
 |};
 
-export const SEALED_KEY_SIZE = tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
-export const TWO_TIMES_SEALED_KEY_SIZE = SEALED_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
-
-export type TrustchainCreationRecord = {|
-  public_signature_key: Uint8Array,
-|}
-
-export type ProvisionalPublicKey = {|
-  app_public_encryption_key: Uint8Array,
-  tanker_public_encryption_key: Uint8Array,
-|}
-
-export type Record = TrustchainCreationRecord;
-
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
 const currentVersion = 1;
 

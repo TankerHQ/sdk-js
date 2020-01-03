@@ -3,11 +3,16 @@
 import { utils } from '@tanker/crypto';
 
 import { InvalidBlockError } from '../../errors.internal';
-import { isTrustchainCreation } from '../../Blocks/Nature';
+import { type Nature, natureKind, NATURE_KIND } from '../../Blocks/Nature';
 
 import type { TrustchainCreationEntry } from './Serialize';
 
 export const rootBlockAuthor = new Uint8Array(32);
+
+
+function isTrustchainCreation(nature: Nature): bool {
+  return natureKind(nature) === NATURE_KIND.trustchain_creation;
+}
 
 export function verifyTrustchainCreation(trustchainCreation: TrustchainCreationEntry, trustchainId: Uint8Array) {
   if (!isTrustchainCreation(trustchainCreation.nature))

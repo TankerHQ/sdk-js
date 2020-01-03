@@ -10,34 +10,22 @@ import {
 } from '../Session/ProvisionalIdentity/Serialize';
 
 import { type TrustchainCreationEntry, trustchainCreationFromBlock } from '../Session/LocalUser/Serialize';
-
-import {
-  userEntryFromBlock,
-  type DeviceCreationEntry,
-  type DeviceRevocationEntry,
-} from '../Users/Serialize';
-
-import {
-  type UserGroupEntry,
-  getGroupEntryFromBlock,
-  makeUserGroupCreation,
-  makeUserGroupAddition,
-} from '../Groups/Serialize';
+import { userEntryFromBlock, type DeviceCreationEntry, type DeviceRevocationEntry } from '../Users/Serialize';
+import { type UserGroupEntry, getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAddition } from '../Groups/Serialize';
+import { type KeyPublishEntry, getKeyPublishEntryFromBlock, makeKeyPublish, makeKeyPublishToProvisionalUser } from '../DataProtection/Resource/Serialize';
 
 import { hashBlock, createBlock } from '../Blocks/Block';
 import { serializeBlock, unserializeBlock } from '../Blocks/payloads';
+import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 
 import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 import { type Group } from '../Groups/types';
-import { type KeyPublishEntry, getKeyPublishEntryFromBlock, makeKeyPublish, makeKeyPublishToProvisionalUser } from '../DataProtection/Resource/keyPublish';
-
 
 import { rootBlockAuthor } from '../Session/LocalUser/Verify';
 
 import { generateGhostDeviceKeys, type GhostDevice } from '../Session/ghostDevice';
 import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from '../Session/UserCreation';
 
-import { NATURE, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 import { type DelegationToken } from '../Session/UserData';
 
 

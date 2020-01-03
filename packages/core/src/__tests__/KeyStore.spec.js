@@ -45,7 +45,7 @@ describe('KeyStore', () => {
       deviceId: random(tcrypto.HASH_SIZE),
       trustchainPublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
     };
-    await keystore.save(localData);
+    await keystore.save(localData, secret);
 
     await datastore.close();
     datastore = await openDataStore(keystoreConfig);
@@ -67,7 +67,7 @@ describe('KeyStore', () => {
       deviceId: random(tcrypto.HASH_SIZE),
       trustchainPublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
     };
-    await keystore.save(localData);
+    await keystore.save(localData, secret);
 
     await datastore.close();
     datastore = await openDataStore(keystoreConfig);

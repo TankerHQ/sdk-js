@@ -5,14 +5,14 @@ import { expect } from '@tanker/test-utils';
 
 import makeUint8Array from './makeUint8Array';
 
-import { serializeKeyPublish, unserializeKeyPublish, serializeKeyPublishToProvisionalUser, unserializeKeyPublishToProvisionalUser, SEALED_KEY_SIZE, TWO_TIMES_SEALED_KEY_SIZE } from '../DataProtection/Resource/keyPublish';
+import { serializeKeyPublish, unserializeKeyPublish, serializeKeyPublishToProvisionalUser, unserializeKeyPublishToProvisionalUser } from '../DataProtection/Resource/Serialize';
 
 describe('key publish', () => {
   it('correctly deserializes a KeyPublishV2 test vector', async () => {
     const keyPublish = {
       recipient: makeUint8Array('recipient user', tcrypto.HASH_SIZE),
       resourceId: makeUint8Array('resource mac', tcrypto.MAC_SIZE),
-      key: makeUint8Array('encrypted key...', SEALED_KEY_SIZE),
+      key: makeUint8Array('encrypted key...', tcrypto.SEALED_KEY_SIZE),
     };
 
     const payload = new Uint8Array([
@@ -35,7 +35,7 @@ describe('key publish', () => {
       recipientAppPublicKey: makeUint8Array('recipient user', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
       recipientTankerPublicKey: makeUint8Array('', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
       resourceId: makeUint8Array('resource mac', tcrypto.MAC_SIZE),
-      key: makeUint8Array('encrypted key...', TWO_TIMES_SEALED_KEY_SIZE),
+      key: makeUint8Array('encrypted key...', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
     };
 
     const payload = new Uint8Array([
