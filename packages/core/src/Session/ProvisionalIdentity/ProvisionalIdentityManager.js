@@ -8,6 +8,8 @@ import { VerificationNeeded } from '../../errors.internal';
 
 import { Client, b64RequestObject } from '../../Network/Client';
 import LocalUser, { type PrivateProvisionalKeys } from '../LocalUser/LocalUser';
+import KeyStore from '../LocalUser/KeyStore';
+
 import { formatVerificationRequest } from '../requests';
 import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../types';
 import UserManager from '../../Users/Manager';
@@ -39,18 +41,21 @@ const tankerProvisionalKeys = (serverResult) => {
 
 export default class ProvisionalIdentityManager {
   _client: Client;
+  _keyStore: KeyStore;
   _localUser: LocalUser;
-  _UserManager: UserManager;
+  _userManager: UserManager;
   _provisionalIdentity: SecretProvisionalIdentity;
 
   constructor(
     client: Client,
+    keyStore: KeyStore,
     localUser: LocalUser,
     userManager: UserManager,
   ) {
     this._client = client;
+    this._keyStore = keyStore;
     this._localUser = localUser;
-    this._UserManager = userManager;
+    this._userManager = userManager;
   }
 
   async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: EmailVerificationMethod }> {
@@ -168,7 +173,7 @@ export default class ProvisionalIdentityManager {
 
     for (const claimBlock of claimBlocks) {
       const claimEntry = provisionalIdentityClaimFromBlock(claimBlock);
-      const authorDeviceKeysMap = await this._UserManager.getDeviceKeysByDevicesIds([claimEntry.author]);
+      const authorDeviceKeysMap = await this._userManager.getDeviceKeysByDevicesIds([claimEntry.author]);
       if (authorDeviceKeysMap.size !== 1) {
         throw new InternalError('refreshProvisionalPrivateKeys: zero or multiple keys for one device');
       }
@@ -180,12 +185,13 @@ export default class ProvisionalIdentityManager {
 
       const privateProvisionalKeys = this._decryptPrivateProvisionalKeys(claimEntry.recipient_user_public_key, claimEntry.encrypted_provisional_identity_private_keys);
 
-      await this._localUser.storeProvisionalUserKey(
+      this._localUser.addProvisionalUserKey(
         claimEntry.app_provisional_identity_signature_public_key,
         claimEntry.tanker_provisional_identity_signature_public_key,
         privateProvisionalKeys
       );
     }
+    return this._keyStore.saveProvisionalUserKeys(this._localUser.provisionalUserKeys);
   }
 
   _decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): PrivateProvisionalKeys {

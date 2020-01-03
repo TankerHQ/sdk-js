@@ -21,7 +21,7 @@ export class Managers {
 
   constructor(localUser: LocalUser, storage: Storage, client: Client) {
     this.userManager = new UserManager(client, localUser);
-    this.provisionalIdentityManager = new ProvisionalIdentityManager(client, localUser, this.userManager);
+    this.provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, localUser, this.userManager);
 
     this.groupManager = new GroupManager(
       localUser,

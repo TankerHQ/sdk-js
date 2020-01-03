@@ -7,22 +7,7 @@ import { expect } from '@tanker/test-utils';
 import TestGenerator, { type TestUser } from './TestGenerator';
 
 import LocalUser from '../Session/LocalUser/LocalUser';
-import { extractUserData } from '../Session/UserData';
-
-class MockKeyStore {
-  signatureKeyPair: tcrypto.SodiumKeyPair;
-  encryptionKeyPair: tcrypto.SodiumKeyPair;
-
-
-  constructor(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair) {
-    this.signatureKeyPair = signatureKeyPair;
-    this.encryptionKeyPair = encryptionKeyPair;
-  }
-
-  setTrustchainPublicKey = () => {};
-  setLocalUserKeys = () => {};
-  setDeviceId = () => {};
-}
+import { extractUserData, type DelegationToken } from '../Session/UserData';
 
 const localUserKeysFromTestUser = (user: TestUser) => {
   const userKeys = {};
@@ -48,13 +33,14 @@ describe('Local User', () => {
   let deviceCreation1Block;
   let deviceCreation2;
   let deviceCreation2Block;
-  let keyStore;
   let testGenerator;
   let trustchainId;
   let trustchainKeyPair;
   let userIdString;
   let identity;
   let userData;
+
+  const delegationToken = (({}: any): DelegationToken);
 
   before(async () => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
@@ -75,27 +61,24 @@ describe('Local User', () => {
     deviceCreation1Block = deviceCreation1.block;
     deviceCreation2 = testGenerator.makeDeviceCreation(deviceCreation1);
     deviceCreation2Block = deviceCreation2.block;
-    keyStore = new MockKeyStore(deviceCreation2.testDevice.signKeys, deviceCreation2.testDevice.encryptionKeys);
-    localUser = new LocalUser(userData, (keyStore: any));
+
+    const localData = {
+      deviceSignatureKeyPair: deviceCreation2.testDevice.signKeys,
+      deviceEncryptionKeyPair: deviceCreation2.testDevice.encryptionKeys,
+      userKeys: {},
+      currentUserKey: null,
+      deviceId: null,
+      trustchainPublicKey: null
+    };
+    localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, delegationToken, localData);
   });
 
-  it('saves our device ID', async () => {
-    let deviceId;
-    keyStore.setDeviceId = (id) => { deviceId = id; };
-
+  it('initializes data correctly', async () => {
     await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block]);
-
-    expect(deviceId).to.deep.equal(deviceCreation2.unverifiedDeviceCreation.hash);
+    expect(localUser.deviceId).to.deep.equal(deviceCreation2.unverifiedDeviceCreation.hash);
+    expect(localUser.trustchainPublicKey).to.deep.equal(trustchainCreation.trustchainKeys.publicKey);
   });
 
-  it('saves the trustchain public key', async () => {
-    let trustchainPublicKey;
-    keyStore.setTrustchainPublicKey = (key) => { trustchainPublicKey = key; };
-
-    await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block]);
-
-    expect(trustchainPublicKey).to.deep.equal(trustchainCreation.trustchainKeys.publicKey);
-  });
 
   it('decrypts and adds user keys', async () => {
     await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block]);
@@ -116,8 +99,16 @@ describe('Local User', () => {
       deviceRevocationBlock = deviceRevocation.block;
       deviceCreation2 = testGenerator.makeDeviceCreation({ ...deviceCreation1, testUser: deviceRevocation.testUser });
       deviceCreation2Block = deviceCreation2.block;
-      keyStore = new MockKeyStore(deviceCreation2.testDevice.signKeys, deviceCreation2.testDevice.encryptionKeys);
-      localUser = new LocalUser(userData, (keyStore: any));
+
+      const localData = {
+        deviceSignatureKeyPair: deviceCreation2.testDevice.signKeys,
+        deviceEncryptionKeyPair: deviceCreation2.testDevice.encryptionKeys,
+        userKeys: {},
+        currentUserKey: null,
+        deviceId: null,
+        trustchainPublicKey: null
+      };
+      localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, delegationToken, localData);
     });
 
     it('decrypts encrypted user keys', async () => {

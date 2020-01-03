@@ -40,7 +40,9 @@ export class Session extends EventEmitter {
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
-    const client = new Client(userData.trustchainId, clientOptions);
+    const { trustchainId, userId, userSecret, delegationToken } = userData;
+
+    const client = new Client(trustchainId, clientOptions);
     client.open().catch((e) => {
       if (!(e instanceof OperationCanceled) && !(e instanceof NetworkError)) {
         console.error(e);
@@ -48,12 +50,12 @@ export class Session extends EventEmitter {
     });
 
     const storage = new Storage(storeOptions);
-    await storage.open(userData.userId, userData.userSecret);
+    await storage.open(userId, userSecret);
 
-    const localUser = new LocalUser(userData, storage.keyStore);
+    const localUser = new LocalUser(trustchainId, userId, userSecret, delegationToken, storage.keyStore.localData);
 
     if (!storage.hasLocalDevice()) {
-      const { deviceExists, userExists } = await client.remoteStatus(localUser.trustchainId, localUser.userId, localUser.publicSignatureKey);
+      const { deviceExists, userExists } = await client.remoteStatus(trustchainId, userId, localUser.deviceSignatureKeyPair.publicKey);
 
       if (!userExists) {
         return new Session(localUser, storage, client, statuses.IDENTITY_REGISTRATION_NEEDED);
@@ -77,7 +79,7 @@ export class Session extends EventEmitter {
   }
 
   authenticate = async () => {
-    await this._client.authenticate(this.localUser.userId, this.storage.keyStore.signatureKeyPair);
+    await this._client.authenticate(this.localUser.userId, this.localUser.deviceSignatureKeyPair);
     if (!this.localUser.isInitialized) {
       await this._updateLocalUser();
     }
@@ -153,6 +155,7 @@ export class Session extends EventEmitter {
     try {
       const localUserBlocks = await this._client.send('get my user blocks');
       await this.localUser.initializeWithBlocks(localUserBlocks);
+      await this.storage.keyStore.save(this.localUser.localData);
     } catch (e) {
       if (e instanceof DeviceRevoked) {
         await this._nuke();

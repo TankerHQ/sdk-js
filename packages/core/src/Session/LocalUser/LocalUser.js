@@ -1,26 +1,27 @@
 // @flow
 
 import EventEmitter from 'events';
-import { tcrypto, utils, type Key } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError, DeviceRevoked } from '@tanker/errors';
 
-import KeyStore from './KeyStore';
 import BlockGenerator from '../../Blocks/BlockGenerator';
-
 import type { DeviceCreationEntry, DeviceRevocationEntry, UserKeys, UserKeyPair } from '../../Users/Serialize';
 import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from '../../Users/Serialize';
+
+import { type LocalData } from './KeyStore';
+
 import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../../Users/User';
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../../Users/Verify';
 
-import type { ProvisionalUserKeyPairs, LocalUserKeys } from './KeySafe';
+import type { ProvisionalUserKeyPairs, LocalUserKeys, IndexedProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../../utils';
-import type { UserData } from '../UserData';
 
 import { type GhostDevice, type GhostDeviceKeys, ghostDeviceToEncryptedUnlockKey } from './ghostDevice';
 import { makeDeviceBlock, type EncryptedUserKeyForGhostDevice } from './deviceCreation';
-
 import { trustchainCreationFromBlock } from './Serialize';
 import { verifyTrustchainCreation } from './Verify';
+
+import { type DelegationToken } from '../UserData';
 
 
 export type PrivateProvisionalKeys = {|
@@ -29,25 +30,37 @@ export type PrivateProvisionalKeys = {|
 |}
 
 export class LocalUser extends EventEmitter {
-  _userData: UserData;
-  _deviceId: ?Uint8Array;
-  _trustchainPublicKey: ?Uint8Array;
+  _trustchainId: Uint8Array;
+  _userId: Uint8Array;
+  _userSecret: Uint8Array;
+  _delegationToken: DelegationToken;
+
   _blockGenerator: BlockGenerator;
-  _wasRevoked: bool;
 
   _deviceSignatureKeyPair: tcrypto.SodiumKeyPair;
   _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
-  _currentUserKey: tcrypto.SodiumKeyPair;
+  _currentUserKey: ?tcrypto.SodiumKeyPair;
+  _provisionalUserKeys: IndexedProvisionalUserKeyPairs;
 
-  _keyStore: KeyStore;
+  _deviceId: ?Uint8Array;
+  _trustchainPublicKey: ?Uint8Array;
 
-  constructor(userData: UserData, keyStore: KeyStore) {
+  constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, delegationToken: DelegationToken, localData: LocalData) {
     super();
 
-    this._keyStore = keyStore;
-    this._userData = userData;
-    this._loadStoredData();
+    this._trustchainId = trustchainId;
+    this._userId = userId;
+    this._userSecret = userSecret;
+    this._delegationToken = delegationToken;
+
+    this._deviceEncryptionKeyPair = localData.deviceEncryptionKeyPair;
+    this._deviceSignatureKeyPair = localData.deviceSignatureKeyPair;
+    this._userKeys = localData.userKeys;
+    this._currentUserKey = localData.currentUserKey;
+    this._trustchainPublicKey = localData.trustchainPublicKey;
+    this._deviceId = localData.deviceId;
+    this._provisionalUserKeys = localData.provisionalUserKeys;
 
     this._blockGenerator = new BlockGenerator(
       this.trustchainId,
@@ -56,18 +69,16 @@ export class LocalUser extends EventEmitter {
     );
   }
 
-  _loadStoredData = () => {
-    const localUserKeys = this._keyStore.localUserKeys;
-
-    if (localUserKeys) {
-      this._userKeys = localUserKeys.userKeys;
-      this._currentUserKey = localUserKeys.currentUserKey;
-      this._deviceId = this._keyStore.deviceId;
-      this._trustchainPublicKey = this._keyStore.trustchainPublicKey;
-    }
-
-    this._deviceSignatureKeyPair = this._keyStore.signatureKeyPair;
-    this._deviceEncryptionKeyPair = this._keyStore.encryptionKeyPair;
+  get localData() {
+    return {
+      deviceEncryptionKeyPair: this._deviceEncryptionKeyPair,
+      deviceSignatureKeyPair: this._deviceSignatureKeyPair,
+      userKeys: this._userKeys,
+      currentUserKey: this._currentUserKey,
+      trustchainPublicKey: this._trustchainPublicKey,
+      deviceId: this._deviceId,
+      provisionalUserKeys: this._provisionalUserKeys,
+    };
   }
 
   generateDeviceFromGhostDevice = (ghostDevice: GhostDevice, encryptedUserKey: EncryptedUserKeyForGhostDevice) => {
@@ -81,11 +92,11 @@ export class LocalUser extends EventEmitter {
     const userKeys = tcrypto.getEncryptionKeyPairFromPrivateKey(decryptedUserPrivateKey);
 
     const ephemeralKeys = tcrypto.makeSignKeyPair();
-    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, this._userData.userId);
+    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, this._userId);
 
     const { deviceBlock } = makeDeviceBlock({
-      trustchainId: this._userData.trustchainId,
-      userId: this._userData.userId,
+      trustchainId: this._trustchainId,
+      userId: this._userId,
       userKeys,
       author: encryptedUserKey.deviceId,
       ephemeralKey: ephemeralKeys.publicKey,
@@ -103,15 +114,15 @@ export class LocalUser extends EventEmitter {
     const userKeys = tcrypto.makeEncryptionKeyPair();
 
     const { deviceBlock, deviceId } = makeDeviceBlock({
-      trustchainId: this._userData.trustchainId,
-      userId: this._userData.userId,
+      trustchainId: this._trustchainId,
+      userId: this._userId,
       userKeys,
       author: this.trustchainId,
-      ephemeralKey: this._userData.delegationToken.ephemeral_public_signature_key,
-      delegationSignature: this._userData.delegationToken.delegation_signature,
+      ephemeralKey: this._delegationToken.ephemeral_public_signature_key,
+      delegationSignature: this._delegationToken.delegation_signature,
       publicSignatureKey: ghostDeviceKeys.signatureKeyPair.publicKey,
       publicEncryptionKey: ghostDeviceKeys.encryptionKeyPair.publicKey,
-      blockSignatureKey: this._userData.delegationToken.ephemeral_private_signature_key,
+      blockSignatureKey: this._delegationToken.ephemeral_private_signature_key,
       isGhost: true,
     });
 
@@ -127,7 +138,7 @@ export class LocalUser extends EventEmitter {
     };
 
     const firstDeviceBlock = this.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
-    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._userData.userSecret);
+    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._userSecret);
     return {
       userCreationBlock: deviceBlock,
       firstDeviceBlock,
@@ -139,14 +150,20 @@ export class LocalUser extends EventEmitter {
   get blockGenerator(): BlockGenerator {
     return this._blockGenerator;
   }
-  get publicSignatureKey(): Key {
-    return this._deviceSignatureKeyPair.publicKey;
+  get deviceSignatureKeyPair() {
+    return this._deviceSignatureKeyPair;
   }
   get userId(): Uint8Array {
-    return this._userData.userId;
+    return this._userId;
+  }
+  get deviceId(): Uint8Array {
+    if (!this._deviceId) {
+      throw new InternalError('Assertion failed: localUser was not initialized');
+    }
+    return this._deviceId;
   }
   get trustchainId(): Uint8Array {
-    return this._userData.trustchainId;
+    return this._trustchainId;
   }
   get isInitialized(): bool {
     return !!this._trustchainPublicKey && !!this._deviceId;
@@ -158,32 +175,31 @@ export class LocalUser extends EventEmitter {
     return this._trustchainPublicKey;
   }
   get userSecret(): Uint8Array {
-    return this._userData.userSecret;
-  }
-  get publicIdentity() {
-    return { trustchain_id: utils.toBase64(this._userData.trustchainId), target: 'user', value: utils.toBase64(this._userData.userId) };
+    return this._userSecret;
   }
 
   findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
 
   get currentUserKey(): tcrypto.SodiumKeyPair {
+    if (!this._currentUserKey) {
+      throw new InternalError('Assertion failed: localUser was not initialized');
+    }
     return this._currentUserKey;
   }
 
-  initializeWithBlocks = async (b64Blocks: Array<string>) => {
+  initializeWithBlocks = (b64Blocks: Array<string>) => {
     // Blocks should contain at least root block and first device
     if (b64Blocks.length < 2) {
       throw new InternalError('Assertion error: not enough blocks to update local user');
     }
     const trustchainCreationEntry = trustchainCreationFromBlock(b64Blocks[0]);
     verifyTrustchainCreation(trustchainCreationEntry, this.trustchainId);
-    await this._keyStore.setTrustchainPublicKey(trustchainCreationEntry.public_signature_key);
     this._trustchainPublicKey = trustchainCreationEntry.public_signature_key;
 
     return this._initializeWithUserBlocks(b64Blocks.slice(1));
   }
 
-  _initializeWithUserBlocks = async (userBlocks: Array<string>) => {
+  _initializeWithUserBlocks = (userBlocks: Array<string>) => {
     let user = null;
     const encryptedUserKeys: Array<UserKeys | UserKeyPair> = [];
     let deviceId;
@@ -226,13 +242,7 @@ export class LocalUser extends EventEmitter {
     }
     this._userKeys = localUserKeys.userKeys;
     this._currentUserKey = localUserKeys.currentUserKey;
-    await this._keyStore.setLocalUserKeys(localUserKeys);
-    await this._setDeviceId(deviceId);
-  }
-
-  _setDeviceId = async (deviceId: Uint8Array) => {
     this._deviceId = deviceId;
-    await this._keyStore.setDeviceId(this._deviceId);
 
     this._blockGenerator = new BlockGenerator(
       this.trustchainId,
@@ -292,9 +302,13 @@ export class LocalUser extends EventEmitter {
     return localUserKeys;
   }
 
+  get provisionalUserKeys() {
+    return this._provisionalUserKeys;
+  }
+
   findProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): ?PrivateProvisionalKeys => {
     const id = utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey);
-    const result = this._keyStore.provisionalUserKeys[utils.toBase64(id)];
+    const result = this._provisionalUserKeys[utils.toBase64(id)];
     if (result) {
       const { appEncryptionKeyPair, tankerEncryptionKeyPair } = result;
       return { appEncryptionKeyPair, tankerEncryptionKeyPair };
@@ -302,13 +316,17 @@ export class LocalUser extends EventEmitter {
     return null;
   }
 
-  storeProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array, privateProvisionalKeys: PrivateProvisionalKeys) => {
-    const id = utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey);
-    return this._keyStore.addProvisionalUserKeys(utils.toBase64(id), privateProvisionalKeys.appEncryptionKeyPair, privateProvisionalKeys.tankerEncryptionKeyPair);
+  addProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array, privateProvisionalKeys: PrivateProvisionalKeys) => {
+    const id = utils.toBase64(utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey));
+    this._provisionalUserKeys[id] = {
+      id,
+      appEncryptionKeyPair: privateProvisionalKeys.appEncryptionKeyPair,
+      tankerEncryptionKeyPair: privateProvisionalKeys.tankerEncryptionKeyPair,
+    };
   }
 
   hasProvisionalUserKey = (appPublicEncryptionKey: Uint8Array) => {
-    const puks: Array<ProvisionalUserKeyPairs> = (Object.values(this._keyStore.provisionalUserKeys): any);
+    const puks: Array<ProvisionalUserKeyPairs> = (Object.values(this._provisionalUserKeys): any);
     return puks.some(puk => utils.equalArray(puk.appEncryptionKeyPair.publicKey, appPublicEncryptionKey));
   }
 }

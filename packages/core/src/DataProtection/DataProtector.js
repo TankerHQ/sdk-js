@@ -122,11 +122,13 @@ export class DataProtector {
 
   _handleShareWithSelf = (identities: Array<PublicIdentity>, shareWithSelf: bool): Array<PublicIdentity> => {
     if (shareWithSelf) {
-      const selfUserIdentity = this._localUser.publicIdentity;
+      const selfUserIdB64 = utils.toBase64(this._localUser.userId);
+      const trustchainIdB64 = utils.toBase64(this._localUser.trustchainId);
+
       if (!identities.some(identity => identity.target === 'user'
-                                    && identity.value === selfUserIdentity.value
-                                    && identity.trustchain_id === selfUserIdentity.trustchain_id)) {
-        return identities.concat([selfUserIdentity]);
+                                    && identity.value === selfUserIdB64
+                                    && identity.trustchain_id === trustchainIdB64)) {
+        return identities.concat([{ trustchain_id: trustchainIdB64, target: 'user', value: selfUserIdB64 }]);
       }
     }
 

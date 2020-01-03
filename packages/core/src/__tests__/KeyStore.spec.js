@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, utils } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
@@ -23,41 +23,57 @@ describe('KeyStore', () => {
   });
 
   it('creates a safe when first opened that can be re-opened later', async () => {
-    const getAllKeys = (k) => ({
-      privateSignatureKey: k.signatureKeyPair.privateKey,
-      publicSignatureKey: k.signatureKeyPair.publicKey,
-      privateEncryptionKey: k.encryptionKeyPair.privateKey,
-      publicEncryptionKey: k.encryptionKeyPair.publicKey,
-    });
-
     const keystore1 = await KeyStore.open(datastore, secret);
-    const keys1 = getAllKeys(keystore1);
+    const keys1 = keystore1.localData;
 
     await datastore.close();
     datastore = await openDataStore(keystoreConfig);
 
     const keystore2 = await KeyStore.open(datastore, secret);
-    const keys2 = getAllKeys(keystore2);
+    const keys2 = keystore2.localData;
 
     expect(keys1).to.deep.equal(keys2);
   });
 
-  it('can set the device ID', async () => {
+  it('can set and save local data', async () => {
     const keystore = await KeyStore.open(datastore, secret);
-    await keystore.setDeviceId(utils.fromString('bob-laptop-hash'));
-    // $FlowIKnow
-    expect(utils.toString(keystore.deviceId)).to.eq('bob-laptop-hash');
+    const localData = {
+      deviceSignatureKeyPair: keystore.localData.deviceSignatureKeyPair,
+      deviceEncryptionKeyPair: keystore.localData.deviceEncryptionKeyPair,
+      userKeys: { AAAAAAAA: tcrypto.makeEncryptionKeyPair() },
+      currentUserKey: tcrypto.makeEncryptionKeyPair(),
+      deviceId: random(tcrypto.HASH_SIZE),
+      trustchainPublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    };
+    await keystore.save(localData);
+
+    await datastore.close();
+    datastore = await openDataStore(keystoreConfig);
+
+    const keystore2 = await KeyStore.open(datastore, secret);
+    expect(keystore2.localData).to.deep.equal(localData);
   });
 
-  it('can insert user keys in the right order', async () => {
+  it('can cannot change device keys', async () => {
     const keystore = await KeyStore.open(datastore, secret);
+    const deviceSignatureKeyPair = keystore.localData.deviceSignatureKeyPair;
+    const deviceEncryptionKeyPair = keystore.localData.deviceEncryptionKeyPair;
 
-    const key2 = tcrypto.makeEncryptionKeyPair();
-    const key3 = tcrypto.makeEncryptionKeyPair();
+    const localData = {
+      deviceSignatureKeyPair: tcrypto.makeSignKeyPair(),
+      deviceEncryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
+      userKeys: { AAAAAAAA: tcrypto.makeEncryptionKeyPair() },
+      currentUserKey: tcrypto.makeEncryptionKeyPair(),
+      deviceId: random(tcrypto.HASH_SIZE),
+      trustchainPublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
+    };
+    await keystore.save(localData);
 
-    await keystore.addUserKey(key2);
-    await keystore.addUserKey(key3);
+    await datastore.close();
+    datastore = await openDataStore(keystoreConfig);
 
-    expect(keystore.userKeys).to.deep.eq([key2, key3]);
+    const keystore2 = await KeyStore.open(datastore, secret);
+    expect(keystore2.localData.deviceEncryptionKeyPair).to.deep.equal(deviceEncryptionKeyPair);
+    expect(keystore2.localData.deviceSignatureKeyPair).to.deep.equal(deviceSignatureKeyPair);
   });
 });

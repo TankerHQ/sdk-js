@@ -186,10 +186,10 @@ export class Tanker extends EventEmitter {
 
   get deviceId(): b64string {
     this.assert(statuses.READY, 'get the device id');
-    if (!this._session.storage.keyStore || !this._session.storage.keyStore.deviceId)
+    if (!this._session.localUser.deviceId)
       throw new InternalError('Tried to get our device hash, but could not find it!');
 
-    return utils.toBase64(this._session.storage.keyStore.deviceId);
+    return utils.toBase64(this._session.localUser.deviceId);
   }
 
   assert(status: number, to: string): void {

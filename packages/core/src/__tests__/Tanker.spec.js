@@ -196,8 +196,7 @@ describe('Tanker', () => {
     beforeEach(() => {
       // mock a session
       tanker._session = ({ // eslint-disable-line no-underscore-dangle
-        localUser: {},
-        storage: { keyStore: { deviceId: new Uint8Array([]) } },
+        localUser: { deviceId: new Uint8Array([]) },
         status: statuses.READY,
       }: any);
     });

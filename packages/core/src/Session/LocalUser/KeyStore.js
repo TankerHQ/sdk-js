@@ -4,10 +4,18 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
-import type { KeySafe, IndexedProvisionalUserKeyPairs, LocalUserKeys } from './KeySafe';
+import type { KeySafe, IndexedProvisionalUserKeyPairs } from './KeySafe';
 
 const TABLE = 'device';
 
+export type LocalData = {|
+  deviceSignatureKeyPair: tcrypto.SodiumKeyPair;
+  deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
+  userKeys: { [string]: tcrypto.SodiumKeyPair };
+  currentUserKey: ?tcrypto.SodiumKeyPair;
+  deviceId: ?Uint8Array,
+  trustchainPublicKey: ?Uint8Array
+|};
 
 export default class KeyStore {
   /*:: _ds: DataStore<*>; */
@@ -38,32 +46,38 @@ export default class KeyStore {
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
   }
 
-  get encryptionKeyPair(): tcrypto.SodiumKeyPair {
-    return this._safe.encryptionPair;
+  get deviceId() {
+    return this._safe.deviceId;
   }
 
-  get signatureKeyPair(): tcrypto.SodiumKeyPair {
-    return this._safe.signaturePair;
+  get localData(): LocalData {
+    const { signaturePair, encryptionPair, localUserKeys, deviceId, trustchainPublicKey } = this._safe;
+    return {
+      deviceSignatureKeyPair: signaturePair,
+      deviceEncryptionKeyPair: encryptionPair,
+      userKeys: localUserKeys ? localUserKeys.userKeys : {},
+      currentUserKey: localUserKeys ? localUserKeys.currentUserKey : null,
+      deviceId: deviceId ? utils.fromBase64(deviceId) : null,
+      trustchainPublicKey: trustchainPublicKey ? utils.fromBase64(trustchainPublicKey) : null,
+    };
   }
 
-  get userKeys(): Array<tcrypto.SodiumKeyPair> {
-    return this._safe.userKeys;
+  async save(localData: LocalData) {
+    if (localData.currentUserKey)
+      this._safe.localUserKeys = { userKeys: localData.userKeys, currentUserKey: localData.currentUserKey };
+    this._safe.deviceId = localData.deviceId ? utils.toBase64(localData.deviceId) : null;
+    this._safe.trustchainPublicKey = localData.trustchainPublicKey ? utils.toBase64(localData.trustchainPublicKey) : null;
+
+    return this.saveSafe();
   }
 
-  get deviceId(): ?Uint8Array {
-    if (!this._safe.deviceId)
-      return;
-    return utils.fromBase64(this._safe.deviceId);
-  }
-
-  get trustchainPublicKey(): ?Uint8Array {
-    if (!this._safe.trustchainPublicKey)
-      return;
-    return utils.fromBase64(this._safe.trustchainPublicKey);
-  }
-
-  get provisionalUserKeys(): IndexedProvisionalUserKeyPairs {
+  get provisionalUserKeys() {
     return this._safe.provisionalUserKeys;
+  }
+
+  async saveProvisionalUserKeys(provisionalUserKeys: IndexedProvisionalUserKeyPairs) {
+    this._safe.provisionalUserKeys = provisionalUserKeys;
+    return this.saveSafe();
   }
 
   async saveSafe(): Promise<void> {
@@ -140,34 +154,5 @@ export default class KeyStore {
 
     // Read-only (non writable, non enumerable, non reconfigurable)
     Object.defineProperty(this, '_safe', { value: safe });
-  }
-
-  setDeviceId(hash: Uint8Array): Promise<void> {
-    this._safe.deviceId = utils.toBase64(hash);
-    return this.saveSafe();
-  }
-
-  setTrustchainPublicKey(trustchainPublicKey: Uint8Array): Promise<void> {
-    this._safe.trustchainPublicKey = utils.toBase64(trustchainPublicKey);
-    return this.saveSafe();
-  }
-
-  addProvisionalUserKeys(id: string, appEncryptionKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair): Promise<void> {
-    this._safe.provisionalUserKeys[id] = { id, appEncryptionKeyPair, tankerEncryptionKeyPair };
-    return this.saveSafe();
-  }
-
-  addUserKey(keyPair: tcrypto.SodiumKeyPair): Promise<void> {
-    this._safe.userKeys.push(keyPair);
-    return this.saveSafe();
-  }
-
-  async setLocalUserKeys(localUserKeys: LocalUserKeys) {
-    this._safe.localUserKeys = localUserKeys;
-    await this.saveSafe();
-  }
-
-  get localUserKeys(): ?LocalUserKeys {
-    return this._safe.localUserKeys;
   }
 }
