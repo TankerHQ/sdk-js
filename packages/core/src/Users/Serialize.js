@@ -3,7 +3,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { getStaticArray, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from '../Blocks/Serialize';
-import { hashBlock, type Block } from '../Blocks/Block';
+import { hashBlock } from '../Blocks/Block';
 import { type VerificationFields } from '../Blocks/entries';
 import { unserializeBlock } from '../Blocks/payloads';
 
@@ -63,7 +63,6 @@ export type DeviceCreationEntry = {|
 export type DeviceRevocationEntry = {|
   ...DeviceRevocationRecord,
   ...VerificationFields,
-  user_id: Uint8Array
 |}
 
 export type UserEntry = DeviceCreationEntry | DeviceRevocationEntry;
@@ -229,64 +228,6 @@ export function unserializeDeviceRevocationV2(src: Uint8Array): DeviceRevocation
   ]);
 }
 
-export function deviceCreationFromBlock(block: Block): DeviceCreationEntry {
-  const author = block.author;
-  const signature = block.signature;
-  const nature = block.nature;
-  const hash = hashBlock(block);
-  const index = block.index;
-  let userEntry;
-
-  switch (block.nature) {
-    case userNatures.device_creation_v1:
-      userEntry = unserializeUserDeviceV1(block.payload);
-      break;
-    case userNatures.device_creation_v2:
-      userEntry = unserializeUserDeviceV2(block.payload);
-      break;
-    case userNatures.device_creation_v3:
-      userEntry = unserializeUserDeviceV3(block.payload);
-      break;
-    default: throw new InternalError('Assertion error: wrong type for deviceCreationFromBlock');
-  }
-  return {
-    ...userEntry,
-    author,
-    signature,
-    nature,
-    hash,
-    index,
-  };
-}
-
-export function deviceRevocationFromBlock(block: Block, userId: Uint8Array): DeviceRevocationEntry {
-  const author = block.author;
-  const signature = block.signature;
-  const nature = block.nature;
-  const hash = hashBlock(block);
-  const index = block.index;
-  let userEntry;
-
-  switch (block.nature) {
-    case userNatures.device_revocation_v1:
-      userEntry = unserializeDeviceRevocationV1(block.payload);
-      break;
-    case userNatures.device_revocation_v2:
-      userEntry = unserializeDeviceRevocationV2(block.payload);
-      break;
-    default: throw new InternalError('Assertion error: wrong type for deviceRevocationFromBlock');
-  }
-  return {
-    ...userEntry,
-    author,
-    signature,
-    nature,
-    hash,
-    index,
-    user_id: userId
-  };
-}
-
 export function isDeviceCreation(nature: number): bool {
   return nature === userNatures.device_creation_v1 || nature === userNatures.device_creation_v2 || nature === userNatures.device_creation_v3;
 }
@@ -295,18 +236,44 @@ export function isDeviceRevocation(nature: number): bool {
   return nature === userNatures.device_revocation_v1 || nature === userNatures.device_revocation_v2;
 }
 
-
-export function userEntryFromBlock(b64Block: string, userId: ?Uint8Array): UserEntry {
+export function userEntryFromBlock(b64Block: string): UserEntry {
   const block = unserializeBlock(utils.fromBase64(b64Block));
 
-  if (isDeviceCreation(block.nature)) {
-    return deviceCreationFromBlock(block);
-  } if (isDeviceRevocation(block.nature)) {
-    if (!userId) {
-      throw new InternalError('Assertion error: no user id for revocation block');
-    }
-    return deviceRevocationFromBlock(block, userId);
-  }
+  const author = block.author;
+  const signature = block.signature;
+  const nature = block.nature;
+  const hash = hashBlock(block);
+  const index = block.index;
 
-  throw new InternalError('Assertion error: wrong block nature for userEntryFromBlock');
+  const toCreationEntry = (record: DeviceCreationRecord): UserEntry => ({
+    ...record,
+    author,
+    signature,
+    nature,
+    hash,
+    index
+  });
+
+  const toRevocationEntry = (record: DeviceRevocationRecord): UserEntry => ({
+    ...record,
+    author,
+    signature,
+    nature,
+    hash,
+    index,
+  });
+  switch (block.nature) {
+    case userNatures.device_creation_v1:
+      return toCreationEntry(unserializeUserDeviceV1(block.payload));
+    case userNatures.device_creation_v2:
+      return toCreationEntry(unserializeUserDeviceV2(block.payload));
+    case userNatures.device_creation_v3:
+      return toCreationEntry(unserializeUserDeviceV3(block.payload));
+    case userNatures.device_revocation_v1:
+      return toRevocationEntry(unserializeDeviceRevocationV1(block.payload));
+    case userNatures.device_revocation_v2:
+      return toRevocationEntry(unserializeDeviceRevocationV2(block.payload));
+    default:
+      throw new InternalError('Assertion error: wrong block nature for userEntryFromBlock');
+  }
 }

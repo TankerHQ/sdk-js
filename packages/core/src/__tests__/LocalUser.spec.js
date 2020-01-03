@@ -6,7 +6,6 @@ import { expect } from '@tanker/test-utils';
 
 import TestGenerator, { type TestUser } from './TestGenerator';
 
-import { serializeBlock } from '../Blocks/payloads';
 import LocalUser from '../Session/LocalUser/LocalUser';
 import { extractUserData } from '../Session/UserData';
 
@@ -71,11 +70,11 @@ describe('Local User', () => {
     identity = await createIdentity(trustchainId, utils.toBase64(trustchainKeyPair.privateKey), userIdString);
     userData = extractUserData(identity);
 
-    trustchainCreationBlock = utils.toBase64(serializeBlock(trustchainCreation.block));
+    trustchainCreationBlock = trustchainCreation.block;
     deviceCreation1 = await testGenerator.makeUserCreation(userData.userId);
-    deviceCreation1Block = utils.toBase64(serializeBlock(deviceCreation1.block));
+    deviceCreation1Block = deviceCreation1.block;
     deviceCreation2 = testGenerator.makeDeviceCreation(deviceCreation1);
-    deviceCreation2Block = utils.toBase64(serializeBlock(deviceCreation2.block));
+    deviceCreation2Block = deviceCreation2.block;
     keyStore = new MockKeyStore(deviceCreation2.testDevice.signKeys, deviceCreation2.testDevice.encryptionKeys);
     localUser = new LocalUser(userData, (keyStore: any));
   });
@@ -112,11 +111,11 @@ describe('Local User', () => {
     let deviceRevocationBlock;
     beforeEach(() => {
       const deviceCreation3 = testGenerator.makeDeviceCreation(deviceCreation1);
-      deviceCreation3Block = utils.toBase64(serializeBlock(deviceCreation3.block));
+      deviceCreation3Block = deviceCreation3.block;
       deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation1, deviceCreation3.testDevice.id);
-      deviceRevocationBlock = utils.toBase64(serializeBlock(deviceRevocation.block));
+      deviceRevocationBlock = deviceRevocation.block;
       deviceCreation2 = testGenerator.makeDeviceCreation({ ...deviceCreation1, testUser: deviceRevocation.testUser });
-      deviceCreation2Block = utils.toBase64(serializeBlock(deviceCreation2.block));
+      deviceCreation2Block = deviceCreation2.block;
       keyStore = new MockKeyStore(deviceCreation2.testDevice.signKeys, deviceCreation2.testDevice.encryptionKeys);
       localUser = new LocalUser(userData, (keyStore: any));
     });
@@ -134,7 +133,7 @@ describe('Local User', () => {
   describe('with revocation after own creation', () => {
     it('decrypts new user keys', async () => {
       const deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation2, deviceCreation1.testDevice.id);
-      const deviceRevocationBlock = utils.toBase64(serializeBlock(deviceRevocation.block));
+      const deviceRevocationBlock = deviceRevocation.block;
 
       await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block, deviceRevocationBlock]);
       const { userKeys, currentUserKey } = localUserKeysFromTestUser(deviceRevocation.testUser);

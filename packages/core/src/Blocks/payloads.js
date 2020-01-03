@@ -3,9 +3,23 @@ import varint from 'varint';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import { type Block } from './Block';
 import { UpgradeRequiredError } from '../errors.internal';
 import { getArray, getStaticArray, encodeArrayLength } from './Serialize';
+
+import { type Nature } from './Nature';
+
+export type BlockNoSignature = {|
+  trustchain_id: Uint8Array,
+  index: number,
+  nature: Nature,
+  payload: Uint8Array,
+  author: Uint8Array,
+|}
+
+export type Block = {|
+  ...BlockNoSignature,
+  signature: Uint8Array,
+|};
 
 export const SEALED_KEY_SIZE = tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
 export const TWO_TIMES_SEALED_KEY_SIZE = SEALED_KEY_SIZE + tcrypto.SEAL_OVERHEAD;

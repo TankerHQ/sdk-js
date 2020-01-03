@@ -219,7 +219,7 @@ export default class ProvisionalIdentityManager {
     const userPubKey = this._localUser.currentUserKey.publicKey;
     const block = this._localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this._localUser.userId, userPubKey, provisionalUserKeys);
 
-    await this._client.sendBlock(block);
+    await this._client.send('push block', block, true);
   }
 
   _updateLocalUser = async () => {

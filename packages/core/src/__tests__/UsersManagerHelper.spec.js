@@ -3,7 +3,6 @@ import { tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { usersFromBlocks } from '../Users/ManagerHelper';
-import { serializeBlock } from '../Blocks/payloads';
 
 
 import TestGenerator from './TestGenerator';
@@ -25,7 +24,7 @@ describe('UserManagerHelper', () => {
       const userCreation2 = await testGenerator.makeUserCreation(userId2);
       const deviceCreationUser2 = await testGenerator.makeDeviceCreation(userCreation2);
 
-      const blocks = [userCreation.block, userCreation2.block, deviceCreation.block, deviceCreationUser2.block, deviceCreation2.block, deviceRevocation.block].map(b => utils.toBase64(serializeBlock(b)));
+      const blocks = [userCreation.block, userCreation2.block, deviceCreation.block, deviceCreationUser2.block, deviceCreation2.block, deviceRevocation.block];
 
       const { userIdToUserMap, deviceIdToUserIdMap } = await usersFromBlocks(blocks, trustchainCreation.trustchainKeys.publicKey);
 

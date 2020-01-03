@@ -1,9 +1,8 @@
 // @flow
-import { tcrypto, utils, random } from '@tanker/crypto';
+import { tcrypto, random } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect, sinon } from '@tanker/test-utils';
 
-import { serializeBlock } from '../Blocks/payloads';
 import { ResourceManager } from '../DataProtection/Resource/ResourceManager';
 
 import TestGenerator from './TestGenerator';
@@ -82,7 +81,7 @@ describe('ResourceManager', () => {
     it('can find keys from Trustchain', async () => {
       const { client, resourceStore, manager, keyDecryptor } = makeManager();
 
-      client.send = () => [utils.toBase64(serializeBlock(testKeyPublish.block))];
+      client.send = () => [testKeyPublish.block];
       keyDecryptor.keyFromKeyPublish = () => testKeyPublish.resourceKey;
 
       expect(await manager.findKeyFromResourceId(testKeyPublish.resourceId)).to.be.equal(testKeyPublish.resourceKey);

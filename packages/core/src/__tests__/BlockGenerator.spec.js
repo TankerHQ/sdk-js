@@ -14,8 +14,6 @@ import {
   getGroupEntryFromBlock,
 } from '../Groups/Serialize';
 
-import { serializeBlock } from '../Blocks/payloads';
-
 import BlockGenerator, {
   getUserGroupCreationBlockSignDataV1,
   getUserGroupCreationBlockSignDataV2,
@@ -134,7 +132,7 @@ describe('BlockGenerator', () => {
       []
     );
 
-    const entry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
+    const entry = getGroupEntryFromBlock(block);
     const record: UserGroupCreationRecordV2 = (entry: any);
     expect(record.public_signature_key).to.deep.equal(groupSignatureKeyPair.publicKey);
     expect(record.public_encryption_key).to.deep.equal(groupEncryptionKeyPair.publicKey);
@@ -234,7 +232,7 @@ describe('BlockGenerator', () => {
       []
     );
 
-    const entry = getGroupEntryFromBlock(utils.toBase64(serializeBlock(block)));
+    const entry = getGroupEntryFromBlock(block);
     const record: UserGroupAdditionRecordV2 = (entry: any);
     expect(record.group_id).to.deep.equal(groupSignatureKeyPair.publicKey);
     expect(record.previous_group_block).to.deep.equal(previousGroupBlock);

@@ -144,7 +144,8 @@ export class Session extends EventEmitter {
       throw new InternalError('Cannot find the current user in the users');
 
     const revokeDeviceBlock = this.localUser.blockGenerator.makeDeviceRevocationBlock(user, this.localUser.currentUserKey, revokedDeviceId);
-    await this._client.sendBlock(revokeDeviceBlock);
+    await this._client.send('push block', revokeDeviceBlock, true);
+
     await this._updateLocalUser();
   }
 

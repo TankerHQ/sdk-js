@@ -14,7 +14,6 @@ import { KeyDecryptor } from './Resource/KeyDecryptor';
 
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
-import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
 import LocalUser from '../Session/LocalUser/LocalUser';
 import GroupManager from '../Groups/Manager';
@@ -68,8 +67,8 @@ export class DataProtector {
     resource: Array<Resource>,
     keys: Array<Uint8Array>,
     nature: NatureKind
-  ): Array<Block> {
-    const blocks: Array<Block> = [];
+  ): Array<b64string> {
+    const blocks: Array<b64string> = [];
     for (const publicEncryptionKey of keys) {
       for (const { key, resourceId } of resource) {
         const block = this._localUser.blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
@@ -82,8 +81,8 @@ export class DataProtector {
   _makeKeyPublishToProvisionalIdentityBlocks(
     resource: Array<Resource>,
     provisionalUsers: Array<PublicProvisionalUser>
-  ): Array<Block> {
-    const blocks: Array<Block> = [];
+  ): Array<b64string> {
+    const blocks: Array<b64string> = [];
     for (const provisionalUser of provisionalUsers) {
       for (const { key, resourceId } of resource) {
         blocks.push(this._localUser.blockGenerator.makeKeyPublishToProvisionalUserBlock(provisionalUser, key, resourceId));
@@ -98,7 +97,7 @@ export class DataProtector {
     recipientProvisionalUsers: Array<PublicProvisionalUser>,
     recipientGroupsEncryptionKeys: Array<Uint8Array>
   ): Promise<void> {
-    let blocks: Array<Block> = [];
+    let blocks: Array<b64string> = [];
     if (recipientGroupsEncryptionKeys.length > 0) {
       blocks = blocks.concat(this._makeKeyPublishBlocks(resource, recipientGroupsEncryptionKeys, NATURE_KIND.key_publish_to_user_group));
     }
@@ -118,7 +117,7 @@ export class DataProtector {
       blocks = blocks.concat(this._makeKeyPublishBlocks(resource, keys, NATURE_KIND.key_publish_to_user));
     }
 
-    await this._client.sendKeyPublishBlocks(blocks);
+    await this._client.send('push keys', blocks, false);
   }
 
   _handleShareWithSelf = (identities: Array<PublicIdentity>, shareWithSelf: bool): Array<PublicIdentity> => {

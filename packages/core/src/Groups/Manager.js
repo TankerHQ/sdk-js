@@ -62,7 +62,7 @@ export default class GroupManager {
       provisionalUsers
     );
 
-    await this._client.sendBlock(userGroupCreationBlock);
+    await this._client.send('push block', userGroupCreationBlock, true);
 
     return utils.toBase64(groupSignatureKeyPair.publicKey);
   }
@@ -91,7 +91,7 @@ export default class GroupManager {
       provisionalUsers,
     );
 
-    await this._client.sendBlock(userGroupAdditionBlock);
+    await this._client.send('push block', userGroupAdditionBlock, true);
   }
 
   async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {

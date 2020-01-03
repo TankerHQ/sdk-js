@@ -3,15 +3,8 @@
 import { tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { signBlock } from '../Blocks/Block';
-import {
-  serializeBlock,
-  unserializeBlock,
-} from '../Blocks/payloads';
-
-
+import { serializeBlock, unserializeBlock } from '../Blocks/payloads';
 import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
-
 import { UpgradeRequiredError } from '../errors.internal';
 
 describe('payloads', () => {
@@ -30,16 +23,15 @@ describe('payloads', () => {
   });
 
   it('should serialize/unserialize a Block', async () => {
-    const signatureKeys = tcrypto.makeSignKeyPair();
     const block = {
       trustchain_id: new Uint8Array(tcrypto.HASH_SIZE),
       index: 999,
       nature: preferredNature(NATURE_KIND.key_publish_to_device),
       payload: random(450),
-      author: random(tcrypto.HASH_SIZE)
+      author: random(tcrypto.HASH_SIZE),
+      signature: random(tcrypto.SIGNATURE_SIZE)
     };
-    const signedBlock = signBlock(block, signatureKeys.privateKey);
 
-    expect(unserializeBlock(serializeBlock(signedBlock))).to.deep.equal(signedBlock);
+    expect(unserializeBlock(serializeBlock(block))).to.deep.equal(block);
   });
 });

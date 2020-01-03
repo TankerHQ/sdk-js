@@ -27,7 +27,7 @@ import {
 import { preferredNature, type NatureKind, NATURE_KIND } from './Nature';
 import { serializeKeyPublish, serializeKeyPublishToProvisionalUser } from '../DataProtection/Resource/keyPublish';
 
-import { signBlock, type Block } from './Block';
+import { createBlock } from './Block';
 import { type DelegationToken } from '../Session/UserData';
 import { getLastUserPublicKey, type User, type Device } from '../Users/types';
 
@@ -128,7 +128,7 @@ export class BlockGenerator {
     this.deviceId = deviceId;
   }
 
-  _makeDeviceBlock(args: MakeDeviceParams): Block {
+  _makeDeviceBlock(args: MakeDeviceParams): b64string {
     const encryptedUserKey = tcrypto.sealEncrypt(
       args.userKeys.privateKey,
       args.publicEncryptionKey,
@@ -148,13 +148,13 @@ export class BlockGenerator {
       revoked: Number.MAX_SAFE_INTEGER,
     };
 
-    return signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.device_creation),
-      author: args.author,
-      payload: serializeUserDeviceV3(userDevice)
-    }, args.blockSignatureKey);
+    return createBlock(
+      serializeUserDeviceV3(userDevice),
+      preferredNature(NATURE_KIND.device_creation),
+      this.trustchainId,
+      args.author,
+      args.blockSignatureKey
+    );
   }
 
   makeNewUserBlock(args: NewUserParams) {
@@ -170,7 +170,7 @@ export class BlockGenerator {
       isGhost: false });
   }
 
-  makeNewDeviceBlock(args: NewDeviceParams): Block {
+  makeNewDeviceBlock(args: NewDeviceParams) {
     const ephemeralKeys = tcrypto.makeSignKeyPair();
     const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, args.userId);
 
@@ -220,16 +220,16 @@ export class BlockGenerator {
       user_keys: userKeys
     };
 
-    return signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.device_revocation),
-      author: this.deviceId,
-      payload: serializeDeviceRevocationV2(revocationRecord)
-    }, this.privateSignatureKey);
+    return createBlock(
+      serializeDeviceRevocationV2(revocationRecord),
+      preferredNature(NATURE_KIND.device_revocation),
+      this.trustchainId,
+      this.deviceId,
+      this.privateSignatureKey
+    );
   }
 
-  makeKeyPublishBlock(publicEncryptionKey: Uint8Array, resourceKey: Uint8Array, resourceId: Uint8Array, nature: NatureKind): Block {
+  makeKeyPublishBlock(publicEncryptionKey: Uint8Array, resourceKey: Uint8Array, resourceId: Uint8Array, nature: NatureKind) {
     const sharedKey = tcrypto.sealEncrypt(
       resourceKey,
       publicEncryptionKey,
@@ -241,21 +241,16 @@ export class BlockGenerator {
       key: sharedKey,
     };
 
-    const pKeyBlock = signBlock(
-      {
-        index: 0,
-        trustchain_id: this.trustchainId,
-        nature: preferredNature(nature),
-        author: this.deviceId,
-        payload: serializeKeyPublish(payload)
-      },
+    return createBlock(
+      serializeKeyPublish(payload),
+      preferredNature(nature),
+      this.trustchainId,
+      this.deviceId,
       this.privateSignatureKey
     );
-
-    return pKeyBlock;
   }
 
-  makeKeyPublishToProvisionalUserBlock(publicProvisionalUser: PublicProvisionalUser, resourceKey: Uint8Array, resourceId: Uint8Array): Block {
+  makeKeyPublishToProvisionalUserBlock(publicProvisionalUser: PublicProvisionalUser, resourceKey: Uint8Array, resourceId: Uint8Array) {
     const preEncryptedKey = tcrypto.sealEncrypt(
       resourceKey,
       publicProvisionalUser.appEncryptionPublicKey,
@@ -272,21 +267,16 @@ export class BlockGenerator {
       key: encryptedKey,
     };
 
-    const pKeyBlock = signBlock(
-      {
-        index: 0,
-        trustchain_id: this.trustchainId,
-        nature: preferredNature(NATURE_KIND.key_publish_to_provisional_user),
-        author: this.deviceId,
-        payload: serializeKeyPublishToProvisionalUser(payload)
-      },
+    return createBlock(
+      serializeKeyPublishToProvisionalUser(payload),
+      preferredNature(NATURE_KIND.key_publish_to_provisional_user),
+      this.trustchainId,
+      this.deviceId,
       this.privateSignatureKey
     );
-
-    return pKeyBlock;
   }
 
-  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>): Block {
+  createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) {
     const encryptedPrivateSignatureKey = tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey);
 
     const keysForUsers = users.map(u => {
@@ -328,18 +318,16 @@ export class BlockGenerator {
     const signData = getUserGroupCreationBlockSignDataV2(payload);
     payload.self_signature = tcrypto.sign(signData, signatureKeyPair.privateKey);
 
-    const block = signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.user_group_creation),
-      author: this.deviceId,
-      payload: serializeUserGroupCreationV2(payload)
-    }, this.privateSignatureKey);
-
-    return block;
+    return createBlock(
+      serializeUserGroupCreationV2(payload),
+      preferredNature(NATURE_KIND.user_group_creation),
+      this.trustchainId,
+      this.deviceId,
+      this.privateSignatureKey
+    );
   }
 
-  addToUserGroup(groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>): Block {
+  addToUserGroup(groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) {
     const keysForUsers = users.map(u => {
       const userPublicKey = getLastUserPublicKey(u);
       if (!userPublicKey)
@@ -378,18 +366,16 @@ export class BlockGenerator {
     const signData = getUserGroupAdditionBlockSignDataV2(payload);
     payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
 
-    const block = signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.user_group_addition),
-      author: this.deviceId,
-      payload: serializeUserGroupAdditionV2(payload)
-    }, this.privateSignatureKey);
-
-    return block;
+    return createBlock(
+      serializeUserGroupAdditionV2(payload),
+      preferredNature(NATURE_KIND.user_group_addition),
+      this.trustchainId,
+      this.deviceId,
+      this.privateSignatureKey
+    );
   }
 
-  makeProvisionalIdentityClaimBlock(userId: Uint8Array, userPublicKey: Uint8Array, provisionalUserKeys: ProvisionalUserKeys): Block {
+  makeProvisionalIdentityClaimBlock(userId: Uint8Array, userPublicKey: Uint8Array, provisionalUserKeys: ProvisionalUserKeys) {
     const multiSignedPayload = utils.concatArrays(
       this.deviceId,
       provisionalUserKeys.appSignatureKeyPair.publicKey,
@@ -411,14 +397,13 @@ export class BlockGenerator {
       encrypted_provisional_identity_private_keys: encryptedprovisionalUserKeys,
     };
 
-    const block = signBlock({
-      index: 0,
-      trustchain_id: this.trustchainId,
-      nature: preferredNature(NATURE_KIND.provisional_identity_claim),
-      author: this.deviceId,
-      payload: serializeProvisionalIdentityClaim(payload)
-    }, this.privateSignatureKey);
-    return block;
+    return createBlock(
+      serializeProvisionalIdentityClaim(payload),
+      preferredNature(NATURE_KIND.provisional_identity_claim),
+      this.trustchainId,
+      this.deviceId,
+      this.privateSignatureKey
+    );
   }
 }
 

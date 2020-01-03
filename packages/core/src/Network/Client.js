@@ -5,8 +5,6 @@ import Socket from 'socket.io-client';
 import { tcrypto, utils } from '@tanker/crypto';
 import { ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts, DeviceRevoked } from '@tanker/errors';
 
-import { type Block } from '../Blocks/Block';
-import { serializeBlock } from '../Blocks/payloads';
 import { VerificationNeeded } from '../errors.internal';
 import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
 
@@ -263,15 +261,5 @@ export class Client extends EventEmitter {
       throw new InternalError(`Server error on route "${route}" with status: ${error.status}, code: ${error.code}, message: ${error.message}`);
     }
     return result;
-  }
-
-  sendBlock = async (block: Block): Promise<void> => {
-    const b2 = { index: 0, ...block };
-    await this.send('push block', b64RequestObject(serializeBlock(b2)), true);
-  }
-
-  sendKeyPublishBlocks = async (blocks: Array<Block>): Promise<void> => {
-    const serializedBlocks = blocks.map(block => serializeBlock({ index: 0, ...block }));
-    await this.send('push keys', b64RequestObject(serializedBlocks), false);
   }
 }

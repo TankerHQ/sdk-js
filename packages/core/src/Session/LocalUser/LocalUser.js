@@ -189,7 +189,7 @@ export class LocalUser extends EventEmitter {
     let deviceId;
 
     for (const b64Block of userBlocks) {
-      const userEntry = userEntryFromBlock(b64Block, user && user.userId);
+      const userEntry = userEntryFromBlock(b64Block);
       if (isDeviceCreation(userEntry.nature)) {
         const deviceCreationEntry = ((userEntry: any): DeviceCreationEntry);
         verifyDeviceCreation(deviceCreationEntry, user, this.trustchainPublicKey);
