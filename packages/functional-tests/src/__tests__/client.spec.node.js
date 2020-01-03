@@ -12,7 +12,7 @@ const makeTanker = (appId: b64string): Tanker => {
   const tanker = new Tanker({
     appId,
     dataStore: { adapter: PouchDBMemory, prefix: makePrefix() },
-    sdkType: 'test',
+    sdkType: 'js-functional-tests-node',
     url: tankerUrl,
   });
 

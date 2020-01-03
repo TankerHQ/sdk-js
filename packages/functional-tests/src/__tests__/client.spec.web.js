@@ -13,7 +13,7 @@ const makeTanker = (appId: b64string): Tanker => {
     appId,
     // $FlowIKnow adapter key is passed as a default option by @tanker/client-browser
     dataStore: { prefix: makePrefix() },
-    sdkType: 'test',
+    sdkType: 'js-functional-tests-web',
     url: tankerUrl,
   });
 
