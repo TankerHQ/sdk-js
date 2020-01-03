@@ -11,6 +11,16 @@ const tablesV1 = [{
 const tablesV2 = [{
   name: 'trustchain',
   indexes: [['index'], ['user_id'], ['public_signature_key'], ['hash'], ['nature'], ['mac'], ['user_public_key'], ['group_public_encryption_key']]
+}, {
+  name: 'users',
+  indexes: [['userId']],
+}, {
+  name: 'devices_to_user',
+  indexes: [['deviceId']],
+},
+{
+  name: 'user_public_key_to_user',
+  indexes: [['userPublicKey']],
 }];
 
 const tablesV3 = [
@@ -71,6 +81,15 @@ const tablesV9 = tablesV8.filter(def => !def.deleted).map<TableSchema>(def => {
   return deleted ? ({ ...def, deleted: true }) : def;
 });
 
+const tablesV10 = tablesV9.filter(def => !def.deleted).map<TableSchema>(def => {
+  const deleted = [
+    'users',
+    'devices_to_user',
+    'user_public_key_to_user',
+  ].indexOf(def.name) !== -1;
+  return deleted ? ({ ...def, deleted: true }) : def;
+});
+
 export const GlobalSchema = [
   { version: 1, tables: tablesV1 },
   { version: 2, tables: tablesV2 },
@@ -81,4 +100,5 @@ export const GlobalSchema = [
   { version: 7, tables: tablesV6 },
   { version: 8, tables: tablesV8 },
   { version: 9, tables: tablesV9 },
+  { version: 10, tables: tablesV10 },
 ];

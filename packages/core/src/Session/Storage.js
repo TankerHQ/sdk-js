@@ -5,7 +5,6 @@ import { errors as dbErrors, mergeSchemas, type DataStore } from '@tanker/datast
 
 import KeyStore from './LocalUser/KeyStore';
 import ResourceStore from '../DataProtection/Resource/ResourceStore';
-import UserStore from '../Users/UserStore';
 import GroupStore from '../Groups/GroupStore';
 import { GlobalSchema, TABLE_METADATA } from './schema';
 
@@ -24,7 +23,6 @@ export default class Storage {
   _datastore: DataStore<*>;
   _keyStore: KeyStore;
   _resourceStore: ResourceStore;
-  _userStore: UserStore;
   _groupStore: GroupStore;
   _schemas: any;
 
@@ -40,10 +38,6 @@ export default class Storage {
     return this._resourceStore;
   }
 
-  get userStore(): UserStore {
-    return this._userStore;
-  }
-
   get groupStore(): GroupStore {
     return this._groupStore;
   }
@@ -55,7 +49,6 @@ export default class Storage {
       GlobalSchema,
       KeyStore.schemas,
       ResourceStore.schemas,
-      UserStore.schemas,
       GroupStore.schemas,
     );
 
@@ -66,7 +59,6 @@ export default class Storage {
 
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
-    this._userStore = new UserStore(this._datastore, userId);
     this._groupStore = await GroupStore.open(this._datastore, userSecret);
 
     await this._checkVersion();

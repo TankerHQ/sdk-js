@@ -13,12 +13,20 @@ import {
   serializeDeviceRevocationV2,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
+  type DeviceCreationRecord,
 } from '../Users/Serialize';
 
-
-import { serializeUserDeviceV1 } from './Generator';
-
 import makeUint8Array from './makeUint8Array';
+
+function serializeUserDeviceV1(userDevice: DeviceCreationRecord): Uint8Array {
+  return utils.concatArrays(
+    userDevice.ephemeral_public_signature_key,
+    userDevice.user_id,
+    userDevice.delegation_signature,
+    userDevice.public_signature_key,
+    userDevice.public_encryption_key,
+  );
+}
 
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
