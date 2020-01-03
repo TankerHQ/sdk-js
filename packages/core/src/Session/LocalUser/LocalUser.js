@@ -4,11 +4,13 @@ import EventEmitter from 'events';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError, DeviceRevoked } from '@tanker/errors';
 
-import BlockGenerator from '../../Blocks/BlockGenerator';
 import type { DeviceCreationEntry, DeviceRevocationEntry, UserKeys, UserKeyPair } from '../../Users/Serialize';
 import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from '../../Users/Serialize';
 
 import { type LocalData } from './KeyStore';
+
+import { createBlock } from '../../Blocks/Block';
+import { type Nature } from '../../Blocks/Nature';
 
 import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../../Users/User';
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../../Users/Verify';
@@ -28,8 +30,6 @@ export class LocalUser extends EventEmitter {
   _trustchainId: Uint8Array;
   _userId: Uint8Array;
   _userSecret: Uint8Array;
-
-  _blockGenerator: BlockGenerator;
 
   _deviceSignatureKeyPair: tcrypto.SodiumKeyPair;
   _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
@@ -54,12 +54,6 @@ export class LocalUser extends EventEmitter {
     this._trustchainPublicKey = localData.trustchainPublicKey;
     this._deviceId = localData.deviceId;
     this._provisionalUserKeys = localData.provisionalUserKeys;
-
-    this._blockGenerator = new BlockGenerator(
-      this.trustchainId,
-      this._deviceSignatureKeyPair.privateKey,
-      this._deviceId ? this._deviceId : new Uint8Array(0),
-    );
   }
 
   get localData() {
@@ -74,9 +68,6 @@ export class LocalUser extends EventEmitter {
     };
   }
 
-  get blockGenerator(): BlockGenerator {
-    return this._blockGenerator;
-  }
   get deviceEncryptionKeyPair() {
     return this._deviceEncryptionKeyPair;
   }
@@ -115,6 +106,13 @@ export class LocalUser extends EventEmitter {
       throw new InternalError('Assertion failed: localUser was not initialized');
     }
     return this._currentUserKey;
+  }
+
+  makeBlock = (payload: Uint8Array, nature: Nature) => {
+    if (!this._deviceId) {
+      throw new InternalError('Assertion failed: localUser was not initialized');
+    }
+    return createBlock(payload, nature, this._trustchainId, this._deviceId, this.deviceSignatureKeyPair.privateKey).block;
   }
 
   initializeWithBlocks = (b64Blocks: Array<string>) => {
@@ -173,12 +171,6 @@ export class LocalUser extends EventEmitter {
     this._userKeys = localUserKeys.userKeys;
     this._currentUserKey = localUserKeys.currentUserKey;
     this._deviceId = deviceId;
-
-    this._blockGenerator = new BlockGenerator(
-      this.trustchainId,
-      this._deviceSignatureKeyPair.privateKey,
-      deviceId,
-    );
   }
 
   _localUserKeysFromPrivateKey = (encryptedPrivateKey: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, existingLocalUserKeys: ?LocalUserKeys): LocalUserKeys => {

@@ -9,12 +9,11 @@ import { VerificationNeeded } from '../../errors.internal';
 import { Client, b64RequestObject } from '../../Network/Client';
 import LocalUser, { type PrivateProvisionalKeys } from '../LocalUser/LocalUser';
 import KeyStore from '../LocalUser/KeyStore';
-
 import { formatVerificationRequest } from '../requests';
 import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../types';
 import UserManager from '../../Users/Manager';
 
-import { provisionalIdentityClaimFromBlock } from './Serialize';
+import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';
 
 type TankerProvisionalKeys = {
@@ -45,6 +44,7 @@ export default class ProvisionalIdentityManager {
   _localUser: LocalUser;
   _userManager: UserManager;
   _provisionalIdentity: SecretProvisionalIdentity;
+  _keyStore: KeyStore;
 
   constructor(
     client: Client,
@@ -223,9 +223,9 @@ export default class ProvisionalIdentityManager {
       appSignatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(appProvisionalUserPrivateSignatureKey),
     };
     const userPubKey = this._localUser.currentUserKey.publicKey;
-    const block = this._localUser.blockGenerator.makeProvisionalIdentityClaimBlock(this._localUser.userId, userPubKey, provisionalUserKeys);
+    const { payload, nature } = makeProvisionalIdentityClaim(this._localUser.userId, this._localUser.deviceId, userPubKey, provisionalUserKeys);
 
-    await this._client.send('push block', block, true);
+    await this._client.send('push block', this._localUser.makeBlock(payload, nature), true);
   }
 
   _updateLocalUser = async () => {

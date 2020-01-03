@@ -1,8 +1,10 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import type { PublicProvisionalUser } from '@tanker/identity';
 
 import { getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
 import { unserializeBlock } from '../../Blocks/payloads';
+import { preferredNature, type NatureKind, NATURE_KIND } from '../../Blocks/Nature';
 
 export const KeyPublishNatures = Object.freeze({
   key_publish_to_user: 8,
@@ -86,4 +88,39 @@ export const getKeyPublishEntryFromBlock = (b64Block: b64string): KeyPublishEntr
 
   const keyPublishRecord = unserializeKeyPublish(block.payload);
   return { ...keyPublishRecord, nature };
+};
+
+export const makeKeyPublish = (publicEncryptionKey: Uint8Array, resourceKey: Uint8Array, resourceId: Uint8Array, nature: NatureKind) => {
+  const sharedKey = tcrypto.sealEncrypt(
+    resourceKey,
+    publicEncryptionKey,
+  );
+
+  const payload = {
+    recipient: publicEncryptionKey,
+    resourceId,
+    key: sharedKey,
+  };
+
+  return { payload: serializeKeyPublish(payload), nature: preferredNature(nature) };
+};
+
+export const makeKeyPublishToProvisionalUser = (publicProvisionalUser: PublicProvisionalUser, resourceKey: Uint8Array, resourceId: Uint8Array) => {
+  const preEncryptedKey = tcrypto.sealEncrypt(
+    resourceKey,
+    publicProvisionalUser.appEncryptionPublicKey,
+  );
+  const encryptedKey = tcrypto.sealEncrypt(
+    preEncryptedKey,
+    publicProvisionalUser.tankerEncryptionPublicKey,
+  );
+
+  const payload = {
+    recipientAppPublicKey: publicProvisionalUser.appSignaturePublicKey,
+    recipientTankerPublicKey: publicProvisionalUser.tankerSignaturePublicKey,
+    resourceId,
+    key: encryptedKey,
+  };
+
+  return { payload: serializeKeyPublishToProvisionalUser(payload), nature: preferredNature(NATURE_KIND.key_publish_to_provisional_user) };
 };

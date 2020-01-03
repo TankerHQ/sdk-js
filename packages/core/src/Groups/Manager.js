@@ -8,7 +8,7 @@ import UserManager from '../Users/Manager';
 import LocalUser from '../Session/LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
-import { getGroupEntryFromBlock } from './Serialize';
+import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAddition } from './Serialize';
 import { Client, b64RequestObject } from '../Network/Client';
 import GroupStore from './GroupStore';
 import type { InternalGroup, Group } from './types';
@@ -55,14 +55,14 @@ export default class GroupManager {
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
-    const userGroupCreationBlock = this._localUser.blockGenerator.createUserGroup(
+    const { payload, nature } = makeUserGroupCreation(
       groupSignatureKeyPair,
       tcrypto.makeEncryptionKeyPair(),
       users,
       provisionalUsers
     );
 
-    await this._client.send('push block', userGroupCreationBlock, true);
+    await this._client.send('push block', this._localUser.makeBlock(payload, nature), true);
 
     return utils.toBase64(groupSignatureKeyPair.publicKey);
   }
@@ -82,7 +82,7 @@ export default class GroupManager {
     const users = await this._UserManager.getUsers({ publicIdentities: permanentIdentities });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
-    const userGroupAdditionBlock = this._localUser.blockGenerator.addToUserGroup(
+    const { payload, nature } = makeUserGroupAddition(
       internalGroupId,
       existingGroup.signatureKeyPair.privateKey,
       existingGroup.lastGroupBlock,
@@ -91,7 +91,7 @@ export default class GroupManager {
       provisionalUsers,
     );
 
-    await this._client.send('push block', userGroupAdditionBlock, true);
+    await this._client.send('push block', this._localUser.makeBlock(payload, nature), true);
   }
 
   async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {

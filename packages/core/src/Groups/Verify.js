@@ -2,15 +2,12 @@
 
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
-import { getUserGroupCreationBlockSignDataV1, getUserGroupCreationBlockSignDataV2, getUserGroupAdditionBlockSignDataV1, getUserGroupAdditionBlockSignDataV2 } from '../Blocks/BlockGenerator';
-
-import { type Group } from './types';
-
-import { InvalidBlockError } from '../errors.internal';
-
-import { NATURE } from '../Blocks/Nature';
 
 import {
+  getUserGroupCreationBlockSignDataV1,
+  getUserGroupCreationBlockSignDataV2,
+  getUserGroupAdditionBlockSignDataV1,
+  getUserGroupAdditionBlockSignDataV2,
   type UserGroupCreationRecord,
   type UserGroupCreationRecordV1,
   type UserGroupCreationRecordV2,
@@ -19,6 +16,13 @@ import {
   type UserGroupAdditionRecord,
   type UserGroupEntry,
 } from './Serialize';
+
+import { type Group } from './types';
+
+import { InvalidBlockError } from '../errors.internal';
+
+import { NATURE } from '../Blocks/Nature';
+
 
 export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, existingGroup: ?Group) {
   const currentPayload: UserGroupCreationRecord = (entry: any);

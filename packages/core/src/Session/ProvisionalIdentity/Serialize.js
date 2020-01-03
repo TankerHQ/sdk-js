@@ -1,11 +1,16 @@
 // @flow
+
+import { type ProvisionalUserKeys } from '@tanker/identity';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
+
+import { preferredNature, NATURE_KIND } from '../../Blocks/Nature';
 
 import { hashBlock } from '../../Blocks/Block';
 import { type VerificationFields } from '../../Blocks/entries';
 import { getStaticArray, unserializeGeneric } from '../../Blocks/Serialize';
 import { unserializeBlock } from '../../Blocks/payloads';
+
 
 export type ProvisionalIdentityClaimRecord = {|
   user_id: Uint8Array,
@@ -83,3 +88,29 @@ export function provisionalIdentityClaimFromBlock(b64Block: string): ClaimEntry 
     device_id: block.author,
   };
 }
+
+
+export const makeProvisionalIdentityClaim = (userId: Uint8Array, deviceId: Uint8Array, userPublicKey: Uint8Array, provisionalUserKeys: ProvisionalUserKeys) => {
+  const multiSignedPayload = utils.concatArrays(
+    deviceId,
+    provisionalUserKeys.appSignatureKeyPair.publicKey,
+    provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+  );
+  const appSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.appSignatureKeyPair.privateKey);
+  const tankerSignature = tcrypto.sign(multiSignedPayload, provisionalUserKeys.tankerSignatureKeyPair.privateKey);
+
+  const keysToEncrypt = utils.concatArrays(provisionalUserKeys.appEncryptionKeyPair.privateKey, provisionalUserKeys.tankerEncryptionKeyPair.privateKey);
+  const encryptedprovisionalUserKeys = tcrypto.sealEncrypt(keysToEncrypt, userPublicKey);
+
+  const payload = {
+    user_id: userId,
+    app_provisional_identity_signature_public_key: provisionalUserKeys.appSignatureKeyPair.publicKey,
+    tanker_provisional_identity_signature_public_key: provisionalUserKeys.tankerSignatureKeyPair.publicKey,
+    author_signature_by_app_key: appSignature,
+    author_signature_by_tanker_key: tankerSignature,
+    recipient_user_public_key: userPublicKey,
+    encrypted_provisional_identity_private_keys: encryptedprovisionalUserKeys,
+  };
+
+  return { payload: serializeProvisionalIdentityClaim(payload), nature: preferredNature(NATURE_KIND.provisional_identity_claim) };
+};

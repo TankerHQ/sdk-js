@@ -11,6 +11,7 @@ import type { Data } from '@tanker/types';
 import { ResourceManager } from './Resource/ResourceManager';
 import ResourceStore from './Resource/ResourceStore';
 import { KeyDecryptor } from './Resource/KeyDecryptor';
+import { makeKeyPublish, makeKeyPublishToProvisionalUser } from './Resource/keyPublish';
 
 import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
 
@@ -66,13 +67,13 @@ export class DataProtector {
   _makeKeyPublishBlocks(
     resource: Array<Resource>,
     keys: Array<Uint8Array>,
-    nature: NatureKind
+    natureKind: NatureKind
   ): Array<b64string> {
     const blocks: Array<b64string> = [];
     for (const publicEncryptionKey of keys) {
       for (const { key, resourceId } of resource) {
-        const block = this._localUser.blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
-        blocks.push(block);
+        const { payload, nature } = makeKeyPublish(publicEncryptionKey, key, resourceId, natureKind);
+        blocks.push(this._localUser.makeBlock(payload, nature));
       }
     }
     return blocks;
@@ -85,7 +86,8 @@ export class DataProtector {
     const blocks: Array<b64string> = [];
     for (const provisionalUser of provisionalUsers) {
       for (const { key, resourceId } of resource) {
-        blocks.push(this._localUser.blockGenerator.makeKeyPublishToProvisionalUserBlock(provisionalUser, key, resourceId));
+        const { payload, nature } = makeKeyPublishToProvisionalUser(provisionalUser, key, resourceId);
+        blocks.push(this._localUser.makeBlock(payload, nature));
       }
     }
     return blocks;

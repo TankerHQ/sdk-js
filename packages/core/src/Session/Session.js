@@ -2,6 +2,7 @@
 import EventEmitter from 'events';
 
 import { InternalError, InvalidVerification, OperationCanceled, NetworkError, TankerError, DeviceRevoked } from '@tanker/errors';
+import { utils } from '@tanker/crypto';
 
 import Storage, { type DataStoreOptions } from './Storage';
 import LocalUser from './LocalUser/LocalUser';
@@ -10,7 +11,7 @@ import { type Status, type Verification, type VerificationMethod, type RemoteVer
 import { Managers } from './Managers';
 import { type UserData, type DelegationToken } from './UserData';
 
-import { generateUserCreation, generateDeviceFromGhostDevice } from './UserCreation';
+import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
 
 import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
 
@@ -160,8 +161,8 @@ export class Session extends EventEmitter {
     if (!user)
       throw new InternalError('Cannot find the current user in the users');
 
-    const revokeDeviceBlock = this.localUser.blockGenerator.makeDeviceRevocationBlock(user, this.localUser.currentUserKey, revokedDeviceId);
-    await this._client.send('push block', revokeDeviceBlock, true);
+    const { payload, nature } = makeDeviceRevocation(user, this.localUser.currentUserKey, utils.fromBase64(revokedDeviceId));
+    await this._client.send('push block', this.localUser.makeBlock(payload, nature), true);
 
     await this._updateLocalUser();
   }
