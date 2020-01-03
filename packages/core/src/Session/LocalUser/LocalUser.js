@@ -16,13 +16,8 @@ import { verifyDeviceCreation, verifyDeviceRevocation } from '../../Users/Verify
 import type { ProvisionalUserKeyPairs, LocalUserKeys, IndexedProvisionalUserKeyPairs } from './KeySafe';
 import { findIndex } from '../../utils';
 
-import { type GhostDevice, type GhostDeviceKeys, ghostDeviceToEncryptedUnlockKey } from './ghostDevice';
-import { makeDeviceBlock, type EncryptedUserKeyForGhostDevice } from './deviceCreation';
 import { trustchainCreationFromBlock } from './Serialize';
 import { verifyTrustchainCreation } from './Verify';
-
-import { type DelegationToken } from '../UserData';
-
 
 export type PrivateProvisionalKeys = {|
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
@@ -33,7 +28,6 @@ export class LocalUser extends EventEmitter {
   _trustchainId: Uint8Array;
   _userId: Uint8Array;
   _userSecret: Uint8Array;
-  _delegationToken: DelegationToken;
 
   _blockGenerator: BlockGenerator;
 
@@ -46,13 +40,12 @@ export class LocalUser extends EventEmitter {
   _deviceId: ?Uint8Array;
   _trustchainPublicKey: ?Uint8Array;
 
-  constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, delegationToken: DelegationToken, localData: LocalData) {
+  constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, localData: LocalData) {
     super();
 
     this._trustchainId = trustchainId;
     this._userId = userId;
     this._userSecret = userSecret;
-    this._delegationToken = delegationToken;
 
     this._deviceEncryptionKeyPair = localData.deviceEncryptionKeyPair;
     this._deviceSignatureKeyPair = localData.deviceSignatureKeyPair;
@@ -81,74 +74,11 @@ export class LocalUser extends EventEmitter {
     };
   }
 
-  generateDeviceFromGhostDevice = (ghostDevice: GhostDevice, encryptedUserKey: EncryptedUserKeyForGhostDevice) => {
-    const ghostDeviceEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey);
-
-    const decryptedUserPrivateKey = tcrypto.sealDecrypt(
-      encryptedUserKey.encryptedPrivateUserKey,
-      ghostDeviceEncryptionKeyPair
-    );
-
-    const userKeys = tcrypto.getEncryptionKeyPairFromPrivateKey(decryptedUserPrivateKey);
-
-    const ephemeralKeys = tcrypto.makeSignKeyPair();
-    const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, this._userId);
-
-    const { deviceBlock } = makeDeviceBlock({
-      trustchainId: this._trustchainId,
-      userId: this._userId,
-      userKeys,
-      author: encryptedUserKey.deviceId,
-      ephemeralKey: ephemeralKeys.publicKey,
-      delegationSignature: tcrypto.sign(delegationBuffer, ghostDevice.privateSignatureKey),
-      publicSignatureKey: this._deviceSignatureKeyPair.publicKey,
-      publicEncryptionKey: this._deviceEncryptionKeyPair.publicKey,
-      blockSignatureKey: ephemeralKeys.privateKey,
-      isGhost: false
-    });
-
-    return deviceBlock;
-  };
-
-  generateUserCreation = (ghostDeviceKeys: GhostDeviceKeys) => {
-    const userKeys = tcrypto.makeEncryptionKeyPair();
-
-    const { deviceBlock, deviceId } = makeDeviceBlock({
-      trustchainId: this._trustchainId,
-      userId: this._userId,
-      userKeys,
-      author: this.trustchainId,
-      ephemeralKey: this._delegationToken.ephemeral_public_signature_key,
-      delegationSignature: this._delegationToken.delegation_signature,
-      publicSignatureKey: ghostDeviceKeys.signatureKeyPair.publicKey,
-      publicEncryptionKey: ghostDeviceKeys.encryptionKeyPair.publicKey,
-      blockSignatureKey: this._delegationToken.ephemeral_private_signature_key,
-      isGhost: true,
-    });
-
-    const encryptedUserKey = {
-      publicUserKey: userKeys.publicKey,
-      encryptedPrivateUserKey: tcrypto.sealEncrypt(userKeys.privateKey, ghostDeviceKeys.encryptionKeyPair.publicKey),
-      deviceId
-    };
-
-    const ghostDevice = {
-      privateSignatureKey: ghostDeviceKeys.signatureKeyPair.privateKey,
-      privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
-    };
-
-    const firstDeviceBlock = this.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
-    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._userSecret);
-    return {
-      userCreationBlock: deviceBlock,
-      firstDeviceBlock,
-      ghostDevice,
-      encryptedUnlockKey,
-    };
-  };
-
   get blockGenerator(): BlockGenerator {
     return this._blockGenerator;
+  }
+  get deviceEncryptionKeyPair() {
+    return this._deviceEncryptionKeyPair;
   }
   get deviceSignatureKeyPair() {
     return this._deviceSignatureKeyPair;

@@ -11,6 +11,11 @@ export type GhostDeviceKeys = {
   signatureKeyPair: tcrypto.SodiumKeyPair,
 }
 
+type EncryptedUserKeyForGhostDevice = {
+  deviceId: Uint8Array,
+  encryptedPrivateUserKey: Uint8Array,
+};
+
 export const generateGhostDeviceKeys = (): GhostDeviceKeys => ({
   encryptionKeyPair: tcrypto.makeEncryptionKeyPair(),
   signatureKeyPair: tcrypto.makeSignKeyPair(),
@@ -45,4 +50,15 @@ export const ghostDeviceKeysFromUnlockKey = (unlockKey: b64string): GhostDeviceK
     encryptionKeyPair: tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey),
     signatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(ghostDevice.privateSignatureKey),
   };
+};
+
+export const decryptUserKeyForGhostDevice = (ghostDevice: GhostDevice, encryptedUserKey: EncryptedUserKeyForGhostDevice) => {
+  const ghostDeviceEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey);
+
+  const decryptedUserPrivateKey = tcrypto.sealDecrypt(
+    encryptedUserKey.encryptedPrivateUserKey,
+    ghostDeviceEncryptionKeyPair
+  );
+
+  return tcrypto.getEncryptionKeyPairFromPrivateKey(decryptedUserPrivateKey);
 };

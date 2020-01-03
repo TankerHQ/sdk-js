@@ -106,8 +106,4 @@ export default class Storage {
     }
     await this._keyStore.clearCache();
   }
-
-  hasLocalDevice() {
-    return !!this._keyStore.deviceId;
-  }
 }

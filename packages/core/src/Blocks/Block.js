@@ -28,5 +28,5 @@ export function createBlock(payload: Uint8Array, nature: Nature, trustchainId: U
   const hash = hashBlock(block);
   const signature = tcrypto.sign(hash, signatureKey);
 
-  return utils.toBase64(serializeBlock({ ...block, signature }));
+  return { block: utils.toBase64(serializeBlock({ ...block, signature })), hash };
 }

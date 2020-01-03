@@ -154,7 +154,7 @@ export class BlockGenerator {
       this.trustchainId,
       args.author,
       args.blockSignatureKey
-    );
+    ).block;
   }
 
   makeNewUserBlock(args: NewUserParams) {
@@ -226,7 +226,7 @@ export class BlockGenerator {
       this.trustchainId,
       this.deviceId,
       this.privateSignatureKey
-    );
+    ).block;
   }
 
   makeKeyPublishBlock(publicEncryptionKey: Uint8Array, resourceKey: Uint8Array, resourceId: Uint8Array, nature: NatureKind) {
@@ -247,7 +247,7 @@ export class BlockGenerator {
       this.trustchainId,
       this.deviceId,
       this.privateSignatureKey
-    );
+    ).block;
   }
 
   makeKeyPublishToProvisionalUserBlock(publicProvisionalUser: PublicProvisionalUser, resourceKey: Uint8Array, resourceId: Uint8Array) {
@@ -273,7 +273,7 @@ export class BlockGenerator {
       this.trustchainId,
       this.deviceId,
       this.privateSignatureKey
-    );
+    ).block;
   }
 
   createUserGroup(signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) {
@@ -324,7 +324,7 @@ export class BlockGenerator {
       this.trustchainId,
       this.deviceId,
       this.privateSignatureKey
-    );
+    ).block;
   }
 
   addToUserGroup(groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) {
@@ -372,7 +372,7 @@ export class BlockGenerator {
       this.trustchainId,
       this.deviceId,
       this.privateSignatureKey
-    );
+    ).block;
   }
 
   makeProvisionalIdentityClaimBlock(userId: Uint8Array, userPublicKey: Uint8Array, provisionalUserKeys: ProvisionalUserKeys) {
@@ -403,7 +403,7 @@ export class BlockGenerator {
       this.trustchainId,
       this.deviceId,
       this.privateSignatureKey
-    );
+    ).block;
   }
 }
 

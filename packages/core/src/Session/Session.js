@@ -1,5 +1,6 @@
 // @flow
 import EventEmitter from 'events';
+
 import { InternalError, InvalidVerification, OperationCanceled, NetworkError, TankerError, DeviceRevoked } from '@tanker/errors';
 
 import Storage, { type DataStoreOptions } from './Storage';
@@ -7,11 +8,13 @@ import LocalUser from './LocalUser/LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
 import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
 import { Managers } from './Managers';
-import { type UserData } from './UserData';
+import { type UserData, type DelegationToken } from './UserData';
+
+import { generateUserCreation, generateDeviceFromGhostDevice } from './UserCreation';
 
 import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
 
-import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, decryptUnlockKey } from './LocalUser/ghostDevice';
+import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, decryptUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUserKeyForGhostDevice } from './ghostDevice';
 
 export class Session extends EventEmitter {
   localUser: LocalUser;
@@ -20,16 +23,18 @@ export class Session extends EventEmitter {
   _client: Client;
 
   _status: Status;
+  _delegationToken: ?DelegationToken;
 
   _managers: Managers;
 
-  constructor(localUser: LocalUser, storage: Storage, client: Client, status: Status) {
+  constructor(localUser: LocalUser, storage: Storage, client: Client, status: Status, delegationToken: ?DelegationToken) {
     super();
 
     this.storage = storage;
     this.localUser = localUser;
     this._client = client;
     this._status = status;
+    this._delegationToken = delegationToken;
 
     client.on('authentication_failed', (e) => this.authenticationError(e));
     this._managers = new Managers(localUser, storage, client);
@@ -40,7 +45,7 @@ export class Session extends EventEmitter {
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
-    const { trustchainId, userId, userSecret, delegationToken } = userData;
+    const { trustchainId, userId, userSecret } = userData;
 
     const client = new Client(trustchainId, clientOptions);
     client.open().catch((e) => {
@@ -52,13 +57,12 @@ export class Session extends EventEmitter {
     const storage = new Storage(storeOptions);
     await storage.open(userId, userSecret);
 
-    const localUser = new LocalUser(trustchainId, userId, userSecret, delegationToken, storage.keyStore.localData);
-
-    if (!storage.hasLocalDevice()) {
-      const { deviceExists, userExists } = await client.remoteStatus(trustchainId, userId, localUser.deviceSignatureKeyPair.publicKey);
+    const localUser = new LocalUser(trustchainId, userId, userSecret, storage.keyStore.localData);
+    if (!localUser.isInitialized) {
+      const { deviceExists, userExists } = await client.remoteStatus(localUser.trustchainId, localUser.userId, localUser.deviceSignatureKeyPair.publicKey);
 
       if (!userExists) {
-        return new Session(localUser, storage, client, statuses.IDENTITY_REGISTRATION_NEEDED);
+        return new Session(localUser, storage, client, statuses.IDENTITY_REGISTRATION_NEEDED, userData.delegationToken);
       }
 
       if (!deviceExists) {
@@ -112,7 +116,14 @@ export class Session extends EventEmitter {
       ghostDeviceKeys = generateGhostDeviceKeys();
     }
 
-    const { userCreationBlock, firstDeviceBlock, encryptedUnlockKey } = this.localUser.generateUserCreation(ghostDeviceKeys);
+    if (!this._delegationToken) {
+      throw new InternalError('Assertion error, no delegation token for user creation');
+    }
+
+    const { trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair } = this.localUser;
+    const { userCreationBlock, firstDeviceBlock, ghostDevice } = generateUserCreation(trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair, ghostDeviceKeys, this._delegationToken);
+    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this.localUser.userSecret);
+
     await sendUserCreation(this._client, this.localUser, userCreationBlock, firstDeviceBlock, verification, encryptedUnlockKey);
     await this.authenticate();
   }
@@ -122,9 +133,13 @@ export class Session extends EventEmitter {
       const unlockKey = await this._getUnlockKey(verification);
       const ghostDevice = extractGhostDevice(unlockKey);
 
-      const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
-
-      const newDeviceBlock = await this.localUser.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
+      const { trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair } = this.localUser;
+      const encryptedUserKey = await getLastUserKey(this._client, trustchainId, ghostDevice);
+      const userKey = decryptUserKeyForGhostDevice(ghostDevice, encryptedUserKey);
+      const newDeviceBlock = await generateDeviceFromGhostDevice(
+        trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair,
+        ghostDevice, encryptedUserKey.deviceId, userKey
+      );
       await this._client.send('create device', newDeviceBlock, true);
     } catch (e) {
       if (e instanceof TankerError) {
@@ -154,7 +169,7 @@ export class Session extends EventEmitter {
   _updateLocalUser = async () => {
     try {
       const localUserBlocks = await this._client.send('get my user blocks');
-      await this.localUser.initializeWithBlocks(localUserBlocks);
+      this.localUser.initializeWithBlocks(localUserBlocks);
       await this.storage.keyStore.save(this.localUser.localData);
     } catch (e) {
       if (e instanceof DeviceRevoked) {
