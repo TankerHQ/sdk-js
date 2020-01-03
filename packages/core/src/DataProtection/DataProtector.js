@@ -10,7 +10,6 @@ import type { Data } from '@tanker/types';
 
 import { ResourceManager } from '../Resources/ResourceManager';
 import ResourceStore from '../Resources/ResourceStore';
-import { KeyDecryptor } from '../Resources/KeyDecryptor';
 import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
 
 import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './types';
@@ -21,12 +20,10 @@ import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdenti
 import { Client } from '../Network/Client';
 import LocalUser from '../LocalUser/LocalUser';
 
-import LocalUserManager from '../LocalUser/Manager';
 import GroupManager from '../Groups/Manager';
 import UserManager from '../Users/Manager';
 import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-
 
 import type { OutputOptions, ProgressOptions, SharingOptions } from './options';
 import EncryptorStream from './EncryptorStream';
@@ -37,36 +34,29 @@ import { ProgressHandler } from './ProgressHandler';
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
 
 export class DataProtector {
-  _resourceManager: ResourceManager;
   _client: Client;
 
-  _groupManager: GroupManager;
   _localUser: LocalUser;
   _userManager: UserManager;
   _provisionalIdentityManager: ProvisionalIdentityManager
+  _groupManager: GroupManager;
+  _resourceManager: ResourceManager;
 
   constructor(
-    resourceStore: ResourceStore,
     client: Client,
-    groupManager: GroupManager,
-    localUserManager: LocalUserManager,
+    resourceStore: ResourceStore,
+    localUser: LocalUser,
     userManager: UserManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
+    groupManager: GroupManager,
+    resourceManager: ResourceManager,
   ) {
-    this._resourceManager = new ResourceManager(
-      resourceStore,
-      client,
-      new KeyDecryptor(
-        localUserManager,
-        groupManager,
-        provisionalIdentityManager
-      ),
-    );
     this._client = client;
     this._groupManager = groupManager;
-    this._localUser = localUserManager.localUser;
+    this._localUser = localUser;
     this._userManager = userManager;
     this._provisionalIdentityManager = provisionalIdentityManager;
+    this._resourceManager = resourceManager;
   }
 
   _makeKeyPublishBlocks(

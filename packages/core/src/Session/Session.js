@@ -6,31 +6,48 @@ import { OperationCanceled, NetworkError, DeviceRevoked, InternalError } from '@
 import Storage, { type DataStoreOptions } from './Storage';
 import { Client, type ClientOptions } from '../Network/Client';
 import { type Status, statuses } from '../LocalUser/types';
-import { Managers } from './Managers';
 import { type UserData, type DelegationToken } from '../LocalUser/UserData';
 
-import { LocalUserManager } from '../LocalUser/Manager';
+import LocalUserManager from '../LocalUser/Manager';
+import UserManager from '../Users/Manager';
+import GroupManager from '../Groups/Manager';
+import CloudStorageManager from '../CloudStorage/CloudStorageManager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
+import ResourceManager from '../Resources/ResourceManager';
+import DataProtector from '../DataProtection/DataProtector';
 
 export class Session extends EventEmitter {
   _storage: Storage;
   _client: Client;
 
   _localUserManager: LocalUserManager;
+  _userManager: UserManager;
+  _groupManager: GroupManager;
+  _provisionalIdentityManager: ProvisionalIdentityManager;
+  _resourceManager: ResourceManager;
+  _dataProtector: DataProtector;
+  _cloudStorageManager: CloudStorageManager;
 
   _status: Status;
   _delegationToken: ?DelegationToken;
 
-  _managers: Managers;
-
-  constructor(localUserManager: LocalUserManager, storage: Storage, client: Client) {
+  constructor(userData: UserData, storage: Storage, client: Client) {
     super();
 
     this._storage = storage;
-    this._localUserManager = localUserManager;
     this._client = client;
     this._status = statuses.STOPPED;
 
-    this._managers = new Managers(localUserManager, storage, client);
+    this._localUserManager = new LocalUserManager(userData, client, storage.keyStore);
+    this._localUserManager.on('authentication_failed', this.close);
+
+    this._userManager = new UserManager(client, this._localUserManager.localUser);
+    this._provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, this._localUserManager, this._userManager);
+    this._groupManager = new GroupManager(client, storage.groupStore, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager);
+    this._resourceManager = new ResourceManager(client, storage.resourceStore, this._localUserManager, this._groupManager, this._provisionalIdentityManager);
+    this._dataProtector = new DataProtector(client, storage.resourceStore, this._localUserManager.localUser,
+      this._userManager, this._provisionalIdentityManager, this._groupManager, this._resourceManager);
+    this._cloudStorageManager = new CloudStorageManager(client, this._dataProtector);
   }
 
   get status(): Status {
@@ -40,10 +57,12 @@ export class Session extends EventEmitter {
     this._status = status;
   }
 
-  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
-    const { trustchainId, userId, userSecret } = userData;
+  start() {
+    return this._localUserManager.init();
+  }
 
-    const client = new Client(trustchainId, clientOptions);
+  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
+    const client = new Client(userData.trustchainId, clientOptions);
     client.open().catch((e) => {
       if (!(e instanceof OperationCanceled) && !(e instanceof NetworkError)) {
         console.error(e);
@@ -51,14 +70,10 @@ export class Session extends EventEmitter {
     });
 
     const storage = new Storage(storeOptions);
-    await storage.open(userId, userSecret);
+    await storage.open(userData.userId, userData.userSecret);
+    const session = new Session(userData, storage, client);
 
-    const localUserManager = new LocalUserManager(userData, client, storage.keyStore);
-    const session = new Session(localUserManager, storage, client);
-
-    localUserManager.on('authentication_failed', session.close);
-
-    session.status = await localUserManager.init();
+    session.status = await session.start();
     return session;
   }
 
@@ -90,22 +105,22 @@ export class Session extends EventEmitter {
   getVerificationMethods = (...args: any) => this._forward(this._localUserManager, 'getVerificationMethods', ...args)
   generateVerificationKey = (...args: any) => this._forward(this._localUserManager, 'generateVerificationKey', ...args)
 
-  upload = (...args: any) => this._forward(this._managers.cloudStorageManager, 'upload', ...args)
-  download = (...args: any) => this._forward(this._managers.cloudStorageManager, 'download', ...args)
+  upload = (...args: any) => this._forward(this._cloudStorageManager, 'upload', ...args)
+  download = (...args: any) => this._forward(this._cloudStorageManager, 'download', ...args)
 
-  encryptData = (...args: any) => this._forward(this._managers.dataProtector, 'encryptData', ...args)
-  decryptData = (...args: any) => this._forward(this._managers.dataProtector, 'decryptData', ...args)
-  share = (...args: any) => this._forward(this._managers.dataProtector, 'share', ...args)
-  makeDecryptorStream = (...args: any) => this._forward(this._managers.dataProtector, 'makeDecryptorStream', ...args)
-  makeEncryptorStream = (...args: any) => this._forward(this._managers.dataProtector, 'makeEncryptorStream', ...args)
+  encryptData = (...args: any) => this._forward(this._dataProtector, 'encryptData', ...args)
+  decryptData = (...args: any) => this._forward(this._dataProtector, 'decryptData', ...args)
+  share = (...args: any) => this._forward(this._dataProtector, 'share', ...args)
+  makeDecryptorStream = (...args: any) => this._forward(this._dataProtector, 'makeDecryptorStream', ...args)
+  makeEncryptorStream = (...args: any) => this._forward(this._dataProtector, 'makeEncryptorStream', ...args)
 
-  attachProvisionalIdentity = (...args: any) => this._forward(this._managers.provisionalIdentityManager, 'attachProvisionalIdentity', ...args)
-  verifyProvisionalIdentity = (...args: any) => this._forward(this._managers.provisionalIdentityManager, 'verifyProvisionalIdentity', ...args)
+  attachProvisionalIdentity = (...args: any) => this._forward(this._provisionalIdentityManager, 'attachProvisionalIdentity', ...args)
+  verifyProvisionalIdentity = (...args: any) => this._forward(this._provisionalIdentityManager, 'verifyProvisionalIdentity', ...args)
 
-  createGroup = (...args: any) => this._forward(this._managers.groupManager, 'createGroup', ...args)
-  updateGroupMembers = (...args: any) => this._forward(this._managers.groupManager, 'updateGroupMembers', ...args)
+  createGroup = (...args: any) => this._forward(this._groupManager, 'createGroup', ...args)
+  updateGroupMembers = (...args: any) => this._forward(this._groupManager, 'updateGroupMembers', ...args)
 
-  findUser = (...args: any) => this._forward(this._managers.userManager, 'findUser', ...args)
+  findUser = (...args: any) => this._forward(this._userManager, 'findUser', ...args)
 
   _handleDeviceRevoked = async () => {
     try {

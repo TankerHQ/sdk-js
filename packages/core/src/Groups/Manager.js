@@ -32,11 +32,11 @@ export default class GroupManager {
   _groupStore: GroupStore;
 
   constructor(
-    localUser: LocalUser,
+    client: Client,
     groupStore: GroupStore,
+    localUser: LocalUser,
     userManager: UserManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
-    client: Client
   ) {
     this._localUser = localUser;
     this._UserManager = userManager;

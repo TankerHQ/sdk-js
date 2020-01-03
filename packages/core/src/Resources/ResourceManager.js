@@ -4,8 +4,12 @@ import { InternalError, InvalidArgument } from '@tanker/errors';
 
 import { getKeyPublishEntryFromBlock } from './Serialize';
 import { KeyDecryptor } from './KeyDecryptor';
+
 import { Client } from '../Network/Client';
 import ResourceStore from './ResourceStore';
+import LocalUserManager from '../LocalUser/Manager';
+import GroupManager from '../Groups/Manager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
 
 export class ResourceManager {
   _resourceStore: ResourceStore;
@@ -13,13 +17,15 @@ export class ResourceManager {
   _keyDecryptor: KeyDecryptor;
 
   constructor(
-    resourceStore: ResourceStore,
     client: Client,
-    keyDecryptor: KeyDecryptor,
+    resourceStore: ResourceStore,
+    localUserManager: LocalUserManager,
+    groupManager: GroupManager,
+    provisionalIdentityManager: ProvisionalIdentityManager
   ) {
     this._resourceStore = resourceStore;
     this._client = client;
-    this._keyDecryptor = keyDecryptor;
+    this._keyDecryptor = new KeyDecryptor(localUserManager, groupManager, provisionalIdentityManager);
   }
 
   async findKeyFromResourceId(resourceId: Uint8Array): Promise<Key> {
@@ -47,3 +53,5 @@ export class ResourceManager {
 
   saveResourceKey = async (resourceId: Uint8Array, key: Uint8Array): Promise<void> => this._resourceStore.saveResourceKey(resourceId, key)
 }
+
+export default ResourceManager;
