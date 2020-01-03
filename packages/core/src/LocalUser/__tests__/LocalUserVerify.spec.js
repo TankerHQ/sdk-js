@@ -1,17 +1,16 @@
 // @flow
 import { expect } from '@tanker/test-utils';
 
-import { InvalidBlockError } from '../errors.internal';
+import TestGenerator from '../../__tests__/TestGenerator';
+import makeUint8Array from '../../__tests__/makeUint8Array';
 
-import makeUint8Array from './makeUint8Array';
+import { InvalidBlockError } from '../../errors.internal';
 
-import { verifyTrustchainCreation } from '../LocalUser/Verify';
+import { verifyTrustchainCreation } from '../Verify';
+import type { TrustchainCreationEntry } from '../Serialize';
 
-import type { TrustchainCreationEntry } from '../LocalUser/Serialize';
+import { NATURE } from '../../Blocks/Nature';
 
-import { NATURE } from '../Blocks/Nature';
-
-import TestGenerator from './TestGenerator';
 
 function assertFailWithNature(verifyFunc: () => any, nature: string) {
   expect(verifyFunc)

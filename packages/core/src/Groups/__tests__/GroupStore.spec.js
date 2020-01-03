@@ -3,9 +3,9 @@ import { random, tcrypto } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
+import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
 
-import GroupStore from '../Groups/GroupStore';
+import GroupStore from '../GroupStore';
 
 describe('GroupStore', () => {
   let dbName;

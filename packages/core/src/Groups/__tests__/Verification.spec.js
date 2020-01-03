@@ -2,14 +2,14 @@
 import { tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { InvalidBlockError } from '../errors.internal';
+import { InvalidBlockError } from '../../errors.internal';
 
-import { type Group } from '../Groups/types';
-import { type UserGroupEntry } from '../Groups/Serialize';
-import { verifyUserGroupCreation, verifyUserGroupAddition } from '../Groups/Verify';
-import { type User } from '../Users/types';
+import { type Group } from '../types';
+import { type UserGroupEntry } from '../Serialize';
+import { verifyUserGroupCreation, verifyUserGroupAddition } from '../Verify';
+import { type User } from '../../Users/types';
 
-import TestGenerator from './TestGenerator';
+import TestGenerator from '../../__tests__/TestGenerator';
 
 function assertFailWithNature(verifyFunc: () => any, nature: string) {
   expect(verifyFunc)

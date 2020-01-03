@@ -3,8 +3,8 @@ import { utils, random, tcrypto, encryptionV4 } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { expect, sinon } from '@tanker/test-utils';
 
-import DecryptorStream from '../DataProtection/DecryptorStream';
-import PromiseWrapper from '../PromiseWrapper';
+import DecryptorStream from '../DecryptorStream';
+import PromiseWrapper from '../../PromiseWrapper';
 
 describe('Decryptor Stream', () => {
   let buffer: Array<Uint8Array>;

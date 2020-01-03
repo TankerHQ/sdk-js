@@ -4,9 +4,9 @@ import { tcrypto, random } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import dataStoreConfig, { makePrefix, openDataStore } from './TestDataStore';
+import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
 
-import KeyStore from '../LocalUser/KeyStore';
+import KeyStore from '../KeyStore';
 
 describe('KeyStore', () => {
   let dbName;

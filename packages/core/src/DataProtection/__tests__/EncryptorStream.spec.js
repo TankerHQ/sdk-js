@@ -3,8 +3,8 @@ import { aead, random, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import EncryptorStream from '../DataProtection/EncryptorStream';
-import PromiseWrapper from '../PromiseWrapper';
+import EncryptorStream from '../EncryptorStream';
+import PromiseWrapper from '../../PromiseWrapper';
 
 describe('Encryptor Stream', () => {
   const headerV4Length = 21;

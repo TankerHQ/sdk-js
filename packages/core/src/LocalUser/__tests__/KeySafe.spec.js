@@ -3,7 +3,7 @@
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from '../LocalUser/KeySafe';
+import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from '../KeySafe';
 
 describe('KeySafe', () => {
   let secret;

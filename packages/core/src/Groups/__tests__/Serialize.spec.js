@@ -3,7 +3,7 @@
 import { tcrypto } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import makeUint8Array from './makeUint8Array';
+import makeUint8Array from '../../__tests__/makeUint8Array';
 
 import {
   serializeUserGroupCreationV1,
@@ -14,7 +14,7 @@ import {
   unserializeUserGroupAdditionV1,
   serializeUserGroupAdditionV2,
   unserializeUserGroupAdditionV2,
-} from '../Groups/Serialize';
+} from '../Serialize';
 
 
 describe('groups blocks', () => {

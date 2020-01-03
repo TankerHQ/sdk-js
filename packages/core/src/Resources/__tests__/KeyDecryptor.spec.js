@@ -1,18 +1,17 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import { toBase64 } from '../index';
-import { KeyDecryptor } from '../Resources/KeyDecryptor';
+import { KeyDecryptor } from '../KeyDecryptor';
 
-import GroupManager from '../Groups/Manager';
-import LocalUserManager from '../LocalUser/Manager';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
-import { type Nature, NATURE } from '../Blocks/Nature';
+import GroupManager from '../../Groups/Manager';
+import LocalUserManager from '../../LocalUser/Manager';
+import ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
+import { type Nature, NATURE } from '../../Blocks/Nature';
 
-import { type KeyPublishEntry } from '../Resources/Serialize';
+import { type KeyPublishEntry } from '../Serialize';
 
 const refDeviceId = new Uint8Array([0, 0, 7]);
 
@@ -56,7 +55,7 @@ describe('KeyDecryptor', () => {
     const kp = tcrypto.makeEncryptionKeyPair();
     keys = {
       ...kp,
-      expect: toBase64(kp.publicKey),
+      expect: utils.toBase64(kp.publicKey),
     };
   });
 
@@ -78,7 +77,7 @@ describe('KeyDecryptor', () => {
 
     const res = await decryptor.keyFromKeyPublish(keyPublish);
     expect(res).to.be.a('Uint8Array');
-    expect(toBase64(res)).to.be.equal(keys.expect);
+    expect(utils.toBase64(res)).to.be.equal(keys.expect);
   });
 
   it('can decrypt key published to group', async () => {
@@ -91,7 +90,7 @@ describe('KeyDecryptor', () => {
 
     const res = await decryptor.keyFromKeyPublish(keyPublish);
     expect(res).to.be.a('Uint8Array');
-    expect(toBase64(res)).to.be.equal(keys.expect);
+    expect(utils.toBase64(res)).to.be.equal(keys.expect);
   });
 
   it('throws when not called with a key publish', async () => {

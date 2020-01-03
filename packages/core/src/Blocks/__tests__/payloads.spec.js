@@ -3,9 +3,9 @@
 import { tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { serializeBlock, unserializeBlock } from '../Blocks/payloads';
-import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
-import { UpgradeRequiredError } from '../errors.internal';
+import { serializeBlock, unserializeBlock } from '../payloads';
+import { preferredNature, NATURE_KIND } from '../Nature';
+import { UpgradeRequiredError } from '../../errors.internal';
 
 describe('payloads', () => {
   it('should throw when unserializing unsupported block version', async () => {

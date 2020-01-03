@@ -3,7 +3,7 @@
 import { tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { serializeTrustchainCreation, unserializeTrustchainCreation } from '../LocalUser/Serialize';
+import { serializeTrustchainCreation, unserializeTrustchainCreation } from '../Serialize';
 
 
 // NOTE: If you ever have to change something here, change it in the Go code too!

@@ -2,10 +2,10 @@
 import { tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { usersFromBlocks } from '../Users/ManagerHelper';
+import { usersFromBlocks } from '../ManagerHelper';
 
 
-import TestGenerator from './TestGenerator';
+import TestGenerator from '../../__tests__/TestGenerator';
 
 describe('UserManagerHelper', () => {
   describe('usersFromBlocks()', () => {

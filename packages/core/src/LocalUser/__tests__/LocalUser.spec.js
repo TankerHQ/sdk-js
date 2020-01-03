@@ -4,10 +4,10 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import TestGenerator, { type TestUser } from './TestGenerator';
+import TestGenerator, { type TestUser } from '../../__tests__/TestGenerator';
 
-import LocalUser from '../LocalUser/LocalUser';
-import { extractUserData } from '../LocalUser/UserData';
+import LocalUser from '../LocalUser';
+import { extractUserData } from '../UserData';
 
 const localUserKeysFromTestUser = (user: TestUser) => {
   const userKeys = {};

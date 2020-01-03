@@ -3,9 +3,9 @@
 import { tcrypto } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import makeUint8Array from './makeUint8Array';
+import makeUint8Array from '../../__tests__/makeUint8Array';
 
-import { serializeKeyPublish, unserializeKeyPublish, serializeKeyPublishToProvisionalUser, unserializeKeyPublishToProvisionalUser } from '../Resources/Serialize';
+import { serializeKeyPublish, unserializeKeyPublish, serializeKeyPublishToProvisionalUser, unserializeKeyPublishToProvisionalUser } from '../Serialize';
 
 describe('key publish', () => {
   it('correctly deserializes a KeyPublishV2 test vector', async () => {

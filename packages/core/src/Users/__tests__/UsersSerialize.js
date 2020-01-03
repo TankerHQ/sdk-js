@@ -3,7 +3,7 @@
 import { tcrypto, random, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { encodeListLength } from '../Blocks/Serialize';
+import { encodeListLength } from '../../Blocks/Serialize';
 import {
   serializeUserDeviceV3,
   unserializeUserDeviceV1,
@@ -12,9 +12,9 @@ import {
   serializeDeviceRevocationV2,
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
-} from '../Users/Serialize';
+} from '../Serialize';
 
-import makeUint8Array from './makeUint8Array';
+import makeUint8Array from '../../__tests__/makeUint8Array';
 
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same

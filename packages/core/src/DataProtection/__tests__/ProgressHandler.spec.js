@@ -2,7 +2,7 @@
 import { InvalidArgument } from '@tanker/errors';
 import { expect, sinon } from '@tanker/test-utils';
 
-import { ProgressHandler } from '../DataProtection/ProgressHandler';
+import { ProgressHandler } from '../ProgressHandler';
 
 describe('ProgressHandler', () => {
   it('can report progress knowing the total byte size', async () => {

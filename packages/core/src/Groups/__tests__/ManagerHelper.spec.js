@@ -3,13 +3,13 @@ import { tcrypto, random, utils } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import { MAX_GROUP_SIZE, assertPublicIdentities, groupFromUserGroupEntry, groupsFromEntries } from '../Groups/ManagerHelper';
-import { type UserGroupCreationRecord, type UserGroupEntry } from '../Groups/Serialize';
-import { type ExternalGroup } from '../Groups/types';
+import { MAX_GROUP_SIZE, assertPublicIdentities, groupFromUserGroupEntry, groupsFromEntries } from '../ManagerHelper';
+import { type UserGroupCreationRecord, type UserGroupEntry } from '../Serialize';
+import { type ExternalGroup } from '../types';
 
-import TestGenerator, { type TestDeviceCreation, type TestUserGroup } from './TestGenerator';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
-import LocalUser from '../LocalUser/LocalUser';
+import TestGenerator, { type TestDeviceCreation, type TestUserGroup } from '../../__tests__/TestGenerator';
+import ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
+import LocalUser from '../../LocalUser/LocalUser';
 
 
 function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): ExternalGroup {

@@ -6,9 +6,9 @@ import { expect } from '@tanker/test-utils';
 import {
   serializeProvisionalIdentityClaim,
   unserializeProvisionalIdentityClaim,
-} from '../ProvisionalIdentity/Serialize';
+} from '../Serialize';
 
-import makeUint8Array from './makeUint8Array';
+import makeUint8Array from '../../__tests__/makeUint8Array';
 
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same

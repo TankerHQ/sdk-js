@@ -2,20 +2,16 @@
 import { tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { InvalidBlockError } from '../errors.internal';
+import TestGenerator from '../../__tests__/TestGenerator';
 
-import {
-  verifyDeviceCreation,
-  verifyDeviceRevocation,
-} from '../Users/Verify';
+import { InvalidBlockError } from '../../errors.internal';
 
-import { type User } from '../Users/types';
+import { verifyDeviceCreation, verifyDeviceRevocation } from '../Verify';
+import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Serialize';
+import { type User } from '../types';
 
-import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
+import { NATURE } from '../../Blocks/Nature';
 
-import { NATURE } from '../Blocks/Nature';
-
-import TestGenerator from './TestGenerator';
 
 function assertFailWithNature(verifyFunc: () => any, nature: string) {
   expect(verifyFunc)
