@@ -6,7 +6,7 @@ import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentiti
 
 import UserManager from '../Users/Manager';
 import LocalUser from '../LocalUser/LocalUser';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 
 import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAddition } from './Serialize';
 import { Client, b64RequestObject } from '../Network/Client';

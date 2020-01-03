@@ -9,7 +9,7 @@ import { Client } from '../Network/Client';
 import ResourceStore from './ResourceStore';
 import LocalUserManager from '../LocalUser/Manager';
 import GroupManager from '../Groups/Manager';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 
 export class ResourceManager {
   _resourceStore: ResourceStore;

@@ -8,7 +8,7 @@ import { type UserGroupCreationRecord, type UserGroupEntry } from '../Groups/Ser
 import { type ExternalGroup } from '../Groups/types';
 
 import TestGenerator, { type TestDeviceCreation, type TestUserGroup } from './TestGenerator';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import LocalUser from '../LocalUser/LocalUser';
 
 

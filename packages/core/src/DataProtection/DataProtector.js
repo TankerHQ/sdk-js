@@ -8,20 +8,17 @@ import { castData, getDataLength } from '@tanker/types';
 import type { PublicIdentity, PublicProvisionalUser } from '@tanker/identity';
 import type { Data } from '@tanker/types';
 
-import { ResourceManager } from '../Resources/ResourceManager';
-import ResourceStore from '../Resources/ResourceStore';
-import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
-
-import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './types';
-import type { Resource } from './types';
-
-import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
-
 import { Client } from '../Network/Client';
 import LocalUser from '../LocalUser/LocalUser';
-
+import ResourceManager from '../Resources/Manager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import GroupManager from '../Groups/Manager';
 import UserManager from '../Users/Manager';
+
+import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './types';
+import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
+import type { Resource } from './types';
+
 import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 
@@ -44,7 +41,6 @@ export class DataProtector {
 
   constructor(
     client: Client,
-    resourceStore: ResourceStore,
     localUser: LocalUser,
     userManager: UserManager,
     provisionalIdentityManager: ProvisionalIdentityManager,

@@ -8,7 +8,7 @@ import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } f
 import { verifyGroupAction } from './Verify';
 
 import { type ProvisionalUserKeyPairs } from '../LocalUser/KeySafe';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import LocalUser from '../LocalUser/LocalUser';
 
 export const MAX_GROUP_SIZE = 1000;

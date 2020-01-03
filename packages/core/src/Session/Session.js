@@ -11,9 +11,9 @@ import { type UserData, type DelegationToken } from '../LocalUser/UserData';
 import LocalUserManager from '../LocalUser/Manager';
 import UserManager from '../Users/Manager';
 import GroupManager from '../Groups/Manager';
-import CloudStorageManager from '../CloudStorage/CloudStorageManager';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/ProvisionalIdentityManager';
-import ResourceManager from '../Resources/ResourceManager';
+import CloudStorageManager from '../CloudStorage/Manager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
+import ResourceManager from '../Resources/Manager';
 import DataProtector from '../DataProtection/DataProtector';
 
 export class Session extends EventEmitter {
@@ -45,8 +45,7 @@ export class Session extends EventEmitter {
     this._provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, this._localUserManager, this._userManager);
     this._groupManager = new GroupManager(client, storage.groupStore, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager);
     this._resourceManager = new ResourceManager(client, storage.resourceStore, this._localUserManager, this._groupManager, this._provisionalIdentityManager);
-    this._dataProtector = new DataProtector(client, storage.resourceStore, this._localUserManager.localUser,
-      this._userManager, this._provisionalIdentityManager, this._groupManager, this._resourceManager);
+    this._dataProtector = new DataProtector(client, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager, this._groupManager, this._resourceManager);
     this._cloudStorageManager = new CloudStorageManager(client, this._dataProtector);
   }
 
