@@ -95,10 +95,6 @@ export class Client extends EventEmitter {
     if (!opts.url) { opts.url = defaultApiAddress; }
 
     this.socket = new SocketIoWrapper(opts);
-
-    this.registerListener('new relevant block', () => {
-      this.emit('blockAvailable');
-    });
   }
 
   authenticate = async (userId: Uint8Array, signatureKeyPair: tcrypto.SodiumKeyPair) => {
