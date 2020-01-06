@@ -49,10 +49,6 @@ export default class KeyStore {
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
   }
 
-  get deviceId() {
-    return this._safe.deviceId;
-  }
-
   get localData(): LocalData {
     const { signaturePair, encryptionPair, localUserKeys, deviceId, trustchainPublicKey, devices } = this._safe;
     return {
@@ -75,11 +71,11 @@ export default class KeyStore {
     return this._saveSafe(userSecret);
   }
 
-  get provisionalUserKeys() {
+  get provisionalUserKeys(): IndexedProvisionalUserKeyPairs {
     return this._safe.provisionalUserKeys;
   }
 
-  async saveProvisionalUserKeys(provisionalUserKeys: IndexedProvisionalUserKeyPairs, userSecret: Uint8Array) {
+  async saveProvisionalUserKeys(provisionalUserKeys: IndexedProvisionalUserKeyPairs, userSecret: Uint8Array): Promise<void> {
     this._safe.provisionalUserKeys = provisionalUserKeys;
     return this._saveSafe(userSecret);
   }
@@ -118,7 +114,7 @@ export default class KeyStore {
     return keystore;
   }
 
-  async initData(userSecret: Uint8Array) {
+  async initData(userSecret: Uint8Array): Promise<void> {
     let record: Object;
     let safe: ?KeySafe;
 

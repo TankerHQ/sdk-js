@@ -56,11 +56,11 @@ export class Session extends EventEmitter {
     this._status = status;
   }
 
-  start() {
+  start(): Promise<Status> {
     return this._localUserManager.init();
   }
 
-  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
+  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
     const client = new Client(userData.trustchainId, clientOptions);
     client.open().catch((e) => {
       if (!(e instanceof OperationCanceled) && !(e instanceof NetworkError)) {

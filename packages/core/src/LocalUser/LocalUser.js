@@ -1,7 +1,7 @@
 // @flow
 
 import EventEmitter from 'events';
-import { tcrypto, utils } from '@tanker/crypto';
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError, DeviceRevoked } from '@tanker/errors';
 
 import type { DeviceCreationEntry, DeviceRevocationEntry, UserKeys, UserKeyPair } from '../Users/Serialize';
@@ -62,10 +62,10 @@ export class LocalUser extends EventEmitter {
     };
   }
 
-  get deviceEncryptionKeyPair() {
+  get deviceEncryptionKeyPair(): tcrypto.SodiumKeyPair {
     return this._deviceEncryptionKeyPair;
   }
-  get deviceSignatureKeyPair() {
+  get deviceSignatureKeyPair(): tcrypto.SodiumKeyPair {
     return this._deviceSignatureKeyPair;
   }
   get userId(): Uint8Array {
@@ -96,7 +96,7 @@ export class LocalUser extends EventEmitter {
     return this._devices;
   }
 
-  findUserKey = (userPublicKey: Uint8Array) => this._userKeys[utils.toBase64(userPublicKey)]
+  findUserKey = (userPublicKey: Uint8Array): tcrypto.SodiumKeyPair => this._userKeys[utils.toBase64(userPublicKey)]
 
   get currentUserKey(): tcrypto.SodiumKeyPair {
     if (!this._currentUserKey) {
@@ -105,7 +105,7 @@ export class LocalUser extends EventEmitter {
     return this._currentUserKey;
   }
 
-  makeBlock = (payload: Uint8Array, nature: Nature) => {
+  makeBlock = (payload: Uint8Array, nature: Nature): b64string => {
     if (!this._deviceId) {
       throw new InternalError('Assertion failed: localUser was not initialized');
     }
@@ -121,7 +121,7 @@ export class LocalUser extends EventEmitter {
     verifyTrustchainCreation(trustchainCreationEntry, this.trustchainId);
     this._trustchainPublicKey = trustchainCreationEntry.public_signature_key;
 
-    return this._initializeWithUserBlocks(b64Blocks.slice(1));
+    this._initializeWithUserBlocks(b64Blocks.slice(1));
   }
 
   _initializeWithUserBlocks = (userBlocks: Array<string>) => {

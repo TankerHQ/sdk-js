@@ -9,7 +9,7 @@ import KeyStore from './KeyStore';
 import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './KeySafe';
 
 import { Client } from '../Network/Client';
-import { type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
+import { type Verification, type VerificationMethod, type RemoteVerification, type Status, statuses } from './types';
 import { type UserData, type DelegationToken } from './UserData';
 import { type Device } from '../Users/types';
 
@@ -46,7 +46,7 @@ export class LocalUserManager extends EventEmitter {
     client.on('authentication_failed', (e) => this.authenticationError(e));
   }
 
-  init = async () => {
+  init = async (): Promise<Status> => {
     if (!this._localUser.isInitialized) {
       const { trustchainId, userId, deviceSignatureKeyPair } = this._localUser;
       const { deviceExists, userExists } = await this._client.remoteStatus(trustchainId, userId, deviceSignatureKeyPair.publicKey);
@@ -66,10 +66,10 @@ export class LocalUserManager extends EventEmitter {
     return statuses.READY;
   }
 
-  authenticate = async () => {
+  authenticate = async (): Promise<void> => {
     await this._client.authenticate(this._localUser.userId, this._localUser.deviceSignatureKeyPair);
     if (!this._localUser.isInitialized) {
-      await this.updateLocalUser();
+      return this.updateLocalUser();
     }
   }
 
@@ -87,7 +87,7 @@ export class LocalUserManager extends EventEmitter {
     await sendSetVerificationMethod(this._client, this._localUser, verification);
   }
 
-  createUser = async (verification: Verification) => {
+  createUser = async (verification: Verification): Promise<void> => {
     let ghostDeviceKeys;
     if (verification.verificationKey) {
       try {
@@ -111,7 +111,7 @@ export class LocalUserManager extends EventEmitter {
     await this.authenticate();
   }
 
-  createNewDevice = async (verification: Verification) => {
+  createNewDevice = async (verification: Verification): Promise<void> => {
     try {
       const unlockKey = await this._getUnlockKey(verification);
       const ghostDevice = extractGhostDevice(unlockKey);
@@ -149,7 +149,7 @@ export class LocalUserManager extends EventEmitter {
     return devices.filter(d => !d.isGhostDevice);
   }
 
-  findUserKey = async (publicKey: Uint8Array) => {
+  findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair> => {
     const userKey = this._localUser.findUserKey(publicKey);
     if (!userKey) {
       await this.updateLocalUser();
@@ -163,7 +163,7 @@ export class LocalUserManager extends EventEmitter {
     await this._keyStore.save(this._localUser.localData, this._localUser.userSecret);
   }
 
-  get localUser() {
+  get localUser(): LocalUser {
     return this._localUser;
   }
 
@@ -177,7 +177,7 @@ export class LocalUserManager extends EventEmitter {
     return null;
   }
 
-  addProvisionalUserKey = async (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array, privateProvisionalKeys: PrivateProvisionalKeys) => {
+  addProvisionalUserKey = async (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array, privateProvisionalKeys: PrivateProvisionalKeys): Promise<void> => {
     const id = utils.toBase64(utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey));
     this._provisionalUserKeys[id] = {
       id,
@@ -187,7 +187,7 @@ export class LocalUserManager extends EventEmitter {
     return this._keyStore.saveProvisionalUserKeys(this._provisionalUserKeys, this._localUser.userSecret);
   }
 
-  hasProvisionalUserKey = (appPublicEncryptionKey: Uint8Array) => {
+  hasProvisionalUserKey = (appPublicEncryptionKey: Uint8Array): bool => {
     const puks: Array<ProvisionalUserKeyPairs> = (Object.values(this._provisionalUserKeys): any);
     return puks.some(puk => utils.equalArray(puk.appEncryptionKeyPair.publicKey, appPublicEncryptionKey));
   }
