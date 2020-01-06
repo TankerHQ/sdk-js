@@ -3,9 +3,8 @@
 import { utils } from '@tanker/crypto';
 import { errors as dbErrors, mergeSchemas, type DataStore } from '@tanker/datastore-base';
 
-import KeyStore from './LocalUser/KeyStore';
-import ResourceStore from '../DataProtection/Resource/ResourceStore';
-import UserStore from '../Users/UserStore';
+import KeyStore from '../LocalUser/KeyStore';
+import ResourceStore from '../Resources/ResourceStore';
 import GroupStore from '../Groups/GroupStore';
 import { GlobalSchema, TABLE_METADATA } from './schema';
 
@@ -24,7 +23,6 @@ export default class Storage {
   _datastore: DataStore<*>;
   _keyStore: KeyStore;
   _resourceStore: ResourceStore;
-  _userStore: UserStore;
   _groupStore: GroupStore;
   _schemas: any;
 
@@ -40,10 +38,6 @@ export default class Storage {
     return this._resourceStore;
   }
 
-  get userStore(): UserStore {
-    return this._userStore;
-  }
-
   get groupStore(): GroupStore {
     return this._groupStore;
   }
@@ -55,7 +49,6 @@ export default class Storage {
       GlobalSchema,
       KeyStore.schemas,
       ResourceStore.schemas,
-      UserStore.schemas,
       GroupStore.schemas,
     );
 
@@ -66,10 +59,9 @@ export default class Storage {
 
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
-    this._userStore = new UserStore(this._datastore, userId);
     this._groupStore = await GroupStore.open(this._datastore, userSecret);
 
-    await this._checkVersion();
+    await this._checkVersion(userSecret);
   }
 
   async close() {
@@ -90,7 +82,7 @@ export default class Storage {
     await this._keyStore.close();
   }
 
-  async _checkVersion(): Promise<void> {
+  async _checkVersion(userSecret: Uint8Array): Promise<void> {
     let currentVersion;
     try {
       const record = await this._datastore.get(TABLE_METADATA, STORAGE_VERSION_KEY);
@@ -101,21 +93,17 @@ export default class Storage {
       }
     }
     if (!currentVersion || currentVersion < CURRENT_STORAGE_VERSION) {
-      await this.cleanupCaches();
+      await this.cleanupCaches(userSecret);
       await this._datastore.put(TABLE_METADATA, { _id: STORAGE_VERSION_KEY, storageVersion: CURRENT_STORAGE_VERSION });
     }
   }
 
-  async cleanupCaches() {
+  async cleanupCaches(userSecret: Uint8Array) {
     const currentSchema = this._schemas[this._schemas.length - 1];
     const cacheTables = currentSchema.tables.filter(t => !t.persistent && !t.deleted).map(t => t.name);
     for (const table of cacheTables) {
       await this._datastore.clear(table);
     }
-    await this._keyStore.clearCache();
-  }
-
-  hasLocalDevice() {
-    return !!this._keyStore.deviceId;
+    await this._keyStore.clearCache(userSecret);
   }
 }

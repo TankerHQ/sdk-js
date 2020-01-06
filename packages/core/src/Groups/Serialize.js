@@ -1,21 +1,15 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
+import { type PublicProvisionalUser } from '@tanker/identity';
+
 
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
-import { hashBlock } from '../Blocks/Block';
-import { type VerificationFields } from '../Blocks/entries';
+import { type VerificationFields, hashBlock } from '../Blocks/Block';
+import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
 
-export const SEALED_KEY_SIZE = tcrypto.SYMMETRIC_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
-export const TWO_TIMES_SEALED_KEY_SIZE = SEALED_KEY_SIZE + tcrypto.SEAL_OVERHEAD;
-
-const groupNatures = Object.freeze({
-  user_group_creation_v1: 10,
-  user_group_addition_v1: 12,
-  user_group_creation_v2: 15,
-  user_group_addition_v2: 16,
-});
+import { getLastUserPublicKey, type User } from '../Users/types';
 
 type GroupEncryptedKeyV1 = {|
     public_user_encryption_key: Uint8Array,
@@ -139,7 +133,7 @@ function unserializeProvisionalGroupEncryptedKeyV2(src: Uint8Array, offset: numb
   return unserializeGenericSub(src, [
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'app_provisional_user_public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_provisional_user_public_signature_key'),
-    (d, o) => getStaticArray(d, TWO_TIMES_SEALED_KEY_SIZE, o, 'encrypted_group_private_encryption_key'),
+    (d, o) => getStaticArray(d, tcrypto.TWO_TIMES_SEALED_KEY_SIZE, o, 'encrypted_group_private_encryption_key'),
   ], offset);
 }
 
@@ -175,7 +169,7 @@ function checkProvisionalGroupEncryptedKeyV2(blockType: string, key: Provisional
     throw new InternalError(`Assertion error: invalid ${blockType} app signature public key size`);
   if (key.tanker_provisional_user_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
     throw new InternalError(`Assertion error: invalid ${blockType} tanker signature public key size`);
-  if (key.encrypted_group_private_encryption_key.length !== TWO_TIMES_SEALED_KEY_SIZE)
+  if (key.encrypted_group_private_encryption_key.length !== tcrypto.TWO_TIMES_SEALED_KEY_SIZE)
     throw new InternalError(`Assertion error: invalid ${blockType} encrypted group private encryption key size`);
 }
 
@@ -294,24 +288,154 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   const signature = block.signature;
   const nature = block.nature;
   const hash = hashBlock(block);
-  const index = block.index;
 
-  if (block.nature === groupNatures.user_group_creation_v1) {
+  if (block.nature === NATURE.user_group_creation_v1) {
     const userGroupAction = unserializeUserGroupCreationV1(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash, index };
+    return { ...userGroupAction, author, signature, nature, hash };
   }
-  if (block.nature === groupNatures.user_group_creation_v2) {
+  if (block.nature === NATURE.user_group_creation_v2) {
     const userGroupAction = unserializeUserGroupCreationV2(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash, index };
+    return { ...userGroupAction, author, signature, nature, hash };
   }
-  if (block.nature === groupNatures.user_group_addition_v1) {
+  if (block.nature === NATURE.user_group_addition_v1) {
     const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash, index };
+    return { ...userGroupAction, author, signature, nature, hash };
   }
-  if (block.nature === groupNatures.user_group_addition_v2) {
+  if (block.nature === NATURE.user_group_addition_v2) {
     const userGroupAction = unserializeUserGroupAdditionV2(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash, index };
+    return { ...userGroupAction, author, signature, nature, hash };
   }
 
   throw new InternalError('Assertion error: wrong type for getGroupEntryFromBlock');
 }
+
+export const getUserGroupCreationBlockSignDataV1 = (record: UserGroupCreationRecordV1): Uint8Array => utils.concatArrays(
+  record.public_signature_key,
+  record.public_encryption_key,
+  record.encrypted_group_private_signature_key,
+  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
+);
+
+export const getUserGroupCreationBlockSignDataV2 = (record: UserGroupCreationRecordV2): Uint8Array => utils.concatArrays(
+  record.public_signature_key,
+  record.public_encryption_key,
+  record.encrypted_group_private_signature_key,
+  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
+    gek.user_id,
+    gek.public_user_encryption_key,
+    gek.encrypted_group_private_encryption_key
+  )),
+  ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
+    gek.app_provisional_user_public_signature_key,
+    gek.tanker_provisional_user_public_signature_key,
+    gek.encrypted_group_private_encryption_key
+  ))
+);
+
+export const getUserGroupAdditionBlockSignDataV1 = (record: UserGroupAdditionRecordV1): Uint8Array => utils.concatArrays(
+  record.group_id,
+  record.previous_group_block,
+  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
+);
+
+export const getUserGroupAdditionBlockSignDataV2 = (record: UserGroupAdditionRecordV2): Uint8Array => utils.concatArrays(
+  record.group_id,
+  record.previous_group_block,
+  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
+    gek.user_id,
+    gek.public_user_encryption_key,
+    gek.encrypted_group_private_encryption_key
+  )),
+  ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
+    gek.app_provisional_user_public_signature_key,
+    gek.tanker_provisional_user_public_signature_key,
+    gek.encrypted_group_private_encryption_key
+  ))
+);
+
+export const makeUserGroupCreation = (signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
+  const encryptedPrivateSignatureKey = tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey);
+
+  const keysForUsers = users.map(u => {
+    const userPublicKey = getLastUserPublicKey(u);
+    if (!userPublicKey)
+      throw new InternalError('createUserGroup: user does not have user keys');
+    return {
+      user_id: u.userId,
+      public_user_encryption_key: userPublicKey,
+      encrypted_group_private_encryption_key: tcrypto.sealEncrypt(encryptionKeyPair.privateKey, userPublicKey),
+    };
+  });
+
+  const keysForProvisionalUsers = provisionalUsers.map(u => {
+    const preEncryptedKey = tcrypto.sealEncrypt(
+      encryptionKeyPair.privateKey,
+      u.appEncryptionPublicKey,
+    );
+    const encryptedKey = tcrypto.sealEncrypt(
+      preEncryptedKey,
+      u.tankerEncryptionPublicKey,
+    );
+    return {
+      app_provisional_user_public_signature_key: u.appSignaturePublicKey,
+      tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
+      encrypted_group_private_encryption_key: encryptedKey,
+    };
+  });
+
+  const payload = {
+    public_signature_key: signatureKeyPair.publicKey,
+    public_encryption_key: encryptionKeyPair.publicKey,
+    encrypted_group_private_signature_key: encryptedPrivateSignatureKey,
+    encrypted_group_private_encryption_keys_for_users: keysForUsers,
+    encrypted_group_private_encryption_keys_for_provisional_users: keysForProvisionalUsers,
+    self_signature: new Uint8Array(0),
+  };
+
+  const signData = getUserGroupCreationBlockSignDataV2(payload);
+  payload.self_signature = tcrypto.sign(signData, signatureKeyPair.privateKey);
+
+  return { payload: serializeUserGroupCreationV2(payload), nature: preferredNature(NATURE_KIND.user_group_creation) };
+};
+
+export const makeUserGroupAddition = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
+  const keysForUsers = users.map(u => {
+    const userPublicKey = getLastUserPublicKey(u);
+    if (!userPublicKey)
+      throw new InternalError('addToUserGroup: user does not have user keys');
+    return {
+      user_id: u.userId,
+      public_user_encryption_key: userPublicKey,
+      encrypted_group_private_encryption_key: tcrypto.sealEncrypt(privateEncryptionKey, userPublicKey),
+    };
+  });
+
+  const keysForProvisionalUsers = provisionalUsers.map(u => {
+    const preEncryptedKey = tcrypto.sealEncrypt(
+      privateEncryptionKey,
+      u.appEncryptionPublicKey,
+    );
+    const encryptedKey = tcrypto.sealEncrypt(
+      preEncryptedKey,
+      u.tankerEncryptionPublicKey,
+    );
+    return {
+      app_provisional_user_public_signature_key: u.appSignaturePublicKey,
+      tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
+      encrypted_group_private_encryption_key: encryptedKey,
+    };
+  });
+
+  const payload = {
+    group_id: groupId,
+    previous_group_block: previousGroupBlock,
+    encrypted_group_private_encryption_keys_for_users: keysForUsers,
+    encrypted_group_private_encryption_keys_for_provisional_users: keysForProvisionalUsers,
+    self_signature_with_current_key: new Uint8Array(0),
+  };
+
+  const signData = getUserGroupAdditionBlockSignDataV2(payload);
+  payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
+
+  return { payload: serializeUserGroupAdditionV2(payload), nature: preferredNature(NATURE_KIND.user_group_addition) };
+};

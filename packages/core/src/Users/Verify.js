@@ -32,7 +32,7 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
     if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, authorDevice.devicePublicSignatureKey))
       throw new InvalidBlockError('invalid_delegation_signature', 'invalid signature from device creation author', { entry, authorDevice });
 
-    if (authorDevice.revokedAt < entry.index)
+    if (authorDevice.revoked)
       throw new InvalidBlockError('revoked_author_error', 'device creation author is revoked', { entry });
 
     if (entry.nature === NATURE.device_creation_v3 && userPublicKey && entry.user_key_pair
@@ -66,7 +66,7 @@ export function verifyDeviceRevocation(entry: DeviceRevocationEntry, authorUser:
   const revokedDevice = find(authorUser.devices, d => utils.equalArray(d.deviceId, entry.device_id));
   if (!revokedDevice)
     throw new InvalidBlockError('invalid_revoked_device', 'can\'t find target of device revocation block', { entry });
-  if (revokedDevice.revokedAt < entry.index)
+  if (revokedDevice.revoked)
     throw new InvalidBlockError('device_already_revoked', 'target of device_revocation block is already revoked', { entry, revokedDevice });
 
   if (entry.nature === NATURE.device_revocation_v1) {
@@ -80,7 +80,7 @@ export function verifyDeviceRevocation(entry: DeviceRevocationEntry, authorUser:
     if (userPublicKey && !utils.equalArray(newKeys.previous_public_encryption_key, userPublicKey))
       throw new InvalidBlockError('invalid_previous_key', 'previous public user encryption key does not match', { entry, authorUser });
 
-    const activeDevices = authorUser.devices.filter(d => d.revokedAt > entry.index && !utils.equalArray(d.deviceId, entry.device_id));
+    const activeDevices = authorUser.devices.filter(d => !d.revoked && !utils.equalArray(d.deviceId, entry.device_id));
     if (activeDevices.length !== newKeys.private_keys.length)
       throw new InvalidBlockError('invalid_new_key', 'device number mismatch', { entry, authorUser, activeDeviceCount: activeDevices.length, userKeysCount: newKeys.private_keys.length });
     for (const device of activeDevices) {

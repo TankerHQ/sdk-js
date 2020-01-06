@@ -8,21 +8,20 @@ import { castData, getDataLength } from '@tanker/types';
 import type { PublicIdentity, PublicProvisionalUser } from '@tanker/identity';
 import type { Data } from '@tanker/types';
 
-import { ResourceManager } from './Resource/ResourceManager';
-import ResourceStore from './Resource/ResourceStore';
-import { KeyDecryptor } from './Resource/KeyDecryptor';
-
-import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
-
-import { type Block } from '../Blocks/Block';
 import { Client } from '../Network/Client';
-import LocalUser from '../Session/LocalUser/LocalUser';
+import LocalUser from '../LocalUser/LocalUser';
+import ResourceManager from '../Resources/Manager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import GroupManager from '../Groups/Manager';
 import UserManager from '../Users/Manager';
+
+import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './types';
+import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
+import type { Resource } from './types';
+
 import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './Resource';
-import type { Resource } from './Resource';
+
 import type { OutputOptions, ProgressOptions, SharingOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
@@ -32,48 +31,40 @@ import { ProgressHandler } from './ProgressHandler';
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
 
 export class DataProtector {
-  _resourceManager: ResourceManager;
   _client: Client;
 
-  _groupManager: GroupManager;
   _localUser: LocalUser;
   _userManager: UserManager;
   _provisionalIdentityManager: ProvisionalIdentityManager
+  _groupManager: GroupManager;
+  _resourceManager: ResourceManager;
 
   constructor(
-    resourceStore: ResourceStore,
     client: Client,
-    groupManager: GroupManager,
     localUser: LocalUser,
     userManager: UserManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
+    groupManager: GroupManager,
+    resourceManager: ResourceManager,
   ) {
-    this._resourceManager = new ResourceManager(
-      resourceStore,
-      client,
-      new KeyDecryptor(
-        localUser,
-        groupManager,
-        provisionalIdentityManager
-      ),
-    );
     this._client = client;
     this._groupManager = groupManager;
     this._localUser = localUser;
     this._userManager = userManager;
     this._provisionalIdentityManager = provisionalIdentityManager;
+    this._resourceManager = resourceManager;
   }
 
   _makeKeyPublishBlocks(
     resource: Array<Resource>,
     keys: Array<Uint8Array>,
-    nature: NatureKind
-  ): Array<Block> {
-    const blocks: Array<Block> = [];
+    natureKind: NatureKind
+  ): Array<b64string> {
+    const blocks: Array<b64string> = [];
     for (const publicEncryptionKey of keys) {
       for (const { key, resourceId } of resource) {
-        const block = this._localUser.blockGenerator.makeKeyPublishBlock(publicEncryptionKey, key, resourceId, nature);
-        blocks.push(block);
+        const { payload, nature } = makeKeyPublish(publicEncryptionKey, key, resourceId, natureKind);
+        blocks.push(this._localUser.makeBlock(payload, nature));
       }
     }
     return blocks;
@@ -82,11 +73,12 @@ export class DataProtector {
   _makeKeyPublishToProvisionalIdentityBlocks(
     resource: Array<Resource>,
     provisionalUsers: Array<PublicProvisionalUser>
-  ): Array<Block> {
-    const blocks: Array<Block> = [];
+  ): Array<b64string> {
+    const blocks: Array<b64string> = [];
     for (const provisionalUser of provisionalUsers) {
       for (const { key, resourceId } of resource) {
-        blocks.push(this._localUser.blockGenerator.makeKeyPublishToProvisionalUserBlock(provisionalUser, key, resourceId));
+        const { payload, nature } = makeKeyPublishToProvisionalUser(provisionalUser, key, resourceId);
+        blocks.push(this._localUser.makeBlock(payload, nature));
       }
     }
     return blocks;
@@ -98,7 +90,7 @@ export class DataProtector {
     recipientProvisionalUsers: Array<PublicProvisionalUser>,
     recipientGroupsEncryptionKeys: Array<Uint8Array>
   ): Promise<void> {
-    let blocks: Array<Block> = [];
+    let blocks: Array<b64string> = [];
     if (recipientGroupsEncryptionKeys.length > 0) {
       blocks = blocks.concat(this._makeKeyPublishBlocks(resource, recipientGroupsEncryptionKeys, NATURE_KIND.key_publish_to_user_group));
     }
@@ -118,16 +110,18 @@ export class DataProtector {
       blocks = blocks.concat(this._makeKeyPublishBlocks(resource, keys, NATURE_KIND.key_publish_to_user));
     }
 
-    await this._client.sendKeyPublishBlocks(blocks);
+    await this._client.send('push keys', blocks, false);
   }
 
   _handleShareWithSelf = (identities: Array<PublicIdentity>, shareWithSelf: bool): Array<PublicIdentity> => {
     if (shareWithSelf) {
-      const selfUserIdentity = this._localUser.publicIdentity;
+      const selfUserIdB64 = utils.toBase64(this._localUser.userId);
+      const trustchainIdB64 = utils.toBase64(this._localUser.trustchainId);
+
       if (!identities.some(identity => identity.target === 'user'
-                                    && identity.value === selfUserIdentity.value
-                                    && identity.trustchain_id === selfUserIdentity.trustchain_id)) {
-        return identities.concat([selfUserIdentity]);
+                                    && identity.value === selfUserIdB64
+                                    && identity.trustchain_id === trustchainIdB64)) {
+        return identities.concat([{ trustchain_id: trustchainIdB64, target: 'user', value: selfUserIdB64 }]);
       }
     }
 

@@ -9,7 +9,7 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
 
-import { type EmailVerification, type RemoteVerification, statuses } from '../Session/types';
+import { type EmailVerification, type RemoteVerification, statuses } from '../LocalUser/types';
 import { type SharingOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {
@@ -196,8 +196,6 @@ describe('Tanker', () => {
     beforeEach(() => {
       // mock a session
       tanker._session = ({ // eslint-disable-line no-underscore-dangle
-        localUser: {},
-        storage: { keyStore: { deviceId: new Uint8Array([]) } },
         status: statuses.READY,
       }: any);
     });
@@ -238,10 +236,6 @@ describe('Tanker', () => {
         tanker._session.getVerificationMethods = async () => [{ type: 'passphrase' }]; // eslint-disable-line no-underscore-dangle
 
         await expect(tanker.generateVerificationKey()).to.be.rejectedWith(PreconditionFailed);
-      });
-
-      it('getting the device id should not throw', async () => {
-        expect(() => tanker.deviceId).to.not.throw();
       });
 
       it('getting the resource id should throw if invalid argument given', async () => {

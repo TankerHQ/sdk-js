@@ -7,9 +7,9 @@ import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, UserGroupEntry 
 import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
 
-import { type ProvisionalUserKeyPairs } from '../Session/LocalUser/KeySafe';
-import ProvisionalIdentityManager from '../Session/ProvisionalIdentity/ProvisionalIdentityManager';
-import LocalUser from '../Session/LocalUser/LocalUser';
+import { type ProvisionalUserKeyPairs } from '../LocalUser/KeySafe';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
+import LocalUser from '../LocalUser/LocalUser';
 
 export const MAX_GROUP_SIZE = 1000;
 
@@ -125,7 +125,6 @@ export async function groupFromUserGroupEntry(
     return {
       ...previousGroup,
       lastGroupBlock: entry.hash,
-      index: entry.index,
     };
   }
 
@@ -143,7 +142,6 @@ export async function groupFromUserGroupEntry(
     publicSignatureKey,
     publicEncryptionKey,
     lastGroupBlock: entry.hash,
-    index: entry.index,
     encryptedPrivateSignatureKey,
   };
 

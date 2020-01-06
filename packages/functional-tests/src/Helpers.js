@@ -2,7 +2,7 @@
 import Socket from 'socket.io-client'; // eslint-disable-line import/no-extraneous-dependencies
 
 import type { b64string } from '@tanker/core';
-import { hashBlock, type Block } from '@tanker/core/src/Blocks/Block';
+import { hashBlock } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
 import { random, tcrypto, utils } from '@tanker/crypto';
@@ -128,8 +128,7 @@ export const makeRandomUint8Array = (sizeOfData: number) => {
 };
 
 export function makeRootBlock(appKeyPair: Object) {
-  const rootBlock: Block = {
-    index: 1,
+  const rootBlock = {
     trustchain_id: new Uint8Array(0),
     nature: preferredNature(NATURE_KIND.trustchain_creation),
     author: new Uint8Array(32),

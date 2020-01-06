@@ -1,45 +1,66 @@
 // @flow
 import EventEmitter from 'events';
-import { InternalError, InvalidVerification, OperationCanceled, NetworkError, TankerError, DeviceRevoked } from '@tanker/errors';
+
+import { OperationCanceled, NetworkError, DeviceRevoked, InternalError } from '@tanker/errors';
 
 import Storage, { type DataStoreOptions } from './Storage';
-import LocalUser from './LocalUser/LocalUser';
 import { Client, type ClientOptions } from '../Network/Client';
-import { type Status, type Verification, type VerificationMethod, type RemoteVerification, statuses } from './types';
-import { Managers } from './Managers';
-import { type UserData } from './UserData';
+import { type Status, statuses } from '../LocalUser/types';
+import { type UserData, type DelegationToken } from '../LocalUser/UserData';
 
-import { sendGetVerificationKey, getLastUserKey, sendUserCreation, getVerificationMethods, sendSetVerificationMethod } from './requests';
-
-import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, decryptUnlockKey } from './LocalUser/ghostDevice';
+import LocalUserManager from '../LocalUser/Manager';
+import UserManager from '../Users/Manager';
+import GroupManager from '../Groups/Manager';
+import CloudStorageManager from '../CloudStorage/Manager';
+import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
+import ResourceManager from '../Resources/Manager';
+import DataProtector from '../DataProtection/DataProtector';
 
 export class Session extends EventEmitter {
-  localUser: LocalUser;
-
-  storage: Storage;
+  _storage: Storage;
   _client: Client;
 
+  _localUserManager: LocalUserManager;
+  _userManager: UserManager;
+  _groupManager: GroupManager;
+  _provisionalIdentityManager: ProvisionalIdentityManager;
+  _resourceManager: ResourceManager;
+  _dataProtector: DataProtector;
+  _cloudStorageManager: CloudStorageManager;
+
   _status: Status;
+  _delegationToken: ?DelegationToken;
 
-  _managers: Managers;
-
-  constructor(localUser: LocalUser, storage: Storage, client: Client, status: Status) {
+  constructor(userData: UserData, storage: Storage, client: Client) {
     super();
 
-    this.storage = storage;
-    this.localUser = localUser;
+    this._storage = storage;
     this._client = client;
-    this._status = status;
+    this._status = statuses.STOPPED;
 
-    client.on('authentication_failed', (e) => this.authenticationError(e));
-    this._managers = new Managers(localUser, storage, client);
+    this._localUserManager = new LocalUserManager(userData, client, storage.keyStore);
+    this._localUserManager.on('authentication_failed', this.close);
+
+    this._userManager = new UserManager(client, this._localUserManager.localUser);
+    this._provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, this._localUserManager, this._userManager);
+    this._groupManager = new GroupManager(client, storage.groupStore, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager);
+    this._resourceManager = new ResourceManager(client, storage.resourceStore, this._localUserManager, this._groupManager, this._provisionalIdentityManager);
+    this._dataProtector = new DataProtector(client, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager, this._groupManager, this._resourceManager);
+    this._cloudStorageManager = new CloudStorageManager(client, this._dataProtector);
   }
 
   get status(): Status {
     return this._status;
   }
+  set status(status: Status) {
+    this._status = status;
+  }
 
-  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions) => {
+  start(): Promise<Status> {
+    return this._localUserManager.init();
+  }
+
+  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
     const client = new Client(userData.trustchainId, clientOptions);
     client.open().catch((e) => {
       if (!(e instanceof OperationCanceled) && !(e instanceof NetworkError)) {
@@ -49,165 +70,69 @@ export class Session extends EventEmitter {
 
     const storage = new Storage(storeOptions);
     await storage.open(userData.userId, userData.userSecret);
+    const session = new Session(userData, storage, client);
 
-    const localUser = new LocalUser(userData, storage.keyStore);
-
-    if (!storage.hasLocalDevice()) {
-      const { deviceExists, userExists } = await client.remoteStatus(localUser.trustchainId, localUser.userId, localUser.publicSignatureKey);
-
-      if (!userExists) {
-        return new Session(localUser, storage, client, statuses.IDENTITY_REGISTRATION_NEEDED);
-      }
-
-      if (!deviceExists) {
-        return new Session(localUser, storage, client, statuses.IDENTITY_VERIFICATION_NEEDED);
-      }
-
-      // Device registered on the trustchain, but device creation block not pulled yet...
-      // Wait for the pull to catch missing blocks.
-      const session = new Session(localUser, storage, client, statuses.STOPPED);
-      await session.authenticate();
-      return session;
-    }
-
-    const session = new Session(localUser, storage, client, statuses.READY);
-
-    session.authenticate().catch((e) => session.authenticationError(e));
+    session.status = await session.start();
     return session;
-  }
-
-  authenticate = async () => {
-    await this._client.authenticate(this.localUser.userId, this.storage.keyStore.signatureKeyPair);
-    if (!this.localUser.isInitialized) {
-      await this._updateLocalUser();
-    }
-    this._status = statuses.READY;
-  }
-
-  authenticationError = (e: Error) => {
-    // OperationCanceled: thrown if you never managed to authenticate and the session gets closed
-    if (!(e instanceof NetworkError) && !(e instanceof OperationCanceled)) {
-      console.error(e);
-      this.emit('authentication_failed');
-    }
-  };
-
-  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => getVerificationMethods(this._client, this.localUser)
-
-  setVerificationMethod = async (verification: RemoteVerification): Promise<void> => {
-    await sendSetVerificationMethod(this._client, this.localUser, verification);
-  }
-
-  createUser = async (verification: Verification) => {
-    let ghostDeviceKeys;
-    if (verification.verificationKey) {
-      try {
-        ghostDeviceKeys = ghostDeviceKeysFromUnlockKey(verification.verificationKey);
-      } catch (e) {
-        throw new InvalidVerification(e);
-      }
-    } else {
-      ghostDeviceKeys = generateGhostDeviceKeys();
-    }
-
-    const { userCreationBlock, firstDeviceBlock, encryptedUnlockKey } = this.localUser.generateUserCreation(ghostDeviceKeys);
-    await sendUserCreation(this._client, this.localUser, userCreationBlock, firstDeviceBlock, verification, encryptedUnlockKey);
-    await this.authenticate();
-  }
-
-  unlockUser = async (verification: Verification) => {
-    try {
-      const unlockKey = await this._getUnlockKey(verification);
-      const ghostDevice = extractGhostDevice(unlockKey);
-
-      const encryptedUserKey = await getLastUserKey(this._client, this.localUser.trustchainId, ghostDevice);
-
-      const newDeviceBlock = await this.localUser.generateDeviceFromGhostDevice(ghostDevice, encryptedUserKey);
-      await this._client.send('create device', newDeviceBlock, true);
-    } catch (e) {
-      if (e instanceof TankerError) {
-        throw e;
-      }
-      if (verification.verificationKey) {
-        throw new InvalidVerification(e);
-      }
-      throw new InternalError(e);
-    }
-    await this.authenticate();
-  }
-
-
-  async revokeDevice(revokedDeviceId: string): Promise<void> {
-    await this._updateLocalUser();
-    const user = await this._managers.userManager.findUser(this.localUser.userId);
-    if (!user)
-      throw new InternalError('Cannot find the current user in the users');
-
-    const revokeDeviceBlock = this.localUser.blockGenerator.makeDeviceRevocationBlock(user, this.localUser.currentUserKey, revokedDeviceId);
-    await this._client.sendBlock(revokeDeviceBlock);
-    await this._updateLocalUser();
-  }
-
-  _updateLocalUser = async () => {
-    try {
-      const localUserBlocks = await this._client.send('get my user blocks');
-      await this.localUser.initializeWithBlocks(localUserBlocks);
-    } catch (e) {
-      if (e instanceof DeviceRevoked) {
-        await this._nuke();
-        this.emit('device_revoked');
-      } else {
-        throw e;
-      }
-    }
-  }
-
-  generateVerificationKey = async () => {
-    const ghostDeviceKeys = generateGhostDeviceKeys();
-
-    return ghostDeviceToUnlockKey({
-      privateSignatureKey: ghostDeviceKeys.signatureKeyPair.privateKey,
-      privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
-    });
   }
 
   close = async () => {
     await this._client.close();
-    await this.storage.close();
+    await this._storage.close();
     this._status = statuses.STOPPED;
   }
 
-  _nuke = async () => {
+  nuke = async () => {
     await this._client.close();
-    await this.storage.nuke();
+    await this._storage.nuke();
     this._status = statuses.STOPPED;
   }
 
-  _getUnlockKey = async (verification: Verification) => {
-    if (verification.verificationKey) {
-      return verification.verificationKey;
-    }
-    const remoteVerification: RemoteVerification = (verification: any);
-    const encryptedUnlockKey = await sendGetVerificationKey(this.localUser, this._client, remoteVerification);
-    return decryptUnlockKey(encryptedUnlockKey, this.localUser.userSecret);
+  createUser = async (...args: any) => {
+    await this._localUserManager.createUser(...args);
+    this._status = statuses.READY;
   }
+  createNewDevice = async (...args: any) => {
+    await this._localUserManager.createNewDevice(...args);
+    this._status = statuses.READY;
+  }
+  revokeDevice = (...args: any) => this._forward(this._localUserManager, 'revokeDevice', ...args)
+  listDevices = (...args: any) => this._forward(this._localUserManager, 'listDevices', ...args)
+  deviceId = () => this._localUserManager.localUser.deviceId
 
-  upload = (...args: any) => this._forward(this._managers.cloudStorageManager, 'upload', ...args)
-  download = (...args: any) => this._forward(this._managers.cloudStorageManager, 'download', ...args)
+  setVerificationMethod = (...args: any) => this._forward(this._localUserManager, 'setVerificationMethod', ...args)
+  getVerificationMethods = (...args: any) => this._forward(this._localUserManager, 'getVerificationMethods', ...args)
+  generateVerificationKey = (...args: any) => this._forward(this._localUserManager, 'generateVerificationKey', ...args)
 
-  encryptData = (...args: any) => this._forward(this._managers.dataProtector, 'encryptData', ...args)
-  decryptData = (...args: any) => this._forward(this._managers.dataProtector, 'decryptData', ...args)
-  share = (...args: any) => this._forward(this._managers.dataProtector, 'share', ...args)
-  makeDecryptorStream = (...args: any) => this._forward(this._managers.dataProtector, 'makeDecryptorStream', ...args)
-  makeEncryptorStream = (...args: any) => this._forward(this._managers.dataProtector, 'makeEncryptorStream', ...args)
+  upload = (...args: any) => this._forward(this._cloudStorageManager, 'upload', ...args)
+  download = (...args: any) => this._forward(this._cloudStorageManager, 'download', ...args)
 
-  attachProvisionalIdentity = (...args: any) => this._forward(this._managers.provisionalIdentityManager, 'attachProvisionalIdentity', ...args)
-  verifyProvisionalIdentity = (...args: any) => this._forward(this._managers.provisionalIdentityManager, 'verifyProvisionalIdentity', ...args)
+  encryptData = (...args: any) => this._forward(this._dataProtector, 'encryptData', ...args)
+  decryptData = (...args: any) => this._forward(this._dataProtector, 'decryptData', ...args)
+  share = (...args: any) => this._forward(this._dataProtector, 'share', ...args)
+  makeDecryptorStream = (...args: any) => this._forward(this._dataProtector, 'makeDecryptorStream', ...args)
+  makeEncryptorStream = (...args: any) => this._forward(this._dataProtector, 'makeEncryptorStream', ...args)
 
-  createGroup = (...args: any) => this._forward(this._managers.groupManager, 'createGroup', ...args)
-  updateGroupMembers = (...args: any) => this._forward(this._managers.groupManager, 'updateGroupMembers', ...args)
+  attachProvisionalIdentity = (...args: any) => this._forward(this._provisionalIdentityManager, 'attachProvisionalIdentity', ...args)
+  verifyProvisionalIdentity = (...args: any) => this._forward(this._provisionalIdentityManager, 'verifyProvisionalIdentity', ...args)
 
-  findUser = (...args: any) => this._forward(this._managers.userManager, 'findUser', ...args)
+  createGroup = (...args: any) => this._forward(this._groupManager, 'createGroup', ...args)
+  updateGroupMembers = (...args: any) => this._forward(this._groupManager, 'updateGroupMembers', ...args)
+
+  findUser = (...args: any) => this._forward(this._userManager, 'findUser', ...args)
+
+  _handleDeviceRevoked = async () => {
+    try {
+      await this._localUserManager.updateLocalUser();
+      throw new InternalError('Assertion error: the server is rejecting us but we are not revoked');
+    } catch (e) {
+      if (e instanceof DeviceRevoked) {
+        await this.nuke();
+        this.emit('device_revoked');
+      }
+      throw e;
+    }
+  }
 
   _forward = async (manager: any, func: string, ...args: any) => {
     try {
@@ -215,7 +140,7 @@ export class Session extends EventEmitter {
       return res;
     } catch (e) {
       if (e instanceof DeviceRevoked) {
-        await this._updateLocalUser();
+        await this._handleDeviceRevoked();
       }
       throw e;
     }
