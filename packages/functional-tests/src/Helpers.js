@@ -51,7 +51,8 @@ if (process.browser) {
 
 export { tankerUrl, fakeAuthUrl, idToken, oidcSettings };
 
-const socket = new Socket(tankerUrl, { transports: ['websocket', 'polling'] });
+const query = { type: 'admin', context: 'js-functional-tests' };
+const socket = new Socket(tankerUrl, { transports: ['websocket', 'polling'], query });
 
 async function send(eventName: string, message: Object | string) {
   const jdata = eventName !== 'push block' ? JSON.stringify(message) : message;
