@@ -6,6 +6,8 @@ import { utils } from '@tanker/crypto';
 
 import { type TestArgs } from './TestArgs';
 
+import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
+
 const { STOPPED, READY, IDENTITY_REGISTRATION_NEEDED, IDENTITY_VERIFICATION_NEEDED } = statuses;
 
 const generateStartTests = (args: TestArgs) => {
@@ -27,14 +29,19 @@ const generateStartTests = (args: TestArgs) => {
     });
 
     it('throws when having configured a non existing app', async () => {
+      const silenceError = silencer.silence('error', /trustchain_not_found/);
+
       const nonExistentB64AppSecret = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
       const publicKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
       const publicKeyBytes = utils.fromBase64(publicKey);
       const nonExistentB64AppId = utils.toBase64(utils.generateAppID(publicKeyBytes));
       const userId = 'bob';
       bobIdentity = await createIdentity(nonExistentB64AppId, nonExistentB64AppSecret, userId);
-      bobLaptop = args.makeTanker(nonExistentB64AppId);
-      await expect(bobLaptop.start(bobIdentity)).to.be.rejectedWith(errors.PreconditionFailed, 'trustchain_not_found');
+      const bobMobile = args.makeTanker(nonExistentB64AppId);
+      await expect(bobMobile.start(bobIdentity)).to.be.rejectedWith(errors.PreconditionFailed, 'trustchain_not_found');
+      await bobMobile.stop();
+
+      silenceError.restore();
     });
 
     it('throws when giving invalid arguments', async () => {
