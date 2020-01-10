@@ -6,6 +6,8 @@ import { utils } from '@tanker/crypto';
 
 import { type TestArgs } from './TestArgs';
 
+import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
+
 const { STOPPED, READY, IDENTITY_REGISTRATION_NEEDED, IDENTITY_VERIFICATION_NEEDED } = statuses;
 
 const generateStartTests = (args: TestArgs) => {
@@ -27,14 +29,19 @@ const generateStartTests = (args: TestArgs) => {
     });
 
     it('throws when having configured a non existing app', async () => {
+      const silenceError = silencer.silence('error', /trustchain_not_found/);
+
       const nonExistentB64AppSecret = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
       const publicKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
       const publicKeyBytes = utils.fromBase64(publicKey);
       const nonExistentB64AppId = utils.toBase64(utils.generateAppID(publicKeyBytes));
       const userId = 'bob';
       bobIdentity = await createIdentity(nonExistentB64AppId, nonExistentB64AppSecret, userId);
-      bobLaptop = args.makeTanker(nonExistentB64AppId);
-      await expect(bobLaptop.start(bobIdentity)).to.be.rejectedWith(errors.NetworkError, 'trustchain_not_found');
+      const bobMobile = args.makeTanker(nonExistentB64AppId);
+      await expect(bobMobile.start(bobIdentity)).to.be.rejectedWith(errors.PreconditionFailed, 'trustchain_not_found');
+      await bobMobile.stop();
+
+      silenceError.restore();
     });
 
     it('throws when giving invalid arguments', async () => {
@@ -89,6 +96,49 @@ const generateStartTests = (args: TestArgs) => {
       // Check a single device is created
       const devices = await bobLaptop.getDeviceList();
       expect(devices).to.deep.have.members([{ id: bobLaptop.deviceId, isRevoked: false }]);
+    });
+  });
+
+  describe('stop', () => {
+    let bobIdentity;
+    let bobLaptop;
+
+    beforeEach(async () => {
+      bobIdentity = await args.appHelper.generateIdentity();
+      bobLaptop = args.makeTanker();
+      await bobLaptop.start(bobIdentity);
+    });
+
+    afterEach(async () => {
+      bobLaptop.stop();
+    });
+
+    it('stops the session when a "session error" is sent from the server', async () => {
+      const silenceError = silencer.silence('error', /trustchain_not_found/);
+
+      const expectPromise = Promise.race([
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Test should have succeeded much faster')), 1000)),
+        new Promise(resolve => {
+          bobLaptop.on('statusChange', (status) => {
+            expect(status).to.equal(STOPPED);
+            resolve();
+          });
+        }),
+      ]);
+
+      // Simulate a server sent event
+      bobLaptop._session._client.socket.socket.onpacket({ // eslint-disable-line no-underscore-dangle
+        type: 2,
+        nsp: '/',
+        data: [
+          'session error',
+          '{"error":{"status":404,"code":"trustchain_not_found","message":"This trustchain does not exist","error":null}}',
+        ]
+      });
+
+      await expect(expectPromise).to.be.fulfilled;
+
+      silenceError.restore();
     });
   });
 

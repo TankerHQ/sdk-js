@@ -6,7 +6,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts, DeviceRevoked } from '@tanker/errors';
 
 import { VerificationNeeded } from '../errors.internal';
-import SocketIoWrapper, { type SdkInfo } from './SocketIoWrapper';
+import SocketIoWrapper, { type Listener, type SdkInfo } from './SocketIoWrapper';
 
 import { type Authenticator, takeChallenge } from './Authenticator';
 
@@ -73,7 +73,8 @@ const serverErrorMap = {
 export class Client extends EventEmitter {
   socket: SocketIoWrapper;
   trustchainId: Uint8Array;
-  sessionConnections: Set<number>;
+  eventListeners: Map<number, Listener>;
+  eventListenerCounter: number;
   _authenticator: ?Authenticator;
   _abortOpen: ?() => void;
   _opening: ?Promise<void>;
@@ -83,7 +84,9 @@ export class Client extends EventEmitter {
   constructor(trustchainId: Uint8Array, options?: ClientOptions) {
     super();
     this.trustchainId = trustchainId;
-    this.sessionConnections = new Set();
+
+    this.eventListenerCounter = 0;
+    this.eventListeners = new Map();
 
     // By default, the socket.io client has the following options set to true:
     //   -> autoConnect: no need to call socket.open()
@@ -93,8 +96,16 @@ export class Client extends EventEmitter {
 
     this.socket = new SocketIoWrapper(opts);
 
-    this.registerListener('new relevant block', () => {
-      this.emit('blockAvailable');
+    this.registerListener('session error', (reason) => {
+      const error = new PreconditionFailed(`socket disconnected by server: ${reason}`);
+
+      this.socket.abortRequests(error);
+
+      // Avoid firing unhandled events when the client is opening and
+      // the enclosing session is not available yet.
+      if (this.listenerCount('error') > 0) {
+        this.emit('error', error);
+      }
     });
   }
 
@@ -109,7 +120,7 @@ export class Client extends EventEmitter {
     });
 
     this.registerListener('reconnect', () => {
-      this._authenticate().catch((e) => this.emit('authentication_failed', e));
+      this._authenticate().catch(error => this.emit('error', error));
     });
     return this._authenticate();
   }
@@ -148,24 +159,30 @@ export class Client extends EventEmitter {
     return this._authenticating;
   }
 
-  registerListener = (event: string, cb: (...Array<any>) => void): number => {
-    const id = this.socket.on(event, cb);
-    this.sessionConnections.add(id);
+  registerListener = (event: string, handler: (...Array<any>) => void): number => {
+    const id = this.eventListenerCounter;
+    this.eventListenerCounter += 1;
+    this.eventListeners.set(id, { event, handler });
+    this.socket.on(event, handler);
     return id;
   }
 
-  unregisterListener = async (id: number): Promise<void> => {
-    this.sessionConnections.delete(id);
-    await this.socket.removeListener(id);
+  unregisterListener = (id: number): void => {
+    const listener = this.eventListeners.get(id);
+    if (!listener)
+      throw new InternalError('Assertion error: removing unknown listener');
+    const { event, handler } = listener;
+    this.eventListeners.delete(id);
+    this.socket.removeListener(event, handler);
   }
 
-  unregisterListeners = async () => {
-    // Warning: Set.values() does not return an array (and is not available in IE11)
-    const ids = [...this.sessionConnections]; // copy into array
-    this.sessionConnections = new Set();
-    for (const id of ids) {
-      await this.unregisterListener(id);
-    }
+  unregisterListeners = () => {
+    // Map.values() not available on IE11
+    this.eventListeners.forEach((listener, id) => {
+      this.unregisterListener(id);
+    });
+
+    this.eventListeners = new Map();
   }
 
   async remoteStatus(trustchainId: Uint8Array, userId: Uint8Array, publicSignatureKey: Uint8Array) {
@@ -191,12 +208,12 @@ export class Client extends EventEmitter {
       return this._opening;
     }
     this._opening = new Promise((resolve, reject) => {
-      let connectListener;
-      let errorListener;
+      let connectListenerId;
+      let errorListenerId;
 
       const cleanup = () => {
-        this.unregisterListener(connectListener);
-        this.unregisterListener(errorListener);
+        this.unregisterListener(connectListenerId);
+        this.unregisterListener(errorListenerId);
         this._abortOpen = null;
         this._opening = null;
       };
@@ -208,8 +225,8 @@ export class Client extends EventEmitter {
         reject(error);
       };
 
-      connectListener = this.registerListener('connect', () => { cleanup(); resolve(); });
-      errorListener = this.registerListener('connect_error', (err) => {
+      connectListenerId = this.registerListener('connect', () => { cleanup(); resolve(); });
+      errorListenerId = this.registerListener('connect_error', (err) => {
         const error = new NetworkError(`can't connect socket: ${err && err.message} ${err && err.description && err.description.message}`);
         cleanup();
         this.socket.abortRequests(error);
@@ -222,19 +239,19 @@ export class Client extends EventEmitter {
     return this._opening;
   }
 
-  async close(): Promise<void> {
+  close(): void {
     if (this._abortOpen) {
       this._abortOpen();
     }
 
     // purge socket event listeners
-    await this.unregisterListeners();
+    this.unregisterListeners();
 
     // purge authentication handler
     this._authenticator = null;
     this._authenticated = false;
 
-    await this.socket.close();
+    this.socket.close();
   }
 
   async send(route: string, payload: any, rawData: bool = false): Promise<any> {

@@ -354,6 +354,7 @@ const generateEncryptTests = (args: TestArgs) => {
         const verificationCode = await args.appHelper.getVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         await bobLaptop.verifyProvisionalIdentity({ email, verificationCode });
+        await bobPhone.stop();
       });
 
       it('decrypt resource on a new device', async () => {
