@@ -99,6 +99,49 @@ const generateStartTests = (args: TestArgs) => {
     });
   });
 
+  describe('stop', () => {
+    let bobIdentity;
+    let bobLaptop;
+
+    beforeEach(async () => {
+      bobIdentity = await args.appHelper.generateIdentity();
+      bobLaptop = args.makeTanker();
+      await bobLaptop.start(bobIdentity);
+    });
+
+    afterEach(async () => {
+      bobLaptop.stop();
+    });
+
+    it('stops the session when a "session error" is sent from the server', async () => {
+      const silenceError = silencer.silence('error', /trustchain_not_found/);
+
+      const expectPromise = Promise.race([
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Test should have succeeded much faster')), 1000)),
+        new Promise(resolve => {
+          bobLaptop.on('statusChange', (status) => {
+            expect(status).to.equal(STOPPED);
+            resolve();
+          });
+        }),
+      ]);
+
+      // Simulate a server sent event
+      bobLaptop._session._client.socket.socket.onpacket({ // eslint-disable-line no-underscore-dangle
+        type: 2,
+        nsp: '/',
+        data: [
+          'session error',
+          '{"error":{"status":404,"code":"trustchain_not_found","message":"This trustchain does not exist","error":null}}',
+        ]
+      });
+
+      await expect(expectPromise).to.be.fulfilled;
+
+      silenceError.restore();
+    });
+  });
+
   describe('registerIdentity', () => {
     let bobIdentity;
     let bobLaptop;
