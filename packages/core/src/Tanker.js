@@ -175,7 +175,7 @@ export class Tanker extends EventEmitter {
   _setSession = (session: ?Session) => {
     if (session) {
       session.on('device_revoked', this._deviceRevoked);
-      session.on('authentication_failed', () => { this.stop(); throw new InternalError('Authentication failed'); });
+      session.on('authentication_failed', this.stop);
       this._session = session;
     } else {
       delete this._session;
