@@ -1,7 +1,7 @@
 // @flow
 
 import uuid from 'uuid';
-import { expect } from 'chai';
+import { expect } from '../../../../packages/test-utils';
 
 import { toBase64 } from '../../../../packages/client-node';
 import { upgradeUserToken } from '../../../../packages/identity';
@@ -88,6 +88,7 @@ function generateRevocationV2Test(args) {
     const deviceRevoked = phone.getRevocationPromise();
 
     await args.currentBob.revokeDevice(phone.deviceId);
+    await expect(phone.encrypt('message', [], [])).to.be.rejected;
     await deviceRevoked;
     expect(phone.status).to.equal(args.Tanker.STOPPED);
   });
