@@ -31,14 +31,14 @@ autoselect-staging:
   stage: check
   before_script:
     - test -z "$CHECKS_ENV" && source gitlab_checks_env.sh
-    - dmenv install
+    - poetry install
 
 check/linux:
   extends: .check
   except:
     - schedules
   script:
-    - dmenv run -- python run-ci.py check --runner linux --env "$CHECKS_ENV"
+    - poetry run python run-ci.py check --runner linux --env "$CHECKS_ENV"
     - mv coverage/lcov-report lcov-report
   artifacts:
     paths:
@@ -52,7 +52,7 @@ check/macos:
   except:
     - schedules
   script:
-    - dmenv run -- python run-ci.py check --runner macos --env "$CHECKS_ENV"
+    - poetry run python run-ci.py check --runner macos --env "$CHECKS_ENV"
   tags:
     - macos
 
@@ -60,21 +60,21 @@ check/macos:
   stage: check
   before_script:
     - if "%CHECKS_ENV%"=="" CALL gitlab_checks_env.bat
-    - dmenv install
+    - poetry install
   tags:
     - windows
 
 check/windows/edge:
   extends: .check/windows
   script:
-    - dmenv run -- python run-ci.py check --runner windows-edge --env %CHECKS_ENV%
+    - poetry run python run-ci.py check --runner windows-edge --env %CHECKS_ENV%
 
 check/windows/ie:
   extends: .check/windows
   only:
     - master
   script:
-    - dmenv run -- python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
+    - poetry run python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
 
 check/windows/ie/manual:
   extends: .check/windows
@@ -82,14 +82,14 @@ check/windows/ie/manual:
   except:
     - master
   script:
-    - dmenv run -- python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
+    - poetry run python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
 
 check/linux/nightly:
   extends: .check
   only:
     - schedules
   script:
-    - dmenv run -- python run-ci.py check --runner linux --nightly
+    - poetry run python run-ci.py check --runner linux --nightly
   tags:
     - linux
 
@@ -98,7 +98,7 @@ check/macos/nightly:
   only:
     - schedules
   script:
-    - dmenv run -- python run-ci.py check --runner macos --nightly
+    - poetry run python run-ci.py check --runner macos --nightly
   tags:
     - macos
 
@@ -107,7 +107,7 @@ check/macos/nightly:
   except:
     - schedules
   before_script:
-    - dmenv install
+    - poetry install
   tags:
     - linux
 
@@ -118,7 +118,7 @@ deploy/sdk:
   only:
     - /\Av[0-9.]+(-(alpha|beta)[0-9]+)?\z/
   script:
-    - dmenv run -- python run-ci.py deploy
+    - poetry run python run-ci.py deploy
         --env ${CI_ENVIRONMENT_NAME} --git-tag ${CI_COMMIT_TAG}
 
 mirror:
@@ -133,9 +133,9 @@ mirror:
   except:
     - schedules
   before_script:
-    - dmenv install
+    - poetry install
   script:
-    - dmenv run python run-ci.py mirror
+    - poetry run python run-ci.py mirror
 
 pages:
   stage: deploy
@@ -160,7 +160,7 @@ check/compat:
   except:
     - master
   script:
-    - dmenv run -- python run-ci.py compat --env "$CHECKS_ENV"
+    - poetry run python run-ci.py compat --env "$CHECKS_ENV"
   tags:
     - linux
 
@@ -169,7 +169,7 @@ check/compat/master:
   only:
     - master
   script:
-    - dmenv run -- python run-ci.py compat --env "$CHECKS_ENV"
+    - poetry run python run-ci.py compat --env "$CHECKS_ENV"
   tags:
     - linux
 
@@ -177,7 +177,7 @@ check/e2e:
   extends: .check
   when: manual
   script:
-    - dmenv run -- python run-ci.py e2e --env "$CHECKS_ENV"
+    - poetry run python run-ci.py e2e --env "$CHECKS_ENV"
   tags:
     - linux
   except:
