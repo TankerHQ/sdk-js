@@ -50,13 +50,13 @@
     "coverage": "nyc --reporter=lcov --reporter=text-summary yarn test"
   },
   "devDependencies": {
-    "@babel/core": "7.7.7",
-    "@babel/plugin-proposal-class-properties": "7.7.4",
-    "@babel/plugin-transform-runtime": "7.7.6",
-    "@babel/preset-env": "7.7.7",
-    "@babel/preset-flow": "7.7.4",
-    "@babel/preset-react": "7.7.4",
-    "@babel/register": "7.7.7",
+    "@babel/core": "7.8.4",
+    "@babel/plugin-proposal-class-properties": "7.8.3",
+    "@babel/plugin-transform-runtime": "7.8.3",
+    "@babel/preset-env": "7.8.4",
+    "@babel/preset-flow": "7.8.3",
+    "@babel/preset-react": "7.8.3",
+    "@babel/register": "7.8.3",
     "babel-eslint": "10.0.3",
     "babel-loader": "8.0.6",
     "babel-plugin-istanbul": "5.2.0",
@@ -87,13 +87,13 @@
     "karma-webpack": "4.0.2",
     "mocha": "6.2.0",
     "nyc": "14.1.1",
-    "rollup": "1.27.13",
+    "rollup": "1.31.0",
     "rollup-plugin-babel": "4.3.3",
     "rollup-plugin-flow": "1.1.1",
     "rollup-plugin-local-resolve": "1.0.7",
-    "webpack": "4.41.3",
+    "webpack": "4.41.5",
     "webpack-cli": "3.3.10",
-    "webpack-dev-server": "3.9.0"
+    "webpack-dev-server": "3.10.1"
   },
   "workspaces": [
     "packages/*",
