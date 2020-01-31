@@ -2,7 +2,7 @@
 
 import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
-import { type SecretProvisionalIdentity, type PublicProvisionalIdentity, type PublicProvisionalUser } from '@tanker/identity';
+import type { SecretProvisionalIdentity, PublicProvisionalIdentity, PublicProvisionalUser } from '@tanker/identity';
 
 import { VerificationNeeded } from '../errors.internal';
 
@@ -17,10 +17,10 @@ import UserManager from '../Users/Manager';
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';
 
-type TankerProvisionalKeys = {
+type TankerProvisionalKeys = {|
   tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
   tankerEncryptionKeyPair: tcrypto.SodiumKeyPair
-};
+|};
 
 const tankerProvisionalKeys = (serverResult) => {
   if (!serverResult) {

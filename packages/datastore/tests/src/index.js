@@ -200,11 +200,11 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
 
       it('overrides existing records', async () => {
         await store.put(tableName, record1);
-        const updatedRecord = { ...record1 };
-        delete updatedRecord.a;
+        const updatedRecord: TestRecord = { ...record1 };
+        delete updatedRecord.d;
         await store.put(tableName, updatedRecord);
         const actual = await store.get(tableName, record1._id);
-        expect(actual.a).to.be.undefined;
+        expect(actual.d).to.be.undefined;
       });
 
       it('can delete record', async () => {

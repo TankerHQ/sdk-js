@@ -81,7 +81,7 @@ export class Client extends EventEmitter {
   _authenticating: ?Promise<void>;
   _authenticated: bool = false;
 
-  constructor(trustchainId: Uint8Array, options?: ClientOptions) {
+  constructor(trustchainId: Uint8Array, options: ClientOptions) {
     super();
     this.trustchainId = trustchainId;
 
@@ -91,10 +91,7 @@ export class Client extends EventEmitter {
     // By default, the socket.io client has the following options set to true:
     //   -> autoConnect: no need to call socket.open()
     //   -> reconnection: will reconnect automatically after disconnection
-    const opts = { ...options };
-    if (!opts.url) { opts.url = defaultApiAddress; }
-
-    this.socket = new SocketIoWrapper(opts);
+    this.socket = new SocketIoWrapper({ url: defaultApiAddress, ...options });
 
     this.registerListener('session error', (reason) => {
       const error = new PreconditionFailed(`socket disconnected by server: ${reason}`);
