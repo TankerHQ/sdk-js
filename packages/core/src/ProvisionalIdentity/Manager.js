@@ -44,10 +44,8 @@ export default class ProvisionalIdentityManager {
   _keyStore: KeyStore;
   _localUserManager: LocalUserManager;
   _userManager: UserManager;
-  _provisionalIdentity: SecretProvisionalIdentity;
+  _provisionalIdentity: ?SecretProvisionalIdentity;
   _keyStore: KeyStore;
-
-  _provisionalIdentity: SecretProvisionalIdentity;
 
   constructor(
     client: Client,
@@ -96,7 +94,9 @@ export default class ProvisionalIdentityManager {
     if (!this._provisionalIdentity)
       throw new PreconditionFailed('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
 
-    if (verification.email && this._provisionalIdentity.value !== verification.email)
+    const provisionalIdentity = this._provisionalIdentity;
+
+    if (verification.email && provisionalIdentity.value !== verification.email)
       throw new InvalidArgument('"verification.email" does not match provisional identity');
 
     if (verification.oidcIdToken) {
@@ -106,13 +106,13 @@ export default class ProvisionalIdentityManager {
       } catch (e) {
         throw new InvalidArgument('Failed to parse "verification.oidcIdToken"');
       }
-      if (this._provisionalIdentity.value !== jwtPayload.email)
+      if (provisionalIdentity.value !== jwtPayload.email)
         throw new InvalidArgument('"verification.oidcIdToken" does not match provisional identity');
     }
 
     const tankerKeys = await this._verifyAndGetProvisionalIdentityKeys(verification);
     if (tankerKeys)
-      await this._claimProvisionalIdentity(this._provisionalIdentity, tankerKeys);
+      await this._claimProvisionalIdentity(provisionalIdentity, tankerKeys);
 
     delete this._provisionalIdentity;
   }
