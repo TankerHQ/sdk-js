@@ -24,6 +24,6 @@ const Element = styled.div`
 
 const enforceTarget = cb => event => event.target.classList.contains(Element.styledComponentId) && cb && cb(event);
 
-const Overlay = ({ onClick, ...props }: { onClick?: Event => any }) => <Element onClick={enforceTarget(onClick)} {...props} />;
+const Overlay = ({ onClick, ...props }: { onClick?: Event => any }) => <Element {...props} onClick={enforceTarget(onClick)} />;
 
 export default Overlay;
