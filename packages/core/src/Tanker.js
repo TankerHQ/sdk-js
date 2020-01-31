@@ -67,7 +67,7 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefa
 
 export class Tanker extends EventEmitter {
   _trustchainId: b64string;
-  _session: Session;
+  _session: ?Session;
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
@@ -172,7 +172,7 @@ export class Tanker extends EventEmitter {
     return super.once(eventName, listener);
   }
 
-  _setSession = (session: ?Session) => {
+  set session(session: ?Session) {
     if (session) {
       session.on('device_revoked', () => this._deviceRevoked());
       session.on('fatal_error', () => this.stop());
@@ -184,10 +184,16 @@ export class Tanker extends EventEmitter {
     this.emit('statusChange', this.status);
   }
 
+  get session() {
+    if (!this._session)
+      throw new InternalError('Trying to access non existing _session');
+    return this._session;
+  }
+
   get deviceId(): b64string {
     this.assert(statuses.READY, 'get the device id');
 
-    const deviceId = this._session.deviceId();
+    const deviceId = this.session.deviceId();
     if (!deviceId)
       throw new InternalError('Tried to get our device hash, but could not find it!');
 
@@ -205,23 +211,21 @@ export class Tanker extends EventEmitter {
   async start(identityB64: b64string) {
     this.assert(statuses.STOPPED, 'start a session');
     const userData = this._parseIdentity(identityB64);
-
-    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
-    this._setSession(session);
+    this.session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
     return this.status;
   }
 
   async registerIdentity(verification: Verification): Promise<void> {
     this.assert(statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
     assertVerification(verification);
-    await this._session.createUser(verification);
+    await this.session.createUser(verification);
     this.emit('statusChange', this.status);
   }
 
   async verifyIdentity(verification: Verification): Promise<void> {
     this.assert(statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
     assertVerification(verification);
-    await this._session.createNewDevice(verification);
+    await this.session.createNewDevice(verification);
     this.emit('statusChange', this.status);
   }
 
@@ -232,7 +236,7 @@ export class Tanker extends EventEmitter {
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
 
-    return this._session.setVerificationMethod(verification);
+    return this.session.setVerificationMethod(verification);
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {
@@ -244,12 +248,12 @@ export class Tanker extends EventEmitter {
       throw new PreconditionFailed(message);
     }
 
-    return this._session.getVerificationMethods();
+    return this.session.getVerificationMethods();
   }
 
   async generateVerificationKey(): Promise<string> {
     this.assert(statuses.IDENTITY_REGISTRATION_NEEDED, 'generate a verification key');
-    return this._session.generateVerificationKey();
+    return this.session.generateVerificationKey();
   }
 
   async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<*> {
@@ -257,13 +261,13 @@ export class Tanker extends EventEmitter {
 
     const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
 
-    return this._session.attachProvisionalIdentity(provisionalIdentityObj);
+    return this.session.attachProvisionalIdentity(provisionalIdentityObj);
   }
 
   async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification): Promise<void> {
     this.assert(statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
-    return this._session.verifyProvisionalIdentity(verification);
+    return this.session.verifyProvisionalIdentity(verification);
   }
 
   _parseIdentity(identityB64: b64string) {
@@ -282,19 +286,19 @@ export class Tanker extends EventEmitter {
   async stop(): Promise<void> {
     if (this._session) {
       const session = this._session;
-      this._setSession(null);
+      this.session = null;
       await session.close();
     }
   }
 
   _deviceRevoked = async (): Promise<void> => {
-    this._setSession(null);
+    this.session = null;
     this.emit('deviceRevoked');
   }
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
     this.assert(statuses.READY, 'get the device list');
-    const devices = await this._session.listDevices();
+    const devices = await this.session.listDevices();
     return devices.map(d => ({ id: utils.toBase64(d.deviceId), isRevoked: d.revoked }));
   }
 
@@ -314,7 +318,7 @@ export class Tanker extends EventEmitter {
       );
     }
 
-    return this._session.share(resourceIds, sharingOptions);
+    return this.session.share(resourceIds, sharingOptions);
   }
 
   async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
@@ -334,7 +338,7 @@ export class Tanker extends EventEmitter {
     if (typeof deviceId !== 'string')
       throw new InvalidArgument('deviceId', 'string', deviceId);
 
-    return this._session.revokeDevice(deviceId);
+    return this.session.revokeDevice(deviceId);
   }
 
   async createGroup(users: Array<b64string>): Promise<b64string> {
@@ -343,7 +347,7 @@ export class Tanker extends EventEmitter {
     if (!(users instanceof Array))
       throw new InvalidArgument('users', 'Array<string>', users);
 
-    return this._session.createGroup(users);
+    return this.session.createGroup(users);
   }
 
   async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd: Array<string> }>): Promise<void> {
@@ -357,7 +361,7 @@ export class Tanker extends EventEmitter {
     if (typeof groupId !== 'string')
       throw new InvalidArgument('groupId', 'string', groupId);
 
-    return this._session.updateGroupMembers(groupId, usersToAdd);
+    return this.session.updateGroupMembers(groupId, usersToAdd);
   }
 
   async makeEncryptorStream(options: SharingOptions = {}): Promise<EncryptorStream> {
@@ -365,13 +369,13 @@ export class Tanker extends EventEmitter {
 
     const sharingOptions = extractSharingOptions(options);
 
-    return this._session.makeEncryptorStream(sharingOptions);
+    return this.session.makeEncryptorStream(sharingOptions);
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
     this.assert(statuses.READY, 'make a stream decryptor');
 
-    return this._session.makeDecryptorStream();
+    return this.session.makeDecryptorStream();
   }
 
   async encryptData<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
@@ -382,7 +386,7 @@ export class Tanker extends EventEmitter {
     const progressOptions = extractProgressOptions(options);
     const sharingOptions = extractSharingOptions(options);
 
-    return this._session.encryptData(clearData, sharingOptions, outputOptions, progressOptions);
+    return this.session.encryptData(clearData, sharingOptions, outputOptions, progressOptions);
   }
 
   async encrypt<T: Data>(plain: string, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
@@ -401,7 +405,7 @@ export class Tanker extends EventEmitter {
     const outputOptions = extractOutputOptions(options, encryptedData);
     const progressOptions = extractProgressOptions(options);
 
-    return this._session.decryptData(encryptedData, outputOptions, progressOptions);
+    return this.session.decryptData(encryptedData, outputOptions, progressOptions);
   }
 
   async decrypt(cipher: Data, options?: $Shape<ProgressOptions> = {}): Promise<string> {
@@ -417,7 +421,7 @@ export class Tanker extends EventEmitter {
     const progressOptions = extractProgressOptions(options);
     const sharingOptions = extractSharingOptions(options);
 
-    return this._session.upload(clearData, sharingOptions, outputOptions, progressOptions);
+    return this.session.upload(clearData, sharingOptions, outputOptions, progressOptions);
   }
 
   async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
@@ -433,7 +437,7 @@ export class Tanker extends EventEmitter {
     const outputOptions = extractOutputOptions({ type: defaultDownloadType, ...options });
     const progressOptions = extractProgressOptions(options);
 
-    return this._session.download(resourceId, outputOptions, progressOptions);
+    return this.session.download(resourceId, outputOptions, progressOptions);
   }
 }
 

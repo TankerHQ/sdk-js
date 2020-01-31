@@ -53,7 +53,7 @@ const generateRevocationTests = (args: TestArgs) => {
     });
 
     it('wipes the storage of the revoked device', async () => {
-      const destroy = sinon.spy(bobPhone._session._storage, 'nuke'); //eslint-disable-line no-underscore-dangle
+      const destroy = sinon.spy(bobPhone.session._storage, 'nuke'); //eslint-disable-line no-underscore-dangle
       try {
         await bobLaptop.revokeDevice(bobPhone.deviceId);
 
