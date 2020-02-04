@@ -144,7 +144,7 @@ class VerifyDevice extends React.Component<Props> {
     return (
       <>
         <Label htmlFor="tanker-verification-ui-field">
-          We need to verify it{"'"}s you. A verification code was sent to {email}.<br />
+          We need to verify it&apos;s you. A verification code was sent to {email}.<br />
           Please enter it below:
         </Label>
         <StyledVerificationCodeField

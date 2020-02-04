@@ -83,7 +83,7 @@ const generateStartTests = (args: TestArgs) => {
       await bobLaptop.start(bobIdentity);
 
       // Force an exception to occur between block sending and receival during registration
-      bobLaptop._session._localUserManager.authenticate = () => Promise.reject(new Error(interruptMessage)); // eslint-disable-line no-underscore-dangle
+      bobLaptop.session._localUserManager.authenticate = () => Promise.reject(new Error(interruptMessage)); // eslint-disable-line no-underscore-dangle
 
       // Will create the device on the trustchain but fail to go further...
       await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(interruptMessage);
@@ -127,7 +127,7 @@ const generateStartTests = (args: TestArgs) => {
       ]);
 
       // Simulate a server sent event
-      bobLaptop._session._client.socket.socket.onpacket({ // eslint-disable-line no-underscore-dangle
+      bobLaptop.session._client.socket.socket.onpacket({ // eslint-disable-line no-underscore-dangle
         type: 2,
         nsp: '/',
         data: [

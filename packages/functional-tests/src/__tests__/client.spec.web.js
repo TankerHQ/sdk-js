@@ -28,7 +28,7 @@ const generateTestResources = (): TestResources => {
   const medium = makeRandomUint8Array(sizes[2]); // 1MB -> this will use v4 format with 2 chunks
   const big = makeRandomUint8Array(sizes[3]); // 6MB -> this will use v4 format with 7 chunks
 
-  const result = {
+  const result: TestResources = {
     empty: [
       { size: sizes[0], type: ArrayBuffer, resource: empty.buffer },
       { size: sizes[0], type: Blob, resource: new Blob([empty], { type: 'application/octet-stream' }) },

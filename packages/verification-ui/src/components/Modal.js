@@ -43,14 +43,14 @@ const computeStyle = ({ opacity, scale, offset }) => ({
 
 const springOptions = { stiffness: 200, damping: 24 };
 
-export const Modal = ({ onClose, ...props }: {onClose?: Event => any}) => (
+export const Modal = ({ onClose, ...props }: { onClose?: Event => any }) => (
   <>
     <Overlay onClick={onClose} aria-hidden />
     <Motion
       defaultStyle={{ opacity: 0, offset: -50, scale: 0.5 }}
       style={{ opacity: spring(1, springOptions), offset: spring(0, springOptions), scale: spring(1, springOptions) }}
     >
-      {interpolatingStyle => <Dialog open {...props} style={computeStyle(interpolatingStyle)} />}
+      {interpolatingStyle => <Dialog {...props} open style={computeStyle(interpolatingStyle)} />}
     </Motion>
   </>
 );

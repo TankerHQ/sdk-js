@@ -233,7 +233,7 @@ describe('Tanker', () => {
       });
 
       it('setting verification method should throw if generating verification key after registration', async () => {
-        tanker._session.getVerificationMethods = async () => [{ type: 'passphrase' }]; // eslint-disable-line no-underscore-dangle
+        tanker.session.getVerificationMethods = async () => [{ type: 'passphrase' }]; // eslint-disable-line no-underscore-dangle
 
         await expect(tanker.generateVerificationKey()).to.be.rejectedWith(PreconditionFailed);
       });
