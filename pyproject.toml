@@ -6,11 +6,15 @@ authors = ["Tanker dev team <tech@tanker.io>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
+ci = "2020.2.2093"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.7.9"
 mypy = "0.740"
-ci = { git = "git+ssh://git@tanker.local/Tanker/ci", branch = "master" }
+
+[[tool.poetry.source]]
+name = "tanker.local"
+url = "http://tanker.local:8181"
 
 [build-system]
 requires = ["poetry>=0.12"]
