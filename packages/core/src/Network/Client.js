@@ -88,9 +88,6 @@ export class Client extends EventEmitter {
     this.eventListenerCounter = 0;
     this.eventListeners = new Map();
 
-    // By default, the socket.io client has the following options set to true:
-    //   -> autoConnect: no need to call socket.open()
-    //   -> reconnection: will reconnect automatically after disconnection
     this.socket = new SocketIoWrapper({ url: defaultApiAddress, ...options });
 
     this.registerListener('session error', (reason) => {
@@ -230,6 +227,7 @@ export class Client extends EventEmitter {
         reject(error);
       });
 
+      // The socket has the 'autoConnect: false' option, so we open it manually:
       this.socket.open();
     });
 
