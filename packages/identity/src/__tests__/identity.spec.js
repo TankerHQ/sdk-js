@@ -5,6 +5,7 @@ import { expect } from '@tanker/test-utils';
 
 import {
   _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
+  _splitProvisionalAndPermanentPublicIdentities,
   createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken,
 } from '../identity';
 import { obfuscateUserId } from '../userId';
@@ -206,6 +207,40 @@ describe('Identity', () => {
     it('throws with mismatching app ID and app secret', async () => {
       const mismatchingAppId = 'rB0/yEJWCUVYRtDZLtXaJqtneXQOsCSKrtmWw+V+ysc=';
       await expect(createIdentity(mismatchingAppId, trustchain.sk, userId)).to.be.rejectedWith(InvalidArgument);
+    });
+  });
+
+  describe('_splitProvisionalAndPermanentPublicIdentities', () => {
+    let identity;
+    let publicIdentity;
+    let provisionalIdentity;
+    let publicProvisionalIdentity;
+
+    before(async () => {
+      const b64Identity = await createIdentity(trustchain.id, trustchain.sk, userId);
+      identity = _deserializePermanentIdentity(b64Identity);
+      const b64PublicIdentity = await getPublicIdentity(b64Identity);
+      publicIdentity = _deserializePublicIdentity(b64PublicIdentity);
+      const b64ProvisionalIdentity = await createProvisionalIdentity(trustchain.id, userEmail);
+      provisionalIdentity = _deserializeProvisionalIdentity(b64ProvisionalIdentity);
+      const b64PublicProvisionalIdentity = await getPublicIdentity(b64ProvisionalIdentity);
+      publicProvisionalIdentity = _deserializePublicIdentity(b64PublicProvisionalIdentity);
+    });
+
+    it('splits identities as expected', async () => {
+      const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities([publicIdentity, publicProvisionalIdentity]);
+      expect(permanentIdentities).to.deep.equal([publicIdentity]);
+      expect(provisionalIdentities).to.deep.equal([publicProvisionalIdentity]);
+    });
+
+    it('throws when given a secret permanent identity', async () => {
+      // $FlowIKnow testing edge case with permanentIdentity
+      expect(() => _splitProvisionalAndPermanentPublicIdentities([identity, publicProvisionalIdentity])).to.throw(InvalidArgument);
+    });
+
+    it('throws when given a secret provisional identity', async () => {
+      // $FlowIKnow testing edge case with permanentIdentity
+      expect(() => _splitProvisionalAndPermanentPublicIdentities([publicIdentity, provisionalIdentity])).to.throw(InvalidArgument);
     });
   });
 });
