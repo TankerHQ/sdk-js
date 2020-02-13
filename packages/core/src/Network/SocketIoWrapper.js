@@ -48,7 +48,17 @@ export default class SocketIoWrapper {
   runningRequests: Array<Request> = [];
 
   constructor({ socket, url, connectTimeout, sdkInfo }: CreationParam) {
-    this.socket = socket || new Socket(url, { timeout: connectTimeout, transports: ['websocket', 'polling'], autoConnect: false, query: sdkInfo });
+    this.socket = socket || new Socket(url, {
+      timeout: connectTimeout,
+      transports: ['websocket', 'polling'],
+      // Disabling autoConnect, socket.open() must be called explicitely instead:
+      autoConnect: false,
+      // Disabling reconnect so that the socket will not attempt reconnections
+      // after a disconnection. Instead, it will try to reconnect on next emit()
+      // which creates less pressure on the server:
+      reconnect: false,
+      query: sdkInfo
+    });
     this.socket.on('error', e => logSocketError(e, 'error'));
     this.socket.on('disconnect', reason => this.abortRequests(new NetworkError(`socket disconnected: ${reason}`)));
   }
