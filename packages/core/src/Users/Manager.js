@@ -26,33 +26,27 @@ export default class UserManager {
     return userIdToUserMap.get(utils.toBase64(userId));
   }
 
-  async findUsers(userIds: Array<Uint8Array>): Promise<Array<User>> {
-    if (!userIds)
-      throw new InternalError('Expected userIds parameter, but was missing');
-
-    if (!userIds.length) {
+  async getUsers(publicIdentities: Array<PublicPermanentIdentity>): Promise<Array<User>> {
+    if (publicIdentities.length === 0) {
       return [];
     }
-    const blocks = await this._getUserBlocksByUserIds(userIds);
-    const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainPublicKey);
-    return Array.from(userIdToUserMap.values());
-  }
 
-  async getUsers({ publicIdentities }: { publicIdentities: Array<PublicPermanentIdentity> }): Promise<Array<User>> {
     const userIds = publicIdentities.map(u => {
       if (u.target !== 'user')
         throw new InternalError(`Assertion error: publicIdentity ${u.target} should be 'user'`);
       return utils.fromBase64(u.value);
     });
 
-    const fullUsers = await this.findUsers(userIds);
+    const blocks = await this._getUserBlocksByUserIds(userIds);
+    const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainPublicKey);
+    const fullUsers = Array.from(userIdToUserMap.values());
+
     if (fullUsers.length === userIds.length)
       return fullUsers;
 
     const invalidPublicIdentities = [];
     for (const publicIdentity of publicIdentities) {
-      const found = fullUsers.some(user => utils.toBase64(user.userId) === publicIdentity.value);
-      if (!found) {
+      if (!userIdToUserMap.has(publicIdentity.value)) {
         invalidPublicIdentities.push(utils.toB64Json(publicIdentity));
       }
     }
