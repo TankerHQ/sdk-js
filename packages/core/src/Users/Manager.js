@@ -47,7 +47,8 @@ export default class UserManager {
     const invalidPublicIdentities = [];
     for (const publicIdentity of publicIdentities) {
       if (!userIdToUserMap.has(publicIdentity.value)) {
-        invalidPublicIdentities.push(utils.toB64Json(publicIdentity));
+        // $FlowIKnow serializedIdentity is a "hidden" property (non enumerable, not declared in types)
+        invalidPublicIdentities.push(publicIdentity.serializedIdentity || utils.toB64Json(publicIdentity));
       }
     }
 

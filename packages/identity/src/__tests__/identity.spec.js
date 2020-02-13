@@ -6,6 +6,7 @@ import { expect } from '@tanker/test-utils';
 import {
   _deserializeIdentity, _deserializePermanentIdentity, _deserializeProvisionalIdentity,
   _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
+  _serializeIdentity,
   createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken,
 } from '../identity';
 import { obfuscateUserId } from '../userId';
@@ -57,6 +58,10 @@ describe('Identity', () => {
       expect(identity.ephemeral_public_signature_key).to.equal('Xh3i0xDTpr3HXtB2Q517QKv3azNzXLLXMdJDTSH4bd4=');
       expect(identity.ephemeral_private_signature_key).to.equal('jEDT4wQCc1DFwodXNPHFClndTPnFuFmXhBt+isKU4ZpeHeLTENOmvcde0HZDnXtAq/drM3Ncstcx0kNNIfht3g==');
       expect(identity.user_secret).to.equal('7FSf/n0e76QT3s0DkvetRVVJhXZGEjOxj5EWAFexvjI=');
+
+      // $FlowIKnow hidden property
+      expect(identity.serializedIdentity).to.equal(goodPermanentIdentity);
+      expect(_serializeIdentity(identity)).to.equal(goodPermanentIdentity);
     });
 
     it('can parse a valid provisional identity', () => {
@@ -69,6 +74,10 @@ describe('Identity', () => {
       expect(identity.private_signature_key).to.equal('UmnYuvdTaLYG0a+JaDpY6ojw4/2Ll8zsmramVC4fuqRbtARAG70Vdxcik6Crra0/AGLIUBulPWsCu4PSH82tMA==');
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
       expect(identity.private_encryption_key).to.equal('4QB5TWmvcBrgeyDDLhULINU6tbqAOEQ8v9pjDkPcybA=');
+
+      // $FlowIKnow hidden property
+      expect(identity.serializedIdentity).to.equal(goodProvisionalIdentity);
+      expect(_serializeIdentity(identity)).to.equal(goodProvisionalIdentity);
     });
 
     it('can parse a valid public identity', () => {
@@ -77,6 +86,10 @@ describe('Identity', () => {
       expect(identity.trustchain_id).to.equal(trustchain.id);
       expect(identity.target).to.equal('user');
       expect(identity.value).to.equal(obfuscatedUserId);
+
+      // $FlowIKnow hidden property
+      expect(identity.serializedIdentity).to.equal(goodPublicIdentity);
+      expect(_serializeIdentity(identity)).to.equal(goodPublicIdentity);
     });
 
     it('can parse a valid public provisional identity', () => {
@@ -87,6 +100,10 @@ describe('Identity', () => {
       expect(identity.value).to.equal(userEmail);
       expect(identity.public_signature_key).to.equal('W7QEQBu9FXcXIpOgq62tPwBiyFAbpT1rAruD0h/NrTA=');
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
+
+      // $FlowIKnow hidden property
+      expect(identity.serializedIdentity).to.equal(goodPublicProvisionalIdentity);
+      expect(_serializeIdentity(identity)).to.equal(goodPublicProvisionalIdentity);
     });
 
     it('can parse both types of secret identities with _deserializeIdentity', () => {
