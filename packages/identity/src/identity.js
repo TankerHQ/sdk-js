@@ -232,32 +232,3 @@ export async function getPublicIdentity(tankerIdentity: b64string): Promise<b64s
 
   throw new InvalidArgument(`Invalid secret identity provided: ${tankerIdentity}`);
 }
-
-// Note: userToken generated with the deprecated @tanker/user-token sdk
-/* eslint-disable camelcase */
-export async function upgradeUserToken(trustchainId: b64string, userId: string, userToken: b64string): Promise<b64string> {
-  const obfuscatedUserId = obfuscateUserId(utils.fromBase64(trustchainId), userId);
-  const {
-    delegation_signature,
-    ephemeral_public_signature_key,
-    ephemeral_private_signature_key,
-    user_id,
-    user_secret,
-  } = utils.fromB64Json(userToken);
-
-  if (utils.toBase64(obfuscatedUserId) !== user_id)
-    throw new InvalidArgument('The userId and userToken provided do not match');
-
-  const permanentIdentity: SecretPermanentIdentity = {
-    trustchain_id: trustchainId,
-    target: 'user',
-    value: user_id,
-    delegation_signature,
-    ephemeral_public_signature_key,
-    ephemeral_private_signature_key,
-    user_secret,
-  };
-
-  return _serializeIdentity(permanentIdentity);
-}
-/* eslint-enable */

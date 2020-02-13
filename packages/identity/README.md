@@ -51,23 +51,6 @@ Return the public identity from an identity. This public identity can be used by
 A Tanker identity.
 <br /><br />
 
-```javascript
-upgradeUserToken(appId, userId, userToken);
-```
-
-Upgrade from a deprecated token used in previous versions of Tanker. Tanker v1 used a user token, when migrating to Tanker v2 you should use this function to migrate you used tokens to identities. This identity is secret and must only be given to a user who has been authenticated by your application. This identity is used by the Tanker client SDK to open a Tanker session.
-Note: You probably won't need this API.
-
-**appId**<br />
-The app ID. You can access it from the [Tanker dashboard](https://dashboard.tanker.io).
-
-**userId**<br />
-The ID of a user in your application.
-
-**userToken**<br />
-The Tanker v1 user token.
-
-
 ## Usage
 
 The server-side code below demonstrates a typical flow to safely deliver identities to your users:
