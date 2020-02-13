@@ -4,8 +4,8 @@ import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
 import {
-  _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
-  _splitProvisionalAndPermanentPublicIdentities,
+  _deserializeIdentity, _deserializePermanentIdentity, _deserializeProvisionalIdentity,
+  _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
   createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken,
 } from '../identity';
 import { obfuscateUserId } from '../userId';
@@ -73,6 +73,7 @@ describe('Identity', () => {
 
     it('can parse a valid public identity', () => {
       const identity = _deserializePublicIdentity(goodPublicIdentity);
+
       expect(identity.trustchain_id).to.equal(trustchain.id);
       expect(identity.target).to.equal('user');
       expect(identity.value).to.equal(obfuscatedUserId);
@@ -86,6 +87,11 @@ describe('Identity', () => {
       expect(identity.value).to.equal(userEmail);
       expect(identity.public_signature_key).to.equal('W7QEQBu9FXcXIpOgq62tPwBiyFAbpT1rAruD0h/NrTA=');
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
+    });
+
+    it('can parse both types of secret identities with _deserializeIdentity', () => {
+      expect(_deserializeIdentity(goodPermanentIdentity)).to.deep.equal(_deserializePermanentIdentity(goodPermanentIdentity));
+      expect(_deserializeIdentity(goodProvisionalIdentity)).to.deep.equal(_deserializeProvisionalIdentity(goodProvisionalIdentity));
     });
 
     it('can upgrade a user token to a permanent identity', async () => {
