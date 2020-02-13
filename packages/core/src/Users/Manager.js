@@ -51,7 +51,7 @@ export default class UserManager {
 
     const invalidPublicIdentities = [];
     for (const publicIdentity of publicIdentities) {
-      const found = fullUsers.some(user => user.userId === publicIdentity.value);
+      const found = fullUsers.some(user => utils.toBase64(user.userId) === publicIdentity.value);
       if (!found) {
         invalidPublicIdentities.push(utils.toB64Json(publicIdentity));
       }
