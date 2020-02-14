@@ -7,8 +7,9 @@ export type {
 } from './identity';
 
 export {
-  _deserializeIdentity, _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
-  createIdentity, createProvisionalIdentity, getPublicIdentity, upgradeUserToken,
+  _deserializeIdentity, _deserializePermanentIdentity, _deserializeProvisionalIdentity,
+  _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
+  createIdentity, createProvisionalIdentity, getPublicIdentity,
 } from './identity';
 
 export { obfuscateUserId } from './userId';
