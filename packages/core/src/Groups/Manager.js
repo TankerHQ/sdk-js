@@ -50,7 +50,7 @@ export default class GroupManager {
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
-    const users = await this._UserManager.getUsers({ publicIdentities: permanentIdentities });
+    const users = await this._UserManager.getUsers(permanentIdentities);
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
@@ -79,7 +79,7 @@ export default class GroupManager {
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
-    const users = await this._UserManager.getUsers({ publicIdentities: permanentIdentities });
+    const users = await this._UserManager.getUsers(permanentIdentities);
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     const { payload, nature } = makeUserGroupAddition(

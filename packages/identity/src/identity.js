@@ -64,13 +64,28 @@ function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): %chec
   return identity.target === 'email';
 }
 
-function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b64string { // eslint-disable-line no-underscore-dangle
+export function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b64string { // eslint-disable-line no-underscore-dangle
   return utils.toB64Json(identity);
+}
+
+function _deserializeAndFreeze(identity: b64string): Object { // eslint-disable-line no-underscore-dangle
+  const result = utils.fromB64Json(identity);
+
+  // Hidden property that carries the original serialized version of the
+  // identity for debugging purposes (e.g. error messages)
+  Object.defineProperty(result, 'serializedIdentity', {
+    value: identity,
+    configurable: false,
+    enumerable: false,
+    writable: false,
+  });
+
+  return Object.freeze(result);
 }
 
 export function _deserializeIdentity(identity: b64string): SecretIdentity { // eslint-disable-line no-underscore-dangle
   try {
-    return utils.fromB64Json(identity);
+    return _deserializeAndFreeze(identity);
   } catch (e) {
     throw new InvalidArgument(`Invalid identity provided: ${identity}`);
   }
@@ -80,7 +95,7 @@ export function _deserializePermanentIdentity(identity: b64string): SecretPerman
   let result;
 
   try {
-    result = utils.fromB64Json(identity);
+    result = _deserializeAndFreeze(identity);
   } catch (e) {
     throw new InvalidArgument(`Invalid permanent identity provided: ${identity}`);
   }
@@ -95,7 +110,7 @@ export function _deserializeProvisionalIdentity(identity: b64string): SecretProv
   let result;
 
   try {
-    result = utils.fromB64Json(identity);
+    result = _deserializeAndFreeze(identity);
   } catch (e) {
     throw new InvalidArgument(`Invalid provisional identity provided: ${identity}`);
   }
@@ -108,7 +123,7 @@ export function _deserializeProvisionalIdentity(identity: b64string): SecretProv
 
 export function _deserializePublicIdentity(identity: b64string): PublicIdentity { // eslint-disable-line no-underscore-dangle
   try {
-    return utils.fromB64Json(identity);
+    return _deserializeAndFreeze(identity);
   } catch (e) {
     throw new InvalidArgument(`Invalid public identity provided: ${identity}`);
   }

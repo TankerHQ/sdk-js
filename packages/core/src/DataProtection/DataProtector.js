@@ -134,7 +134,7 @@ export class DataProtector {
     const deserializedIdentities = (sharingOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
     const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, shareWithSelf);
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesWithSelf);
-    const users = await this._userManager.getUsers({ publicIdentities: permanentIdentities });
+    const users = await this._userManager.getUsers(permanentIdentities);
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     if (shareWithSelf) {

@@ -26,35 +26,30 @@ export default class UserManager {
     return userIdToUserMap.get(utils.toBase64(userId));
   }
 
-  async findUsers(hashedUserIds: Array<Uint8Array>): Promise<Array<User>> {
-    if (!hashedUserIds)
-      throw new InternalError('Expected hashedUserIds parameter, but was missing');
-
-    if (!hashedUserIds.length) {
+  async getUsers(publicIdentities: Array<PublicPermanentIdentity>): Promise<Array<User>> {
+    if (publicIdentities.length === 0) {
       return [];
     }
-    const blocks = await this._getUserBlocksByUserIds(hashedUserIds);
-    const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainPublicKey);
-    return Array.from(userIdToUserMap.values());
-  }
 
-  async getUsers({ publicIdentities }: { publicIdentities: Array<PublicPermanentIdentity> }): Promise<Array<User>> {
-    const obfuscatedUserIds = publicIdentities.map(u => {
+    const userIds = publicIdentities.map(u => {
       if (u.target !== 'user')
         throw new InternalError(`Assertion error: publicIdentity ${u.target} should be 'user'`);
       return utils.fromBase64(u.value);
     });
 
-    const fullUsers = await this.findUsers(obfuscatedUserIds);
+    const blocks = await this._getUserBlocksByUserIds(userIds);
+    const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainPublicKey);
+    const fullUsers = Array.from(userIdToUserMap.values());
 
-    if (fullUsers.length === obfuscatedUserIds.length)
+    if (fullUsers.length === userIds.length)
       return fullUsers;
 
     const invalidPublicIdentities = [];
     for (const publicIdentity of publicIdentities) {
-      const found = fullUsers.some(user => user.userId === publicIdentity.value);
-      if (!found)
-        invalidPublicIdentities.push(utils.toB64Json(publicIdentity));
+      if (!userIdToUserMap.has(publicIdentity.value)) {
+        // $FlowIKnow serializedIdentity is a "hidden" property (non enumerable, not declared in types)
+        invalidPublicIdentities.push(publicIdentity.serializedIdentity || utils.toB64Json(publicIdentity));
+      }
     }
 
     const message = `The following identities are invalid or do not exist on the trustchain: "${invalidPublicIdentities.join('", "')}"`;
