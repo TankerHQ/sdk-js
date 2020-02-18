@@ -56,7 +56,7 @@ export default class SocketIoWrapper {
       // Disabling reconnect so that the socket will not attempt reconnections
       // after a disconnection. Instead, it will try to reconnect on next emit()
       // which creates less pressure on the server:
-      reconnect: false,
+      reconnection: false,
       query: sdkInfo
     });
     this.socket.on('error', e => logSocketError(e, 'error'));
