@@ -50,7 +50,7 @@ export default class SocketIoWrapper {
   constructor({ socket, url, connectTimeout, sdkInfo }: CreationParam) {
     this.socket = socket || new Socket(url, {
       timeout: connectTimeout,
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
       // Disabling autoConnect, socket.open() must be called explicitely instead:
       autoConnect: false,
       // Disabling reconnect so that the socket will not attempt reconnections
