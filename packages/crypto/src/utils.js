@@ -1,4 +1,5 @@
 // @flow
+import { InvalidArgument } from '@tanker/errors';
 import sodium from 'libsodium-wrappers';
 import { type b64string, type safeb64string } from './aliases';
 import { generichash } from './hash';
@@ -120,4 +121,14 @@ export function memzero(bytes: Uint8Array) {
 
 export function generateAppID(publicKey: Uint8Array): Uint8Array {
   return generichash(concatArrays(new Uint8Array([1]), new Uint8Array(32), publicKey));
+}
+
+// Function exposed for our users using the verification by passphrase to hash their password client side.
+// This hash must be different from the hash we use internally, thus we add a pepper.
+export function hashPassphrase(data: Uint8Array): Uint8Array {
+  if (!data || !data.length) {
+    throw new InvalidArgument('Cannot hash an empty passphrase');
+  }
+  const pepper = fromString('2NsxLuBPL7JanD2SIjb9erBgVHjMFh');
+  return generichash(concatArrays(data, pepper));
 }
