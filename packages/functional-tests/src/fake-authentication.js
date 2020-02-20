@@ -18,10 +18,27 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
 
   describe('fake authentication', () => {
     let fa;
+    let appId;
 
     before(async () => {
-      const appId = utils.toBase64(args.appHelper.appId);
+      appId = utils.toBase64(args.appHelper.appId);
       fa = new FakeAuthentication({ appId, url: fakeAuthUrl });
+    });
+
+    it('handles invalid app id type', async () => {
+      // $FlowIKnow the point of the test is to check the error when the type is wrong
+      expect(() => new FakeAuthentication({ appId: 42, url: fakeAuthUrl })).to.throw();
+      expect(() => new FakeAuthentication({ url: fakeAuthUrl })).to.throw();
+    });
+
+    it('handles invalid base64 app id', async () => {
+      const badFa = new FakeAuthentication({ appId: 'bad-base-64', url: fakeAuthUrl });
+      await expect(badFa.getIdentity()).to.be.rejected;
+    });
+
+    it('handles unknown app id', async () => {
+      const badFa = new FakeAuthentication({ appId: 'deadbeef', url: fakeAuthUrl });
+      await expect(badFa.getIdentity()).to.be.rejected;
     });
 
     it('returns a disposable permanent identity without an email', async () => {
@@ -73,6 +90,27 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
       expectMatchingPublicIdentities(publicProvIdentity1, await getPublicIdentity(provisionalIdentity));
       expectMatchingPublicIdentities(publicProvIdentity2, await getPublicIdentity(provisionalIdentity));
       expectMatchingPublicIdentities(publicPermIdentity, await getPublicIdentity(identity));
+    });
+
+    it('can be used to share resources across users', async () => {
+      const aliceEmail = makeTestEmail();
+      const bobEmail = makeTestEmail();
+
+      const { identity: alicePrivateIdentity } = await fa.getIdentity(aliceEmail);
+      const { identity: bobPrivateIdentity } = await fa.getIdentity(bobEmail);
+
+      const [bobPublicIdentity] = await fa.getPublicIdentities([bobEmail]);
+
+      const aliceTanker = args.makeTanker(appId);
+      await aliceTanker.start(alicePrivateIdentity);
+      await aliceTanker.registerIdentity({ passphrase: 'passphrase' });
+
+      const bobTanker = args.makeTanker(appId);
+      await bobTanker.start(bobPrivateIdentity);
+      await bobTanker.registerIdentity({ passphrase: 'passphrase' });
+
+      const message = await aliceTanker.encrypt('I love you', { shareWithUsers: [bobPublicIdentity] });
+      await bobTanker.decrypt(message);
     });
   });
 };
