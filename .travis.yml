@@ -10,7 +10,7 @@ matrix:
   include:
     - script:
         - yarn build:all
-        - npm run coverage
+        - yarn coverage
         - yarn run codecov
       name: "Coverage"
     - script: yarn karma --browsers ChromeWindows10
