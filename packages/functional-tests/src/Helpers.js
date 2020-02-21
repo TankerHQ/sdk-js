@@ -19,7 +19,7 @@ const getFakeAuthUrl = (apiUrl) => {
   if (apiUrl.indexOf('api.') !== -1) {
     return apiUrl.replace('api.', 'fakeauth.');
   }
-  return 'http://127.0.0.1:8080';
+  return 'http://127.0.0.1:4249';
 };
 
 // $FlowIKnow
