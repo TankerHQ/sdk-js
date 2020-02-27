@@ -3,7 +3,7 @@
 import EventEmitter from 'events';
 import Socket from 'socket.io-client';
 import { tcrypto, utils } from '@tanker/crypto';
-import { ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts, DeviceRevoked } from '@tanker/errors';
+import { ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts, DeviceRevoked, Conflict } from '@tanker/errors';
 
 import { VerificationNeeded } from '../errors.internal';
 import SocketIoWrapper, { type Listener, type SdkInfo } from './SocketIoWrapper';
@@ -65,6 +65,7 @@ const serverErrorMap = {
   verification_needed: VerificationNeeded,
   verification_key_not_found: PreconditionFailed,
   device_revoked: DeviceRevoked,
+  conflict: Conflict,
 };
 
 /**
