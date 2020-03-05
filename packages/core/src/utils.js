@@ -29,6 +29,6 @@ export function findIndex<T>(array: Array<T>, predicate: T => bool): number {
 }
 
 
-export function hashPassphrase(passphrase: string): b64string {
-  return utils.toBase64(utils.hashPassphrase(utils.fromString(passphrase)));
+export function prehashPassword(password: string): b64string {
+  return utils.toBase64(utils.prehashPassword(utils.fromString(password)));
 }
