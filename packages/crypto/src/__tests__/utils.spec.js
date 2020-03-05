@@ -1,11 +1,13 @@
 // @flow
 import { expect } from '@tanker/test-utils';
+import { InvalidArgument } from '@tanker/errors';
 
 import {
   concatArrays, equalArray, isNullArray, memzero,
   fromB64Json, fromBase64, fromSafeBase64, toB64Json, toBase64, toSafeBase64,
-  fromString, toString,
+  fromString, toString, hashPassphrase
 } from '../utils';
+import { generichash } from '../hash';
 
 describe('utils', () => {
   let base64;
@@ -125,6 +127,36 @@ describe('utils', () => {
         // $FlowExpectedError
         expect(() => { helper(bytes); }, `bad argument #${i}`).to.throw(TypeError);
       });
+    });
+  });
+
+  describe('hashPassphrase', () => {
+    it('should be a different hash function than the one we use', () => {
+      const input = 'super secretive password';
+      const output = toBase64(hashPassphrase(fromString(input)));
+      const ourHash = toBase64(generichash(fromString(input)));
+
+      expect(output).to.not.deep.equal(ourHash);
+    });
+
+    it('should be equal to the test vector', () => {
+      const input = 'super secretive password';
+      const output = toBase64(hashPassphrase(fromString(input)));
+      const b64TestVector = 'UYNRgDLSClFWKsJ7dl9uPJjhpIoEzadksv/Mf44gSHI=';
+
+      expect(output).to.deep.equal(b64TestVector);
+    });
+
+    it('should be equal to the unicode test vector', () => {
+      const input = 'test éå 한국어 😃';
+      const output = toBase64(hashPassphrase(fromString(input)));
+      const b64TestVector = 'Pkn/pjub2uwkBDpt2HUieWOXP5xLn0Zlen16ID4C7jI=';
+
+      expect(output).to.deep.equal(b64TestVector);
+    });
+
+    it('should throw when given an empty passphrase', () => {
+      expect(() => { hashPassphrase(fromString('')); }).to.throw(InvalidArgument);
     });
   });
 });

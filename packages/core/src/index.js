@@ -18,7 +18,7 @@ import {
 
 import { Tanker, optionsWithDefaults } from './Tanker';
 import { statuses } from './LocalUser/types';
-import { fromBase64, toBase64 } from './utils';
+import { fromBase64, toBase64, hashPassphrase } from './utils';
 
 // export
 export default Tanker;
@@ -50,4 +50,5 @@ export {
   optionsWithDefaults,
   statuses,
   toBase64,
+  hashPassphrase,
 };
