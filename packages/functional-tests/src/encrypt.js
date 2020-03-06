@@ -6,7 +6,6 @@ import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 
 import { type TestArgs } from './TestArgs';
-import { AppHelper } from './Helpers';
 
 const expectProgressReport = (spy, totalBytes, maxBytesPerStep = encryptionV4.defaultMaxEncryptedChunkSize) => {
   // add 1 for initial progress report (currentBytes = 0)
@@ -514,41 +513,42 @@ const generateEncryptTests = (args: TestArgs) => {
   });
 
   describe('binary file upload and download', () => {
+    let appHelper;
     let aliceIdentity;
     let aliceLaptop;
     let bobIdentity;
     let bobLaptop;
     let bobPublicIdentity;
-    let appHelper;
+
+    before(async () => {
+      ({ appHelper } = args);
+
+      const appId = utils.toBase64(appHelper.appId);
+      aliceIdentity = await appHelper.generateIdentity();
+      aliceLaptop = args.makeTanker(appId);
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+      bobIdentity = await appHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
+      bobLaptop = args.makeTanker(appId);
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+    });
+
+    after(async () => {
+      await Promise.all([
+        aliceLaptop.stop(),
+        bobLaptop.stop(),
+      ]);
+    });
 
     ['gcs', 's3'].forEach((storage) => {
       describe(storage, () => {
-        before(async () => {
-          if (storage === 'gcs') {
-            appHelper = args.appHelper;
-          } else {
-            appHelper = await AppHelper.newApp();
-            await appHelper.setupS3();
-          }
-          const appId = utils.toBase64(appHelper.appId);
-          aliceIdentity = await appHelper.generateIdentity();
-          aliceLaptop = args.makeTanker(appId);
-          await aliceLaptop.start(aliceIdentity);
-          await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
-
-          bobIdentity = await appHelper.generateIdentity();
-          bobPublicIdentity = await getPublicIdentity(bobIdentity);
-          bobLaptop = args.makeTanker(appId);
-          await bobLaptop.start(bobIdentity);
-          await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-        });
-
-        after(async () => {
-          await Promise.all([
-            aliceLaptop.stop(),
-            bobLaptop.stop(),
-          ]);
-        });
+        if (storage === 's3') {
+          before(() => appHelper.setS3());
+          after(() => appHelper.unsetS3());
+        }
 
         forEachSize(['empty', 'small', 'medium'], size => {
           it(`can upload and download a ${size} file`, async () => {

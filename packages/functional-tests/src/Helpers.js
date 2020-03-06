@@ -167,19 +167,26 @@ export class AppHelper {
     const requester = await AuthenticatedRequester.open();
     const createResponse = await requester.send('create trustchain', message);
     const authToken = createResponse.auth_token;
-
     const appId = rootBlock.trustchain_id;
-
-    await requester.send('update trustchain', {
-      id: utils.toBase64(appId),
-      oidc_client_id: oidcSettings.googleAuth.clientId,
-      oidc_provider: 'google',
-    });
-
     return new AppHelper(requester, appId, appKeyPair, authToken);
   }
 
-  async setupS3() {
+  async setOIDC() {
+    await this._requester.send('update trustchain', {
+      id: utils.toBase64(this.appId),
+      oidc_provider: 'google',
+      oidc_client_id: oidcSettings.googleAuth.clientId,
+    });
+  }
+
+  async unsetOIDC() {
+    await this._requester.send('update trustchain', {
+      id: utils.toBase64(this.appId),
+      oidc_provider: 'none',
+    });
+  }
+
+  async setS3() {
     await this._requester.send('update trustchain', {
       id: utils.toBase64(this.appId),
       storage_provider: 's3',
@@ -187,6 +194,13 @@ export class AppHelper {
       storage_bucket_region: storageSettings.s3.bucketRegion,
       storage_client_id: storageSettings.s3.clientId,
       storage_client_secret: storageSettings.s3.clientSecret,
+    });
+  }
+
+  async unsetS3() {
+    await this._requester.send('update trustchain', {
+      id: utils.toBase64(this.appId),
+      storage_provider: 'none',
     });
   }
 
