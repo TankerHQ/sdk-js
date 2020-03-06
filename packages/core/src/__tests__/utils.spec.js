@@ -2,7 +2,7 @@
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import { toBase64, fromBase64, findIndex } from '../utils';
+import { toBase64, fromBase64, findIndex, prehashPassword } from '../utils';
 
 const notStringTypes = [undefined, null, 0, {}, [], new Uint8Array(0)];
 const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'wat'];
@@ -19,6 +19,11 @@ describe('utils (core)', () => {
     it('should throw when fromBase64 is given an invalid type', () => {
       // $FlowExpectedError
       notStringTypes.forEach((v, i) => expect(() => fromBase64(v), `#${i}`).to.throw(InvalidArgument));
+    });
+
+    it('should throw when prehashPassword is given an invalid type', async () => {
+      // $FlowExpectedError
+      await Promise.all(notStringTypes.map((v, i) => expect(prehashPassword(v), `#${i}`).to.be.rejectedWith(InvalidArgument)));
     });
   });
 

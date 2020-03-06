@@ -28,7 +28,10 @@ export function findIndex<T>(array: Array<T>, predicate: T => bool): number {
   return -1;
 }
 
+// Keep this function asynchronous for compat with future asynchronous libsodium init
+export async function prehashPassword(password: string): Promise<b64string> {
+  if (typeof password !== 'string')
+    throw new InvalidArgument('password', 'string', password);
 
-export function prehashPassword(password: string): b64string {
   return utils.toBase64(utils.prehashPassword(utils.fromString(password)));
 }
