@@ -223,9 +223,12 @@ const generateVerificationTests = (args: TestArgs) => {
       let kevinIdToken: string;
 
       before(async () => {
+        await appHelper.setOIDC();
         martineIdToken = await getGoogleIdToken(martineRefreshToken);
         kevinIdToken = await getGoogleIdToken(kevinRefreshToken);
       });
+
+      after(() => appHelper.unsetOIDC());
 
       it('registers and verifies with an oidc id token', async () => {
         await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
