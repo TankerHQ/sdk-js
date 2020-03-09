@@ -19,6 +19,7 @@ describe('print', () => {
       () => 'anonymous',
       {},
       { a: { nested: 'key' } },
+      Object.create(null), // bare object
       [],
       [0, { a: 'a', b: 2 }, null],
       new Uint8Array(5),
@@ -34,6 +35,7 @@ describe('print', () => {
       'number',
       'function',
       'function',
+      'Object',
       'Object',
       'Object',
       'Array(0)',
@@ -53,6 +55,7 @@ describe('print', () => {
       '[source code]',
       '{}',
       '{"a":{"nested":"key"}}',
+      '{}',
       '[]',
       '[0,{"a":"a","b":2},null]',
       '{"0":0,"1":0,"2":0,"3":0,"4":0}',
