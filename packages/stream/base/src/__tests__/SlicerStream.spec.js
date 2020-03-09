@@ -1,5 +1,5 @@
 // @flow
-import { safePrintType } from '@tanker/errors';
+import { getConstructor, getConstructorName } from '@tanker/types';
 import FilePonyfill from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 
@@ -28,7 +28,7 @@ describe('SlicerStream', () => {
 
   testOptions.forEach(options => {
     const { source } = options;
-    const classname = safePrintType(source);
+    const classname = getConstructorName(getConstructor(source));
 
     it(`can slice a ${classname}`, async () => {
       const stream = new SlicerStream({ ...options, outputSize });
