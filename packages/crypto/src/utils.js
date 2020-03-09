@@ -125,9 +125,9 @@ export function generateAppID(publicKey: Uint8Array): Uint8Array {
 
 // Function exposed for our users using the verification by passphrase to hash their password client side.
 // This hash must be different from the hash we use internally, thus we add a pepper.
-export function hashPassphrase(data: Uint8Array): Uint8Array {
+export function prehashPassword(data: Uint8Array): Uint8Array {
   if (!data || !data.length) {
-    throw new InvalidArgument('Cannot hash an empty passphrase');
+    throw new InvalidArgument('Cannot hash an empty password');
   }
   const pepper = fromString('2NsxLuBPL7JanD2SIjb9erBgVHjMFh');
   return generichash(concatArrays(data, pepper));
