@@ -18,7 +18,7 @@ import makeUint8Array from '../../__tests__/makeUint8Array';
 
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
-describe('payload test vectors', () => {
+describe('user serialization: payload test vectors', () => {
   it('correctly deserializes a DeviceCreation v1 test vector', async () => {
     const deviceCreation = {
       ephemeral_public_signature_key: new Uint8Array([
@@ -227,7 +227,7 @@ describe('payload test vectors', () => {
   });
 });
 
-describe('payloads', () => {
+describe('user serialization: payloads', () => {
   it('should serialize/unserialize a UserDeviceV3', async () => {
     const ephemeralKeys = tcrypto.makeSignKeyPair();
     const signatureKeys = tcrypto.makeSignKeyPair();

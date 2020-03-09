@@ -5,7 +5,7 @@ import { InternalError } from '@tanker/errors';
 import { preferredNature, natureKind, NATURE, NATURE_KIND } from '../Nature';
 import type { Nature, NatureKind } from '../Nature';
 
-describe('natures', () => {
+describe('blocks: natures', () => {
   // Extract minimum and maximum object values (without Flow issues...)
   const minMax = <T: number>(obj: { [string]: T }): [T, T] => {
     const values = ((Object.values(obj): any): Array<T>);

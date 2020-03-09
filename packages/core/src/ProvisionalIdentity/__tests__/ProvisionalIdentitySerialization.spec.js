@@ -12,7 +12,7 @@ import makeUint8Array from '../../__tests__/makeUint8Array';
 
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
-describe('payload test vectors', () => {
+describe('provisional identity serialization: payload test vectors', () => {
   it('correctly deserializes a ProvisionalIdentityClaim test vector', async () => {
     const provisionalIdentityClaim = {
       user_id: makeUint8Array('the user id', tcrypto.HASH_SIZE),
