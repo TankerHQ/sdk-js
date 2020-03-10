@@ -1,5 +1,5 @@
 // @flow
-import { expect } from '@tanker/test-utils';
+import { expect, silencer } from '@tanker/test-utils';
 
 import { safePrintType, safePrintValue } from '../print';
 
@@ -19,6 +19,7 @@ describe('print', () => {
       () => 'anonymous',
       {},
       { a: { nested: 'key' } },
+      Object.create(null), // bare object
       [],
       [0, { a: 'a', b: 2 }, null],
       new Uint8Array(5),
@@ -34,6 +35,7 @@ describe('print', () => {
       'number',
       'function',
       'function',
+      'Object',
       'Object',
       'Object',
       'Array(0)',
@@ -53,6 +55,7 @@ describe('print', () => {
       '[source code]',
       '{}',
       '{"a":{"nested":"key"}}',
+      '{}',
       '[]',
       '[0,{"a":"a","b":2},null]',
       '{"0":0,"1":0,"2":0,"3":0,"4":0}',
@@ -71,5 +74,20 @@ describe('print', () => {
     for (let i = 0; i < values.length; i++) {
       expect(safePrintValue(values[i]), `failed type check #${i}`).to.equal(expectedValues[i]);
     }
+  });
+
+  it('should gracefully handle values that are not friendly printable', () => {
+    const circular = {};
+    circular.reference = circular;
+    expect(safePrintType(circular)).to.equal('Object');
+    expect(safePrintValue(circular)).to.equal('[object Object]');
+
+    const trap = {
+      get length() { throw new Error('nope'); },
+    };
+    silencer.silence('error');
+    expect(safePrintType(trap)).to.equal('[error printing type]');
+    expect(safePrintValue(trap)).to.equal('[error printing value]');
+    silencer.restore();
   });
 });

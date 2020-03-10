@@ -7,7 +7,7 @@ import { serializeBlock, unserializeBlock } from '../payloads';
 import { preferredNature, NATURE_KIND } from '../Nature';
 import { UpgradeRequiredError } from '../../errors.internal';
 
-describe('payloads', () => {
+describe('blocks: payloads', () => {
   it('should throw when unserializing unsupported block version', async () => {
     const block = {
       author: random(tcrypto.HASH_SIZE),

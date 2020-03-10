@@ -1,6 +1,7 @@
 // @flow
 import { utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
+import { silencer } from '@tanker/test-utils';
 
 import { AppHelper, tankerUrl, idToken, oidcSettings } from './Helpers';
 import type { TestArgs, TestResources } from './TestArgs';
@@ -14,8 +15,6 @@ import generateStartTests from './start';
 import generateRevocationTests from './revocation';
 import generateVerificationTests from './verification';
 import generateFakeAuthenticationTests from './fake-authentication';
-
-import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
 
 export function generateFunctionalTests(
   name: string,

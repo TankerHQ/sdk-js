@@ -1,5 +1,5 @@
 // @flow
-import { sinon } from '@tanker/test-utils';
+import sinon from 'sinon';
 
 export const silencer = {
   _stubs: [],
