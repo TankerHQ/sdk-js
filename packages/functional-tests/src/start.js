@@ -1,12 +1,10 @@
 // @flow
 import { errors, statuses } from '@tanker/core';
 import { createIdentity } from '@tanker/identity';
-import { expect } from '@tanker/test-utils';
+import { expect, silencer } from '@tanker/test-utils';
 import { utils } from '@tanker/crypto';
 
 import { type TestArgs } from './TestArgs';
-
-import { silencer } from '../../core/src/__tests__/ConsoleSilencer';
 
 const { STOPPED, READY, IDENTITY_REGISTRATION_NEEDED, IDENTITY_VERIFICATION_NEEDED } = statuses;
 
