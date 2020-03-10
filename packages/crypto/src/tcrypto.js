@@ -1,6 +1,5 @@
 // @flow
 import sodium from 'libsodium-wrappers';
-import { random } from './random';
 import { generichash } from './hash';
 import { concatArrays } from './utils';
 import { toUint64le } from './number';
@@ -51,20 +50,6 @@ export function getEncryptionKeyPairFromPrivateKey(privKey: Uint8Array): SodiumK
 export function getSignatureKeyPairFromPrivateKey(privateKey: Uint8Array): SodiumKeyPair {
   const publicKey = privateKey.subarray(SIGNATURE_SEEDBYTES);
   return { privateKey, publicKey };
-}
-
-export function asymEncrypt(msg: Uint8Array, publicKey: Uint8Array, privKey: Uint8Array): Uint8Array {
-  const nonce = random(sodium.crypto_box_NONCEBYTES);
-  const cipher = sodium.crypto_box_easy(msg, nonce, publicKey, privKey);
-  const res = concatArrays(cipher, nonce);
-  return res;
-}
-
-export function asymDecrypt(cipherText: Uint8Array, publicKey: Uint8Array, privKey: Uint8Array): Uint8Array {
-  const nonceStart = cipherText.length - sodium.crypto_box_NONCEBYTES;
-  const nonce = cipherText.subarray(nonceStart);
-  const cipherSliced = cipherText.subarray(0, nonceStart);
-  return sodium.crypto_box_open_easy(cipherSliced, nonce, publicKey, privKey);
 }
 
 export function sealEncrypt(clearData: Uint8Array, pubKey: Uint8Array): Uint8Array {
