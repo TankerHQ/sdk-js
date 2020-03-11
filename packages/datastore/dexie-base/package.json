@@ -1,7 +1,7 @@
 {
-  "name": "@tanker/datastore-dexie-browser",
+  "name": "@tanker/datastore-dexie-base",
   "version": "0.0.1",
-  "description": "Tanker SDK (datastore dexie browser)",
+  "description": "Tanker SDK (datastore dexie base)",
   "author": "Tanker Team",
   "license": "Apache-2.0",
   "homepage": "https://tanker.io/",
@@ -17,10 +17,6 @@
   "browser": "browser.js",
   "dependencies": {
     "@babel/runtime-corejs2": "^7.4.0",
-    "@tanker/datastore-dexie-base": "0.0.1",
-    "dexie": "^2.0.4"
-  },
-  "devDependencies": {
-    "@tanker/datastore-tests": "0.0.1"
+    "@tanker/datastore-base": "0.0.1"
   }
 }
