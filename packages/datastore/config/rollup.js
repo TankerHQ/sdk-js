@@ -8,6 +8,7 @@ const packages = [
   'base',
   'dexie-base',
   'dexie-browser',
+  'dexie-memory',
   'pouchdb-base',
   'pouchdb-memory',
   'pouchdb-node',
