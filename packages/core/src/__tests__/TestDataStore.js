@@ -1,5 +1,5 @@
 // @flow
-import PouchDBMemory from '@tanker/datastore-pouchdb-memory';
+import DexieMemory from '@tanker/datastore-dexie-memory';
 import { type DataStore, type BaseConfig, type Schema, mergeSchemas } from '@tanker/datastore-base';
 import { uuid } from '@tanker/test-utils';
 
@@ -18,8 +18,8 @@ export const openDataStore = async (config: DataStoreConfig): Promise<DataStore<
 };
 
 export function makeMemoryDataStore(schemas: Array<Schema>, dbName: string): Promise<DataStore<*>> {
-  const config = { adapter: PouchDBMemory, schemas: mergeSchemas(schemas), dbName: makePrefix() + dbName };
+  const config = { adapter: DexieMemory, schemas: mergeSchemas(schemas), dbName: makePrefix() + dbName };
   return openDataStore(config);
 }
 
-export default { adapter: PouchDBMemory };
+export default { adapter: DexieMemory };
