@@ -107,7 +107,7 @@ export default class ProvisionalIdentityManager {
     if (verification.oidcIdToken) {
       let jwtPayload;
       try {
-        jwtPayload = JSON.parse(utils.toString(utils.fromBase64(verification.oidcIdToken.split('.')[1])));
+        jwtPayload = JSON.parse(utils.toString(utils.fromSafeBase64(verification.oidcIdToken.split('.')[1])));
       } catch (e) {
         throw new InvalidArgument('Failed to parse "verification.oidcIdToken"');
       }
