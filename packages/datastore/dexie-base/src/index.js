@@ -214,7 +214,6 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
   }
 
   find = async (table: string, query?: { selector?: Object, sort?: SortParams, limit?: number } = {}) => {
-    // console.log('\n' + JSON.stringify(query));
     const { selector, sort, limit } = query;
     let q = this._db.table(table);
     let index = null;
@@ -285,7 +284,6 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
 
     q = q.where(key); // WhereClause (Dexie)
 
-    // console.log(`where key=${key}, value=${JSON.stringify(value)}`);
     // object
     if (value instanceof Object) {
       if ('$in' in value) {
@@ -305,7 +303,7 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
       } else {
         throw new Error(`A selector provided an unknown value: ${JSON.stringify(value)}`);
       }
-      // primitive type
+    // primitive type
     } else {
       if (typeof value === 'boolean') {
         throw new UnsupportedTypeError('boolean');
@@ -320,13 +318,11 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
   }
 
   _chainAnd<Q>(query: Q, andValues: Object): Q {
-    // console.log(`and andValues=${JSON.stringify(andValues)}`);
     let q: any = query;
 
     const keys = Object.keys(andValues);
 
     q = q.and(record => {
-      // console.log(`checking record: ${JSON.stringify(record)}`);
       for (const key of keys) {
         const value = andValues[key];
         if (value instanceof Object) {
@@ -380,7 +376,6 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
   }
 
   _chainSort<Q>(query: Q, sort: SortParams, index: ?string, table: string): Q | Promise<Array<Object>> {
-    // console.log(`sort=${JSON.stringify(sort)}`);
     let q: any = query;
     let sortKey: any = sort[0]; // assume single sort
     let dir = 'asc';
