@@ -1,38 +1,48 @@
+os: linux
 dist: bionic
 language: node_js
-node_js:
-  - "10"
+node_js: 12
 
 install:
   - yarn
 
-matrix:
+jobs:
   include:
-    - script:
+    - name: "Coverage (Node 12 on Linux)"
+      script:
         - yarn build:all
         - yarn coverage
         - yarn run codecov
-      name: "Coverage"
-    - script: yarn karma --browsers ChromeWindows10
-      name: "Latest Chrome on Windows 10"
-    - script: yarn karma --browsers Chrome70Windows7
-      name: "Chrome 70 on Windows 7"
-    - script: yarn karma --browsers EdgeWindows10
-      name: "Latest Edge"
-    - script: yarn karma --browsers FirefoxWindows10
-      name: "Latest Firefox on Windows 10"
-    - script: yarn karma --browsers Firefox64Windows8
-      name: "Firefox 64 on Windows 8.1"
-    - script: yarn karma --browsers ChomeOSX
-      name: "Chrome on OS X"
-    - script: yarn karma --browsers FirefoxOSX
-      name: "Firefox on OS X"
-    - script: yarn karma --browsers Android9
-      name: "Chrome Android 9"
-    - script: yarn karma --browsers Android5
-      name: "Chrome Android 5"
-    - script: yarn karma --browsers iOS12
-      name: "Safari iOS 12"
+    - name: "Node 12 on macOS"
+      os: osx
+      script: yarn test
+    - name: "Node 10 on Linux"
+      node_js: 10
+      script: yarn test
+    - name: "Node 10 on macOS"
+      node_js: 10
+      os: osx
+      script: yarn test
+    - name: "Latest Chrome on Windows 10"
+      script: yarn karma --browsers ChromeWindows10
+    - name: "Chrome 70 on Windows 7"
+      script: yarn karma --browsers Chrome70Windows7
+    - name: "Latest Edge"
+      script: yarn karma --browsers EdgeWindows10
+    - name: "Latest Firefox on Windows 10"
+      script: yarn karma --browsers FirefoxWindows10
+    - name: "Firefox 64 on Windows 8.1"
+      script: yarn karma --browsers Firefox64Windows8
+    - name: "Chrome on macOS"
+      script: yarn karma --browsers ChomeOSX
+    - name: "Firefox on macOS"
+      script: yarn karma --browsers FirefoxOSX
+    - name: "Chrome Android 9"
+      script: yarn karma --browsers Android9
+    - name: "Chrome Android 5"
+      script: yarn karma --browsers Android5
+    - name: "Safari iOS 12"
+      script: yarn karma --browsers iOS12
   allow_failures:
-    - script: yarn karma --browsers Safari12Mojave
-      name: "Safari 12 on OS X Mojave"
+    - name: "Safari 12 on macOS Mojave"
+      script: yarn karma --browsers Safari12Mojave

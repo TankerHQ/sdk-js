@@ -1,7 +1,7 @@
 {
-  "name": "@tanker/datastore-pouchdb-memory",
+  "name": "@tanker/datastore-dexie-memory",
   "version": "0.0.1",
-  "description": "Tanker SDK (datastore pouchdb memory)",
+  "description": "Tanker SDK (datastore dexie memory)",
   "author": "Tanker Team",
   "license": "Apache-2.0",
   "homepage": "https://tanker.io/",
@@ -17,11 +17,8 @@
   "browser": "browser.js",
   "dependencies": {
     "@babel/runtime-corejs2": "^7.4.0",
-    "@tanker/datastore-pouchdb-base": "0.0.1",
-    "pouchdb-adapter-leveldb": "^7.2.1",
-    "pouchdb-core": "^7.2.1",
-    "pouchdb-find": "^7.2.1",
-    "pouchdb-adapter-memory": "^7.2.1"
+    "@tanker/datastore-dexie-base": "0.0.1",
+    "array-find": "^1.0.0"
   },
   "devDependencies": {
     "@tanker/datastore-tests": "0.0.1"

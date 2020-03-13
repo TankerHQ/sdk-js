@@ -6,7 +6,9 @@ const flatten = arr => arr.reduce((acc, val) => acc.concat(val), []);
 
 const packages = [
   'base',
+  'dexie-base',
   'dexie-browser',
+  'dexie-memory',
   'pouchdb-base',
   'pouchdb-memory',
   'pouchdb-node',

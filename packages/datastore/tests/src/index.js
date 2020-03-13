@@ -158,7 +158,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         await expect(store.get(tableName, record2._id)).to.be.rejectedWith(RecordNotFound);
       });
 
-      it('can add and get back a normal record', async () => {
+      it('can add and get back a simple record', async () => {
         await store.add(tableName, record1);
         const actual = await store.get(tableName, record1._id);
         expect(cleanRecord(actual)).to.deep.equal(cleanRecord(record1));
@@ -184,37 +184,30 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         expect(cleanRecord(actual)).to.deep.equal(cleanRecord(record4));
       });
 
-      it('can add a record only once', async () => {
+      it('can not add a record with a primary key already in use', async () => {
         await store.add(tableName, record1);
-        await expect(store.add(tableName, record1)).to.be.rejectedWith(RecordNotUnique);
+        await expect(store.add(tableName, { _id: record1._id })).to.be.rejectedWith(RecordNotUnique);
       });
 
-      it('can put a record several times', async () => {
-        await store.put(tableName, record1);
-        const updatedRecord = { ...record1 };
-        updatedRecord.a = 'newValue';
-        await store.put(tableName, updatedRecord);
-        const actual = await store.get(tableName, record1._id);
-        expect(actual.a).to.eq('newValue');
-      });
-
-      it('overrides existing records', async () => {
+      it('can put a record several times, with updates', async () => {
         await store.put(tableName, record1);
         const updatedRecord: TestRecord = { ...record1 };
+        updatedRecord.a = 'newValue';
         delete updatedRecord.d;
         await store.put(tableName, updatedRecord);
         const actual = await store.get(tableName, record1._id);
-        expect(actual.d).to.be.undefined;
+        expect(actual.a).to.eq('newValue');
+        expect('d' in actual).to.be.false;
       });
 
-      it('can delete record', async () => {
+      it('can delete a record', async () => {
         await store.bulkPut(tableName, [record1, record2, record3]);
         await store.delete(tableName, record2._id);
         const result = await store.getAll(tableName);
         expect(result.map(cleanRecord)).to.deep.equal([record1, record3]);
       });
 
-      it('can delete non-existing record', async () => {
+      it('can delete a non-existing record', async () => {
         await store.bulkPut(tableName, [record1, record2, record3]);
         await store.delete(tableName, 'blah');
         const result = await store.getAll(tableName);
@@ -306,22 +299,37 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         expect(cleanRecord(result5)).to.deep.equal(record1);
       });
 
-      it('can find the list of all records matching a value', async () => {
-        const result = await store.find(tableName, { selector: { b: record1.b } });
-        expect(result.map(cleanRecord)).to.have.deep.members([record1, record2]);
+      it('can find the list of all records matching a value (2 flavors)', async () => {
+        const result1 = await store.find(tableName, { selector: { b: record1.b } });
+        const result2 = await store.find(tableName, { selector: { b: { $eq: record1.b } } });
+        expect(result1.map(cleanRecord)).to.have.deep.members([record1, record2]);
+        expect(result2.map(cleanRecord)).to.have.deep.members([record1, record2]);
       });
 
-      it('can sort results', async () => {
+      it('can sort results in ascending order', async () => {
+        const result = await store.find(tableName, { sort: [{ c: 'asc' }] });
+        expect(result.map(x => x.c)).to.deep.equal([1, 2, 3]);
+      });
+
+      it('can sort results in descending order', async () => {
         const result = await store.find(tableName, { sort: [{ c: 'desc' }] });
         expect(result.map(x => x.c)).to.deep.equal([3, 2, 1]);
       });
 
+      it('can limit the number of results', async () => {
+        const result1 = await store.find(tableName, { sort: [{ c: 'asc' }], limit: 2 });
+        const result2 = await store.find(tableName, { sort: [{ c: 'desc' }], limit: 1 });
+        expect(result1.map(x => x.c)).to.deep.equal([1, 2]);
+        expect(result2.map(x => x.c)).to.deep.equal([3]);
+      });
+
       it('can find records with comparison operators', async () => {
-        const result1 = await store.find(tableName, { sort: [{ c: 'asc' }], selector: { c: { $gt: 1 } } });
-        const result2 = await store.find(tableName, { sort: [{ c: 'asc' }], selector: { c: { $gte: 2 } } });
-        const result3 = await store.find(tableName, { sort: [{ c: 'asc' }], selector: { c: { $lt: 3 } } });
-        const result4 = await store.find(tableName, { sort: [{ c: 'asc' }], selector: { c: { $lte: 2 } } });
-        const result5 = await store.find(tableName, { selector: { _id: { $in: ['key2', 'key3'] } } });
+        const sort = [{ c: 'asc' }];
+        const result1 = await store.find(tableName, { sort, selector: { c: { $gt: 1 } } });
+        const result2 = await store.find(tableName, { sort, selector: { c: { $gte: 2 } } });
+        const result3 = await store.find(tableName, { sort, selector: { c: { $lt: 3 } } });
+        const result4 = await store.find(tableName, { sort, selector: { c: { $lte: 2 } } });
+        const result5 = await store.find(tableName, { sort, selector: { _id: { $in: ['key2', 'key3'] } } });
         expect(result1.map(cleanRecord)).to.deep.equal([record3, record1]);
         expect(result2.map(cleanRecord)).to.deep.equal([record3, record1]);
         expect(result3.map(cleanRecord)).to.deep.equal([record2, record3]);
@@ -340,7 +348,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       });
 
       it('can find records with multiple selectors', async () => {
-      // Note: at least one operator given MUST match an index
+        // Note: at least one operator given MUST match an index
         const result1 = await store.find(tableName, { selector: { a: { $gte: '2' }, c: { $lt: 2 } } }); // both indexed
         const result2 = await store.find(tableName, { selector: { b: 'b', d: null } });
         const result3 = await store.find(tableName, { selector: { b: 'b', d: { $ne: null } } });
@@ -350,9 +358,9 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       });
 
       it('can find records with $exists operator on secondary field', async () => {
-      // Note: we're not implementing it on the primary search field as it's not
-      //       performant at all and can be achieved with a simple getAll()
-      //       followed by a javascript filter!
+        // Note: we're not implementing it on the primary search field as it's not
+        //       performant at all and can be achieved with a simple getAll()
+        //       followed by a javascript filter!
         const result1 = await store.find(tableName, { selector: { b: 'b', e: { $exists: true } } });
         const result2 = await store.find(tableName, { selector: { b: 'b', e: { $exists: false } } });
         expect(result1.map(cleanRecord)).to.deep.equal([record2]);
