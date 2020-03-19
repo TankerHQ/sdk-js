@@ -95,6 +95,10 @@
     "webpack-cli": "3.3.11",
     "webpack-dev-server": "3.10.3"
   },
+  "resolutions": {
+    "**/optimist/minimist": "1.2.5",
+    "karma-mocha/minimist": "1.2.5"
+  },
   "workspaces": [
     "packages/*",
     "packages/datastore/*",
