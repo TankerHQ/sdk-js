@@ -1,8 +1,11 @@
 // @flow
 
-import { tankerUrl } from '../../../../packages/functional-tests/src/Helpers';
+import '../../../../config/tanker.test.config';
+import { AppHelper, tankerUrl } from '../../../../packages/functional-tests/src/Helpers';
 import { fromBase64, toBase64 } from '../../../../packages/client-node';
 import { getPublicIdentity } from '../../../../packages/identity';
+
+export { AppHelper, toBase64 };
 
 const password = 'plop';
 

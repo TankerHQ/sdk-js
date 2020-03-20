@@ -4,9 +4,5 @@
   "main": "index.js",
   "author": "Tanker Team",
   "license": "UNLICENSED",
-  "private": true,
-  "dependencies": {
-    "chai": "^4.2.0",
-    "uuid": "^3.3.2"
-  }
+  "private": true
 }
