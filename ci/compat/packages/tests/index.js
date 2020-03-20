@@ -1,11 +1,7 @@
 // @flow
+import { expect, uuid } from '../../../../packages/test-utils';
 
-import uuid from 'uuid';
-import { expect } from '../../../../packages/test-utils';
-
-import { toBase64 } from '../../../../packages/client-node';
-import { AppHelper } from '../../../../packages/functional-tests/src/Helpers';
-import { makeCurrentUser, makeV2User } from './helpers';
+import { AppHelper, makeCurrentUser, makeV2User, toBase64 } from './helpers';
 
 function generateEncryptTest(args) {
   it(`encrypts in ${args.version} and decrypts with current code`, async () => {
