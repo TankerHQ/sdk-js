@@ -1,6 +1,9 @@
 // @noflow
 /* eslint-disable */
 
+// Warning: don't replace this module by the core-js-pure ponyfill
+//          which is too naïve.
+//
 // Note: the __global_this__ trick did not work in Safari + Karma,
 //       so we continue to test global variables first :'-(
 function getGlobalThis() {
