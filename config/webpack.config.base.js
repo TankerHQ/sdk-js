@@ -12,19 +12,20 @@ const hackAroundSodium = {
 };
 
 const getBabelLoaders = (env) => {
-  const config = getBabelConfig(env);
+  const babelConfig = getBabelConfig(env);
+  const babelConfigForceUMD = getBabelConfig({ ...env, modules: 'umd' });
 
   return [
     {
       test: /\.js$/,
       loader: 'babel-loader',
-      options: config,
+      options: babelConfig,
       exclude: /node_modules/,
     },
     {
       test: /\.js$/,
       loader: 'babel-loader',
-      options: config,
+      options: babelConfig,
       include: [
         // babelify our own stuff
         /node_modules(\\|\/)@tanker/,
@@ -41,17 +42,7 @@ const getBabelLoaders = (env) => {
     {
       test: /\.js$/,
       loader: 'babel-loader',
-      options: {
-        presets: [
-          ['@babel/preset-env', {
-            modules: 'umd',
-            targets: { browsers: ['last 2 versions', 'Firefox ESR', 'not ie < 11', 'not dead'] },
-          }],
-        ],
-        plugins: [
-          ['@babel/plugin-transform-runtime', { corejs: 3 }]
-        ],
-      },
+      options: babelConfigForceUMD,
       include: [
         // they use arrow functions
         /node_modules(\\|\/)chai-as-promised/,
