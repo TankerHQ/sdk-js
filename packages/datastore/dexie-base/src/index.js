@@ -327,7 +327,7 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
         const value = andValues[key];
         if (value instanceof Object) {
           if ('$in' in value) {
-            if (value['$in'].indexOf(record[key]) === -1) { // eslint-disable-line dot-notation
+            if (!value['$in'].includes(record[key])) { // eslint-disable-line dot-notation
               return false;
             }
           } else if ('$gt' in value) {

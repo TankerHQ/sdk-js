@@ -10,7 +10,7 @@ import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
 const getFakeAuthUrl = (apiUrl) => {
-  if (apiUrl.indexOf('api.') !== -1) {
+  if (apiUrl.includes('api.')) {
     return apiUrl.replace('api.', 'fakeauth.');
   }
   return 'http://127.0.0.1:4249';

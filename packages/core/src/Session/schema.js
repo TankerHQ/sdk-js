@@ -65,7 +65,7 @@ const tablesV6 = [
   }];
 
 const tablesV8 = tablesV6.map<TableSchema>(def => {
-  const deleted = ['unverified_user_groups', 'encryption_key_to_group_id'].indexOf(def.name) !== -1;
+  const deleted = ['unverified_user_groups', 'encryption_key_to_group_id'].includes(def.name);
   return deleted ? ({ ...def, deleted: true }) : def;
 });
 
@@ -77,7 +77,7 @@ const tablesV9 = tablesV8.filter(def => !def.deleted).map<TableSchema>(def => {
     'device_to_user',
     'user_last_indexes',
     'unverified_invite_claims',
-  ].indexOf(def.name) !== -1;
+  ].includes(def.name);
   return deleted ? ({ ...def, deleted: true }) : def;
 });
 
@@ -86,7 +86,7 @@ const tablesV10 = tablesV9.filter(def => !def.deleted).map<TableSchema>(def => {
     'users',
     'devices_to_user',
     'user_public_key_to_user',
-  ].indexOf(def.name) !== -1;
+  ].includes(def.name);
   return deleted ? ({ ...def, deleted: true }) : def;
 });
 
