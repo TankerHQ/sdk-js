@@ -16,18 +16,6 @@ export function fromBase64(str: b64string): Uint8Array {
   return utils.fromBase64(str);
 }
 
-// Because IE11: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex#Browser_compatibility
-export function findIndex<T>(array: Array<T>, predicate: T => bool): number {
-  if (Array.prototype.findIndex)
-    return array.findIndex(predicate);
-
-  for (let i = 0; i < array.length; ++i) // eslint-disable-line no-plusplus
-    if (predicate(array[i]))
-      return i;
-
-  return -1;
-}
-
 // Keep this function asynchronous for compat with future asynchronous libsodium init
 export async function prehashPassword(password: string): Promise<b64string> {
   if (typeof password !== 'string')

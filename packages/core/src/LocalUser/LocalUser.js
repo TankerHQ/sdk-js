@@ -15,7 +15,6 @@ import { type Nature } from '../Blocks/Nature';
 
 import { type LocalData } from './KeyStore';
 import type { LocalUserKeys } from './KeySafe';
-import { findIndex } from '../utils';
 
 import { trustchainCreationFromBlock } from './Serialize';
 import { verifyTrustchainCreation } from './Verify';
@@ -212,11 +211,11 @@ export class LocalUser extends EventEmitter {
         localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_previous_encryption_key, existingUserKey, localUserKeys);
       // Key encrypted after our device creation
       } else {
-        const privKeyIndex = findIndex(encryptedUserKey.private_keys, k => utils.equalArray(k.recipient, deviceId));
-        if (privKeyIndex === -1)
+        const privKey = encryptedUserKey.private_keys.find(k => utils.equalArray(k.recipient, deviceId));
+        if (!privKey)
           throw new InternalError('Assertion error: Couldn\'t decrypt user keys from revocation');
 
-        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.private_keys[privKeyIndex].key, this._deviceEncryptionKeyPair, localUserKeys);
+        localUserKeys = this._localUserKeysFromPrivateKey(privKey.key, this._deviceEncryptionKeyPair, localUserKeys);
       }
     }
     if (!localUserKeys) {

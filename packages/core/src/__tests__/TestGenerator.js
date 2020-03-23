@@ -1,5 +1,4 @@
 // @flow
-import find from 'array-find';
 import { tcrypto, utils, random, type b64string } from '@tanker/crypto';
 import { type PublicProvisionalUser, createIdentity, getPublicIdentity } from '@tanker/identity';
 
@@ -261,7 +260,7 @@ class TestGenerator {
     };
 
     // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
-    const keyForParentDevice = find(unverifiedDeviceRevocation.user_keys.private_keys, key => utils.equalArray(key.recipient, parentDevice.testDevice.id));
+    const keyForParentDevice = unverifiedDeviceRevocation.user_keys.private_keys.find(key => utils.equalArray(key.recipient, parentDevice.testDevice.id));
     if (keyForParentDevice) {
       testUser.userKeys.push({
         // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null

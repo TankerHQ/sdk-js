@@ -17,8 +17,7 @@
   "browser": "browser.js",
   "dependencies": {
     "@babel/runtime-corejs3": "^7.4.0",
-    "@tanker/datastore-dexie-base": "0.0.1",
-    "array-find": "^1.0.0"
+    "@tanker/datastore-dexie-base": "0.0.1"
   },
   "devDependencies": {
     "@tanker/datastore-tests": "0.0.1"

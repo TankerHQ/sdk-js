@@ -1,5 +1,4 @@
 // @flow
-import find from 'array-find';
 import React from 'react';
 import styled from 'styled-components';
 import { transparentize } from 'polished';
@@ -73,7 +72,7 @@ const errorTuples = [
   [TooManyAttempts, 'Too many attempts, please retry later.'],
 ];
 const findError = error => {
-  const res = find(errorTuples, ([e]) => error instanceof e);
+  const res = errorTuples.find(([e]) => error instanceof e);
   return res ? res[1] : null;
 };
 const getVerificationError = error => findError(error) || 'An unknown error occurred while checking the code.';

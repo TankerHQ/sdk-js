@@ -2,7 +2,6 @@
 import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import { findIndex } from '../utils';
 import { NATURE } from '../Blocks/Nature';
 
 import { type DeviceCreationEntry, type DeviceRevocationEntry } from './Serialize';
@@ -38,7 +37,7 @@ export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, u
 }
 
 export function applyDeviceRevocationToUser(deviceRevocation: DeviceRevocationEntry, user: User): User {
-  const deviceIndex = findIndex(user.devices, (d) => utils.equalArray(d.deviceId, deviceRevocation.device_id));
+  const deviceIndex = user.devices.findIndex(d => utils.equalArray(d.deviceId, deviceRevocation.device_id));
   if (deviceIndex === -1)
     throw new InternalError('Device not found!');
   const updatedUser = { ...user };

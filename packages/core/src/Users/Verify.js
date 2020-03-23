@@ -1,13 +1,10 @@
 // @flow
-
-import find from 'array-find';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { InvalidBlockError } from '../errors.internal';
-import { findIndex } from '../utils';
 
-import { type User, type Device, getLastUserPublicKey } from './types';
+import { type User, getLastUserPublicKey } from './types';
 import type { DeviceCreationEntry, DeviceRevocationEntry } from './Serialize';
 
 import {
@@ -28,7 +25,11 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
   const delegationBuffer = utils.concatArrays(entry.ephemeral_public_signature_key, entry.user_id);
 
   if (authorUser) {
-    const authorDevice: Device = find(authorUser.devices, d => utils.equalArray(d.deviceId, entry.author));
+    const authorDevice = authorUser.devices.find(d => utils.equalArray(d.deviceId, entry.author));
+
+    if (!authorDevice)
+      throw new InternalError('Assertion error: we have an author user, but the author device did not match');
+
     if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, authorDevice.devicePublicSignatureKey))
       throw new InvalidBlockError('invalid_delegation_signature', 'invalid signature from device creation author', { entry, authorDevice });
 
@@ -38,9 +39,6 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
     if (entry.nature === NATURE.device_creation_v3 && userPublicKey && entry.user_key_pair
         && !utils.equalArray(entry.user_key_pair.public_encryption_key, userPublicKey))
       throw new InvalidBlockError('invalid_public_user_key', 'public_user_key is different than the author\'s one', { entry, authorDevice });
-
-    if (!authorUser)
-      throw new InternalError('Assertion error: We have an author device, but no author user!?');
 
     if (!utils.equalArray(entry.user_id, authorUser.userId))
       throw new InvalidBlockError('forbidden', 'the author is not authorized to create a device for this user', { entry, authorDevice });
@@ -58,12 +56,13 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
 }
 
 export function verifyDeviceRevocation(entry: DeviceRevocationEntry, authorUser: User) {
-  const authorDevice: Device = find(authorUser.devices, d => utils.equalArray(d.deviceId, entry.author));
-
+  const authorDevice = authorUser.devices.find(d => utils.equalArray(d.deviceId, entry.author));
+  if (!authorDevice)
+    throw new InternalError('Assertion error: we have an author user, but the author device did not match');
   if (!tcrypto.verifySignature(entry.hash, entry.signature, authorDevice.devicePublicSignatureKey))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', { entry, authorUser });
 
-  const revokedDevice = find(authorUser.devices, d => utils.equalArray(d.deviceId, entry.device_id));
+  const revokedDevice = authorUser.devices.find(d => utils.equalArray(d.deviceId, entry.device_id));
   if (!revokedDevice)
     throw new InvalidBlockError('invalid_revoked_device', 'can\'t find target of device revocation block', { entry });
   if (revokedDevice.revoked)
@@ -84,7 +83,7 @@ export function verifyDeviceRevocation(entry: DeviceRevocationEntry, authorUser:
     if (activeDevices.length !== newKeys.private_keys.length)
       throw new InvalidBlockError('invalid_new_key', 'device number mismatch', { entry, authorUser, activeDeviceCount: activeDevices.length, userKeysCount: newKeys.private_keys.length });
     for (const device of activeDevices) {
-      if (findIndex(newKeys.private_keys, k => utils.equalArray(k.recipient, device.deviceId)) === -1)
+      if (!newKeys.private_keys.find(k => utils.equalArray(k.recipient, device.deviceId)))
         throw new InvalidBlockError('invalid_new_key', 'missing encrypted private key for an active device', { entry, authorUser });
     }
   }
