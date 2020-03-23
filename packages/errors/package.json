@@ -19,7 +19,7 @@
     "test": "cd ../..; yarn test:errors"
   },
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.4.0"
+    "@babel/runtime-corejs3": "^7.6.0"
   },
   "devDependencies": {
     "@tanker/test-utils": "0.0.1"
