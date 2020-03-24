@@ -7,7 +7,7 @@ const getBabelConfig = ({ target, coverage, react, hmre, modules }) => {
 
   if (target === 'node') {
     config.presets.push(['@babel/preset-env', {
-      targets: { node: 8 },
+      targets: { node: 10 },
       modules: modules || 'auto',
     }]);
   } else if (target === 'web') {
