@@ -19,7 +19,7 @@
     "test": "cd ../..; yarn test:types"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "^7.4.0",
+    "@babel/runtime-corejs3": "^7.6.0",
     "@tanker/errors": "0.0.1",
     "@tanker/file-ponyfill": "0.0.1",
     "@tanker/file-reader": "0.0.1",

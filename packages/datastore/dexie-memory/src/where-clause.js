@@ -14,7 +14,7 @@ export class WhereClause {
 
   above = (value: any): Collection => this._collection.and((record: Object) => record[this._key] > value);
   aboveOrEqual = (value: any): Collection => this._collection.and((record: Object) => record[this._key] >= value);
-  anyOf = (values: Array<any>): Collection => this._collection.and((record: Object) => values.indexOf(record[this._key]) !== -1);
+  anyOf = (values: Array<any>): Collection => this._collection.and((record: Object) => values.includes(record[this._key]));
   below = (value: any): Collection => this._collection.and((record: Object) => record[this._key] < value);
   belowOrEqual = (value: any): Collection => this._collection.and((record: Object) => record[this._key] <= value);
   equals = (value: any): Collection => this._collection.and((record: Object) => record[this._key] === value);

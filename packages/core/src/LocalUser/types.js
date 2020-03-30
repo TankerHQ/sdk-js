@@ -39,7 +39,7 @@ export const assertVerification = (verification: Verification) => {
   if (!verification || typeof verification !== 'object' || verification instanceof Array)
     throw new InvalidArgument('verification', 'object', verification);
 
-  if (Object.keys(verification).some(k => validKeys.indexOf(k) === -1))
+  if (Object.keys(verification).some(k => !validKeys.includes(k)))
     throw new InvalidArgument('verification', `should only contain keys in ${JSON.stringify(validKeys)}`, verification);
 
   const methodCound = validMethods.reduce((count, key) => count + (key in verification ? 1 : 0), 0);

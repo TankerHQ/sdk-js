@@ -1,9 +1,6 @@
 // @flow
-import find from 'array-find';
-
 import { Collection } from './collection'; // eslint-disable-line import/no-cycle
 import { BulkError, ConstraintError } from './errors';
-import { findIndex } from './utils';
 
 // Implements a subset of the Dexie Table interface
 // See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/table.d.ts
@@ -32,11 +29,11 @@ export class Table {
     this.records.push(record);
   }
 
-  get = async (id: string) => find(this.records, r => r._id === id); // eslint-disable-line no-underscore-dangle
+  get = async (id: string) => this.records.find(r => r._id === id); // eslint-disable-line no-underscore-dangle
 
   put = async (record: Object) => {
     const { _id } = record;
-    const prevIndex = findIndex(this.records, r => r._id === _id); // eslint-disable-line no-underscore-dangle
+    const prevIndex = this.records.findIndex(r => r._id === _id); // eslint-disable-line no-underscore-dangle
     if (prevIndex !== -1) {
       this.records[prevIndex] = record;
     } else {
@@ -45,7 +42,7 @@ export class Table {
   }
 
   delete = async (id: string) => {
-    const index = findIndex(this.records, r => r._id === id); // eslint-disable-line no-underscore-dangle
+    const index = this.records.findIndex(r => r._id === id); // eslint-disable-line no-underscore-dangle
     if (index !== -1) {
       this.records.splice(index, 1);
     }

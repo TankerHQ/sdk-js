@@ -1,5 +1,4 @@
 // @flow
-import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument, InternalError } from '@tanker/errors';
 
@@ -34,7 +33,7 @@ export function assertPublicIdentities(publicIdentities: Array<b64string>) {
 export function assertExpectedGroups(groups: Array<Group>, expectedGroupIds: Array<Uint8Array>) {
   const missingGroupIds = [];
   for (const groupId of expectedGroupIds) {
-    const fetchedGroup = find(groups, group => utils.equalArray(group.groupId, groupId));
+    const fetchedGroup = groups.find(group => utils.equalArray(group.groupId, groupId));
     if (!fetchedGroup) {
       missingGroupIds.push(utils.toBase64(groupId));
     }

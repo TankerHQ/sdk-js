@@ -117,7 +117,7 @@ export default class GroupStore {
       }
     })).map(record => record._id); //eslint-disable-line no-underscore-dangle
 
-    const groupKeysToSave = b64GroupKeys.filter(gkr => existingB64GroupIds.indexOf(gkr._id) === -1); //eslint-disable-line no-underscore-dangle
+    const groupKeysToSave = b64GroupKeys.filter(gkr => !existingB64GroupIds.includes(gkr._id)); //eslint-disable-line no-underscore-dangle
 
     await this._ds.bulkPut(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, groupKeysToSave);
   }

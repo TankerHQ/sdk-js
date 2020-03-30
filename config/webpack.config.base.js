@@ -12,24 +12,25 @@ const hackAroundSodium = {
 };
 
 const getBabelLoaders = (env) => {
-  const config = getBabelConfig(env);
+  const babelConfig = getBabelConfig(env);
+  const babelConfigForceUMD = getBabelConfig({ ...env, modules: 'umd' });
 
   return [
     {
       test: /\.js$/,
       loader: 'babel-loader',
-      options: config,
+      options: babelConfig,
       exclude: /node_modules/,
     },
     {
       test: /\.js$/,
       loader: 'babel-loader',
-      options: config,
+      options: babelConfig,
       include: [
         // babelify our own stuff
         /node_modules(\\|\/)@tanker/,
-        // babelify all es libs when included
-        /node_modules(\\|\/).*(\\|\/)es(\\|\/)/,
+        // babelify all es libs when included (except core-js-pure ponyfills)
+        /node_modules(\\|\/)((?!core-js-pure).).*(\\|\/)es(\\|\/)/,
         // ws lib is es6 (it assumes the users will run it in nodejs directly)
         /node_modules(\\|\/)ws/,
         // supports-color is es6
@@ -41,14 +42,7 @@ const getBabelLoaders = (env) => {
     {
       test: /\.js$/,
       loader: 'babel-loader',
-      options: {
-        presets: [['@babel/preset-env', {
-          modules: 'umd',
-          useBuiltIns: 'usage',
-          corejs: 2,
-          targets: { browsers: ['last 2 versions', 'Firefox ESR', 'not ie < 11', 'not dead'] },
-        }]],
-      },
+      options: babelConfigForceUMD,
       include: [
         // they use arrow functions
         /node_modules(\\|\/)chai-as-promised/,

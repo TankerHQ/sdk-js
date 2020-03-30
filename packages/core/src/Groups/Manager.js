@@ -1,5 +1,4 @@
 // @flow
-import find from 'array-find';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
@@ -180,7 +179,7 @@ export default class GroupManager {
     const missingGroupIds = [];
 
     groupsIds.forEach(groupId => {
-      const resultFromCache = find(cacheResults, result => utils.equalArray(result.groupId, groupId));
+      const resultFromCache = cacheResults.find(result => utils.equalArray(result.groupId, groupId));
       if (!resultFromCache) {
         missingGroupIds.push(groupId);
       }

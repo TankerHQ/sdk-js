@@ -1,6 +1,4 @@
 // @flow
-import find from 'array-find';
-
 import { utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { type PublicPermanentIdentity } from '@tanker/identity';
@@ -68,13 +66,16 @@ export default class UserManager {
     for (const deviceId of devicesIds) {
       const userId = deviceIdToUserIdMap.get(utils.toBase64(deviceId));
       if (!userId) {
-        throw new InternalError('no such author user id');
+        throw new InternalError('Assertion error: no such author user id');
       }
       const user = userIdToUserMap.get(userId);
       if (!user) {
-        throw new InternalError('no such author user');
+        throw new InternalError('Assertion error: no such author user');
       }
-      const device = find(user.devices, userDevice => utils.equalArray(userDevice.deviceId, deviceId));
+      const device = user.devices.find(userDevice => utils.equalArray(userDevice.deviceId, deviceId));
+      if (!device) {
+        throw new InternalError('Assertion error: no such author device');
+      }
       devicesPublicSignatureKeys.set(utils.toBase64(deviceId), device.devicePublicSignatureKey);
     }
     return devicesPublicSignatureKeys;

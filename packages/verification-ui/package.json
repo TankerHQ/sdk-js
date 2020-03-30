@@ -28,9 +28,8 @@
     "styled-components": "^4.0.0"
   },
   "dependencies": {
-    "@babel/runtime-corejs2": "^7.4.0",
+    "@babel/runtime-corejs3": "^7.6.0",
     "@tanker/errors": "0.0.1",
-    "array-find": "^1.0.0",
     "dumb-reducer": "^2.0.2",
     "fetch-ponyfill": "^6.1.0",
     "polished": "^3.4.1",
