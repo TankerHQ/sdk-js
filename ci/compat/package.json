@@ -7,6 +7,9 @@
     "lint:js": "../../node_modules/.bin/eslint \"packages/*/*.js\"",
     "proof": "yarn lint:js && yarn test"
   },
+  "resolutions": {
+    "**/minimist": "1.2.5"
+  },
   "workspaces": {
     "packages": [
       "packages/*"
