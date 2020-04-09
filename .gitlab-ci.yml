@@ -182,3 +182,11 @@ check/e2e:
     - linux
   except:
     - schedules
+
+audit:
+  stage: check
+  script:
+    - yarn
+    - yarn audit
+  only:
+    - schedules
