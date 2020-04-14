@@ -1,44 +1,20 @@
 stages:
-  - select-env
   - check
   - deploy
-
-.select:
-  stage: select-env
-  artifacts:
-    paths:
-      - gitlab_checks_env.sh
-      - gitlab_checks_env.bat
-  script:
-      - echo "export CHECKS_ENV=$CHECKS_ENV_SELECT" >> gitlab_checks_env.sh
-      - echo "set CHECKS_ENV=$CHECKS_ENV_SELECT" >> gitlab_checks_env.bat
-
-autoselect-dev:
-  extends: .select
-  except:
-    - /.*staging\/.*/
-  variables:
-    CHECKS_ENV_SELECT: dev
-
-autoselect-staging:
-  extends: .select
-  only:
-    - /.*staging\/.*/
-  variables:
-    CHECKS_ENV_SELECT: staging
 
 .check:
   stage: check
   before_script:
-    - test -z "$CHECKS_ENV" && source gitlab_checks_env.sh
     - poetry install
+  variables:
+    TANKER_CONFIG_NAME: dev
 
 check/linux:
   extends: .check
   except:
     - schedules
   script:
-    - poetry run python run-ci.py check --runner linux --env "$CHECKS_ENV"
+    - poetry run python run-ci.py check --runner linux
     - mv coverage/lcov-report lcov-report
   artifacts:
     paths:
@@ -52,29 +28,26 @@ check/macos:
   except:
     - schedules
   script:
-    - poetry run python run-ci.py check --runner macos --env "$CHECKS_ENV"
+    - poetry run python run-ci.py check --runner macos
   tags:
     - macos
 
 .check/windows:
-  stage: check
-  before_script:
-    - if "%CHECKS_ENV%"=="" CALL gitlab_checks_env.bat
-    - poetry install
+  extends: .check
   tags:
     - windows
 
 check/windows/edge:
   extends: .check/windows
   script:
-    - poetry run python run-ci.py check --runner windows-edge --env %CHECKS_ENV%
+    - poetry run python run-ci.py check --runner windows-edge
 
 check/windows/ie:
   extends: .check/windows
   only:
     - master
   script:
-    - poetry run python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
+    - poetry run python run-ci.py check --runner windows-ie
 
 check/windows/ie/manual:
   extends: .check/windows
@@ -82,7 +55,7 @@ check/windows/ie/manual:
   except:
     - master
   script:
-    - poetry run python run-ci.py check --runner windows-ie --env %CHECKS_ENV%
+    - poetry run python run-ci.py check --runner windows-ie
 
 check/linux/nightly:
   extends: .check
@@ -160,7 +133,7 @@ check/compat:
   except:
     - master
   script:
-    - poetry run python run-ci.py compat --env "$CHECKS_ENV"
+    - poetry run python run-ci.py compat
   tags:
     - linux
 
@@ -169,7 +142,7 @@ check/compat/master:
   only:
     - master
   script:
-    - poetry run python run-ci.py compat --env "$CHECKS_ENV"
+    - poetry run python run-ci.py compat
   tags:
     - linux
 
@@ -177,7 +150,7 @@ check/e2e:
   extends: .check
   when: manual
   script:
-    - poetry run python run-ci.py e2e --env "$CHECKS_ENV"
+    - poetry run python run-ci.py e2e
   tags:
     - linux
   except:
