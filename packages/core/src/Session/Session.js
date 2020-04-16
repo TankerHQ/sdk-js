@@ -137,6 +137,8 @@ export class Session extends EventEmitter {
 
   findUser = (...args: any) => this._forward(this._userManager, 'findUser', ...args)
 
+  createEncryptionSession = (...args: any) => this._forward(this._dataProtector, 'createEncryptionSession', ...args)
+
   _handleDeviceRevocation = async () => {
     try {
       await this._localUserManager.updateLocalUser();

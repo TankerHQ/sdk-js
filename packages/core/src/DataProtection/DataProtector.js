@@ -26,6 +26,8 @@ import type { OutputOptions, ProgressOptions, SharingOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
 import { ProgressHandler } from './ProgressHandler';
+import { EncryptionSession } from './EncryptionSession';
+
 
 // Stream encryption will be used starting from this clear data size:
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
@@ -278,7 +280,6 @@ export class DataProtector {
       const key = await this._resourceManager.findKeyFromResourceId(resourceId);
       return { resourceId, key };
     }));
-
     return this._shareResources(keys, sharingOptions, false);
   }
 
@@ -303,6 +304,14 @@ export class DataProtector {
       findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId)
     };
     return new DecryptorStream(resourceIdKeyMapper);
+  }
+
+  async createEncryptionSession(sharingOptions: SharingOptions): Promise<EncryptionSession> {
+    const { key, resourceId } = makeResource();
+    await this._resourceManager.saveResourceKey(resourceId, key);
+    await this._shareResources([{ key, resourceId }], sharingOptions, true);
+
+    return new EncryptionSession(this, utils.toBase64(resourceId));
   }
 }
 

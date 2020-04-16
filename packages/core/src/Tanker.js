@@ -21,6 +21,7 @@ import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extr
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/types';
+import type { EncryptionSession } from './DataProtection/EncryptionSession';
 
 import { TANKER_SDK_VERSION } from './version';
 
@@ -447,6 +448,14 @@ export class Tanker extends EventEmitter {
     const progressOptions = extractProgressOptions(options);
 
     return this.session.download(resourceId, outputOptions, progressOptions);
+  }
+
+  async createEncryptionSession(options: SharingOptions = {}): Promise<EncryptionSession> {
+    this.assert(statuses.READY, 'create an encryption session');
+
+    const sharingOptions = extractSharingOptions(options);
+
+    return this.session.createEncryptionSession(sharingOptions);
   }
 }
 
