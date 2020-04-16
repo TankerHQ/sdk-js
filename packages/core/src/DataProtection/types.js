@@ -1,6 +1,6 @@
 // @flow
 import varint from 'varint';
-import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, type Key, random, tcrypto, generichash } from '@tanker/crypto';
+import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, type Key, random, tcrypto } from '@tanker/crypto';
 
 import { InvalidArgument } from '@tanker/errors';
 
@@ -26,7 +26,7 @@ type EncryptionFormatDescription = {
 
 export function makeResource(): Resource {
   const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
-  const resourceId = generichash(key, tcrypto.MAC_SIZE);
+  const resourceId = random(tcrypto.MAC_SIZE);
   return { key, resourceId };
 }
 
