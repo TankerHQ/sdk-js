@@ -9,7 +9,7 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
 
-import { type EmailVerification, type RemoteVerification, statuses } from '../LocalUser/types';
+import { type EmailVerification, type RemoteVerification } from '../LocalUser/types';
 import { type SharingOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {
@@ -17,6 +17,7 @@ describe('Tanker', () => {
   let appId;
   let userId;
   let badVerifications;
+  let statuses;
 
   const makeTestTankerOptions = () => ({
     appId: utils.toBase64(appId),
@@ -28,6 +29,9 @@ describe('Tanker', () => {
   before(() => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     appId = utils.generateAppID(trustchainKeyPair.publicKey);
+
+    ({ statuses } = Tanker);
+
     userId = 'winnie';
 
     badVerifications = [

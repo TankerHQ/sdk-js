@@ -9,10 +9,13 @@ import { _deserializeProvisionalIdentity } from '@tanker/identity';
 import { type ClientOptions } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 
-import { statusDefs, statuses, type Status, type Verification, type EmailVerification, type OIDCVerification, type RemoteVerification, type VerificationMethod, assertVerification } from './LocalUser/types';
-
+import type { Verification, EmailVerification, OIDCVerification, RemoteVerification, VerificationMethod } from './LocalUser/types';
+import { assertVerification } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
+
+import { statusDefs, statuses, type Status } from './Session/status';
 import { Session } from './Session/Session';
+
 import type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
 import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
 import EncryptorStream from './DataProtection/EncryptorStream';

@@ -5,8 +5,8 @@ import { OperationCanceled, NetworkError, DeviceRevoked, InternalError } from '@
 
 import Storage, { type DataStoreOptions } from './Storage';
 import { Client, type ClientOptions } from '../Network/Client';
-import { type Status, statuses } from '../LocalUser/types';
 import { type UserData, type DelegationToken } from '../LocalUser/UserData';
+import { statuses, type Status } from './status';
 
 import LocalUserManager from '../LocalUser/Manager';
 import UserManager from '../Users/Manager';
