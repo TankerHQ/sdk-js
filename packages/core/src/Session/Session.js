@@ -56,8 +56,15 @@ export class Session extends EventEmitter {
     return this._status;
   }
 
+  set status(nextStatus: Status) {
+    if (nextStatus !== this._status) {
+      this._status = nextStatus;
+      this.emit('status_change', nextStatus);
+    }
+  }
+
   async start(): Promise<void> {
-    this._status = await this._localUserManager.init();
+    this.status = await this._localUserManager.init();
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
@@ -82,13 +89,13 @@ export class Session extends EventEmitter {
   close = async () => {
     await this._client.close();
     await this._storage.close();
-    this._status = statuses.STOPPED;
+    this.status = statuses.STOPPED;
   }
 
   nuke = async () => {
     await this._client.close();
     await this._storage.nuke();
-    this._status = statuses.STOPPED;
+    this.status = statuses.STOPPED;
   }
 
   onError = (e: Error) => {
@@ -101,11 +108,11 @@ export class Session extends EventEmitter {
 
   createUser = async (...args: any) => {
     await this._localUserManager.createUser(...args);
-    this._status = statuses.READY;
+    this.status = statuses.READY;
   }
   createNewDevice = async (...args: any) => {
     await this._localUserManager.createNewDevice(...args);
-    this._status = statuses.READY;
+    this.status = statuses.READY;
   }
   revokeDevice = (...args: any) => this._forward(this._localUserManager, 'revokeDevice', ...args)
   listDevices = (...args: any) => this._forward(this._localUserManager, 'listDevices', ...args)
