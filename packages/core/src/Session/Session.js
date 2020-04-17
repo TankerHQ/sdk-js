@@ -64,7 +64,12 @@ export class Session extends EventEmitter {
   }
 
   async start(): Promise<void> {
-    this.status = await this._localUserManager.init();
+    try {
+      this.status = await this._localUserManager.init();
+    } catch (e) {
+      await this.stop();
+      throw e;
+    }
   }
 
   static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
@@ -73,29 +78,22 @@ export class Session extends EventEmitter {
     const storage = new Storage(storeOptions);
     await storage.open(userData.userId, userData.userSecret);
 
-    const session = new Session(userData, storage, client);
-
-    try {
-      await session.start();
-    } catch (e) {
-      await client.close();
-      await storage.close();
-      throw e;
-    }
-
-    return session;
+    return new Session(userData, storage, client);
   }
 
-  close = async () => {
+  stop = async () => {
     await this._client.close();
     await this._storage.close();
     this.status = statuses.STOPPED;
+    this.removeAllListeners();
   }
 
-  nuke = async () => {
+  _wipeDeviceAndStop = async () => {
     await this._client.close();
     await this._storage.nuke();
     this.status = statuses.STOPPED;
+    this.emit('device_revoked');
+    this.removeAllListeners();
   }
 
   onError = (e: Error) => {
@@ -139,14 +137,13 @@ export class Session extends EventEmitter {
 
   findUser = (...args: any) => this._forward(this._userManager, 'findUser', ...args)
 
-  _handleDeviceRevoked = async () => {
+  _handleDeviceRevocation = async () => {
     try {
       await this._localUserManager.updateLocalUser();
       throw new InternalError('Assertion error: the server is rejecting us but we are not revoked');
     } catch (e) {
       if (e instanceof DeviceRevoked) {
-        await this.nuke();
-        this.emit('device_revoked');
+        await this._wipeDeviceAndStop();
       }
       throw e;
     }
@@ -158,7 +155,7 @@ export class Session extends EventEmitter {
       return res;
     } catch (e) {
       if (e instanceof DeviceRevoked) {
-        await this._handleDeviceRevoked();
+        await this._handleDeviceRevocation();
       }
       throw e;
     }

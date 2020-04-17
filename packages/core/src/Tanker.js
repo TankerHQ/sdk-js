@@ -177,14 +177,10 @@ export class Tanker extends EventEmitter {
 
   set session(session: ?Session) {
     if (session) {
-      session.on('device_revoked', () => this._deviceRevoked());
-      session.on('fatal_error', () => this.stop());
       this._session = session;
     } else {
       delete this._session;
-      this.emit('sessionClosed');
     }
-    this.emit('statusChange', this.status);
   }
 
   get session() {
@@ -213,8 +209,20 @@ export class Tanker extends EventEmitter {
 
   async start(identityB64: b64string) {
     this.assert(statuses.STOPPED, 'start a session');
+
+    // Prepare the session
     const userData = this._parseIdentity(identityB64);
-    this.session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
+    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
+
+    // Watch and start the session
+    session.on('device_revoked', () => this._deviceRevoked());
+    session.on('fatal_error', () => this.stop());
+    session.on('status_change', (s) => this.emit('statusChange', s));
+    await session.start();
+
+    // Set the session only if properly started
+    this.session = session;
+
     return this.status;
   }
 
@@ -222,14 +230,12 @@ export class Tanker extends EventEmitter {
     this.assert(statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
     assertVerification(verification);
     await this.session.createUser(verification);
-    this.emit('statusChange', this.status);
   }
 
   async verifyIdentity(verification: Verification): Promise<void> {
     this.assert(statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
     assertVerification(verification);
     await this.session.createNewDevice(verification);
-    this.emit('statusChange', this.status);
   }
 
   async setVerificationMethod(verification: RemoteVerification): Promise<void> {
@@ -290,12 +296,12 @@ export class Tanker extends EventEmitter {
     if (this._session) {
       const session = this._session;
       this.session = null;
-      await session.close();
+      await session.stop();
     }
   }
 
   _deviceRevoked = async (): Promise<void> => {
-    this.session = null;
+    this.session = null; // the session has already closed itself
     this.emit('deviceRevoked');
   }
 
