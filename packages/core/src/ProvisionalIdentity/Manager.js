@@ -11,7 +11,8 @@ import LocalUserManager, { type PrivateProvisionalKeys } from '../LocalUser/Mana
 
 import KeyStore from '../LocalUser/KeyStore';
 import { formatVerificationRequest } from '../LocalUser/requests';
-import { statuses, type EmailVerificationMethod, type Status, type EmailVerification, type OIDCVerification } from '../LocalUser/types';
+import type { EmailVerificationMethod, EmailVerification, OIDCVerification } from '../LocalUser/types';
+import { statuses, type Status } from '../Session/status';
 import UserManager from '../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';

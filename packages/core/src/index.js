@@ -17,7 +17,7 @@ import {
 } from '@tanker/errors';
 
 import { Tanker, optionsWithDefaults } from './Tanker';
-import { statuses } from './LocalUser/types';
+import { statuses } from './Session/status';
 import { fromBase64, toBase64, prehashPassword } from './utils';
 
 // export

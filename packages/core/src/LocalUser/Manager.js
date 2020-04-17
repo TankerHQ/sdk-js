@@ -9,9 +9,10 @@ import KeyStore from './KeyStore';
 import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './KeySafe';
 
 import { Client } from '../Network/Client';
-import { type Verification, type VerificationMethod, type RemoteVerification, type Status, statuses } from './types';
+import { type Verification, type VerificationMethod, type RemoteVerification } from './types';
 import { type UserData, type DelegationToken } from './UserData';
 import { type Device } from '../Users/types';
+import { statuses, type Status } from '../Session/status';
 
 import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
 
