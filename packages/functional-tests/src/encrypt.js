@@ -697,6 +697,12 @@ const generateEncryptTests = (args: TestArgs) => {
 
       expect(resourceId).to.equal(encryptionSession.resourceId);
     });
+
+    it('throws when using an encryption session with a Tanker in an invalid state', async () => {
+      const encryptionSession = await aliceLaptop.createEncryptionSession();
+      await aliceLaptop.stop();
+      await expect(encryptionSession.encrypt(clearText)).to.be.rejectedWith(errors.PreconditionFailed);
+    });
   });
 };
 

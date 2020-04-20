@@ -21,6 +21,7 @@ import type { Resource } from './types';
 
 import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
+import { type Status } from '../Session/status';
 
 import type { OutputOptions, ProgressOptions, SharingOptions } from './options';
 import EncryptorStream from './EncryptorStream';
@@ -306,12 +307,14 @@ export class DataProtector {
     return new DecryptorStream(resourceIdKeyMapper);
   }
 
-  async createEncryptionSession(sharingOptions: SharingOptions): Promise<EncryptionSession> {
+  async createEncryptionSession(subscribeToStatusChange: (listener: (status: Status) => void) => void, sharingOptions: SharingOptions): Promise<EncryptionSession> {
     const { key, resourceId } = makeResource();
     await this._resourceManager.saveResourceKey(resourceId, key);
     await this._shareResources([{ key, resourceId }], sharingOptions, true);
 
-    return new EncryptionSession(this, utils.toBase64(resourceId));
+    const encryptionSession = new EncryptionSession(this, utils.toBase64(resourceId));
+    subscribeToStatusChange((s) => encryptionSession.statusChange(s));
+    return encryptionSession;
   }
 }
 
