@@ -1,11 +1,11 @@
 // @flow
 
 import { utils, type b64string } from '@tanker/crypto';
-import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
+import { InvalidArgument } from '@tanker/errors';
 import type { Data } from '@tanker/types';
 import { assertDataType } from '@tanker/types';
 
-import { statuses, type Status, statusDefs } from '../Session/status';
+import { assertStatus, statuses, type Status } from '../Session/status';
 import type { OutputOptions, ProgressOptions } from './options';
 import { extractOutputOptions, extractProgressOptions } from './options';
 import type { DataProtector } from './DataProtector';
@@ -37,11 +37,7 @@ export class EncryptionSession {
   }
 
   async encryptData<T: Data>(clearData: Data, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
-    if (this._status !== statuses.READY) {
-      const { name } = statusDefs[this._status];
-      const message = `Expected status READY but got ${name} trying to encrypt with an encryption session.`;
-      throw new PreconditionFailed(message);
-    }
+    assertStatus(this._status, statuses.READY, 'encrypt with an encryption session');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
