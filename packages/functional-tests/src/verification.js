@@ -57,7 +57,7 @@ const expectVerification = async (tanker: Tanker, identity: string, verification
   expectVerificationToMatchMethod(verification, method);
 };
 
-const generateVerificationTests = (args: TestArgs) => {
+export const generateVerificationTests = (args: TestArgs) => {
   describe('verification', () => {
     let bobLaptop;
     let bobPhone;
@@ -424,5 +424,3 @@ const generateVerificationTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateVerificationTests;

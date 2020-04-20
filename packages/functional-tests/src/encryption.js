@@ -8,7 +8,7 @@ import { expect, sinon, uuid } from '@tanker/test-utils';
 import type { TestArgs } from './helpers';
 import { expectProgressReport, expectType, expectSameType, expectDeepEqual } from './helpers';
 
-const generateEncryptTests = (args: TestArgs) => {
+export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
 
   describe('text resource encryption and sharing - no session', () => {
@@ -483,5 +483,3 @@ const generateEncryptTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateEncryptTests;

@@ -5,7 +5,7 @@ import { expect } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 
-const generateEncryptionSessionTests = (args: TestArgs) => {
+export const generateEncryptionSessionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
 
   describe('encrypt resources with encryption sessions', () => {
@@ -83,5 +83,3 @@ const generateEncryptionSessionTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateEncryptionSessionTests;

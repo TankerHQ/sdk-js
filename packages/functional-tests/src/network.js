@@ -74,10 +74,8 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
   });
 };
 
-const generateNetworkTests = (args: TestArgs) => {
+export const generateNetworkTests = (args: TestArgs) => {
   describe('network issues', () => {
     Object.keys(networkIssues).forEach(type => generateNetworkIssueTests(args, type));
   });
 };
-
-export default generateNetworkTests;

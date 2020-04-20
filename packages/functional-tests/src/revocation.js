@@ -7,7 +7,7 @@ import type { TestArgs } from './helpers';
 
 const isIE = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\./);
 
-const generateRevocationTests = (args: TestArgs) => {
+export const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
     // IE revocation tests don't work.
     // Events are not fired correctly for some reason
@@ -136,5 +136,3 @@ const generateRevocationTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateRevocationTests;

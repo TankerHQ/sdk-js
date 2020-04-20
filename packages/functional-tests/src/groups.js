@@ -6,7 +6,7 @@ import { expect, uuid } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 
-const generateGroupsTests = (args: TestArgs) => {
+export const generateGroupsTests = (args: TestArgs) => {
   describe('groups', () => {
     let aliceLaptop;
     let alicePublicIdentity;
@@ -167,5 +167,3 @@ const generateGroupsTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateGroupsTests;

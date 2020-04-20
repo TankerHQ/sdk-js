@@ -7,7 +7,7 @@ import { expect, uuid } from '@tanker/test-utils';
 import { fakeAuthUrl } from './helpers';
 import type { TestArgs } from './helpers';
 
-const generateFakeAuthenticationTests = (args: TestArgs) => {
+export const generateFakeAuthenticationTests = (args: TestArgs) => {
   const makeTestEmail = () => `${uuid.v4()}@example.com`;
 
   const expectMatchingPublicIdentities = (identityA: string, identityB: string) => expect(
@@ -116,5 +116,3 @@ const generateFakeAuthenticationTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateFakeAuthenticationTests;

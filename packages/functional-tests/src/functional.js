@@ -6,17 +6,17 @@ import { silencer } from '@tanker/test-utils';
 import { AppHelper, tankerUrl, idToken, oidcSettings } from './helpers';
 import type { TestArgs, TestResources } from './helpers';
 
-import generateStreamEncryptor from './encryptorStream';
-import generateEncryptionSessionTests from './encryptionSession';
-import generateEncryptTests from './encrypt';
-import generateUploadTests from './upload';
-import generateNetworkTests from './network';
-import generateGetDeviceListTests from './getDeviceList';
-import generateGroupsTests from './groups';
-import generateStartTests from './start';
-import generateRevocationTests from './revocation';
-import generateVerificationTests from './verification';
-import generateFakeAuthenticationTests from './fake-authentication';
+import { generateEncryptorStreamTests } from './encryptorStream';
+import { generateEncryptionSessionTests } from './encryptionSession';
+import { generateEncryptionTests } from './encryption';
+import { generateFakeAuthenticationTests } from './fake-authentication';
+import { generateNetworkTests } from './network';
+import { generateGetDeviceListTests } from './getDeviceList';
+import { generateGroupsTests } from './groups';
+import { generateRevocationTests } from './revocation';
+import { generateSessionTests } from './session';
+import { generateUploadTests } from './upload';
+import { generateVerificationTests } from './verification';
 
 export function generateFunctionalTests(
   name: string,
@@ -57,14 +57,13 @@ export function generateFunctionalTests(
       silencer.restore();
     });
 
-    generateStreamEncryptor(args);
-
-    generateEncryptTests(args);
+    generateEncryptionTests(args);
     generateEncryptionSessionTests(args);
+    generateEncryptorStreamTests(args);
     generateUploadTests(args);
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
-    generateStartTests(args);
+    generateSessionTests(args);
     generateRevocationTests(args);
     generateVerificationTests(args);
     generateNetworkTests(args);

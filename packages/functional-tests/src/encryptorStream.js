@@ -5,7 +5,7 @@ import { expect } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 
-const generateEncryptorStreamTests = (args: TestArgs) => {
+export const generateEncryptorStreamTests = (args: TestArgs) => {
   describe('stream encryption', () => {
     let aliceIdentity;
     let aliceLaptop;
@@ -137,5 +137,3 @@ const generateEncryptorStreamTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateEncryptorStreamTests;

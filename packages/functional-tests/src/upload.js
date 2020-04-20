@@ -7,7 +7,7 @@ import { expect, sinon } from '@tanker/test-utils';
 import type { TestArgs } from './helpers';
 import { expectProgressReport, expectType, expectDeepEqual } from './helpers';
 
-const generateUploadTests = (args: TestArgs) => {
+export const generateUploadTests = (args: TestArgs) => {
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
   const forEachSize = (sizes: Array<string>, fun: (size: string) => void) => {
     const availableSizes = Object.keys(args.resources);
@@ -132,5 +132,3 @@ const generateUploadTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateUploadTests;
