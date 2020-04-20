@@ -1,7 +1,7 @@
 // @flow
 import EventEmitter from 'events';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
@@ -13,7 +13,7 @@ import type { Verification, EmailVerification, OIDCVerification, RemoteVerificat
 import { assertVerification } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
 
-import { statusDefs, statuses, type Status } from './Session/status';
+import { assertStatus, statusDefs, statuses, type Status } from './Session/status';
 import { Session } from './Session/Session';
 
 import type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
@@ -21,6 +21,7 @@ import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extr
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/types';
+import type { EncryptionSession } from './DataProtection/EncryptionSession';
 
 import { TANKER_SDK_VERSION } from './version';
 
@@ -190,7 +191,7 @@ export class Tanker extends EventEmitter {
   }
 
   get deviceId(): b64string {
-    this.assert(statuses.READY, 'get the device id');
+    assertStatus(this.status, statuses.READY, 'get the device id');
 
     const deviceId = this.session.deviceId();
     if (!deviceId)
@@ -199,16 +200,8 @@ export class Tanker extends EventEmitter {
     return utils.toBase64(deviceId);
   }
 
-  assert(status: number, to: string): void {
-    if (this.status !== status) {
-      const { name } = statusDefs[status];
-      const message = `Expected status ${name} but got ${this.statusName} trying to ${to}.`;
-      throw new PreconditionFailed(message);
-    }
-  }
-
   async start(identityB64: b64string) {
-    this.assert(statuses.STOPPED, 'start a session');
+    assertStatus(this.status, statuses.STOPPED, 'start a session');
 
     // Prepare the session
     const userData = this._parseIdentity(identityB64);
@@ -227,19 +220,19 @@ export class Tanker extends EventEmitter {
   }
 
   async registerIdentity(verification: Verification): Promise<void> {
-    this.assert(statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
+    assertStatus(this.status, statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
     assertVerification(verification);
     await this.session.createUser(verification);
   }
 
   async verifyIdentity(verification: Verification): Promise<void> {
-    this.assert(statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
+    assertStatus(this.status, statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
     assertVerification(verification);
     await this.session.createNewDevice(verification);
   }
 
   async setVerificationMethod(verification: RemoteVerification): Promise<void> {
-    this.assert(statuses.READY, 'set a verification method');
+    assertStatus(this.status, statuses.READY, 'set a verification method');
 
     assertVerification(verification);
     if ('verificationKey' in verification)
@@ -249,24 +242,17 @@ export class Tanker extends EventEmitter {
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {
-    // Note: sadly this.assert() does not assert "one in a list"
-    if (![statuses.READY, statuses.IDENTITY_VERIFICATION_NEEDED].includes(this.status)) {
-      const { name: ready } = statusDefs[statuses.READY];
-      const { name: verification } = statusDefs[statuses.IDENTITY_VERIFICATION_NEEDED];
-      const message = `Expected status ${ready} or ${verification} but got ${this.statusName} trying to get verification methods.`;
-      throw new PreconditionFailed(message);
-    }
-
+    assertStatus(this.status, [statuses.READY, statuses.IDENTITY_VERIFICATION_NEEDED], 'get verification methods');
     return this.session.getVerificationMethods();
   }
 
   async generateVerificationKey(): Promise<string> {
-    this.assert(statuses.IDENTITY_REGISTRATION_NEEDED, 'generate a verification key');
+    assertStatus(this.status, statuses.IDENTITY_REGISTRATION_NEEDED, 'generate a verification key');
     return this.session.generateVerificationKey();
   }
 
   async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<*> {
-    this.assert(statuses.READY, 'attach a provisional identity');
+    assertStatus(this.status, statuses.READY, 'attach a provisional identity');
 
     const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
 
@@ -274,7 +260,7 @@ export class Tanker extends EventEmitter {
   }
 
   async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification): Promise<void> {
-    this.assert(statuses.READY, 'verify a provisional identity');
+    assertStatus(this.status, statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
     return this.session.verifyProvisionalIdentity(verification);
   }
@@ -306,13 +292,13 @@ export class Tanker extends EventEmitter {
   }
 
   async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
-    this.assert(statuses.READY, 'get the device list');
+    assertStatus(this.status, statuses.READY, 'get the device list');
     const devices = await this.session.listDevices();
     return devices.map(d => ({ id: utils.toBase64(d.deviceId), isRevoked: d.revoked }));
   }
 
   async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {
-    this.assert(statuses.READY, 'share');
+    assertStatus(this.status, statuses.READY, 'share');
 
     if (!(resourceIds instanceof Array) || resourceIds.some(id => typeof id !== 'string'))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
@@ -331,7 +317,7 @@ export class Tanker extends EventEmitter {
   }
 
   async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
-    this.assert(statuses.READY, 'get a resource id');
+    assertStatus(this.status, statuses.READY, 'get a resource id');
     assertDataType(encryptedData, 'encryptedData');
 
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
@@ -342,7 +328,7 @@ export class Tanker extends EventEmitter {
   }
 
   async revokeDevice(deviceId: b64string): Promise<void> {
-    this.assert(statuses.READY, 'revoke a device');
+    assertStatus(this.status, statuses.READY, 'revoke a device');
 
     if (typeof deviceId !== 'string')
       throw new InvalidArgument('deviceId', 'string', deviceId);
@@ -351,7 +337,7 @@ export class Tanker extends EventEmitter {
   }
 
   async createGroup(users: Array<b64string>): Promise<b64string> {
-    this.assert(statuses.READY, 'create a group');
+    assertStatus(this.status, statuses.READY, 'create a group');
 
     if (!(users instanceof Array))
       throw new InvalidArgument('users', 'Array<string>', users);
@@ -360,7 +346,7 @@ export class Tanker extends EventEmitter {
   }
 
   async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd: Array<string> }>): Promise<void> {
-    this.assert(statuses.READY, 'update a group');
+    assertStatus(this.status, statuses.READY, 'update a group');
 
     const { usersToAdd } = args;
 
@@ -374,7 +360,7 @@ export class Tanker extends EventEmitter {
   }
 
   async makeEncryptorStream(options: SharingOptions = {}): Promise<EncryptorStream> {
-    this.assert(statuses.READY, 'make a stream encryptor');
+    assertStatus(this.status, statuses.READY, 'make a stream encryptor');
 
     const sharingOptions = extractSharingOptions(options);
 
@@ -382,13 +368,13 @@ export class Tanker extends EventEmitter {
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
-    this.assert(statuses.READY, 'make a stream decryptor');
+    assertStatus(this.status, statuses.READY, 'make a stream decryptor');
 
     return this.session.makeDecryptorStream();
   }
 
   async encryptData<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
-    this.assert(statuses.READY, 'encrypt data');
+    assertStatus(this.status, statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
@@ -399,7 +385,7 @@ export class Tanker extends EventEmitter {
   }
 
   async encrypt<T: Data>(plain: string, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
-    this.assert(statuses.READY, 'encrypt');
+    assertStatus(this.status, statuses.READY, 'encrypt');
 
     if (typeof plain !== 'string')
       throw new InvalidArgument('plain', 'string', plain);
@@ -408,7 +394,7 @@ export class Tanker extends EventEmitter {
   }
 
   async decryptData<T: Data>(encryptedData: Data, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
-    this.assert(statuses.READY, 'decrypt data');
+    assertStatus(this.status, statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
     const outputOptions = extractOutputOptions(options, encryptedData);
@@ -423,7 +409,7 @@ export class Tanker extends EventEmitter {
   }
 
   async upload<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<string> {
-    this.assert(statuses.READY, 'upload a file');
+    assertStatus(this.status, statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
@@ -434,7 +420,7 @@ export class Tanker extends EventEmitter {
   }
 
   async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
-    this.assert(statuses.READY, 'download a file');
+    assertStatus(this.status, statuses.READY, 'download a file');
 
     // Best effort to catch values that can't be a resourceId before reaching the server
     if (typeof resourceId !== 'string' || utils.fromBase64(resourceId).length !== tcrypto.MAC_SIZE)
@@ -447,6 +433,14 @@ export class Tanker extends EventEmitter {
     const progressOptions = extractProgressOptions(options);
 
     return this.session.download(resourceId, outputOptions, progressOptions);
+  }
+
+  async createEncryptionSession(options: SharingOptions = {}): Promise<EncryptionSession> {
+    assertStatus(this.status, statuses.READY, 'create an encryption session');
+
+    const sharingOptions = extractSharingOptions(options);
+
+    return this.session.createEncryptionSession(sharingOptions);
   }
 }
 
