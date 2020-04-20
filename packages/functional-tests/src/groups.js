@@ -4,7 +4,7 @@ import { utils } from '@tanker/crypto';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, uuid } from '@tanker/test-utils';
 
-import { type TestArgs } from './TestArgs';
+import type { TestArgs } from './helpers';
 
 const generateGroupsTests = (args: TestArgs) => {
   describe('groups', () => {

@@ -2,7 +2,7 @@
 import { errors } from '@tanker/core';
 import { expect, uuid } from '@tanker/test-utils';
 
-import { type TestArgs } from './TestArgs';
+import type { TestArgs } from './helpers';
 
 const generateGetDeviceListTests = (args: TestArgs) => {
   describe('getDeviceList', () => {

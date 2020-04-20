@@ -5,7 +5,7 @@ import { getConstructor, getConstructorName, getDataLength } from '@tanker/types
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 
-import { type TestArgs } from './TestArgs';
+import type { TestArgs } from './helpers';
 
 const expectProgressReport = (spy, totalBytes, maxBytesPerStep = encryptionV4.defaultMaxEncryptedChunkSize) => {
   // add 1 for initial progress report (currentBytes = 0)

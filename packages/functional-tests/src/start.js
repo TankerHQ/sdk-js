@@ -4,7 +4,7 @@ import { createIdentity } from '@tanker/identity';
 import { expect, silencer } from '@tanker/test-utils';
 import { utils } from '@tanker/crypto';
 
-import { type TestArgs } from './TestArgs';
+import type { TestArgs } from './helpers';
 
 const { STOPPED, READY, IDENTITY_REGISTRATION_NEEDED, IDENTITY_VERIFICATION_NEEDED } = statuses;
 

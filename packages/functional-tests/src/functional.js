@@ -3,8 +3,8 @@ import { utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
-import { AppHelper, tankerUrl, idToken, oidcSettings } from './Helpers';
-import type { TestArgs, TestResources } from './TestArgs';
+import { AppHelper, tankerUrl, idToken, oidcSettings } from './helpers';
+import type { TestArgs, TestResources } from './helpers';
 
 import generateStreamEncryptor from './encryptorStream';
 import generateEncryptTests from './encrypt';

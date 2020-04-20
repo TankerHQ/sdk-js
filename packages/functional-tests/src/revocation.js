@@ -3,7 +3,7 @@ import { errors, statuses } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect, fail, sinon } from '@tanker/test-utils';
 
-import { type TestArgs } from './TestArgs';
+import type { TestArgs } from './helpers';
 
 const isIE = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\./);
 

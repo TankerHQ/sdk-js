@@ -5,8 +5,8 @@ import { expect, uuid } from '@tanker/test-utils';
 import fetchPonyfill from 'fetch-ponyfill';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
-import { type TestArgs } from './TestArgs';
-import { oidcSettings, tankerUrl } from './Helpers';
+import type { TestArgs } from './helpers';
+import { oidcSettings, tankerUrl } from './helpers';
 
 const { fetch } = fetchPonyfill({ Promise });
 

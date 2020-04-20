@@ -1,109 +1,16 @@
 // @flow
-import Socket from 'socket.io-client'; // eslint-disable-line import/no-extraneous-dependencies
-
 import type { b64string } from '@tanker/core';
 import { hashBlock } from '@tanker/core/src/Blocks/Block';
 import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
 import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
-import { random, tcrypto, utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
-const getFakeAuthUrl = (apiUrl) => {
-  if (apiUrl.includes('api.')) {
-    return apiUrl.replace('api.', 'fakeauth.');
-  }
-  return 'http://127.0.0.1:4249';
-};
+import { AuthenticatedRequester } from './AuthenticatedRequester';
+import { oidcSettings, storageSettings } from './config';
 
-// $FlowIKnow TANKER_TEST_CONFIG is a global magic variable passed by Karma or imported in Node.js
-const testConfig = TANKER_TEST_CONFIG; // eslint-disable-line no-undef
-const tankerUrl = testConfig.url;
-const fakeAuthUrl = getFakeAuthUrl(tankerUrl);
-const idToken = testConfig.idToken;
-const oidcSettings = testConfig.oidc;
-const storageSettings = testConfig.storage;
-
-export { tankerUrl, fakeAuthUrl, idToken, oidcSettings };
-
-const query = { type: 'admin', context: 'js-functional-tests' };
-const socket = new Socket(tankerUrl, { transports: ['websocket', 'polling'], query });
-
-async function send(eventName: string, message: Object | string) {
-  const jdata = eventName !== 'push block' ? JSON.stringify(message) : message;
-  return new Promise((resolve, reject) => {
-    socket.emit(
-      eventName, jdata,
-      jresult => {
-        try {
-          const result = JSON.parse(jresult);
-          if (result && result.error) {
-            reject(new Error(result.error.code));
-          } else {
-            resolve(result);
-          }
-        } catch (e) {
-          reject(e);
-        }
-      }
-    );
-  });
-}
-
-class AuthenticatedRequester {
-  _reopenPromise: ?Promise<*>;
-  _tries: number = 0;
-
-  static open = async () => {
-    await send('authenticate customer', { idToken });
-    return new AuthenticatedRequester();
-  }
-
-  _reopenSession = async () => {
-    if (!this._reopenPromise) {
-      this._reopenPromise = send('authenticate customer', { idToken });
-      await this._reopenPromise;
-      this._reopenPromise = null;
-    } else {
-      await this._reopenPromise;
-    }
-  }
-
-  send = async (eventName: string, data: ?Object = null): Promise<*> => {
-    let ret;
-    try {
-      ret = await send(eventName, data);
-    } catch (e) {
-      if (this._tries > 5 || e.message !== 'no_session') {
-        throw e;
-      }
-      this._tries += 1;
-      await this._reopenSession();
-      return this.send(eventName, data);
-    }
-    this._tries = 0;
-    return ret;
-  }
-}
-
-export const makePrefix = (length: number = 12) => uuid.v4().replace('-', '').slice(0, length);
-
-// Overcome random()'s max size by generating bigger Uint8Arrays
-// having a random segment of 1kB set at a random position.
-export const makeRandomUint8Array = (sizeOfData: number) => {
-  const sizeOfRandomSegment = 1024; // 1kB
-
-  if (sizeOfData < sizeOfRandomSegment)
-    return random(sizeOfData);
-
-  const randomSegment = random(sizeOfRandomSegment);
-  const data = new Uint8Array(sizeOfData);
-  const randomPos = Math.floor(Math.random() * (sizeOfData - sizeOfRandomSegment));
-  data.set(randomSegment, randomPos);
-  return data;
-};
-
-export function makeRootBlock(appKeyPair: Object) {
+function makeRootBlock(appKeyPair: Object) {
   const rootBlock = {
     trustchain_id: new Uint8Array(0),
     nature: preferredNature(NATURE_KIND.trustchain_creation),

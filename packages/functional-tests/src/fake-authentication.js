@@ -4,8 +4,8 @@ import FakeAuthentication from '@tanker/fake-authentication';
 import { getPublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
 import { expect, uuid } from '@tanker/test-utils';
 
-import { fakeAuthUrl } from './Helpers';
-import type { TestArgs } from './TestArgs';
+import { fakeAuthUrl } from './helpers';
+import type { TestArgs } from './helpers';
 
 const generateFakeAuthenticationTests = (args: TestArgs) => {
   const makeTestEmail = () => `${uuid.v4()}@example.com`;
