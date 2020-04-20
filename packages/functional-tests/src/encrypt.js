@@ -1,24 +1,12 @@
 // @flow
 import { errors } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
-import { getConstructor, getConstructorName, getDataLength } from '@tanker/types';
+import { getConstructorName, getDataLength } from '@tanker/types';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
-
-const expectProgressReport = (spy, totalBytes, maxBytesPerStep = encryptionV4.defaultMaxEncryptedChunkSize) => {
-  // add 1 for initial progress report (currentBytes = 0)
-  const stepCount = 1 + (totalBytes === 0 ? 1 : Math.ceil(totalBytes / maxBytesPerStep));
-  expect(spy.callCount).to.equal(stepCount);
-
-  let currentBytes = 0;
-  for (let step = 0; step < stepCount - 1; step++) {
-    expect(spy.getCall(step).args).to.deep.equal([{ currentBytes, totalBytes }]);
-    currentBytes += maxBytesPerStep;
-  }
-  expect(spy.getCall(stepCount - 1).args).to.deep.equal([{ currentBytes: totalBytes, totalBytes }]);
-};
+import { expectProgressReport, expectType, expectSameType, expectDeepEqual } from './helpers';
 
 const generateEncryptTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
@@ -425,23 +413,6 @@ const generateEncryptTests = (args: TestArgs) => {
       expect(decrypted).to.equal(clearText);
     });
   });
-
-  // In Edge and IE11, accessing the webkitRelativePath property on File instances triggers
-  // a "TypeError: Invalid calling object", although the property exists. We avoid this error
-  // by comparing only a subset of useful File properties:
-  const fileProps = (obj: Object) => {
-    const { name, size, type, lastModified } = obj;
-    return { name, size, type, lastModified };
-  };
-  const expectType = (obj: Object, type: Object) => expect(getConstructor(obj)).to.equal(type);
-  const expectSameType = (a: Object, b: Object) => expect(getConstructor(a)).to.equal(getConstructor(b));
-  const expectDeepEqual = (a: Object, b: Object) => {
-    if (global.File && a instanceof File) {
-      expect(fileProps(a)).to.deep.equal(fileProps(b));
-      return;
-    }
-    expect(a).to.deep.equal(b);
-  };
 
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
   const forEachSize = (sizes: Array<string>, fun: (size: string) => void) => {
