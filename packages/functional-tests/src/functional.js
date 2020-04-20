@@ -7,6 +7,7 @@ import { AppHelper, tankerUrl, idToken, oidcSettings } from './helpers';
 import type { TestArgs, TestResources } from './helpers';
 
 import generateStreamEncryptor from './encryptorStream';
+import generateEncryptionSessionTests from './encryptionSession';
 import generateEncryptTests from './encrypt';
 import generateNetworkTests from './network';
 import generateGetDeviceListTests from './getDeviceList';
@@ -56,7 +57,9 @@ export function generateFunctionalTests(
     });
 
     generateStreamEncryptor(args);
+
     generateEncryptTests(args);
+    generateEncryptionSessionTests(args);
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
     generateStartTests(args);
