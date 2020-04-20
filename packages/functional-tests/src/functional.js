@@ -9,6 +9,7 @@ import type { TestArgs, TestResources } from './helpers';
 import generateStreamEncryptor from './encryptorStream';
 import generateEncryptionSessionTests from './encryptionSession';
 import generateEncryptTests from './encrypt';
+import generateUploadTests from './upload';
 import generateNetworkTests from './network';
 import generateGetDeviceListTests from './getDeviceList';
 import generateGroupsTests from './groups';
@@ -60,6 +61,7 @@ export function generateFunctionalTests(
 
     generateEncryptTests(args);
     generateEncryptionSessionTests(args);
+    generateUploadTests(args);
     generateGetDeviceListTests(args);
     generateGroupsTests(args);
     generateStartTests(args);
