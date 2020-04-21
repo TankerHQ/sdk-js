@@ -202,12 +202,10 @@ def e2e(*, use_local_sources: bool) -> None:
     ci.conan.set_home_isolation()
     ci.cpp.update_conan_config()
     ci.conan.export(src_path=base_path / "sdk-native", ref_or_channel="tanker/dev")
-    env = os.environ["TANKER_CONFIG_NAME"]
     ci.endtoend.test(
         tanker_conan_ref="tanker/dev@tanker/dev",
         profile="gcc8-release",
         base_path=base_path,
-        project_config=env,
     )
 
 
