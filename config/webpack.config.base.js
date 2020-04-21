@@ -79,16 +79,9 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
 
     plugins: [
       // Always expose NODE_ENV to webpack, in order to use `process.env.NODE_ENV`
-      // inside your code for any environment checks; UglifyJS will automatically
+      // inside your code for any environment checks; Terser will automatically
       // drop any unreachable code.
-      new webpack.DefinePlugin({
-        'process.env': {
-          NODE_ENV: JSON.stringify(mode),
-        },
-        __DEVELOPMENT__: mode === 'development',
-        __PRODUCTION__: mode === 'production',
-      }),
-
+      new webpack.EnvironmentPlugin({ NODE_ENV: mode }),
       ...(plugins || []),
     ],
 

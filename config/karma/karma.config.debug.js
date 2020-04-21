@@ -3,7 +3,7 @@ const webpack = require('webpack');
 
 const karmaConfig = require('./karma.config.base');
 const { makeBaseConfig } = require('../webpack.config.base');
-const { TANKER_TEST_CONFIG } = require('../tanker.test.config');
+const { plugin } = require('./tanker.test.config');
 
 module.exports = (config) => {
   config.set({
@@ -13,11 +13,7 @@ module.exports = (config) => {
       mode: 'development',
       target: 'web',
       react: true,
-      plugins: [
-        new webpack.DefinePlugin({
-          TANKER_TEST_CONFIG: JSON.stringify(TANKER_TEST_CONFIG),
-        }),
-      ],
+      plugins: [plugin],
     }),
 
     // level of logging
