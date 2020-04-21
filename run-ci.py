@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 import argparse
 import os
 import re
@@ -13,7 +13,6 @@ import ci.cpp
 import ci.conan
 import ci.endtoend
 import ci.js
-import ci.tanker_configs
 
 
 class TestFailed(Exception):
@@ -123,33 +122,25 @@ def run_tests_in_browser_ten_times(*, runner: str) -> None:
         raise TestFailed
 
 
-def get_run_env() -> Dict[str, str]:
-    run_env = os.environ.copy()
-    run_env["TANKER_CONFIG_FILEPATH"] = ci.tanker_configs.get_path()
-    return run_env
-
-
 def run_tests_in_browser(*, runner: str) -> None:
-    run_env = get_run_env()
     if runner == "linux":
-        ci.js.run_yarn("karma", "--browsers", "ChromeInDocker", env=run_env)
+        ci.js.run_yarn("karma", "--browsers", "ChromeInDocker")
     elif runner == "macos":
         ci.run("killall", "Safari", check=False)
         delete_safari_state()
-        ci.js.run_yarn("karma", "--browsers", "Safari", env=run_env)
+        ci.js.run_yarn("karma", "--browsers", "Safari")
     elif runner == "windows-edge":
         delete_edge_state()
-        ci.js.run_yarn("karma", "--browsers", "Edge", env=run_env)
+        ci.js.run_yarn("karma", "--browsers", "Edge")
     elif runner == "windows-ie":
         delete_ie_state()
-        ci.js.run_yarn("karma", "--browsers", "IE", env=run_env)
+        ci.js.run_yarn("karma", "--browsers", "IE")
 
 
 def run_sdk_compat_tests() -> None:
-    run_env = get_run_env()
     cwd = Path.getcwd() / "ci/compat"
     ci.js.yarn_install_deps(cwd=cwd)
-    ci.js.run_yarn("proof", cwd=cwd, env=run_env)
+    ci.js.run_yarn("proof", cwd=cwd)
 
 
 def get_package_path(package_name: str) -> Path:
@@ -181,8 +172,7 @@ def run_linters() -> None:
 
 
 def run_tests_in_node() -> None:
-    run_env = get_run_env()
-    ci.js.run_yarn("coverage", env=run_env)
+    ci.js.run_yarn("coverage")
 
 
 def check(*, runner: str, nightly: bool) -> None:

@@ -4,7 +4,6 @@ import { prefixActions } from 'dumb-reducer';
 import DumbContext from './DumbContext';
 import registerLogger from './logger';
 
-declare var __DEVELOPMENT__: bool;
 declare var module: { hot: bool };
 
 export type State = $Exact<{
@@ -62,7 +61,7 @@ const actions = prefixActions(
 
 function makeContextHolder(noLogs?: bool): ContextHolder {
   const contextHolder = new DumbContext<State, BoundActions>(prefix, initialState, actions);
-  if (!noLogs && typeof __DEVELOPMENT__ !== 'undefined' && __DEVELOPMENT__ && module.hot)
+  if (!noLogs && process.env.NODE_ENV === 'development' && module.hot)
     registerLogger(contextHolder);
 
   return contextHolder;

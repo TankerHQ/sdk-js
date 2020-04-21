@@ -1,6 +1,5 @@
 // @flow
 
-import '../../../../config/tanker.test.config';
 import { AppHelper, tankerUrl } from '../../../../packages/functional-tests/src/helpers';
 import { fromBase64, toBase64 } from '../../../../packages/client-node';
 import { getPublicIdentity } from '../../../../packages/identity';

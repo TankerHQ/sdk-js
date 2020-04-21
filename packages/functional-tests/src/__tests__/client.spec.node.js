@@ -4,7 +4,6 @@ import PouchDBMemory from '@tanker/datastore-pouchdb-memory';
 
 import type { b64string } from '@tanker/core';
 
-import '../../../../config/tanker.test.config';
 import type { TestResources } from '../helpers';
 import { tankerUrl, makePrefix, makeRandomUint8Array } from '../helpers';
 import { generateFunctionalTests } from '..';

@@ -8,10 +8,6 @@ env:
   node: true
   webextensions: true
 
-globals:
-  __DEVELOPMENT__: true
-
-
 rules:
   arrow-parens: 0
   class-methods-use-this: 0
