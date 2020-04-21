@@ -3,11 +3,11 @@ import { errors, statuses } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect, fail, sinon } from '@tanker/test-utils';
 
-import { type TestArgs } from './TestArgs';
+import type { TestArgs } from './helpers';
 
 const isIE = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\./);
 
-const generateRevocationTests = (args: TestArgs) => {
+export const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
     // IE revocation tests don't work.
     // Events are not fired correctly for some reason
@@ -136,5 +136,3 @@ const generateRevocationTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateRevocationTests;

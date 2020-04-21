@@ -1,6 +1,7 @@
 // @flow
 import type { Tanker } from '@tanker/core';
-import { AppHelper } from './Helpers';
+
+import type { AppHelper } from './AppHelper';
 
 export type TestResource<T> = { size: number, type: Class<T>, resource: T };
 export type TestResources = { [string]: Array<TestResource<any>> };

@@ -5,8 +5,8 @@ import { expect, uuid } from '@tanker/test-utils';
 import fetchPonyfill from 'fetch-ponyfill';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
-import { type TestArgs } from './TestArgs';
-import { oidcSettings, tankerUrl } from './Helpers';
+import type { TestArgs } from './helpers';
+import { oidcSettings, tankerUrl } from './helpers';
 
 const { fetch } = fetchPonyfill({ Promise });
 
@@ -57,7 +57,7 @@ const expectVerification = async (tanker: Tanker, identity: string, verification
   expectVerificationToMatchMethod(verification, method);
 };
 
-const generateVerificationTests = (args: TestArgs) => {
+export const generateVerificationTests = (args: TestArgs) => {
   describe('verification', () => {
     let bobLaptop;
     let bobPhone;
@@ -424,5 +424,3 @@ const generateVerificationTests = (args: TestArgs) => {
     });
   });
 };
-
-export default generateVerificationTests;

@@ -1,26 +1,14 @@
 // @flow
 import { errors } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
-import { getConstructor, getConstructorName, getDataLength } from '@tanker/types';
+import { getConstructorName, getDataLength } from '@tanker/types';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 
-import { type TestArgs } from './TestArgs';
+import type { TestArgs } from './helpers';
+import { expectProgressReport, expectType, expectSameType, expectDeepEqual } from './helpers';
 
-const expectProgressReport = (spy, totalBytes, maxBytesPerStep = encryptionV4.defaultMaxEncryptedChunkSize) => {
-  // add 1 for initial progress report (currentBytes = 0)
-  const stepCount = 1 + (totalBytes === 0 ? 1 : Math.ceil(totalBytes / maxBytesPerStep));
-  expect(spy.callCount).to.equal(stepCount);
-
-  let currentBytes = 0;
-  for (let step = 0; step < stepCount - 1; step++) {
-    expect(spy.getCall(step).args).to.deep.equal([{ currentBytes, totalBytes }]);
-    currentBytes += maxBytesPerStep;
-  }
-  expect(spy.getCall(stepCount - 1).args).to.deep.equal([{ currentBytes: totalBytes, totalBytes }]);
-};
-
-const generateEncryptTests = (args: TestArgs) => {
+export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
 
   describe('text resource encryption and sharing - no session', () => {
@@ -426,23 +414,6 @@ const generateEncryptTests = (args: TestArgs) => {
     });
   });
 
-  // In Edge and IE11, accessing the webkitRelativePath property on File instances triggers
-  // a "TypeError: Invalid calling object", although the property exists. We avoid this error
-  // by comparing only a subset of useful File properties:
-  const fileProps = (obj: Object) => {
-    const { name, size, type, lastModified } = obj;
-    return { name, size, type, lastModified };
-  };
-  const expectType = (obj: Object, type: Object) => expect(getConstructor(obj)).to.equal(type);
-  const expectSameType = (a: Object, b: Object) => expect(getConstructor(a)).to.equal(getConstructor(b));
-  const expectDeepEqual = (a: Object, b: Object) => {
-    if (global.File && a instanceof File) {
-      expect(fileProps(a)).to.deep.equal(fileProps(b));
-      return;
-    }
-    expect(a).to.deep.equal(b);
-  };
-
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
   const forEachSize = (sizes: Array<string>, fun: (size: string) => void) => {
     const availableSizes = Object.keys(args.resources);
@@ -511,199 +482,4 @@ const generateEncryptTests = (args: TestArgs) => {
       });
     });
   });
-
-  describe('binary file upload and download', () => {
-    let appHelper;
-    let aliceIdentity;
-    let aliceLaptop;
-    let bobIdentity;
-    let bobLaptop;
-    let bobPublicIdentity;
-
-    before(async () => {
-      ({ appHelper } = args);
-
-      const appId = utils.toBase64(appHelper.appId);
-      aliceIdentity = await appHelper.generateIdentity();
-      aliceLaptop = args.makeTanker(appId);
-      await aliceLaptop.start(aliceIdentity);
-      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
-
-      bobIdentity = await appHelper.generateIdentity();
-      bobPublicIdentity = await getPublicIdentity(bobIdentity);
-      bobLaptop = args.makeTanker(appId);
-      await bobLaptop.start(bobIdentity);
-      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-    });
-
-    after(async () => {
-      await Promise.all([
-        aliceLaptop.stop(),
-        bobLaptop.stop(),
-      ]);
-    });
-
-    ['gcs', 's3'].forEach((storage) => {
-      describe(storage, () => {
-        if (storage === 's3') {
-          before(() => appHelper.setS3());
-          after(() => appHelper.unsetS3());
-        }
-
-        forEachSize(['empty', 'small', 'medium'], size => {
-          it(`can upload and download a ${size} file`, async () => {
-            const { type: originalType, resource: clear } = args.resources[size][2];
-
-            const fileId = await aliceLaptop.upload(clear);
-
-            const decrypted = await aliceLaptop.download(fileId);
-
-            expectType(decrypted, originalType);
-            expectDeepEqual(decrypted, clear);
-          });
-        });
-
-        it('can report progress at upload and download', async () => {
-          // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
-          const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
-
-          const onProgress = sinon.spy();
-
-          const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2];
-
-          const fileId = await aliceLaptop.upload(clear, { onProgress });
-          const encryptedSize = encryptionV4.getEncryptedSize(clearSize, encryptionV4.defaultMaxEncryptedChunkSize);
-          let chunkSize;
-          if (storage === 's3') {
-            chunkSize = 5 * 1024 * 1024;
-          } else if (isEdge()) {
-            chunkSize = encryptedSize;
-          } else {
-            chunkSize = encryptionV4.defaultMaxEncryptedChunkSize;
-          }
-          expectProgressReport(onProgress, encryptedSize, chunkSize);
-          onProgress.resetHistory();
-
-          const decrypted = await aliceLaptop.download(fileId, { onProgress });
-          expectType(decrypted, originalType);
-          expectDeepEqual(decrypted, clear);
-          expectProgressReport(onProgress, clearSize, encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
-        });
-
-        it('can download a file shared at upload', async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2];
-
-          const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity] });
-
-          const decrypted = await bobLaptop.download(fileId);
-
-          expectType(decrypted, originalType);
-          expectDeepEqual(decrypted, clear);
-        });
-
-        it('can share a file after upload', async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2];
-
-          const fileId = await aliceLaptop.upload(clear);
-          await aliceLaptop.share([fileId], { shareWithUsers: [bobPublicIdentity] });
-
-          const decrypted = await bobLaptop.download(fileId);
-
-          expectType(decrypted, originalType);
-          expectDeepEqual(decrypted, clear);
-        });
-
-        it('throws InvalidArgument if downloading a non existing file', async () => {
-          const nonExistingFileId = 'AAAAAAAAAAAAAAAAAAAAAA==';
-          await expect(aliceLaptop.download(nonExistingFileId)).to.be.rejectedWith(errors.InvalidArgument);
-        });
-
-        it('throws InvalidArgument if giving an obviously wrong fileId', async () => {
-          const promises = [undefined, null, 'not a resourceId', [], {}].map(async (invalidFileId, i) => {
-            // $FlowExpectedError Giving invalid options
-            await expect(aliceLaptop.download(invalidFileId), `failed test #${i}`).to.be.rejectedWith(errors.InvalidArgument);
-          });
-
-          await Promise.all(promises);
-        });
-      });
-    });
-  });
-
-  describe('encrypt resources with encryption sessions', () => {
-    let appHelper;
-    let aliceLaptop;
-    let aliceIdentity;
-    let bobLaptop;
-    let bobPhone;
-    let bobIdentity;
-    let bobPublicIdentity;
-
-    before(() => {
-      ({ appHelper } = args);
-    });
-
-    beforeEach(async () => {
-      aliceIdentity = await appHelper.generateIdentity();
-      bobIdentity = await appHelper.generateIdentity();
-      bobPublicIdentity = await getPublicIdentity(bobIdentity);
-      aliceLaptop = args.makeTanker();
-      bobLaptop = args.makeTanker();
-      bobPhone = args.makeTanker();
-      await aliceLaptop.start(aliceIdentity);
-      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
-
-      await bobLaptop.start(bobIdentity);
-      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-      await bobPhone.start(bobIdentity);
-      await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
-    });
-
-    afterEach(async () => {
-      await Promise.all([
-        bobPhone.stop(),
-        bobLaptop.stop(),
-        aliceLaptop.stop(),
-      ]);
-    });
-
-    it('decrypts a resource encrypted with an encryption session from another device', async () => {
-      const encryptionSession = await bobLaptop.createEncryptionSession();
-      const encrypted = await encryptionSession.encrypt(clearText);
-      const decrypted = await bobPhone.decrypt(encrypted);
-      expect(decrypted).to.equal(clearText);
-    });
-
-    it('decrypts a resource shared and encrypted with an encryption session', async () => {
-      const encryptionSession = await aliceLaptop.createEncryptionSession({ shareWithUsers: [bobPublicIdentity] });
-      const encrypted = await encryptionSession.encrypt(clearText);
-      const decrypted = await bobPhone.decrypt(encrypted);
-      expect(decrypted).to.equal(clearText);
-    });
-
-    it('decrypts a resource postponed shared and encrypted with an encryption session', async () => {
-      const encryptionSession = await aliceLaptop.createEncryptionSession();
-      const encrypted = await encryptionSession.encrypt(clearText);
-      const resourceId = encryptionSession.resourceId;
-      await aliceLaptop.share([resourceId], { shareWithUsers: [bobPublicIdentity] });
-      const decrypted = await bobPhone.decrypt(encrypted);
-      expect(decrypted).to.equal(clearText);
-    });
-
-    it('getResourceId returns the same resource id as the encryption session', async () => {
-      const encryptionSession = await aliceLaptop.createEncryptionSession();
-      const encrypted = await encryptionSession.encrypt(clearText);
-      const resourceId = await aliceLaptop.getResourceId(encrypted);
-
-      expect(resourceId).to.equal(encryptionSession.resourceId);
-    });
-
-    it('throws when using an encryption session with a Tanker in an invalid state', async () => {
-      const encryptionSession = await aliceLaptop.createEncryptionSession();
-      await aliceLaptop.stop();
-      await expect(encryptionSession.encrypt(clearText)).to.be.rejectedWith(errors.PreconditionFailed);
-    });
-  });
 };
-
-export default generateEncryptTests;

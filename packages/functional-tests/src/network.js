@@ -2,7 +2,7 @@
 import { errors, type Tanker } from '@tanker/core';
 import { expect } from '@tanker/test-utils';
 
-import { type TestArgs } from './TestArgs';
+import type { TestArgs } from './helpers';
 
 const networkIssues = {
   // closed_port: { url: 'https://api.tanker.io:666' }, // slow... (20 sec timeout)
@@ -74,10 +74,8 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
   });
 };
 
-const generateNetworkTests = (args: TestArgs) => {
+export const generateNetworkTests = (args: TestArgs) => {
   describe('network issues', () => {
     Object.keys(networkIssues).forEach(type => generateNetworkIssueTests(args, type));
   });
 };
-
-export default generateNetworkTests;
