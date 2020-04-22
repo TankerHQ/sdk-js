@@ -94,6 +94,20 @@ function generateFilekitTest(args) {
   });
 }
 
+function generateEncryptionSessionTests(args) {
+  it(`encrypts in ${args.version} with an encryption session and decrypts with current code`, async () => {
+    const message = 'secret message';
+    const encryptionSession = await args.versionAlice.createEncryptionSession([await args.versionBob.id], []);
+    const encryptedData = toBase64(await encryptionSession.encrypt(message));
+
+    let decryptedData = await args.currentBob.decrypt(encryptedData);
+    expect(decryptedData).to.equal(message);
+
+    decryptedData = await args.currentAlice.decrypt(encryptedData);
+    expect(decryptedData).to.equal(message);
+  });
+}
+
 const generatorMap = {
   encrypt: generateEncryptTest,
   group: generateGroupTest,
@@ -101,6 +115,7 @@ const generatorMap = {
   verification: generateVerificationTest,
   revocationV2: generateRevocationV2Test,
   filekit: generateFilekitTest,
+  encryptionSession: generateEncryptionSessionTests,
 };
 
 function generateV2Tests(opts) {
