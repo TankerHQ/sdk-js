@@ -81,7 +81,7 @@ export class CloudStorageManager {
     const { UploadStream } = streamService;
 
     const slicer = new SlicerStream({ source: clearData });
-    const uploader = new UploadStream(urls, headers, totalEncryptedSize, recommendedChunkSize, encryptedMetadata);
+    const uploader = new UploadStream(urls, headers, totalEncryptedSize, recommendedChunkSize);
 
     const progressHandler = new ProgressHandler(progressOptions).start(totalEncryptedSize);
     uploader.on('uploaded', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
