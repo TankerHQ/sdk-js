@@ -234,6 +234,7 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
             "build": "datastores",
             "publish": [
                 "@tanker/datastore-base",
+                "@tanker/datastore-dexie-base",
                 "@tanker/datastore-dexie-browser",
                 "@tanker/datastore-pouchdb-base",
                 "@tanker/datastore-pouchdb-memory",
