@@ -29,6 +29,10 @@ class BaseUser {
     return this._tanker.revokeDevice(deviceId);
   }
 
+  async createEncryptionSession(userIds, groupIds) {
+    return this._tanker.createEncryptionSession({ shareWithUsers: userIds, shareWithGroups: groupIds });
+  }
+
   get deviceId() {
     return this._tanker.deviceId;
   }
