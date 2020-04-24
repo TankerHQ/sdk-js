@@ -2,6 +2,7 @@
 // Flow trickery, webpack will actually throw for undefined value
 //  https://github.com/webpack/webpack/blob/0740909b901afa69fcc1657a03215d1e011bb5c3/lib/EnvironmentPlugin.js#L41
 const tankerUrl = process.env.TANKER_TRUSTCHAIND_URL || '';
+const admindUrl = process.env.TANKER_ADMIND_URL || '';
 const fakeAuthUrl = process.env.TANKER_FAKE_AUTH_URL || '';
 const idToken = process.env.TANKER_ID_TOKEN || '';
 const oidcSettings = {
@@ -30,4 +31,4 @@ const storageSettings = {
   },
 };
 
-export { tankerUrl, fakeAuthUrl, idToken, oidcSettings, storageSettings };
+export { tankerUrl, admindUrl, fakeAuthUrl, idToken, oidcSettings, storageSettings };

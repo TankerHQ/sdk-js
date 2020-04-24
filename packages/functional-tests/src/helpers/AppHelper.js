@@ -7,8 +7,13 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
-import { AuthenticatedRequester } from './AuthenticatedRequester';
+import { requestTrustchaind, requestAdmindWithAuth } from './request';
 import { oidcSettings, storageSettings } from './config';
+
+function toUnpaddedSafeBase64(str: Uint8Array): string {
+  const b64 = utils.toSafeBase64(str);
+  return b64.substring(0, b64.indexOf('='));
+}
 
 function makeRootBlock(appKeyPair: Object) {
   const rootBlock = {
@@ -25,13 +30,11 @@ function makeRootBlock(appKeyPair: Object) {
 }
 
 export class AppHelper {
-  _requester: AuthenticatedRequester;
   appId: Uint8Array;
   appKeyPair: Object;
   authToken: string;
 
-  constructor(requester: AuthenticatedRequester, appId: Uint8Array, appKeyPair: Object, authToken: string) {
-    this._requester = requester;
+  constructor(appId: Uint8Array, appKeyPair: Object, authToken: string) {
     this.appId = appId;
     this.appKeyPair = appKeyPair;
     this.authToken = authToken;
@@ -40,37 +43,38 @@ export class AppHelper {
   static async newApp(): Promise<AppHelper> {
     const appKeyPair = tcrypto.makeSignKeyPair();
     const rootBlock = makeRootBlock(appKeyPair);
-    const message = {
+    const body = {
       root_block: utils.toBase64(serializeBlock(rootBlock)),
       name: `functest-${uuid.v4()}`,
-      is_test: true,
       private_signature_key: utils.toBase64(appKeyPair.privateKey),
     };
-    const requester = await AuthenticatedRequester.open();
-    const createResponse = await requester.send('create trustchain', message);
-    const authToken = createResponse.auth_token;
+    const createResponse = await requestAdmindWithAuth({ method: 'POST', path: '/apps', body });
+    const authToken = createResponse.app.auth_token;
     const appId = rootBlock.trustchain_id;
-    return new AppHelper(requester, appId, appKeyPair, authToken);
+    return new AppHelper(appId, appKeyPair, authToken);
+  }
+
+  async _update(body: Object): Promise<Object> {
+    await requestAdmindWithAuth({
+      method: 'PATCH',
+      path: `/apps/${toUnpaddedSafeBase64(this.appId)}`,
+      body,
+    });
   }
 
   async setOIDC() {
-    await this._requester.send('update trustchain', {
-      id: utils.toBase64(this.appId),
+    await this._update({
       oidc_provider: 'google',
       oidc_client_id: oidcSettings.googleAuth.clientId,
     });
   }
 
   async unsetOIDC() {
-    await this._requester.send('update trustchain', {
-      id: utils.toBase64(this.appId),
-      oidc_provider: 'none',
-    });
+    await this._update({ oidc_provider: 'none' });
   }
 
   async setS3() {
-    await this._requester.send('update trustchain', {
-      id: utils.toBase64(this.appId),
+    await this._update({
       storage_provider: 's3',
       storage_bucket_name: storageSettings.s3.bucketName,
       storage_bucket_region: storageSettings.s3.bucketRegion,
@@ -80,10 +84,7 @@ export class AppHelper {
   }
 
   async unsetS3() {
-    await this._requester.send('update trustchain', {
-      id: utils.toBase64(this.appId),
-      storage_provider: 'none',
-    });
+    await this._update({ storage_provider: 'none' });
   }
 
   generateIdentity(userId?: string): Promise<b64string> {
@@ -92,11 +93,12 @@ export class AppHelper {
   }
 
   async getVerificationCode(email: string): Promise<string> {
-    const msg = {
-      trustchain_id: utils.toBase64(this.appId),
+    const body = {
+      app_id: utils.toBase64(this.appId),
       email,
+      auth_token: this.authToken,
     };
-    const answer = await this._requester.send('get verification code', msg);
+    const answer = await requestTrustchaind({ method: 'POST', path: '/verification/email/code', body });
     if (!answer.verification_code) {
       throw new Error('Invalid response');
     }
@@ -113,6 +115,9 @@ export class AppHelper {
   }
 
   async cleanup(): Promise<void> {
-    await this._requester.send('delete trustchain', { id: utils.toBase64(this.appId) });
+    await requestAdmindWithAuth({
+      method: 'DELETE',
+      path: `/apps/${toUnpaddedSafeBase64(this.appId)}`
+    });
   }
 }
