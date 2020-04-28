@@ -14,7 +14,7 @@ export class UploadStream extends Writable {
   _recommendedChunkSize: number;
   _verbose: bool;
 
-  constructor(urls: Array<string>, headers: Object, contentLength: number, recommendedChunkSize: number, encryptedMetadata: string, verbose: bool = false) {
+  constructor(urls: Array<string>, headers: Object, contentLength: number, recommendedChunkSize: number, verbose: bool = false) {
     super({
       highWaterMark: 1,
       objectMode: true

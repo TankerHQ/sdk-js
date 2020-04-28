@@ -17,14 +17,14 @@ export class UploadStream extends Writable {
   _uploadedLength: number;
   _verbose: bool;
 
-  constructor(urls: Array<string>, headers: Object, contentLength: number, _recommendedChunkSize: number, encryptedMetadata: string, verbose: bool = false) {
+  constructor(urls: Array<string>, headers: Object, contentLength: number, _recommendedChunkSize: number, verbose: bool = false) {
     super({
       highWaterMark: 1,
       objectMode: true
     });
 
     this._initUrl = urls[0];
-    this._headers = { ...headers, 'x-goog-meta-tanker-metadata': encryptedMetadata };
+    this._headers = { ...headers }; // copy
     this._contentLength = contentLength;
     this._uploadedLength = 0;
     this._verbose = verbose;
@@ -40,7 +40,6 @@ export class UploadStream extends Writable {
 
   async initialize() {
     this.log('initializing...');
-
     const { ok, status, statusText, headers } = await fetch(this._initUrl, { method: 'POST', headers: this._headers });
     if (!ok) {
       throw new NetworkError(`GCS init request failed with status ${status}: ${statusText}`);
