@@ -86,7 +86,7 @@
     "karma-sourcemap-loader": "0.3.7",
     "karma-webpack": "4.0.2",
     "mocha": "7.1.1",
-    "nyc": "15.0.0",
+    "nyc": "15.0.1",
     "rollup": "2.1.0",
     "rollup-plugin-babel": "4.4.0",
     "rollup-plugin-flow": "1.1.1",
@@ -98,7 +98,8 @@
   "resolutions": {
     "**/jsdom/**/acorn": "5.7.4",
     "**/optimist/minimist": "1.2.5",
-    "karma-mocha/minimist": "1.2.5"
+    "karma-mocha/minimist": "1.2.5",
+    "nyc/yargs/yargs-parser": "^18.1.2"
   },
   "workspaces": [
     "packages/*",

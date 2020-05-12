@@ -4098,9 +4098,9 @@ engine.io-client@~3.2.0:
     yeast "0.1.2"
 
 engine.io-client@~3.4.0:
-  version "3.4.0"
-  resolved "https://registry.yarnpkg.com/engine.io-client/-/engine.io-client-3.4.0.tgz#82a642b42862a9b3f7a188f41776b2deab643700"
-  integrity sha512-a4J5QO2k99CM2a0b12IznnyQndoEvtA4UAldhGzKqnHf42I3Qs2W5SPnDvatZRcMaNZs4IevVicBPayxYt6FwA==
+  version "3.4.1"
+  resolved "https://registry.yarnpkg.com/engine.io-client/-/engine.io-client-3.4.1.tgz#922ddb47eecdcb541136a93aeead24718fd05461"
+  integrity sha512-RJNmA+A9Js+8Aoq815xpGAsgWH1VoSYM//2VgIiu9lNOaHFfLpTjH4tOzktBpjIs5lvOfiNY1dwf+NuU6D38Mw==
   dependencies:
     component-emitter "1.2.1"
     component-inherit "0.0.3"
@@ -7242,10 +7242,10 @@ istanbul-lib-source-maps@^4.0.0:
     istanbul-lib-coverage "^3.0.0"
     source-map "^0.6.1"
 
-istanbul-reports@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/istanbul-reports/-/istanbul-reports-3.0.0.tgz#d4d16d035db99581b6194e119bbf36c963c5eb70"
-  integrity sha512-2osTcC8zcOSUkImzN2EWQta3Vdi4WjjKw99P2yWx5mLnigAM0Rd5uYFn1cf2i/Ois45GkNjaoTqc5CxgMSX80A==
+istanbul-reports@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/istanbul-reports/-/istanbul-reports-3.0.2.tgz#d593210e5000683750cb09fc0644e4b6e27fd53b"
+  integrity sha512-9tZvz7AiR3PEDNGiV9vIouQ/EAcqMXFmkcA1CDFTwOB98OZVDL0PH9glHotf5Ugp6GCOTypfzGWI/OqjWNCRUw==
   dependencies:
     html-escaper "^2.0.0"
     istanbul-lib-report "^3.0.0"
@@ -8735,7 +8735,7 @@ node-modules-regexp@^1.0.0:
   resolved "https://registry.yarnpkg.com/node-modules-regexp/-/node-modules-regexp-1.0.0.tgz#8d9dbe28964a4ac5712e9131642107c71e90ec40"
   integrity sha1-jZ2+KJZKSsVxLpExZCEHxx6Q7EA=
 
-node-preload@^0.2.0:
+node-preload@^0.2.1:
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/node-preload/-/node-preload-0.2.1.tgz#c03043bb327f417a18fee7ab7ee57b408a144301"
   integrity sha512-RM5oyBy45cLEoHqCeh+MNuFAxO0vTFBLskvQbOKnEE7YTTSN4tbN8QWDIPQ6L+WvKsB/qLEGpYe2ZZ9d4W9OIQ==
@@ -8867,10 +8867,10 @@ number-is-nan@^1.0.0:
   resolved "https://registry.yarnpkg.com/nwmatcher/-/nwmatcher-1.4.4.tgz#2285631f34a95f0d0395cd900c96ed39b58f346e"
   integrity sha512-3iuY4N5dhgMpCUrOVnuAdGrgxVqV2cJpM+XNccjR2DKOB1RUP0aA+wGXEiNziG/UKboFyGBIoKOaNlJxx8bciQ==
 
-nyc@15.0.0:
-  version "15.0.0"
-  resolved "https://registry.yarnpkg.com/nyc/-/nyc-15.0.0.tgz#eb32db2c0f29242c2414fe46357f230121cfc162"
-  integrity sha512-qcLBlNCKMDVuKb7d1fpxjPR8sHeMVX0CHarXAVzrVWoFrigCkYR8xcrjfXSPi5HXM7EU78L6ywO7w1c5rZNCNg==
+nyc@15.0.1:
+  version "15.0.1"
+  resolved "https://registry.yarnpkg.com/nyc/-/nyc-15.0.1.tgz#bd4d5c2b17f2ec04370365a5ca1fc0ed26f9f93d"
+  integrity sha512-n0MBXYBYRqa67IVt62qW1r/d9UH/Qtr7SF1w/nQLJ9KxvWF6b2xCHImRAixHN9tnMMYHC2P14uo6KddNGwMgGg==
   dependencies:
     "@istanbuljs/load-nyc-config" "^1.0.0"
     "@istanbuljs/schema" "^0.1.2"
@@ -8887,10 +8887,9 @@ nyc@15.0.0:
     istanbul-lib-processinfo "^2.0.2"
     istanbul-lib-report "^3.0.0"
     istanbul-lib-source-maps "^4.0.0"
-    istanbul-reports "^3.0.0"
-    js-yaml "^3.13.1"
+    istanbul-reports "^3.0.2"
     make-dir "^3.0.0"
-    node-preload "^0.2.0"
+    node-preload "^0.2.1"
     p-map "^3.0.0"
     process-on-spawn "^1.0.0"
     resolve-from "^5.0.0"
@@ -8898,7 +8897,6 @@ nyc@15.0.0:
     signal-exit "^3.0.2"
     spawn-wrap "^2.0.0"
     test-exclude "^6.0.0"
-    uuid "^3.3.3"
     yargs "^15.0.2"
 
 oauth-sign@~0.9.0:
@@ -13334,18 +13332,18 @@ yargs-parser@13.1.2, yargs-parser@^13.1.0, yargs-parser@^13.1.2:
     camelcase "^5.0.0"
     decamelize "^1.2.0"
 
-yargs-parser@^15.0.1:
-  version "15.0.1"
-  resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-15.0.1.tgz#54786af40b820dcb2fb8025b11b4d659d76323b3"
-  integrity sha512-0OAMV2mAZQrs3FkNpDQcBk1x5HXb8X4twADss4S0Iuk+2dGnLOE/fRHrsYm542GduMveyA77OF4wrNJuanRCWw==
+yargs-parser@18.1.3, yargs-parser@^18.1.1:
+  version "18.1.3"
+  resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-18.1.3.tgz#be68c4975c6b2abf469236b0c870362fab09a7b0"
+  integrity sha512-o50j0JeToy/4K6OZcaQmW6lyXXKhq7csREXcDwk2omFPJEwUNOVtJKvmDr9EI1fAJZUyZcRF7kxGBWmRXudrCQ==
   dependencies:
     camelcase "^5.0.0"
     decamelize "^1.2.0"
 
-yargs-parser@^18.1.1:
-  version "18.1.1"
-  resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-18.1.1.tgz#bf7407b915427fc760fcbbccc6c82b4f0ffcbd37"
-  integrity sha512-KRHEsOM16IX7XuLnMOqImcPNbLVXMNHYAoFc3BKR8Ortl5gzDbtXvvEoGx9imk5E+X1VeNKNlcHr8B8vi+7ipA==
+yargs-parser@^15.0.1:
+  version "15.0.1"
+  resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-15.0.1.tgz#54786af40b820dcb2fb8025b11b4d659d76323b3"
+  integrity sha512-0OAMV2mAZQrs3FkNpDQcBk1x5HXb8X4twADss4S0Iuk+2dGnLOE/fRHrsYm542GduMveyA77OF4wrNJuanRCWw==
   dependencies:
     camelcase "^5.0.0"
     decamelize "^1.2.0"
