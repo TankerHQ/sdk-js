@@ -73,7 +73,7 @@
     "eslint-plugin-react": "7.19.0",
     "flow-bin": "0.121.0",
     "fs-extra": "8.1.0",
-    "karma": "4.4.1",
+    "karma": "5.0.7",
     "karma-browserstack-launcher": "1.4.0",
     "karma-chrome-launcher": "3.1.0",
     "karma-edge-launcher": "0.4.2",
@@ -99,7 +99,8 @@
     "**/jsdom/**/acorn": "5.7.4",
     "**/optimist/minimist": "1.2.5",
     "karma-mocha/minimist": "1.2.5",
-    "nyc/yargs/yargs-parser": "^18.1.2"
+    "nyc/yargs/yargs-parser": "^18.1.2",
+    "http-proxy": "^1.18.1"
   },
   "workspaces": [
     "packages/*",
