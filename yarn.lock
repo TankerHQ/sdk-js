@@ -7442,6 +7442,10 @@ karma-chrome-launcher@3.1.0:
   dependencies:
     which "^1.2.1"
 
+"karma-edge-azure-launcher@git+https://github.com/TankerHQ/karma-edge-launcher.git#0dd0ec9833507a8456eb84341edb4c6a02728ce9":
+  version "0.4.3"
+  resolved "git+https://github.com/TankerHQ/karma-edge-launcher.git#0dd0ec9833507a8456eb84341edb4c6a02728ce9"
+
 karma-edge-launcher@0.4.2:
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/karma-edge-launcher/-/karma-edge-launcher-0.4.2.tgz#3d9529b09b13c909c5f3ceee12d00e7f9a989b3d"

@@ -6,15 +6,13 @@ authors = ["Tanker dev team <tech@tanker.io>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-ci = "2020.4.2291"
+cli_ui = "^0.10.3"
+path = "^13.2.0"
+psutil = "^5.7.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.7.9"
 mypy = "0.740"
-
-[[tool.poetry.source]]
-name = "tanker.local"
-url = "http://tanker.local:8181"
 
 [build-system]
 requires = ["poetry>=0.12"]

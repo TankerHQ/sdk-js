@@ -2,6 +2,7 @@ from typing import Any, Callable
 import argparse
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -9,10 +10,26 @@ import cli_ui as ui
 from path import Path
 import psutil
 
-import ci.cpp
-import ci.conan
-import ci.endtoend
-import ci.js
+
+def run(*cmd: str, **kwargs: Any) -> "subprocess.CompletedProcess[str]":
+    check = kwargs.get("check", True)
+    if "cwd" in kwargs:
+        ui.info_2(kwargs["cwd"], ui.green, "$", end=" ")
+    else:
+        ui.info_2(os.getcwd(), ui.green, "$", end=" ")
+    ui.info(*cmd)
+    completed_process = subprocess.run(cmd, **kwargs)
+    returncode = completed_process.returncode
+    if returncode != 0 and check:
+        ui.fatal(f'`{" ".join(cmd)}` exited with retcode: {returncode}')
+    return completed_process
+
+
+def run_yarn(*args: str, **kwargs: Any) -> None:
+    cmd = "yarn"
+    if os.name == "nt":
+        cmd += ".cmd"
+    run(cmd, *args, **kwargs)
 
 
 class TestFailed(Exception):
@@ -96,7 +113,7 @@ def delete_ie_state() -> None:
 
     Total: 511
     """
-    ci.run("RunDll32.exe", "InetCpl.cpl,ClearMyTracksByProcess", "511")
+    run("RunDll32.exe", "InetCpl.cpl,ClearMyTracksByProcess", "511")
     time.sleep(5)
 
 
@@ -124,23 +141,19 @@ def run_tests_in_browser_ten_times(*, runner: str) -> None:
 
 def run_tests_in_browser(*, runner: str) -> None:
     if runner == "linux":
-        ci.js.run_yarn("karma", "--browsers", "ChromeInDocker")
+        run_yarn("karma", "--browsers", "ChromeInDocker")
     elif runner == "macos":
-        ci.run("killall", "Safari", check=False)
-        delete_safari_state()
-        ci.js.run_yarn("karma", "--browsers", "Safari")
+        run_yarn("karma", "--browsers", "Safari")
     elif runner == "windows-edge":
-        delete_edge_state()
-        ci.js.run_yarn("karma", "--browsers", "Edge")
+        run_yarn("karma", "--browsers", "EdgeAzure")
     elif runner == "windows-ie":
-        delete_ie_state()
-        ci.js.run_yarn("karma", "--browsers", "IE")
+        run_yarn("karma", "--browsers", "IE")
 
 
 def run_sdk_compat_tests() -> None:
     cwd = Path.getcwd() / "ci/compat"
-    ci.js.yarn_install_deps(cwd=cwd)
-    ci.js.run_yarn("proof", cwd=cwd)
+    run_yarn(cwd=cwd)
+    run_yarn("proof", cwd=cwd)
 
 
 def get_package_path(package_name: str) -> Path:
@@ -163,20 +176,20 @@ def version_to_npm_tag(version: str) -> str:
 def publish_npm_package(package_name: str, version: str) -> None:
     package_path = get_package_path(package_name)
     npm_tag = version_to_npm_tag(version)
-    ci.run("npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path)
+    run("npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path)
 
 
 def run_linters() -> None:
-    ci.js.run_yarn("flow")
-    ci.js.run_yarn("lint:js")
+    run_yarn("flow")
+    run_yarn("lint:js")
 
 
 def run_tests_in_node() -> None:
-    ci.js.run_yarn("coverage")
+    run_yarn("coverage")
 
 
 def check(*, runner: str, nightly: bool) -> None:
-    ci.js.yarn_install_deps()
+    run_yarn()
     if runner == "linux" and not nightly:
         run_linters()
         run_tests_in_node()
@@ -188,71 +201,8 @@ def check(*, runner: str, nightly: bool) -> None:
 
 
 def compat() -> None:
-    ci.js.yarn_install_deps()
+    run_yarn()
     run_sdk_compat_tests()
-
-
-def e2e(*, use_local_sources: bool) -> None:
-    if use_local_sources:
-        base_path = Path.getcwd().parent
-    else:
-        base_path = ci.git.prepare_sources(
-            repos=["sdk-native", "sdk-python", "sdk-js", "qa-python-js"]
-        )
-    ci.conan.set_home_isolation()
-    ci.cpp.update_conan_config()
-    ci.conan.export(src_path=base_path / "sdk-native", ref_or_channel="tanker/dev")
-    ci.endtoend.test(
-        tanker_conan_ref="tanker/dev@tanker/dev",
-        profile="gcc8-release",
-        base_path=base_path,
-    )
-
-
-def deploy_sdk(*, env: str, git_tag: str) -> None:
-    ci.js.yarn_install_deps()
-    version = ci.bump.version_from_git_tag(git_tag)
-    ci.bump.bump_files(version)
-
-    # Publish packages in order so that dependencies don't break during deploy
-    configs = [
-        {"build": "global-this", "publish": ["@tanker/global-this"]},
-        {"build": "crypto", "publish": ["@tanker/crypto"]},
-        {"build": "errors", "publish": ["@tanker/errors"]},
-        {"build": "identity", "publish": ["@tanker/identity"]},
-        {"build": "file-ponyfill", "publish": ["@tanker/file-ponyfill"]},
-        {"build": "file-reader", "publish": ["@tanker/file-reader"]},
-        {"build": "types", "publish": ["@tanker/types"]},
-        {
-            "build": "streams",
-            "publish": [
-                "@tanker/stream-base",
-                "@tanker/stream-cloud-storage",
-            ],
-        },
-        {
-            "build": "datastores",
-            "publish": [
-                "@tanker/datastore-base",
-                "@tanker/datastore-dexie-base",
-                "@tanker/datastore-dexie-browser",
-                "@tanker/datastore-pouchdb-base",
-                "@tanker/datastore-pouchdb-memory",
-                "@tanker/datastore-pouchdb-node",
-            ],
-        },
-        {"build": "core", "publish": ["@tanker/core"]},
-        {"build": "client-browser", "publish": ["@tanker/client-browser"]},
-        {"build": "client-node", "publish": ["@tanker/client-node"]},
-        {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
-        {"build": "fake-authentication", "publish": ["@tanker/fake-authentication"]},
-        {"build": "filekit", "publish": ["@tanker/filekit"]},
-    ]
-
-    for config in configs:
-        ci.js.yarn_build(delivery=config["build"], env=env)  # type: ignore
-        for package_name in config["publish"]:
-            publish_npm_package(package_name, version)
 
 
 def _main() -> None:
@@ -263,31 +213,15 @@ def _main() -> None:
     check_parser.add_argument("--nightly", action="store_true")
     check_parser.add_argument("--runner", required=True)
 
-    deploy_parser = subparsers.add_parser("deploy")
-    deploy_parser.add_argument("--git-tag", required=True)
-    deploy_parser.add_argument("--env", required=True)
-
     subparsers.add_parser("compat")
-
-    e2e_parser = subparsers.add_parser("e2e")
-    e2e_parser.add_argument("--use-local-sources", action="store_true", default=False)
-
-    subparsers.add_parser("mirror")
 
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
         nightly = args.nightly
         check(runner=runner, nightly=nightly)
-    elif args.command == "deploy":
-        git_tag = args.git_tag
-        deploy_sdk(env=args.env, git_tag=git_tag)
-    elif args.command == "mirror":
-        ci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
         compat()
-    elif args.command == "e2e":
-        e2e(use_local_sources=args.use_local_sources)
     else:
         parser.print_help()
         sys.exit(1)

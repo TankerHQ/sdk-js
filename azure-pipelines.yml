@@ -1,0 +1,149 @@
+name: Test and Deploy
+pr:
+- master
+trigger:
+- master
+stages:
+  - stage: check
+    jobs:
+      - job: Edge
+        pool:
+          vmImage: windows-2019
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.8'
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '10.x'
+          - bash: |
+              python -m pip install -U pip
+              pip install poetry
+              poetry install
+            displayName: 'Install poetry'
+          - bash: |
+              poetry run python run-ci.py check --runner windows-edge
+            env:
+              TANKER_TRUSTCHAIND_URL: $(TANKER_TRUSTCHAIND_URL)
+              TANKER_ADMIND_URL: $(TANKER_ADMIND_URL)
+              TANKER_EMAILD_URL: $(TANKER_EMAILD_URL)
+              TANKER_FAKE_AUTH_URL: $(TANKER_FAKE_AUTH_URL)
+              TANKER_ID_TOKEN: $(TANKER_ID_TOKEN)
+              TANKER_OIDC_PROVIDER: $(TANKER_OIDC_PROVIDER)
+              TANKER_OIDC_CLIENT_ID: $(TANKER_OIDC_CLIENT_ID)
+              TANKER_OIDC_CLIENT_SECRET: $(TANKER_OIDC_CLIENT_SECRET)
+              TANKER_OIDC_MARTINE_EMAIL: $(TANKER_OIDC_MARTINE_EMAIL)
+              TANKER_OIDC_MARTINE_REFRESH_TOKEN: $(TANKER_OIDC_MARTINE_REFRESH_TOKEN)
+              TANKER_OIDC_KEVIN_EMAIL: $(TANKER_OIDC_KEVIN_EMAIL)
+              TANKER_OIDC_KEVIN_REFRESH_TOKEN: $(TANKER_OIDC_KEVIN_REFRESH_TOKEN)
+              TANKER_FILEKIT_BUCKET_NAME: $(TANKER_FILEKIT_BUCKET_NAME)
+              TANKER_FILEKIT_BUCKET_REGION: $(TANKER_FILEKIT_BUCKET_REGION)
+              TANKER_FILEKIT_CLIENT_ID: $(TANKER_FILEKIT_CLIENT_ID)
+              TANKER_FILEKIT_CLIENT_SECRET: $(TANKER_FILEKIT_CLIENT_SECRET)
+
+      - job: IE
+        pool:
+          vmImage: windows-2019
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.8'
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '10.x'
+          - bash: |
+              python -m pip install -U pip
+              pip install poetry
+              poetry install
+            displayName: 'Install poetry'
+          - bash: |
+              poetry run python run-ci.py check --runner windows-ie
+            env:
+              TANKER_TRUSTCHAIND_URL: $(TANKER_TRUSTCHAIND_URL)
+              TANKER_ADMIND_URL: $(TANKER_ADMIND_URL)
+              TANKER_EMAILD_URL: $(TANKER_EMAILD_URL)
+              TANKER_FAKE_AUTH_URL: $(TANKER_FAKE_AUTH_URL)
+              TANKER_ID_TOKEN: $(TANKER_ID_TOKEN)
+              TANKER_OIDC_PROVIDER: $(TANKER_OIDC_PROVIDER)
+              TANKER_OIDC_CLIENT_ID: $(TANKER_OIDC_CLIENT_ID)
+              TANKER_OIDC_CLIENT_SECRET: $(TANKER_OIDC_CLIENT_SECRET)
+              TANKER_OIDC_MARTINE_EMAIL: $(TANKER_OIDC_MARTINE_EMAIL)
+              TANKER_OIDC_MARTINE_REFRESH_TOKEN: $(TANKER_OIDC_MARTINE_REFRESH_TOKEN)
+              TANKER_OIDC_KEVIN_EMAIL: $(TANKER_OIDC_KEVIN_EMAIL)
+              TANKER_OIDC_KEVIN_REFRESH_TOKEN: $(TANKER_OIDC_KEVIN_REFRESH_TOKEN)
+              TANKER_FILEKIT_BUCKET_NAME: $(TANKER_FILEKIT_BUCKET_NAME)
+              TANKER_FILEKIT_BUCKET_REGION: $(TANKER_FILEKIT_BUCKET_REGION)
+              TANKER_FILEKIT_CLIENT_ID: $(TANKER_FILEKIT_CLIENT_ID)
+              TANKER_FILEKIT_CLIENT_SECRET: $(TANKER_FILEKIT_CLIENT_SECRET)
+
+      - job: linux
+        displayName: Node and Chrome
+        pool:
+          vmImage: ubuntu-18.04
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.8'
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '10.x'
+          - bash: |
+              python -m pip install -U pip
+              pip install poetry
+              poetry install
+            displayName: 'Install poetry'
+          - bash: |
+              poetry run python run-ci.py check --runner linux
+            env:
+              TANKER_TRUSTCHAIND_URL: $(TANKER_TRUSTCHAIND_URL)
+              TANKER_ADMIND_URL: $(TANKER_ADMIND_URL)
+              TANKER_EMAILD_URL: $(TANKER_EMAILD_URL)
+              TANKER_FAKE_AUTH_URL: $(TANKER_FAKE_AUTH_URL)
+              TANKER_ID_TOKEN: $(TANKER_ID_TOKEN)
+              TANKER_OIDC_PROVIDER: $(TANKER_OIDC_PROVIDER)
+              TANKER_OIDC_CLIENT_ID: $(TANKER_OIDC_CLIENT_ID)
+              TANKER_OIDC_CLIENT_SECRET: $(TANKER_OIDC_CLIENT_SECRET)
+              TANKER_OIDC_MARTINE_EMAIL: $(TANKER_OIDC_MARTINE_EMAIL)
+              TANKER_OIDC_MARTINE_REFRESH_TOKEN: $(TANKER_OIDC_MARTINE_REFRESH_TOKEN)
+              TANKER_OIDC_KEVIN_EMAIL: $(TANKER_OIDC_KEVIN_EMAIL)
+              TANKER_OIDC_KEVIN_REFRESH_TOKEN: $(TANKER_OIDC_KEVIN_REFRESH_TOKEN)
+              TANKER_FILEKIT_BUCKET_NAME: $(TANKER_FILEKIT_BUCKET_NAME)
+              TANKER_FILEKIT_BUCKET_REGION: $(TANKER_FILEKIT_BUCKET_REGION)
+              TANKER_FILEKIT_CLIENT_ID: $(TANKER_FILEKIT_CLIENT_ID)
+              TANKER_FILEKIT_CLIENT_SECRET: $(TANKER_FILEKIT_CLIENT_SECRET)
+
+      - job: macos
+        displayName: Safari
+        pool:
+          vmImage: macOS-10.15
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.8'
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '10.x'
+          - bash: |
+              python -m pip install -U pip
+              pip install poetry
+              poetry install
+            displayName: 'Install poetry'
+          - bash: |
+              poetry run python run-ci.py check --runner macos
+            env:
+              TANKER_TRUSTCHAIND_URL: $(TANKER_TRUSTCHAIND_URL)
+              TANKER_ADMIND_URL: $(TANKER_ADMIND_URL)
+              TANKER_EMAILD_URL: $(TANKER_EMAILD_URL)
+              TANKER_FAKE_AUTH_URL: $(TANKER_FAKE_AUTH_URL)
+              TANKER_ID_TOKEN: $(TANKER_ID_TOKEN)
+              TANKER_OIDC_PROVIDER: $(TANKER_OIDC_PROVIDER)
+              TANKER_OIDC_CLIENT_ID: $(TANKER_OIDC_CLIENT_ID)
+              TANKER_OIDC_CLIENT_SECRET: $(TANKER_OIDC_CLIENT_SECRET)
+              TANKER_OIDC_MARTINE_EMAIL: $(TANKER_OIDC_MARTINE_EMAIL)
+              TANKER_OIDC_MARTINE_REFRESH_TOKEN: $(TANKER_OIDC_MARTINE_REFRESH_TOKEN)
+              TANKER_OIDC_KEVIN_EMAIL: $(TANKER_OIDC_KEVIN_EMAIL)
+              TANKER_OIDC_KEVIN_REFRESH_TOKEN: $(TANKER_OIDC_KEVIN_REFRESH_TOKEN)
+              TANKER_FILEKIT_BUCKET_NAME: $(TANKER_FILEKIT_BUCKET_NAME)
+              TANKER_FILEKIT_BUCKET_REGION: $(TANKER_FILEKIT_BUCKET_REGION)
+              TANKER_FILEKIT_CLIENT_ID: $(TANKER_FILEKIT_CLIENT_ID)
+              TANKER_FILEKIT_CLIENT_SECRET: $(TANKER_FILEKIT_CLIENT_SECRET)
