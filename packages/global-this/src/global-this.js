@@ -7,6 +7,10 @@
 // Note: the __global_this__ trick did not work in Safari + Karma,
 //       so we continue to test global variables first :'-(
 function getGlobalThis() {
+  // Modern runtimes (ES2020 compatible)
+  if (typeof globalThis !== 'undefined')
+    return globalThis;
+
   // Browser main thread
   if (typeof window !== 'undefined')
     return window;
@@ -37,6 +41,4 @@ function getGlobalThis() {
   }
 };
 
-const globalThis = getGlobalThis();
-
-export { globalThis, getGlobalThis };
+export { getGlobalThis };
