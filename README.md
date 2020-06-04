@@ -31,7 +31,7 @@
 [verificationui_npm-badge]: https://img.shields.io/npm/v/@tanker/verification-ui.svg
 [verificationui_npm-link]: https://npmjs.com/package/@tanker/verification-ui
 
-<a href="#readme"><img src="./src/public/tanker.png" alt="Tanker logo" width="180" /></a>
+<a href="#readme"><img src="https://tanker.io/images/github-logo.png" alt="Tanker logo" width="180" /></a>
 
 [![License][license-badge]][license-link]
 [![Build][travis-badge]][travis-link]
