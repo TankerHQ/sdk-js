@@ -2,10 +2,15 @@ stages:
   - check
   - deploy
 
+default:
+  before_script:
+    - poetry -V
+    - node -v
+    - poetry install
+    - poetry run python --version
+
 .check:
   stage: check
-  before_script:
-    - poetry install
   variables:
     TANKER_CONFIG_NAME: dev
 
@@ -79,8 +84,6 @@ check/macos/nightly:
   stage: deploy
   except:
     - schedules
-  before_script:
-    - poetry install
   tags:
     - linux
 
@@ -105,8 +108,6 @@ mirror:
 
   except:
     - schedules
-  before_script:
-    - poetry install
   script:
     - poetry run python run-ci.py mirror
 
