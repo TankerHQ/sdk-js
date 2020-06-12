@@ -126,7 +126,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('encrypt and share with a provisional identity', async () => {
-        const email = 'alice@tanker-functional-test.io';
+        const email = 'alice.test@tanker.io';
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
@@ -137,7 +137,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('throws when sharing with secret provisional identities', async () => {
-        const email = 'alice@tanker-functional-test.io';
+        const email = 'alice.test@tanker.io';
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
       });
@@ -213,7 +213,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('shares an existing resource with a provisional identity', async () => {
-        const email = 'alice@tanker-functional-test.io';
+        const email = 'alice.test@tanker.io';
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
         const cipherText = await bobLaptop.encrypt(clearText);
@@ -228,7 +228,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       let publicProvisionalIdentity;
 
       beforeEach(async () => {
-        email = `${uuid.v4()}@tanker-functional-test.io`;
+        email = `${uuid.v4()}@tanker.io`;
         provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);
         publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
@@ -309,7 +309,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('throws when verifying an email that does not match the provisional identity', async () => {
-        const anotherEmail = `${uuid.v4()}@tanker-functional-test.io`;
+        const anotherEmail = `${uuid.v4()}@tanker.io`;
         const verificationCode = await appHelper.getVerificationCode(anotherEmail);
         await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
       });

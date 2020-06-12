@@ -8,7 +8,7 @@ import { fakeAuthUrl } from './helpers';
 import type { TestArgs } from './helpers';
 
 export const generateFakeAuthenticationTests = (args: TestArgs) => {
-  const makeTestEmail = () => `${uuid.v4()}@example.com`;
+  const makeTestEmail = () => `${uuid.v4()}@tanker.io`;
 
   const expectMatchingPublicIdentities = (identityA: string, identityB: string) => expect(
     _deserializePublicIdentity(identityA),

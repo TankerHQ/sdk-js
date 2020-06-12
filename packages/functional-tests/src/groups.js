@@ -135,7 +135,7 @@ export const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('share keys with original provisional group members', async () => {
-      const provisionalEmail = `${uuid.v4()}@tanker-functional-test.io`;
+      const provisionalEmail = `${uuid.v4()}@tanker.io`;
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), provisionalEmail);
       const provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
 
@@ -150,7 +150,7 @@ export const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('share keys with added provisional group members', async () => {
-      const provisionalEmail = `${uuid.v4()}@tanker-functional-test.io`;
+      const provisionalEmail = `${uuid.v4()}@tanker.io`;
       const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), provisionalEmail);
       const provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
 
