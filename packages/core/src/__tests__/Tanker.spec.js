@@ -37,15 +37,15 @@ describe('Tanker', () => {
     badVerifications = [
       undefined,
       null,
-      'valid@email.com',
+      'valid@tanker.io',
       [],
       {},
       { email: null, verificationCode: '12345678' },
-      { email: ['valid@email.com'], verificationCode: '12345678' },
-      { email: 'valid@email.com', verificationCode: '12345678', extra_invalid_key: 'test' },
+      { email: ['valid@tanker.io'], verificationCode: '12345678' },
+      { email: 'valid@tanker.io', verificationCode: '12345678', extra_invalid_key: 'test' },
       { passphrase: 12 },
       { passphrase: new Uint8Array(12) },
-      { email: 'valid@email.com', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
+      { email: 'valid@tanker.io', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
     ];
   });
 

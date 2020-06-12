@@ -9,7 +9,7 @@ import { Tanker } from '../Tanker';
 const contextHolder = makeContextHolder();
 const defaultProps = {
   appId: '1234',
-  email: 'a@a.aa',
+  email: 'a@tanker.io',
   url: 'https://thisisatest.test',
   check: () => new Promise(resolve => resolve()),
   exit: () => {},
