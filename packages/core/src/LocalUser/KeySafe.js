@@ -20,6 +20,7 @@ export type KeySafe = {|
   provisionalUserKeys: IndexedProvisionalUserKeyPairs,
   devices: Array<Device>,
   deviceId: ?b64string,
+  deviceInitialized: bool,
   trustchainPublicKey: ?b64string,
   localUserKeys: ?LocalUserKeys,
 |};
@@ -58,6 +59,7 @@ async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<O
 export function generateKeySafe(): KeySafe {
   return {
     deviceId: null,
+    deviceInitialized: false,
     signaturePair: tcrypto.makeSignKeyPair(),
     encryptionPair: tcrypto.makeEncryptionKeyPair(),
     provisionalUserKeys: {},
@@ -90,6 +92,11 @@ export async function deserializeKeySafe(serializedSafe: b64string, userSecret: 
   } else if (!safe.provisionalUserKeys) {
     // Add an empty default for devices created before SDK v2.0.0
     safe.provisionalUserKeys = {};
+  }
+
+  // Migrate devices created before SDK v2.4.1
+  if (!('deviceInitialized' in safe)) {
+    safe.deviceInitialized = !!safe.deviceId;
   }
 
   // Validation of keys

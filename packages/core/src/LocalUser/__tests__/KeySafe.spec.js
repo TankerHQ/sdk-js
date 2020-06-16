@@ -16,6 +16,7 @@ describe('KeySafe', () => {
 
   it('should create a new valid safe when asked to', () => {
     expect(safe.deviceId).to.equal(null);
+    expect(safe.deviceInitialized).to.equal(false);
     expect(safe.encryptionPair.privateKey).to.be.an.instanceof(Uint8Array);
     expect(safe.encryptionPair.publicKey).to.be.an.instanceof(Uint8Array);
     expect(safe.signaturePair.privateKey).to.be.an.instanceof(Uint8Array);

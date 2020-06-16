@@ -52,6 +52,7 @@ describe('KeyStore', () => {
       currentUserKey: tcrypto.makeEncryptionKeyPair(),
       devices: [fakeDevice, fakeDevice],
       deviceId: random(tcrypto.HASH_SIZE),
+      deviceInitialized: true,
       trustchainPublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
     };
     await keystore.save(localData, secret);
@@ -75,6 +76,7 @@ describe('KeyStore', () => {
       currentUserKey: tcrypto.makeEncryptionKeyPair(),
       devices: [fakeDevice, fakeDevice],
       deviceId: random(tcrypto.HASH_SIZE),
+      deviceInitialized: true,
       trustchainPublicKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
     };
     await keystore.save(localData, secret);

@@ -31,6 +31,7 @@ export class LocalUser extends EventEmitter {
   _devices: Array<Device>
 
   _deviceId: ?Uint8Array;
+  _deviceInitialized: bool;
   _trustchainPublicKey: ?Uint8Array;
 
   constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, localData: LocalData) {
@@ -46,6 +47,7 @@ export class LocalUser extends EventEmitter {
     this._currentUserKey = localData.currentUserKey;
     this._trustchainPublicKey = localData.trustchainPublicKey;
     this._deviceId = localData.deviceId;
+    this._deviceInitialized = localData.deviceInitialized;
     this._devices = localData.devices;
   }
 
@@ -57,6 +59,7 @@ export class LocalUser extends EventEmitter {
       currentUserKey: this._currentUserKey,
       trustchainPublicKey: this._trustchainPublicKey,
       deviceId: this._deviceId,
+      deviceInitialized: this._deviceInitialized,
       devices: this._devices,
     };
   }
@@ -76,11 +79,14 @@ export class LocalUser extends EventEmitter {
     }
     return this._deviceId;
   }
+  set deviceId(value: Uint8Array) {
+    this._deviceId = value;
+  }
   get trustchainId(): Uint8Array {
     return this._trustchainId;
   }
   get isInitialized(): bool {
-    return !!this._trustchainPublicKey && !!this._deviceId;
+    return !!this._trustchainPublicKey && this._deviceInitialized;
   }
   get trustchainPublicKey(): Uint8Array {
     if (!this._trustchainPublicKey) {
@@ -170,6 +176,7 @@ export class LocalUser extends EventEmitter {
     this._userKeys = localUserKeys.userKeys;
     this._currentUserKey = localUserKeys.currentUserKey;
     this._deviceId = deviceId;
+    this._deviceInitialized = true;
     this._devices = user.devices;
   }
 

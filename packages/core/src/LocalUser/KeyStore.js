@@ -15,6 +15,7 @@ export type LocalData = {|
   userKeys: { [string]: tcrypto.SodiumKeyPair };
   currentUserKey: ?tcrypto.SodiumKeyPair;
   deviceId: ?Uint8Array,
+  deviceInitialized: bool,
   trustchainPublicKey: ?Uint8Array,
   devices: Array<Device>,
 |};
@@ -50,13 +51,14 @@ export default class KeyStore {
   }
 
   get localData(): LocalData {
-    const { signaturePair, encryptionPair, localUserKeys, deviceId, trustchainPublicKey, devices } = this._safe;
+    const { signaturePair, encryptionPair, localUserKeys, deviceId, deviceInitialized, trustchainPublicKey, devices } = this._safe;
     return {
       deviceSignatureKeyPair: signaturePair,
       deviceEncryptionKeyPair: encryptionPair,
       userKeys: localUserKeys ? localUserKeys.userKeys : {},
       currentUserKey: localUserKeys ? localUserKeys.currentUserKey : null,
       deviceId: deviceId ? utils.fromBase64(deviceId) : null,
+      deviceInitialized,
       trustchainPublicKey: trustchainPublicKey ? utils.fromBase64(trustchainPublicKey) : null,
       devices,
     };
@@ -66,8 +68,9 @@ export default class KeyStore {
     if (localData.currentUserKey)
       this._safe.localUserKeys = { userKeys: localData.userKeys, currentUserKey: localData.currentUserKey };
     this._safe.deviceId = localData.deviceId ? utils.toBase64(localData.deviceId) : null;
-    this._safe.trustchainPublicKey = localData.trustchainPublicKey ? utils.toBase64(localData.trustchainPublicKey) : null;
+    this._safe.deviceInitialized = localData.deviceInitialized;
     this._safe.devices = localData.devices;
+    this._safe.trustchainPublicKey = localData.trustchainPublicKey ? utils.toBase64(localData.trustchainPublicKey) : null;
     return this._saveSafe(userSecret);
   }
 
@@ -90,6 +93,7 @@ export default class KeyStore {
   clearCache(userSecret: Uint8Array): Promise<void> {
     delete this._safe.deviceId;
     delete this._safe.trustchainPublicKey;
+    this._safe.deviceInitialized = false;
     this._safe.provisionalUserKeys = {};
     return this._saveSafe(userSecret);
   }
