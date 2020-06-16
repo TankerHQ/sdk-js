@@ -84,21 +84,15 @@ export async function deserializeKeySafe(serializedSafe: b64string, userSecret: 
     throw new InternalError('Invalid key safe');
   }
 
-  // Migrations
-  if (safe.provisionalUserKeys instanceof Array) {
-    // Format migration for device created with SDKs in the v2.0.0-alpha series:
-    for (const puk of safe.provisionalUserKeys) {
-      safe.provisionalUserKeys[puk.id] = puk;
-    }
-    upgraded = true;
-  } else if (!safe.provisionalUserKeys) {
+  // Format upgrades
+  if (!safe.provisionalUserKeys || safe.provisionalUserKeys instanceof Array) {
     // Add an empty default for devices created before SDK v2.0.0
     safe.provisionalUserKeys = {};
     upgraded = true;
   }
 
-  // Migrate devices created before SDK v2.4.1
   if (!('deviceInitialized' in safe)) {
+    // Migrate devices created before SDK v2.4.1
     safe.deviceInitialized = !!safe.deviceId;
     upgraded = true;
   }
