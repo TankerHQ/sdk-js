@@ -121,6 +121,7 @@ export default class KeyStore {
   async initData(userSecret: Uint8Array): Promise<void> {
     let record: Object;
     let safe: ?KeySafe;
+    let upgraded: bool = false;
 
     // Try to get safe from the storage, might not exist yet
     try {
@@ -136,7 +137,7 @@ export default class KeyStore {
     // Try to deserialize the safe
     try {
       if (record) {
-        safe = await deserializeKeySafe(record.encryptedSafe, userSecret);
+        ({ safe, upgraded } = await deserializeKeySafe(record.encryptedSafe, userSecret));
       }
     } catch (e) {
       // Log unexpected error. That said, there's not much that can be done...
@@ -155,5 +156,10 @@ export default class KeyStore {
 
     // Read-only (non writable, non enumerable, non reconfigurable)
     Object.defineProperty(this, '_safe', { value: safe });
+
+    // If the format of the safe has changed, save the upgraded version
+    if (upgraded) {
+      await this._saveSafe(userSecret);
+    }
   }
 }
