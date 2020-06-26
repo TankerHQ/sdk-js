@@ -39,6 +39,13 @@ const customLaunchers = {
     os: 'Windows',
     os_version: '10',
   },
+  Edge18Windows10: {
+    base: 'BrowserStack',
+    browser: 'Edge',
+    browserVersion: '18.0',
+    os: 'Windows',
+    os_version: '10',
+  },
   IeWindows7: {
     base: 'BrowserStack',
     browser: 'IE',
@@ -93,12 +100,12 @@ const customLaunchers = {
     os: 'ios',
     os_version: '10.0',
   },
-  Android9: {
+  Android10: {
     base: 'BrowserStack',
-    device: 'Samsung Galaxy S10',
+    device: 'Samsung Galaxy S20',
     real_mobile: 'true',
     os: 'Android',
-    os_version: '9.0',
+    os_version: '10.0',
   },
   Android8: {
     base: 'BrowserStack',
@@ -107,12 +114,12 @@ const customLaunchers = {
     os: 'Android',
     os_version: '8.0',
   },
-  Android5: {
+  Android6: {
     base: 'BrowserStack',
-    device: 'Samsung Galaxy S6',
+    device: 'Samsung Galaxy S7',
     real_mobile: 'true',
     os: 'Android',
-    os_version: '5.0',
+    os_version: '6.0',
   },
 };
 
