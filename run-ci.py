@@ -42,7 +42,7 @@ def kill_windows_process_if_running(name: str) -> None:
 
 
 def kill_windows_processes() -> None:
-    kill_windows_process_if_running("MicrosoftEdge.exe")
+    kill_windows_process_if_running("msedge.exe")
     kill_windows_process_if_running("iexplore.exe")
     kill_windows_process_if_running("dllhost.exe")
 
@@ -57,23 +57,6 @@ def onerror(navigator: str) -> Callable[..., None]:
         Path(path).rmtree(ignore_errors=True)
 
     return fcn
-
-
-def delete_edge_state() -> None:
-    kill_windows_processes()
-    localappdata = os.environ.get("LOCALAPPDATA")
-    edge_path = Path(
-        r"%s\Packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe" % localappdata
-    )  # noqa
-    edge_ac_path = edge_path.joinpath("AC")
-    user_default_path = edge_ac_path.joinpath(r"MicrosoftEdge\User\Default")
-
-    targets = edge_ac_path.glob("#!*")
-    targets.append(edge_path.joinpath(r"AppData"))
-    targets.append(user_default_path.joinpath(r"Recovery\Active"))
-    targets.append(user_default_path.joinpath("DataStore"))
-    for target in targets:
-        target.rmtree(onerror=onerror("Edge"))
 
 
 def delete_ie_state() -> None:
@@ -130,8 +113,8 @@ def run_tests_in_browser(*, runner: str) -> None:
         delete_safari_state()
         ci.js.run_yarn("karma", "--browsers", "Safari")
     elif runner == "windows-edge":
-        delete_edge_state()
-        ci.js.run_yarn("karma", "--browsers", "Edge")
+        kill_windows_processes()
+        ci.js.run_yarn("karma", "--browsers", "EdgeHeadless")
     elif runner == "windows-ie":
         delete_ie_state()
         ci.js.run_yarn("karma", "--browsers", "IE")
