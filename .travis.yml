@@ -19,8 +19,15 @@ jobs:
     - name: "Node 10 on Linux"
       node_js: 10
       script: yarn test
+    - name: "Node 14 on Linux"
+      node_js: 14
+      script: yarn test
     - name: "Node 10 on macOS"
       node_js: 10
+      os: osx
+      script: yarn test
+    - name: "Node 14 on macOS"
+      node_js: 14
       os: osx
       script: yarn test
     - name: "Latest Chrome on Windows 10"
@@ -29,6 +36,8 @@ jobs:
       script: yarn karma --browsers Chrome70Windows7
     - name: "Latest Edge"
       script: yarn karma --browsers EdgeWindows10
+    - name: "Legacy Edge 18"
+      script: yarn karma --browsers Edge18Windows10
     - name: "Latest Firefox on Windows 10"
       script: yarn karma --browsers FirefoxWindows10
     - name: "Firefox 64 on Windows 8.1"
@@ -37,10 +46,10 @@ jobs:
       script: yarn karma --browsers ChomeOSX
     - name: "Firefox on macOS"
       script: yarn karma --browsers FirefoxOSX
-    - name: "Chrome Android 9"
-      script: yarn karma --browsers Android9
-    - name: "Chrome Android 5"
-      script: yarn karma --browsers Android5
+    - name: "Chrome Android 10"
+      script: yarn karma --browsers Android10
+    - name: "Chrome Android 6"
+      script: yarn karma --browsers Android6
     - name: "Safari iOS 12"
       script: yarn karma --browsers iOS12
   allow_failures:
