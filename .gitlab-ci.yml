@@ -44,8 +44,6 @@ check/macos:
 
 check/windows/edge:
   extends: .check/windows
-  tags:
-    - WindowsSlave-2
   script:
     - poetry run python run-ci.py check --runner windows-edge
 
