@@ -79,6 +79,11 @@ export class LocalUserManager extends EventEmitter {
     await sendSetVerificationMethod(this._client, this._localUser, verification);
   }
 
+  saveDeviceId = async (deviceId: Uint8Array) => {
+    this._localUser.deviceId = deviceId;
+    await this._keyStore.save(this._localUser.localData, this._localUser.userSecret);
+  }
+
   createUser = async (verification: Verification): Promise<void> => {
     let ghostDeviceKeys;
     if (verification.verificationKey) {
@@ -96,9 +101,10 @@ export class LocalUserManager extends EventEmitter {
     }
 
     const { trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair } = this._localUser;
-    const { userCreationBlock, firstDeviceBlock, ghostDevice } = generateUserCreation(trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair, ghostDeviceKeys, this._delegationToken);
+    const { userCreationBlock, firstDeviceBlock, firstDeviceId, ghostDevice } = generateUserCreation(trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair, ghostDeviceKeys, this._delegationToken);
     const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._localUser.userSecret);
 
+    await this.saveDeviceId(firstDeviceId);
     await sendUserCreation(this._client, this._localUser, userCreationBlock, firstDeviceBlock, verification, encryptedUnlockKey);
     await this.authenticate();
   }
@@ -111,11 +117,12 @@ export class LocalUserManager extends EventEmitter {
       const { trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair } = this._localUser;
       const encryptedUserKey = await getLastUserKey(this._client, trustchainId, ghostDevice);
       const userKey = decryptUserKeyForGhostDevice(ghostDevice, encryptedUserKey);
-      const newDeviceBlock = await generateDeviceFromGhostDevice(
+      const newDevice = await generateDeviceFromGhostDevice(
         trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair,
         ghostDevice, encryptedUserKey.deviceId, userKey
       );
-      await this._client.send('create device', newDeviceBlock, true);
+      await this.saveDeviceId(newDevice.hash);
+      await this._client.send('create device', newDevice.block, true);
     } catch (e) {
       if (e instanceof TankerError) {
         throw e;

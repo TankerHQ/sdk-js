@@ -20,6 +20,7 @@ export type KeySafe = {|
   provisionalUserKeys: IndexedProvisionalUserKeyPairs,
   devices: Array<Device>,
   deviceId: ?b64string,
+  deviceInitialized: bool,
   trustchainPublicKey: ?b64string,
   localUserKeys: ?LocalUserKeys,
 |};
@@ -58,6 +59,7 @@ async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<O
 export function generateKeySafe(): KeySafe {
   return {
     deviceId: null,
+    deviceInitialized: false,
     signaturePair: tcrypto.makeSignKeyPair(),
     encryptionPair: tcrypto.makeEncryptionKeyPair(),
     provisionalUserKeys: {},
@@ -72,24 +74,27 @@ export async function serializeKeySafe(keySafe: KeySafe, userSecret: Uint8Array)
   return utils.toBase64(encrypted);
 }
 
-export async function deserializeKeySafe(serializedSafe: b64string, userSecret: Uint8Array): Promise<KeySafe> {
+export async function deserializeKeySafe(serializedSafe: b64string, userSecret: Uint8Array): Promise<$Exact<{ safe: KeySafe, upgraded: bool }>> {
   const encryptedSafe = utils.fromBase64(serializedSafe);
   const safe = await decryptObject(userSecret, encryptedSafe);
+  let upgraded = false;
 
   // Validation
   if (!safe || typeof safe !== 'object') {
     throw new InternalError('Invalid key safe');
   }
 
-  // Migrations
-  if (safe.provisionalUserKeys instanceof Array) {
-    // Format migration for device created with SDKs in the v2.0.0-alpha series:
-    for (const puk of safe.provisionalUserKeys) {
-      safe.provisionalUserKeys[puk.id] = puk;
-    }
-  } else if (!safe.provisionalUserKeys) {
+  // Format upgrades
+  if (!safe.provisionalUserKeys || safe.provisionalUserKeys instanceof Array) {
     // Add an empty default for devices created before SDK v2.0.0
     safe.provisionalUserKeys = {};
+    upgraded = true;
+  }
+
+  if (!('deviceInitialized' in safe)) {
+    // Migrate devices created before SDK v2.4.1
+    safe.deviceInitialized = !!safe.deviceId;
+    upgraded = true;
   }
 
   // Validation of keys
@@ -97,5 +102,5 @@ export async function deserializeKeySafe(serializedSafe: b64string, userSecret: 
     throw new InternalError('Invalid key safe');
   }
 
-  return safe;
+  return { safe, upgraded };
 }

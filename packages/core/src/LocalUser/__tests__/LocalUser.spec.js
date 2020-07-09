@@ -63,6 +63,7 @@ describe('Local User', () => {
       currentUserKey: null,
       devices: [],
       deviceId: null,
+      deviceInitialized: false,
       trustchainPublicKey: null
     };
     localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
@@ -102,6 +103,7 @@ describe('Local User', () => {
         currentUserKey: null,
         devices: [],
         deviceId: null,
+        deviceInitialized: false,
         trustchainPublicKey: null,
       };
       localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
