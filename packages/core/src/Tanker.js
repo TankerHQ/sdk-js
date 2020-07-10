@@ -16,8 +16,8 @@ import { extractUserData } from './LocalUser/UserData';
 import { assertStatus, statusDefs, statuses, type Status } from './Session/status';
 import { Session } from './Session/Session';
 
-import type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
-import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
+import type { OutputOptions, ProgressOptions, EncryptionOptions, SharingOptions } from './DataProtection/options';
+import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractEncryptionOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
 import EncryptorStream from './DataProtection/EncryptorStream';
 import DecryptorStream from './DataProtection/DecryptorStream';
 import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/types';
@@ -359,12 +359,12 @@ export class Tanker extends EventEmitter {
     return this.session.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async makeEncryptorStream(options: SharingOptions = {}): Promise<EncryptorStream> {
+  async makeEncryptorStream(options: EncryptionOptions = {}): Promise<EncryptorStream> {
     assertStatus(this.status, statuses.READY, 'make a stream encryptor');
 
-    const sharingOptions = extractSharingOptions(options);
+    const encryptionOptions = extractEncryptionOptions(options);
 
-    return this.session.makeEncryptorStream(sharingOptions);
+    return this.session.makeEncryptorStream(encryptionOptions);
   }
 
   async makeDecryptorStream(): Promise<DecryptorStream> {
@@ -373,18 +373,18 @@ export class Tanker extends EventEmitter {
     return this.session.makeDecryptorStream();
   }
 
-  async encryptData<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encryptData<T: Data>(clearData: Data, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertStatus(this.status, statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
     const progressOptions = extractProgressOptions(options);
-    const sharingOptions = extractSharingOptions(options);
+    const encryptionOptions = extractEncryptionOptions(options);
 
-    return this.session.encryptData(clearData, sharingOptions, outputOptions, progressOptions);
+    return this.session.encryptData(clearData, encryptionOptions, outputOptions, progressOptions);
   }
 
-  async encrypt<T: Data>(plain: string, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
+  async encrypt<T: Data>(plain: string, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
     assertStatus(this.status, statuses.READY, 'encrypt');
 
     if (typeof plain !== 'string')
@@ -408,15 +408,15 @@ export class Tanker extends EventEmitter {
     return utils.toString(await this.decryptData(cipher, { ...progressOptions, type: Uint8Array }));
   }
 
-  async upload<T: Data>(clearData: Data, options?: $Shape<SharingOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<string> {
+  async upload<T: Data>(clearData: Data, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<string> {
     assertStatus(this.status, statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
     const progressOptions = extractProgressOptions(options);
-    const sharingOptions = extractSharingOptions(options);
+    const encryptionOptions = extractEncryptionOptions(options);
 
-    return this.session.upload(clearData, sharingOptions, outputOptions, progressOptions);
+    return this.session.upload(clearData, encryptionOptions, outputOptions, progressOptions);
   }
 
   async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
@@ -435,12 +435,12 @@ export class Tanker extends EventEmitter {
     return this.session.download(resourceId, outputOptions, progressOptions);
   }
 
-  async createEncryptionSession(options: SharingOptions = {}): Promise<EncryptionSession> {
+  async createEncryptionSession(options: EncryptionOptions = {}): Promise<EncryptionSession> {
     assertStatus(this.status, statuses.READY, 'create an encryption session');
 
-    const sharingOptions = extractSharingOptions(options);
+    const encryptionOptions = extractEncryptionOptions(options);
 
-    return this.session.createEncryptionSession(sharingOptions);
+    return this.session.createEncryptionSession(encryptionOptions);
   }
 }
 

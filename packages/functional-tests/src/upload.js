@@ -103,6 +103,19 @@ export const generateUploadTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
 
+        it('can upload a file and not share with self', async () => {
+          const { type: originalType, resource: clear } = args.resources.small[2];
+
+          const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity], shareWithSelf: false });
+
+          await expect(aliceLaptop.download(fileId)).to.be.rejectedWith(errors.InvalidArgument);
+
+          const decrypted = await bobLaptop.download(fileId);
+
+          expectType(decrypted, originalType);
+          expectDeepEqual(decrypted, clear);
+        });
+
         it('can share a file after upload', async () => {
           const { type: originalType, resource: clear } = args.resources.small[2];
 

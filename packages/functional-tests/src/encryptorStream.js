@@ -1,6 +1,7 @@
 // @flow
 import { errors } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
+import { utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
@@ -103,6 +104,22 @@ export const generateEncryptorStreamTests = (args: TestArgs) => {
 
         const decryptedData = await watchPromise;
         expect(decryptedData).to.deep.equal([smallClearData]);
+      });
+
+      it('shares a streamed resource but not with self', async () => {
+        const encryptor = await aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity], shareWithSelf: false });
+
+        const watchPromise = watchStream(encryptor);
+
+        encryptor.write(smallClearData);
+        encryptor.end();
+
+        const encryptedData = utils.concatArrays(...(await watchPromise));
+
+        await expect(aliceLaptop.decrypt(encryptedData)).to.be.rejectedWith(errors.InvalidArgument);
+
+        const decryptedData = await bobLaptop.decryptData(encryptedData);
+        expect(decryptedData).to.deep.equal(smallClearData);
       });
 
       it('can postpone share', async () => {

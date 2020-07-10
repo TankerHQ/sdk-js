@@ -13,7 +13,7 @@ import type { Resource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
-import type { OutputOptions, ProgressOptions, SharingOptions } from '../DataProtection/options';
+import type { OutputOptions, ProgressOptions, EncryptionOptions } from '../DataProtection/options';
 
 const pipeStreams = (
   { streams, resolveEvent }: { streams: Array<Readable | Writable>, resolveEvent: string }
@@ -51,8 +51,8 @@ export class CloudStorageManager {
     return JSON.parse(jsonMetadata);
   }
 
-  async upload<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<string> {
-    const encryptor = await this._dataProtector.makeEncryptorStream(sharingOptions);
+  async upload<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<string> {
+    const encryptor = await this._dataProtector.makeEncryptorStream(encryptionOptions);
     const { _resourceId: resourceId, _key: key } = encryptor;
     const b64ResourceId = utils.toBase64(resourceId);
 

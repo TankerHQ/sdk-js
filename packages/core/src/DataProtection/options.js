@@ -12,13 +12,13 @@ export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: str
 
 export type ProgressOptions = { onProgress?: OnProgress };
 
+export type EncryptionOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool };
+
 export type SharingOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
 
 export const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
-export const extractSharingOptions = (options: Object): SharingOptions => {
-  const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options);
-
+export const extractSharingOptions = (options: Object, error: any = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options)): SharingOptions => {
   if (!isObject(options))
     throw error;
 
@@ -36,6 +36,28 @@ export const extractSharingOptions = (options: Object): SharingOptions => {
   });
 
   return sharingOptions;
+};
+
+export const extractEncryptionOptions = (options: Object): EncryptionOptions => {
+  const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool }', options);
+
+  // $FlowIKnow casting SharingOptions to EncryptionOptions is safe
+  const encryptionOptions: EncryptionOptions = extractSharingOptions(options, error);
+
+  if ('shareWithSelf' in options) {
+    if (typeof options.shareWithSelf !== 'boolean')
+      throw error;
+    encryptionOptions.shareWithSelf = options.shareWithSelf;
+  } else {
+    encryptionOptions.shareWithSelf = true;
+  }
+
+  if ((!encryptionOptions.shareWithUsers || !encryptionOptions.shareWithUsers.length)
+    && (!encryptionOptions.shareWithGroups || !encryptionOptions.shareWithGroups.length)
+    && !encryptionOptions.shareWithSelf)
+    throw new InvalidArgument('cannot encrypt and not share with anybody');
+
+  return encryptionOptions;
 };
 
 export const isSharingOptionsEmpty = (opts: SharingOptions): bool => {
