@@ -36,7 +36,6 @@ export const NATURE_KIND = Object.freeze({
 
 export type NatureKind = $Values<typeof NATURE_KIND>;
 
-
 export function preferredNature(kind: NatureKind): Nature {
   switch (kind) {
     case NATURE_KIND.trustchain_creation: return NATURE.trustchain_creation;
@@ -52,7 +51,6 @@ export function preferredNature(kind: NatureKind): Nature {
     default: throw new InternalError(`invalid kind: ${kind}`);
   }
 }
-
 
 export function natureKind(val: Nature): NatureKind {
   switch (val) {

@@ -12,7 +12,6 @@ import { type User } from '../types';
 
 import { NATURE } from '../../Blocks/Nature';
 
-
 function assertFailWithNature(verifyFunc: () => any, nature: string) {
   expect(verifyFunc)
     .to.throw(InvalidBlockError)

@@ -23,7 +23,6 @@ import { InvalidBlockError } from '../errors.internal';
 
 import { NATURE } from '../Blocks/Nature';
 
-
 export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, existingGroup: ?Group) {
   const currentPayload: UserGroupCreationRecord = (entry: any);
 

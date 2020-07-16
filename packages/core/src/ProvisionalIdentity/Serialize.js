@@ -9,7 +9,6 @@ import { type VerificationFields, hashBlock } from '../Blocks/Block';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
 
-
 export type ProvisionalIdentityClaimRecord = {|
   user_id: Uint8Array,
   app_provisional_identity_signature_public_key: Uint8Array,
@@ -84,7 +83,6 @@ export function provisionalIdentityClaimFromBlock(b64Block: string): ClaimEntry 
     device_id: block.author,
   };
 }
-
 
 export const makeProvisionalIdentityClaim = (userId: Uint8Array, deviceId: Uint8Array, userPublicKey: Uint8Array, provisionalUserKeys: ProvisionalUserKeys) => {
   const multiSignedPayload = utils.concatArrays(

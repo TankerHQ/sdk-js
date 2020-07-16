@@ -5,7 +5,6 @@ import { expect } from '@tanker/test-utils';
 import { generichash } from '../hash';
 import { fromString } from '../utils';
 
-
 function fromHex(str: string): Uint8Array {
   if (typeof str !== 'string')
     throw new TypeError('"str" is not a string');

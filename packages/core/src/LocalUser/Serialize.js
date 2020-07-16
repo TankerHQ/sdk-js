@@ -28,7 +28,6 @@ export function unserializeTrustchainCreation(src: Uint8Array): TrustchainCreati
   return { public_signature_key: value };
 }
 
-
 export function trustchainCreationFromBlock(b64Block: string): TrustchainCreationEntry {
   const block = unserializeBlock(utils.fromBase64(b64Block));
   const author = block.author;

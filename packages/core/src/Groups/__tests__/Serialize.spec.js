@@ -16,7 +16,6 @@ import {
   unserializeUserGroupAdditionV2,
 } from '../Serialize';
 
-
 describe('groups blocks', () => {
   it('correctly serializes/deserializes a UserGroupCreation test vector', async () => {
     const userGroupCreation = {

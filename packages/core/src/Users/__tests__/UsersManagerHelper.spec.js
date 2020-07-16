@@ -4,7 +4,6 @@ import { expect } from '@tanker/test-utils';
 
 import { usersFromBlocks } from '../ManagerHelper';
 
-
 import TestGenerator from '../../__tests__/TestGenerator';
 
 describe('UserManagerHelper', () => {

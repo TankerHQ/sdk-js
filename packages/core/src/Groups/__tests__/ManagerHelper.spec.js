@@ -11,7 +11,6 @@ import TestGenerator, { type TestDeviceCreation, type TestUserGroup } from '../.
 import ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
 import LocalUser from '../../LocalUser/LocalUser';
 
-
 function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): ExternalGroup {
   const userGroupCreation: UserGroupCreationRecord = (userGroupEntry: any);
 

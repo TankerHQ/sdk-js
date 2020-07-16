@@ -72,7 +72,6 @@ function serializeUserKeys(userKeys: UserKeys): Uint8Array {
   );
 }
 
-
 export function serializeUserDeviceV3(userDevice: DeviceCreationRecord): Uint8Array {
   if (!utils.equalArray(userDevice.last_reset, new Uint8Array(tcrypto.HASH_SIZE)))
     throw new InternalError('Assertion error: user device last reset must be null');

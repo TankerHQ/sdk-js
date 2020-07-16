@@ -50,7 +50,6 @@ describe('KeyDecryptor', () => {
   let groupManager;
   const provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
 
-
   before(() => {
     const kp = tcrypto.makeEncryptionKeyPair();
     keys = {

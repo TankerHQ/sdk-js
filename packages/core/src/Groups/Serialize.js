@@ -3,7 +3,6 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 import { type PublicProvisionalUser } from '@tanker/identity';
 
-
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
 import { type VerificationFields, hashBlock } from '../Blocks/Block';
@@ -27,7 +26,6 @@ export type ProvisionalGroupEncryptedKeyV2 = {|
     tanker_provisional_user_public_signature_key: Uint8Array,
     encrypted_group_private_encryption_key: Uint8Array,
   |}
-
 
 export type UserGroupCreationRecordV1 = {|
     public_encryption_key: Uint8Array,
@@ -119,7 +117,6 @@ function unserializeGroupEncryptedKeyV1(src: Uint8Array, offset: number) {
     (d, o) => getStaticArray(d, tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE, o, 'encrypted_group_private_encryption_key'),
   ], offset);
 }
-
 
 function unserializeGroupEncryptedKeyV2(src: Uint8Array, offset: number) {
   return unserializeGenericSub(src, [

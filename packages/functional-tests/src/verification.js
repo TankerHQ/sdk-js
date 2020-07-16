@@ -404,7 +404,6 @@ export const generateVerificationTests = (args: TestArgs) => {
         });
       });
 
-
       describe('/verification/email/code HTTP request', () => {
         it('works', async () => {
           const appId = toBase64(args.appHelper.appId);

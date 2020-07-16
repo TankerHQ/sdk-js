@@ -4,7 +4,6 @@ import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
 
-
 export type ResourceIdKeyMapper = {
   findKey: (Uint8Array) => Promise<Key>
 };
