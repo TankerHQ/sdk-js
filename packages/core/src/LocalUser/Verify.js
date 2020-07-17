@@ -9,7 +9,6 @@ import type { TrustchainCreationEntry } from './Serialize';
 
 export const rootBlockAuthor = new Uint8Array(32);
 
-
 function isTrustchainCreation(nature: Nature): bool {
   return natureKind(nature) === NATURE_KIND.trustchain_creation;
 }

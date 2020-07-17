@@ -122,7 +122,6 @@ export const generateRevocationTests = (args: TestArgs) => {
       await aliceLaptop.start(aliceIdentity);
       await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-
       await bobLaptop.revokeDevice(bobPhone.deviceId);
 
       const message = 'I love you';

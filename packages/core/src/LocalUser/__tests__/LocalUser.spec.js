@@ -75,7 +75,6 @@ describe('Local User', () => {
     expect(localUser.trustchainPublicKey).to.deep.equal(trustchainCreation.trustchainKeys.publicKey);
   });
 
-
   it('decrypts and adds user keys', async () => {
     await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block]);
     const { userKeys, currentUserKey } = localUserKeysFromTestUser(deviceCreation2.testUser);

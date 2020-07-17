@@ -5,7 +5,6 @@ import { expect } from '@tanker/test-utils';
 
 import { serializeTrustchainCreation, unserializeTrustchainCreation } from '../Serialize';
 
-
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
 describe('TrustchainCreation test vectors', () => {
@@ -30,7 +29,6 @@ describe('TrustchainCreation', () => {
     };
     expect(() => serializeTrustchainCreation(trustchainCreation)).to.throw();
   });
-
 
   it('should serialize/unserialize a TrustchainCreation', async () => {
     const trustchainCreation = {

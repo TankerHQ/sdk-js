@@ -116,7 +116,6 @@ export const generateUserCreation = (
   };
 };
 
-
 const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKeyPair): UserKeys => {
   const newUserKeyPair = tcrypto.makeEncryptionKeyPair();
 

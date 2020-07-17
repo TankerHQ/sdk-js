@@ -27,7 +27,6 @@ import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocati
 
 import { type DelegationToken } from '../LocalUser/UserData';
 
-
 export type TestDevice = {
   id: Uint8Array,
   signKeys: tcrypto.SodiumKeyPair,
