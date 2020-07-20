@@ -44,7 +44,6 @@ class UserV2 extends BaseUser {
     this._identity = identity;
   }
 
-
   async start() {
     const status = await this._tanker.start(this._identity);
     if (status === this._tanker.constructor.statuses.IDENTITY_VERIFICATION_NEEDED) {
