@@ -9,15 +9,16 @@ import { assertStatus, statuses, type Status } from '../Session/status';
 import type { OutputOptions, ProgressOptions } from './options';
 import { extractOutputOptions, extractProgressOptions } from './options';
 import type { DataProtector } from './DataProtector';
+import type { Resource } from './types';
 
 export class EncryptionSession {
   _dataProtector: DataProtector;
-  _b64ResourceId: b64string;
+  _resource: Resource;
   _status: Status;
 
-  constructor(dataProtector: DataProtector, resourceId: b64string) {
+  constructor(dataProtector: DataProtector, resource: Resource) {
     this._dataProtector = dataProtector;
-    this._b64ResourceId = resourceId;
+    this._resource = resource;
     this._status = statuses.READY;
   }
 
@@ -26,7 +27,7 @@ export class EncryptionSession {
   }
 
   get resourceId(): b64string {
-    return this._b64ResourceId;
+    return utils.toBase64(this._resource.resourceId);
   }
 
   async encrypt<T: Data>(clearText: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
@@ -43,6 +44,6 @@ export class EncryptionSession {
     const outputOptions = extractOutputOptions(options, clearData);
     const progressOptions = extractProgressOptions(options);
 
-    return this._dataProtector.encryptData(clearData, {}, outputOptions, progressOptions, this._b64ResourceId);
+    return this._dataProtector.encryptData(clearData, {}, outputOptions, progressOptions, this._resource);
   }
 }
