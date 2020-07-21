@@ -70,7 +70,7 @@ class FileReader {
 
     this._readPositions = { start, end };
 
-    // $FlowIKnow cross-browser compat
+    // $FlowIgnore cross-browser compat
     const blobSlice = Blob.prototype.slice || Blob.prototype.mozSlice || Blob.prototype.webkitSlice;
 
     return new Promise((resolve, reject) => {

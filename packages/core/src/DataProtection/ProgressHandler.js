@@ -10,7 +10,7 @@ export class ProgressHandler {
   _totalBytes: ?number;
 
   constructor(options: { onProgress?: OnProgress } = {}) {
-    // $FlowIKnow Use of Object.prototype
+    // $FlowIgnore Use of Object.prototype
     if (!options || typeof options !== 'object' || Object.getPrototypeOf(options) !== Object.prototype)
       throw new InvalidArgument('options', 'object', options);
 

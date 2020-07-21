@@ -26,7 +26,7 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
     });
 
     it('handles invalid app id type', async () => {
-      // $FlowIKnow the point of the test is to check the error when the type is wrong
+      // $FlowIgnore the point of the test is to check the error when the type is wrong
       expect(() => new FakeAuthentication({ appId: 42, url: fakeAuthUrl })).to.throw();
       expect(() => new FakeAuthentication({ url: fakeAuthUrl })).to.throw();
     });

@@ -7,10 +7,5 @@ src/flow
 module.file_ext=.js
 munge_underscores=false
 
-suppress_comment=\\(.\\|\n\\)*\\$FlowFixMe\\($\\|[^(]\\|(\\(>=0\\.\\(5[0-3]\\|[1-4][0-9]\\|[0-9]\\).[0-9]\\)? *\\(site=[a-z,_]*react_native[a-z,_]*\\)?)\\)
-suppress_comment=\\(.\\|\n\\)*\\$FlowIssue
-suppress_comment=\\(.\\|\n\\)*\\$FlowExpectedError
-suppress_comment=\\(.\\|\n\\)*\\$FlowIKnow
-
 [ignore]
 <PROJECT_ROOT>/ci/compat/.*

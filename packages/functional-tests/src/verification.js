@@ -37,7 +37,7 @@ const expectVerificationToMatchMethod = (verification: Verification, method: Ver
   expect(type in verification).to.be.true;
 
   if (type === 'email') {
-    // $FlowIKnow I tested the 'email' type already
+    // $FlowIgnore I tested the 'email' type already
     expect(email).to.equal(verification.email);
   }
 };

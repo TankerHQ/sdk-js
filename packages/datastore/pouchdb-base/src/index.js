@@ -43,7 +43,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
 
     try {
       await this.parallelEachDb(db => db.close());
-      // $FlowIKnow
+      // $FlowIgnore
       this._dbs = null;
     } catch (error) {
       console.error(`Error when closing ${this.className}: `, error);
@@ -56,7 +56,7 @@ export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase impleme
       return;
 
     await this.parallelEachDb(db => db.destroy());
-    // $FlowIKnow
+    // $FlowIgnore
     this._dbs = null;
   }
 

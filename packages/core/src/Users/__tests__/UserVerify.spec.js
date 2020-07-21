@@ -164,7 +164,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a revocation v2 with too many elements in the private_keys field', () => {
-      // $FlowIKnow user_keys is not null
+      // $FlowIgnore user_keys is not null
       unverifiedDeviceRevocation.user_keys.private_keys.push(unverifiedDeviceRevocation.user_keys.private_keys[0]);
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
@@ -173,7 +173,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a revocation v2 with too few elements in the private_keys field', () => {
-      // $FlowIKnow user_keys is not null
+      // $FlowIgnore user_keys is not null
       unverifiedDeviceRevocation.user_keys.private_keys = [];
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
@@ -182,7 +182,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a revocation v2 with an encrypted_keys_for_devices that does not target the users devices', () => {
-      // $FlowIKnow user_keys is not null
+      // $FlowIgnore user_keys is not null
       unverifiedDeviceRevocation.user_keys.private_keys[0].recipient = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
@@ -200,7 +200,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a revocation v2 if previous public user encryption key does not match', () => {
-      // $FlowIKnow user_keys is not null
+      // $FlowIgnore user_keys is not null
       unverifiedDeviceRevocation.user_keys.previous_public_encryption_key = new Uint8Array([1]);
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),

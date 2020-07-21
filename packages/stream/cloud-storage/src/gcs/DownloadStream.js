@@ -92,7 +92,7 @@ export class DownloadStream extends Readable {
             throw new NetworkError(`GCS answered with status 206 but an invalid content-range header: ${header}`);
           }
 
-          this._totalLength = parseInt(header.split('/')[1], 0);
+          this._totalLength = parseInt(header.split('/')[1], 10);
         } else {
           this._totalLength = result.length;
         }

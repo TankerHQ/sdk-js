@@ -69,7 +69,7 @@ export default class GroupStore {
   }
 
   async close(): Promise<void> {
-    // $FlowIKnow
+    // $FlowIgnore
     this._ds = null;
   }
 

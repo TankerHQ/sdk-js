@@ -60,7 +60,7 @@ export const getConstructorName = (constructor: Object): string => {
 export const getDataLength = (value: Data): number => {
   for (const def of dataTypeDefs) {
     if (value instanceof def.type) {
-      // $FlowIKnow we checked for the proper type
+      // $FlowIgnore we checked for the proper type
       return def.lengthOf(value);
     }
   }

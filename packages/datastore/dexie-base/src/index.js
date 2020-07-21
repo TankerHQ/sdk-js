@@ -43,7 +43,7 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
     try {
       this._db.close(); // completes immediately, no promise
       this._db = null;
-      // $FlowIKnow
+      // $FlowIgnore
       this._indexes = null;
     } catch (error) {
       console.error(`Error when closing ${this.className}: `, error);
@@ -57,7 +57,7 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
 
     await this._db.delete();
     this._db = null;
-    // $FlowIKnow
+    // $FlowIgnore
     this._indexes = null;
   }
 
@@ -76,7 +76,7 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
 
     const store = new DexieBrowserStore(db);
 
-    // $FlowIKnow
+    // $FlowIgnore
     await store.defineSchemas(config.schemas);
 
     return store;

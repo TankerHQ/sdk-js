@@ -22,7 +22,7 @@ export default class SlicerStream extends Readable {
   _fileReader: FileReader;
 
   constructor(options: { source: ExternalSource, outputSize?: number }) {
-    // $FlowIKnow Use of Object.prototype
+    // $FlowIgnore Use of Object.prototype
     if (!options || typeof options !== 'object' || Object.getPrototypeOf(options) !== Object.prototype)
       throw new InvalidArgument('options', 'object', options);
 
@@ -73,7 +73,7 @@ export default class SlicerStream extends Readable {
     const { byteSize, byteIndex: startIndex } = this._readingState;
     const endIndex = Math.min(startIndex + this._outputSize, byteSize);
 
-    // $FlowIKnow we know _source is an Uint8Array
+    // $FlowIgnore we know _source is an Uint8Array
     const bytes = this._source.subarray(startIndex, endIndex);
     const pushMore = this.push(bytes);
 

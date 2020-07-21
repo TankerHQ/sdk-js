@@ -108,7 +108,7 @@ export default class KeyStore {
     delete this._safe.trustchainPublicKey;
 
     // Then let GC do its job
-    // $FlowIKnow
+    // $FlowIgnore
     this._ds = null;
   }
 

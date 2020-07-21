@@ -41,7 +41,7 @@ export default () => {
   const PouchDBStore = PouchDBStoreBase(PouchDBNodeBackend());
 
   return class PouchDBNodeStore extends PouchDBStore {
-    // $FlowIKnow: open takes a Config argument but parent method takes a BaseConfig
+    // $FlowIgnore: open takes a Config argument but parent method takes a BaseConfig
     static async open(config: Config): Promise<PouchDBStoreBase> {
       const { dbPath, dbName, ...otherConfig } = config;
       const normalizedPath = normalizePath(dbPath);

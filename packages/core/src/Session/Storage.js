@@ -53,7 +53,7 @@ export default class Storage {
     );
 
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
-    // $FlowIKnow DataStore is a flow interface, which does not support static methods
+    // $FlowIgnore DataStore is a flow interface, which does not support static methods
     this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
     this._schemas = schemas;
 
