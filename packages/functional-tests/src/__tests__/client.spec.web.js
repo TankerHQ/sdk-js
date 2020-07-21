@@ -5,7 +5,7 @@ import FilePonyfill from '@tanker/file-ponyfill';
 import type { b64string } from '@tanker/core';
 
 import type { TestResources } from '../helpers';
-import { tankerUrl, makePrefix, makeRandomUint8Array } from '../helpers';
+import { appdUrl, makePrefix, makeRandomUint8Array } from '../helpers';
 import { generateFunctionalTests } from '..';
 
 const makeTanker = (appId: b64string): Tanker => {
@@ -14,7 +14,7 @@ const makeTanker = (appId: b64string): Tanker => {
     // $FlowIgnore adapter key is passed as a default option by @tanker/client-browser
     dataStore: { prefix: makePrefix() },
     sdkType: 'js-functional-tests-web',
-    url: tankerUrl,
+    url: appdUrl,
   });
 
   return tanker;
