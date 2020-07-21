@@ -7,7 +7,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
-import { requestTrustchaind, requestAdmindWithAuth } from './request';
+import { requestAppd, requestAdmindWithAuth } from './request';
 import { oidcSettings, storageSettings } from './config';
 
 function toUnpaddedSafeBase64(str: Uint8Array): string {
@@ -98,7 +98,7 @@ export class AppHelper {
       email,
       auth_token: this.authToken,
     };
-    const answer = await requestTrustchaind({ method: 'POST', path: '/verification/email/code', body });
+    const answer = await requestAppd({ method: 'POST', path: '/verification/email/code', body });
     if (!answer.verification_code) {
       throw new Error('Invalid response');
     }

@@ -6,8 +6,8 @@ const plugin = new webpack.EnvironmentPlugin([
 
   'TANKER_ID_TOKEN',
   'TANKER_ADMIND_URL',
+  'TANKER_APPD_URL',
   'TANKER_FAKE_AUTH_URL',
-  'TANKER_TRUSTCHAIND_URL',
 
   'TANKER_OIDC_CLIENT_SECRET',
   'TANKER_OIDC_CLIENT_ID',

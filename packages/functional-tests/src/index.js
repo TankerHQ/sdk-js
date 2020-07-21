@@ -3,7 +3,7 @@ import { utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
-import { AppHelper, admindUrl, tankerUrl, idToken, oidcSettings } from './helpers';
+import { AppHelper, admindUrl, appdUrl, idToken, oidcSettings } from './helpers';
 import type { TestArgs, TestResources } from './helpers';
 
 import { generateEncryptorStreamTests } from './encryptorStream';
@@ -23,7 +23,7 @@ export function generateFunctionalTests(
   makeTanker: (appId: b64string) => Tanker,
   generateTestResources: () => TestResources,
 ) {
-  if (!admindUrl || !tankerUrl || !idToken || !oidcSettings) {
+  if (!admindUrl || !appdUrl || !idToken || !oidcSettings) {
     // Those functional tests create an app automatically and require TANKER_* env variables
     // to be set (see the ci repository and env variables set on the Tanker Group on GitLab)
     if (process.env.CI) {
