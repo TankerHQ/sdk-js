@@ -87,7 +87,7 @@
     "karma-webpack": "4.0.2",
     "mocha": "8.0.1",
     "nyc": "15.1.0",
-    "rollup": "2.1.0",
+    "rollup": "2.22.1",
     "rollup-plugin-babel": "4.4.0",
     "rollup-plugin-flow": "1.1.1",
     "rollup-plugin-local-resolve": "1.0.7",
