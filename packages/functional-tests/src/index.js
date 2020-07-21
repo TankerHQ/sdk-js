@@ -24,8 +24,8 @@ export function generateFunctionalTests(
   generateTestResources: () => TestResources,
 ) {
   if (!admindUrl || !tankerUrl || !idToken || !oidcSettings) {
-    // Those functional tests create an app automatically and require a TANKER_CONFIG_NAME
-    // and TANKER_CONFIG_FILEPATH to run
+    // Those functional tests create an app automatically and require TANKER_* env variables
+    // to be set (see the ci repository and env variables set on the Tanker Group on GitLab)
     if (process.env.CI) {
       throw new Error('Functional tests should be running, check the configuration');
     }

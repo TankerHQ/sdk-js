@@ -9,13 +9,8 @@ default:
     - poetry install
     - poetry run python --version
 
-.check:
-  stage: check
-  variables:
-    TANKER_CONFIG_NAME: dev
-
 check/linux:
-  extends: .check
+  stage: check
   except:
     - schedules
   script:
@@ -29,7 +24,7 @@ check/linux:
     - linux
 
 check/macos:
-  extends: .check
+  stage: check
   except:
     - schedules
   script:
@@ -38,7 +33,7 @@ check/macos:
     - macos
 
 .check/windows:
-  extends: .check
+  stage: check
   tags:
     - windows
 
@@ -63,7 +58,7 @@ check/windows/ie/manual:
     - poetry run python run-ci.py check --runner windows-ie
 
 check/linux/nightly:
-  extends: .check
+  stage: check
   only:
     - schedules
   script:
@@ -72,7 +67,7 @@ check/linux/nightly:
     - linux
 
 check/macos/nightly:
-  extends: .check
+  stage: check
   only:
     - schedules
   script:
@@ -129,7 +124,7 @@ pages:
     - linux
 
 check/compat:
-  extends: .check
+  stage: check
   when: manual
   except:
     - master
@@ -139,7 +134,7 @@ check/compat:
     - linux
 
 check/compat/master:
-  extends: .check
+  stage: check
   only:
     - master
   script:
@@ -148,7 +143,7 @@ check/compat/master:
     - linux
 
 check/e2e:
-  extends: .check
+  stage: check
   when: manual
   script:
     - poetry run python run-ci.py e2e
