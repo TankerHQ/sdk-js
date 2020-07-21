@@ -6,7 +6,7 @@ import { expect, uuid } from '@tanker/test-utils';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
 import type { TestArgs } from './helpers';
-import { oidcSettings, tankerUrl } from './helpers';
+import { oidcSettings, appdUrl } from './helpers';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
@@ -405,7 +405,7 @@ export const generateVerificationTests = (args: TestArgs) => {
       describe('/verification/email/code HTTP request', () => {
         it('works', async () => {
           const appId = toBase64(args.appHelper.appId);
-          const url = `${tankerUrl}/verification/email/code`;
+          const url = `${appdUrl}/verification/email/code`;
           const body = {
             email: 'bob@tanker.io',
             app_id: appId,
