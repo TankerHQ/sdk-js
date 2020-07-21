@@ -29,8 +29,6 @@
     "@tanker/stream-base": "0.0.1",
     "@tanker/stream-cloud-storage": "0.0.1",
     "@tanker/types": "0.0.1",
-    "engine.io-client": "git+https://github.com/TankerHQ/engine.io-client.git#2996c2d746d4695742cbc3f8fb47c60d4c5757f7",
-    "socket.io-client": "git+https://github.com/TankerHQ/socket.io-client.git#4f71b8dda24bea5e4949c37fec6b790795615c25",
     "varint": "^5.0.0"
   },
   "devDependencies": {
