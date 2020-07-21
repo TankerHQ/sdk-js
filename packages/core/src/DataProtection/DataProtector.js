@@ -152,7 +152,7 @@ export class DataProtector {
 
     const encryption = extractEncryptionFormat(castEncryptedData);
     const encryptedSize = getDataLength(castEncryptedData);
-    // $FlowIKnow Already checked we are using a simple encryption
+    // $FlowIgnore Already checked we are using a simple encryption
     const clearSize = encryption.getClearSize(encryptedSize);
     const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
 
@@ -162,7 +162,7 @@ export class DataProtector {
     let clearData;
 
     try {
-    // $FlowIKnow Already checked we are using a simple encryption
+    // $FlowIgnore Already checked we are using a simple encryption
       clearData = encryption.decrypt(key, encryption.unserialize(castEncryptedData));
     } catch (error) {
       const b64ResourceId = utils.toBase64(resourceId);

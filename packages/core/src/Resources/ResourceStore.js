@@ -78,7 +78,7 @@ export default class ResourceStore {
     // Erase traces of critical data first
     utils.memzero(this._userSecret);
 
-    // $FlowIKnow
+    // $FlowIgnore
     this._ds = null;
   }
 

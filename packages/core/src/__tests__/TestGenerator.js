@@ -259,17 +259,17 @@ class TestGenerator {
       userKeys: [...parentDevice.testUser.userKeys]
     };
 
-    // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
+    // $FlowIgnore unverifiedDeviceRevocation.user_keys is not null
     const keyForParentDevice = unverifiedDeviceRevocation.user_keys.private_keys.find(key => utils.equalArray(key.recipient, parentDevice.testDevice.id));
     if (keyForParentDevice) {
       testUser.userKeys.push({
-        // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
+        // $FlowIgnore unverifiedDeviceRevocation.user_keys is not null
         publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
         privateKey: tcrypto.sealDecrypt(keyForParentDevice.key, parentDevice.testDevice.encryptionKeys),
       });
     } else {
       testUser.userKeys.push({
-        // $FlowIKnow unverifiedDeviceRevocation.user_keys is not null
+        // $FlowIgnore unverifiedDeviceRevocation.user_keys is not null
         publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
         privateKey: random(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
       });

@@ -43,7 +43,7 @@ const retry = <T>(fn: () => Promise<T> | T, opts: RetryOptions): Promise<T> => {
         throw err;
       }
 
-      // $FlowIKnow done is false, so it's a yielded number (and not an undefined return value)
+      // $FlowIgnore done is false, so it's a yielded number (and not an undefined return value)
       await wait(value);
 
       return doTry();

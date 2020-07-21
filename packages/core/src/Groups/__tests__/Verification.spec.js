@@ -61,7 +61,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a group creation with bad self-signature', async () => {
-      // $FlowIKnow this is a user group creation
+      // $FlowIgnore this is a user group creation
       userGroupEntry.self_signature[0] += 1;
       assertFailWithNature(
         () => verifyUserGroupCreation(userGroupEntry, user.devices[0].devicePublicSignatureKey, null),
@@ -106,7 +106,7 @@ describe('BlockVerification', () => {
     });
 
     it('should reject a group addition with bad self-signature', async () => {
-      // $FlowIKnow this is a user group creation
+      // $FlowIgnore this is a user group creation
       userGroupEntry.self_signature_with_current_key[0] += 1;
       assertFailWithNature(
         () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),

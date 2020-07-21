@@ -58,7 +58,7 @@ describe('Identity', () => {
       expect(identity.ephemeral_private_signature_key).to.equal('jEDT4wQCc1DFwodXNPHFClndTPnFuFmXhBt+isKU4ZpeHeLTENOmvcde0HZDnXtAq/drM3Ncstcx0kNNIfht3g==');
       expect(identity.user_secret).to.equal('7FSf/n0e76QT3s0DkvetRVVJhXZGEjOxj5EWAFexvjI=');
 
-      // $FlowIKnow hidden property
+      // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodPermanentIdentity);
       expect(_serializeIdentity(identity)).to.equal(goodPermanentIdentity);
     });
@@ -74,7 +74,7 @@ describe('Identity', () => {
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
       expect(identity.private_encryption_key).to.equal('4QB5TWmvcBrgeyDDLhULINU6tbqAOEQ8v9pjDkPcybA=');
 
-      // $FlowIKnow hidden property
+      // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodProvisionalIdentity);
       expect(_serializeIdentity(identity)).to.equal(goodProvisionalIdentity);
     });
@@ -86,7 +86,7 @@ describe('Identity', () => {
       expect(identity.target).to.equal('user');
       expect(identity.value).to.equal(obfuscatedUserId);
 
-      // $FlowIKnow hidden property
+      // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodPublicIdentity);
       expect(_serializeIdentity(identity)).to.equal(goodPublicIdentity);
     });
@@ -100,7 +100,7 @@ describe('Identity', () => {
       expect(identity.public_signature_key).to.equal('W7QEQBu9FXcXIpOgq62tPwBiyFAbpT1rAruD0h/NrTA=');
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
 
-      // $FlowIKnow hidden property
+      // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodPublicProvisionalIdentity);
       expect(_serializeIdentity(identity)).to.equal(goodPublicProvisionalIdentity);
     });
@@ -190,7 +190,7 @@ describe('Identity', () => {
 
       const provisionalIdentity = _deserializeProvisionalIdentity(b64Identity);
       const {
-        // $FlowIKnow We know a provisional identity is expected
+        // $FlowIgnore We know a provisional identity is expected
         trustchain_id, target, value, public_signature_key, public_encryption_key, ...trail // eslint-disable-line camelcase
       } = _deserializePublicIdentity(b64PublicIdentity);
 
@@ -247,12 +247,12 @@ describe('Identity', () => {
     });
 
     it('throws when given a secret permanent identity', async () => {
-      // $FlowIKnow testing edge case with permanentIdentity
+      // $FlowIgnore testing edge case with permanentIdentity
       expect(() => _splitProvisionalAndPermanentPublicIdentities([identity, publicProvisionalIdentity])).to.throw(InvalidArgument);
     });
 
     it('throws when given a secret provisional identity', async () => {
-      // $FlowIKnow testing edge case with permanentIdentity
+      // $FlowIgnore testing edge case with permanentIdentity
       expect(() => _splitProvisionalAndPermanentPublicIdentities([publicIdentity, provisionalIdentity])).to.throw(InvalidArgument);
     });
   });
