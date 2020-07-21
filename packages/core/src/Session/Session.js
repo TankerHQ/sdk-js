@@ -39,7 +39,6 @@ export class Session extends EventEmitter {
     this._status = statuses.STOPPED;
 
     this._client.on('error', (e) => this.onError(e));
-    this._client.open().catch((e) => this.onError(e));
 
     this._localUserManager = new LocalUserManager(userData, client, storage.keyStore);
     this._localUserManager.on('error', (e) => this.onError(e));
