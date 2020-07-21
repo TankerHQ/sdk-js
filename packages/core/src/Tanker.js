@@ -28,7 +28,6 @@ import { TANKER_SDK_VERSION } from './version';
 type TankerDefaultOptions = $Exact<{
   appId?: b64string,
   trustchainId?: b64string,
-  socket?: any,
   url?: string,
   dataStore: DataStoreOptions,
   sdkType: string,
@@ -37,7 +36,6 @@ type TankerDefaultOptions = $Exact<{
 type TankerCoreOptions = $Exact<{
   appId?: b64string,
   trustchainId?: b64string,
-  socket?: any,
   url?: string,
   connectTimeout?: number,
   dataStore: DataStoreOptions,
@@ -47,7 +45,6 @@ type TankerCoreOptions = $Exact<{
 export type TankerOptions = $Exact<{
   appId?: b64string,
   trustchainId?: b64string,
-  socket?: any,
   url?: string,
   dataStore?: DataStoreOptions,
   sdkType?: string,
@@ -116,12 +113,11 @@ export class Tanker extends EventEmitter {
 
     const clientOptions: ClientOptions = {
       sdkInfo: {
-        version: Tanker.version,
+        appId: this._trustchainId,
         type: options.sdkType,
-        trustchainId: this._trustchainId,
+        version: Tanker.version,
       }
     };
-    if (options.socket) { clientOptions.socket = options.socket; }
     if (options.url) { clientOptions.url = options.url; }
     if (options.connectTimeout) { clientOptions.connectTimeout = options.connectTimeout; }
     this._clientOptions = clientOptions;
