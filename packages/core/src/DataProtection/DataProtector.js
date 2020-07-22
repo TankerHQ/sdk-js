@@ -23,7 +23,7 @@ import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { type Status } from '../Session/status';
 
-import type { OutputOptions, ProgressOptions, SharingOptions } from './options';
+import type { OutputOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './options';
 import EncryptorStream from './EncryptorStream';
 import DecryptorStream from './DecryptorStream';
 import { ProgressHandler } from './ProgressHandler';
@@ -130,16 +130,18 @@ export class DataProtector {
     return identities;
   }
 
-  async _shareResources(keys: Array<{ resourceId: Uint8Array, key: Uint8Array }>, sharingOptions: SharingOptions, shareWithSelf: bool): Promise<void> {
-    const groupIds = (sharingOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
+  async _shareResources(keys: Array<Resource>, encryptionOptions: EncryptionOptions): Promise<void> {
+    const groupIds = (encryptionOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
     const groupsKeys = await this._groupManager.getGroupsPublicEncryptionKeys(groupIds);
-    const deserializedIdentities = (sharingOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
-    const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, shareWithSelf);
+    const deserializedIdentities = (encryptionOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
+    if (encryptionOptions.shareWithSelf === undefined)
+      throw new InternalError('Assertion error: shareWithSelf must be defined here');
+    const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, encryptionOptions.shareWithSelf);
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesWithSelf);
     const users = await this._userManager.getUsers(permanentIdentities);
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
-    if (shareWithSelf) {
+    if (encryptionOptions.shareWithSelf) {
       const [{ resourceId, key }] = keys;
       await this._resourceManager.saveResourceKey(resourceId, key);
     }
@@ -207,7 +209,7 @@ export class DataProtector {
     return this._simpleDecryptData(encryptedData, outputOptions, progressOptions);
   }
 
-  async _simpleEncryptData<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async _simpleEncryptData<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const encryption = getSimpleEncryption();
 
     const clearSize = getDataLength(clearData);
@@ -218,7 +220,7 @@ export class DataProtector {
     const { key } = makeResource();
     const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData));
     const resourceId = encryption.extractResourceId(encryptedData);
-    await this._shareResources([{ resourceId, key }], sharingOptions, true);
+    await this._shareResources([{ resourceId, key }], encryptionOptions);
     const castEncryptedData = await castData(encryptedData, outputOptions);
 
     progressHandler.report(encryptedSize);
@@ -226,7 +228,7 @@ export class DataProtector {
     return castEncryptedData;
   }
 
-  async _simpleEncryptDataWithResourceId<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, b64ResourceId: b64string): Promise<T> {
+  async _simpleEncryptDataWithResource<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource: Resource): Promise<T> {
     const encryption = getSimpleEncryptionWithFixedResourceId();
 
     const clearSize = getDataLength(clearData);
@@ -234,11 +236,9 @@ export class DataProtector {
     const progressHandler = new ProgressHandler(progressOptions).start(encryptedSize);
 
     const castClearData = await castData(clearData, { type: Uint8Array });
-    if (typeof b64ResourceId !== 'string')
-      throw new InternalError('Assertion error: called _simpleEncryptDataWithResourceId without a resourceId');
-    const resourceId = utils.fromBase64(b64ResourceId);
-    const key = await this._resourceManager.findKeyFromResourceId(resourceId);
-    const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData, resourceId));
+    if (!resource)
+      throw new InternalError('Assertion error: called _simpleEncryptDataWithResource without a resource');
+    const encryptedData = encryption.serialize(encryption.encrypt(resource.key, castClearData, resource.resourceId));
     const castEncryptedData = await castData(encryptedData, outputOptions);
 
     progressHandler.report(encryptedSize);
@@ -246,9 +246,9 @@ export class DataProtector {
     return castEncryptedData;
   }
 
-  async _streamEncryptData<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, b64ResourceId?: b64string): Promise<T> {
+  async _streamEncryptData<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
-    const encryptor = await this.makeEncryptorStream(sharingOptions, b64ResourceId);
+    const encryptor = await this.makeEncryptorStream(encryptionOptions, resource);
 
     const clearSize = getDataLength(clearData);
     const encryptedSize = encryptor.getEncryptedSize(clearSize);
@@ -263,14 +263,14 @@ export class DataProtector {
     });
   }
 
-  async encryptData<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, b64ResourceId?: b64string): Promise<T> {
+  async encryptData<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
     if (getDataLength(clearData) >= STREAM_THRESHOLD)
-      return this._streamEncryptData(clearData, sharingOptions, outputOptions, progressOptions, b64ResourceId);
+      return this._streamEncryptData(clearData, encryptionOptions, outputOptions, progressOptions, resource);
 
-    if (b64ResourceId)
-      return this._simpleEncryptDataWithResourceId(clearData, sharingOptions, outputOptions, progressOptions, b64ResourceId);
+    if (resource)
+      return this._simpleEncryptDataWithResource(clearData, encryptionOptions, outputOptions, progressOptions, resource);
 
-    return this._simpleEncryptData(clearData, sharingOptions, outputOptions, progressOptions);
+    return this._simpleEncryptData(clearData, encryptionOptions, outputOptions, progressOptions);
   }
 
   async share(resourceIds: Array<b64string>, sharingOptions: SharingOptions): Promise<void> {
@@ -280,20 +280,18 @@ export class DataProtector {
       const key = await this._resourceManager.findKeyFromResourceId(resourceId);
       return { resourceId, key };
     }));
-    return this._shareResources(keys, sharingOptions, false);
+    return this._shareResources(keys, { ...sharingOptions, shareWithSelf: false });
   }
 
-  async makeEncryptorStream(sharingOptions: SharingOptions, b64ResourceId?: b64string): Promise<EncryptorStream> {
+  async makeEncryptorStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptorStream> {
     let encryptorStream;
 
-    if (b64ResourceId) {
-      const resourceId = utils.fromBase64(b64ResourceId);
-      const key = await this._resourceManager.findKeyFromResourceId(resourceId);
-      encryptorStream = new EncryptorStream(resourceId, key);
-    } else {
-      const resource = makeResource();
-      await this._shareResources([resource], sharingOptions, true);
+    if (resource) {
       encryptorStream = new EncryptorStream(resource.resourceId, resource.key);
+    } else {
+      const newResource = makeResource();
+      await this._shareResources([newResource], encryptionOptions);
+      encryptorStream = new EncryptorStream(newResource.resourceId, newResource.key);
     }
 
     return encryptorStream;
@@ -306,12 +304,11 @@ export class DataProtector {
     return new DecryptorStream(resourceIdKeyMapper);
   }
 
-  async createEncryptionSession(subscribeToStatusChange: (listener: (status: Status) => void) => void, sharingOptions: SharingOptions): Promise<EncryptionSession> {
-    const { key, resourceId } = makeResource();
-    await this._resourceManager.saveResourceKey(resourceId, key);
-    await this._shareResources([{ key, resourceId }], sharingOptions, true);
+  async createEncryptionSession(subscribeToStatusChange: (listener: (status: Status) => void) => void, encryptionOptions: EncryptionOptions): Promise<EncryptionSession> {
+    const resource = makeResource();
+    await this._shareResources([resource], encryptionOptions);
 
-    const encryptionSession = new EncryptionSession(this, utils.toBase64(resourceId));
+    const encryptionSession = new EncryptionSession(this, resource);
     subscribeToStatusChange((s) => encryptionSession.statusChange(s));
     return encryptionSession;
   }

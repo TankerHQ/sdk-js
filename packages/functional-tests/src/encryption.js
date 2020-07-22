@@ -125,6 +125,17 @@ export const generateEncryptionTests = (args: TestArgs) => {
         expect(decrypted).to.equal(clearText);
       });
 
+      it('encrypt and share with a permanent identity and not self', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity], shareWithSelf: false });
+        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
+        const decrypted = await aliceLaptop.decrypt(encrypted);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('fails to encrypt and not share with anybody', async () => {
+        await expect(bobLaptop.encrypt(clearText, { shareWithSelf: false })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
       it('encrypt and share with a provisional identity', async () => {
         const email = 'alice.test@tanker.io';
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);

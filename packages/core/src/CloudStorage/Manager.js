@@ -9,10 +9,11 @@ import type { Data } from '@tanker/types';
 
 import type { Client } from '../Network/Client';
 import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProtection/types';
+import type { Resource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
-import type { OutputOptions, ProgressOptions, SharingOptions } from '../DataProtection/options';
+import type { OutputOptions, ProgressOptions, EncryptionOptions } from '../DataProtection/options';
 
 const pipeStreams = (
   { streams, resolveEvent }: { streams: Array<Readable | Writable>, resolveEvent: string }
@@ -36,10 +37,10 @@ export class CloudStorageManager {
     this._dataProtector = dataProtector;
   }
 
-  async _encryptAndShareMetadata(metadata: Object, b64ResourceId: b64string): Promise<b64string> {
+  async _encryptAndShareMetadata(metadata: Object, resource: Resource): Promise<b64string> {
     const jsonMetadata = JSON.stringify(metadata);
     const clearMetadata = utils.fromString(jsonMetadata);
-    const encryptedMetadata = await this._dataProtector.encryptData(clearMetadata, {}, { type: Uint8Array }, {}, b64ResourceId);
+    const encryptedMetadata = await this._dataProtector.encryptData(clearMetadata, {}, { type: Uint8Array }, {}, resource);
     return utils.toBase64(encryptedMetadata);
   }
 
@@ -50,9 +51,10 @@ export class CloudStorageManager {
     return JSON.parse(jsonMetadata);
   }
 
-  async upload<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<string> {
-    const encryptor = await this._dataProtector.makeEncryptorStream(sharingOptions);
-    const { resourceId } = encryptor;
+  async upload<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<string> {
+    const encryptor = await this._dataProtector.makeEncryptorStream(encryptionOptions);
+    const { _resourceId: resourceId, _key: key } = encryptor;
+    const b64ResourceId = utils.toBase64(resourceId);
 
     const totalClearSize = getDataLength(clearData);
     const totalEncryptedSize = encryptor.getEncryptedSize(totalClearSize);
@@ -61,7 +63,7 @@ export class CloudStorageManager {
     // clearContentLength shouldn't be used since we may not have that
     // information. We leave it here only for compatibility with SDKs up to 2.2.1
     const metadata = { ...fileMetadata, clearContentLength: totalClearSize, encryptionFormat: getStreamEncryptionFormatDescription() };
-    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, resourceId);
+    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, { resourceId, key });
 
     const {
       urls,
@@ -69,7 +71,7 @@ export class CloudStorageManager {
       service,
       recommended_chunk_size: recommendedChunkSize
     } = await this._client.send('get file upload url', {
-      resource_id: resourceId,
+      resource_id: b64ResourceId,
       metadata: encryptedMetadata,
       upload_content_length: totalEncryptedSize,
     });
@@ -104,7 +106,7 @@ export class CloudStorageManager {
 
     await pipeStreams({ streams, resolveEvent: 'finish' });
 
-    return resourceId;
+    return b64ResourceId;
   }
 
   async download<T: Data>(resourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {

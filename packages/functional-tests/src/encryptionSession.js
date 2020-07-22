@@ -59,6 +59,14 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
       expect(decrypted).to.equal(clearText);
     });
 
+    it('encrypt and share with a permanent identity and not self', async () => {
+      const encryptionSession = await aliceLaptop.createEncryptionSession({ shareWithUsers: [bobPublicIdentity], shareWithSelf: false });
+      const encrypted = await encryptionSession.encrypt(clearText);
+      await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
+      const decrypted = await bobPhone.decrypt(encrypted);
+      expect(decrypted).to.equal(clearText);
+    });
+
     it('decrypts a resource postponed shared and encrypted with an encryption session', async () => {
       const encryptionSession = await aliceLaptop.createEncryptionSession();
       const encrypted = await encryptionSession.encrypt(clearText);
