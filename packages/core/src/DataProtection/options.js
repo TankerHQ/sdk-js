@@ -41,7 +41,7 @@ export const extractSharingOptions = (options: Object, error: any = new InvalidA
 export const extractEncryptionOptions = (options: Object): EncryptionOptions => {
   const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool }', options);
 
-  // $FlowIKnow casting SharingOptions to EncryptionOptions is safe
+  // $FlowIgnore casting SharingOptions to EncryptionOptions is safe
   const encryptionOptions: EncryptionOptions = extractSharingOptions(options, error);
 
   if ('shareWithSelf' in options) {
