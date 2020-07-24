@@ -59,29 +59,6 @@ version = "3.0.4"
 
 [[package]]
 category = "main"
-description = "Tanker CI library"
-name = "ci"
-optional = false
-python-versions = ">=3.7,<4.0"
-version = "2020.7.2608"
-
-[package.dependencies]
-cli-ui = ">=0.10.0,<0.11.0"
-conan = "1.26.0"
-path = ">=13.1.0,<14.0.0"
-psutil = ">=5.6.7,<6.0.0"
-python-dotenv = ">=0.13.0,<0.14.0"
-python-gitlab = ">=2.0.0,<3.0.0"
-"ruamel.yaml" = ">=0.16.10,<0.17.0"
-tbump = ">=6.0.5,<7.0.0"
-tomlkit = ">=0.5.8,<0.6.0"
-
-[package.source]
-reference = "tanker.local"
-url = "http://tanker.local:8181"
-
-[[package]]
-category = "main"
 description = "Build Nice User Interfaces In The Terminal"
 name = "cli-ui"
 optional = false
@@ -574,11 +551,35 @@ widechars = ["wcwidth"]
 
 [[package]]
 category = "main"
+description = "Tanker CI library"
+name = "tankerci"
+optional = false
+python-versions = ">=3.7,<4.0"
+version = "2020.7.2621"
+
+[package.dependencies]
+cli-ui = ">=0.10.0,<0.11.0"
+conan = "1.26.0"
+path = ">=13.1.0,<14.0.0"
+psutil = ">=5.6.7,<6.0.0"
+python-dotenv = ">=0.13.0,<0.14.0"
+python-gitlab = ">=2.0.0,<3.0.0"
+"ruamel.yaml" = ">=0.16.10,<0.17.0"
+tbump = ">=6.0.5,<7.0.0"
+tomlkit = ">=0.5.8,<0.6.0"
+
+[package.source]
+reference = "tanker.local"
+type = "legacy"
+url = "http://tanker.local:8181"
+
+[[package]]
+category = "main"
 description = "Bump software releases"
 name = "tbump"
 optional = false
 python-versions = ">=3.5,<4.0"
-version = "6.1.0"
+version = "6.1.1"
 
 [package.dependencies]
 attrs = ">=19.3.0,<20.0.0"
@@ -637,7 +638,7 @@ description = "HTTP library with thread-safe connection pooling, file post, and 
 name = "urllib3"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
-version = "1.25.9"
+version = "1.25.10"
 
 [package.extras]
 brotli = ["brotlipy (>=0.6.0)"]
@@ -658,7 +659,8 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "92375a0bf7ad84e9d2cfc418b1cbe451f5db782603ce27c77079e794452dcdc9"
+content-hash = "33b6ce7dfe75c949bad2dfc555b70855631b7bc21d7c7c4bbafe2230587cdf6c"
+lock-version = "1.0"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -711,10 +713,6 @@ cffi = [
 chardet = [
     {file = "chardet-3.0.4-py2.py3-none-any.whl", hash = "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"},
     {file = "chardet-3.0.4.tar.gz", hash = "sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae"},
-]
-ci = [
-    {file = "ci-2020.7.2608-py3-none-any.whl", hash = "md5:c97abecdc12288aea38a693855b32309"},
-    {file = "ci-2020.7.2608.tar.gz", hash = "md5:bb94ed54d2bfa2a814586de1d3f2c3c7"},
 ]
 cli-ui = [
     {file = "cli-ui-0.10.3.tar.gz", hash = "sha256:be517ec1a5385eb22c06d578c08ca65be59a33f00a0c09aa111db44a2f9dd211"},
@@ -974,9 +972,13 @@ tabulate = [
     {file = "tabulate-0.8.7-py3-none-any.whl", hash = "sha256:ac64cb76d53b1231d364babcd72abbb16855adac7de6665122f97b593f1eb2ba"},
     {file = "tabulate-0.8.7.tar.gz", hash = "sha256:db2723a20d04bcda8522165c73eea7c300eda74e0ce852d9022e0159d7895007"},
 ]
+tankerci = [
+    {file = "tankerci-2020.7.2621-py3-none-any.whl", hash = "md5:bec1a32c35ba40f7a1a4f554f1d5200e"},
+    {file = "tankerci-2020.7.2621.tar.gz", hash = "md5:74deeb989e80f3f9a91453d8837e459b"},
+]
 tbump = [
-    {file = "tbump-6.1.0-py3-none-any.whl", hash = "sha256:e9da20a37945e1f2fa4a744c692b447e1a57ecd4a5da86a41d20a635bf592ca7"},
-    {file = "tbump-6.1.0.tar.gz", hash = "sha256:6911fabda0293d09369cc842a7035e6fdeb88799765f963e30f83314dfb497e4"},
+    {file = "tbump-6.1.1-py3-none-any.whl", hash = "sha256:fc46f72b9467161993c11ac31ab4ec63b68bea6aa89533ad9e0687e83539d019"},
+    {file = "tbump-6.1.1.tar.gz", hash = "sha256:f6f09f03d750a96d06257a4b68a3361e5dff2b76923abe1ddccb01f201e09c82"},
 ]
 tomlkit = [
     {file = "tomlkit-0.5.11-py2.py3-none-any.whl", hash = "sha256:4e1bd6c9197d984528f9ff0cc9db667c317d8881288db50db20eeeb0f6b0380b"},
@@ -1019,8 +1021,8 @@ unidecode = [
     {file = "Unidecode-1.1.1.tar.gz", hash = "sha256:2b6aab710c2a1647e928e36d69c21e76b453cd455f4e2621000e54b2a9b8cce8"},
 ]
 urllib3 = [
-    {file = "urllib3-1.25.9-py2.py3-none-any.whl", hash = "sha256:88206b0eb87e6d677d424843ac5209e3fb9d0190d0ee169599165ec25e9d9115"},
-    {file = "urllib3-1.25.9.tar.gz", hash = "sha256:3018294ebefce6572a474f0604c2021e33b3fd8006ecd11d62107a5d2a963527"},
+    {file = "urllib3-1.25.10-py2.py3-none-any.whl", hash = "sha256:e7983572181f5e1522d9c98453462384ee92a0be7fac5f1413a1e35c56cc0461"},
+    {file = "urllib3-1.25.10.tar.gz", hash = "sha256:91056c15fa70756691db97756772bb1eb9678fa585d9184f24534b100dc60f4a"},
 ]
 zipp = [
     {file = "zipp-3.1.0-py3-none-any.whl", hash = "sha256:aa36550ff0c0b7ef7fa639055d797116ee891440eac1a56f378e2d3179e0320b"},
