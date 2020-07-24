@@ -9,10 +9,10 @@ import cli_ui as ui
 from path import Path
 import psutil
 
-import ci.cpp
-import ci.conan
-import ci.endtoend
-import ci.js
+import tankerci.cpp
+import tankerci.conan
+import tankerci.endtoend
+import tankerci.js
 
 
 class TestFailed(Exception):
@@ -79,7 +79,7 @@ def delete_ie_state() -> None:
 
     Total: 511
     """
-    ci.run("RunDll32.exe", "InetCpl.cpl,ClearMyTracksByProcess", "511")
+    tankerci.run("RunDll32.exe", "InetCpl.cpl,ClearMyTracksByProcess", "511")
     time.sleep(5)
 
 
@@ -107,23 +107,23 @@ def run_tests_in_browser_ten_times(*, runner: str) -> None:
 
 def run_tests_in_browser(*, runner: str) -> None:
     if runner == "linux":
-        ci.js.run_yarn("karma", "--browsers", "ChromeInDocker")
+        tankerci.js.run_yarn("karma", "--browsers", "ChromeInDocker")
     elif runner == "macos":
-        ci.run("killall", "Safari", check=False)
+        tankerci.run("killall", "Safari", check=False)
         delete_safari_state()
-        ci.js.run_yarn("karma", "--browsers", "Safari")
+        tankerci.js.run_yarn("karma", "--browsers", "Safari")
     elif runner == "windows-edge":
         kill_windows_processes()
-        ci.js.run_yarn("karma", "--browsers", "EdgeHeadless")
+        tankerci.js.run_yarn("karma", "--browsers", "EdgeHeadless")
     elif runner == "windows-ie":
         delete_ie_state()
-        ci.js.run_yarn("karma", "--browsers", "IE")
+        tankerci.js.run_yarn("karma", "--browsers", "IE")
 
 
 def run_sdk_compat_tests() -> None:
     cwd = Path.getcwd() / "ci/compat"
-    ci.js.yarn_install_deps(cwd=cwd)
-    ci.js.run_yarn("proof", cwd=cwd)
+    tankerci.js.yarn_install_deps(cwd=cwd)
+    tankerci.js.run_yarn("proof", cwd=cwd)
 
 
 def get_package_path(package_name: str) -> Path:
@@ -146,20 +146,22 @@ def version_to_npm_tag(version: str) -> str:
 def publish_npm_package(package_name: str, version: str) -> None:
     package_path = get_package_path(package_name)
     npm_tag = version_to_npm_tag(version)
-    ci.run("npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path)
+    tankerci.run(
+        "npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path
+    )
 
 
 def run_linters() -> None:
-    ci.js.run_yarn("flow")
-    ci.js.run_yarn("lint:js")
+    tankerci.js.run_yarn("flow")
+    tankerci.js.run_yarn("lint:js")
 
 
 def run_tests_in_node() -> None:
-    ci.js.run_yarn("coverage")
+    tankerci.js.run_yarn("coverage")
 
 
 def check(*, runner: str, nightly: bool) -> None:
-    ci.js.yarn_install_deps()
+    tankerci.js.yarn_install_deps()
     if runner == "linux" and not nightly:
         run_linters()
         run_tests_in_node()
@@ -171,7 +173,7 @@ def check(*, runner: str, nightly: bool) -> None:
 
 
 def compat() -> None:
-    ci.js.yarn_install_deps()
+    tankerci.js.yarn_install_deps()
     run_sdk_compat_tests()
 
 
@@ -179,13 +181,15 @@ def e2e(*, use_local_sources: bool) -> None:
     if use_local_sources:
         base_path = Path.getcwd().parent
     else:
-        base_path = ci.git.prepare_sources(
+        base_path = tankerci.git.prepare_sources(
             repos=["sdk-native", "sdk-python", "sdk-js", "qa-python-js"]
         )
-    ci.conan.set_home_isolation()
-    ci.cpp.update_conan_config()
-    ci.conan.export(src_path=base_path / "sdk-native", ref_or_channel="tanker/dev")
-    ci.endtoend.test(
+    tankerci.conan.set_home_isolation()
+    tankerci.cpp.update_conan_config()
+    tankerci.conan.export(
+        src_path=base_path / "sdk-native", ref_or_channel="tanker/dev"
+    )
+    tankerci.endtoend.test(
         tanker_conan_ref="tanker/dev@tanker/dev",
         profile="gcc8-release",
         base_path=base_path,
@@ -193,9 +197,9 @@ def e2e(*, use_local_sources: bool) -> None:
 
 
 def deploy_sdk(*, env: str, git_tag: str) -> None:
-    ci.js.yarn_install_deps()
-    version = ci.bump.version_from_git_tag(git_tag)
-    ci.bump.bump_files(version)
+    tankerci.js.yarn_install_deps()
+    version = tankerci.bump.version_from_git_tag(git_tag)
+    tankerci.bump.bump_files(version)
 
     # Publish packages in order so that dependencies don't break during deploy
     configs = [
@@ -208,10 +212,7 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
         {"build": "types", "publish": ["@tanker/types"]},
         {
             "build": "streams",
-            "publish": [
-                "@tanker/stream-base",
-                "@tanker/stream-cloud-storage",
-            ],
+            "publish": ["@tanker/stream-base", "@tanker/stream-cloud-storage",],
         },
         {
             "build": "datastores",
@@ -233,7 +234,7 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
     ]
 
     for config in configs:
-        ci.js.yarn_build(delivery=config["build"], env=env)  # type: ignore
+        tankerci.js.yarn_build(delivery=config["build"], env=env)  # type: ignore
         for package_name in config["publish"]:
             publish_npm_package(package_name, version)
 
@@ -266,7 +267,7 @@ def _main() -> None:
         git_tag = args.git_tag
         deploy_sdk(env=args.env, git_tag=git_tag)
     elif args.command == "mirror":
-        ci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
+        tankerci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
         compat()
     elif args.command == "e2e":
