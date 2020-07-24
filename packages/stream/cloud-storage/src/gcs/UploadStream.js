@@ -1,5 +1,5 @@
 // @flow
-import { InvalidArgument, NetworkError } from '@tanker/errors';
+import { InternalError, InvalidArgument, NetworkError } from '@tanker/errors';
 import { Writable } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
 
@@ -40,11 +40,16 @@ export class UploadStream extends Writable {
 
   async initialize() {
     this.log('initializing...');
+
     const { ok, status, statusText, headers } = await fetch(this._initUrl, { method: 'POST', headers: this._headers });
     if (!ok) {
       throw new NetworkError(`GCS init request failed with status ${status}: ${statusText}`);
     }
-    this._uploadUrl = headers.get('location');
+
+    this._uploadUrl = headers.get('location') || '';
+    if (!this._uploadUrl) {
+      throw new InternalError('GCS did not return an upload URL');
+    }
     this.log(`using upload URL ${this._uploadUrl}`);
   }
 
