@@ -1,8 +1,9 @@
 // @flow
+import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class DeviceRevoked extends TankerError {
-  constructor() {
-    super('DeviceRevoked', 'This device was revoked');
+  constructor(errorInfo?: ErrorInfo) {
+    super('DeviceRevoked', errorInfo || 'This device was revoked');
   }
 }

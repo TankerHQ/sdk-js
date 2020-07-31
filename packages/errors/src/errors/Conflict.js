@@ -1,8 +1,9 @@
 // @flow
+import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class Conflict extends TankerError {
-  constructor(message: string) {
-    super('Conflict', message);
+  constructor(errorInfo?: ErrorInfo) {
+    super('Conflict', errorInfo);
   }
 }

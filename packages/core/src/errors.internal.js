@@ -12,8 +12,8 @@ export class InvalidBlockError extends Error {
 }
 
 export class VerificationNeeded extends Error {
-  constructor() {
-    super();
+  constructor(message: string) {
+    super(message);
     this.name = 'VerificationNeeded';
   }
 }

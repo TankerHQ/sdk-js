@@ -46,7 +46,7 @@ export class DownloadStream extends Readable {
       }
     }
 
-    const metadata = headers.get('x-goog-meta-tanker-metadata');
+    const metadata = headers.get('x-goog-meta-tanker-metadata') || '';
     return { metadata, encryptedContentLength: parseInt(headers.get('content-length'), 10) };
   }
 
@@ -86,7 +86,7 @@ export class DownloadStream extends Readable {
       if (!this._totalLength) {
         // Partial content: file is incomplete (i.e. bigger than chunkSize)
         if (status === 206) {
-          const header = headers.get('content-range'); // e.g. "bytes 786432-1048575/1048698"
+          const header = headers.get('content-range') || ''; // e.g. "bytes 786432-1048575/1048698"
 
           if (typeof header !== 'string' || !header.match(/^bytes +\d+-\d+\/\d+$/)) {
             throw new NetworkError(`GCS answered with status 206 but an invalid content-range header: ${header}`);

@@ -1,8 +1,9 @@
 // @flow
+import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class PreconditionFailed extends TankerError {
-  constructor(message: string) {
-    super('PreconditionFailed', message);
+  constructor(errorInfo?: ErrorInfo) {
+    super('PreconditionFailed', errorInfo);
   }
 }

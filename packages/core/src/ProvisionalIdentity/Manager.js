@@ -61,8 +61,12 @@ export default class ProvisionalIdentityManager {
   }
 
   async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: EmailVerificationMethod }> {
-    await this._refreshProvisionalPrivateKeys();
-    const hasClaimed = this._localUserManager.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
+    let hasClaimed = this._localUserManager.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
+
+    if (!hasClaimed) {
+      await this._refreshProvisionalPrivateKeys();
+      hasClaimed = this._localUserManager.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
+    }
 
     if (hasClaimed) {
       return { status: statuses.READY };

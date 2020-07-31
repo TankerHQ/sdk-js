@@ -1,8 +1,9 @@
 // @flow
+import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class ExpiredVerification extends TankerError {
-  constructor(message: string) {
-    super('ExpiredVerification', message);
+  constructor(errorInfo?: ErrorInfo) {
+    super('ExpiredVerification', errorInfo);
   }
 }

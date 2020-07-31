@@ -116,6 +116,15 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const decrypted = await bobLaptop.decrypt(encrypted, { onProgress });
         expectProgressReport(onProgress, decrypted.length, encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
       });
+
+      it('encrypt should ignore resource id argument', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+
+        const encrypted2 = await bobLaptop.encrypt(clearText, (({ resourceId }): any));
+        const resourceId2 = await bobLaptop.getResourceId(encrypted2);
+        expect(resourceId2).to.not.equal(resourceId);
+      });
     });
 
     describe('share at encryption time', () => {
@@ -176,15 +185,6 @@ export const generateEncryptionTests = (args: TestArgs) => {
         expect(decrypted).to.equal(clearText);
         await bobPhone.stop();
       });
-    });
-
-    it('encrypt should ignore resource id argument', async () => {
-      const encrypted = await bobLaptop.encrypt(clearText);
-      const resourceId = await bobLaptop.getResourceId(encrypted);
-
-      const encrypted2 = await bobLaptop.encrypt(clearText, (({ resourceId }): any));
-      const resourceId2 = await bobLaptop.getResourceId(encrypted2);
-      expect(resourceId2).to.not.equal(resourceId);
     });
 
     describe('share after encryption (reshare)', () => {

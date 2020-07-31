@@ -1,8 +1,9 @@
 // @flow
+import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class TooManyAttempts extends TankerError {
-  constructor(message: string) {
-    super('TooManyAttempts', message);
+  constructor(errorInfo?: ErrorInfo) {
+    super('TooManyAttempts', errorInfo);
   }
 }
