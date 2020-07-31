@@ -2,7 +2,7 @@
 import { TankerError } from '../TankerError';
 
 export class DeviceRevoked extends TankerError {
-  constructor() {
-    super('DeviceRevoked', 'This device was revoked');
+  constructor(message: string = 'This device was revoked') {
+    super('DeviceRevoked', message);
   }
 }
