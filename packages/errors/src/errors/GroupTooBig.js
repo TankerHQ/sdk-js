@@ -1,8 +1,9 @@
 // @flow
+import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class GroupTooBig extends TankerError {
-  constructor(message: string) {
-    super('GroupTooBig', message);
+  constructor(errorInfo?: ErrorInfo) {
+    super('GroupTooBig', errorInfo);
   }
 }

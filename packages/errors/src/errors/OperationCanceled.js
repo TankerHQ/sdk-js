@@ -1,8 +1,9 @@
 // @flow
+import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class OperationCanceled extends TankerError {
-  constructor(message: string = 'Operation canceled') {
-    super('OperationCanceled', message);
+  constructor(errorInfo?: ErrorInfo) {
+    super('OperationCanceled', errorInfo || 'Operation canceled');
   }
 }

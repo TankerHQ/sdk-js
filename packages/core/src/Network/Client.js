@@ -261,17 +261,16 @@ export class Client extends EventEmitter {
     return this._send(route, payload, false);
   }
 
-  async _send(route: string, payload: any, rawData: bool): Promise<any> {
+  async _send(apiRoute: string, payload: any, rawData: bool): Promise<any> {
     const jdata = rawData ? payload : JSON.stringify(payload);
-    const jresult = await this.socket.emit(route, jdata);
+    const jresult = await this.socket.emit(apiRoute, jdata);
     const result = JSON.parse(jresult);
     if (result && result.error) {
       const { error } = result;
-      const SpecificError = serverErrorMap[error.code];
-      if (SpecificError) {
-        throw new SpecificError(error.message);
-      }
-      throw new InternalError(`Server error on route "${route}" with status: ${error.status}, code: ${error.code}, message: ${error.message}`);
+      const { code: apiCode, message, socketio_trace_id: socketioTraceId, status: httpStatus, trace_id: traceId } = error;
+      const errorInfo = { apiCode, apiRoute, httpStatus, message, socketioTraceId, traceId };
+      const ErrorClass = serverErrorMap[error.code] || InternalError;
+      throw new ErrorClass(errorInfo);
     }
     return result;
   }
