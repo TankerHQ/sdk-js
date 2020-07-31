@@ -53,7 +53,7 @@ export const generateDeviceFromGhostDevice = (
     trustchainId,
     ghostDeviceId,
     ephemeralKeys.privateKey
-  );
+  ).block;
 };
 
 export const generateUserCreation = (
@@ -98,7 +98,7 @@ export const generateUserCreation = (
     privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
   };
 
-  const firstDevice = generateDeviceFromGhostDevice(
+  const firstDeviceBlock = generateDeviceFromGhostDevice(
     trustchainId,
     userId,
     deviceEncryptionKeyPair,
@@ -110,8 +110,7 @@ export const generateUserCreation = (
 
   return {
     userCreationBlock: block,
-    firstDeviceId: firstDevice.hash,
-    firstDeviceBlock: firstDevice.block,
+    firstDeviceBlock,
     ghostDevice,
   };
 };

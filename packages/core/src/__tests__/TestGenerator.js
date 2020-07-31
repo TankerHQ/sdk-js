@@ -218,8 +218,7 @@ class TestGenerator {
     const testUserKeys = parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1];
     const userKeys = { publicKey: testUserKeys.publicKey, privateKey: testUserKeys.privateKey };
 
-    const newDevice = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, deviceEncryptionKeyPair, deviceSignatureKeyPair, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0].id, userKeys);
-    const newDeviceBlock = newDevice.block;
+    const newDeviceBlock = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, deviceEncryptionKeyPair, deviceSignatureKeyPair, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0].id, userKeys);
 
     const unverifiedDeviceCreation = ((userEntryFromBlock(newDeviceBlock): any): DeviceCreationEntry);
 
