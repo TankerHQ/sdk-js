@@ -195,7 +195,7 @@ export class Tanker extends EventEmitter {
 
     const deviceId = this.session.deviceId();
     if (!deviceId)
-      throw new InternalError('Tried to get our device id, but could not find it!');
+      throw new InternalError('Tried to get our device hash, but could not find it!');
 
     return utils.toBase64(deviceId);
   }
