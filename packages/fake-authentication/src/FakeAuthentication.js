@@ -1,7 +1,5 @@
 //@flow
-import fetchPonyfill from 'fetch-ponyfill';
-
-const { fetch } = fetchPonyfill({ Promise });
+import { fetch } from '@tanker/http-utils';
 
 export const TANKER_FAKEAUTH_VERSION = '0.0.1';
 

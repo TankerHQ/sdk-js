@@ -209,6 +209,7 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
         {"build": "identity", "publish": ["@tanker/identity"]},
         {"build": "file-ponyfill", "publish": ["@tanker/file-ponyfill"]},
         {"build": "file-reader", "publish": ["@tanker/file-reader"]},
+        {"build": "http-utils", "publish": ["@tanker/http-utils"]},
         {"build": "types", "publish": ["@tanker/types"]},
         {
             "build": "streams",

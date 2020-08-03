@@ -1,14 +1,12 @@
 // @flow
 import { errors, statuses, type Tanker, type Verification, type VerificationMethod, toBase64 } from '@tanker/core';
 import { utils, type b64string } from '@tanker/crypto';
+import { fetch } from '@tanker/http-utils';
 import { expect, uuid } from '@tanker/test-utils';
-import fetchPonyfill from 'fetch-ponyfill';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
 import type { TestArgs } from './helpers';
 import { oidcSettings, tankerUrl } from './helpers';
-
-const { fetch } = fetchPonyfill({ Promise });
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
