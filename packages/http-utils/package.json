@@ -1,15 +1,9 @@
 {
-  "name": "@tanker/fake-authentication",
+  "name": "@tanker/http-utils",
   "version": "0.0.1",
-  "description": "Tanker fake-authentication SDK",
+  "description": "Tanker SDK (http-utils)",
   "author": "Tanker Team",
   "license": "Apache-2.0",
-  "main": "src/index.js",
-  "module": "es.js",
-  "browser": "browser.js",
-  "scripts": {
-    "test": "cd ../..; yarn test:fake-authentication"
-  },
   "homepage": "https://tanker.io/",
   "repository": {
     "type": "git",
@@ -18,8 +12,18 @@
   "bugs": {
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
+  "main": "src/index.js",
+  "module": "es.js",
+  "browser": "browser.js",
+  "scripts": {
+    "test": "cd ../..; yarn test:http-utils"
+  },
   "dependencies": {
     "@babel/runtime-corejs3": "^7.6.0",
-    "@tanker/http-utils": "0.0.1"
+    "@tanker/errors": "0.0.1",
+    "fetch-ponyfill": "^6.1.1"
+  },
+  "devDependencies": {
+    "@tanker/test-utils": "0.0.1"
   }
 }

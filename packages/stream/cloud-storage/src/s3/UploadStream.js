@@ -1,10 +1,8 @@
 // @flow
 import { InvalidArgument, InternalError, NetworkError } from '@tanker/errors';
+import { fetch, retry } from '@tanker/http-utils';
 import { Writable } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
-
-import { fetch } from '../fetch';
-import { retry } from '../retry';
 
 export class UploadStream extends Writable {
   _contentLength: number;
