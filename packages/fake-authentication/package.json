@@ -20,6 +20,6 @@
   },
   "dependencies": {
     "@babel/runtime-corejs3": "^7.6.0",
-    "fetch-ponyfill": "^6.1.0"
+    "fetch-ponyfill": "^6.1.1"
   }
 }
