@@ -1,10 +1,8 @@
 // @flow
 import { InternalError, InvalidArgument, NetworkError } from '@tanker/errors';
+import { fetch, retry } from '@tanker/http-utils';
 import { Writable } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
-
-import { fetch } from '../fetch';
-import { retry } from '../retry';
 
 const GCSUploadSizeIncrement = 256 * 1024; // 256KiB
 

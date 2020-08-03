@@ -1,9 +1,7 @@
 // @flow
-import fetchPonyfill from 'fetch-ponyfill';
+import { fetch } from '@tanker/http-utils';
 
 import { admindUrl, tankerUrl, idToken } from './config';
-
-const { fetch } = fetchPonyfill({ Promise });
 
 type stringToAnyMap = { [string]: any, ...};
 
