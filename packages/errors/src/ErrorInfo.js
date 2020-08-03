@@ -6,7 +6,6 @@ export type ApiError = {
     apiRoute?: string,
     httpStatus?: number,
     message?: string,
-    socketioTraceId?: string,
     traceId?: string,
 };
 

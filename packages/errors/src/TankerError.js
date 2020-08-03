@@ -6,7 +6,6 @@ export class TankerError extends Error {
   /*:: apiCode: ?string */
   /*:: apiRoute: ?string */
   /*:: httpStatus: ?number */
-  /*:: socketioTraceId: ?string */
   /*:: traceId: ?string */
 
   constructor(name: string = 'TankerError', errorInfo?: ErrorInfo) {
@@ -16,12 +15,11 @@ export class TankerError extends Error {
     if (typeof errorInfo === 'string') {
       this._message = errorInfo;
     } else if (errorInfo) {
-      const { apiCode, apiRoute, httpStatus, message, traceId, socketioTraceId } = errorInfo;
+      const { apiCode, apiRoute, httpStatus, message, traceId } = errorInfo;
       this._message = message || '';
       this.apiCode = apiCode;
       this.apiRoute = apiRoute;
       this.httpStatus = httpStatus;
-      this.socketioTraceId = socketioTraceId;
       this.traceId = traceId;
     }
   }
@@ -37,7 +35,6 @@ export class TankerError extends Error {
       this.apiCode && `api_code: "${this.apiCode}"`,
       this.apiRoute && `api_route: "${this.apiRoute}"`,
       this.httpStatus && `http_status: ${this.httpStatus}`,
-      this.socketioTraceId && `socketio_trace_id: "${this.socketioTraceId}"`,
       this.traceId && `trace_id: "${this.traceId}"`,
     ].filter(s => !!s).join(', ');
   }
