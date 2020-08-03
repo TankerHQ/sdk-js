@@ -4,13 +4,14 @@ import { exponentialDelayGenerator } from './delay';
 
 type RetryOptions = $Exact<{
   retries: number,
+  retryCondition?: (error: Error) => Promise<bool> | bool;
   delayGenerator?: DelayGenerator,
 }>;
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function retry<T>(fn: () => Promise<T> | T, opts: RetryOptions): Promise<T> {
-  const { retries } = opts;
+  const { retries, retryCondition } = opts;
   const delayGenerator = opts.delayGenerator || exponentialDelayGenerator;
 
   const delays = delayGenerator(retries);
@@ -23,6 +24,13 @@ async function retry<T>(fn: () => Promise<T> | T, opts: RetryOptions): Promise<T
 
       if (done) {
         throw err;
+      }
+
+      if (retryCondition) {
+        const tryAgain = await retryCondition(err);
+        if (!tryAgain) {
+          throw err;
+        }
       }
 
       // $FlowIgnore done is false, so it's a yielded number (and not an undefined return value)
