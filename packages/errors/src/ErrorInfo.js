@@ -1,7 +1,7 @@
 // @flow
-type Message = string;
+export type ErrorMessage = string;
 
-type ApiError = {
+export type ApiError = {
     apiCode?: string,
     apiRoute?: string,
     httpStatus?: number,
@@ -10,4 +10,4 @@ type ApiError = {
     traceId?: string,
 };
 
-export type ErrorInfo = Message | ApiError;
+export type ErrorInfo = ErrorMessage | ApiError;
