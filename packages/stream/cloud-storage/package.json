@@ -19,7 +19,7 @@
     "@babel/runtime-corejs3": "^7.6.0",
     "@tanker/errors": "0.0.1",
     "@tanker/stream-base": "0.0.1",
-    "fetch-ponyfill": "^6.1.0"
+    "fetch-ponyfill": "^6.1.1"
   },
   "devDependencies": {
     "@tanker/test-utils": "0.0.1"

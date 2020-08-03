@@ -14,6 +14,6 @@
     "@tanker/identity": "0.0.1",
     "@tanker/test-utils": "0.0.1",
     "@tanker/types": "0.0.1",
-    "fetch-ponyfill": "^6.1.0"
+    "fetch-ponyfill": "^6.1.1"
   }
 }
