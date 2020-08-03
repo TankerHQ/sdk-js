@@ -8,7 +8,7 @@ describe('retry', () => {
   const error = new Error('Expected test error');
   const successfulAttempt = 2;
 
-  let attempts = 0;
+  let attempts;
 
   const succeedAt = (attempt: number) => () => {
     attempts += 1;
@@ -33,5 +33,51 @@ describe('retry', () => {
         expect(attempts).to.equal(1 + retries);
       });
     }
+  });
+
+  describe('with retry condition', () => {
+    const genericTests = (conditions) => {
+      const { alwaysPass, alwaysBlock, blockAfterAttempts } = conditions;
+
+      it('retries if retry condition is met', async () => {
+        const retries = 2;
+        const baseOpts = { retries, delayGenerator: zeroDelayGenerator };
+
+        await expect(retry(succeedAt(retries), { ...baseOpts, retryCondition: alwaysPass })).to.be.fulfilled;
+        expect(attempts).to.equal(2);
+      });
+
+      it('does not retry if retry condition is not met', async () => {
+        const retries = 2;
+        const baseOpts = { retries, delayGenerator: zeroDelayGenerator };
+
+        await expect(retry(succeedAt(retries), { ...baseOpts, retryCondition: alwaysBlock })).to.be.rejected;
+        expect(attempts).to.equal(1);
+      });
+
+      it('stop retrying if retry condition stops being met', async () => {
+        const retries = 3;
+        const baseOpts = { retries, delayGenerator: zeroDelayGenerator };
+
+        await expect(retry(succeedAt(retries), { ...baseOpts, retryCondition: blockAfterAttempts(2) })).to.be.rejected;
+        expect(attempts).to.equal(2);
+      });
+    };
+
+    describe('synchronous condition', () => {
+      genericTests({
+        alwaysPass: () => true,
+        alwaysBlock: () => false,
+        blockAfterAttempts: (count) => { let calls = 0; return () => { calls += 1; return calls < count; }; },
+      });
+    });
+
+    describe('asynchronous condition', () => {
+      genericTests({
+        alwaysPass: async () => true,
+        alwaysBlock: async () => false,
+        blockAfterAttempts: (count) => { let calls = 0; return async () => { calls += 1; return calls < count; }; },
+      });
+    });
   });
 });
