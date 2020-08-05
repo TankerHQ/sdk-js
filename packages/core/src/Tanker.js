@@ -25,19 +25,10 @@ import type { EncryptionSession } from './DataProtection/EncryptionSession';
 
 import { TANKER_SDK_VERSION } from './version';
 
-type TankerDefaultOptions = $Exact<{
-  appId?: b64string,
-  trustchainId?: b64string,
-  url?: string,
-  dataStore: DataStoreOptions,
-  sdkType: string,
-}>;
-
 export type TankerCoreOptions = $Exact<{
   appId?: b64string,
   trustchainId?: b64string,
   url?: string,
-  connectTimeout?: number,
   dataStore: DataStoreOptions,
   sdkType: string,
 }>;
@@ -50,7 +41,7 @@ export type TankerOptions = $Exact<{
   sdkType?: string,
 }>;
 
-export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefaultOptions): TankerCoreOptions {
+export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
     throw new InvalidArgument('options', 'object', options);
 
@@ -111,7 +102,6 @@ export class Tanker extends EventEmitter {
       url: defaultApiEndpoint,
     };
     if (options.url) { clientOptions.url = options.url; }
-    if (options.connectTimeout) { clientOptions.connectTimeout = options.connectTimeout; }
     this._clientOptions = clientOptions;
 
     const datastoreOptions: DataStoreOptions = {
