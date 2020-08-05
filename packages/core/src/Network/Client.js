@@ -13,7 +13,6 @@ export const defaultApiEndpoint = 'https://api.tanker.io';
 
 export type ClientOptions = {
   url: string,
-  connectTimeout?: number,
   sdkInfo: { type: string, version: string },
 }
 
