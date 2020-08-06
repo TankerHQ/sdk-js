@@ -313,11 +313,16 @@ export class Tanker extends EventEmitter {
     return utils.toBase64(encryption.extractResourceId(castEncryptedData));
   }
 
-  async revokeDevice(deviceId: b64string): Promise<void> {
+  async revokeDevice(b64DeviceId: b64string): Promise<void> {
     assertStatus(this.status, statuses.READY, 'revoke a device');
 
-    if (typeof deviceId !== 'string')
-      throw new InvalidArgument('deviceId', 'string', deviceId);
+    if (typeof b64DeviceId !== 'string')
+      throw new InvalidArgument('deviceId', 'string', b64DeviceId);
+
+    const deviceId = utils.fromBase64(b64DeviceId);
+
+    if (deviceId.length !== tcrypto.HASH_SIZE)
+      throw new InvalidArgument('the provided string does not look like a valid deviceId');
 
     return this.session.revokeDevice(deviceId);
   }
