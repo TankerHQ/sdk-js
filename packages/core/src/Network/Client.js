@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { TankerError, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
+import { TankerError, DeviceRevoked, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
 import { fetch, retry, exponentialDelayGenerator } from '@tanker/http-utils';
 import type { DelayGenerator } from '@tanker/http-utils'; // eslint-disable-line no-unused-vars
 
@@ -28,6 +28,7 @@ export class Client {
   /*:: _cancelationHandle: PromiseWrapper<string>; */
   /*:: _deviceId: Uint8Array | null; */
   /*:: _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null; */
+  /*:: _isRevoked: bool; */
   /*:: _retryDelayGenerator: DelayGenerator; */
   /*:: _sdkType: string; */
   /*:: _sdkVersion: string; */
@@ -42,6 +43,7 @@ export class Client {
     this._cancelationHandle = new PromiseWrapper<string>();
     this._deviceId = null;
     this._deviceSignatureKeyPair = null;
+    this._isRevoked = false;
     this._retryDelayGenerator = exponentialDelayGenerator;
     this._sdkType = sdkInfo.type;
     this._sdkVersion = sdkInfo.version;
@@ -91,6 +93,7 @@ export class Client {
       const apiMethod = init && init.method || 'GET';
       genericErrorHandler(apiMethod, url, error);
     } catch (e) {
+      if (e instanceof DeviceRevoked) this._isRevoked = true;
       if (e instanceof TankerError) throw e;
       throw new InternalError(e.toString());
     }
@@ -141,13 +144,14 @@ export class Client {
       const signature = signChallenge(deviceSignatureKeyPair, challenge);
 
       const sessionPath = `/devices/${urlize(deviceId)}/sessions`;
-      const { access_token: accessToken } = await this._baseApiCall(sessionPath, {
+      const { access_token: accessToken, is_revoked: isRevoked } = await this._baseApiCall(sessionPath, {
         method: 'POST',
         body: JSON.stringify(b64RequestObject({ signature, challenge })),
         headers: { 'Content-Type': 'application/json' },
       });
 
       this._accessToken = accessToken;
+      this._isRevoked = isRevoked;
     };
 
     this._authenticating = auth().finally(() => {
@@ -160,7 +164,12 @@ export class Client {
   authenticateDevice = async (deviceId: Uint8Array, signatureKeyPair: tcrypto.SodiumKeyPair) => {
     this._deviceId = deviceId;
     this._deviceSignatureKeyPair = signatureKeyPair;
-    return this._authenticate();
+
+    return this._authenticate().then(() => {
+      if (this._isRevoked) {
+        throw new DeviceRevoked();
+      }
+    });
   }
 
   getUser = async () => {
@@ -248,7 +257,18 @@ export class Client {
     return { root, histories };
   }
 
+  getRevokedDeviceHistory = async (): Promise<$Exact<{ root: b64string, histories: Array<b64string> }>> => {
+    if (!this._deviceId)
+      throw new InternalError('Assertion error: trying to get revoked device history without a device id');
+    const deviceId = this._deviceId;
+    const { root, history: histories } = await this._apiCall(`/devices/${urlize(deviceId)}/revoked-device-history`);
+    return { root, histories };
+  }
+
   getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>) => {
+    if (this._isRevoked && userIds.length === 1 && utils.equalArray(userIds[0], this._userId)) {
+      return this.getRevokedDeviceHistory();
+    }
     const query = `user_ids[]=${userIds.map(id => urlize(id)).join('&user_ids[]=')}`;
     return this.getUserHistories(query);
   }
