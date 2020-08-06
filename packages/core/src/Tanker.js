@@ -304,10 +304,10 @@ export class Tanker extends EventEmitter {
     return utils.toBase64(encryption.extractResourceId(castEncryptedData));
   }
 
-  async revokeDevice(deviceId: b64string): Promise<void> {
+  async revokeDevice(b64DeviceId: b64string): Promise<void> {
     assertStatus(this.status, statuses.READY, 'revoke a device');
-    assertB64StringWithSize(deviceId, 'deviceId', tcrypto.HASH_SIZE);
-
+    assertB64StringWithSize(b64DeviceId, 'deviceId', tcrypto.HASH_SIZE);
+    const deviceId = utils.fromBase64(b64DeviceId);
     return this.session.revokeDevice(deviceId);
   }
 
