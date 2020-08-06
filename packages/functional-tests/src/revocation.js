@@ -1,7 +1,7 @@
 // @flow
 import { errors, statuses } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
-import { expect, fail, sinon } from '@tanker/test-utils';
+import { expect, sinon } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 
@@ -40,13 +40,15 @@ export const generateRevocationTests = (args: TestArgs) => {
 
     it('fires a revoked event on the revoked device only', async () => {
       let bobPhoneRevoked = false;
+      let bobLaptopRevoked = false;
       bobPhone.on('deviceRevoked', () => { bobPhoneRevoked = true; });
-      bobLaptop.on('deviceRevoked', () => fail('Unexpected revocation of bobLaptop'));
+      bobLaptop.on('deviceRevoked', () => { bobLaptopRevoked = true; });
 
       await bobLaptop.revokeDevice(bobPhone.deviceId);
 
       await expect(bobPhone.encrypt('message')).to.be.rejectedWith(errors.DeviceRevoked);
-      await expect(bobPhoneRevoked).to.be.true;
+      expect(bobPhoneRevoked).to.be.true;
+      expect(bobLaptopRevoked).to.be.false;
     });
 
     it('wipes the storage of the revoked device', async () => {
