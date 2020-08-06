@@ -68,8 +68,16 @@ export const generateRevocationTests = (args: TestArgs) => {
       await bobPhone.stop();
       await bobLaptop.revokeDevice(bobPhoneDeviceId);
 
+      const timeoutMilliseconds = 2000;
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => {
+          try { expect.fail('deviceRevoked event not received before timeout'); } catch (e) { reject(e); }
+        }, timeoutMilliseconds));
+
+      const revocationEventPromise = new Promise(resolve => bobPhone.on('deviceRevoked', resolve));
+
       await bobPhone.start(bobIdentity);
-      await expect(bobPhone.encrypt('message')).to.be.rejectedWith(errors.DeviceRevoked);
+      await Promise.race([timeoutPromise, revocationEventPromise]);
+;
       expect(bobPhone.status).to.equal(statuses.STOPPED);
     });
 

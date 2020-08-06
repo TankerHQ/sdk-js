@@ -39,7 +39,21 @@ export class Session extends EventEmitter {
     this._status = statuses.STOPPED;
 
     this._localUserManager = new LocalUserManager(userData, client, storage.keyStore);
-    this._localUserManager.on('error', (e) => this.onError(e));
+    this._localUserManager.on('error', (e: Error) => {
+      // These are expected errors respectively when no network access and
+      // when stopping the session while another API call is in progress.
+      if (e instanceof NetworkError || e instanceof OperationCanceled) {
+        return;
+      }
+
+      if (e instanceof DeviceRevoked) {
+        /* no await */ this._handleDeviceRevocation();
+        return;
+      }
+
+      console.error('Unexpected fatal error caught on the local user manager:', e);
+      this.emit('fatal_error', e);
+    });
 
     this._userManager = new UserManager(client, this._localUserManager.localUser);
     this._provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, this._localUserManager, this._userManager);
@@ -93,14 +107,6 @@ export class Session extends EventEmitter {
     this.removeAllListeners();
   }
 
-  onError = (e: Error) => {
-    // OperationCanceled: thrown if you never managed to authenticate and the session gets closed
-    if (!(e instanceof NetworkError) && !(e instanceof OperationCanceled)) {
-      console.error(e);
-      this.emit('fatal_error', e);
-    }
-  };
-
   createUser = async (...args: any) => {
     await this._localUserManager.createUser(...args);
     this.status = statuses.READY;
@@ -143,9 +149,12 @@ export class Session extends EventEmitter {
       await this._localUserManager.updateLocalUser();
       throw new InternalError('Assertion error: the server is rejecting us but we are not revoked');
     } catch (e) {
+      // We confirmed from the blocks returned by the server that we're actually revoked
       if (e instanceof DeviceRevoked) {
         await this._wipeDeviceAndStop();
+        return;
       }
+
       throw e;
     }
   }
