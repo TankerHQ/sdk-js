@@ -239,7 +239,8 @@ class TestGenerator {
   }
 
   makeDeviceRevocation = (parentDevice: TestDeviceCreation, deviceIdToRevoke: Uint8Array): TestDeviceRevocation => {
-    const { payload, nature } = makeDeviceRevocation(parentDevice.user.devices, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], deviceIdToRevoke);
+    const refreshedDevices = this._testUserToUser(parentDevice.testUser).devices;
+    const { payload, nature } = makeDeviceRevocation(refreshedDevices, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], deviceIdToRevoke);
 
     this._trustchainIndex += 1;
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);

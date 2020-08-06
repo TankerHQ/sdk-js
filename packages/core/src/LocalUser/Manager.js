@@ -159,10 +159,10 @@ export class LocalUserManager extends EventEmitter {
     }
   }
 
-  revokeDevice = async (deviceToRevokeId: string): Promise<void> => {
+  revokeDevice = async (deviceToRevokeId: Uint8Array): Promise<void> => {
     await this.updateLocalUser();
 
-    const { payload, nature } = makeDeviceRevocation(this._localUser.devices, this._localUser.currentUserKey, utils.fromBase64(deviceToRevokeId));
+    const { payload, nature } = makeDeviceRevocation(this._localUser.devices, this._localUser.currentUserKey, deviceToRevokeId);
     const block = this._localUser.makeBlock(payload, nature);
     await this._client.revokeDevice({ device_revocation: block });
   }

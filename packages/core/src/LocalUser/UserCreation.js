@@ -1,6 +1,7 @@
 // @flow
 
 import { tcrypto, utils } from '@tanker/crypto';
+import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 
 import { serializeUserDeviceV3,
   type UserKeys,
@@ -146,7 +147,25 @@ const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKe
 };
 
 export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
-  const remainingDevices = devices.filter(device => device.revoked === false && !utils.equalArray(device.deviceId, deviceId));
+  const remainingDevices = [];
+  let deviceToRevokeFound = false;
+  let deviceAlreadyRevoked = false;
+
+  devices.forEach((device) => {
+    if (utils.equalArray(device.deviceId, deviceId)) {
+      deviceToRevokeFound = true;
+      deviceAlreadyRevoked = device.revoked;
+    } else if (!device.revoked) {
+      remainingDevices.push(device);
+    }
+  });
+
+  if (!deviceToRevokeFound) {
+    throw new InvalidArgument('The deviceId provided does not match one of your devices');
+  }
+  if (deviceAlreadyRevoked) {
+    throw new PreconditionFailed('The deviceId provided targets a device which is already revoked');
+  }
 
   const userKeys = rotateUserKeys(remainingDevices, currentUserKeys);
   const revocationRecord = {
