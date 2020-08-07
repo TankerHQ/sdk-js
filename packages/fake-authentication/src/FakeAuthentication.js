@@ -39,8 +39,8 @@ const pathJoin = (...args: Array<string>) => {
 type Config = $Exact<{ appId?: string, trustchainId?: string, url?: string }>;
 
 const defaultHeaders = {
-  'X-Tanker-SdkVersion': TANKER_FAKEAUTH_VERSION,
-  'X-Tanker-SdkType': 'fakeauth-js',
+  'X-Tanker-Sdkversion': TANKER_FAKEAUTH_VERSION,
+  'X-Tanker-Sdktype': 'fakeauth-js',
 };
 
 function doFetch(url: string, options?: Object = {}): Promise<*> {
