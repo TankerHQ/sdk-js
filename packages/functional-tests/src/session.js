@@ -19,7 +19,7 @@ export const generateSessionTests = (args: TestArgs) => {
     });
 
     afterEach(async () => {
-      bobLaptop.stop();
+      await bobLaptop.stop();
     });
 
     it('has STOPPED status before start', async () => {
@@ -36,7 +36,7 @@ export const generateSessionTests = (args: TestArgs) => {
       const userId = 'bob';
       bobIdentity = await createIdentity(nonExistentB64AppId, nonExistentB64AppSecret, userId);
       const bobMobile = args.makeTanker(nonExistentB64AppId);
-      await expect(bobMobile.start(bobIdentity)).to.be.rejectedWith(errors.PreconditionFailed, 'trustchain_not_found');
+      await expect(bobMobile.start(bobIdentity)).to.be.rejectedWith(errors.PreconditionFailed, 'app_not_found');
       await bobMobile.stop();
 
       silenceError.restore();
@@ -74,27 +74,6 @@ export const generateSessionTests = (args: TestArgs) => {
       await bobLaptop.start(bobIdentity);
       await expect(bobLaptop.status).to.equal(READY);
     });
-
-    it('can recover and start normally if interrupted just after sending creation blocks', async () => {
-      const interruptMessage = 'Browser crashed!';
-
-      await bobLaptop.start(bobIdentity);
-
-      // Force an exception to occur between block sending and receival during registration
-      bobLaptop.session._localUserManager.authenticate = () => Promise.reject(new Error(interruptMessage)); // eslint-disable-line no-underscore-dangle
-
-      // Will create the device on the trustchain but fail to go further...
-      await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(interruptMessage);
-      await bobLaptop.stop();
-
-      // Will detect device exists on the trustchain, boot the session normally and receive the device creation block
-      await bobLaptop.start(bobIdentity);
-      await expect(bobLaptop.status).to.equal(READY);
-
-      // Check a single device is created
-      const devices = await bobLaptop.getDeviceList();
-      expect(devices).to.deep.have.members([{ id: bobLaptop.deviceId, isRevoked: false }]);
-    });
   });
 
   describe('stop', () => {
@@ -107,9 +86,22 @@ export const generateSessionTests = (args: TestArgs) => {
       await bobLaptop.start(bobIdentity);
     });
 
-    it('stops a session', async () => {
+    it('stops a session with identity registration needed status', async () => {
       await bobLaptop.stop();
       await expect(bobLaptop.status).to.equal(STOPPED);
+    });
+
+    it('stops a session with ready or identity verification needed status', async () => {
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+      await expect(bobLaptop.status).to.equal(READY);
+      await bobLaptop.stop();
+      await expect(bobLaptop.status).to.equal(STOPPED);
+
+      const bobPhone = args.makeTanker();
+      await bobPhone.start(bobIdentity);
+      await expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      await bobPhone.stop();
+      await expect(bobPhone.status).to.equal(STOPPED);
     });
   });
 
@@ -153,6 +145,92 @@ export const generateSessionTests = (args: TestArgs) => {
       await expect(bobLaptop.status).to.equal(STOPPED);
       await bobLaptop.start(bobIdentity);
       await expect(bobLaptop.status).to.equal(READY);
+    });
+  });
+
+  describe('recovery after interrupted session opening', () => {
+    let bobIdentity;
+    let bobLaptop;
+
+    beforeEach(async () => {
+      bobIdentity = await args.appHelper.generateIdentity();
+      bobLaptop = args.makeTanker();
+    });
+
+    afterEach(async () => {
+      await bobLaptop.stop();
+    });
+
+    const interruptMessage = 'Browser crashed!';
+
+    /* eslint-disable no-param-reassign, no-shadow */
+    const interruptBefore = (object: any, method: string) => {
+      const originalMethod = object[method];
+      object[method] = () => {
+        object[method] = originalMethod;
+        throw new Error(interruptMessage);
+      };
+    };
+    /* eslint-enable no-param-reassign, no-shadow */
+
+    describe('during registration', () => {
+      it('can start and create a new device if interrupted just after sending user creation blocks', async () => {
+        await bobLaptop.start(bobIdentity);
+
+        // Force an exception to occur between block sending and receival during registration
+        interruptBefore(bobLaptop.session._localUserManager, 'updateDeviceInfo'); // eslint-disable-line no-underscore-dangle
+
+        // Will create the user on the trustchain but fail to go further... the first device is lost
+        await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(interruptMessage);
+        await bobLaptop.stop();
+
+        // Will detect user exists on the trustchain, and ask for a new identity verification to create a new device
+        await bobLaptop.start(bobIdentity);
+        await expect(bobLaptop.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+
+        await bobLaptop.verifyIdentity({ passphrase: 'passphrase' });
+
+        // Check two devices have been created
+        const devices = await bobLaptop.getDeviceList();
+        expect(devices).to.have.lengthOf(2);
+        expect(devices).to.deep.include.members([{ id: bobLaptop.deviceId, isRevoked: false }]);
+      });
+    });
+
+    describe('during verification', () => {
+      let bobDesktop;
+
+      beforeEach(async () => {
+        bobDesktop = args.makeTanker();
+        await bobDesktop.start(bobIdentity);
+        await bobDesktop.registerIdentity({ passphrase: 'passphrase' });
+      });
+
+      afterEach(async () => {
+        await bobDesktop.stop();
+      });
+
+      it('can start and create a new device if interrupted just after sending device creation block', async () => {
+        await bobLaptop.start(bobIdentity);
+
+        // Force an exception to occur between block sending and receival during verification
+        interruptBefore(bobLaptop.session._localUserManager, 'updateDeviceInfo'); // eslint-disable-line no-underscore-dangle
+
+        // Will create the device on the trustchain but fail to go further...
+        await expect(bobLaptop.verifyIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(interruptMessage);
+        await bobLaptop.stop();
+
+        // Will detect user exists on the trustchain, and ask for a new identity verification to create a new device
+        await bobLaptop.start(bobIdentity);
+        await expect(bobLaptop.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+
+        await bobLaptop.verifyIdentity({ passphrase: 'passphrase' });
+
+        // Check two devices have been created
+        const devices = await bobLaptop.getDeviceList();
+        expect(devices).to.have.lengthOf(3);
+        expect(devices).to.deep.include.members([{ id: bobLaptop.deviceId, isRevoked: false }]);
+      });
     });
   });
 };

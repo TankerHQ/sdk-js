@@ -197,7 +197,7 @@ export const generateVerificationTests = (args: TestArgs) => {
       });
     });
 
-    describe('email verification', () => {
+    describe('verification by email', () => {
       const email = 'john.doe@tanker.io';
       it('can register a verification email and verify with a valid verification code', async () => {
         let verificationCode = await appHelper.getVerificationCode(email);
@@ -266,7 +266,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(bobPhone.status).to.equal(READY);
       });
 
-      it('fails to attach a provisional identity if the oidc id token contains an email different from the provisional email', async () => {
+      it('fails to verify a provisional identity if the oidc id token contains an email different from the provisional email', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const aliceIdentity = await args.appHelper.generateIdentity();
         const aliceLaptop = args.makeTanker();
