@@ -1,8 +1,10 @@
 // @flow
+import type { Tanker } from '@tanker/core';
 import { errors, statuses } from '@tanker/core';
 import { createIdentity } from '@tanker/identity';
 import { expect, silencer } from '@tanker/test-utils';
-import { utils } from '@tanker/crypto';
+import { zeroDelayGenerator } from '@tanker/http-utils';
+import { random, utils } from '@tanker/crypto';
 
 import type { TestArgs } from './helpers';
 
@@ -231,6 +233,54 @@ export const generateSessionTests = (args: TestArgs) => {
         expect(devices).to.have.lengthOf(3);
         expect(devices).to.deep.include.members([{ id: bobLaptop.deviceId, isRevoked: false }]);
       });
+    });
+  });
+
+  describe('session expiration', () => {
+    let bobIdentity;
+    let bobLaptop;
+
+    /* eslint-disable no-param-reassign, no-underscore-dangle */
+    const mockExpireAccessToken = (tanker: Tanker) => {
+      // $FlowExpectedError Erase internal access token to simulate token expiration
+      tanker._session._client._accessToken = utils.toSafeBase64(random(32));
+      // $FlowExpectedError Replace internal delay generator to retry to authenticate right away
+      tanker._session._client._retryDelayGenerator = zeroDelayGenerator;
+    };
+    /* eslint-enable */
+
+    beforeEach(async () => {
+      bobIdentity = await args.appHelper.generateIdentity();
+      bobLaptop = args.makeTanker();
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+    });
+
+    afterEach(async () => {
+      await bobLaptop.stop();
+    });
+
+    it('can re-authenticate a new user after session token expiration and retry the failed operation', async () => {
+      mockExpireAccessToken(bobLaptop);
+      await expect(bobLaptop.encrypt('some secret')).to.be.fulfilled;
+    });
+
+    it('can re-authenticate a new device after session token expiration and retry the failed operation', async () => {
+      const bobDesktop = args.makeTanker();
+      await bobDesktop.start(bobIdentity);
+      await bobDesktop.verifyIdentity({ passphrase: 'passphrase' });
+
+      mockExpireAccessToken(bobDesktop);
+      await expect(bobDesktop.encrypt('some secret')).to.be.fulfilled;
+    });
+
+    it('can re-authenticate an existing device after session token expiration and retry the failed operation', async () => {
+      // Reopen existing device
+      await bobLaptop.stop();
+      await bobLaptop.start(bobIdentity);
+
+      mockExpireAccessToken(bobLaptop);
+      await expect(bobLaptop.encrypt('some secret')).to.be.fulfilled;
     });
   });
 };
