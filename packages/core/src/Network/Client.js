@@ -48,24 +48,6 @@ export function b64RequestObject(requestObject: any): any {
   return result;
 }
 
-const serverErrorMap = {
-  device_not_found: InvalidVerification,
-  group_too_big: GroupTooBig,
-  invalid_delegation_signature: InvalidVerification,
-  invalid_oidc_id_token: InvalidVerification,
-  invalid_passphrase: InvalidVerification,
-  invalid_verification_code: InvalidVerification,
-  too_many_attempts: TooManyAttempts,
-  provisional_identity_already_attached: InvalidArgument,
-  verification_code_expired: ExpiredVerification,
-  verification_code_not_found: InvalidVerification,
-  verification_method_not_set: PreconditionFailed,
-  verification_needed: VerificationNeeded,
-  verification_key_not_found: PreconditionFailed,
-  device_revoked: DeviceRevoked,
-  conflict: Conflict,
-};
-
 /**
  * Network communication
  */
