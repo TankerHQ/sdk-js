@@ -1,7 +1,8 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { TankerError, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
-import { fetch, retry } from '@tanker/http-utils';
+import { fetch, retry, exponentialDelayGenerator } from '@tanker/http-utils';
+import type { DelayGenerator } from '@tanker/http-utils'; // eslint-disable-line no-unused-vars
 
 import { PromiseWrapper } from '../PromiseWrapper';
 import { signChallenge } from './Authenticator';
@@ -25,8 +26,10 @@ export class Client {
   /*:: _apiRootPath: string; */
   /*:: _appId: Uint8Array; */
   /*:: _authenticating: ?Promise<void>; */
+  /*:: _cancelationHandle: PromiseWrapper<string>; */
   /*:: _deviceId: Uint8Array | null; */
   /*:: _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null; */
+  /*:: _retryDelayGenerator: DelayGenerator; */
   /*:: _sdkType: string; */
   /*:: _sdkVersion: string; */
   /*:: _userId: Uint8Array; */
@@ -37,22 +40,27 @@ export class Client {
     this._apiEndpoint = url;
     this._apiRootPath = `/apps/${urlize(appId)}`;
     this._appId = appId;
+    this._cancelationHandle = new PromiseWrapper<string>();
     this._deviceId = null;
     this._deviceSignatureKeyPair = null;
+    this._retryDelayGenerator = exponentialDelayGenerator;
     this._sdkType = sdkInfo.type;
     this._sdkVersion = sdkInfo.version;
     this._userId = userId;
   }
 
+  _cancelable = <F: Function>(fun: F): F => { // eslint-disable-line arrow-body-style
+    // $FlowIgnore Our first promise will always reject so the return type doesn't matter
+    return (...args: Array<any>) => Promise.race([
+      this._cancelationHandle.promise.then((message) => { throw new OperationCanceled(message); }),
+      fun(...args),
+    ]);
+  }
+
   // Simple fetch wrapper with:
   //   - proper headers set (sdk info and authorization)
   //   - generic error handling
-  //
-  // TODO (next commit):
-  //   - await authentication if in progress
-  //   - smart retry on authentication failure (e.g. expired token)
-  //   - in progress calls can be canceled if close() called
-  _apiCall = async (path: string, init?: RequestOptions): Promise<any> => {
+  _baseApiCall = async (path: string, init?: RequestOptions): Promise<any> => {
     try {
       if (!path || path[0] !== '/') {
         throw new InvalidArgument('"path" should be non empty and start with "/"');
@@ -89,7 +97,32 @@ export class Client {
     }
   }
 
-  _authenticate = async () => {
+  // Advanced _baseApiCall wrapper with additional capabilities:
+  //   - await authentication if in progress
+  //   - smart retry on authentication failure (e.g. expired token)
+  //   - call in progress can be canceled if close() called
+  _apiCall = this._cancelable(async (path: string, init?: RequestOptions): Promise<any> => {
+    if (this._authenticating) {
+      await this._authenticating;
+    }
+
+    const retryOptions = {
+      delayGenerator: this._retryDelayGenerator,
+      retries: 1,
+      retryCondition: async (error: Error) => {
+        if (error instanceof PreconditionFailed && error.apiCode === 'invalid_token') {
+          this._accessToken = '';
+          await this._authenticate();
+          return true;
+        }
+        return false;
+      },
+    };
+
+    return retry(() => this._baseApiCall(path, init), retryOptions);
+  })
+
+  _authenticate = this._cancelable(async () => {
     if (this._authenticating) {
       return this._authenticating;
     }
@@ -104,12 +137,12 @@ export class Client {
 
     const auth = async () => {
       const challengePath = `/devices/${urlize(deviceId)}/challenges`;
-      const { challenge } = await this._apiCall(challengePath, { method: 'POST' });
+      const { challenge } = await this._baseApiCall(challengePath, { method: 'POST' });
 
       const signature = signChallenge(deviceSignatureKeyPair, challenge);
 
       const sessionPath = `/devices/${urlize(deviceId)}/sessions`;
-      const { access_token: accessToken } = await this._apiCall(sessionPath, {
+      const { access_token: accessToken } = await this._baseApiCall(sessionPath, {
         method: 'POST',
         body: JSON.stringify(b64RequestObject({ signature, challenge })),
         headers: { 'Content-Type': 'application/json' },
@@ -123,7 +156,7 @@ export class Client {
     });
 
     return this._authenticating;
-  }
+  });
 
   authenticateDevice = async (deviceId: Uint8Array, signatureKeyPair: tcrypto.SodiumKeyPair) => {
     this._deviceId = deviceId;
@@ -344,6 +377,8 @@ export class Client {
   }
 
   close = async (): Promise<void> => {
+    this._cancelationHandle.resolve('Closing the client');
+
     if (this._accessToken && this._deviceId) {
       const deviceId = this._deviceId;
       const path = `/devices/${urlize(deviceId)}/sessions`;
@@ -351,7 +386,7 @@ export class Client {
       //   204: session successfully deleted
       //   401: session already expired
       //   other: something unexpected happened -> ignore and continue closing ¯\_(ツ)_/¯
-      await this._apiCall(path, { method: 'DELETE' }).catch((error: TankerError) => {
+      await this._baseApiCall(path, { method: 'DELETE' }).catch((error: TankerError) => {
         if (error.httpStatus !== 401) {
           console.error('Error while closing the network client', error);
         }
