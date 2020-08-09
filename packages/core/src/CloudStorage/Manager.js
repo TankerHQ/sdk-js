@@ -75,11 +75,7 @@ export class CloudStorageManager {
       headers,
       service,
       recommended_chunk_size: recommendedChunkSize
-    } = await this._client.send('get file upload url', {
-      resource_id: b64ResourceId,
-      metadata: encryptedMetadata,
-      upload_content_length: totalEncryptedSize,
-    });
+    } = await this._client.getFileUploadURL(resourceId, encryptedMetadata, totalEncryptedSize);
 
     if (!streamCloudStorage[service])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
@@ -114,10 +110,10 @@ export class CloudStorageManager {
     return b64ResourceId;
   }
 
-  async download<T: Data>(resourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
-    const { head_url: headUrl, get_url: getUrl, service } = await this._client.send('get file download url', { // eslint-disable-line no-underscore-dangle
-      resource_id: resourceId,
-    });
+  async download<T: Data>(b64ResourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+    const resourceId = utils.fromBase64(b64ResourceId);
+
+    const { head_url: headUrl, get_url: getUrl, service } = await this._client.getFileDownloadURL(resourceId); // eslint-disable-line no-underscore-dangle
 
     if (!streamCloudStorage[service])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
@@ -125,7 +121,7 @@ export class CloudStorageManager {
     const { DownloadStream } = streamCloudStorage[service];
 
     const downloadChunkSize = 1024 * 1024;
-    const downloader = new DownloadStream(resourceId, headUrl, getUrl, downloadChunkSize);
+    const downloader = new DownloadStream(b64ResourceId, headUrl, getUrl, downloadChunkSize);
 
     const { metadata: encryptedMetadata, encryptedContentLength } = await downloader.getMetadata();
     const { encryptionFormat, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);

@@ -38,8 +38,6 @@ export class Session extends EventEmitter {
     this._client = client;
     this._status = statuses.STOPPED;
 
-    this._client.on('error', (e) => this.onError(e));
-
     this._localUserManager = new LocalUserManager(userData, client, storage.keyStore);
     this._localUserManager.on('error', (e) => this.onError(e));
 
@@ -62,7 +60,16 @@ export class Session extends EventEmitter {
     }
   }
 
-  async start(): Promise<void> {
+  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
+    const client = new Client(userData.trustchainId, userData.userId, clientOptions);
+
+    const storage = new Storage(storeOptions);
+    await storage.open(userData.userId, userData.userSecret);
+
+    return new Session(userData, storage, client);
+  }
+
+  start = async (): Promise<void> => {
     try {
       this.status = await this._localUserManager.init();
     } catch (e) {
@@ -71,16 +78,7 @@ export class Session extends EventEmitter {
     }
   }
 
-  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
-    const client = new Client(userData.trustchainId, clientOptions);
-
-    const storage = new Storage(storeOptions);
-    await storage.open(userData.userId, userData.userSecret);
-
-    return new Session(userData, storage, client);
-  }
-
-  stop = async () => {
+  stop = async (): Promise<void> => {
     await this._client.close();
     await this._storage.close();
     this.status = statuses.STOPPED;

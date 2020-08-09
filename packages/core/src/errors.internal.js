@@ -11,13 +11,6 @@ export class InvalidBlockError extends Error {
   }
 }
 
-export class VerificationNeeded extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'VerificationNeeded';
-  }
-}
-
 export class UpgradeRequiredError extends Error {
   constructor(message: string) {
     super(`Tanker must be upgraded to a newer version to continue: ${message}`);

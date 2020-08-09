@@ -1,6 +1,5 @@
 // @flow
-import { utils, type Key } from '@tanker/crypto';
-import { InternalError, InvalidArgument } from '@tanker/errors';
+import { type Key } from '@tanker/crypto';
 
 import { getKeyPublishEntryFromBlock } from './Serialize';
 import { KeyDecryptor } from './KeyDecryptor';
@@ -31,27 +30,15 @@ export class ResourceManager {
   async findKeyFromResourceId(resourceId: Uint8Array): Promise<Key> {
     let resourceKey = await this._resourceStore.findResourceKey(resourceId);
     if (!resourceKey) {
-      const keyPublish = await this._getKeyPublish(this._client, resourceId);
+      const keyPublishBlock = await this._client.getResourceKey(resourceId);
+      const keyPublish = getKeyPublishEntryFromBlock(keyPublishBlock);
       resourceKey = await this._keyDecryptor.keyFromKeyPublish(keyPublish);
       await this._resourceStore.saveResourceKey(resourceId, resourceKey);
     }
     return resourceKey;
   }
 
-  _getKeyPublish = async (client: Client, resourceId: Uint8Array) => {
-    const response = await client.send('get key publishes', {
-      resource_ids: [utils.toBase64(resourceId)],
-    });
-    if (!Array.isArray(response)) {
-      throw new InternalError('Invalid response from server');
-    }
-    if (response.length === 0) {
-      throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
-    }
-    return getKeyPublishEntryFromBlock(response[0]);
-  };
-
-  saveResourceKey = async (resourceId: Uint8Array, key: Uint8Array): Promise<void> => this._resourceStore.saveResourceKey(resourceId, key)
+  saveResourceKey = (resourceId: Uint8Array, key: Uint8Array): Promise<void> => this._resourceStore.saveResourceKey(resourceId, key)
 }
 
 export default ResourceManager;
