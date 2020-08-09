@@ -92,13 +92,18 @@ export class DataProtector {
     recipientProvisionalUsers: Array<PublicProvisionalUser>,
     recipientGroupsEncryptionKeys: Array<Uint8Array>
   ): Promise<void> {
-    let blocks: Array<b64string> = [];
+    const body = {
+      key_publishes_to_user: [],
+      key_publishes_to_user_group: [],
+      key_publishes_to_provisional_user: [],
+    };
+
     if (recipientGroupsEncryptionKeys.length > 0) {
-      blocks = blocks.concat(this._makeKeyPublishBlocks(resource, recipientGroupsEncryptionKeys, NATURE_KIND.key_publish_to_user_group));
+      body.key_publishes_to_user_group = this._makeKeyPublishBlocks(resource, recipientGroupsEncryptionKeys, NATURE_KIND.key_publish_to_user_group);
     }
 
     if (recipientProvisionalUsers.length > 0) {
-      blocks = blocks.concat(this._makeKeyPublishToProvisionalIdentityBlocks(resource, recipientProvisionalUsers));
+      body.key_publishes_to_provisional_user = this._makeKeyPublishToProvisionalIdentityBlocks(resource, recipientProvisionalUsers);
     }
 
     if (recipientUsers.length > 0) {
@@ -109,10 +114,10 @@ export class DataProtector {
         return userPublicKey;
       });
 
-      blocks = blocks.concat(this._makeKeyPublishBlocks(resource, keys, NATURE_KIND.key_publish_to_user));
+      body.key_publishes_to_user = this._makeKeyPublishBlocks(resource, keys, NATURE_KIND.key_publish_to_user);
     }
 
-    await this._client.send('push keys', blocks, false);
+    await this._client.publishResourceKeys(body);
   }
 
   _handleShareWithSelf = (identities: Array<PublicIdentity>, shareWithSelf: bool): Array<PublicIdentity> => {

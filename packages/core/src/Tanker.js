@@ -6,7 +6,7 @@ import { assertDataType, assertNotEmptyString, assertB64StringWithSize, castData
 import type { Data } from '@tanker/types';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
 
-import { type ClientOptions } from './Network/Client';
+import { type ClientOptions, defaultApiEndpoint } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 
 import type { Verification, EmailVerification, OIDCVerification, RemoteVerification, VerificationMethod } from './LocalUser/types';
@@ -105,10 +105,10 @@ export class Tanker extends EventEmitter {
 
     const clientOptions: ClientOptions = {
       sdkInfo: {
-        appId: this._trustchainId,
         type: options.sdkType,
         version: Tanker.version,
-      }
+      },
+      url: defaultApiEndpoint,
     };
     if (options.url) { clientOptions.url = options.url; }
     if (options.connectTimeout) { clientOptions.connectTimeout = options.connectTimeout; }
@@ -183,7 +183,7 @@ export class Tanker extends EventEmitter {
 
     const deviceId = this.session.deviceId();
     if (!deviceId)
-      throw new InternalError('Tried to get our device hash, but could not find it!');
+      throw new InternalError('Tried to get our device id, but could not find it!');
 
     return utils.toBase64(deviceId);
   }
