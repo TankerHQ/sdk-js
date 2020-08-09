@@ -57,15 +57,15 @@ export function generateFunctionalTests(
       silencer.restore();
     });
 
+    generateSessionTests(args);
+    generateGetDeviceListTests(args);
+    generateVerificationTests(args);
     generateEncryptionTests(args);
     generateEncryptionSessionTests(args);
     generateEncryptorStreamTests(args);
-    generateUploadTests(args);
-    generateGetDeviceListTests(args);
     generateGroupsTests(args);
-    generateSessionTests(args);
+    generateUploadTests(args);
     generateRevocationTests(args);
-    generateVerificationTests(args);
     generateNetworkTests(args);
     generateFakeAuthenticationTests(args);
   });

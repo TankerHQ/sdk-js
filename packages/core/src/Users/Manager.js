@@ -3,7 +3,7 @@ import { utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { type PublicPermanentIdentity } from '@tanker/identity';
 
-import { Client, b64RequestObject } from '../Network/Client';
+import type { Client } from '../Network/Client';
 import { type User } from './types';
 import LocalUser from '../LocalUser/LocalUser';
 import { usersFromBlocks } from './ManagerHelper';
@@ -81,19 +81,13 @@ export default class UserManager {
     return devicesPublicSignatureKeys;
   }
 
-  _getUserBlocksByUserIds(userIds: Array<Uint8Array>) {
-    const request = {
-      user_ids: userIds,
-    };
-
-    return this._client.send('get users blocks', b64RequestObject(request));
+  _getUserBlocksByUserIds = async (userIds: Array<Uint8Array>): Promise<Array<b64string>> => {
+    const { histories } = await this._client.getUserHistoriesByUserIds(userIds);
+    return histories;
   }
 
-  _getUserBlocksByDeviceIds(deviceIds: Array<Uint8Array>) {
-    const request = {
-      device_ids: deviceIds,
-    };
-
-    return this._client.send('get users blocks', b64RequestObject(request));
+  _getUserBlocksByDeviceIds = async (deviceIds: Array<Uint8Array>): Promise<Array<b64string>> => {
+    const { histories } = await this._client.getUserHistoriesByDeviceIds(deviceIds);
+    return histories;
   }
 }

@@ -1,144 +1,365 @@
 // @flow
+import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { TankerError, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
+import { fetch, retry } from '@tanker/http-utils';
 
-import EventEmitter from 'events';
-import { tcrypto, utils } from '@tanker/crypto';
-import { ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, DeviceRevoked, Conflict } from '@tanker/errors';
+import { PromiseWrapper } from '../PromiseWrapper';
+import { signChallenge } from './Authenticator';
+import { genericErrorHandler } from './ErrorHandler';
+import { b64RequestObject, urlize } from './utils';
 
-import { VerificationNeeded } from '../errors.internal';
-import type { SdkInfo } from './SdkInfo';
-
-import { type Authenticator, takeChallenge } from './Authenticator';
-
-const defaultApiAddress = 'https://api.tanker.io';
+export const defaultApiEndpoint = 'https://appd.tanker.io';
 
 export type ClientOptions = {
-  url?: string,
+  url: string,
   connectTimeout?: number,
-  sdkInfo: SdkInfo,
-}
-
-const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
-
-export function b64RequestObject(requestObject: any): any {
-  if (requestObject instanceof Uint8Array) {
-    return utils.toBase64(requestObject);
-  }
-
-  if (Array.isArray(requestObject)) {
-    return requestObject.map(elem => b64RequestObject(elem));
-  }
-
-  if (!isObject(requestObject))
-    throw new InternalError('Assertion error: b64RequestObject operates only on Object, Array and Uint8Array instances');
-
-  const result = {};
-
-  Object.entries(requestObject).forEach(([key, value]) => {
-    if (value instanceof Uint8Array) {
-      result[key] = utils.toBase64(value);
-    } else if (Array.isArray(value)) {
-      result[key] = b64RequestObject(value);
-    } else if (isObject(value)) {
-      result[key] = b64RequestObject(value);
-    } else {
-      result[key] = value;
-    }
-  });
-
-  return result;
+  sdkInfo: { type: string, version: string },
 }
 
 /**
  * Network communication
  */
-export class Client extends EventEmitter {
-  _appId: Uint8Array;
-  _authenticator: ?Authenticator;
-  _authenticating: ?Promise<void>;
-  _authenticated: bool = false;
-  _options: ClientOptions;
+export class Client {
+  /*:: _accessToken: string; */
+  /*:: _apiEndpoint: string; */
+  /*:: _apiRootPath: string; */
+  /*:: _appId: Uint8Array; */
+  /*:: _authenticating: ?Promise<void>; */
+  /*:: _deviceId: Uint8Array | null; */
+  /*:: _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null; */
+  /*:: _sdkType: string; */
+  /*:: _sdkVersion: string; */
+  /*:: _userId: Uint8Array; */
 
-  constructor(appId: Uint8Array, options: ClientOptions) {
-    super();
-    this._options = { url: defaultApiAddress, ...options };
+  constructor(appId: Uint8Array, userId: Uint8Array, options: ClientOptions) {
+    const { url, sdkInfo } = { url: defaultApiEndpoint, ...options };
+    this._accessToken = '';
+    this._apiEndpoint = url;
+    this._apiRootPath = `/apps/${urlize(appId)}`;
     this._appId = appId;
+    this._deviceId = null;
+    this._deviceSignatureKeyPair = null;
+    this._sdkType = sdkInfo.type;
+    this._sdkVersion = sdkInfo.version;
+    this._userId = userId;
   }
 
-  authenticate = async (userId: Uint8Array, signatureKeyPair: tcrypto.SodiumKeyPair) => {
-    if (this._authenticator)
-      throw new InternalError('Assertion error: client is already authenticated');
+  // Simple fetch wrapper with:
+  //   - proper headers set (sdk info and authorization)
+  //   - generic error handling
+  //
+  // TODO (next commit):
+  //   - await authentication if in progress
+  //   - smart retry on authentication failure (e.g. expired token)
+  //   - in progress calls can be canceled if close() called
+  _apiCall = async (path: string, init?: RequestOptions): Promise<any> => {
+    try {
+      if (!path || path[0] !== '/') {
+        throw new InvalidArgument('"path" should be non empty and start with "/"');
+      }
 
-    this._authenticator = (challenge) => takeChallenge(this._appId, userId, signatureKeyPair, challenge);
+      // $FlowIgnore Only using bare objects as headers so we're fine...
+      const headers: { [string]: string } = (init && init.headers) || {};
+      headers['X-Tanker-Sdktype'] = this._sdkType;
+      headers['X-Tanker-Sdkversion'] = this._sdkVersion;
 
-    return this._authenticate();
+      if (this._accessToken) {
+        headers['Authorization'] = `Bearer ${this._accessToken}`; // eslint-disable-line dot-notation
+      }
+
+      const url = `${this._apiEndpoint}${this._apiRootPath}${path}`;
+
+      const response = await fetch(url, { ...init, headers });
+
+      if (response.status === 204) { // no-content: no JSON response to parse
+        return;
+      }
+
+      const { error, ...responseBody } = await response.json();
+
+      if (response.ok) {
+        return responseBody;
+      }
+
+      const apiMethod = init && init.method || 'GET';
+      genericErrorHandler(apiMethod, url, error);
+    } catch (e) {
+      if (e instanceof TankerError) throw e;
+      throw new InternalError(e.toString());
+    }
   }
 
   _authenticate = async () => {
-    if (this._authenticated || !this._authenticator) {
-      return;
-    }
-
     if (this._authenticating) {
       return this._authenticating;
     }
 
+    if (!this._deviceId)
+      throw new InternalError('Assertion error: trying to authenticate without a device id');
+    const deviceId = this._deviceId;
+
+    if (!this._deviceSignatureKeyPair)
+      throw new InternalError('Assertion error: trying to sign a challenge without a signature key pair');
+    const deviceSignatureKeyPair = this._deviceSignatureKeyPair;
+
     const auth = async () => {
-      const { challenge } = await this._unauthenticatedSend('request auth challenge');
+      const challengePath = `/devices/${urlize(deviceId)}/challenges`;
+      const { challenge } = await this._apiCall(challengePath, { method: 'POST' });
 
-      if (!this._authenticator)
-        throw new InternalError('Assertion error: missing authenticator');
+      const signature = signChallenge(deviceSignatureKeyPair, challenge);
 
-      const { signature, publicSignatureKey, trustchainId, userId } = this._authenticator(challenge);
+      const sessionPath = `/devices/${urlize(deviceId)}/sessions`;
+      const { access_token: accessToken } = await this._apiCall(sessionPath, {
+        method: 'POST',
+        body: JSON.stringify(b64RequestObject({ signature, challenge })),
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-      return this._unauthenticatedSend('authenticate device', b64RequestObject({
-        signature,
-        public_signature_key: publicSignatureKey,
-        trustchain_id: trustchainId,
-        user_id: userId,
-      }));
+      this._accessToken = accessToken;
     };
 
-    this._authenticating = auth().then(() => {
-      this._authenticated = true;
-    }).finally(() => {
+    this._authenticating = auth().finally(() => {
       this._authenticating = null;
     });
 
     return this._authenticating;
   }
 
-  async remoteStatus(trustchainId: Uint8Array, userId: Uint8Array, publicSignatureKey: Uint8Array) {
-    const request = {
-      trustchain_id: trustchainId,
-      user_id: userId,
-      device_public_signature_key: publicSignatureKey,
+  authenticateDevice = async (deviceId: Uint8Array, signatureKeyPair: tcrypto.SodiumKeyPair) => {
+    this._deviceId = deviceId;
+    this._deviceSignatureKeyPair = signatureKeyPair;
+    return this._authenticate();
+  }
+
+  getUser = async () => {
+    const path = `/users/${urlize(this._userId)}`;
+
+    try {
+      const { user } = await this._apiCall(path);
+      return user;
+    } catch (e) {
+      if (e instanceof TankerError) {
+        if (e.apiCode === 'app_not_found') throw new PreconditionFailed(e);
+        if (e.apiCode === 'user_not_found') return null;
+      }
+      throw e;
+    }
+  }
+
+  getVerificationKey = async (body: any): Promise<Uint8Array> => {
+    const path = `/users/${urlize(this._userId)}/verification-key`;
+
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(b64RequestObject(body)),
+      headers: { 'Content-Type': 'application/json' },
     };
 
-    const reply = await this.send('get user status', b64RequestObject(request));
+    const { encrypted_verification_key: key } = await this._apiCall(path, options);
 
-    return {
-      deviceExists: reply.device_exists,
-      userExists: reply.user_exists,
+    return utils.fromBase64(key);
+  }
+
+  getEncryptionKey = async (ghostDevicePublicSignatureKey: Uint8Array) => {
+    const query = `ghost_device_public_signature_key=${urlize(ghostDevicePublicSignatureKey)}`;
+
+    const path = `/users/${urlize(this._userId)}/encryption-key?${query}`;
+
+    try {
+      const { encrypted_user_private_encryption_key: key, ghost_device_id: id } = await this._apiCall(path);
+
+      return {
+        encryptedPrivateUserKey: utils.fromBase64(key),
+        deviceId: utils.fromBase64(id),
+      };
+    } catch (e) {
+      if (e instanceof TankerError) {
+        if (e.apiCode === 'device_not_found') throw new InvalidVerification(e);
+      }
+      throw e;
+    }
+  }
+
+  createUser = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: any): Promise<void> => {
+    const path = `/users/${urlize(this._userId)}`;
+
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(b64RequestObject(body)),
+      headers: { 'Content-Type': 'application/json' },
     };
+
+    const { access_token: accessToken } = await this._apiCall(path, options);
+
+    this._accessToken = accessToken;
+    this._deviceId = deviceId;
+    this._deviceSignatureKeyPair = deviceSignatureKeyPair;
   }
 
-  close(): void {
-    // purge authentication handler
-    this._authenticator = null;
-    this._authenticated = false;
+  createDevice = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: any): Promise<void> => {
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(b64RequestObject(body)),
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    const { access_token: accessToken } = await this._apiCall('/devices', options);
+
+    this._accessToken = accessToken;
+    this._deviceId = deviceId;
+    this._deviceSignatureKeyPair = deviceSignatureKeyPair;
   }
 
-  async send(route: string, payload: any, rawData: bool = false): Promise<any> {
-    await this._authenticate();
-    return this._send(route, payload, rawData);
+  getUserHistories = async (query: string): Promise<$Exact<{ root: b64string, histories: Array<b64string> }>> => {
+    const path = `/user-histories?${query}`;
+    const { root, histories } = await this._apiCall(path);
+    return { root, histories };
   }
 
-  async _unauthenticatedSend(route: string, payload: any): Promise<any> {
-    return this._send(route, payload, false);
+  getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>) => {
+    const query = `user_ids[]=${userIds.map(id => urlize(id)).join('&user_ids[]=')}`;
+    return this.getUserHistories(query);
   }
 
-  // Make all socket.io server calls fail - TODO: replace by new HTTP APIs
-  async _send(apiRoute: string, payload: any, rawData: bool): Promise<any> {
-    throw new Error(`FAIL calling _send(${apiRoute})`);
+  getUserHistoriesByDeviceIds = (deviceIds: Array<Uint8Array>) => {
+    const query = `device_ids[]=${deviceIds.map(id => urlize(id)).join('&device_ids[]=')}`;
+    return this.getUserHistories(query);
+  }
+
+  getVerificationMethods = async () => {
+    const path = `/users/${urlize(this._userId)}/verification-methods`;
+    const { verification_methods: verificationMethods } = await this._apiCall(path);
+    return verificationMethods;
+  }
+
+  setVerificationMethod = async (body: any) => {
+    await this._apiCall(`/users/${urlize(this._userId)}/verification-methods`, {
+      method: 'POST',
+      body: JSON.stringify(b64RequestObject(body)),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  getResourceKey = async (resourceId: Uint8Array): Promise<b64string> => {
+    const query = `resource_ids[]=${urlize(resourceId)}`;
+    const { resource_keys: resourceKeys } = await this._apiCall(`/resource-keys?${query}`);
+    if (resourceKeys.length === 0) {
+      throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
+    }
+    return resourceKeys[0];
+  }
+
+  publishResourceKeys = async (body: any): Promise<void> => {
+    await this._apiCall('/resource-keys', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  revokeDevice = async (body: any): Promise<void> => {
+    await this._apiCall('/device-revocations', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  createGroup = async (body: any): Promise<void> => {
+    await this._apiCall('/user-groups', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  patchGroup = async (body: any): Promise<void> => {
+    await this._apiCall('/user-groups', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  getGroupHistories = (query: string): Promise<$Exact<{ histories: Array<b64string> }>> => { // eslint-disable-line arrow-body-style
+    return this._apiCall(`/user-group-histories?${query}`);
+  }
+
+  getGroupHistoriesByGroupIds = (groupIds: Array<Uint8Array>) => {
+    const query = `user_group_ids[]=${groupIds.map(id => urlize(id)).join('&user_group_ids[]=')}`;
+    return this.getGroupHistories(query);
+  }
+
+  getGroupHistoriesByGroupPublicEncryptionKey = (groupPublicEncryptionKey: Uint8Array) => {
+    const query = `user_group_public_encryption_key=${urlize(groupPublicEncryptionKey)}`;
+    return this.getGroupHistories(query);
+  }
+
+  getFileUploadURL = (resourceId: Uint8Array, metadata: b64string, uploadContentLength: number) => {
+    const query = `metadata=${urlize(metadata)}&upload_content_length=${uploadContentLength}`;
+    return this._apiCall(`/resources/${urlize(resourceId)}/upload-url?${query}`);
+  }
+
+  getFileDownloadURL = (resourceId: Uint8Array) => { // eslint-disable-line arrow-body-style
+    return this._apiCall(`/resources/${urlize(resourceId)}/download-url`);
+  }
+
+  getPublicProvisionalIdentities = async (hashedEmails: Array<Uint8Array>) => {
+    const query = `hashed_emails[]=${hashedEmails.map(id => urlize(id)).join('&hashed_emails[]=')}`;
+    const path = `/public-provisional-identities?${query}`;
+    const { public_provisional_identities: publicProvisionalIdentitiesByHashedEmail } = await this._apiCall(path);
+    return publicProvisionalIdentitiesByHashedEmail;
+  }
+
+  getProvisionalIdentityClaims = async () => {
+    const path = `/users/${urlize(this._userId)}/provisional-identity-claims`;
+    const { provisional_identity_claims: claims } = await this._apiCall(path);
+    return claims;
+  }
+
+  getProvisionalIdentity = async (body: any) => {
+    const options = {
+      method: 'POST',
+      body: body ? JSON.stringify(b64RequestObject(body)) : '{}',
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    try {
+      const { provisional_identity: provisionalIdentity } = await this._apiCall('/provisional-identities', options);
+      return provisionalIdentity;
+    } catch (e) {
+      if (e instanceof TankerError) {
+        if (e.apiCode === 'provisional_identity_not_found') return null;
+      }
+      throw e;
+    }
+  }
+
+  claimProvisionalIdentity = async (body: any): Promise<void> => {
+    await this._apiCall('/provisional-identity-claims', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  close = async (): Promise<void> => {
+    if (this._accessToken && this._deviceId) {
+      const deviceId = this._deviceId;
+      const path = `/devices/${urlize(deviceId)}/sessions`;
+      // HTTP status:
+      //   204: session successfully deleted
+      //   401: session already expired
+      //   other: something unexpected happened -> ignore and continue closing ¯\_(ツ)_/¯
+      await this._apiCall(path, { method: 'DELETE' }).catch((error: TankerError) => {
+        if (error.httpStatus !== 401) {
+          console.error('Error while closing the network client', error);
+        }
+      });
+    }
+
+    this._accessToken = '';
+    this._deviceId = null;
+    this._deviceSignatureKeyPair = null;
   }
 }
