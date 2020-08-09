@@ -24,8 +24,8 @@ export class LocalUser extends EventEmitter {
   _userId: Uint8Array;
   _userSecret: Uint8Array;
 
-  _deviceSignatureKeyPair: tcrypto.SodiumKeyPair;
-  _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
+  _deviceSignatureKeyPair: ?tcrypto.SodiumKeyPair;
+  _deviceEncryptionKeyPair: ?tcrypto.SodiumKeyPair;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
   _currentUserKey: ?tcrypto.SodiumKeyPair;
   _devices: Array<Device>
@@ -51,30 +51,45 @@ export class LocalUser extends EventEmitter {
 
   get localData() {
     return {
+      deviceId: this._deviceId,
       deviceEncryptionKeyPair: this._deviceEncryptionKeyPair,
       deviceSignatureKeyPair: this._deviceSignatureKeyPair,
       userKeys: this._userKeys,
       currentUserKey: this._currentUserKey,
       trustchainPublicKey: this._trustchainPublicKey,
-      deviceId: this._deviceId,
       devices: this._devices,
     };
   }
 
   get deviceEncryptionKeyPair(): tcrypto.SodiumKeyPair {
+    if (!this._deviceEncryptionKeyPair) {
+      throw new InternalError('Assertion failed: localUser was not initialized (device encryption key pair missing)');
+    }
     return this._deviceEncryptionKeyPair;
   }
+  set deviceEncryptionKeyPair(value: tcrypto.SodiumKeyPair) {
+    this._deviceEncryptionKeyPair = value;
+  }
   get deviceSignatureKeyPair(): tcrypto.SodiumKeyPair {
+    if (!this._deviceSignatureKeyPair) {
+      throw new InternalError('Assertion failed: localUser was not initialized (device signature key pair missing)');
+    }
     return this._deviceSignatureKeyPair;
+  }
+  set deviceSignatureKeyPair(value: tcrypto.SodiumKeyPair) {
+    this._deviceSignatureKeyPair = value;
   }
   get userId(): Uint8Array {
     return this._userId;
   }
   get deviceId(): Uint8Array {
     if (!this._deviceId) {
-      throw new InternalError('Assertion failed: localUser was not initialized');
+      throw new InternalError('Assertion failed: localUser was not initialized (device id missing)');
     }
     return this._deviceId;
+  }
+  set deviceId(value: Uint8Array) {
+    this._deviceId = value;
   }
   get trustchainId(): Uint8Array {
     return this._trustchainId;
@@ -99,7 +114,7 @@ export class LocalUser extends EventEmitter {
 
   get currentUserKey(): tcrypto.SodiumKeyPair {
     if (!this._currentUserKey) {
-      throw new InternalError('Assertion failed: localUser was not initialized');
+      throw new InternalError('Assertion failed: localUser was not initialized (current user encryption key pair missing)');
     }
     return this._currentUserKey;
   }
@@ -111,7 +126,7 @@ export class LocalUser extends EventEmitter {
     return createBlock(payload, nature, this._trustchainId, this._deviceId, this.deviceSignatureKeyPair.privateKey).block;
   }
 
-  initializeWithBlocks = (b64Blocks: Array<string>) => {
+  initializeWithBlocks = (b64Blocks: Array<b64string>) => {
     // Blocks should contain at least root block and first device
     if (b64Blocks.length < 2) {
       throw new InternalError('Assertion error: not enough blocks to update local user');
@@ -134,7 +149,7 @@ export class LocalUser extends EventEmitter {
         const deviceCreationEntry = ((userEntry: any): DeviceCreationEntry);
         verifyDeviceCreation(deviceCreationEntry, user, this.trustchainPublicKey);
         user = applyDeviceCreationToUser(deviceCreationEntry, user);
-        if (utils.equalArray(this._deviceEncryptionKeyPair.publicKey, deviceCreationEntry.public_encryption_key)) {
+        if (utils.equalArray(this.deviceEncryptionKeyPair.publicKey, deviceCreationEntry.public_encryption_key)) {
           deviceId = deviceCreationEntry.hash;
           if (deviceCreationEntry.user_key_pair) {
             encryptedUserKeys.unshift(deviceCreationEntry.user_key_pair);
@@ -194,10 +209,11 @@ export class LocalUser extends EventEmitter {
 
   _decryptUserKeys = (encryptedUserKeys: Array<UserKeys | UserKeyPair>, deviceId: Uint8Array): LocalUserKeys => {
     let localUserKeys;
+
     for (const encryptedUserKey of encryptedUserKeys) {
       // Key for local device
       if (encryptedUserKey.encrypted_private_encryption_key) {
-        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_private_encryption_key, this._deviceEncryptionKeyPair, localUserKeys);
+        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_private_encryption_key, this.deviceEncryptionKeyPair, localUserKeys);
         continue;
       }
 
@@ -215,9 +231,10 @@ export class LocalUser extends EventEmitter {
         if (!privKey)
           throw new InternalError('Assertion error: Couldn\'t decrypt user keys from revocation');
 
-        localUserKeys = this._localUserKeysFromPrivateKey(privKey.key, this._deviceEncryptionKeyPair, localUserKeys);
+        localUserKeys = this._localUserKeysFromPrivateKey(privKey.key, this.deviceEncryptionKeyPair, localUserKeys);
       }
     }
+
     if (!localUserKeys) {
       throw new InternalError('Assertion error: no user keys');
     }
