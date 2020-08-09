@@ -47,36 +47,32 @@ export class LocalUserManager extends EventEmitter {
 
   init = async (): Promise<Status> => {
     if (!this._localUser.isInitialized) {
-      const { trustchainId, userId, deviceSignatureKeyPair } = this._localUser;
-      const { deviceExists, userExists } = await this._client.remoteStatus(trustchainId, userId, deviceSignatureKeyPair.publicKey);
+      // TODO: get user
+      const user = null;
 
-      if (!userExists) {
+      if (user === null) {
         return statuses.IDENTITY_REGISTRATION_NEEDED;
       }
 
-      if (!deviceExists) {
-        return statuses.IDENTITY_VERIFICATION_NEEDED;
-      }
-      await this.authenticate();
-      return statuses.READY;
+      return statuses.IDENTITY_VERIFICATION_NEEDED;
     }
 
-    // Avoid swallowing authentication errors, re-emit them
-    this.authenticate().catch((e) => this.emit('error', e));
+    // TODO: auth device using this._localUser.deviceId and this._localUser.deviceSignatureKeyPair
+    // this.authenticate().catch((e) => this.emit('error', e));
+
     return statuses.READY;
   }
 
-  authenticate = async (): Promise<void> => {
-    await this._client.authenticate(this._localUser.userId, this._localUser.deviceSignatureKeyPair);
-    if (!this._localUser.isInitialized) {
-      return this.updateLocalUser();
-    }
-  }
+  getVerificationMethods = (): Promise<Array<VerificationMethod>> => getVerificationMethods(this._client, this._localUser)
 
-  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => getVerificationMethods(this._client, this._localUser)
+  setVerificationMethod = (verification: RemoteVerification): Promise<void> => sendSetVerificationMethod(this._client, this._localUser, verification)
 
-  setVerificationMethod = async (verification: RemoteVerification): Promise<void> => {
-    await sendSetVerificationMethod(this._client, this._localUser, verification);
+  updateDeviceInfo = async (id: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, signatureKeyPair: tcrypto.SodiumKeyPair): Promise<void> => {
+    this._localUser.deviceId = id;
+    this._localUser.deviceEncryptionKeyPair = encryptionKeyPair;
+    this._localUser.deviceSignatureKeyPair = signatureKeyPair;
+
+    await this.updateLocalUser();
   }
 
   createUser = async (verification: Verification): Promise<void> => {
@@ -95,12 +91,13 @@ export class LocalUserManager extends EventEmitter {
       throw new InternalError('Assertion error, no delegation token for user creation');
     }
 
-    const { trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair } = this._localUser;
-    const { userCreationBlock, firstDeviceBlock, ghostDevice } = generateUserCreation(trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair, ghostDeviceKeys, this._delegationToken);
+    const { trustchainId, userId } = this._localUser;
+    const { userCreationBlock, firstDeviceBlock, firstDeviceId, firstDeviceEncryptionKeyPair, firstDeviceSignatureKeyPair, ghostDevice } = generateUserCreation(trustchainId, userId, ghostDeviceKeys, this._delegationToken);
     const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._localUser.userSecret);
 
-    await sendUserCreation(this._client, this._localUser, userCreationBlock, firstDeviceBlock, verification, encryptedUnlockKey);
-    await this.authenticate();
+    // TODO: send user creation with new args (firstDeviceId, firstDeviceSignatureKeyPair)
+    // await sendUserCreation(this._client, this._localUser, userCreationBlock, firstDeviceBlock, firstDeviceId, firstDeviceSignatureKeyPair, verification, encryptedUnlockKey);
+    await this.updateDeviceInfo(firstDeviceId, firstDeviceEncryptionKeyPair, firstDeviceSignatureKeyPair);
   }
 
   createNewDevice = async (verification: Verification): Promise<void> => {
@@ -108,14 +105,17 @@ export class LocalUserManager extends EventEmitter {
       const unlockKey = await this._getUnlockKey(verification);
       const ghostDevice = extractGhostDevice(unlockKey);
 
-      const { trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair } = this._localUser;
+      const { trustchainId, userId } = this._localUser;
       const encryptedUserKey = await getLastUserKey(this._client, trustchainId, ghostDevice);
       const userKey = decryptUserKeyForGhostDevice(ghostDevice, encryptedUserKey);
-      const newDeviceBlock = await generateDeviceFromGhostDevice(
-        trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair,
-        ghostDevice, encryptedUserKey.deviceId, userKey
+      const newDevice = await generateDeviceFromGhostDevice(
+        trustchainId, userId, ghostDevice, encryptedUserKey.deviceId, userKey
       );
-      await this._client.send('create device', newDeviceBlock, true);
+      const deviceId = newDevice.hash;
+      const deviceSignatureKeyPair = newDevice.signatureKeyPair;
+      // TODO: create device with new args (deviceId, deviceSignatureKeyPair)
+      // await this._client.createDevice(deviceId, deviceSignatureKeyPair, { device_creation: newDevice.block });
+      await this.updateDeviceInfo(deviceId, newDevice.encryptionKeyPair, deviceSignatureKeyPair);
     } catch (e) {
       if (e instanceof TankerError) {
         throw e;
@@ -123,9 +123,8 @@ export class LocalUserManager extends EventEmitter {
       if (verification.verificationKey) {
         throw new InvalidVerification(e);
       }
-      throw new InternalError(e);
+      throw new InternalError(e.toString());
     }
-    await this.authenticate();
   }
 
   async revokeDevice(revokedDeviceId: string): Promise<void> {
@@ -150,7 +149,8 @@ export class LocalUserManager extends EventEmitter {
   }
 
   updateLocalUser = async () => {
-    const localUserBlocks = await this._client.send('get my user blocks');
+    const { root, histories } = await this._client.getUserHistoriesByUserIds([this._localUser.userId]);
+    const localUserBlocks = [root, ...histories];
     this._localUser.initializeWithBlocks(localUserBlocks);
     await this._keyStore.save(this._localUser.localData, this._localUser.userSecret);
   }
