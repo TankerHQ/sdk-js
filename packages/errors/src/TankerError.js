@@ -4,6 +4,7 @@ import type { ErrorInfo } from './ErrorInfo';
 export class TankerError extends Error {
   /*:: _message: string */
   /*:: apiCode: ?string */
+  /*:: apiMethod: ?string */
   /*:: apiRoute: ?string */
   /*:: httpStatus: ?number */
   /*:: traceId: ?string */
@@ -15,9 +16,10 @@ export class TankerError extends Error {
     if (typeof errorInfo === 'string') {
       this._message = errorInfo;
     } else if (errorInfo) {
-      const { apiCode, apiRoute, httpStatus, message, traceId } = errorInfo;
+      const { apiCode, apiMethod, apiRoute, httpStatus, message, traceId } = errorInfo;
       this._message = message || '';
       this.apiCode = apiCode;
+      this.apiMethod = apiMethod;
       this.apiRoute = apiRoute;
       this.httpStatus = httpStatus;
       this.traceId = traceId;
@@ -33,6 +35,7 @@ export class TankerError extends Error {
     return [
       this._message,
       this.apiCode && `api_code: "${this.apiCode}"`,
+      this.apiMethod && `api_method: "${this.apiMethod}"`,
       this.apiRoute && `api_route: "${this.apiRoute}"`,
       this.httpStatus && `http_status: ${this.httpStatus}`,
       this.traceId && `trace_id: "${this.traceId}"`,

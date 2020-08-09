@@ -44,6 +44,7 @@ describe('TankerError', () => {
 
   describe('error info', () => {
     let apiCode;
+    let apiMethod;
     let apiRoute;
     let message;
     let httpStatus;
@@ -53,17 +54,19 @@ describe('TankerError', () => {
 
     before(() => {
       apiCode = 'invalid_verification_code';
-      apiRoute = 'set verification method';
+      apiMethod = 'POST';
+      apiRoute = 'https://api.tanker.io/apps/AAAA/users/BBBB/verification-methods';
       httpStatus = 401;
       message = 'Invalid verification code';
       traceId = '20e73fd692fc3151133e8fdeeda63a1e';
 
-      errorInfo = { apiCode, apiRoute, httpStatus, message, traceId };
+      errorInfo = { apiCode, apiMethod, apiRoute, httpStatus, message, traceId };
     });
 
     it('should have configurable error info', () => {
       const error = new TankerError('TankerError', errorInfo);
       expect(error.apiCode).to.equal(apiCode);
+      expect(error.apiMethod).to.equal(apiMethod);
       expect(error.apiRoute).to.equal(apiRoute);
       expect(error._message).to.equal(message); // eslint-disable-line no-underscore-dangle
       expect(error.httpStatus).to.equal(httpStatus);
@@ -73,7 +76,7 @@ describe('TankerError', () => {
     it('should pretty print the error class and error info if any', () => {
       const name = 'SpecificError';
       const error = new TankerError(name, errorInfo);
-      const expectedMessage = `${message}, api_code: "${apiCode}", api_route: "${apiRoute}", http_status: ${httpStatus}, trace_id: "${traceId}"`;
+      const expectedMessage = `${message}, api_code: "${apiCode}", api_method: "${apiMethod}", api_route: "${apiRoute}", http_status: ${httpStatus}, trace_id: "${traceId}"`;
       expect(error.message).to.equal(expectedMessage);
       expect(error.toString()).to.equal(`[Tanker] ${name}: ${expectedMessage}`);
     });
@@ -84,6 +87,7 @@ describe('TankerError', () => {
       const error = new TankerError(name, partialErrorInfo);
       const expectedMessage = `${message}, trace_id: "${traceId}"`;
       expect(error.apiCode).to.be.undefined;
+      expect(error.apiMethod).to.be.undefined;
       expect(error.apiRoute).to.be.undefined;
       expect(error._message).to.equal(message); // eslint-disable-line no-underscore-dangle
       expect(error.httpStatus).to.be.undefined;
