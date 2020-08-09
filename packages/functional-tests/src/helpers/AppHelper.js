@@ -93,16 +93,13 @@ export class AppHelper {
   }
 
   async getVerificationCode(email: string): Promise<string> {
-    const body = {
-      app_id: utils.toBase64(this.appId),
-      email,
-      auth_token: this.authToken,
-    };
-    const answer = await requestAppd({ method: 'POST', path: '/verification/email/code', body });
-    if (!answer.verification_code) {
+    const path = `/apps/${toUnpaddedSafeBase64(this.appId)}/verification/email/code?email=${encodeURIComponent(email)}`;
+    const headers = { Authorization: `Bearer ${this.authToken}` };
+    const { verification_code: verificationCode } = await requestAppd({ method: 'GET', path, headers });
+    if (!verificationCode) {
       throw new Error('Invalid response');
     }
-    return answer.verification_code;
+    return verificationCode;
   }
 
   async getWrongVerificationCode(email: string): Promise<string> {
