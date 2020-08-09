@@ -3,6 +3,7 @@ export type ErrorMessage = string;
 
 export type ApiError = {
     apiCode?: string,
+    apiMethod?: string,
     apiRoute?: string,
     httpStatus?: number,
     message?: string,
