@@ -38,7 +38,7 @@ export class Client {
     const { url, sdkInfo } = { url: defaultApiEndpoint, ...options };
     this._accessToken = '';
     this._apiEndpoint = url;
-    this._apiRootPath = `/apps/${urlize(appId)}`;
+    this._apiRootPath = `/v2/apps/${urlize(appId)}`;
     this._appId = appId;
     this._cancelationHandle = new PromiseWrapper<string>();
     this._deviceId = null;

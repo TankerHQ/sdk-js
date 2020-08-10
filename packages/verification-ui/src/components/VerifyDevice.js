@@ -91,7 +91,7 @@ class VerifyDevice extends React.Component<Props> {
     try {
       actions.sendStart(state.sendAttempts + 1);
       const b64UrlUnpaddedAppId = appId.replace(/\//g, '_').replace(/\+/g, '-').replace(/=+$/g, '');
-      const raw = await fetch(`${url}/apps/${b64UrlUnpaddedAppId}/verification/default-email`, {
+      const raw = await fetch(`${url}/v2/apps/${b64UrlUnpaddedAppId}/verification/default-email`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
