@@ -402,11 +402,11 @@ export const generateVerificationTests = (args: TestArgs) => {
         });
       });
 
-      describe('/apps/{app_id}/verification/email/code HTTP request', () => {
+      describe('/v2/apps/{app_id}/verification/email/code HTTP request', () => {
         it('works', async () => {
           const appId = utils.toSafeBase64(args.appHelper.appId).replace(/=+$/, '');
           const email = 'bob@tanker.io';
-          const url = `${appdUrl}/apps/${appId}/verification/email/code?email=${encodeURIComponent(email)}`;
+          const url = `${appdUrl}/v2/apps/${appId}/verification/email/code?email=${encodeURIComponent(email)}`;
           const response = await fetch(url, {
             method: 'GET',
             headers: {
