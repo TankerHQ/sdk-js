@@ -93,7 +93,7 @@ export class AppHelper {
   }
 
   async getVerificationCode(email: string): Promise<string> {
-    const path = `/apps/${toUnpaddedSafeBase64(this.appId)}/verification/email/code?email=${encodeURIComponent(email)}`;
+    const path = `/v2/apps/${toUnpaddedSafeBase64(this.appId)}/verification/email/code?email=${encodeURIComponent(email)}`;
     const headers = { Authorization: `Bearer ${this.authToken}` };
     const { verification_code: verificationCode } = await requestAppd({ method: 'GET', path, headers });
     if (!verificationCode) {
