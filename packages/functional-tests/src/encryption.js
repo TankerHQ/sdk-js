@@ -255,6 +255,14 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.fulfilled;
       });
 
+      it('does not throw if nothing to claim and same email registered as verification method', async () => {
+        const verificationCode = await appHelper.getVerificationCode(email);
+        await aliceLaptop.setVerificationMethod({ email, verificationCode });
+
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({ status: aliceLaptop.constructor.statuses.READY });
+      });
+
       it('decrypt data shared with an attached provisional identity', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 

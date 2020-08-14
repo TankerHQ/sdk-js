@@ -5,5 +5,5 @@ export const uuid = { v4 };
 
 export { default as sinon } from 'sinon';
 
-export { assert, chai, expect, fail } from './chai';
+export { assert, chai, expect } from './chai';
 export { silencer } from './silencer';

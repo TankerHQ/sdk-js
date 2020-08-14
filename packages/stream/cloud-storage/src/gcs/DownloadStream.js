@@ -1,9 +1,7 @@
 // @flow
 import { InvalidArgument, NetworkError } from '@tanker/errors';
+import { fetch, retry } from '@tanker/http-utils';
 import { Readable } from '@tanker/stream-base';
-
-import { fetch } from '../fetch';
-import { retry } from '../retry';
 
 export class DownloadStream extends Readable {
   _chunkSize: number;

@@ -1,7 +1,5 @@
 //@flow
-import fetchPonyfill from 'fetch-ponyfill';
-
-const { fetch } = fetchPonyfill({ Promise });
+import { fetch } from '@tanker/http-utils';
 
 export const TANKER_FAKEAUTH_VERSION = '0.0.1';
 
@@ -39,8 +37,8 @@ const pathJoin = (...args: Array<string>) => {
 type Config = $Exact<{ appId?: string, trustchainId?: string, url?: string }>;
 
 const defaultHeaders = {
-  'X-Tanker-SdkVersion': TANKER_FAKEAUTH_VERSION,
-  'X-Tanker-SdkType': 'fakeauth-js',
+  'X-Tanker-Sdkversion': TANKER_FAKEAUTH_VERSION,
+  'X-Tanker-Sdktype': 'fakeauth-js',
 };
 
 function doFetch(url: string, options?: Object = {}): Promise<*> {

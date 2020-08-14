@@ -1,6 +1,7 @@
 // @flow
+import semver from 'semver';
 
-import { AppHelper, tankerUrl } from '../../../../packages/functional-tests/src/helpers';
+import { AppHelper, appdUrl, trustchaindUrl } from '../../../../packages/functional-tests/src/helpers';
 import { fromBase64, toBase64 } from '../../../../packages/client-node';
 import { getPublicIdentity } from '../../../../packages/identity';
 
@@ -83,10 +84,14 @@ class UserV2 extends BaseUser {
 }
 
 function makeTanker(Tanker, adapter, appId, prefix) {
+  const sdkVersion = Tanker.version;
+  const httpSDK = semver.satisfies(sdkVersion, '0.0.1 || > 2.5.0'); // local or recent
+  const url = httpSDK ? appdUrl : trustchaindUrl;
+
   return new Tanker({
     appId,
     trustchainId: appId, // set trustchainId because old version only understand this param
-    url: tankerUrl,
+    url,
     sdkType: 'test',
     dataStore: {
       adapter,

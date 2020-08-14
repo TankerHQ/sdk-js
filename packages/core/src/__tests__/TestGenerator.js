@@ -171,12 +171,10 @@ class TestGenerator {
   };
 
   makeUserCreation = async (userId: Uint8Array): Promise<TestDeviceCreation> => {
-    const deviceSignatureKeyPair = tcrypto.makeSignKeyPair();
-    const deviceEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
     const delegationToken = createDelegationToken(userId, this._trustchainKeys.privateKey);
     const ghostDeviceKeys = generateGhostDeviceKeys();
 
-    const { userCreationBlock, ghostDevice } = generateUserCreation(this._trustchainId, userId, deviceEncryptionKeyPair, deviceSignatureKeyPair, ghostDeviceKeys, delegationToken);
+    const { userCreationBlock, ghostDevice } = generateUserCreation(this._trustchainId, userId, ghostDeviceKeys, delegationToken);
     const unverifiedDeviceCreation = ((userEntryFromBlock(userCreationBlock): any): DeviceCreationEntry);
 
     const privateUserKey = tcrypto.sealDecrypt(unverifiedDeviceCreation.user_key_pair.encrypted_private_encryption_key, ghostDeviceKeys.encryptionKeyPair);
@@ -213,19 +211,18 @@ class TestGenerator {
   }
 
   makeDeviceCreation = (parentDevice: TestDeviceCreation): TestDeviceCreation => {
-    const deviceSignatureKeyPair = tcrypto.makeSignKeyPair();
-    const deviceEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
     const testUserKeys = parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1];
     const userKeys = { publicKey: testUserKeys.publicKey, privateKey: testUserKeys.privateKey };
 
-    const newDeviceBlock = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, deviceEncryptionKeyPair, deviceSignatureKeyPair, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0].id, userKeys);
+    const newDevice = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0].id, userKeys);
+    const newDeviceBlock = newDevice.block;
 
     const unverifiedDeviceCreation = ((userEntryFromBlock(newDeviceBlock): any): DeviceCreationEntry);
 
     const testDevice: TestDevice = {
       id: unverifiedDeviceCreation.hash,
-      signKeys: deviceSignatureKeyPair,
-      encryptionKeys: deviceEncryptionKeyPair,
+      signKeys: newDevice.signatureKeyPair,
+      encryptionKeys: newDevice.encryptionKeyPair,
       revoked: false,
       isGhost: false,
     };
@@ -242,7 +239,8 @@ class TestGenerator {
   }
 
   makeDeviceRevocation = (parentDevice: TestDeviceCreation, deviceIdToRevoke: Uint8Array): TestDeviceRevocation => {
-    const { payload, nature } = makeDeviceRevocation(parentDevice.user.devices, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], deviceIdToRevoke);
+    const refreshedDevices = this._testUserToUser(parentDevice.testUser).devices;
+    const { payload, nature } = makeDeviceRevocation(refreshedDevices, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], deviceIdToRevoke);
 
     this._trustchainIndex += 1;
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);

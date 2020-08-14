@@ -1,6 +1,7 @@
 // @flow
 
 import { tcrypto, utils } from '@tanker/crypto';
+import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 
 import { serializeUserDeviceV3,
   type UserKeys,
@@ -18,26 +19,26 @@ import { type DelegationToken } from './UserData';
 export const generateDeviceFromGhostDevice = (
   trustchainId: Uint8Array,
   userId: Uint8Array,
-  deviceEncryptionKeyPair: tcrypto.SodiumKeyPair,
-  deviceSignatureKeyPair: tcrypto.SodiumKeyPair,
   ghostDevice: GhostDevice,
   ghostDeviceId: Uint8Array,
   userKeys: tcrypto.SodiumKeyPair,
 ) => {
+  const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
+  const signatureKeyPair = tcrypto.makeSignKeyPair();
   const ephemeralKeys = tcrypto.makeSignKeyPair();
   const delegationBuffer = utils.concatArrays(ephemeralKeys.publicKey, userId);
 
   const encryptedUserKeyForNewDevice = tcrypto.sealEncrypt(
     userKeys.privateKey,
-    deviceEncryptionKeyPair.publicKey
+    encryptionKeyPair.publicKey
   );
 
   const payload = serializeUserDeviceV3({
     ephemeral_public_signature_key: ephemeralKeys.publicKey,
     user_id: userId,
     delegation_signature: tcrypto.sign(delegationBuffer, ghostDevice.privateSignatureKey),
-    public_signature_key: deviceSignatureKeyPair.publicKey,
-    public_encryption_key: deviceEncryptionKeyPair.publicKey,
+    public_signature_key: signatureKeyPair.publicKey,
+    public_encryption_key: encryptionKeyPair.publicKey,
     last_reset: new Uint8Array(tcrypto.HASH_SIZE),
     user_key_pair: {
       public_encryption_key: userKeys.publicKey,
@@ -47,20 +48,22 @@ export const generateDeviceFromGhostDevice = (
     revoked: Number.MAX_SAFE_INTEGER,
   });
 
-  return createBlock(
-    payload,
-    preferredNature(NATURE_KIND.device_creation),
-    trustchainId,
-    ghostDeviceId,
-    ephemeralKeys.privateKey
-  ).block;
+  return {
+    ...createBlock(
+      payload,
+      preferredNature(NATURE_KIND.device_creation),
+      trustchainId,
+      ghostDeviceId,
+      ephemeralKeys.privateKey
+    ),
+    encryptionKeyPair,
+    signatureKeyPair,
+  };
 };
 
 export const generateUserCreation = (
   trustchainId: Uint8Array,
   userId: Uint8Array,
-  deviceEncryptionKeyPair: tcrypto.SodiumKeyPair,
-  deviceSignatureKeyPair: tcrypto.SodiumKeyPair,
   ghostDeviceKeys: GhostDeviceKeys,
   delegationToken: DelegationToken
 ) => {
@@ -98,11 +101,9 @@ export const generateUserCreation = (
     privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
   };
 
-  const firstDeviceBlock = generateDeviceFromGhostDevice(
+  const firstDevice = generateDeviceFromGhostDevice(
     trustchainId,
     userId,
-    deviceEncryptionKeyPair,
-    deviceSignatureKeyPair,
     ghostDevice,
     hash,
     userKeys
@@ -110,7 +111,10 @@ export const generateUserCreation = (
 
   return {
     userCreationBlock: block,
-    firstDeviceBlock,
+    firstDeviceId: firstDevice.hash,
+    firstDeviceBlock: firstDevice.block,
+    firstDeviceEncryptionKeyPair: firstDevice.encryptionKeyPair,
+    firstDeviceSignatureKeyPair: firstDevice.signatureKeyPair,
     ghostDevice,
   };
 };
@@ -143,7 +147,25 @@ const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKe
 };
 
 export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
-  const remainingDevices = devices.filter(device => device.revoked === false && !utils.equalArray(device.deviceId, deviceId));
+  const remainingDevices = [];
+  let deviceToRevokeFound = false;
+  let deviceAlreadyRevoked = false;
+
+  devices.forEach((device) => {
+    if (utils.equalArray(device.deviceId, deviceId)) {
+      deviceToRevokeFound = true;
+      deviceAlreadyRevoked = device.revoked;
+    } else if (!device.revoked) {
+      remainingDevices.push(device);
+    }
+  });
+
+  if (!deviceToRevokeFound) {
+    throw new InvalidArgument('The deviceId provided does not match one of your devices');
+  }
+  if (deviceAlreadyRevoked) {
+    throw new PreconditionFailed('The deviceId provided targets a device which is already revoked');
+  }
 
   const userKeys = rotateUserKeys(remainingDevices, currentUserKeys);
   const revocationRecord = {

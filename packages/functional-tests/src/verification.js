@@ -1,14 +1,12 @@
 // @flow
-import { errors, statuses, type Tanker, type Verification, type VerificationMethod, toBase64 } from '@tanker/core';
+import { errors, statuses, type Tanker, type Verification, type VerificationMethod } from '@tanker/core';
 import { utils, type b64string } from '@tanker/crypto';
+import { fetch } from '@tanker/http-utils';
 import { expect, uuid } from '@tanker/test-utils';
-import fetchPonyfill from 'fetch-ponyfill';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
 import type { TestArgs } from './helpers';
-import { oidcSettings, tankerUrl } from './helpers';
-
-const { fetch } = fetchPonyfill({ Promise });
+import { oidcSettings, appdUrl } from './helpers';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
@@ -199,7 +197,7 @@ export const generateVerificationTests = (args: TestArgs) => {
       });
     });
 
-    describe('email verification', () => {
+    describe('verification by email', () => {
       const email = 'john.doe@tanker.io';
       it('can register a verification email and verify with a valid verification code', async () => {
         let verificationCode = await appHelper.getVerificationCode(email);
@@ -268,7 +266,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(bobPhone.status).to.equal(READY);
       });
 
-      it('fails to attach a provisional identity if the oidc id token contains an email different from the provisional email', async () => {
+      it('fails to verify a provisional identity if the oidc id token contains an email different from the provisional email', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const aliceIdentity = await args.appHelper.generateIdentity();
         const aliceLaptop = args.makeTanker();
@@ -404,29 +402,24 @@ export const generateVerificationTests = (args: TestArgs) => {
         });
       });
 
-      describe('/verification/email/code HTTP request', () => {
+      describe('/apps/{app_id}/verification/email/code HTTP request', () => {
         it('works', async () => {
-          const appId = toBase64(args.appHelper.appId);
-          const url = `${tankerUrl}/verification/email/code`;
-          const body = {
-            email: 'bob@tanker.io',
-            app_id: appId,
-            auth_token: args.appHelper.authToken
-          };
+          const appId = utils.toSafeBase64(args.appHelper.appId).replace(/=+$/, '');
+          const email = 'bob@tanker.io';
+          const url = `${appdUrl}/apps/${appId}/verification/email/code?email=${encodeURIComponent(email)}`;
           const response = await fetch(url, {
-            method: 'POST',
+            method: 'GET',
             headers: {
+              Authorization: `Bearer ${args.appHelper.authToken}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(body),
           });
           expect(response.status).to.eq(200);
-          const res = await response.json();
-          const verificationCode = res.verification_code;
+          const { verification_code: verificationCode } = await response.json();
           expect(verificationCode).to.not.be.undefined;
-          await bobLaptop.registerIdentity({ email: 'bob@tanker.io', verificationCode });
+          await bobLaptop.registerIdentity({ email, verificationCode });
           const actualMethods = await bobLaptop.getVerificationMethods();
-          expect(actualMethods).to.deep.have.members([{ type: 'email', email: 'bob@tanker.io' }]);
+          expect(actualMethods).to.deep.have.members([{ type: 'email', email }]);
         });
       });
     });

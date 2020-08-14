@@ -6,7 +6,7 @@ import { assertDataType, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
 
-import { type ClientOptions } from './Network/Client';
+import { type ClientOptions, defaultApiEndpoint } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 
 import type { Verification, EmailVerification, OIDCVerification, RemoteVerification, VerificationMethod } from './LocalUser/types';
@@ -25,21 +25,10 @@ import type { EncryptionSession } from './DataProtection/EncryptionSession';
 
 import { TANKER_SDK_VERSION } from './version';
 
-type TankerDefaultOptions = $Exact<{
-  appId?: b64string,
-  trustchainId?: b64string,
-  socket?: any,
-  url?: string,
-  dataStore: DataStoreOptions,
-  sdkType: string,
-}>;
-
 type TankerCoreOptions = $Exact<{
   appId?: b64string,
   trustchainId?: b64string,
-  socket?: any,
   url?: string,
-  connectTimeout?: number,
   dataStore: DataStoreOptions,
   sdkType: string,
 }>;
@@ -47,13 +36,12 @@ type TankerCoreOptions = $Exact<{
 export type TankerOptions = $Exact<{
   appId?: b64string,
   trustchainId?: b64string,
-  socket?: any,
   url?: string,
   dataStore?: DataStoreOptions,
   sdkType?: string,
 }>;
 
-export function optionsWithDefaults(options: TankerOptions, defaults: TankerDefaultOptions): TankerCoreOptions {
+export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
     throw new InvalidArgument('options', 'object', options);
 
@@ -116,14 +104,12 @@ export class Tanker extends EventEmitter {
 
     const clientOptions: ClientOptions = {
       sdkInfo: {
-        version: Tanker.version,
         type: options.sdkType,
-        trustchainId: this._trustchainId,
-      }
+        version: Tanker.version,
+      },
+      url: defaultApiEndpoint,
     };
-    if (options.socket) { clientOptions.socket = options.socket; }
     if (options.url) { clientOptions.url = options.url; }
-    if (options.connectTimeout) { clientOptions.connectTimeout = options.connectTimeout; }
     this._clientOptions = clientOptions;
 
     const datastoreOptions: DataStoreOptions = {
@@ -195,7 +181,7 @@ export class Tanker extends EventEmitter {
 
     const deviceId = this.session.deviceId();
     if (!deviceId)
-      throw new InternalError('Tried to get our device hash, but could not find it!');
+      throw new InternalError('Tried to get our device id, but could not find it!');
 
     return utils.toBase64(deviceId);
   }
@@ -327,11 +313,16 @@ export class Tanker extends EventEmitter {
     return utils.toBase64(encryption.extractResourceId(castEncryptedData));
   }
 
-  async revokeDevice(deviceId: b64string): Promise<void> {
+  async revokeDevice(b64DeviceId: b64string): Promise<void> {
     assertStatus(this.status, statuses.READY, 'revoke a device');
 
-    if (typeof deviceId !== 'string')
-      throw new InvalidArgument('deviceId', 'string', deviceId);
+    if (typeof b64DeviceId !== 'string')
+      throw new InvalidArgument('deviceId', 'string', b64DeviceId);
+
+    const deviceId = utils.fromBase64(b64DeviceId);
+
+    if (deviceId.length !== tcrypto.HASH_SIZE)
+      throw new InvalidArgument('the provided string does not look like a valid deviceId');
 
     return this.session.revokeDevice(deviceId);
   }
