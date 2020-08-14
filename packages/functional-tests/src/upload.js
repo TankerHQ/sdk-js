@@ -116,6 +116,16 @@ export const generateUploadTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
 
+        it('can upload a file and share with a group', async () => {
+          const { type: originalType, resource: clear } = args.resources.small[2];
+          const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
+          const fileId = await aliceLaptop.upload(clear, { shareWithGroups: [groupId] });
+          const decrypted = await bobLaptop.download(fileId);
+
+          expectType(decrypted, originalType);
+          expectDeepEqual(decrypted, clear);
+        });
+
         it('can share a file after upload', async () => {
           const { type: originalType, resource: clear } = args.resources.small[2];
 
