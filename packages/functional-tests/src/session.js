@@ -162,6 +162,22 @@ export const generateSessionTests = (args: TestArgs) => {
       }));
     });
 
+    it('throws when trying to register an empty passphrase', async () => {
+      await bobLaptop.start(bobIdentity);
+      await expect(bobLaptop.registerIdentity({ passphrase: '' })).to.be.rejectedWith(errors.InvalidArgument);
+    });
+
+    it('throws when trying to register an email without a verificationCode', async () => {
+      await bobLaptop.start(bobIdentity);
+      // $FlowExpectedError
+      await expect(bobLaptop.registerIdentity({ email: 'bob@acme.corp' })).to.be.rejectedWith(errors.InvalidArgument);
+    });
+
+    it('throws when trying to register an empty oidcIdToken', async () => {
+      await bobLaptop.start(bobIdentity);
+      await expect(bobLaptop.registerIdentity({ oidcIdToken: '' })).to.be.rejectedWith(errors.InvalidArgument);
+    });
+
     it('throws when registering before having started a session', async () => {
       await expect(bobLaptop.registerIdentity({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
     });
