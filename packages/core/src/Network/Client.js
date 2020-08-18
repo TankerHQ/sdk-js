@@ -398,20 +398,6 @@ export class Client {
   close = async (): Promise<void> => {
     this._cancelationHandle.resolve('Closing the client');
 
-    if (this._accessToken && this._deviceId) {
-      const deviceId = this._deviceId;
-      const path = `/devices/${urlize(deviceId)}/sessions`;
-      // HTTP status:
-      //   204: session successfully deleted
-      //   401: session already expired
-      //   other: something unexpected happened -> ignore and continue closing ¯\_(ツ)_/¯
-      await this._baseApiCall(path, { method: 'DELETE' }).catch((error: TankerError) => {
-        if (error.httpStatus !== 401) {
-          console.error('Error while closing the network client', error);
-        }
-      });
-    }
-
     this._accessToken = '';
     this._deviceId = null;
     this._deviceSignatureKeyPair = null;
