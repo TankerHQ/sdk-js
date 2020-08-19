@@ -18,6 +18,16 @@ export type RemoteVerification = EmailVerification | PassphraseVerification | OI
 const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken'];
 const validKeys = [...validMethods, 'verificationCode'];
 
+const assertNotEmptyString = (verification: Verification, key: string) => {
+  const value = verification[key];
+  if (typeof value !== 'string') {
+    throw new InvalidArgument('verification', `${key} should be a string`, value);
+  }
+  if (!value) {
+    throw new InvalidArgument('verification', `${key} should not be empty`, value);
+  }
+};
+
 export const assertVerification = (verification: Verification) => {
   if (!verification || typeof verification !== 'object' || verification instanceof Array)
     throw new InvalidArgument('verification', 'object', verification);
@@ -31,17 +41,16 @@ export const assertVerification = (verification: Verification) => {
     throw new InvalidArgument('verification', `should contain a single verification method in ${JSON.stringify(validMethods)}`, verification);
 
   if ('email' in verification) {
-    if (typeof verification.email !== 'string')
-      throw new InvalidArgument('verification', 'email should be a string', verification.email);
-    if (!('verificationCode' in verification))
-      throw new InvalidArgument('verification', 'verification should also have a verificationCode', verification);
-    if (typeof verification.verificationCode !== 'string')
-      throw new InvalidArgument('verification', 'verificationCode should be a string', verification.verificationCode);
-  } else if ('passphrase' in verification && typeof verification.passphrase !== 'string') {
-    throw new InvalidArgument('verification', 'passphrase should be a string', verification.passphrase);
-  } else if ('verificationKey' in verification && typeof verification.verificationKey !== 'string') {
-    throw new InvalidArgument('verification', 'verificationKey should be a string', verification.verificationKey);
-  } else if ('oidcIdToken' in verification && typeof verification.oidcIdToken !== 'string') {
-    throw new InvalidArgument('verification', 'oidcIdToken should be a string', verification.oidcIdToken);
+    assertNotEmptyString(verification, 'email');
+    if (!('verificationCode' in verification)) {
+      throw new InvalidArgument('verification', 'email verification should also have a verificationCode', verification);
+    }
+    assertNotEmptyString(verification, 'verificationCode');
+  } else if ('passphrase' in verification) {
+    assertNotEmptyString(verification, 'passphrase');
+  } else if ('verificationKey' in verification) {
+    assertNotEmptyString(verification, 'verificationKey');
+  } else if ('oidcIdToken' in verification) {
+    assertNotEmptyString(verification, 'oidcIdToken');
   }
 };
