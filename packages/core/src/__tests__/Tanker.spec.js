@@ -9,6 +9,7 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
 
+import { type TankerCoreOptions } from '../Tanker';
 import { type EmailVerification, type RemoteVerification } from '../LocalUser/types';
 import { type SharingOptions } from '../DataProtection/options';
 
@@ -16,7 +17,6 @@ describe('Tanker', () => {
   let trustchainKeyPair;
   let appId;
   let userId;
-  let badVerifications;
   let statuses;
 
   const makeTestTankerOptions = () => ({
@@ -26,6 +26,25 @@ describe('Tanker', () => {
     sdkType: 'test',
   });
 
+  const valid32BytesB64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+
+  const badVerifications = [
+    undefined,
+    null,
+    'valid@tanker.io',
+    [],
+    {},
+    { email: null, verificationCode: '12345678' },
+    { email: '', verificationCode: '12345678' },
+    { email: ['valid@tanker.io'], verificationCode: '12345678' },
+    { email: 'valid@tanker.io', verificationCode: '' },
+    { email: 'valid@tanker.io', verificationCode: '12345678', extra_invalid_key: 'test' },
+    { passphrase: 12 },
+    { passphrase: new Uint8Array(12) },
+    { passphrase: '' },
+    { email: 'valid@tanker.io', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
+  ];
+
   before(() => {
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     appId = utils.generateAppID(trustchainKeyPair.publicKey);
@@ -33,20 +52,6 @@ describe('Tanker', () => {
     ({ statuses } = Tanker);
 
     userId = 'winnie';
-
-    badVerifications = [
-      undefined,
-      null,
-      'valid@tanker.io',
-      [],
-      {},
-      { email: null, verificationCode: '12345678' },
-      { email: ['valid@tanker.io'], verificationCode: '12345678' },
-      { email: 'valid@tanker.io', verificationCode: '12345678', extra_invalid_key: 'test' },
-      { passphrase: 12 },
-      { passphrase: new Uint8Array(12) },
-      { email: 'valid@tanker.io', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
-    ];
   });
 
   describe('version', () => {
@@ -102,17 +107,19 @@ describe('Tanker', () => {
         // invalid appId
         {},
         { appId: undefined },
+        { appId: '' },
+        { appId: 'AAAA=' },
         { appId: new Uint8Array(32) },
         // missing dataStore
-        { appId: 'ok' },
+        { appId: valid32BytesB64 },
         // missing adapter
-        { appId: 'ok', dataStore: {} },
+        { appId: valid32BytesB64, dataStore: {} },
         // wrong adapter type
-        { appId: 'ok', dataStore: { adapter: 'not a function' } },
-        { appId: 'ok', dataStore: { adapter: () => {} }, sdkType: undefined }
+        { appId: valid32BytesB64, dataStore: { adapter: 'not a function' } },
+        { appId: valid32BytesB64, dataStore: { adapter: () => {} }, sdkType: undefined }
       ].forEach((invalidOptions, i) => {
-        // $FlowExpectedError
-        expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
+        const arg = ((invalidOptions: any): TankerCoreOptions);
+        expect(() => { new Tanker(arg); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
       });
     });
 
@@ -158,13 +165,20 @@ describe('Tanker', () => {
     });
 
     describe('start', () => {
-      it('should throw when identity is undefined', async () => {
-        // $FlowExpectedError
-        await expect(tanker.start(undefined)).to.be.rejectedWith(InvalidArgument);
-      });
+      it('should throw when identity is invalid', async () => {
+        const badIdentities = [
+          undefined,
+          null,
+          {},
+          [],
+          '',
+          'not base 64'
+        ];
 
-      it('should throw when identity is not base64', async () => {
-        await expect(tanker.start('not b64')).to.be.rejectedWith(InvalidArgument);
+        for (let i = 0; i < badIdentities.length; i++) {
+          const arg = ((badIdentities[i]: any): string);
+          await expect(tanker.start(arg)).to.be.rejectedWith(InvalidArgument);
+        }
       });
 
       it('should throw when identity\'s trustchain does not match tanker\'s', async () => {
@@ -257,6 +271,9 @@ describe('Tanker', () => {
           null,
           [],
           {},
+          '',
+          'not base 64',
+          'AAAA='
         ];
 
         for (let i = 0; i < badArgs.length; i++) {
@@ -270,7 +287,7 @@ describe('Tanker', () => {
           undefined,
           null,
           {},
-          'random string'
+          'random string',
         ];
 
         for (let i = 0; i < badArgs.length; i++) {
@@ -279,11 +296,36 @@ describe('Tanker', () => {
         }
       });
 
-      it('updating group members should throw if invalid argument given', async () => {
-        // $FlowExpectedError
-        await expect(tanker.updateGroupMembers('', { usersToAdd: null })).to.be.rejectedWith(InvalidArgument);
-        // $FlowExpectedError
-        await expect(tanker.updateGroupMembers(null, { usersToAdd: ['user1'] })).to.be.rejectedWith(InvalidArgument);
+      it('updating group members should throw if invalid GroupID argument given', async () => {
+        const badGroupIdArgs = [
+          undefined,
+          null,
+          {},
+          ''
+        ];
+
+        for (let i = 0; i < badGroupIdArgs.length; i++) {
+          const badGroupIdArg = ((badGroupIdArgs[i]: any): string);
+          await expect(tanker.updateGroupMembers(badGroupIdArg, { usersToAdd: ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='] })).to.be.rejectedWith(InvalidArgument);
+        }
+      });
+
+      const validGroupId = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+
+      it('updating group members should throw if invalid Users argument given', async () => {
+        const badUsersArgs = [
+          undefined,
+          null,
+          {},
+          'random string',
+          { usersToAdd: null },
+          { usersToAdd: [] },
+          { usersToAdd: [''] },
+        ];
+        for (let i = 0; i < badUsersArgs.length; i++) {
+          const badUsersArg = ((badUsersArgs[i]: any): $Exact<{ usersToAdd: Array<string> }>);
+          await expect(tanker.updateGroupMembers(validGroupId, badUsersArg)).to.be.rejectedWith(InvalidArgument);
+        }
       });
 
       it('sharing should throw if invalid argument given', async () => {
@@ -292,8 +334,10 @@ describe('Tanker', () => {
           0,
           'noArrayAroundMe',
           { shareWithUsers: [undefined] },
+          { shareWithUsers: [''] },
           { shareWithUsers: 'noArrayAroundMe' },
           { shareWithGroups: 'noArrayAroundMe' },
+          { shareWithUsers: [''] },
           { shareWithGroups: [new Uint8Array(32)] },
           {}, // empty is not allowed on reshare
         ];

@@ -1,9 +1,7 @@
 // @flow
 
 import { utils, type b64string } from '@tanker/crypto';
-import { InvalidArgument } from '@tanker/errors';
-import type { Data } from '@tanker/types';
-import { assertDataType } from '@tanker/types';
+import { type Data, assertDataType, assertNotEmptyString } from '@tanker/types';
 
 import { assertStatus, statuses, type Status } from '../Session/status';
 import type { OutputOptions, ProgressOptions } from './options';
@@ -31,9 +29,7 @@ export class EncryptionSession {
   }
 
   async encrypt<T: Data>(clearText: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
-    if (typeof clearText !== 'string')
-      throw new InvalidArgument('clearText', 'string', clearText);
-
+    assertNotEmptyString(clearText, 'clearText');
     return this.encryptData(utils.fromString(clearText), options);
   }
 
