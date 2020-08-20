@@ -150,6 +150,10 @@ export default class GroupManager {
   }
 
   async _groupsFromBlocks(blocks: Array<b64string>): Promise<Array<Group>> {
+    if (blocks.length === 0) {
+      return [];
+    }
+
     const entries = blocks.map(block => getGroupEntryFromBlock(block));
 
     const deviceIds = entries.map(entry => entry.author);
