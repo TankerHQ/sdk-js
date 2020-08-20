@@ -42,11 +42,6 @@ export const generateSessionTests = (args: TestArgs) => {
       silenceError.restore();
     });
 
-    it('throws when giving invalid arguments', async () => {
-      // $FlowExpectedError
-      await expect(bobLaptop.start()).to.be.rejectedWith(errors.InvalidArgument);
-    });
-
     it('throws when giving an invalid identity', async () => {
       await expect(bobLaptop.start('secret')).to.be.rejectedWith(errors.InvalidArgument);
     });
@@ -151,31 +146,6 @@ export const generateSessionTests = (args: TestArgs) => {
 
     afterEach(async () => {
       await bobLaptop.stop();
-    });
-
-    it('throws when giving invalid arguments', async () => {
-      await bobLaptop.start(bobIdentity);
-
-      await Promise.all([undefined, 'none', ['none'], [{ none: true }], { none: 'none' }].map(arg => { /* eslint-disable-line arrow-body-style */
-        // $FlowExpectedError
-        return expect(bobLaptop.registerIdentity(arg)).to.be.rejectedWith(errors.InvalidArgument);
-      }));
-    });
-
-    it('throws when trying to register an empty passphrase', async () => {
-      await bobLaptop.start(bobIdentity);
-      await expect(bobLaptop.registerIdentity({ passphrase: '' })).to.be.rejectedWith(errors.InvalidArgument);
-    });
-
-    it('throws when trying to register an email without a verificationCode', async () => {
-      await bobLaptop.start(bobIdentity);
-      // $FlowExpectedError
-      await expect(bobLaptop.registerIdentity({ email: 'bob@acme.corp' })).to.be.rejectedWith(errors.InvalidArgument);
-    });
-
-    it('throws when trying to register an empty oidcIdToken', async () => {
-      await bobLaptop.start(bobIdentity);
-      await expect(bobLaptop.registerIdentity({ oidcIdToken: '' })).to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('throws when registering before having started a session', async () => {

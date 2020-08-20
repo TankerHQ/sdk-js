@@ -1,5 +1,6 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
+import { assertNotEmptyString } from '@tanker/types';
 import { InvalidArgument } from '@tanker/errors';
 
 export function toBase64(bytes: Uint8Array): b64string {
@@ -10,16 +11,12 @@ export function toBase64(bytes: Uint8Array): b64string {
 }
 
 export function fromBase64(str: b64string): Uint8Array {
-  if (typeof str !== 'string')
-    throw new InvalidArgument('str', 'b64string', str);
-
+  assertNotEmptyString(str, 'str');
   return utils.fromBase64(str);
 }
 
 // Keep this function asynchronous for compat with future asynchronous libsodium init
 export async function prehashPassword(password: string): Promise<b64string> {
-  if (typeof password !== 'string')
-    throw new InvalidArgument('password', 'string', password);
-
+  assertNotEmptyString(password, 'password');
   return utils.toBase64(utils.prehashPassword(utils.fromString(password)));
 }

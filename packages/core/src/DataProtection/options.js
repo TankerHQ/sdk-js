@@ -2,7 +2,7 @@
 import type { b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import globalThis from '@tanker/global-this';
-import { getConstructor, type Data } from '@tanker/types';
+import { getConstructor, type Data, assertNotEmptyString } from '@tanker/types';
 
 import type { OnProgress } from './ProgressHandler';
 
@@ -28,9 +28,7 @@ export const extractSharingOptions = (options: Object, error: any = new InvalidA
     if (key in options) {
       if (!(options[key] instanceof Array))
         throw error;
-      if (options[key].some(el => typeof el !== 'string'))
-        throw error;
-
+      options[key].forEach(el => assertNotEmptyString(el, `option.${key}`));
       sharingOptions[key] = options[key];
     }
   });

@@ -1,5 +1,6 @@
 // @flow
 import { InvalidArgument } from '@tanker/errors';
+import { assertNotEmptyString } from '@tanker/types';
 
 export type EmailVerificationMethod = $Exact<{ type: 'email', email: string }>;
 type PassphraseVerificationMethod = $Exact<{ type: 'passphrase' }>;
@@ -18,16 +19,6 @@ export type RemoteVerification = EmailVerification | PassphraseVerification | OI
 const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken'];
 const validKeys = [...validMethods, 'verificationCode'];
 
-const assertNotEmptyString = (verification: Verification, key: string) => {
-  const value = verification[key];
-  if (typeof value !== 'string') {
-    throw new InvalidArgument('verification', `${key} should be a string`, value);
-  }
-  if (!value) {
-    throw new InvalidArgument('verification', `${key} should not be empty`, value);
-  }
-};
-
 export const assertVerification = (verification: Verification) => {
   if (!verification || typeof verification !== 'object' || verification instanceof Array)
     throw new InvalidArgument('verification', 'object', verification);
@@ -41,16 +32,21 @@ export const assertVerification = (verification: Verification) => {
     throw new InvalidArgument('verification', `should contain a single verification method in ${JSON.stringify(validMethods)}`, verification);
 
   if ('email' in verification) {
-    assertNotEmptyString(verification, 'email');
+    // $FlowIgnore[prop-missing]
+    assertNotEmptyString(verification.email, 'verification.email');
     if (!('verificationCode' in verification)) {
       throw new InvalidArgument('verification', 'email verification should also have a verificationCode', verification);
     }
-    assertNotEmptyString(verification, 'verificationCode');
+    // $FlowIgnore[prop-missing]
+    assertNotEmptyString(verification.verificationCode, 'verification.verificationCode');
   } else if ('passphrase' in verification) {
-    assertNotEmptyString(verification, 'passphrase');
+    // $FlowIgnore[prop-missing]
+    assertNotEmptyString(verification.passphrase, 'verification.passphrase');
   } else if ('verificationKey' in verification) {
-    assertNotEmptyString(verification, 'verificationKey');
+    // $FlowIgnore[prop-missing]
+    assertNotEmptyString(verification.verificationKey, 'verification.verificationKey');
   } else if ('oidcIdToken' in verification) {
-    assertNotEmptyString(verification, 'oidcIdToken');
+    // $FlowIgnore[prop-missing]
+    assertNotEmptyString(verification.oidcIdToken, 'verification.oidcIdToken');
   }
 };

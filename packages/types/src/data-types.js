@@ -1,5 +1,7 @@
 // @flow
 import { InternalError, InvalidArgument } from '@tanker/errors';
+import { utils } from '@tanker/crypto';
+
 import FilePonyfill from '@tanker/file-ponyfill';
 import FileReader from '@tanker/file-reader';
 import globalThis from '@tanker/global-this';
@@ -32,6 +34,29 @@ export const assertDataType = (value: any, argName: string): void => {
 export const assertDataTypeClass = (value: any, argName: string): void => {
   if (!dataTypeDefs.some(def => value === def.type))
     throw new InvalidArgument(argName, 'class in [ArrayBuffer | Blob | Buffer | File | Uint8Array]', value);
+};
+
+export const assertNotEmptyString = (arg: any, argName: string) => {
+  if (typeof arg !== 'string') {
+    throw new InvalidArgument(argName, `${argName} should be a string`, arg);
+  }
+  if (arg.length === 0) {
+    throw new InvalidArgument(argName, `${argName} should not be empty`, arg);
+  }
+};
+
+export const assertB64StringWithSize = (arg: any, argName: string, expectedSize: number) => {
+  assertNotEmptyString(arg, argName);
+
+  let unb64;
+  try {
+    unb64 = utils.fromBase64(arg);
+  } catch (e) {
+    throw new InvalidArgument(argName, `${argName} is not valid base64`, arg);
+  }
+  if (unb64.length !== expectedSize) {
+    throw new InvalidArgument(argName, `${argName} is not the right size, expected ${expectedSize}, got ${unb64.length}`, arg);
+  }
 };
 
 export const getConstructor = <T: Data>(instance: T): * => {

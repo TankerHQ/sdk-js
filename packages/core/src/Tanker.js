@@ -2,7 +2,7 @@
 import EventEmitter from 'events';
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
-import { assertDataType, castData } from '@tanker/types';
+import { assertDataType, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
 
@@ -34,7 +34,7 @@ type TankerDefaultOptions = $Exact<{
   sdkType: string,
 }>;
 
-type TankerCoreOptions = $Exact<{
+export type TankerCoreOptions = $Exact<{
   appId?: b64string,
   trustchainId?: b64string,
   socket?: any,
@@ -87,17 +87,11 @@ export class Tanker extends EventEmitter {
     }
 
     if ('appId' in options) {
-      if (typeof options.appId !== 'string') {
-        throw new InvalidArgument('options.appId', 'string', options.appId);
-      }
-
-      this._trustchainId = options.appId;
+      assertB64StringWithSize(options.appId, 'options.appId', tcrypto.HASH_SIZE);
+      this._trustchainId = ((options.appId: any): string);
     } else if ('trustchainId' in options) {
-      if (typeof options.trustchainId !== 'string') {
-        throw new InvalidArgument('options.trustchainId', 'string', options.trustchainId);
-      }
-
-      this._trustchainId = options.trustchainId;
+      assertB64StringWithSize(options.trustchainId, 'trustchainId.appId', tcrypto.HASH_SIZE);
+      this._trustchainId = ((options.trustchainId: any): string);
       console.warn('"trustchainId" option has been deprecated in favor of "appId", it will be removed in the next major release.');
     } else {
       throw new InvalidArgument('options.appId', 'string', options.appId);
@@ -108,10 +102,8 @@ export class Tanker extends EventEmitter {
     } else if (typeof options.dataStore.adapter !== 'function') {
       throw new InvalidArgument('options.dataStore.adapter', 'function', options.dataStore.adapter);
     }
-    if (typeof options.sdkType !== 'string') {
-      throw new InvalidArgument('options.sdkType', 'string', options.sdkType);
-    }
 
+    assertNotEmptyString(options.sdkType, 'options.sdkType');
     this._options = options;
 
     const clientOptions: ClientOptions = {
@@ -266,9 +258,7 @@ export class Tanker extends EventEmitter {
   }
 
   _parseIdentity(identityB64: b64string) {
-    // Type verif arguments
-    if (!identityB64 || typeof identityB64 !== 'string')
-      throw new InvalidArgument('identity', 'b64string', identityB64);
+    assertNotEmptyString(identityB64, 'identity');
     // End type verif
     const userData = extractUserData(identityB64);
     const userDataTrustchainId = utils.toBase64(userData.trustchainId);
@@ -300,8 +290,9 @@ export class Tanker extends EventEmitter {
   async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {
     assertStatus(this.status, statuses.READY, 'share');
 
-    if (!(resourceIds instanceof Array) || resourceIds.some(id => typeof id !== 'string'))
+    if (!(resourceIds instanceof Array))
       throw new InvalidArgument('resourceIds', 'Array<b64string>', resourceIds);
+    resourceIds.forEach(id => assertB64StringWithSize(id, 'resourceId', tcrypto.MAC_SIZE));
 
     const sharingOptions = extractSharingOptions(options);
 
@@ -329,9 +320,7 @@ export class Tanker extends EventEmitter {
 
   async revokeDevice(deviceId: b64string): Promise<void> {
     assertStatus(this.status, statuses.READY, 'revoke a device');
-
-    if (typeof deviceId !== 'string')
-      throw new InvalidArgument('deviceId', 'string', deviceId);
+    assertB64StringWithSize(deviceId, 'deviceId', tcrypto.HASH_SIZE);
 
     return this.session.revokeDevice(deviceId);
   }
@@ -341,20 +330,23 @@ export class Tanker extends EventEmitter {
 
     if (!(users instanceof Array))
       throw new InvalidArgument('users', 'Array<string>', users);
+    users.forEach(user => assertNotEmptyString(user, 'users'));
 
     return this.session.createGroup(users);
   }
 
   async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd: Array<string> }>): Promise<void> {
     assertStatus(this.status, statuses.READY, 'update a group');
+    if (!args)
+      throw new InvalidArgument('usersToAdd', '{ usersToAdd: Array<string> }', args);
 
     const { usersToAdd } = args;
 
-    if (!usersToAdd || !(usersToAdd instanceof Array))
+    if (!usersToAdd || !(usersToAdd instanceof Array) || usersToAdd.length === 0)
       throw new InvalidArgument('usersToAdd', 'Array<string>', usersToAdd);
+    usersToAdd.forEach(user => assertNotEmptyString(user, 'usersToAdd'));
 
-    if (typeof groupId !== 'string')
-      throw new InvalidArgument('groupId', 'string', groupId);
+    assertB64StringWithSize(groupId, 'groupId', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
     return this.session.updateGroupMembers(groupId, usersToAdd);
   }
@@ -386,10 +378,7 @@ export class Tanker extends EventEmitter {
 
   async encrypt<T: Data>(plain: string, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
     assertStatus(this.status, statuses.READY, 'encrypt');
-
-    if (typeof plain !== 'string')
-      throw new InvalidArgument('plain', 'string', plain);
-
+    assertNotEmptyString(plain, 'plain');
     return this.encryptData(utils.fromString(plain), options);
   }
 
@@ -421,10 +410,7 @@ export class Tanker extends EventEmitter {
 
   async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertStatus(this.status, statuses.READY, 'download a file');
-
-    // Best effort to catch values that can't be a resourceId before reaching the server
-    if (typeof resourceId !== 'string' || utils.fromBase64(resourceId).length !== tcrypto.MAC_SIZE)
-      throw new InvalidArgument('resourceId', 'string', resourceId);
+    assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 
     if (!isObject(options))
       throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
