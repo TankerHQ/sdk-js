@@ -64,6 +64,12 @@ export const generateGroupsTests = (args: TestArgs) => {
         .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
     });
 
+    it('throws on groupUpdate with invalid group ID', async () => {
+      const badGroupID = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+      await expect(aliceLaptop.updateGroupMembers(badGroupID, { usersToAdd: [alicePublicIdentity] }))
+        .to.be.rejectedWith(errors.InvalidArgument, badGroupID);
+    });
+
     it('throws on groupUpdate with mix valid/invalid users', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, unknownPublicIdentity] }))
