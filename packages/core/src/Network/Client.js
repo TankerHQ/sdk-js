@@ -16,6 +16,8 @@ export type ClientOptions = {
   sdkInfo: { type: string, version: string },
 }
 
+const MAX_QUERY_STRING_ITEMS = 100;
+
 /**
  * Network communication
  */
@@ -269,13 +271,26 @@ export class Client {
     if (this._isRevoked && userIds.length === 1 && utils.equalArray(userIds[0], this._userId)) {
       return this.getRevokedDeviceHistory();
     }
-    const query = `user_ids[]=${userIds.map(id => urlize(id)).join('&user_ids[]=')}`;
-    return this.getUserHistories(query);
+
+    const result = { root: '', histories: [] };
+    for (let i = 0; i < userIds.length; i += MAX_QUERY_STRING_ITEMS) {
+      const query = `user_ids[]=${userIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&user_ids[]=')}`;
+      const response = await this.getUserHistories(query);
+      result.root = response.root;
+      result.histories = result.histories.concat(response.histories);
+    }
+    return result;
   }
 
-  getUserHistoriesByDeviceIds = (deviceIds: Array<Uint8Array>) => {
-    const query = `device_ids[]=${deviceIds.map(id => urlize(id)).join('&device_ids[]=')}`;
-    return this.getUserHistories(query);
+  getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>) => {
+    const result = { root: '', histories: [] };
+    for (let i = 0; i < deviceIds.length; i += MAX_QUERY_STRING_ITEMS) {
+      const query = `device_ids[]=${deviceIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&device_ids[]=')}`;
+      const response = await this.getUserHistories(query);
+      result.root = response.root;
+      result.histories = result.histories.concat(response.histories);
+    }
+    return result;
   }
 
   getVerificationMethods = async () => {
@@ -337,9 +352,15 @@ export class Client {
     return this._apiCall(`/user-group-histories?${query}`);
   }
 
-  getGroupHistoriesByGroupIds = (groupIds: Array<Uint8Array>) => {
-    const query = `user_group_ids[]=${groupIds.map(id => urlize(id)).join('&user_group_ids[]=')}`;
-    return this.getGroupHistories(query);
+  getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<$Exact<{ histories: Array<b64string> }>> => {
+    const result = { histories: [] };
+
+    for (let i = 0; i < groupIds.length; i += MAX_QUERY_STRING_ITEMS) {
+      const query = `user_group_ids[]=${groupIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&user_group_ids[]=')}`;
+      const response = await this.getGroupHistories(query);
+      result.histories = result.histories.concat(response.histories);
+    }
+    return result;
   }
 
   getGroupHistoriesByGroupPublicEncryptionKey = (groupPublicEncryptionKey: Uint8Array) => {
@@ -357,10 +378,14 @@ export class Client {
   }
 
   getPublicProvisionalIdentities = async (hashedEmails: Array<Uint8Array>) => {
-    const query = `hashed_emails[]=${hashedEmails.map(id => urlize(id)).join('&hashed_emails[]=')}`;
-    const path = `/public-provisional-identities?${query}`;
-    const { public_provisional_identities: publicProvisionalIdentitiesByHashedEmail } = await this._apiCall(path);
-    return publicProvisionalIdentitiesByHashedEmail;
+    let result = {};
+    for (let i = 0; i < hashedEmails.length; i += MAX_QUERY_STRING_ITEMS) {
+      const query = `hashed_emails[]=${hashedEmails.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&hashed_emails[]=')}`;
+      const path = `/public-provisional-identities?${query}`;
+      const { public_provisional_identities: publicProvisionalIdentitiesByHashedEmail } = await this._apiCall(path);
+      result = { ...result, ...publicProvisionalIdentitiesByHashedEmail };
+    }
+    return result;
   }
 
   getProvisionalIdentityClaims = async () => {
