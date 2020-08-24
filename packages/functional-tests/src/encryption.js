@@ -152,6 +152,16 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
       });
 
+      it('throws when trying to share with more than 100 recipients', async () => {
+        const identities = new Array(101).fill(alicePublicIdentity);
+
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: identities })).to.be.rejectedWith(errors.InvalidArgument);
+
+        const encryptedData = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(encryptedData);
+        await expect(bobLaptop.share([resourceId], { shareWithUsers: identities })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
       it('throws when sharing with secret permanent identities', async () => {
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [aliceIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
       });

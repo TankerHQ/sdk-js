@@ -6,6 +6,8 @@ import { getConstructor, type Data, assertNotEmptyString } from '@tanker/types';
 
 import type { OnProgress } from './ProgressHandler';
 
+const MAX_SHARE_RECIPIENTS = 100;
+
 export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Array;
 
 export type OutputOptions<T: Data> = $Exact<{ type: Class<T>, mime?: string, name?: string, lastModified?: number }>;
@@ -23,15 +25,25 @@ export const extractSharingOptions = (options: Object, error: any = new InvalidA
     throw error;
 
   const sharingOptions = {};
+  let recipientCount = 0;
 
   ['shareWithUsers', 'shareWithGroups'].forEach(key => {
     if (key in options) {
-      if (!(options[key] instanceof Array))
+      const value = options[key];
+      if (!(value instanceof Array))
         throw error;
-      options[key].forEach(el => assertNotEmptyString(el, `option.${key}`));
-      sharingOptions[key] = options[key];
+      value.forEach(el => assertNotEmptyString(el, `options.${key}`));
+      sharingOptions[key] = value;
+      recipientCount += value.length;
     }
   });
+
+  if (recipientCount > MAX_SHARE_RECIPIENTS)
+    throw new InvalidArgument(
+      'options.shareWith*',
+      'it is not possible to share with more than 100 recipients at once',
+      options
+    );
 
   return sharingOptions;
 };
