@@ -9,7 +9,7 @@ import type { Data } from '@tanker/types';
 
 import type { Client } from '../Network/Client';
 import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProtection/types';
-import type { Resource } from '../DataProtection/types';
+import type { EncryptionFormatDescription, Resource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
@@ -25,6 +25,13 @@ const pipeStreams = (
 // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
 const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
+type Metadata = $Exact<{
+  encryptionFormat: EncryptionFormatDescription,
+  mime?: string,
+  name?: string,
+  lastModified?: number
+}>;
+
 export class CloudStorageManager {
   _client: Client;
   _dataProtector: DataProtector;
@@ -37,14 +44,14 @@ export class CloudStorageManager {
     this._dataProtector = dataProtector;
   }
 
-  async _encryptAndShareMetadata(metadata: Object, resource: Resource): Promise<b64string> {
+  async _encryptAndShareMetadata(metadata: Metadata, resource: Resource): Promise<b64string> {
     const jsonMetadata = JSON.stringify(metadata);
     const clearMetadata = utils.fromString(jsonMetadata);
     const encryptedMetadata = await this._dataProtector.encryptData(clearMetadata, {}, { type: Uint8Array }, {}, resource);
     return utils.toBase64(encryptedMetadata);
   }
 
-  async _decryptMetadata(b64EncryptedMetadata: b64string): Promise<*> {
+  async _decryptMetadata(b64EncryptedMetadata: b64string): Promise<Metadata> {
     const encryptedMetadata = utils.fromBase64(b64EncryptedMetadata);
     const decryptedMetadata = await this._dataProtector.decryptData(encryptedMetadata, { type: Uint8Array }, {});
     const jsonMetadata = utils.toString(decryptedMetadata);
@@ -60,9 +67,7 @@ export class CloudStorageManager {
     const totalEncryptedSize = encryptor.getEncryptedSize(totalClearSize);
 
     const { type, ...fileMetadata } = outputOptions;
-    // clearContentLength shouldn't be used since we may not have that
-    // information. We leave it here only for compatibility with SDKs up to 2.2.1
-    const metadata = { ...fileMetadata, clearContentLength: totalClearSize, encryptionFormat: getStreamEncryptionFormatDescription() };
+    const metadata = { ...fileMetadata, encryptionFormat: getStreamEncryptionFormatDescription() };
     const encryptedMetadata = await this._encryptAndShareMetadata(metadata, { resourceId, key });
 
     const {
@@ -123,18 +128,18 @@ export class CloudStorageManager {
     const downloader = new DownloadStream(resourceId, headUrl, getUrl, downloadChunkSize);
 
     const { metadata: encryptedMetadata, encryptedContentLength } = await downloader.getMetadata();
-    const { encryptionFormat, clearContentLength, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
+    const { encryptionFormat, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
     const combinedOutputOptions = extractOutputOptions({ type: defaultDownloadType, ...outputOptions, ...fileMetadata });
     const merger = new MergerStream(combinedOutputOptions);
 
     const decryptor = await this._dataProtector.makeDecryptorStream();
 
-    // For compatibility with SDKs up to 2.2.1
-    const clearSize = encryptionFormat
-      ? getClearSize(encryptionFormat, encryptedContentLength)
-      : clearContentLength;
-    const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
-    decryptor.on('data', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
+    // SDKs up to v2.2.1 did not set an encryption format in the metadata
+    if (encryptionFormat) {
+      const clearSize = getClearSize(encryptionFormat, encryptedContentLength);
+      const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
+      decryptor.on('data', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
+    }
 
     return pipeStreams({ streams: [downloader, decryptor, merger], resolveEvent: 'data' });
   }
