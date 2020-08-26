@@ -8,7 +8,7 @@ import type { OnProgress } from './ProgressHandler';
 
 export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Array;
 
-export type OutputOptions<T: Data> = { type: Class<T>, mime?: string, name?: string, lastModified?: number };
+export type OutputOptions<T: Data> = $Exact<{ type: Class<T>, mime?: string, name?: string, lastModified?: number }>;
 
 export type ProgressOptions = { onProgress?: OnProgress };
 
@@ -80,8 +80,9 @@ export const extractOutputOptions = <T: Data>(options: Object, input?: Data): Ou
     throw new InternalError('Assertion error: called extractOutputOptions without a type or input');
   }
 
-  const outputOptions = {};
-  outputOptions.type = outputType;
+  const outputOptions: OutputOptions<T> = {
+    type: outputType
+  };
 
   if (globalThis.Blob && input instanceof globalThis.Blob) {
     outputOptions.mime = input.type;

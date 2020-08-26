@@ -19,7 +19,7 @@ export type Resource = {
 // By reading an input up to this size, we're sure to be able to extract the resource ID.
 export const SAFE_EXTRACTION_LENGTH = 1 + 16 + 24 + 5 * (1024 * 1024);
 
-type EncryptionFormatDescription = {
+export type EncryptionFormatDescription = {
   version: number,
   encryptedChunkSize?: number,
 };
