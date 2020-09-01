@@ -18,8 +18,8 @@ type PublicIdentitiesResponse = Array<{
   public_identity: string,
 }>;
 
-// Converts the base64 argument into the URL safe variant (RFC 4648)
-const ensureUrlSafeBase64 = (b64str: string) => b64str.replace(/[/+]/g, (char: string) => {
+// Converts the base64 argument into the unpaddded URL safe variant (RFC 4648)
+const ensureUrlSafeBase64 = (b64str: string) => b64str.replace(/[/+=]/g, (char: string) => {
   if (char === '/') return '_';
   if (char === '+') return '-';
   return '';
