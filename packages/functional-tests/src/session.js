@@ -258,6 +258,7 @@ export const generateSessionTests = (args: TestArgs) => {
 
       mockExpireAccessToken(bobDesktop);
       await expect(bobDesktop.encrypt('some secret')).to.be.fulfilled;
+      await bobDesktop.stop();
     });
 
     it('can re-authenticate an existing device after session token expiration and retry the failed operation', async () => {
