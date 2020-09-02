@@ -5,7 +5,7 @@ import PouchDBMemory from '@tanker/datastore-pouchdb-memory';
 import type { b64string } from '@tanker/core';
 
 import type { TestResources } from '../helpers';
-import { tankerUrl, makePrefix, makeRandomUint8Array } from '../helpers';
+import { appdUrl, makePrefix, makeRandomUint8Array } from '../helpers';
 import { generateFunctionalTests } from '..';
 
 const makeTanker = (appId: b64string): Tanker => {
@@ -13,7 +13,7 @@ const makeTanker = (appId: b64string): Tanker => {
     appId,
     dataStore: { adapter: PouchDBMemory, prefix: makePrefix() },
     sdkType: 'js-functional-tests-node',
-    url: tankerUrl,
+    url: appdUrl,
   });
 
   return tanker;

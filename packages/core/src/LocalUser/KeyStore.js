@@ -10,13 +10,13 @@ import { type Device } from '../Users/types';
 const TABLE = 'device';
 
 export type LocalData = {|
-  deviceSignatureKeyPair: tcrypto.SodiumKeyPair;
-  deviceEncryptionKeyPair: tcrypto.SodiumKeyPair;
-  userKeys: { [string]: tcrypto.SodiumKeyPair };
   currentUserKey: ?tcrypto.SodiumKeyPair;
   deviceId: ?Uint8Array,
-  trustchainPublicKey: ?Uint8Array,
+  deviceEncryptionKeyPair: ?tcrypto.SodiumKeyPair;
+  deviceSignatureKeyPair: ?tcrypto.SodiumKeyPair;
   devices: Array<Device>,
+  trustchainPublicKey: ?Uint8Array,
+  userKeys: { [string]: tcrypto.SodiumKeyPair };
 |};
 
 export default class KeyStore {
@@ -65,9 +65,13 @@ export default class KeyStore {
   async save(localData: LocalData, userSecret: Uint8Array) {
     if (localData.currentUserKey)
       this._safe.localUserKeys = { userKeys: localData.userKeys, currentUserKey: localData.currentUserKey };
+    if (localData.deviceSignatureKeyPair)
+      this._safe.signaturePair = localData.deviceSignatureKeyPair;
+    if (localData.deviceEncryptionKeyPair)
+      this._safe.encryptionPair = localData.deviceEncryptionKeyPair;
     this._safe.deviceId = localData.deviceId ? utils.toBase64(localData.deviceId) : null;
-    this._safe.trustchainPublicKey = localData.trustchainPublicKey ? utils.toBase64(localData.trustchainPublicKey) : null;
     this._safe.devices = localData.devices;
+    this._safe.trustchainPublicKey = localData.trustchainPublicKey ? utils.toBase64(localData.trustchainPublicKey) : null;
     return this._saveSafe(userSecret);
   }
 
@@ -96,10 +100,12 @@ export default class KeyStore {
 
   async close(): Promise<void> {
     // First erase traces of critical data in memory
-    utils.memzero(this._safe.encryptionPair.privateKey);
-    utils.memzero(this._safe.signaturePair.privateKey);
-    utils.memzero(this._safe.encryptionPair.publicKey);
-    utils.memzero(this._safe.signaturePair.publicKey);
+    [this._safe.encryptionPair, this._safe.signaturePair].forEach((keyPair) => {
+      if (keyPair) {
+        utils.memzero(keyPair.privateKey);
+        utils.memzero(keyPair.publicKey);
+      }
+    });
     delete this._safe.deviceId;
     delete this._safe.trustchainPublicKey;
 
@@ -117,6 +123,7 @@ export default class KeyStore {
   async initData(userSecret: Uint8Array): Promise<void> {
     let record: Object;
     let safe: ?KeySafe;
+    let upgraded: bool = false;
 
     // Try to get safe from the storage, might not exist yet
     try {
@@ -132,7 +139,7 @@ export default class KeyStore {
     // Try to deserialize the safe
     try {
       if (record) {
-        safe = await deserializeKeySafe(record.encryptedSafe, userSecret);
+        ({ safe, upgraded } = await deserializeKeySafe(record.encryptedSafe, userSecret));
       }
     } catch (e) {
       // Log unexpected error. That said, there's not much that can be done...
@@ -151,5 +158,10 @@ export default class KeyStore {
 
     // Read-only (non writable, non enumerable, non reconfigurable)
     Object.defineProperty(this, '_safe', { value: safe });
+
+    // If the format of the safe has changed, save the upgraded version
+    if (upgraded) {
+      await this._saveSafe(userSecret);
+    }
   }
 }

@@ -90,16 +90,14 @@ class VerifyDevice extends React.Component<Props> {
 
     try {
       actions.sendStart(state.sendAttempts + 1);
-      const raw = await fetch(`${url}/verification/email`, {
+      const b64UrlUnpaddedAppId = appId.replace(/\//g, '_').replace(/\+/g, '-').replace(/=+$/g, '');
+      const raw = await fetch(`${url}/v2/apps/${b64UrlUnpaddedAppId}/verification/default-email`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          app_id: appId,
-          email_data: { to_email: email },
-        }),
+        body: JSON.stringify({ to_email: email }),
       });
 
       if (raw.status !== 200) {

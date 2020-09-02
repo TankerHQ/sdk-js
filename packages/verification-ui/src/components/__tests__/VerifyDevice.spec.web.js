@@ -8,9 +8,13 @@ import VerifyDevice from '../VerifyDevice';
 
 const shallowNoMount = elt => shallow(elt, { disableLifecycleMethods: true });
 const contextHolder = makeContextHolder();
+
+const appId = '/+A=';
+const b64UrlUnpaddedAppId = '_-A';
+
 const defaultProps = {
   fetch: (uri: string, options: { method: string, body: string }) => {}, // eslint-disable-line no-unused-vars
-  appId: '1234',
+  appId,
   email: 'a@a.aa',
   url: 'https://thisisatest.test',
   check: () => new Promise(resolve => resolve()),
@@ -29,9 +33,9 @@ const makeFakeFetch = (status: number, body: Object) => {
 
   fakeFetch.assert = () => {
     expect(callCount).to.equal(1);
-    expect(callArgs.uri).to.equal(`${defaultProps.url}/verification/email`);
+    expect(callArgs.uri).to.equal(`${defaultProps.url}/v2/apps/${b64UrlUnpaddedAppId}/verification/default-email`);
     expect(callArgs.options.method).to.equal('POST');
-    expect(callArgs.options.body).to.equal(JSON.stringify({ app_id: defaultProps.appId, email_data: { to_email: defaultProps.email } }));
+    expect(callArgs.options.body).to.equal(JSON.stringify({ to_email: defaultProps.email }));
   };
 
   return fakeFetch;

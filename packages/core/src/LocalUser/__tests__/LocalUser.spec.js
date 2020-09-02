@@ -84,19 +84,18 @@ describe('Local User', () => {
 
   describe('with revocation before own creation', () => {
     let deviceRevocation;
+    let deviceCreation3;
     let deviceCreation3Block;
     let deviceRevocationBlock;
     beforeEach(() => {
-      const deviceCreation3 = testGenerator.makeDeviceCreation(deviceCreation1);
-      deviceCreation3Block = deviceCreation3.block;
-      deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation1, deviceCreation3.testDevice.id);
+      deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation1, deviceCreation2.testDevice.id);
       deviceRevocationBlock = deviceRevocation.block;
-      deviceCreation2 = testGenerator.makeDeviceCreation({ ...deviceCreation1, testUser: deviceRevocation.testUser });
-      deviceCreation2Block = deviceCreation2.block;
+      deviceCreation3 = testGenerator.makeDeviceCreation({ ...deviceCreation1, testUser: deviceRevocation.testUser });
+      deviceCreation3Block = deviceCreation3.block;
 
       const localData = {
-        deviceSignatureKeyPair: deviceCreation2.testDevice.signKeys,
-        deviceEncryptionKeyPair: deviceCreation2.testDevice.encryptionKeys,
+        deviceSignatureKeyPair: deviceCreation3.testDevice.signKeys,
+        deviceEncryptionKeyPair: deviceCreation3.testDevice.encryptionKeys,
         userKeys: {},
         currentUserKey: null,
         devices: [],
@@ -107,9 +106,9 @@ describe('Local User', () => {
     });
 
     it('decrypts encrypted user keys', async () => {
-      await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation3Block, deviceRevocationBlock, deviceCreation2Block]);
+      await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block, deviceRevocationBlock, deviceCreation3Block]);
 
-      const { userKeys, currentUserKey } = localUserKeysFromTestUser(deviceCreation2.testUser);
+      const { userKeys, currentUserKey } = localUserKeysFromTestUser(deviceCreation3.testUser);
 
       expect(userKeys).to.deep.equal(localUser._userKeys); //eslint-disable-line no-underscore-dangle
       expect(currentUserKey).to.deep.equal(localUser.currentUserKey);

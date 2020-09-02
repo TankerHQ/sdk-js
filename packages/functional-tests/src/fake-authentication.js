@@ -112,7 +112,10 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
       const message = await aliceTanker.encrypt('I love you', { shareWithUsers: [bobPublicIdentity] });
       await bobTanker.decrypt(message);
 
-      await Promise.all([aliceTanker.stop(), bobTanker.stop()]);
+      await Promise.all([
+        aliceTanker.stop(),
+        bobTanker.stop(),
+      ]);
     });
   });
 };

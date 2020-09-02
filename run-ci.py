@@ -185,7 +185,7 @@ def e2e(*, use_local_sources: bool) -> None:
             repos=["sdk-native", "sdk-python", "sdk-js", "qa-python-js"]
         )
     tankerci.conan.set_home_isolation()
-    tankerci.cpp.update_conan_config()
+    tankerci.conan.update_config()
     tankerci.conan.export(
         src_path=base_path / "sdk-native", ref_or_channel="tanker/dev"
     )
@@ -209,6 +209,7 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
         {"build": "identity", "publish": ["@tanker/identity"]},
         {"build": "file-ponyfill", "publish": ["@tanker/file-ponyfill"]},
         {"build": "file-reader", "publish": ["@tanker/file-reader"]},
+        {"build": "http-utils", "publish": ["@tanker/http-utils"]},
         {"build": "types", "publish": ["@tanker/types"]},
         {
             "build": "streams",

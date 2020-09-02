@@ -4,5 +4,8 @@
   "main": "index.js",
   "author": "Tanker Team",
   "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "semver": "^7.3.2"
+  }
 }

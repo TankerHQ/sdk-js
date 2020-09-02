@@ -21,7 +21,6 @@ describe('Tanker', () => {
 
   const makeTestTankerOptions = () => ({
     appId: utils.toBase64(appId),
-    socket: ({}: any),
     dataStore: { ...dataStoreConfig, prefix: makePrefix() },
     sdkType: 'test',
   });
