@@ -115,7 +115,6 @@ export class LocalUserManager extends EventEmitter {
 
     const { trustchainId, userId } = this._localUser;
     const { userCreationBlock, firstDeviceBlock, firstDeviceId, firstDeviceEncryptionKeyPair, firstDeviceSignatureKeyPair, ghostDevice } = generateUserCreation(trustchainId, userId, ghostDeviceKeys, this._delegationToken);
-    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._localUser.userSecret);
 
     const request: any = {
       ghost_device_creation: userCreationBlock,
@@ -123,7 +122,7 @@ export class LocalUserManager extends EventEmitter {
     };
 
     if (verification.email || verification.passphrase || verification.oidcIdToken) {
-      request.encrypted_verification_key = encryptedUnlockKey;
+      request.encrypted_verification_key = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
     }
 
