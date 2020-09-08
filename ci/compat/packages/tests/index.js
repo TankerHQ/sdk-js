@@ -1,7 +1,7 @@
 // @flow
 import { expect, uuid } from '../../../../packages/test-utils';
 
-import { AppHelper, makeCurrentUser, makeV2User, toBase64 } from './helpers';
+import { AppHelper, makeUser, toBase64 } from './helpers';
 
 function generateEncryptTest(args) {
   it(`encrypts in ${args.version} and decrypts with current code`, async () => {
@@ -47,7 +47,7 @@ function generateDeviceVersionUpgradeTest(args) {
       prefix: 'phone',
     };
 
-    const phone = makeV2User({ ...baseConfig, Tanker: args.Tanker });
+    const phone = makeUser({ ...baseConfig, Tanker: args.Tanker });
 
     await phone.start();
     const message = 'Message for myself';
@@ -55,7 +55,7 @@ function generateDeviceVersionUpgradeTest(args) {
     await phone.stop();
 
     // We're reusing the same adapter and prefix so that the underlying datastore is reused
-    const phoneUpgraded = makeCurrentUser(baseConfig);
+    const phoneUpgraded = makeUser(baseConfig);
 
     // Test the device is started (and migrated if needed) - not recreated
     const status = await phoneUpgraded._tanker.start(phoneUpgraded._identity); // eslint-disable-line no-underscore-dangle
@@ -72,9 +72,9 @@ function generateDeviceVersionUpgradeTest(args) {
   });
 }
 
-function generateRevocationV2Test(args) {
+function generateRevocationTest(args) {
   it(`creates a device with ${args.version} and revokes it with current code`, async () => {
-    const phone = makeV2User({
+    const phone = makeUser({
       Tanker: args.Tanker,
       adapter: args.adapter,
       identity: args.currentBob.identity,
@@ -135,10 +135,10 @@ const generatorMap = {
   encryptionSession: generateEncryptionSessionTests,
   filekit: generateFilekitTest,
   group: generateGroupTest,
-  revocationV2: generateRevocationV2Test,
+  revocation: generateRevocationTest,
 };
 
-function generateV2Tests(opts) {
+function generateCompatTests(opts) {
   const version = opts.Tanker.version;
   describe(version, function () { // eslint-disable-line func-names
     this.timeout(30000);
@@ -156,26 +156,26 @@ function generateV2Tests(opts) {
       const aliceIdentity = await opts.createIdentity(args.appId, appSecret, aliceId);
       const bobIdentity = await opts.createIdentity(args.appId, appSecret, bobId);
 
-      args.versionBob = makeV2User({
+      args.versionBob = makeUser({
         Tanker: opts.Tanker,
         adapter: opts.adapter,
         appId: args.appId,
         identity: bobIdentity,
         prefix: 'bob1',
       });
-      args.versionAlice = makeV2User({
+      args.versionAlice = makeUser({
         Tanker: opts.Tanker,
         adapter: opts.adapter,
         appId: args.appId,
         identity: aliceIdentity,
         prefix: 'alice1',
       });
-      args.currentBob = makeCurrentUser({
+      args.currentBob = makeUser({
         appId: args.appId,
         identity: bobIdentity,
         prefix: 'bob2',
       });
-      args.currentAlice = makeCurrentUser({
+      args.currentAlice = makeUser({
         appId: args.appId,
         identity: aliceIdentity,
         prefix: 'alice2',
@@ -200,5 +200,5 @@ function generateV2Tests(opts) {
 }
 
 module.exports = {
-  generateV2Tests,
+  generateCompatTests,
 };

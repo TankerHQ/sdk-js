@@ -3,11 +3,11 @@ import { Tanker } from '@tanker/client-node';
 import { createIdentity } from '@tanker/identity';
 import adapter from '@tanker/datastore-pouchdb-memory';
 
-import { generateV2Tests } from 'tests';
+import { generateCompatTests } from 'tests';
 
-generateV2Tests({
+generateCompatTests({
   createIdentity,
   Tanker,
-  tests: ['deviceUpgrade', 'encryption', 'encryptionSession', 'group', 'revocationV2', 'filekit'],
+  tests: ['deviceUpgrade', 'encryption', 'encryptionSession', 'group', 'revocation', 'filekit'],
   adapter,
 });

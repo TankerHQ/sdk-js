@@ -9,39 +9,9 @@ export { AppHelper, toBase64 };
 
 const password = 'plop';
 
-class BaseUser {
-  constructor(tanker) {
-    this._tanker = tanker;
-  }
-
-  async encrypt(message, userIds, groupIds) {
-    return toBase64(await this._tanker.encrypt(message, { shareWithUsers: userIds, shareWithGroups: groupIds }));
-  }
-
-  async decrypt(encryptedData) {
-    return this._tanker.decrypt(fromBase64(encryptedData));
-  }
-
-  async createGroup(ids) {
-    return this._tanker.createGroup(ids);
-  }
-
-  async revokeDevice(deviceId) {
-    return this._tanker.revokeDevice(deviceId);
-  }
-
-  async createEncryptionSession(userIds, groupIds) {
-    return this._tanker.createEncryptionSession({ shareWithUsers: userIds, shareWithGroups: groupIds });
-  }
-
-  get deviceId() {
-    return this._tanker.deviceId;
-  }
-}
-
-class UserV2 extends BaseUser {
+class User {
   constructor(tanker, identity) {
-    super(tanker);
+    this._tanker = tanker;
     this._identity = identity;
   }
 
@@ -64,6 +34,30 @@ class UserV2 extends BaseUser {
 
   get id() {
     return getPublicIdentity(this._identity);
+  }
+
+  get deviceId() {
+    return this._tanker.deviceId;
+  }
+
+  async encrypt(message, userIds, groupIds) {
+    return toBase64(await this._tanker.encrypt(message, { shareWithUsers: userIds, shareWithGroups: groupIds }));
+  }
+
+  async decrypt(encryptedData) {
+    return this._tanker.decrypt(fromBase64(encryptedData));
+  }
+
+  async createGroup(ids) {
+    return this._tanker.createGroup(ids);
+  }
+
+  async revokeDevice(deviceId) {
+    return this._tanker.revokeDevice(deviceId);
+  }
+
+  async createEncryptionSession(userIds, groupIds) {
+    return this._tanker.createEncryptionSession({ shareWithUsers: userIds, shareWithGroups: groupIds });
   }
 
   getRevocationPromise() {
@@ -90,24 +84,15 @@ function makeTanker(Tanker, adapter, appId, prefix) {
 
   return new Tanker({
     appId,
-    trustchainId: appId, // set trustchainId because old version only understand this param
     url,
     sdkType: 'test',
-    dataStore: {
-      adapter,
-      prefix,
-    },
+    dataStore: { adapter, prefix },
   });
 }
 
-export function makeV2User(opts) {
-  const tanker = makeTanker(opts.Tanker, opts.adapter, opts.appId, opts.prefix);
-  return new UserV2(tanker, opts.identity);
-}
-
-export function makeCurrentUser(opts) {
-  const Tanker = require('../../../../packages/client-node').default; // eslint-disable-line global-require
+export function makeUser(opts) {
+  const Tanker = opts.Tanker || require('../../../../packages/client-node').default; // eslint-disable-line global-require
   const adapter = opts.adapter || require('../../../../packages/datastore/pouchdb-memory').default; // eslint-disable-line global-require
   const tanker = makeTanker(Tanker, adapter, opts.appId, opts.prefix);
-  return new UserV2(tanker, opts.identity);
+  return new User(tanker, opts.identity);
 }
