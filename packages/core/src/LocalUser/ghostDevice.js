@@ -21,31 +21,31 @@ export const generateGhostDeviceKeys = (): GhostDeviceKeys => ({
   signatureKeyPair: tcrypto.makeSignKeyPair(),
 });
 
-export const extractGhostDevice = (unlockKey: b64string): GhostDevice => {
-  const decoded = utils.fromB64Json(unlockKey);
+export const extractGhostDevice = (verificationKey: b64string): GhostDevice => {
+  const decoded = utils.fromB64Json(verificationKey);
   return {
     privateEncryptionKey: utils.fromBase64(decoded.privateEncryptionKey),
     privateSignatureKey: utils.fromBase64(decoded.privateSignatureKey),
   };
 };
 
-export const decryptUnlockKey = (encryptedUnlockKey: Uint8Array, userSecret: Uint8Array) => {
-  if (encryptedUnlockKey.length < encryptionV2.overhead) {
+export const decryptVerificationKey = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => {
+  if (encryptedVerificationKey.length < encryptionV2.overhead) {
     throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
   }
 
-  return utils.toString(encryptionV2.compatDecrypt(userSecret, encryptedUnlockKey));
+  return utils.toString(encryptionV2.compatDecrypt(userSecret, encryptedVerificationKey));
 };
 
-export const ghostDeviceToUnlockKey = (ghostDevice: GhostDevice) => utils.toB64Json({
+export const ghostDeviceToVerificationKey = (ghostDevice: GhostDevice) => utils.toB64Json({
   privateEncryptionKey: utils.toBase64(ghostDevice.privateEncryptionKey),
   privateSignatureKey: utils.toBase64(ghostDevice.privateSignatureKey),
 });
 
-export const ghostDeviceToEncryptedUnlockKey = (ghostDevice: GhostDevice, userSecret: Uint8Array) => encryptionV2.compatEncrypt(userSecret, utils.fromString(ghostDeviceToUnlockKey(ghostDevice)));
+export const ghostDeviceToEncryptedVerificationKey = (ghostDevice: GhostDevice, userSecret: Uint8Array) => encryptionV2.compatEncrypt(userSecret, utils.fromString(ghostDeviceToVerificationKey(ghostDevice)));
 
-export const ghostDeviceKeysFromUnlockKey = (unlockKey: b64string): GhostDeviceKeys => {
-  const ghostDevice = extractGhostDevice(unlockKey);
+export const ghostDeviceKeysFromVerificationKey = (verificationKey: b64string): GhostDeviceKeys => {
+  const ghostDevice = extractGhostDevice(verificationKey);
   return {
     encryptionKeyPair: tcrypto.getEncryptionKeyPairFromPrivateKey(ghostDevice.privateEncryptionKey),
     signatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(ghostDevice.privateSignatureKey),
