@@ -8,6 +8,6 @@ import { generateV2Tests } from 'tests';
 generateV2Tests({
   createIdentity,
   Tanker,
-  tests: ['encrypt', 'group', 'verification', 'revocationV2', 'filekit', 'encryptionSession'],
+  tests: ['deviceUpgrade', 'encryption', 'encryptionSession', 'group', 'revocationV2', 'filekit'],
   adapter,
 });

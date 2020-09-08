@@ -38,16 +38,37 @@ function generateGroupTest(args) {
   });
 }
 
-function generateVerificationTest(args) {
-  it(`registers unlock with ${args.version} and unlocks with current code`, async () => {
-    const phone = makeCurrentUser({
+function generateDeviceVersionUpgradeTest(args) {
+  it(`creates a device with ${args.version} and upgrades the device with current code`, async () => {
+    const baseConfig = {
       adapter: args.adapter,
-      identity: args.currentBob.identity,
       appId: args.appId,
+      identity: args.currentBob.identity,
       prefix: 'phone',
-    });
+    };
+
+    const phone = makeV2User({ ...baseConfig, Tanker: args.Tanker });
+
     await phone.start();
+    const message = 'Message for myself';
+    const encryptedData = await phone.encrypt(message, [], []);
     await phone.stop();
+
+    // We're reusing the same adapter and prefix so that the underlying datastore is reused
+    const phoneUpgraded = makeCurrentUser(baseConfig);
+
+    // Test the device is started (and migrated if needed) - not recreated
+    const status = await phoneUpgraded._tanker.start(phoneUpgraded._identity); // eslint-disable-line no-underscore-dangle
+    expect(status).to.equal(phoneUpgraded._tanker.constructor.statuses.READY); // eslint-disable-line no-underscore-dangle
+
+    // Still able to decrypt message with local key
+    phoneUpgraded._tanker.session._client.getResourceKey = () => { // eslint-disable-line no-underscore-dangle
+      throw new Error('Unexpected call of client.getResourceKey() in compat test');
+    };
+    const decrypted = await phoneUpgraded.decrypt(encryptedData);
+    expect(decrypted).to.equal(message);
+
+    await phoneUpgraded.stop();
   });
 }
 
@@ -109,13 +130,12 @@ function generateEncryptionSessionTests(args) {
 }
 
 const generatorMap = {
-  encrypt: generateEncryptTest,
-  group: generateGroupTest,
-  unlock: generateVerificationTest,
-  verification: generateVerificationTest,
-  revocationV2: generateRevocationV2Test,
-  filekit: generateFilekitTest,
+  deviceUpgrade: generateDeviceVersionUpgradeTest,
+  encryption: generateEncryptTest,
   encryptionSession: generateEncryptionSessionTests,
+  filekit: generateFilekitTest,
+  group: generateGroupTest,
+  revocationV2: generateRevocationV2Test,
 };
 
 function generateV2Tests(opts) {

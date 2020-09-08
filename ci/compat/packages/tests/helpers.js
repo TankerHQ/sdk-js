@@ -107,7 +107,7 @@ export function makeV2User(opts) {
 
 export function makeCurrentUser(opts) {
   const Tanker = require('../../../../packages/client-node').default; // eslint-disable-line global-require
-  const adapter = require('../../../../packages/datastore/pouchdb-memory').default; // eslint-disable-line global-require
+  const adapter = opts.adapter || require('../../../../packages/datastore/pouchdb-memory').default; // eslint-disable-line global-require
   const tanker = makeTanker(Tanker, adapter, opts.appId, opts.prefix);
   return new UserV2(tanker, opts.identity);
 }
