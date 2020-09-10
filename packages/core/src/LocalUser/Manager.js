@@ -4,7 +4,7 @@ import EventEmitter from 'events';
 import { encryptionV2, tcrypto, utils } from '@tanker/crypto';
 import { DecryptionFailed, InternalError, InvalidVerification, TankerError } from '@tanker/errors';
 
-import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToUnlockKey, ghostDeviceKeysFromUnlockKey, decryptUnlockKey, ghostDeviceToEncryptedUnlockKey, decryptUserKeyForGhostDevice } from './ghostDevice';
+import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationKey, ghostDeviceKeysFromVerificationKey, decryptVerificationKey, ghostDeviceToEncryptedVerificationKey, decryptUserKeyForGhostDevice } from './ghostDevice';
 import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './KeySafe';
 import type KeyStore from './KeyStore';
 import LocalUser from './LocalUser';
@@ -101,7 +101,7 @@ export class LocalUserManager extends EventEmitter {
     let ghostDeviceKeys;
     if (verification.verificationKey) {
       try {
-        ghostDeviceKeys = ghostDeviceKeysFromUnlockKey(verification.verificationKey);
+        ghostDeviceKeys = ghostDeviceKeysFromVerificationKey(verification.verificationKey);
       } catch (e) {
         throw new InvalidVerification(e);
       }
@@ -115,7 +115,6 @@ export class LocalUserManager extends EventEmitter {
 
     const { trustchainId, userId } = this._localUser;
     const { userCreationBlock, firstDeviceBlock, firstDeviceId, firstDeviceEncryptionKeyPair, firstDeviceSignatureKeyPair, ghostDevice } = generateUserCreation(trustchainId, userId, ghostDeviceKeys, this._delegationToken);
-    const encryptedUnlockKey = ghostDeviceToEncryptedUnlockKey(ghostDevice, this._localUser.userSecret);
 
     const request: any = {
       ghost_device_creation: userCreationBlock,
@@ -123,7 +122,7 @@ export class LocalUserManager extends EventEmitter {
     };
 
     if (verification.email || verification.passphrase || verification.oidcIdToken) {
-      request.encrypted_verification_key = encryptedUnlockKey;
+      request.encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
     }
 
@@ -133,8 +132,8 @@ export class LocalUserManager extends EventEmitter {
 
   createNewDevice = async (verification: Verification): Promise<void> => {
     try {
-      const unlockKey = await this._getUnlockKey(verification);
-      const ghostDevice = extractGhostDevice(unlockKey);
+      const verificationKey = await this._getVerificationKey(verification);
+      const ghostDevice = extractGhostDevice(verificationKey);
 
       const ghostSignatureKeyPair = tcrypto.getSignatureKeyPairFromPrivateKey(ghostDevice.privateSignatureKey);
       const encryptedUserKey = await this._client.getEncryptionKey(ghostSignatureKeyPair.publicKey);
@@ -220,20 +219,20 @@ export class LocalUserManager extends EventEmitter {
   generateVerificationKey = async () => {
     const ghostDeviceKeys = generateGhostDeviceKeys();
 
-    return ghostDeviceToUnlockKey({
+    return ghostDeviceToVerificationKey({
       privateSignatureKey: ghostDeviceKeys.signatureKeyPair.privateKey,
       privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
     });
   }
 
-  _getUnlockKey = async (verification: Verification) => {
+  _getVerificationKey = async (verification: Verification) => {
     if (verification.verificationKey) {
       return verification.verificationKey;
     }
     const remoteVerification: RemoteVerification = (verification: any);
     const request = { verification: formatVerificationRequest(remoteVerification, this._localUser) };
-    const encryptedUnlockKey = await this._client.getVerificationKey(request);
-    return decryptUnlockKey(encryptedUnlockKey, this._localUser.userSecret);
+    const encryptedVerificationKey = await this._client.getVerificationKey(request);
+    return decryptVerificationKey(encryptedVerificationKey, this._localUser.userSecret);
   }
 }
 
