@@ -115,5 +115,8 @@
     ],
     "sourceMap": false,
     "instrument": false
+  },
+  "resolutions": {
+      "node-fetch": "^2.6.1"
   }
 }
