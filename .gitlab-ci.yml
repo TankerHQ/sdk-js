@@ -75,6 +75,7 @@ check/macos/nightly:
     - poetry run python run-ci.py check --runner macos --nightly
   tags:
     - macos
+    - notslave3
 
 .deploy:
   stage: deploy
