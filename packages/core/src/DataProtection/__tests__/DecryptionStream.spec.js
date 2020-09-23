@@ -3,10 +3,10 @@ import { utils, random, tcrypto, encryptionV4 } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { expect, sinon } from '@tanker/test-utils';
 
-import DecryptorStream from '../DecryptorStream';
+import { DecryptionStream } from '../DecryptionStream';
 import PromiseWrapper from '../../PromiseWrapper';
 
-describe('Decryptor Stream', () => {
+describe('DecryptionStream', () => {
   let buffer: Array<Uint8Array>;
   let key;
   let resourceId;
@@ -34,7 +34,7 @@ describe('Decryptor Stream', () => {
     key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     resourceId = random(16);
     mapper = { findKey: () => Promise.resolve(key) };
-    stream = new DecryptorStream(mapper);
+    stream = new DecryptionStream(mapper);
     sync = watchStream(stream);
   });
 

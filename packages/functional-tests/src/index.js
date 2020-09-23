@@ -6,7 +6,7 @@ import { silencer } from '@tanker/test-utils';
 import { AppHelper, admindUrl, appdUrl, idToken, oidcSettings } from './helpers';
 import type { TestArgs, TestResources } from './helpers';
 
-import { generateEncryptorStreamTests } from './encryptorStream';
+import { generateEncryptionStreamTests } from './encryptionStream';
 import { generateEncryptionSessionTests } from './encryptionSession';
 import { generateEncryptionTests } from './encryption';
 import { generateFakeAuthenticationTests } from './fake-authentication';
@@ -62,7 +62,7 @@ export function generateFunctionalTests(
     generateVerificationTests(args);
     generateEncryptionTests(args);
     generateEncryptionSessionTests(args);
-    generateEncryptorStreamTests(args);
+    generateEncryptionStreamTests(args);
     generateGroupsTests(args);
     generateUploadTests(args);
     generateRevocationTests(args);

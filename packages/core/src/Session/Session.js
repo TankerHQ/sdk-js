@@ -129,8 +129,8 @@ export class Session extends EventEmitter {
   encryptData = (...args: any) => this._forward(this._dataProtector, 'encryptData', ...args)
   decryptData = (...args: any) => this._forward(this._dataProtector, 'decryptData', ...args)
   share = (...args: any) => this._forward(this._dataProtector, 'share', ...args)
-  makeDecryptorStream = (...args: any) => this._forward(this._dataProtector, 'makeDecryptorStream', ...args)
-  makeEncryptorStream = (...args: any) => this._forward(this._dataProtector, 'makeEncryptorStream', ...args)
+  makeDecryptionStream = (...args: any) => this._forward(this._dataProtector, 'makeDecryptionStream', ...args)
+  makeEncryptionStream = (...args: any) => this._forward(this._dataProtector, 'makeEncryptionStream', ...args)
 
   attachProvisionalIdentity = (...args: any) => this._forward(this._provisionalIdentityManager, 'attachProvisionalIdentity', ...args)
   verifyProvisionalIdentity = (...args: any) => this._forward(this._provisionalIdentityManager, 'verifyProvisionalIdentity', ...args)

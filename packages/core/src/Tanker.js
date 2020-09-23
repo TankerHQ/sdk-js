@@ -18,8 +18,8 @@ import { Session } from './Session/Session';
 
 import type { OutputOptions, ProgressOptions, EncryptionOptions, SharingOptions } from './DataProtection/options';
 import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractEncryptionOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
-import EncryptorStream from './DataProtection/EncryptorStream';
-import DecryptorStream from './DataProtection/DecryptorStream';
+import EncryptionStream from './DataProtection/EncryptionStream';
+import DecryptionStream from './DataProtection/DecryptionStream';
 import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/types';
 import type { EncryptionSession } from './DataProtection/EncryptionSession';
 
@@ -337,18 +337,18 @@ export class Tanker extends EventEmitter {
     return this.session.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async makeEncryptorStream(options: EncryptionOptions = {}): Promise<EncryptorStream> {
-    assertStatus(this.status, statuses.READY, 'make a stream encryptor');
+  async makeEncryptionStream(options: EncryptionOptions = {}): Promise<EncryptionStream> {
+    assertStatus(this.status, statuses.READY, 'make an encryption stream');
 
     const encryptionOptions = extractEncryptionOptions(options);
 
-    return this.session.makeEncryptorStream(encryptionOptions);
+    return this.session.makeEncryptionStream(encryptionOptions);
   }
 
-  async makeDecryptorStream(): Promise<DecryptorStream> {
-    assertStatus(this.status, statuses.READY, 'make a stream decryptor');
+  async makeDecryptionStream(): Promise<DecryptionStream> {
+    assertStatus(this.status, statuses.READY, 'make a decryption stream');
 
-    return this.session.makeDecryptorStream();
+    return this.session.makeDecryptionStream();
   }
 
   async encryptData<T: Data>(clearData: Data, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {

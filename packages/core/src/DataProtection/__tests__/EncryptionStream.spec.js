@@ -3,10 +3,10 @@ import { aead, random, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import EncryptorStream from '../EncryptorStream';
+import { EncryptionStream } from '../EncryptionStream';
 import PromiseWrapper from '../../PromiseWrapper';
 
-describe('Encryptor Stream', () => {
+describe('EncryptionStream', () => {
   const headerV4Length = 21;
 
   let buffer: Array<Uint8Array>;
@@ -31,7 +31,7 @@ describe('Encryptor Stream', () => {
   });
 
   it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
-    const stream = new EncryptorStream(resourceId, key);
+    const stream = new EncryptionStream(resourceId, key);
     const sync = watchStream(stream);
 
     stream.write('fail');
@@ -41,7 +41,7 @@ describe('Encryptor Stream', () => {
   });
 
   it('can give its associated resourceId', async () => {
-    const stream = new EncryptorStream(resourceId, key);
+    const stream = new EncryptionStream(resourceId, key);
     const sync = watchStream(stream);
 
     expect(stream.resourceId).to.be.equal(utils.toBase64(resourceId));
@@ -51,7 +51,7 @@ describe('Encryptor Stream', () => {
   });
 
   it('outputs a resource from which you can read the header', async () => {
-    const stream = new EncryptorStream(resourceId, key);
+    const stream = new EncryptionStream(resourceId, key);
     const sync = watchStream(stream);
     stream.end();
     await sync.promise;
@@ -63,7 +63,7 @@ describe('Encryptor Stream', () => {
   });
 
   it('outputs a resource from which you can directly get the resource id', async () => {
-    const stream = new EncryptorStream(resourceId, key);
+    const stream = new EncryptionStream(resourceId, key);
     const sync = watchStream(stream);
     stream.end();
     await sync.promise;
@@ -73,7 +73,7 @@ describe('Encryptor Stream', () => {
 
   it('derives its iv and push header before encryption', async () => {
     const msg = utils.fromString('message');
-    const stream = new EncryptorStream(resourceId, key);
+    const stream = new EncryptionStream(resourceId, key);
     const sync = watchStream(stream);
 
     stream.write(msg);
@@ -102,7 +102,7 @@ describe('Encryptor Stream', () => {
 
     const encryptedChunkSize = msg.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD + headerV4Length;
 
-    const stream = new EncryptorStream(resourceId, key, encryptedChunkSize);
+    const stream = new EncryptionStream(resourceId, key, encryptedChunkSize);
     const sync = watchStream(stream);
 
     // push msg twice
@@ -128,7 +128,7 @@ describe('Encryptor Stream', () => {
 
     const encryptedChunkSize = msg.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD + headerV4Length;
 
-    const stream = new EncryptorStream(resourceId, key, encryptedChunkSize);
+    const stream = new EncryptionStream(resourceId, key, encryptedChunkSize);
     const sync = watchStream(stream);
 
     // push msg twice + 1 more byte

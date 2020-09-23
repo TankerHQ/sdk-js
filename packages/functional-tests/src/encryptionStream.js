@@ -6,7 +6,7 @@ import { expect } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 
-export const generateEncryptorStreamTests = (args: TestArgs) => {
+export const generateEncryptionStreamTests = (args: TestArgs) => {
   describe('stream encryption', () => {
     let aliceIdentity;
     let aliceLaptop;
@@ -55,13 +55,13 @@ export const generateEncryptorStreamTests = (args: TestArgs) => {
 
     describe('encryption and decryption', () => {
       it('can encrypt/decrypt a resource in multiple \'write\'', async () => {
-        const encryptor = await aliceLaptop.makeEncryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptionStream();
         encryptor.write(smallClearData.subarray(0, 2));
         encryptor.write(smallClearData.subarray(2, 5));
         encryptor.write(smallClearData.subarray(5, 10));
         encryptor.end();
 
-        const decryptor = await aliceLaptop.makeDecryptorStream();
+        const decryptor = await aliceLaptop.makeDecryptionStream();
         const watchPromise = watchStream(decryptor);
 
         encryptor.pipe(decryptor);
@@ -71,11 +71,11 @@ export const generateEncryptorStreamTests = (args: TestArgs) => {
       });
 
       it('can encrypt/decrypt large resources (data size > MB)', async () => {
-        const encryptor = await aliceLaptop.makeEncryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptionStream();
         encryptor.write(largeClearData);
         encryptor.end();
 
-        const decryptor = await aliceLaptop.makeDecryptorStream();
+        const decryptor = await aliceLaptop.makeDecryptionStream();
         const watchPromise = watchStream(decryptor);
 
         encryptor.pipe(decryptor);
@@ -93,8 +93,8 @@ export const generateEncryptorStreamTests = (args: TestArgs) => {
 
     describe('sharing', () => {
       it('shares a streamed resource', async () => {
-        const encryptor = await aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity] });
-        const decryptor = await bobLaptop.makeDecryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptionStream({ shareWithUsers: [bobPublicIdentity] });
+        const decryptor = await bobLaptop.makeDecryptionStream();
         const watchPromise = watchStream(decryptor);
 
         encryptor.pipe(decryptor);
@@ -107,7 +107,7 @@ export const generateEncryptorStreamTests = (args: TestArgs) => {
       });
 
       it('shares a streamed resource but not with self', async () => {
-        const encryptor = await aliceLaptop.makeEncryptorStream({ shareWithUsers: [bobPublicIdentity], shareWithSelf: false });
+        const encryptor = await aliceLaptop.makeEncryptionStream({ shareWithUsers: [bobPublicIdentity], shareWithSelf: false });
 
         const watchPromise = watchStream(encryptor);
 
@@ -123,8 +123,8 @@ export const generateEncryptorStreamTests = (args: TestArgs) => {
       });
 
       it('can postpone share', async () => {
-        const encryptor = await aliceLaptop.makeEncryptorStream();
-        const decryptor = await bobLaptop.makeDecryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptionStream();
+        const decryptor = await bobLaptop.makeDecryptionStream();
         const watchPromise = watchStream(decryptor);
 
         encryptor.write(smallClearData);
@@ -140,11 +140,11 @@ export const generateEncryptorStreamTests = (args: TestArgs) => {
       });
 
       it('throws InvalidArgument when resource was not shared with user', async () => {
-        const encryptor = await aliceLaptop.makeEncryptorStream();
+        const encryptor = await aliceLaptop.makeEncryptionStream();
         encryptor.write(smallClearData);
         encryptor.end();
 
-        const decryptor = await bobLaptop.makeDecryptorStream();
+        const decryptor = await bobLaptop.makeDecryptionStream();
         const watchPromise = watchStream(decryptor);
 
         encryptor.pipe(decryptor);
