@@ -4,7 +4,7 @@ import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
 
-export default class EncryptionStream extends Transform {
+export class EncryptionStream extends Transform {
   _maxClearChunkSize: number;
   _maxEncryptedChunkSize: number;
   _encryptionStream: Transform;

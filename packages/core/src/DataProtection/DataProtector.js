@@ -24,8 +24,8 @@ import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { type Status } from '../Session/status';
 
 import type { OutputOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './options';
-import EncryptionStream from './EncryptionStream';
-import DecryptionStream from './DecryptionStream';
+import { EncryptionStream } from './EncryptionStream';
+import { DecryptionStream } from './DecryptionStream';
 import { ProgressHandler } from './ProgressHandler';
 import { EncryptionSession } from './EncryptionSession';
 
