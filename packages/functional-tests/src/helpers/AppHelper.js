@@ -7,7 +7,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
-import { requestAppd, requestAdmindWithAuth } from './request';
+import { requestAppd, requestAdmindWithAuth, requestTrustchaind } from './request';
 import { oidcSettings, storageSettings } from './config';
 
 function toUnpaddedSafeBase64(str: Uint8Array): string {
@@ -116,5 +116,15 @@ export class AppHelper {
       method: 'DELETE',
       path: `/apps/${toUnpaddedSafeBase64(this.appId)}`
     });
+  }
+
+  async deleteResourceKeys(resourceIds: Array<string>) {
+    const formData = {
+      app_id: utils.toBase64(this.appId),
+      auth_token: this.authToken,
+      resource_ids: resourceIds
+    };
+
+    await requestTrustchaind({ method: 'DELETE', path: '/resource-keys', body: formData });
   }
 }
