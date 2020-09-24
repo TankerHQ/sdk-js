@@ -45,6 +45,12 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
       ]);
     });
 
+    it('throws when using an encryption session with a Tanker instance in an invalid state', async () => {
+      const encryptionSession = await aliceLaptop.createEncryptionSession();
+      await aliceLaptop.stop();
+      await expect(encryptionSession.encrypt(clearText)).to.be.rejectedWith(errors.PreconditionFailed);
+    });
+
     it('decrypts a resource encrypted with an encryption session from another device', async () => {
       const encryptionSession = await bobLaptop.createEncryptionSession();
       const encrypted = await encryptionSession.encrypt(clearText);
@@ -80,14 +86,22 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
       const encryptionSession = await aliceLaptop.createEncryptionSession();
       const encrypted = await encryptionSession.encrypt(clearText);
       const resourceId = await aliceLaptop.getResourceId(encrypted);
-
       expect(resourceId).to.equal(encryptionSession.resourceId);
     });
 
-    it('throws when using an encryption session with a Tanker in an invalid state', async () => {
+    it('uses a single resource id for multiple resources', async () => {
       const encryptionSession = await aliceLaptop.createEncryptionSession();
-      await aliceLaptop.stop();
-      await expect(encryptionSession.encrypt(clearText)).to.be.rejectedWith(errors.PreconditionFailed);
+      const encrypted1 = await encryptionSession.encrypt(clearText);
+      const encrypted2 = await encryptionSession.encrypt(clearText);
+      const resourceId1 = await aliceLaptop.getResourceId(encrypted1);
+      const resourceId2 = await aliceLaptop.getResourceId(encrypted1);
+      expect(resourceId1).to.equal(resourceId2);
+    });
+
+    it('uses a distinct resource id per encryption session', async () => {
+      const encryptionSession1 = await aliceLaptop.createEncryptionSession();
+      const encryptionSession2 = await aliceLaptop.createEncryptionSession();
+      expect(encryptionSession1.resourceId).not.to.equal(encryptionSession2.resourceId);
     });
   });
 };
