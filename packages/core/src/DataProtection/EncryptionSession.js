@@ -44,8 +44,8 @@ export class EncryptionSession {
     return this._dataProtector.encryptData(clearData, {}, outputOptions, progressOptions, this._resource);
   }
 
-  async makeEncryptionStream(): Promise<EncryptionStream> {
-    assertStatus(this._status, statuses.READY, 'make an encryption stream');
-    return this._dataProtector.makeEncryptionStream({}, this._resource);
+  async createEncryptionStream(): Promise<EncryptionStream> {
+    assertStatus(this._status, statuses.READY, 'create an encryption stream');
+    return this._dataProtector.createEncryptionStream({}, this._resource);
   }
 }

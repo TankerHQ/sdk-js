@@ -118,7 +118,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         clearData = new Uint8Array([104, 101, 108, 108, 111]);
 
         encryptionSession = await aliceLaptop.createEncryptionSession({ shareWithUsers: [bobPublicIdentity] });
-        encryptionStream = await encryptionSession.makeEncryptionStream();
+        encryptionStream = await encryptionSession.createEncryptionStream();
 
         const encryptionPromise = new Promise((resolve, reject) => {
           const result = [];

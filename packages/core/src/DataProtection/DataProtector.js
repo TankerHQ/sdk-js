@@ -185,7 +185,7 @@ export class DataProtector {
 
   async _streamDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const slicer = new SlicerStream({ source: encryptedData });
-    const decryptor = await this.makeDecryptionStream();
+    const decryptor = await this.createDecryptionStream();
     const merger = new MergerStream(outputOptions);
 
     const progressHandler = new ProgressHandler(progressOptions);
@@ -253,7 +253,7 @@ export class DataProtector {
 
   async _streamEncryptData<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
-    const encryptor = await this.makeEncryptionStream(encryptionOptions, resource);
+    const encryptor = await this.createEncryptionStream(encryptionOptions, resource);
 
     const clearSize = getDataLength(clearData);
     const encryptedSize = encryptor.getEncryptedSize(clearSize);
@@ -288,7 +288,7 @@ export class DataProtector {
     return this._shareResources(keys, { ...sharingOptions, shareWithSelf: false });
   }
 
-  async makeEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStream> {
+  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStream> {
     let encryptionStream;
 
     if (resource) {
@@ -302,7 +302,7 @@ export class DataProtector {
     return encryptionStream;
   }
 
-  async makeDecryptionStream(): Promise<DecryptionStream> {
+  async createDecryptionStream(): Promise<DecryptionStream> {
     const resourceIdKeyMapper = {
       findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId)
     };

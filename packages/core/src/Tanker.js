@@ -337,18 +337,18 @@ export class Tanker extends EventEmitter {
     return this.session.updateGroupMembers(groupId, usersToAdd);
   }
 
-  async makeEncryptionStream(options: EncryptionOptions = {}): Promise<EncryptionStream> {
-    assertStatus(this.status, statuses.READY, 'make an encryption stream');
+  async createEncryptionStream(options: EncryptionOptions = {}): Promise<EncryptionStream> {
+    assertStatus(this.status, statuses.READY, 'create an encryption stream');
 
     const encryptionOptions = extractEncryptionOptions(options);
 
-    return this.session.makeEncryptionStream(encryptionOptions);
+    return this.session.createEncryptionStream(encryptionOptions);
   }
 
-  async makeDecryptionStream(): Promise<DecryptionStream> {
-    assertStatus(this.status, statuses.READY, 'make a decryption stream');
+  async createDecryptionStream(): Promise<DecryptionStream> {
+    assertStatus(this.status, statuses.READY, 'create a decryption stream');
 
-    return this.session.makeDecryptionStream();
+    return this.session.createDecryptionStream();
   }
 
   async encryptData<T: Data>(clearData: Data, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
