@@ -17,27 +17,27 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
     let bobIdentity;
     let bobPublicIdentity;
 
-    before(() => {
+    before(async () => {
       ({ appHelper } = args);
-    });
 
-    beforeEach(async () => {
       aliceIdentity = await appHelper.generateIdentity();
       bobIdentity = await appHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
+
       aliceLaptop = args.makeTanker();
-      bobLaptop = args.makeTanker();
-      bobPhone = args.makeTanker();
       await aliceLaptop.start(aliceIdentity);
       await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
+      bobLaptop = args.makeTanker();
       await bobLaptop.start(bobIdentity);
       await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+      bobPhone = args.makeTanker();
       await bobPhone.start(bobIdentity);
       await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
     });
 
-    afterEach(async () => {
+    after(async () => {
       await Promise.all([
         bobPhone.stop(),
         bobLaptop.stop(),
@@ -46,8 +46,12 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
     });
 
     it('throws when using an encryption session with a Tanker instance in an invalid state', async () => {
-      const encryptionSession = await aliceLaptop.createEncryptionSession();
-      await aliceLaptop.stop();
+      // Avoid to stop() a device used in other tests, create a new disposable one:
+      const alicePhone = args.makeTanker();
+      await alicePhone.start(aliceIdentity);
+      await alicePhone.verifyIdentity({ passphrase: 'passphrase' });
+      const encryptionSession = await alicePhone.createEncryptionSession();
+      await alicePhone.stop();
       await expect(encryptionSession.encrypt(clearText)).to.be.rejectedWith(errors.PreconditionFailed);
     });
 
