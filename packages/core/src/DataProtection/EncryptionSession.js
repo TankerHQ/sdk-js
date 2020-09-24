@@ -7,6 +7,7 @@ import { assertStatus, statuses, type Status } from '../Session/status';
 import type { OutputOptions, ProgressOptions } from './options';
 import { extractOutputOptions, extractProgressOptions } from './options';
 import type { DataProtector } from './DataProtector';
+import type { EncryptionStream } from './EncryptionStream';
 import type { Resource } from './types';
 
 export class EncryptionSession {
@@ -41,5 +42,10 @@ export class EncryptionSession {
     const progressOptions = extractProgressOptions(options);
 
     return this._dataProtector.encryptData(clearData, {}, outputOptions, progressOptions, this._resource);
+  }
+
+  async makeEncryptionStream(): Promise<EncryptionStream> {
+    assertStatus(this._status, statuses.READY, 'make an encryption stream');
+    return this._dataProtector.makeEncryptionStream({}, this._resource);
   }
 }

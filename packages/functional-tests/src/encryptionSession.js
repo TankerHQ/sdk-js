@@ -98,7 +98,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
       const encrypted1 = await encryptionSession.encrypt(clearText);
       const encrypted2 = await encryptionSession.encrypt(clearText);
       const resourceId1 = await aliceLaptop.getResourceId(encrypted1);
-      const resourceId2 = await aliceLaptop.getResourceId(encrypted1);
+      const resourceId2 = await aliceLaptop.getResourceId(encrypted2);
       expect(resourceId1).to.equal(resourceId2);
     });
 
@@ -106,6 +106,49 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
       const encryptionSession1 = await aliceLaptop.createEncryptionSession();
       const encryptionSession2 = await aliceLaptop.createEncryptionSession();
       expect(encryptionSession1.resourceId).not.to.equal(encryptionSession2.resourceId);
+    });
+
+    describe('using streams', () => {
+      let clearData;
+      let encryptedData;
+      let encryptionSession;
+      let encryptionStream;
+
+      before(async () => {
+        clearData = new Uint8Array([104, 101, 108, 108, 111]);
+
+        encryptionSession = await aliceLaptop.createEncryptionSession({ shareWithUsers: [bobPublicIdentity] });
+        encryptionStream = await encryptionSession.makeEncryptionStream();
+
+        const encryptionPromise = new Promise((resolve, reject) => {
+          const result = [];
+          encryptionStream.on('data', data => result.push(data));
+          encryptionStream.on('end', () => resolve(result));
+          encryptionStream.on('error', reject);
+        });
+
+        encryptionStream.write(clearData);
+        encryptionStream.end();
+
+        const encryptedParts = await encryptionPromise;
+        expect(encryptedParts).to.have.lengthOf(1); // a single 'data' event is expected
+        encryptedData = encryptedParts[0];
+      });
+
+      it('uses the resource id of the session', async () => {
+        expect(encryptionStream.resourceId).to.equal(encryptionSession.resourceId);
+        await expect(aliceLaptop.getResourceId(encryptedData)).to.eventually.equal(encryptionSession.resourceId);
+      });
+
+      it('decrypts a resource encrypted with a stream', async () => {
+        const decryptedData = await aliceLaptop.decryptData(encryptedData);
+        expect(decryptedData).to.deep.equal(clearData);
+      });
+
+      it('decrypts a shared resource encrypted with a stream', async () => {
+        const decryptedData = await bobLaptop.decryptData(encryptedData);
+        expect(decryptedData).to.deep.equal(clearData);
+      });
     });
   });
 };

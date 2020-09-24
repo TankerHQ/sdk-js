@@ -18,8 +18,8 @@ import { Session } from './Session/Session';
 
 import type { OutputOptions, ProgressOptions, EncryptionOptions, SharingOptions } from './DataProtection/options';
 import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractEncryptionOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
-import { EncryptionStream } from './DataProtection/EncryptionStream';
-import { DecryptionStream } from './DataProtection/DecryptionStream';
+import type { EncryptionStream } from './DataProtection/EncryptionStream';
+import type { DecryptionStream } from './DataProtection/DecryptionStream';
 import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/types';
 import type { EncryptionSession } from './DataProtection/EncryptionSession';
 
