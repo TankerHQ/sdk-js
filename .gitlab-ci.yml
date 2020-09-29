@@ -31,7 +31,7 @@ check/macos:
     - poetry run python run-ci.py check --runner macos
   tags:
     - macos
-    - notslave3
+    - MacOSSlave-2
 
 .check/windows:
   stage: check
@@ -75,7 +75,7 @@ check/macos/nightly:
     - poetry run python run-ci.py check --runner macos --nightly
   tags:
     - macos
-    - notslave3
+    - MacOSSlave-2
 
 .deploy:
   stage: deploy
