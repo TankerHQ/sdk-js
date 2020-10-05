@@ -117,6 +117,7 @@
     "instrument": false
   },
   "resolutions": {
-      "node-fetch": "^2.6.1"
+      "node-fetch": "^2.6.1",
+      "node-forge": "^0.10.0"
   }
 }
