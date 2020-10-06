@@ -4,10 +4,10 @@ import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
 
-export default class EncryptorStream extends Transform {
+export class EncryptionStream extends Transform {
   _maxClearChunkSize: number;
   _maxEncryptedChunkSize: number;
-  _encryptorStream: Transform;
+  _encryptionStream: Transform;
   _key: Uint8Array;
   _resizerStream: ResizerStream;
   _resourceId: Uint8Array;
@@ -41,7 +41,7 @@ export default class EncryptorStream extends Transform {
   _initializeStreams() {
     this._resizerStream = new ResizerStream(this._maxClearChunkSize);
 
-    this._encryptorStream = new Transform({
+    this._encryptionStream = new Transform({
       // buffering input bytes until clear chunk size is reached
       writableHighWaterMark: this._maxClearChunkSize,
       writableObjectMode: false,
@@ -52,7 +52,7 @@ export default class EncryptorStream extends Transform {
       transform: (clearData, encoding, done) => {
         try {
           const encryptedChunk = this._encryptChunk(clearData);
-          this._encryptorStream.push(encryptedChunk);
+          this._encryptionStream.push(encryptedChunk);
         } catch (err) {
           return done(err);
         }
@@ -64,7 +64,7 @@ export default class EncryptorStream extends Transform {
         if (this._state.lastClearChunkSize % this._maxClearChunkSize === 0) {
           try {
             const encryptedChunk = this._encryptChunk(new Uint8Array(0));
-            this._encryptorStream.push(encryptedChunk);
+            this._encryptionStream.push(encryptedChunk);
           } catch (err) {
             return done(err);
           }
@@ -74,11 +74,11 @@ export default class EncryptorStream extends Transform {
     });
 
     const forwardData = (data) => this.push(data);
-    this._encryptorStream.on('data', forwardData);
+    this._encryptionStream.on('data', forwardData);
     const forwardError = (error) => this.emit('error', error);
-    [this._resizerStream, this._encryptorStream].forEach((stream) => stream.on('error', forwardError));
+    [this._resizerStream, this._encryptionStream].forEach((stream) => stream.on('error', forwardError));
 
-    this._resizerStream.pipe(this._encryptorStream);
+    this._resizerStream.pipe(this._encryptionStream);
   }
 
   _encryptChunk(clearChunk: Uint8Array) {
@@ -98,7 +98,7 @@ export default class EncryptorStream extends Transform {
   }
 
   _flush(done: DoneCallback) {
-    this._encryptorStream.on('end', done);
+    this._encryptionStream.on('end', done);
     this._resizerStream.end();
   }
 

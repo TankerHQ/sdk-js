@@ -8,7 +8,7 @@ export type ResourceIdKeyMapper = {
   findKey: (Uint8Array) => Promise<Key>
 };
 
-export default class DecryptorStream extends Transform {
+export class DecryptionStream extends Transform {
   _mapper: ResourceIdKeyMapper;
 
   _state: {

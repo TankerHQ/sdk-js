@@ -59,7 +59,7 @@ export class CloudStorageManager {
   }
 
   async upload<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<string> {
-    const encryptor = await this._dataProtector.makeEncryptorStream(encryptionOptions);
+    const encryptor = await this._dataProtector.createEncryptionStream(encryptionOptions);
     const { _resourceId: resourceId, _key: key } = encryptor;
     const b64ResourceId = utils.toBase64(resourceId);
 
@@ -128,7 +128,7 @@ export class CloudStorageManager {
     const combinedOutputOptions = extractOutputOptions({ type: defaultDownloadType, ...outputOptions, ...fileMetadata });
     const merger = new MergerStream(combinedOutputOptions);
 
-    const decryptor = await this._dataProtector.makeDecryptorStream();
+    const decryptor = await this._dataProtector.createDecryptionStream();
 
     // SDKs up to v2.2.1 did not set an encryption format in the metadata
     if (encryptionFormat) {

@@ -24,8 +24,8 @@ import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
 import { type Status } from '../Session/status';
 
 import type { OutputOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './options';
-import EncryptorStream from './EncryptorStream';
-import DecryptorStream from './DecryptorStream';
+import { EncryptionStream } from './EncryptionStream';
+import { DecryptionStream } from './DecryptionStream';
 import { ProgressHandler } from './ProgressHandler';
 import { EncryptionSession } from './EncryptionSession';
 
@@ -185,7 +185,7 @@ export class DataProtector {
 
   async _streamDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const slicer = new SlicerStream({ source: encryptedData });
-    const decryptor = await this.makeDecryptorStream();
+    const decryptor = await this.createDecryptionStream();
     const merger = new MergerStream(outputOptions);
 
     const progressHandler = new ProgressHandler(progressOptions);
@@ -253,7 +253,7 @@ export class DataProtector {
 
   async _streamEncryptData<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
-    const encryptor = await this.makeEncryptorStream(encryptionOptions, resource);
+    const encryptor = await this.createEncryptionStream(encryptionOptions, resource);
 
     const clearSize = getDataLength(clearData);
     const encryptedSize = encryptor.getEncryptedSize(clearSize);
@@ -288,25 +288,25 @@ export class DataProtector {
     return this._shareResources(keys, { ...sharingOptions, shareWithSelf: false });
   }
 
-  async makeEncryptorStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptorStream> {
-    let encryptorStream;
+  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStream> {
+    let encryptionStream;
 
     if (resource) {
-      encryptorStream = new EncryptorStream(resource.resourceId, resource.key);
+      encryptionStream = new EncryptionStream(resource.resourceId, resource.key);
     } else {
       const newResource = makeResource();
       await this._shareResources([newResource], encryptionOptions);
-      encryptorStream = new EncryptorStream(newResource.resourceId, newResource.key);
+      encryptionStream = new EncryptionStream(newResource.resourceId, newResource.key);
     }
 
-    return encryptorStream;
+    return encryptionStream;
   }
 
-  async makeDecryptorStream(): Promise<DecryptorStream> {
+  async createDecryptionStream(): Promise<DecryptionStream> {
     const resourceIdKeyMapper = {
       findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId)
     };
-    return new DecryptorStream(resourceIdKeyMapper);
+    return new DecryptionStream(resourceIdKeyMapper);
   }
 
   async createEncryptionSession(subscribeToStatusChange: (listener: (status: Status) => void) => void, encryptionOptions: EncryptionOptions): Promise<EncryptionSession> {
