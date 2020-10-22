@@ -47,6 +47,6 @@
     "enzyme-adapter-react-16": "^1.15.5",
     "html-webpack-plugin": "^4.5.0",
     "react": "^16.14.0",
-    "react-dom": "npm:@hot-loader/react-dom"
+    "react-dom": "npm:@hot-loader/react-dom@^16.14.0"
   }
 }
