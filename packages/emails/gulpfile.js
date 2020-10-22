@@ -4,7 +4,7 @@ const plugins = require('gulp-load-plugins');
 const browser = require('browser-sync');
 const rimraf = require('rimraf');
 const panini = require('panini');
-const yargs = require('yargs');
+const yargs = require('yargs/yargs');
 const lazypipe = require('lazypipe');
 const inky = require('inky');
 const fs = require('fs');
@@ -13,7 +13,7 @@ const siphon = require('siphon-media-query');
 const $ = plugins();
 
 // Look for the --production flag
-const PRODUCTION = !!yargs.argv.production;
+const PRODUCTION = !!yargs(process.argv).argv.production;
 
 // Delete the "dist" folder, this happens every time a build starts
 function clean(done) {
