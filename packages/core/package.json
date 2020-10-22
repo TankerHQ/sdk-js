@@ -30,7 +30,7 @@
     "@tanker/stream-base": "0.0.1",
     "@tanker/stream-cloud-storage": "0.0.1",
     "@tanker/types": "0.0.1",
-    "varint": "^5.0.0"
+    "varint": "^6.0.0"
   },
   "devDependencies": {
     "@tanker/datastore-dexie-memory": "0.0.1",
