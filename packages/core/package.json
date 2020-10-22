@@ -34,7 +34,6 @@
   },
   "devDependencies": {
     "@tanker/datastore-dexie-memory": "0.0.1",
-    "@tanker/test-utils": "0.0.1",
-    "tmp": "^0.1.0"
+    "@tanker/test-utils": "0.0.1"
   }
 }
