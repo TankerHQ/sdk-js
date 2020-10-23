@@ -17,11 +17,11 @@
     "build": "gulp build --production"
   },
   "dependencies": {
-    "foundation-emails": "^2.2.1",
+    "foundation-emails": "^2.3.1",
     "siphon-media-query": "^1.0.0"
   },
   "devDependencies": {
-    "browser-sync": "^2.26.12",
+    "browser-sync": "^2.26.13",
     "gulp": "^4.0.2",
     "gulp-cli": "^2.3.0",
     "gulp-html-src": "^1.0.0",
@@ -29,7 +29,7 @@
     "gulp-if": "^3.0.0",
     "gulp-imagemin": "^7.1.0",
     "gulp-inline-css": "^3.5.0",
-    "gulp-load-plugins": "^2.0.3",
+    "gulp-load-plugins": "^2.0.5",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
     "gulp-sass": "^4.1.0",
@@ -38,6 +38,6 @@
     "lazypipe": "^1.0.2",
     "panini": "^1.7.1",
     "rimraf": "^3.0.2",
-    "yargs": "^15.4.1"
+    "yargs": "^16.0.1"
   }
 }
