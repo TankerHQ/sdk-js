@@ -36,11 +36,6 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
       await expect(badFa.getIdentity()).to.be.rejected;
     });
 
-    it('handles unknown app id', async () => {
-      const badFa = new FakeAuthentication({ appId: 'deadbeef', url: fakeAuthUrl });
-      await expect(badFa.getIdentity()).to.be.rejected;
-    });
-
     it('returns a disposable permanent identity without an email', async () => {
       const privateIdentity = await fa.getIdentity();
       const { identity, provisionalIdentity } = privateIdentity;
@@ -54,15 +49,6 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
       const { identity, provisionalIdentity } = privateIdentity;
       expect(identity).to.be.a.string;
       expect(provisionalIdentity).not.to.exist;
-    });
-
-    it('returns the same permanent identity when requested multiple times', async () => {
-      const email = makeTestEmail();
-
-      const result1 = await fa.getIdentity(email);
-      const result2 = await fa.getIdentity(email);
-
-      expect(result1).to.deep.equal(result2);
     });
 
     it('returns a list of public identities (provisional and permanent)', async () => {

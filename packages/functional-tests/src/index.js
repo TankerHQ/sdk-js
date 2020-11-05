@@ -3,7 +3,7 @@ import { utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
-import { AppHelper, admindUrl, trustchaindUrl, appdUrl, idToken, oidcSettings } from './helpers';
+import { AppHelper, admindUrl, appdUrl, idToken, oidcSettings } from './helpers';
 import type { TestArgs, TestResources } from './helpers';
 
 import { generateEncryptionStreamTests } from './encryptionStream';
@@ -17,14 +17,13 @@ import { generateRevocationTests } from './revocation';
 import { generateSessionTests } from './session';
 import { generateUploadTests } from './upload';
 import { generateVerificationTests } from './verification';
-import { generateResourceKeyDeletionTests } from './resourceKey';
 
 export function generateFunctionalTests(
   name: string,
   makeTanker: (appId: b64string) => Tanker,
   generateTestResources: () => TestResources,
 ) {
-  if (!admindUrl || !appdUrl || !trustchaindUrl || !idToken || !oidcSettings) {
+  if (!admindUrl || !appdUrl || !idToken || !oidcSettings) {
     // Those functional tests create an app automatically and require TANKER_* env variables
     // to be set (see the ci repository and env variables set on the Tanker Group on GitLab)
     if (process.env.CI) {
@@ -69,6 +68,5 @@ export function generateFunctionalTests(
     generateRevocationTests(args);
     generateNetworkTests(args);
     generateFakeAuthenticationTests(args);
-    generateResourceKeyDeletionTests(args);
   });
 }
