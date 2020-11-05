@@ -4,6 +4,7 @@
 const admindUrl = process.env.TANKER_ADMIND_URL || '';
 const appdUrl = process.env.TANKER_APPD_URL || '';
 const fakeAuthUrl = process.env.TANKER_FAKE_AUTH_URL || '';
+const trustchaindUrl = process.env.TANKER_TRUSTCHAIND_URL || '';
 const idToken = process.env.TANKER_ID_TOKEN || '';
 const oidcSettings = {
   googleAuth: {
@@ -31,4 +32,4 @@ const storageSettings = {
   },
 };
 
-export { appdUrl, admindUrl, fakeAuthUrl, idToken, oidcSettings, storageSettings };
+export { appdUrl, admindUrl, fakeAuthUrl, trustchaindUrl, idToken, oidcSettings, storageSettings };
