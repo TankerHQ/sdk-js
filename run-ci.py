@@ -9,9 +9,7 @@ import cli_ui as ui
 from path import Path
 import psutil
 
-import tankerci.cpp
 import tankerci.conan
-import tankerci.endtoend
 import tankerci.js
 
 
@@ -182,18 +180,26 @@ def e2e(*, use_local_sources: bool) -> None:
         base_path = Path.getcwd().parent
     else:
         base_path = tankerci.git.prepare_sources(
-            repos=["sdk-native", "sdk-python", "sdk-js", "qa-python-js"]
+            repos=["sdk-python", "sdk-js", "qa-python-js"]
         )
     tankerci.conan.set_home_isolation()
     tankerci.conan.update_config()
-    tankerci.conan.export(
-        src_path=base_path / "sdk-native", ref_or_channel="tanker/dev"
-    )
-    tankerci.endtoend.test(
-        tanker_conan_ref="tanker/dev@tanker/dev",
-        profile="gcc8-release",
-        base_path=base_path,
-    )
+    with base_path / "sdk-python":
+        tankerci.run("poetry", "install", "--no-root")
+        tankerci.conan.install_tanker_source(
+            tankerci.conan.TankerSource.SAME_AS_BRANCH,
+            output_path=Path("conan") / "out",
+            profiles=["gcc8-release"],
+            update=False,
+            tanker_deployed_ref=None,
+        )
+        tankerci.run("poetry", "install")
+    with base_path / "sdk-js":
+        tankerci.js.yarn_install()
+    with base_path / "qa-python-js":
+        tankerci.run("poetry", "install")
+        tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
+
 
 
 def deploy_sdk(*, env: str, git_tag: str) -> None:
