@@ -2,7 +2,7 @@
 
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
-import { createIdentity } from '@tanker/identity';
+import { createIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
@@ -199,6 +199,16 @@ describe('Tanker', () => {
         );
         const truncatedIdentity = identity.slice(0, identity.length - 10);
         await expect(tanker.start(truncatedIdentity)).to.be.rejectedWith(InvalidArgument);
+      });
+
+      it('should throw when identity is public instead of secret', async () => {
+        const identity = await createIdentity(
+          utils.toBase64(appId),
+          utils.toBase64(trustchainKeyPair.privateKey),
+          userId,
+        );
+        const publicIdentity = await getPublicIdentity(identity);
+        await expect(tanker.start(publicIdentity)).to.be.rejectedWith(InvalidArgument, 'Expected a secret permanent identity, but got a public permanent identity');
       });
     });
   });
