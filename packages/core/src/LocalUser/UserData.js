@@ -20,9 +20,10 @@ export type UserData = {
 };
 
 export function extractUserData(identityB64: b64string): UserData {
-  try {
-    const identity = _deserializePermanentIdentity(identityB64);
+  // Note: already throws detailed InvalidArgument errors
+  const identity = _deserializePermanentIdentity(identityB64);
 
+  try {
     const userId = utils.fromBase64(identity.value);
     const userSecret = utils.fromBase64(identity.user_secret);
     const trustchainId = utils.fromBase64(identity.trustchain_id);

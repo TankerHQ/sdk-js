@@ -60,6 +60,10 @@ function isPermanentIdentity(identity: SecretIdentity | PublicIdentity): %checks
   return identity.target === 'user';
 }
 
+function isPublicPermanentIdentity(identity: SecretPermanentIdentity | PublicPermanentIdentity): %checks {
+  return !('user_secret' in identity);
+}
+
 function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): %checks {
   return identity.target === 'email';
 }
@@ -97,11 +101,14 @@ export function _deserializePermanentIdentity(identity: b64string): SecretPerman
   try {
     result = _deserializeAndFreeze(identity);
   } catch (e) {
-    throw new InvalidArgument(`Invalid permanent identity provided: ${identity}`);
+    throw new InvalidArgument(`Invalid secret permanent identity provided: ${identity}`);
   }
 
   if (!isPermanentIdentity(result))
-    throw new InvalidArgument(`Expected a permanent identity, but contained target "${result.target}"`);
+    throw new InvalidArgument(`Expected a secret permanent identity, but got provisional identity with target: "${result.target}"`);
+
+  if (isPublicPermanentIdentity(result))
+    throw new InvalidArgument(`Expected a secret permanent identity, but got a public permanent identity: ${identity}"`);
 
   return result;
 }
