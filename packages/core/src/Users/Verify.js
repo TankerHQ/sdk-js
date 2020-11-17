@@ -51,13 +51,6 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
 
     if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, trustchainPublicKey))
       throw new InvalidBlockError('invalid_delegation_signature', 'delegation signature is invalid, there might be a mismatch between the Trustchains configured client-side and server-side', { entry });
-
-    if (!authorUser || authorUser.devices.length === 0)
-      return;
-
-    // If we're already verified, then it's not an error
-    if (!authorUser.devices.some(device => utils.equalArray(device.deviceId, entry.hash)))
-      throw new InvalidBlockError('forbidden', 'the user already has a device, this can\'t be the first device', { entry });
   }
 }
 
