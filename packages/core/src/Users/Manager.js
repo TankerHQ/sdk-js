@@ -20,7 +20,7 @@ export default class UserManager {
 
   async findUser(userId: Uint8Array) {
     const blocks = await this._getUserBlocksByUserIds([userId]);
-    const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainPublicKey);
+    const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);
     return userIdToUserMap.get(utils.toBase64(userId));
   }
 
@@ -36,7 +36,7 @@ export default class UserManager {
     });
 
     const blocks = await this._getUserBlocksByUserIds(userIds);
-    const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainPublicKey);
+    const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);
     const fullUsers = Array.from(userIdToUserMap.values());
 
     if (fullUsers.length === userIds.length)
@@ -57,7 +57,7 @@ export default class UserManager {
   async getDeviceKeysByDevicesIds(devicesIds: Array<Uint8Array>) {
     const blocks = await this._getUserBlocksByDeviceIds(devicesIds);
 
-    const { userIdToUserMap, deviceIdToUserIdMap } = await usersFromBlocks(blocks, this._localUser.trustchainPublicKey);
+    const { userIdToUserMap, deviceIdToUserIdMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);
     return this._getDeviceKeysFromIds(userIdToUserMap, deviceIdToUserIdMap, devicesIds);
   }
 

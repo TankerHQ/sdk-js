@@ -7,7 +7,7 @@ import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { verifyDeviceCreation, verifyDeviceRevocation } from './Verify';
 import { type User } from './types';
 
-export async function usersFromBlocks(userBlocks: Array<b64string>, trustchainPublicKey: Uint8Array) {
+export async function usersFromBlocks(userBlocks: Array<b64string>, trustchainId: Uint8Array, trustchainPublicKey: Uint8Array) {
   const userIdToUserMap: Map<b64string, User> = new Map();
   const deviceIdToUserIdMap: Map<b64string, b64string> = new Map();
 
@@ -18,7 +18,7 @@ export async function usersFromBlocks(userBlocks: Array<b64string>, trustchainPu
       const base64UserId = utils.toBase64(deviceCreationEntry.user_id);
       let user = userIdToUserMap.get(base64UserId);
 
-      verifyDeviceCreation(deviceCreationEntry, user, trustchainPublicKey);
+      verifyDeviceCreation(deviceCreationEntry, user, trustchainId, trustchainPublicKey);
       user = applyDeviceCreationToUser(deviceCreationEntry, user);
 
       userIdToUserMap.set(base64UserId, user);

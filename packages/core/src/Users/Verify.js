@@ -11,7 +11,7 @@ import {
   NATURE,
 } from '../Blocks/Nature';
 
-export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?User, trustchainPublicKey: Uint8Array) {
+export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?User, trustchainId: Uint8Array, trustchainPublicKey: Uint8Array) {
   if (!utils.isNullArray(entry.last_reset))
     throw new InvalidBlockError('invalid_last_reset', 'last_reset is not null', { entry });
 
@@ -27,8 +27,11 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
   if (authorUser) {
     const authorDevice = authorUser.devices.find(d => utils.equalArray(d.deviceId, entry.author));
 
-    if (!authorDevice)
+    if (!authorDevice) {
+      if (utils.equalArray(entry.author, trustchainId))
+        throw new InvalidBlockError('invalid_author', 'a device for an existing user was signed by the trustchain key');
       throw new InternalError('Assertion error: we have an author user, but the author device did not match');
+    }
 
     if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, authorDevice.devicePublicSignatureKey))
       throw new InvalidBlockError('invalid_delegation_signature', 'invalid signature from device creation author', { entry, authorDevice });
@@ -43,6 +46,9 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?Us
     if (!utils.equalArray(entry.user_id, authorUser.userId))
       throw new InvalidBlockError('forbidden', 'the author is not authorized to create a device for this user', { entry, authorDevice });
   } else {
+    if (!utils.equalArray(entry.author, trustchainId))
+      throw new InvalidBlockError('invalid_author', 'first device is not signed by the trustchain');
+
     if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, trustchainPublicKey))
       throw new InvalidBlockError('invalid_delegation_signature', 'delegation signature is invalid, there might be a mismatch between the Trustchains configured client-side and server-side', { entry });
 

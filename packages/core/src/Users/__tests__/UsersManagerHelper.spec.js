@@ -25,7 +25,7 @@ describe('UserManagerHelper', () => {
 
       const blocks = [userCreation.block, userCreation2.block, deviceCreation.block, deviceCreationUser2.block, deviceCreation2.block, deviceRevocation.block];
 
-      const { userIdToUserMap, deviceIdToUserIdMap } = await usersFromBlocks(blocks, trustchainCreation.trustchainKeys.publicKey);
+      const { userIdToUserMap, deviceIdToUserIdMap } = await usersFromBlocks(blocks, trustchainCreation.trustchainId, trustchainCreation.trustchainKeys.publicKey);
 
       expect(userIdToUserMap.size).to.deep.equal(2);
       expect(deviceIdToUserIdMap.size).to.deep.equal(5); // revoked device still is a device
