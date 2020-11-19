@@ -18,6 +18,10 @@ export type ClientOptions = {
 
 const MAX_QUERY_STRING_ITEMS = 100;
 
+function unique(vals: Array<string>): Array<string> {
+  return Array.from(new Set(vals));
+}
+
 /**
  * Network communication
  */
@@ -272,9 +276,11 @@ export class Client {
       return this.getRevokedDeviceHistory();
     }
 
+    const urlizedUserIds = unique(userIds.map(urlize));
+
     const result = { root: '', histories: [] };
-    for (let i = 0; i < userIds.length; i += MAX_QUERY_STRING_ITEMS) {
-      const query = `user_ids[]=${userIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&user_ids[]=')}`;
+    for (let i = 0; i < urlizedUserIds.length; i += MAX_QUERY_STRING_ITEMS) {
+      const query = `user_ids[]=${urlizedUserIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&user_ids[]=')}`;
       const response = await this.getUserHistories(query);
       result.root = response.root;
       result.histories = result.histories.concat(response.histories);
@@ -283,12 +289,20 @@ export class Client {
   }
 
   getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>) => {
+    const urlizedDeviceIds = unique(deviceIds.map(urlize));
     const result = { root: '', histories: [] };
-    for (let i = 0; i < deviceIds.length; i += MAX_QUERY_STRING_ITEMS) {
-      const query = `device_ids[]=${deviceIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&device_ids[]=')}`;
+    const gotBlocks = new Set();
+    for (let i = 0; i < urlizedDeviceIds.length; i += MAX_QUERY_STRING_ITEMS) {
+      const query = `device_ids[]=${urlizedDeviceIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&device_ids[]=')}`;
       const response = await this.getUserHistories(query);
       result.root = response.root;
-      result.histories = result.histories.concat(response.histories);
+      // We may ask for the same user twice, but through two different device
+      // IDs. We can't use unique() here because we need to keep the order
+      // intact.
+      const withoutDuplicates = response.histories.filter(d => !gotBlocks.has(d));
+      result.histories = result.histories.concat(withoutDuplicates);
+      for (const block of withoutDuplicates)
+        gotBlocks.add(block);
     }
     return result;
   }
