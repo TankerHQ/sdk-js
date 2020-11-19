@@ -9739,7 +9739,7 @@ pouchdb-adapter-leveldb-core@7.2.2:
     sublevel-pouchdb "7.2.2"
     through2 "3.0.2"
 
-pouchdb-adapter-leveldb@^7.2.1:
+pouchdb-adapter-leveldb@^7.2.2:
   version "7.2.2"
   resolved "https://registry.yarnpkg.com/pouchdb-adapter-leveldb/-/pouchdb-adapter-leveldb-7.2.2.tgz#a57e4a8c6d8eb5ced7c7bc5e1e51bc5a7bd8e6ee"
   integrity sha512-f0m1ZbP5wvnEQIVy7Po89Hhh0mrkkf5LEEZJ3H54pdqpE1ebuJ3WorI3J3CsBXAh4i3PBNR/6SsmO7YhQONsjQ==
@@ -9752,7 +9752,7 @@ pouchdb-adapter-leveldb@^7.2.1:
     pouchdb-utils "7.2.2"
     through2 "3.0.2"
 
-pouchdb-adapter-memory@^7.2.1:
+pouchdb-adapter-memory@^7.2.2:
   version "7.2.2"
   resolved "https://registry.yarnpkg.com/pouchdb-adapter-memory/-/pouchdb-adapter-memory-7.2.2.tgz#c0ec2e87928d516ca9d1b5badc7269df6f95e5ea"
   integrity sha512-9o+zdItPEq7rIrxdkUxgsLNaZkDJAGEqqoYgeYdrHidOCZnlhxhX3g7/R/HcpDKC513iEPqJWDJQSfeT6nVKkw==
@@ -9799,7 +9799,7 @@ pouchdb-collections@7.2.2:
   resolved "https://registry.yarnpkg.com/pouchdb-collections/-/pouchdb-collections-7.2.2.tgz#aeed77f33322429e3f59d59ea233b48ff0e68572"
   integrity sha512-6O9zyAYlp3UdtfneiMYuOCWdUCQNo2bgdjvNsMSacQX+3g8WvIoFQCYJjZZCpTttQGb+MHeRMr8m2U95lhJTew==
 
-pouchdb-core@^7.2.1:
+pouchdb-core@^7.2.2:
   version "7.2.2"
   resolved "https://registry.yarnpkg.com/pouchdb-core/-/pouchdb-core-7.2.2.tgz#519402cf0fcaffcc903db9d484d901fc9dde33d5"
   integrity sha512-AnMmSH+xx12Vk6oASDRQoElXfV9fSn8MIwfus0oa2lqkxowx4bvidofZbhZfKEiE6QgKwFEOBzs56MS3znI8TQ==
@@ -9829,7 +9829,7 @@ pouchdb-fetch@7.2.2:
     fetch-cookie "0.10.1"
     node-fetch "2.6.0"
 
-pouchdb-find@^7.2.1:
+pouchdb-find@^7.2.2:
   version "7.2.2"
   resolved "https://registry.yarnpkg.com/pouchdb-find/-/pouchdb-find-7.2.2.tgz#1227afdd761812d508fe0794b3e904518a721089"
   integrity sha512-BmFeFVQ0kHmDehvJxNZl9OmIztCjPlZlVSdpijuFbk/Fi1EFPU1BAv3kLC+6DhZuOqU/BCoaUBY9sn66pPY2ag==
