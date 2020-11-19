@@ -28,16 +28,16 @@
     "gulp-htmlmin": "^5.0.1",
     "gulp-if": "^3.0.0",
     "gulp-imagemin": "^7.1.0",
-    "gulp-inline-css": "^3.5.0",
+    "gulp-inline-css": "^4.0.0",
     "gulp-load-plugins": "^2.0.5",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
     "gulp-sass": "^4.1.0",
-    "gulp-sourcemaps": "^2.6.5",
+    "gulp-sourcemaps": "^3.0.0",
     "inky": "^1.4.2",
     "lazypipe": "^1.0.2",
     "panini": "^1.7.1",
     "rimraf": "^3.0.2",
-    "yargs": "^16.0.1"
+    "yargs": "^16.1.1"
   }
 }
