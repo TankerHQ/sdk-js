@@ -26,7 +26,7 @@
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.6.0",
+    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/global-this": "0.0.1"
   },
   "devDependencies": {

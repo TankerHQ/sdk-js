@@ -16,7 +16,7 @@
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.6.0",
+    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/datastore-pouchdb-base": "0.0.1",
     "pouchdb-adapter-leveldb": "^7.2.2",
     "pouchdb-core": "^7.2.2",

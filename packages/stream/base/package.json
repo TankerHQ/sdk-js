@@ -16,7 +16,7 @@
   "module": "es.js",
   "browser": "browser.js",
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.6.0",
+    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/errors": "0.0.1",
     "@tanker/file-reader": "0.0.1",
     "@tanker/types": "0.0.1",
