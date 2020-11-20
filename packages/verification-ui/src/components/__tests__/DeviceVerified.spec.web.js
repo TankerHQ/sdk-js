@@ -11,7 +11,7 @@ describe('<DeviceVerified />', () => {
   });
 
   it('calls the exit callback when the button is clicked', () => {
-    const exit = sinon.spy();
+    const exit = sinon.fake();
     const wrapper = shallow(<DeviceVerified exit={exit} />);
     wrapper.childAt(3).simulate('click');
     expect(exit.calledOnce).to.be.true;
