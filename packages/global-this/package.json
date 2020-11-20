@@ -19,7 +19,7 @@
     "test": "cd ../..; yarn test:global-this"
   },
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.6.0"
+    "@babel/runtime-corejs3": "^7.9.0"
   },
   "devDependencies": {
     "@tanker/test-utils": "0.0.1"

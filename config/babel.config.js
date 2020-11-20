@@ -23,7 +23,7 @@ const getBabelConfig = ({ target, coverage, react, hmre, modules }) => {
     // See: https://babeljs.io/docs/en/babel-plugin-transform-runtime#technical-details
     config.plugins.push(['@babel/plugin-transform-runtime', {
       corejs: 3,
-      version: '^7.6.0', // Keep this in sync with @babel/runtime-corejs3 version
+      version: '^7.9.0', // Keep this in sync with @babel/runtime-corejs3 version
     }]);
   }
 
