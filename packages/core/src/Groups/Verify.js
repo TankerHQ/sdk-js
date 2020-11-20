@@ -6,13 +6,17 @@ import { InternalError } from '@tanker/errors';
 import {
   getUserGroupCreationBlockSignDataV1,
   getUserGroupCreationBlockSignDataV2,
+  getUserGroupCreationBlockSignDataV3,
   getUserGroupAdditionBlockSignDataV1,
   getUserGroupAdditionBlockSignDataV2,
+  getUserGroupAdditionBlockSignDataV3,
   type UserGroupCreationRecord,
   type UserGroupCreationRecordV1,
   type UserGroupCreationRecordV2,
+  type UserGroupCreationRecordV3,
   type UserGroupAdditionRecordV1,
   type UserGroupAdditionRecordV2,
+  type UserGroupAdditionRecordV3,
   type UserGroupAdditionRecord,
   type UserGroupEntry,
 } from './Serialize';
@@ -40,6 +44,9 @@ export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSigna
   } else if (entry.nature === NATURE.user_group_creation_v2) {
     const versionedPayload: UserGroupCreationRecordV2 = (currentPayload: any);
     selfSigBuffer = getUserGroupCreationBlockSignDataV2(versionedPayload);
+  } else if (entry.nature === NATURE.user_group_creation_v3) {
+    const versionedPayload: UserGroupCreationRecordV3 = (currentPayload: any);
+    selfSigBuffer = getUserGroupCreationBlockSignDataV3(versionedPayload);
   } else {
     throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
   }
@@ -66,6 +73,9 @@ export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSigna
   } else if (entry.nature === NATURE.user_group_addition_v2) {
     const versionedPayload: UserGroupAdditionRecordV2 = (currentPayload: any);
     selfSigBuffer = getUserGroupAdditionBlockSignDataV2(versionedPayload);
+  } else if (entry.nature === NATURE.user_group_addition_v3) {
+    const versionedPayload: UserGroupAdditionRecordV3 = (currentPayload: any);
+    selfSigBuffer = getUserGroupAdditionBlockSignDataV3(versionedPayload);
   } else {
     throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
   }
@@ -74,9 +84,9 @@ export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSigna
 }
 
 export function verifyGroupAction(action: UserGroupEntry, devicePublicSignatureKey: Uint8Array, group: ?Group) {
-  if (action.nature === NATURE.user_group_creation_v2 || action.nature === NATURE.user_group_creation_v1) {
+  if (action.nature === NATURE.user_group_creation_v3 || action.nature === NATURE.user_group_creation_v2 || action.nature === NATURE.user_group_creation_v1) {
     verifyUserGroupCreation(action, devicePublicSignatureKey, group);
-  } else if (action.nature === NATURE.user_group_addition_v2 || action.nature === NATURE.user_group_addition_v1) {
+  } else if (action.nature === NATURE.user_group_addition_v3 || action.nature === NATURE.user_group_addition_v2 || action.nature === NATURE.user_group_addition_v1) {
     verifyUserGroupAddition(action, devicePublicSignatureKey, group);
   } else {
     throw new InternalError('Assertion error: entry to verify is not a group');

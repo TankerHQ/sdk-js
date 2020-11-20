@@ -2,7 +2,7 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument, InternalError } from '@tanker/errors';
 
-import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, UserGroupEntry } from './Serialize';
+import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, ProvisionalGroupEncryptedKeyV3, UserGroupEntry } from './Serialize';
 import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
 
@@ -64,7 +64,7 @@ function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, localUser:
   return null;
 }
 
-async function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>, provisionalIdentityManager: ProvisionalIdentityManager): Promise<?Object> {
+async function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>, provisionalIdentityManager: ProvisionalIdentityManager): Promise<?Object> {
   for (const gek of groupKeys) {
     const correspondingPair = await provisionalIdentityManager.getPrivateProvisionalKeys(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key);
     if (correspondingPair)
