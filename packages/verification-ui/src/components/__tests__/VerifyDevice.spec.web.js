@@ -66,7 +66,7 @@ describe('<VerifyDevice />', () => {
     });
 
     it('updates the verificationCode when the field changes', async () => {
-      const setVerificationCode = sinon.spy();
+      const setVerificationCode = sinon.fake();
       const nextCode = 'next';
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, setVerificationCode } }} />);
       await wrapper.childAt(1).props().onChange(nextCode);
@@ -74,7 +74,7 @@ describe('<VerifyDevice />', () => {
     });
 
     it('starts the verification when the code is more than 8 characters long', async () => {
-      const verifyStart = sinon.spy();
+      const verifyStart = sinon.fake();
       const nextCode = 'nextCode';
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, verifyStart } }} />);
       await wrapper.childAt(1).props().onChange(nextCode);
@@ -82,7 +82,7 @@ describe('<VerifyDevice />', () => {
     });
 
     it('doesn\'t start the verification if one is already in progress', async () => {
-      const verifyStart = sinon.spy();
+      const verifyStart = sinon.fake();
       const nextCode = 'nextCode';
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ state: { ...defaultProps.context.state, verifyIsFetching: true }, actions: { ...defaultProps.context.actions, verifyStart } }} />);
       await wrapper.childAt(1).props().onChange(nextCode);
@@ -90,7 +90,7 @@ describe('<VerifyDevice />', () => {
     });
 
     it('uses the verificationCode when the code is more than 8 characters long', async () => {
-      const check = sinon.spy();
+      const check = sinon.fake();
       const nextCode = 'nextCode';
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} check={check} />);
       await wrapper.childAt(1).props().onChange(nextCode);
@@ -98,8 +98,8 @@ describe('<VerifyDevice />', () => {
     });
 
     it('calls the success callback when verification succeeds', async () => {
-      const verifySuccess = sinon.spy();
-      const verifyError = sinon.spy();
+      const verifySuccess = sinon.fake();
+      const verifyError = sinon.fake();
       const nextCode = 'nextCode';
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, verifySuccess, verifyError } }} />);
       await wrapper.childAt(1).props().onChange(nextCode);
@@ -110,8 +110,8 @@ describe('<VerifyDevice />', () => {
     it('calls the error callback when verification fails', async () => {
       const error = new Error('error');
       const check = () => { throw error; };
-      const verifySuccess = sinon.spy();
-      const verifyError = sinon.spy();
+      const verifySuccess = sinon.fake();
+      const verifyError = sinon.fake();
       const nextCode = 'nextCode';
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} check={check} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, verifySuccess, verifyError } }} />);
       await wrapper.childAt(1).props().onChange(nextCode);
@@ -125,14 +125,14 @@ describe('<VerifyDevice />', () => {
 
     it('sends a verification email when mounting', async () => {
       defaultProps.fetch = makeFakeFetch(200, {});
-      const sendStart = sinon.spy();
+      const sendStart = sinon.fake();
       shallow(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, sendStart } }} />);
       expect(sendStart.calledOnce).to.be.true;
     });
 
     it('sends a verification email when clickng the resend button', async () => {
       defaultProps.fetch = makeFakeFetch(200, {});
-      const sendStart = sinon.spy();
+      const sendStart = sinon.fake();
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, sendStart } }} />);
       await wrapper.childAt(2).props().onClick();
       expect(sendStart.calledOnce).to.be.true;
@@ -140,8 +140,8 @@ describe('<VerifyDevice />', () => {
 
     it('calls the success callback when sending the verification email succeeds', async () => {
       defaultProps.fetch = makeFakeFetch(200, {});
-      const sendSuccess = sinon.spy();
-      const sendError = sinon.spy();
+      const sendSuccess = sinon.fake();
+      const sendError = sinon.fake();
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, sendSuccess, sendError } }} />);
       await wrapper.childAt(2).props().onClick();
       expect(sendSuccess.calledOnce).to.be.true;
@@ -151,8 +151,8 @@ describe('<VerifyDevice />', () => {
     it('calls the error callback when sending the verification email fails with a standard error', async () => {
       const code = 'code';
       defaultProps.fetch = makeFakeFetch(500, { code });
-      const sendSuccess = sinon.spy();
-      const sendError = sinon.spy();
+      const sendSuccess = sinon.fake();
+      const sendError = sinon.fake();
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, sendSuccess, sendError } }} />);
       await wrapper.childAt(2).props().onClick();
       expect(sendSuccess.calledOnce).to.be.false;
@@ -161,8 +161,8 @@ describe('<VerifyDevice />', () => {
 
     it('calls the error callback when sending the verification email fails with a non-standard error', async () => {
       defaultProps.fetch = makeFakeFetch(500, {});
-      const sendSuccess = sinon.spy();
-      const sendError = sinon.spy();
+      const sendSuccess = sinon.fake();
+      const sendError = sinon.fake();
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, sendSuccess, sendError } }} />);
       await wrapper.childAt(2).props().onClick();
       expect(sendSuccess.calledOnce).to.be.false;

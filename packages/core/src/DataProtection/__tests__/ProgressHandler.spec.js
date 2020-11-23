@@ -6,7 +6,7 @@ import { ProgressHandler } from '../ProgressHandler';
 
 describe('ProgressHandler', () => {
   it('can report progress knowing the total byte size', async () => {
-    const onProgress = sinon.spy();
+    const onProgress = sinon.fake();
     const totalBytes = 6;
 
     const handler = new ProgressHandler({ onProgress });
@@ -28,7 +28,7 @@ describe('ProgressHandler', () => {
   });
 
   it('can report progress even if total bytes is zero', async () => {
-    const onProgress = sinon.spy();
+    const onProgress = sinon.fake();
     const totalBytes = 0;
 
     const handler = new ProgressHandler({ onProgress });
@@ -45,7 +45,7 @@ describe('ProgressHandler', () => {
   });
 
   it('can report progress without a total byte size', async () => {
-    const onProgress = sinon.spy();
+    const onProgress = sinon.fake();
 
     const handler = new ProgressHandler({ onProgress });
     expect(onProgress.notCalled).to.be.true;

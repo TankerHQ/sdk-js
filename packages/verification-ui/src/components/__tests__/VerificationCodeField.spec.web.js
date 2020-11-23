@@ -31,7 +31,7 @@ describe('<VerificationCodeField />', () => {
   });
 
   it('calls the onChange callback with the new value when the number field changes', () => {
-    const onChange = sinon.spy();
+    const onChange = sinon.fake();
     const oldValue = '1234';
     const added = '5678';
     const wrapper = shallow(<VerificationCodeField {...defaultProps} value={oldValue} onChange={onChange} />);
@@ -40,7 +40,7 @@ describe('<VerificationCodeField />', () => {
   });
 
   it('cleans up the new value before calling the onChange callback', () => {
-    const onChange = sinon.spy();
+    const onChange = sinon.fake();
     const oldValue = '1';
     const added = '5az';
     const wrapper = shallow(<VerificationCodeField {...defaultProps} value={oldValue} onChange={onChange} />);
@@ -49,7 +49,7 @@ describe('<VerificationCodeField />', () => {
   });
 
   it('limits the length of the new value to 8 when calling the onChange callback', () => {
-    const onChange = sinon.spy();
+    const onChange = sinon.fake();
     const oldValue = '1234';
     const added = '56789';
     const wrapper = shallow(<VerificationCodeField {...defaultProps} value={oldValue} onChange={onChange} />);
@@ -58,7 +58,7 @@ describe('<VerificationCodeField />', () => {
   });
 
   it('removes a character in the new value and calls the onChange callback when pressing Backspace in the number field', () => {
-    const onChange = sinon.spy();
+    const onChange = sinon.fake();
     const value = 'value';
     const wrapper = shallow(<VerificationCodeField {...defaultProps} value={value} onChange={onChange} />);
     wrapper.childAt(0).simulate('keydown', { key: 'Backspace' });
@@ -66,7 +66,7 @@ describe('<VerificationCodeField />', () => {
   });
 
   it('does not call the onChange callback when pressing not-Backspace in the number field', () => {
-    const onChange = sinon.spy();
+    const onChange = sinon.fake();
     const wrapper = shallow(<VerificationCodeField {...defaultProps} onChange={onChange} />);
     wrapper.childAt(0).simulate('keydown', { key: 'a' });
     expect(onChange.calledOnce).to.be.false;

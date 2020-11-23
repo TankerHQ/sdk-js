@@ -69,7 +69,7 @@ export const generateUploadTests = (args: TestArgs) => {
           // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
           const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
-          const onProgress = sinon.spy();
+          const onProgress = sinon.fake();
 
           const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2];
 

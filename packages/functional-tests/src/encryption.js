@@ -107,7 +107,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('can report progress when encrypting and decrypting', async () => {
-        const onProgress = sinon.spy();
+        const onProgress = sinon.fake();
 
         const encrypted = await bobLaptop.encrypt(clearText, { onProgress });
         expectProgressReport(onProgress, encrypted.length);
@@ -467,7 +467,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
     forEachSize(['empty', 'small', 'medium', 'big'], size => {
       args.resources[size].forEach(({ type, resource: clear }) => {
         it(`can encrypt and decrypt a ${size} ${getConstructorName(type)}`, async () => {
-          const onProgress = sinon.spy();
+          const onProgress = sinon.fake();
 
           const encrypted = await aliceLaptop.encryptData(clear, { onProgress });
           expectSameType(encrypted, clear);

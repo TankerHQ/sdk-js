@@ -12,7 +12,7 @@ export class DecryptionFailed extends TankerError {
     if (b64ResourceId) {
       if (!message) {
         message = `resource ${b64ResourceId} decryption failed`;
-        if (error) message += `with: ${error.toString()}`;
+        if (error) message += `, with: ${error.toString()}`;
       }
     }
 

@@ -33,13 +33,14 @@ describe('DecryptionStream', () => {
   beforeEach(() => {
     key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     resourceId = random(16);
-    mapper = { findKey: () => Promise.resolve(key) };
+    // Note: we don't use sinon.fake.resolves(key) that would bind the key
+    //       now, as the key is overridden later in some tests ;-)
+    mapper = { findKey: sinon.fake(() => Promise.resolve(key)) };
     stream = new DecryptionStream(mapper);
     sync = watchStream(stream);
   });
 
   it('can extract header v4, resource id and message', async () => {
-    const spy = sinon.spy(mapper, 'findKey');
     const msg = encryptMsg(0, '1st message');
     const emptyMsg = encryptMsg(1, '');
 
@@ -48,11 +49,10 @@ describe('DecryptionStream', () => {
 
     await expect(sync.promise).to.be.fulfilled;
 
-    expect(mapper.findKey.withArgs(resourceId).calledOnce).to.be.true;
+    expect(mapper.findKey.calledOnce).to.be.true;
+    expect(mapper.findKey.args[0]).to.deep.equal([resourceId]);
     expect(buffer.length).to.equal(1);
     expect(buffer[0]).to.deep.equal(msg.clear);
-
-    spy.restore();
   });
 
   it('can decrypt chunks of fixed size', async () => {
@@ -88,8 +88,6 @@ describe('DecryptionStream', () => {
   });
 
   it('can decrypt a test vector (empty data)', async () => {
-    const spy = sinon.spy(mapper, 'findKey');
-
     const emptyTestVector = new Uint8Array([
       // version
       0x4,
@@ -122,15 +120,12 @@ describe('DecryptionStream', () => {
 
     await expect(sync.promise).to.be.fulfilled;
 
-    expect(mapper.findKey.withArgs(resourceId).calledOnce).to.be.true;
+    expect(mapper.findKey.calledOnce).to.be.true;
+    expect(mapper.findKey.args[0]).to.deep.equal([resourceId]);
     expect(buffer.length).to.equal(0); // no data
-
-    spy.restore();
   });
 
   it('can decrypt a test vector (with data)', async () => {
-    const spy = sinon.spy(mapper, 'findKey');
-
     const testMessage = 'this is a secret';
 
     const testVector = new Uint8Array([
@@ -166,16 +161,13 @@ describe('DecryptionStream', () => {
 
     await expect(sync.promise).to.be.fulfilled;
 
-    expect(mapper.findKey.withArgs(resourceId).calledOnce).to.be.true;
+    expect(mapper.findKey.calledOnce).to.be.true;
+    expect(mapper.findKey.args[0]).to.deep.equal([resourceId]);
     expect(buffer.length).to.equal(1);
     expect(utils.toString(buffer[0])).to.equal(testMessage);
-
-    spy.restore();
   });
 
   it('can decrypt a test vector (with multiple chunks)', async () => {
-    const spy = sinon.spy(mapper, 'findKey');
-
     const testMessage = 'this is a secret';
 
     const testVector = new Uint8Array([
@@ -225,11 +217,10 @@ describe('DecryptionStream', () => {
 
     await expect(sync.promise).to.be.fulfilled;
 
-    expect(mapper.findKey.withArgs(resourceId).calledOnce).to.be.true;
+    expect(mapper.findKey.calledOnce).to.be.true;
+    expect(mapper.findKey.args[0]).to.deep.equal([resourceId]);
     expect(buffer.length).to.equal(2);
     expect(utils.toString(utils.concatArrays(...buffer))).to.equal(testMessage);
-
-    spy.restore();
   });
 
   describe('Errors', () => {
