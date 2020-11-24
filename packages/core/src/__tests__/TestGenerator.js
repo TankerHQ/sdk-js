@@ -414,7 +414,7 @@ class TestGenerator {
     return {
       userId: user.id,
       userPublicKeys: user.userKeys.map(key => (key.publicKey)),
-      devices: user.devices.map(this._testDeviceToDevice),
+      devices: user.devices.map(device => this._testDeviceToDevice(device)),
     };
   }
 }

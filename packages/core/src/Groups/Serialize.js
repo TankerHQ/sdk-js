@@ -255,7 +255,7 @@ export function serializeUserGroupCreationV1(userGroupCreation: UserGroupCreatio
     userGroupCreation.public_encryption_key,
     userGroupCreation.encrypted_group_private_signature_key,
     encodeListLength(userGroupCreation.encrypted_group_private_encryption_keys_for_users),
-    ...userGroupCreation.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV1),
+    ...userGroupCreation.encrypted_group_private_encryption_keys_for_users.map(key => serializeGroupEncryptedKeyV1(key)),
     userGroupCreation.self_signature,
   );
 }
@@ -287,9 +287,9 @@ export function serializeUserGroupCreationV2(userGroupCreation: UserGroupCreatio
     userGroupCreation.public_encryption_key,
     userGroupCreation.encrypted_group_private_signature_key,
     encodeListLength(userGroupCreation.encrypted_group_private_encryption_keys_for_users),
-    ...userGroupCreation.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV2),
+    ...userGroupCreation.encrypted_group_private_encryption_keys_for_users.map(key => serializeGroupEncryptedKeyV2(key)),
     encodeListLength(userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users),
-    ...userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users.map(serializeProvisionalGroupEncryptedKeyV2),
+    ...userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users.map(key => serializeProvisionalGroupEncryptedKeyV2(key)),
     userGroupCreation.self_signature,
   );
 }
@@ -311,9 +311,9 @@ export function serializeUserGroupCreationV3(userGroupCreation: UserGroupCreatio
     userGroupCreation.public_encryption_key,
     userGroupCreation.encrypted_group_private_signature_key,
     encodeListLength(userGroupCreation.encrypted_group_private_encryption_keys_for_users),
-    ...userGroupCreation.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV2),
+    ...userGroupCreation.encrypted_group_private_encryption_keys_for_users.map(key => serializeGroupEncryptedKeyV2(key)),
     encodeListLength(userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users),
-    ...userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users.map(serializeProvisionalGroupEncryptedKeyV3),
+    ...userGroupCreation.encrypted_group_private_encryption_keys_for_provisional_users.map(key => serializeProvisionalGroupEncryptedKeyV3(key)),
     userGroupCreation.self_signature,
   );
 }
@@ -329,7 +329,7 @@ export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditio
     userGroupAddition.group_id,
     userGroupAddition.previous_group_block,
     encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_users),
-    ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV1),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(key => serializeGroupEncryptedKeyV1(key)),
     userGroupAddition.self_signature_with_current_key,
   );
 }
@@ -346,9 +346,9 @@ export function serializeUserGroupAdditionV2(userGroupAddition: UserGroupAdditio
     userGroupAddition.group_id,
     userGroupAddition.previous_group_block,
     encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_users),
-    ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV2),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(key => serializeGroupEncryptedKeyV2(key)),
     encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users),
-    ...userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.map(serializeProvisionalGroupEncryptedKeyV2),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.map(key => serializeProvisionalGroupEncryptedKeyV2(key)),
     userGroupAddition.self_signature_with_current_key,
   );
 }
@@ -365,9 +365,9 @@ export function serializeUserGroupAdditionV3(userGroupAddition: UserGroupAdditio
     userGroupAddition.group_id,
     userGroupAddition.previous_group_block,
     encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_users),
-    ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(serializeGroupEncryptedKeyV2),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_users.map(key => serializeGroupEncryptedKeyV2(key)),
     encodeListLength(userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users),
-    ...userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.map(serializeProvisionalGroupEncryptedKeyV3),
+    ...userGroupAddition.encrypted_group_private_encryption_keys_for_provisional_users.map(key => serializeProvisionalGroupEncryptedKeyV3(key)),
     userGroupAddition.self_signature_with_current_key,
   );
 }

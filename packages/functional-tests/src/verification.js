@@ -244,9 +244,9 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('fails to verify a token with incorrect signature', async () => {
         await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
-        const jwtBinParts = martineIdToken.split('.').map(utils.fromBase64);
+        const jwtBinParts = martineIdToken.split('.').map(part => utils.fromBase64(part));
         jwtBinParts[2][5] += 1; // break signature
-        const forgedIdToken = jwtBinParts.map(utils.toSafeBase64).join('.').replace(/=/g, '');
+        const forgedIdToken = jwtBinParts.map(part => utils.toSafeBase64(part)).join('.').replace(/=/g, '');
         await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: forgedIdToken })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
