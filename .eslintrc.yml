@@ -1,13 +1,25 @@
 ---
-extends:
-  - airbnb
-  - plugin:flowtype/recommended
-parser: babel-eslint
 env:
   browser: true
   mocha: true
   node: true
   webextensions: true
+
+extends:
+  - airbnb
+  - plugin:flowtype/recommended
+
+parser: babel-eslint
+parserOptions:
+  ecmaVersion: 7
+  ecmaFeatures:
+    experimentalObjectRestSpread: true
+
+plugins:
+  - chai-expect
+  - chai-friendly
+  - mocha-no-only
+  - flowtype
 
 rules:
   arrow-parens: 0
@@ -40,16 +52,10 @@ rules:
   prefer-destructuring: 0
   spaced-comment: 0
 
-  import/no-named-as-default: 0
-  import/prefer-default-export: 0
-
   chai-expect/missing-assertion: 2
   chai-expect/terminating-properties: 1
 
   chai-friendly/no-unused-expressions: 2
-
-  mocha-no-only/mocha-no-only:
-    - error
 
   flowtype/boolean-style:
     - error
@@ -58,6 +64,12 @@ rules:
   flowtype/require-valid-file-annotation:
     - error
     - always
+
+  import/no-named-as-default: 0
+  import/prefer-default-export: 0
+
+  mocha-no-only/mocha-no-only:
+    - error
 
   react/no-multi-comp:
     - error
@@ -70,14 +82,3 @@ rules:
   react/jsx-props-no-spreading: 0
   react/state-in-constructor: 0
   react/static-property-placement: 0
-
-plugins:
-    - chai-expect
-    - chai-friendly
-    - mocha-no-only
-    - flowtype
-
-parserOptions:
-  ecmaVersion: 7
-  ecmaFeatures:
-    experimentalObjectRestSpread: true
