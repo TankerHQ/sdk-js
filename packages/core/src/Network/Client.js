@@ -26,19 +26,19 @@ function unique(vals: Array<string>): Array<string> {
  * Network communication
  */
 export class Client {
-  /*:: _accessToken: string; */
-  /*:: _apiEndpoint: string; */
-  /*:: _apiRootPath: string; */
-  /*:: _appId: Uint8Array; */
-  /*:: _authenticating: ?Promise<void>; */
-  /*:: _cancelationHandle: PromiseWrapper<string>; */
-  /*:: _deviceId: Uint8Array | null; */
-  /*:: _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null; */
-  /*:: _isRevoked: bool; */
-  /*:: _retryDelayGenerator: DelayGenerator; */
-  /*:: _sdkType: string; */
-  /*:: _sdkVersion: string; */
-  /*:: _userId: Uint8Array; */
+  declare _accessToken: string;
+  declare _apiEndpoint: string;
+  declare _apiRootPath: string;
+  declare _appId: Uint8Array;
+  declare _authenticating: ?Promise<void>;
+  declare _cancelationHandle: PromiseWrapper<string>;
+  declare _deviceId: Uint8Array | null;
+  declare _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
+  declare _isRevoked: bool;
+  declare _retryDelayGenerator: DelayGenerator;
+  declare _sdkType: string;
+  declare _sdkVersion: string;
+  declare _userId: Uint8Array;
 
   constructor(appId: Uint8Array, userId: Uint8Array, options: ClientOptions) {
     const { url, sdkInfo } = { url: defaultApiEndpoint, ...options };

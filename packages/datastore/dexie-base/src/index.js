@@ -17,8 +17,8 @@ const iframe = (typeof window !== 'undefined') && window.parent && window.parent
 const fromDB = iframe ? transform.fixObjects : transform.identity;
 
 export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexie> {
-  /*:: _db: Dexie; */
-  /*:: _indexes: { [table: string]: { [field: string]: bool } }; */
+  declare _db: Dexie;
+  declare _indexes: { [table: string]: { [field: string]: bool } };
 
   constructor(db: Dexie) {
     // _ properties won't be enumerable, nor reconfigurable

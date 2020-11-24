@@ -1,6 +1,6 @@
 // @flow
 export class BulkError extends Error {
-  /*:: failures: $ReadOnlyArray<Error> */
+  declare failures: $ReadOnlyArray<Error>;
 
   constructor(errors: $ReadOnlyArray<Error>) {
     super();

@@ -8,11 +8,11 @@ type Filter = (record: Object) => bool;
 // Implements a subset of the Dexie Collection interface
 // See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/collection.d.ts
 export class Collection {
-  /*:: _filters: Array<Filter> */
-  /*:: _limit: ?number */
-  /*:: _sortDirection: 'asc' | 'desc' */
-  /*:: _sortKey: string */
-  /*:: _table: Table */
+  declare _filters: Array<Filter>;
+  declare _limit: ?number;
+  declare _sortDirection: 'asc' | 'desc';
+  declare _sortKey: string;
+  declare _table: Table;
 
   constructor(table: Table) {
     this._table = table;
