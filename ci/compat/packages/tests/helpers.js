@@ -85,7 +85,7 @@ function makeTanker(Tanker, adapter, appId, prefix) {
   return new Tanker({
     appId,
     url,
-    sdkType: 'test',
+    sdkType: 'sdk-js-test-compat',
     dataStore: { adapter, prefix },
   });
 }
