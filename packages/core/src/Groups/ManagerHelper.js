@@ -3,6 +3,7 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument, InternalError } from '@tanker/errors';
 
 import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, ProvisionalGroupEncryptedKeyV3, UserGroupEntry } from './Serialize';
+import { getUserGroupEntryVersion } from './Serialize';
 import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
 
@@ -120,10 +121,11 @@ export function groupFromUserGroupEntry(
   localUser: LocalUser,
   provisionalIdentityManager: ProvisionalIdentityManager
 ): Group {
-  // Previous group already has every field we need
+  // Previous group already has every field we need except groupVersion
   if (previousGroup && isInternalGroup(previousGroup)) {
     return {
       ...previousGroup,
+      groupVersion: Math.max(previousGroup.groupVersion, getUserGroupEntryVersion(entry)),
       lastGroupBlock: entry.hash,
     };
   }
@@ -142,6 +144,7 @@ export function groupFromUserGroupEntry(
     publicSignatureKey,
     publicEncryptionKey,
     lastGroupBlock: entry.hash,
+    groupVersion: getUserGroupEntryVersion(entry),
     encryptedPrivateSignatureKey,
   };
 

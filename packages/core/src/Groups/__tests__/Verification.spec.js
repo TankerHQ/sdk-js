@@ -70,63 +70,79 @@ describe('BlockVerification', () => {
     });
   });
 
-  describe('group addition', () => {
-    let user: User;
-    let group: Group;
-    let userGroupEntry: UserGroupEntry;
+  const describeGroupAdditionTests = (version: number) => {
+    let makeUserGroupAddition;
+    beforeEach(() => {
+      makeUserGroupAddition = {
+        '2': testGenerator.makeUserGroupAdditionV2, // eslint-disable-line quote-props
+        '3': testGenerator.makeUserGroupAdditionV3, // eslint-disable-line quote-props
+      }[version];
 
-    beforeEach(async () => {
-      testGenerator.makeTrustchainCreation();
-      const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      user = userCreation.user;
-      const provisionalIdentity = testGenerator.makeProvisionalUser().publicProvisionalUser;
-      const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
-      group = userGroupCreation.group;
-
-      // Second user
-      const userId2 = random(tcrypto.HASH_SIZE);
-      const userCreation2 = await testGenerator.makeUserCreation(userId2);
-      const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroupCreation.group, [userCreation2.user]);
-
-      userGroupEntry = userGroupAddition.userGroupEntry;
+      if (!makeUserGroupAddition) {
+        throw Error('Assertion error: unknown version in test generation');
+      }
     });
 
-    it('should accept a valid group addition', async () => {
-      expect(() => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group))
-        .to.not.throw();
-    });
+    describe(`group addition v${version}`, () => {
+      let user: User;
+      let group: Group;
+      let userGroupEntry: UserGroupEntry;
 
-    it('should reject a group addition with bad signature', async () => {
-      userGroupEntry.signature[0] += 1;
-      assertFailWithNature(
-        () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
-        'invalid_signature'
-      );
-    });
+      beforeEach(async () => {
+        testGenerator.makeTrustchainCreation();
+        const userId = random(tcrypto.HASH_SIZE);
+        const userCreation = await testGenerator.makeUserCreation(userId);
+        user = userCreation.user;
+        const provisionalIdentity = testGenerator.makeProvisionalUser().publicProvisionalUser;
+        const userGroupCreation = testGenerator.makeUserGroupCreation(userCreation, [user], [provisionalIdentity]);
+        group = userGroupCreation.group;
 
-    it('should reject a group addition with bad self-signature', async () => {
+        // Second user
+        const userId2 = random(tcrypto.HASH_SIZE);
+        const userCreation2 = await testGenerator.makeUserCreation(userId2);
+        const userGroupAddition = makeUserGroupAddition(userCreation, userGroupCreation.group, [userCreation2.user]);
+
+        userGroupEntry = userGroupAddition.userGroupEntry;
+      });
+
+      it('should accept a valid group addition', async () => {
+        expect(() => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group))
+          .to.not.throw();
+      });
+
+      it('should reject a group addition with bad signature', async () => {
+        userGroupEntry.signature[0] += 1;
+        assertFailWithNature(
+          () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
+          'invalid_signature'
+        );
+      });
+
+      it('should reject a group addition with bad self-signature', async () => {
       // $FlowIgnore this is a user group creation
-      userGroupEntry.self_signature_with_current_key[0] += 1;
-      assertFailWithNature(
-        () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
-        'invalid_self_signature'
-      );
-    });
+        userGroupEntry.self_signature_with_current_key[0] += 1;
+        assertFailWithNature(
+          () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
+          'invalid_self_signature'
+        );
+      });
 
-    it('should reject a group addition if the group does not exist', async () => {
-      assertFailWithNature(
-        () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, null),
-        'invalid_group_id'
-      );
-    });
+      it('should reject a group addition if the group does not exist', async () => {
+        assertFailWithNature(
+          () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, null),
+          'invalid_group_id'
+        );
+      });
 
-    it('should reject a group addition if the group does match', async () => {
-      group.lastGroupBlock = random(tcrypto.HASH_SIZE);
-      assertFailWithNature(
-        () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
-        'invalid_previous_group_block'
-      );
+      it('should reject a group addition if the group does match', async () => {
+        group.lastGroupBlock = random(tcrypto.HASH_SIZE);
+        assertFailWithNature(
+          () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
+          'invalid_previous_group_block'
+        );
+      });
     });
-  });
+  };
+  describeGroupAdditionTests(2);
+  describeGroupAdditionTests(3);
 });
