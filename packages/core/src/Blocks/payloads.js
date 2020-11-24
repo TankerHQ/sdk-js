@@ -1,12 +1,11 @@
 // @flow
 import varint from 'varint';
 import { tcrypto, utils } from '@tanker/crypto';
-import { InternalError } from '@tanker/errors';
+import { InternalError, UpgradeRequired } from '@tanker/errors';
 
-import { UpgradeRequiredError } from '../errors.internal';
 import { getArray, getStaticArray, encodeArrayLength } from './Serialize';
 
-import { type Nature } from './Nature';
+import { type Nature, natureExists } from './Nature';
 
 export type BlockNoSignature = {|
   trustchain_id: Uint8Array,
@@ -53,7 +52,7 @@ export function unserializeBlock(src: Uint8Array): Block {
   const version = varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   if (version > currentVersion)
-    throw new UpgradeRequiredError(`unsupported block version: ${version}`);
+    throw new UpgradeRequired(`unsupported block version: ${version}`);
   /*const index = */varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   ({ value, newOffset } = getStaticArray(src, trustchainIdSize, newOffset));
@@ -61,6 +60,8 @@ export function unserializeBlock(src: Uint8Array): Block {
   value = varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   const nature = value;
+  if (!natureExists(nature))
+    throw new UpgradeRequired(`unknown block nature: ${nature}`);
   ({ value, newOffset } = getArray(src, newOffset));
   const payload = value;
   ({ value, newOffset } = getStaticArray(src, hashSize, newOffset));

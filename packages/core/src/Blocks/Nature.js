@@ -21,7 +21,13 @@ export const NATURE = Object.freeze({
   user_group_addition_v3: 18,
 });
 
+const NATURE_INT = Object.values(NATURE);
+
 export type Nature = $Values<typeof NATURE>;
+
+export function natureExists(nature: number): bool {
+  return NATURE_INT.includes(nature);
+}
 
 export const NATURE_KIND = Object.freeze({
   trustchain_creation: 0,
