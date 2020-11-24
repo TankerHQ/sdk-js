@@ -22,7 +22,7 @@ describe('Tanker', () => {
   const makeTestTankerOptions = () => ({
     appId: utils.toBase64(appId),
     dataStore: { ...dataStoreConfig, prefix: makePrefix() },
-    sdkType: 'test',
+    sdkType: 'sdk-js-test',
   });
 
   const valid32BytesB64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
