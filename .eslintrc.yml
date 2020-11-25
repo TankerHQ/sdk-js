@@ -9,9 +9,11 @@ extends:
   - airbnb
   - plugin:flowtype/recommended
 
-parser: babel-eslint
+parser: "@babel/eslint-parser"
 parserOptions:
   ecmaVersion: 2018
+  babelOptions:
+    configFile: ./config/babel.config-eslint.js
 
 plugins:
   - chai-expect
