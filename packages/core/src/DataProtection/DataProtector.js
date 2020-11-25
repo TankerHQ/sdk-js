@@ -37,7 +37,7 @@ export class DataProtector {
 
   _localUser: LocalUser;
   _userManager: UserManager;
-  _provisionalIdentityManager: ProvisionalIdentityManager
+  _provisionalIdentityManager: ProvisionalIdentityManager;
   _groupManager: GroupManager;
   _resourceManager: ResourceManager;
 

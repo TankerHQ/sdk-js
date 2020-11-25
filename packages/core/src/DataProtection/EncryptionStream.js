@@ -14,7 +14,7 @@ export class EncryptionStream extends Transform {
   _state: {
     index: number,
     lastClearChunkSize: number,
-  }
+  };
 
   constructor(resourceId: Uint8Array, key: Uint8Array, maxEncryptedChunkSize: number = encryptionV4.defaultMaxEncryptedChunkSize) {
     super({

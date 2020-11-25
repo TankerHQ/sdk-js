@@ -10,7 +10,7 @@ export type DelegationToken = {
   user_id: Uint8Array,
   delegation_signature: Uint8Array,
   last_reset: Uint8Array,
-}
+};
 
 export type UserData = {
   trustchainId: Uint8Array,

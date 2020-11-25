@@ -14,7 +14,7 @@ export const defaultApiEndpoint = 'https://api.tanker.io';
 export type ClientOptions = {
   url: string,
   sdkInfo: { type: string, version: string },
-}
+};
 
 const MAX_QUERY_STRING_ITEMS = 100;
 

@@ -15,7 +15,7 @@ type TestRecord = {|
   c: number,
   d: ?(string | Uint8Array),
   e?: string
-|}
+|};
 
 // Keep only the original properties, e.g. strip PouchDB private
 // property '_rev' representing the record's current revision.

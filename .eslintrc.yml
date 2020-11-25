@@ -74,7 +74,7 @@ rules:
   flowtype/require-valid-file-annotation:
     - error
     - always
-  flowtype/semi: 0
+  flowtype/semi: 2
   flowtype/space-after-type-colon:
     - error
     - always

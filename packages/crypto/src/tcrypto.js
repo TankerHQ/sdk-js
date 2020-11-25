@@ -28,7 +28,7 @@ export const SEALED_SIGNATURE_PRIVATE_KEY_SIZE = 112;
 export type SodiumKeyPair = {
   privateKey: Key,
   publicKey: Key,
-}
+};
 
 export function makeSignKeyPair(): SodiumKeyPair {
   const out = sodium.crypto_sign_keypair();

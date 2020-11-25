@@ -7,7 +7,7 @@ import { InvalidArgument } from '@tanker/errors';
 export type Resource = {
   resourceId: Uint8Array,
   key: Key,
-}
+};
 
 // The maximum byte size of a resource encrypted with the "simple" algorithms
 // (different from v4) is obtained by summing the sizes of:

@@ -35,7 +35,7 @@ const schemaV8 = {
 type GroupKeyRecord = {
   groupId: Uint8Array,
   publicEncryptionKey: Uint8Array,
-}
+};
 
 export default class GroupStore {
   /*:: _ds: DataStore<*>; */
