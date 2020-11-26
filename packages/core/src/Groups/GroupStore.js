@@ -144,7 +144,7 @@ export default class GroupStore {
   async findGroupsPublicKeys(groupIds: Array<Uint8Array>): Promise<Array<GroupKeyRecord>> {
     const records = await this._ds.find(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
       selector: {
-        _id: { $in: groupIds.map(utils.toBase64) },
+        _id: { $in: groupIds.map(groupId => utils.toBase64(groupId)) },
       }
     });
 

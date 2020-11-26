@@ -68,7 +68,7 @@ function serializeUserKeys(userKeys: UserKeys): Uint8Array {
     userKeys.previous_public_encryption_key,
     userKeys.encrypted_previous_encryption_key,
     encodeListLength(userKeys.private_keys),
-    ...userKeys.private_keys.map(serializePrivateKey),
+    ...userKeys.private_keys.map(key => serializePrivateKey(key)),
   );
 }
 

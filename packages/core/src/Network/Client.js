@@ -276,7 +276,7 @@ export class Client {
       return this.getRevokedDeviceHistory();
     }
 
-    const urlizedUserIds = unique(userIds.map(urlize));
+    const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
     const result = { root: '', histories: [] };
     for (let i = 0; i < urlizedUserIds.length; i += MAX_QUERY_STRING_ITEMS) {
@@ -289,7 +289,7 @@ export class Client {
   }
 
   getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>) => {
-    const urlizedDeviceIds = unique(deviceIds.map(urlize));
+    const urlizedDeviceIds = unique(deviceIds.map(deviceId => urlize(deviceId)));
     const result = { root: '', histories: [] };
     const gotBlocks = new Set();
     for (let i = 0; i < urlizedDeviceIds.length; i += MAX_QUERY_STRING_ITEMS) {

@@ -17,9 +17,17 @@ export const NATURE = Object.freeze({
   provisional_identity_claim: 14,
   user_group_creation_v2: 15,
   user_group_addition_v2: 16,
+  user_group_creation_v3: 17,
+  user_group_addition_v3: 18,
 });
 
+const NATURE_INT = Object.values(NATURE);
+
 export type Nature = $Values<typeof NATURE>;
+
+export function natureExists(nature: number): bool {
+  return NATURE_INT.includes(nature);
+}
 
 export const NATURE_KIND = Object.freeze({
   trustchain_creation: 0,
@@ -66,8 +74,10 @@ export function natureKind(val: Nature): NatureKind {
     case NATURE.device_revocation_v2: return NATURE_KIND.device_revocation;
     case NATURE.user_group_creation_v1: return NATURE_KIND.user_group_creation;
     case NATURE.user_group_creation_v2: return NATURE_KIND.user_group_creation;
+    case NATURE.user_group_creation_v3: return NATURE_KIND.user_group_creation;
     case NATURE.user_group_addition_v1: return NATURE_KIND.user_group_addition;
     case NATURE.user_group_addition_v2: return NATURE_KIND.user_group_addition;
+    case NATURE.user_group_addition_v3: return NATURE_KIND.user_group_addition;
     case NATURE.provisional_identity_claim: return NATURE_KIND.provisional_identity_claim;
     default: throw new InternalError(`invalid nature: ${val}`);
   }

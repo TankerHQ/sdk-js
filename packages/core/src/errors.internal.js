@@ -10,10 +10,3 @@ export class InvalidBlockError extends Error {
     this.args = e;
   }
 }
-
-export class UpgradeRequiredError extends Error {
-  constructor(message: string) {
-    super(`Tanker must be upgraded to a newer version to continue: ${message}`);
-    this.name = 'UpgradeRequiredError';
-  }
-}

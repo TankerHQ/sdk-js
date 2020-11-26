@@ -13,5 +13,6 @@ export { OperationCanceled } from './errors/OperationCanceled';
 export { PreconditionFailed } from './errors/PreconditionFailed';
 export { TooManyAttempts } from './errors/TooManyAttempts';
 export { Conflict } from './errors/Conflict';
+export { UpgradeRequired } from './errors/UpgradeRequired';
 
 export type { ApiError, ErrorInfo, ErrorMessage } from './ErrorInfo';

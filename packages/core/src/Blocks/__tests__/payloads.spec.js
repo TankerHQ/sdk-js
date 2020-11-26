@@ -2,10 +2,10 @@
 
 import { tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
+import { UpgradeRequired } from '@tanker/errors';
 
 import { serializeBlock, unserializeBlock } from '../payloads';
 import { preferredNature, NATURE_KIND } from '../Nature';
-import { UpgradeRequiredError } from '../../errors.internal';
 
 describe('blocks: payloads', () => {
   it('should throw when unserializing unsupported block version', async () => {
@@ -18,7 +18,20 @@ describe('blocks: payloads', () => {
     };
     const serializedBlock = serializeBlock(block);
     serializedBlock[0] = 99;
-    expect(() => unserializeBlock(serializedBlock)).to.throw(UpgradeRequiredError);
+    expect(() => unserializeBlock(serializedBlock)).to.throw(UpgradeRequired);
+  });
+
+  it('should throw when unserializing unknown block nature', async () => {
+    const block = {
+      author: random(tcrypto.HASH_SIZE),
+      signature: random(tcrypto.SIGNATURE_SIZE),
+      trustchain_id: random(tcrypto.HASH_SIZE),
+      payload: new Uint8Array(0),
+      nature: Number.MAX_SAFE_INTEGER,
+    };
+    // $FlowExpectedError Unknown nature
+    const serializedBlock = serializeBlock(block);
+    expect(() => unserializeBlock(serializedBlock)).to.throw(UpgradeRequired);
   });
 
   it('should serialize/unserialize a Block', async () => {

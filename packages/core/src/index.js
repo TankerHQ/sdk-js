@@ -13,7 +13,8 @@ import {
   PreconditionFailed,
   TankerError,
   TooManyAttempts,
-  DeviceRevoked
+  DeviceRevoked,
+  UpgradeRequired,
 } from '@tanker/errors';
 
 import { Tanker, optionsWithDefaults } from './Tanker';
@@ -41,6 +42,7 @@ const errors = {
   PreconditionFailed,
   TankerError,
   TooManyAttempts,
+  UpgradeRequired,
 };
 
 export {
