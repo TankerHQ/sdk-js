@@ -20,7 +20,7 @@ import type { Device } from '../Users/types';
 export type PrivateProvisionalKeys = {|
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
   tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
-|}
+|};
 
 export class LocalUserManager extends EventEmitter {
   _localUser: LocalUser;

@@ -33,7 +33,7 @@ export type TestDevice = {
   encryptionKeys: tcrypto.SodiumKeyPair,
   revoked: bool;
   isGhost: bool;
-}
+};
 
 export type TestProvisionalUser = {
     trustchainId: Uint8Array,
@@ -43,12 +43,12 @@ export type TestProvisionalUser = {
     appEncryptionPublicKey: Uint8Array,
     tankerSignaturePublicKey: Uint8Array,
     tankerEncryptionPublicKey: Uint8Array,
-}
+};
 
 type TestUserKeys = {
   publicKey: Uint8Array,
   privateKey: Uint8Array,
-}
+};
 
 export type TestUser = {
   id: Uint8Array,
@@ -57,14 +57,14 @@ export type TestUser = {
   ghostDevice: GhostDevice,
   identity: string,
   publicIdentity: string,
-}
+};
 
 export type TestTrustchainCreation = {
   unverifiedTrustchainCreation: TrustchainCreationEntry,
   block: b64string,
   trustchainId: Uint8Array;
   trustchainKeys: tcrypto.SodiumKeyPair,
-}
+};
 
 export type TestDeviceCreation = {
   unverifiedDeviceCreation: DeviceCreationEntry,
@@ -72,14 +72,14 @@ export type TestDeviceCreation = {
   testUser: TestUser,
   testDevice: TestDevice,
   user: User,
-}
+};
 
 export type TestDeviceRevocation = {
   unverifiedDeviceRevocation: DeviceRevocationEntry,
   block: b64string,
   testUser: TestUser,
   user: User,
-}
+};
 
 export type TestKeyPublish = {
   block: b64string,

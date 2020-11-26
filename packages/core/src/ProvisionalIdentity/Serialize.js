@@ -17,13 +17,13 @@ export type ProvisionalIdentityClaimRecord = {|
   author_signature_by_tanker_key: Uint8Array,
   recipient_user_public_key: Uint8Array,
   encrypted_provisional_identity_private_keys: Uint8Array,
-|}
+|};
 
 export type ClaimEntry = {|
   ...ProvisionalIdentityClaimRecord,
   ...VerificationFields,
   device_id: Uint8Array
-|}
+|};
 
 export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: ProvisionalIdentityClaimRecord): Uint8Array {
   if (provisionalIdentityClaim.user_id.length !== tcrypto.HASH_SIZE)

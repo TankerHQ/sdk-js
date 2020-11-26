@@ -20,8 +20,8 @@ export type LocalData = {|
 |};
 
 export default class KeyStore {
-  /*:: _ds: DataStore<*>; */
-  /*:: _safe: KeySafe; */
+  declare _ds: DataStore<*>;
+  declare _safe: KeySafe;
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE, persistent: true }] },

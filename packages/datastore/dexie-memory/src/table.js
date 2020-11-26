@@ -5,9 +5,9 @@ import { BulkError, ConstraintError } from './errors';
 // Implements a subset of the Dexie Table interface
 // See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/table.d.ts
 export class Table {
-  /*:: definition: string */
-  /*:: name: string */
-  /*:: records: Array<Object> */
+  declare definition: string;
+  declare name: string;
+  declare records: Array<Object>;
 
   constructor(name: string, definition: string) {
     this.definition = definition;

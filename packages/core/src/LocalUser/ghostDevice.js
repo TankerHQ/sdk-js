@@ -5,11 +5,11 @@ import { DecryptionFailed } from '@tanker/errors';
 export type GhostDevice = {
   privateEncryptionKey: Uint8Array,
   privateSignatureKey: Uint8Array,
-}
+};
 export type GhostDeviceKeys = {
   encryptionKeyPair: tcrypto.SodiumKeyPair,
   signatureKeyPair: tcrypto.SodiumKeyPair,
-}
+};
 
 type EncryptedUserKeyForGhostDevice = {
   deviceId: Uint8Array,

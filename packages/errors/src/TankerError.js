@@ -2,12 +2,12 @@
 import type { ErrorInfo } from './ErrorInfo';
 
 export class TankerError extends Error {
-  /*:: _message: string */
-  /*:: apiCode: ?string */
-  /*:: apiMethod: ?string */
-  /*:: apiRoute: ?string */
-  /*:: httpStatus: ?number */
-  /*:: traceId: ?string */
+  declare _message: string;
+  declare apiCode: ?string;
+  declare apiMethod: ?string;
+  declare apiRoute: ?string;
+  declare httpStatus: ?number;
+  declare traceId: ?string;
 
   constructor(name: string = 'TankerError', errorInfo?: ErrorInfo) {
     super();

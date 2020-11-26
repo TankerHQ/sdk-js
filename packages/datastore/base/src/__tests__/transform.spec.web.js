@@ -4,7 +4,7 @@ import { expect } from '@tanker/test-utils';
 import { fixObjects } from '../transform';
 
 describe('datastore transform operations (web)', () => {
-  declare function notNull<T>(body: T | null): T;
+  declare function notNull<T>(body: T | null): T; // eslint-disable-line no-unused-vars
 
   it('should fix Uint8Array constructor when calling fixObjects on objects of another frame', () => {
     const iframe = document.createElement('iframe');

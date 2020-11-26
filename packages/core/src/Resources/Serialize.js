@@ -29,7 +29,7 @@ type KeyPublishToProvisionalUserEntry = {|
   nature: Nature,
 |};
 
-export type KeyPublishEntry = KeyPublishToSingleRecipientEntry | KeyPublishToProvisionalUserEntry
+export type KeyPublishEntry = KeyPublishToSingleRecipientEntry | KeyPublishToProvisionalUserEntry;
 
 export const isKeyPublishToUser = (nature: Nature) => nature === NATURE.key_publish_to_user;
 export const isKeyPublishToUserGroup = (nature: Nature) => nature === NATURE.key_publish_to_user_group;

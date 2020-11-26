@@ -28,7 +28,7 @@ export class LocalUser extends EventEmitter {
   _deviceEncryptionKeyPair: ?tcrypto.SodiumKeyPair;
   _userKeys: { [string]: tcrypto.SodiumKeyPair };
   _currentUserKey: ?tcrypto.SodiumKeyPair;
-  _devices: Array<Device>
+  _devices: Array<Device>;
 
   _deviceId: ?Uint8Array;
   _trustchainPublicKey: ?Uint8Array;

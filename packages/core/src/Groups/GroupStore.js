@@ -35,11 +35,11 @@ const schemaV8 = {
 type GroupKeyRecord = {
   groupId: Uint8Array,
   publicEncryptionKey: Uint8Array,
-}
+};
 
 export default class GroupStore {
-  /*:: _ds: DataStore<*>; */
-  /*:: _userSecret: Uint8Array; */
+  declare _ds: DataStore<*>;
+  declare _userSecret: Uint8Array;
 
   static schemas = [
     // this store didn't exist in schema version 1 and 2

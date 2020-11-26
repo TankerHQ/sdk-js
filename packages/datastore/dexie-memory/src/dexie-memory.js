@@ -13,9 +13,9 @@ const InMemoryDatabaseCache = {};
 // Implements a subset of the Dexie interface
 // See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/dexie.d.ts
 export class DexieMemory {
-  /*:: dbName: string */
-  /*:: _closed: bool */
-  /*:: _tables: { [name: string]: Table } */
+  declare dbName: string;
+  declare _closed: bool;
+  declare _tables: { [name: string]: Table };
 
   static dataStoreName = 'DexieMemory';
 

@@ -4,8 +4,8 @@ import { Collection } from './collection'; // eslint-disable-line import/no-cycl
 // Implements a subset of the Dexie WhereClause interface
 // See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/where-clause.d.ts
 export class WhereClause {
-  /*:: _collection: Collection */
-  /*:: _key: string */
+  declare _collection: Collection;
+  declare _key: string;
 
   constructor(collection: Collection, key: string) {
     this._collection = collection;

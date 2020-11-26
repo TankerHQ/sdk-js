@@ -12,7 +12,7 @@ export type BlockNoSignature = {|
   nature: Nature,
   payload: Uint8Array,
   author: Uint8Array,
-|}
+|};
 
 export type Block = {|
   ...BlockNoSignature,

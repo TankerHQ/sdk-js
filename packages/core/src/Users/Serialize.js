@@ -10,19 +10,19 @@ import { NATURE } from '../Blocks/Nature';
 type UserPrivateKey = {|
   recipient: Uint8Array,
   key: Uint8Array,
-|}
+|};
 
 export type UserKeyPair = {|
   public_encryption_key: Uint8Array,
   encrypted_private_encryption_key: Uint8Array,
-|}
+|};
 
 export type UserKeys = {|
   public_encryption_key: Uint8Array,
   previous_public_encryption_key: Uint8Array,
   encrypted_previous_encryption_key: Uint8Array,
   private_keys: Array<UserPrivateKey>,
-|}
+|};
 
 export type DeviceCreationRecord = {|
   last_reset: Uint8Array,
@@ -35,22 +35,22 @@ export type DeviceCreationRecord = {|
   is_ghost_device: bool,
 
   revoked: number,
-|}
+|};
 
 export type DeviceRevocationRecord = {|
   device_id: Uint8Array,
   user_keys?: UserKeys,
-|}
+|};
 
 export type DeviceCreationEntry = {|
   ...DeviceCreationRecord,
   ...VerificationFields
-|}
+|};
 
 export type DeviceRevocationEntry = {|
   ...DeviceRevocationRecord,
   ...VerificationFields,
-|}
+|};
 
 export type UserEntry = DeviceCreationEntry | DeviceRevocationEntry;
 

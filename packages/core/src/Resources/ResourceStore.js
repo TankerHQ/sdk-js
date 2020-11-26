@@ -7,8 +7,8 @@ import { DecryptionFailed, InternalError } from '@tanker/errors';
 const TABLE = 'resource_keys';
 
 export default class ResourceStore {
-  /*:: _ds: DataStore<*>; */
-  /*:: _userSecret: Uint8Array; */
+  declare _ds: DataStore<*>;
+  declare _userSecret: Uint8Array;
 
   static schemas = [
     { version: 1, tables: [{ name: TABLE }] },

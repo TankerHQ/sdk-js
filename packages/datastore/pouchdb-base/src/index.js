@@ -20,7 +20,7 @@ function extractSortKey(sort: SortParams): string {
 /* eslint-disable no-underscore-dangle */
 
 export default (PouchDB: any, prefix?: string) => class PouchDBStoreBase implements DataStore<PouchDB> {
-  /*:: _dbs: { [name: string]: PouchDB }; */
+  declare _dbs: { [name: string]: PouchDB };
 
   constructor(dbs: { [name: string]: PouchDB }) {
     // _ properties won't be enumerable, nor reconfigurable

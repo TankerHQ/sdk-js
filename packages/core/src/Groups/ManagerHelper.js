@@ -15,13 +15,13 @@ export const MAX_GROUP_SIZE = 1000;
 export type GroupData = Array<{|
   entry: UserGroupEntry,
   group: Group,
-|}>
+|}>;
 
 export type GroupDataWithDevices = Array<{|
   entry: UserGroupEntry,
   group: Group,
   devicePublicSignatureKey: Uint8Array
-|}>
+|}>;
 
 export function assertPublicIdentities(publicIdentities: Array<b64string>) {
   if (publicIdentities.length === 0)

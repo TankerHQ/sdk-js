@@ -21,10 +21,10 @@ import {
 type CachedPublicKeysResult = {
   cachedKeys: Array<Uint8Array>,
   missingGroupIds: Array<Uint8Array>,
-}
+};
 
 export default class GroupManager {
-  _localUser: LocalUser
+  _localUser: LocalUser;
   _UserManager: UserManager;
   _provisionalIdentityManager: ProvisionalIdentityManager;
   _client: Client;

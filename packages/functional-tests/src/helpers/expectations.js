@@ -7,7 +7,7 @@ import { getConstructor } from '@tanker/types';
 type spyObj = {
   callCount: number,
   getCall: (step: number) => { args: Array<mixed> },
-}
+};
 
 export const expectProgressReport = (
   spy: spyObj,

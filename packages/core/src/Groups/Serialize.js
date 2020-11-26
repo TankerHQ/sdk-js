@@ -13,19 +13,19 @@ import { getLastUserPublicKey, type User } from '../Users/types';
 type GroupEncryptedKeyV1 = {|
     public_user_encryption_key: Uint8Array,
     encrypted_group_private_encryption_key: Uint8Array,
-  |}
+  |};
 
 type GroupEncryptedKeyV2 = {|
     user_id: Uint8Array,
     public_user_encryption_key: Uint8Array,
     encrypted_group_private_encryption_key: Uint8Array,
-  |}
+  |};
 
 export type ProvisionalGroupEncryptedKeyV2 = {|
     app_provisional_user_public_signature_key: Uint8Array,
     tanker_provisional_user_public_signature_key: Uint8Array,
     encrypted_group_private_encryption_key: Uint8Array,
-  |}
+  |};
 
 export type ProvisionalGroupEncryptedKeyV3 = {|
     app_provisional_user_public_signature_key: Uint8Array,
@@ -33,7 +33,7 @@ export type ProvisionalGroupEncryptedKeyV3 = {|
     app_provisional_user_public_encryption_key: Uint8Array,
     tanker_provisional_user_public_encryption_key: Uint8Array,
     encrypted_group_private_encryption_key: Uint8Array,
-  |}
+  |};
 
 export type UserGroupCreationRecordV1 = {|
     public_encryption_key: Uint8Array,
@@ -41,7 +41,7 @@ export type UserGroupCreationRecordV1 = {|
     encrypted_group_private_signature_key: Uint8Array,
     encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV1>,
     self_signature: Uint8Array,
-  |}
+  |};
 
 export type UserGroupCreationRecordV2 = {|
     public_encryption_key: Uint8Array,
@@ -50,7 +50,7 @@ export type UserGroupCreationRecordV2 = {|
     encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
     encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
     self_signature: Uint8Array,
-  |}
+  |};
 
 export type UserGroupCreationRecordV3 = {|
     public_encryption_key: Uint8Array,
@@ -59,14 +59,14 @@ export type UserGroupCreationRecordV3 = {|
     encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
     encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV3>,
     self_signature: Uint8Array,
-  |}
+  |};
 
 export type UserGroupAdditionRecordV1 = {|
     group_id: Uint8Array,
     previous_group_block: Uint8Array,
     encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV1>,
     self_signature_with_current_key: Uint8Array,
-  |}
+  |};
 
 export type UserGroupAdditionRecordV2 = {|
     group_id: Uint8Array,
@@ -74,7 +74,7 @@ export type UserGroupAdditionRecordV2 = {|
     encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
     encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
     self_signature_with_current_key: Uint8Array,
-  |}
+  |};
 
 export type UserGroupAdditionRecordV3 = {|
     group_id: Uint8Array,
@@ -82,7 +82,7 @@ export type UserGroupAdditionRecordV3 = {|
     encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
     encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV3>,
     self_signature_with_current_key: Uint8Array,
-  |}
+  |};
 
 export type GroupEncryptedKey = GroupEncryptedKeyV1 | GroupEncryptedKeyV2;
 
