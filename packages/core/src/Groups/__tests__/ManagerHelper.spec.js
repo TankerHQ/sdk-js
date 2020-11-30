@@ -44,10 +44,12 @@ describe('GroupManagerHelper', () => {
     const userId = random(tcrypto.HASH_SIZE);
     userCreation = await testGenerator.makeUserCreation(userId);
 
-    provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
     localUser = (({ findUserKey: () => userCreation.testUser.userKeys[0] }: any): LocalUser);
     userGroup = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user], []);
-    provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
+    provisionalIdentityManager = (({
+      findPrivateProvisionalKeys: () => null,
+      refreshProvisionalPrivateKeys: () => null,
+    }: any): ProvisionalIdentityManager);
   });
 
   describe('assertPublicIdentities()', () => {
@@ -70,7 +72,8 @@ describe('GroupManagerHelper', () => {
 
       it('can create a group with a userGroupCreation action from a provisional user', async () => {
         const provisionalResult = await testGenerator.makeProvisionalUser();
-        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => provisionalResult.provisionalUserKeys }: any): ProvisionalIdentityManager);
+        // $FlowIgnore[cannot-write]
+        provisionalIdentityManager.findPrivateProvisionalKeys = () => provisionalResult.provisionalUserKeys;
 
         userGroup = testGenerator.makeUserGroupCreation(userCreation, [], [provisionalResult.publicProvisionalUser]);
         const group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
@@ -89,7 +92,8 @@ describe('GroupManagerHelper', () => {
       it('can update a group with a userGroupAddition from a provisional user', async () => {
         let group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
         const provisionalResult = await testGenerator.makeProvisionalUser();
-        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => provisionalResult.provisionalUserKeys }: any): ProvisionalIdentityManager);
+        // $FlowIgnore[cannot-write]
+        provisionalIdentityManager.findPrivateProvisionalKeys = () => provisionalResult.provisionalUserKeys;
 
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup.group, [], [provisionalResult.publicProvisionalUser]);
 
@@ -134,7 +138,6 @@ describe('GroupManagerHelper', () => {
 
       it('can create an external group from a userGroupCreation action with a provisional user', async () => {
         const provisionalResult = await testGenerator.makeProvisionalUser();
-        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => null }: any): ProvisionalIdentityManager);
 
         userGroup = testGenerator.makeUserGroupCreation(userCreation, [], [provisionalResult.publicProvisionalUser]);
         const externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
@@ -143,7 +146,6 @@ describe('GroupManagerHelper', () => {
 
       it('can update an external group from a userGroupCreation action with a provisional user', async () => {
         const provisionalResult = await testGenerator.makeProvisionalUser();
-        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => null }: any): ProvisionalIdentityManager);
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup.group, [], [provisionalResult.publicProvisionalUser]);
 
         let resultGroup = getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry);

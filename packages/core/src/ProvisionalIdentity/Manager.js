@@ -62,7 +62,7 @@ export default class ProvisionalIdentityManager {
     let hasClaimed = this._localUserManager.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
 
     if (!hasClaimed) {
-      await this._refreshProvisionalPrivateKeys();
+      await this.refreshProvisionalPrivateKeys();
       hasClaimed = this._localUserManager.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
     }
 
@@ -131,14 +131,17 @@ export default class ProvisionalIdentityManager {
     delete this._provisionalIdentity;
   }
 
-  async getPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): Promise<?PrivateProvisionalKeys> {
-    const provisionalUserKeyPairs = this._localUserManager.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
-
-    if (provisionalUserKeyPairs) {
-      return provisionalUserKeyPairs;
-    }
-    await this._refreshProvisionalPrivateKeys();
+  findPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): ?PrivateProvisionalKeys {
     return this._localUserManager.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
+  }
+
+  async getPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): Promise<?PrivateProvisionalKeys> {
+    let provisionalEncryptionKeyPairs = this.findPrivateProvisionalKeys(appPublicSignatureKey, tankerPublicSignatureKey);
+    if (!provisionalEncryptionKeyPairs) {
+      await this.refreshProvisionalPrivateKeys();
+      provisionalEncryptionKeyPairs = this.findPrivateProvisionalKeys(appPublicSignatureKey, tankerPublicSignatureKey);
+    }
+    return provisionalEncryptionKeyPairs;
   }
 
   async getProvisionalUsers(provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> {
@@ -199,7 +202,7 @@ export default class ProvisionalIdentityManager {
     return tankerProvisionalKeys(provisionalIdentity);
   }
 
-  async _refreshProvisionalPrivateKeys() {
+  async refreshProvisionalPrivateKeys() {
     const claimBlocks = await this._client.getProvisionalIdentityClaims();
 
     const claimEntries = claimBlocks.map(block => provisionalIdentityClaimFromBlock(block));

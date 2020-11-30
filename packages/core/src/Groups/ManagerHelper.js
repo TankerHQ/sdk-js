@@ -65,14 +65,19 @@ function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, localUser:
 }
 
 async function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>, provisionalIdentityManager: ProvisionalIdentityManager): Promise<?Object> {
+  // Refresh only once (i.e. a single API call), then loop to find our provisional keys
+  await provisionalIdentityManager.refreshProvisionalPrivateKeys();
+
   for (const gek of groupKeys) {
-    const correspondingPair = await provisionalIdentityManager.getPrivateProvisionalKeys(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key);
-    if (correspondingPair)
+    const correspondingPair = provisionalIdentityManager.findPrivateProvisionalKeys(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key);
+    if (correspondingPair) {
       return {
         provisionalKeyPair: correspondingPair,
         groupEncryptedKey: gek.encrypted_group_private_encryption_key,
       };
+    }
   }
+
   return null;
 }
 
