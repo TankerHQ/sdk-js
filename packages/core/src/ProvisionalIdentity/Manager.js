@@ -202,13 +202,13 @@ export default class ProvisionalIdentityManager {
   async _refreshProvisionalPrivateKeys() {
     const claimBlocks = await this._client.getProvisionalIdentityClaims();
 
-    for (const claimBlock of claimBlocks) {
-      const claimEntry = provisionalIdentityClaimFromBlock(claimBlock);
-      const authorDeviceKeysMap = await this._userManager.getDeviceKeysByDevicesIds([claimEntry.author]);
-      if (authorDeviceKeysMap.size !== 1) {
-        throw new InternalError('refreshProvisionalPrivateKeys: zero or multiple keys for one device');
-      }
-      const authorDevicePublicSignatureKey = authorDeviceKeysMap.get(utils.toBase64(claimEntry.author));
+    const claimEntries = claimBlocks.map(block => provisionalIdentityClaimFromBlock(block));
+    const authorDevices = claimEntries.map(entry => entry.author);
+    const authorDeviceKeysMap = await this._userManager.getDeviceKeysByDevicesIds(authorDevices);
+
+    for (let i = 0, length = claimEntries.length; i < length; i++) {
+      const claimEntry = claimEntries[i];
+      const authorDevicePublicSignatureKey = authorDeviceKeysMap.get(utils.toBase64(authorDevices[i]));
       if (!authorDevicePublicSignatureKey) {
         throw new InternalError('refreshProvisionalPrivateKeys: author device should have a public signature key');
       }
