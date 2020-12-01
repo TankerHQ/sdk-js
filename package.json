@@ -48,6 +48,7 @@
     "debug:errors": "karma start packages/errors/config/karma.config.debug.js",
     "debug:streams": "karma start packages/stream/config/karma.config.debug.js",
     "debug:verification-ui": "karma start packages/verification-ui/config/karma.config.debug.js",
+    "benchmark": "karma start config/karma/karma.config.benchmark.js",
     "proof": "yarn lint:js && yarn lint:flow && yarn test",
     "coverage": "nyc --reporter=lcov --reporter=text-summary yarn test"
   },

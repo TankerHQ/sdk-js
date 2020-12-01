@@ -13,3 +13,4 @@ yarn-*.log
 __pycache__
 
 package-lock.json
+benchmarks.json

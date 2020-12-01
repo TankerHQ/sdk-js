@@ -6,6 +6,7 @@ import re
 import shutil
 import sys
 import time
+import json
 
 import cli_ui as ui
 import psutil
@@ -279,6 +280,39 @@ def report_size() -> None:
     )
 
 
+def benchmark() -> None:
+    tankerci.reporting.assert_can_send_metrics()
+
+    branch = get_branch_name()
+    _, commit_id = tankerci.git.run_captured(os.getcwd(), "rev-parse", "HEAD")
+
+    tankerci.run("yarn", "benchmark")
+    benchmark_output = Path("benchmarks.json")
+    benchmark_results = json.loads(benchmark_output.read_text())
+
+    hostname = benchmark_results["context"]["host"]
+
+    for browser in benchmark_results["browsers"]:
+        # map the name to something more friendly
+        if browser["name"].startswith("Chrome Headless"):
+            browser_name = "chrome-headless"
+        else:
+            raise RuntimeError(f"unsupported browser {browser['name']}")
+
+        for benchmark in browser["benchmarks"]:
+            tankerci.reporting.send_metric(
+                f"benchmark",
+                tags={
+                    "project": "sdk-js",
+                    "branch": branch,
+                    "browser": browser_name,
+                    "scenario": benchmark["name"].lower(),
+                    "host": hostname,
+                },
+                fields={"real_time": benchmark["real_time"], "commit_id": commit_id},
+            )
+
+
 def _main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
@@ -316,6 +350,7 @@ def _main() -> None:
         e2e(use_local_sources=args.use_local_sources)
     elif args.command == "benchmark":
         report_size()
+        benchmark()
     else:
         parser.print_help()
         sys.exit(1)
