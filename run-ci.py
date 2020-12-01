@@ -12,6 +12,7 @@ import psutil
 
 import tankerci.conan
 import tankerci.js
+import tankerci.reporting
 
 
 class TestFailed(Exception):
@@ -250,6 +251,34 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
             publish_npm_package(package_name, version)
 
 
+def get_branch_name() -> str:
+    branch = tankerci.git.get_current_branch(Path().getcwd())
+    if not branch:
+        ui.fatal("Not on a branch, can't report size")
+    return branch
+
+
+def report_size() -> None:
+    tankerci.reporting.assert_can_send_metrics()
+
+    branch = get_branch_name()
+    _, commit_id = tankerci.git.run_captured(os.getcwd(), "rev-parse", "HEAD")
+
+    tankerci.run("yarn", "build:client-browser-umd")
+    lib_path = Path("packages/client-browser/dist/umd/tanker-client-browser.min.js")
+    size = lib_path.getsize()
+    tankerci.reporting.send_metric(
+        f"benchmark",
+        tags={
+            "project": "sdk-js",
+            "branch": branch,
+            "object": "client-browser-umd",
+            "scenario": "size",
+        },
+        fields={"value": size, "commit_id": commit_id},
+    )
+
+
 def _main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
@@ -269,6 +298,8 @@ def _main() -> None:
 
     subparsers.add_parser("mirror")
 
+    subparsers.add_parser("benchmark")
+
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
@@ -283,6 +314,8 @@ def _main() -> None:
         compat()
     elif args.command == "e2e":
         e2e(use_local_sources=args.use_local_sources)
+    elif args.command == "benchmark":
+        report_size()
     else:
         parser.print_help()
         sys.exit(1)
