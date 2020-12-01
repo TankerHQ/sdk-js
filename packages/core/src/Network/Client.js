@@ -58,10 +58,17 @@ export class Client {
 
   _cancelable = <F: Function>(fun: F): F => { // eslint-disable-line arrow-body-style
     // $FlowIgnore Our first promise will always reject so the return type doesn't matter
-    return (...args: Array<any>) => Promise.race([
-      this._cancelationHandle.promise.then((message) => { throw new OperationCanceled(message); }),
-      fun(...args),
-    ]);
+    return (...args: Array<any>) => {
+      const cancelationPromise = this._cancelationHandle.promise.then((message) => {
+        throw new OperationCanceled(message);
+      });
+
+      if (this._cancelationHandle.settled) {
+        return cancelationPromise;
+      }
+
+      return Promise.race([cancelationPromise, fun(...args)]);
+    };
   }
 
   // Simple fetch wrapper with:
