@@ -31,7 +31,7 @@ export class Client {
   declare _apiRootPath: string;
   declare _appId: Uint8Array;
   declare _authenticating: ?Promise<void>;
-  declare _cancelationHandle: PromiseWrapper<string>;
+  declare _cancelationHandle: PromiseWrapper<void>;
   declare _deviceId: Uint8Array | null;
   declare _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
   declare _isRevoked: bool;
@@ -46,7 +46,7 @@ export class Client {
     this._apiEndpoint = url;
     this._apiRootPath = `/v2/apps/${urlize(appId)}`;
     this._appId = appId;
-    this._cancelationHandle = new PromiseWrapper<string>();
+    this._cancelationHandle = new PromiseWrapper<void>();
     this._deviceId = null;
     this._deviceSignatureKeyPair = null;
     this._isRevoked = false;
@@ -56,20 +56,13 @@ export class Client {
     this._userId = userId;
   }
 
-  _cancelable = <F: Function>(fun: F): F => { // eslint-disable-line arrow-body-style
-    // $FlowIgnore Our first promise will always reject so the return type doesn't matter
-    return (...args: Array<any>) => {
-      const cancelationPromise = this._cancelationHandle.promise.then((message) => {
-        throw new OperationCanceled(message);
-      });
-
-      if (this._cancelationHandle.settled) {
-        return cancelationPromise;
-      }
-
-      return Promise.race([cancelationPromise, fun(...args)]);
-    };
-  }
+  // $FlowIgnore Our first promise will always reject so the return type doesn't matter
+  _cancelable = <F: Function>(fun: F): F => (...args: Array<any>) => {
+    if (this._cancelationHandle.settled) {
+      return this._cancelationHandle.promise;
+    }
+    return Promise.race([this._cancelationHandle.promise, fun(...args)]);
+  };
 
   // Simple fetch wrapper with:
   //   - proper headers set (sdk info and authorization)
@@ -443,7 +436,7 @@ export class Client {
   }
 
   close = async (): Promise<void> => {
-    this._cancelationHandle.resolve('Closing the client');
+    this._cancelationHandle.reject(new OperationCanceled('Closing the client'));
 
     if (this._accessToken && this._deviceId) {
       const deviceId = this._deviceId;

@@ -100,6 +100,13 @@ export const generateSessionTests = (args: TestArgs) => {
       await bobPhone.stop();
       await expect(bobPhone.status).to.equal(STOPPED);
     });
+
+    it('stops a session and rejects in-progress operations with OperationCanceled error', async () => {
+      const registrationPromise = bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+      await bobLaptop.stop();
+      await expect(bobLaptop.status).to.equal(STOPPED);
+      await expect(registrationPromise).to.be.rejectedWith(errors.OperationCanceled);
+    });
   });
 
   describe('registerIdentity', () => {
