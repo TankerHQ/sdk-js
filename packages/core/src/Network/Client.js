@@ -144,17 +144,18 @@ export class Client {
     const deviceSignatureKeyPair = this._deviceSignatureKeyPair;
 
     const auth = async () => {
-      const challengePath = `/devices/${urlize(deviceId)}/challenges`;
-      const { challenge } = await this._baseApiCall(challengePath, { method: 'POST' });
-
+      const { challenge } = await this._cancelable(
+        () => this._baseApiCall(`/devices/${urlize(deviceId)}/challenges`, { method: 'POST' })
+      )();
       const signature = signChallenge(deviceSignatureKeyPair, challenge);
 
-      const sessionPath = `/devices/${urlize(deviceId)}/sessions`;
-      const { access_token: accessToken, is_revoked: isRevoked } = await this._baseApiCall(sessionPath, {
-        method: 'POST',
-        body: JSON.stringify(b64RequestObject({ signature, challenge })),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const { access_token: accessToken, is_revoked: isRevoked } = await this._cancelable(
+        () => this._baseApiCall(`/devices/${urlize(deviceId)}/sessions`, {
+          method: 'POST',
+          body: JSON.stringify(b64RequestObject({ signature, challenge })),
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )();
 
       this._accessToken = accessToken;
       this._isRevoked = isRevoked;
