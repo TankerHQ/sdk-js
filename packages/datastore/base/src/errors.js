@@ -2,33 +2,32 @@
 export class DataStoreError extends Error {
   next: ?Error;
   name: string;
-  message: string;
 
-  constructor(name: string, error?: Error, ...params: Array<any>) {
-    super(...params);
+  constructor(name: string, error: ?Error, messageArg?: string) {
+    const message = messageArg || (error && error.toString()) || '';
+    super(message);
     this.name = name;
-    this.message = name;
     this.next = error;
   }
 }
 
 export class RecordNotFound extends DataStoreError {
-  constructor(error?: Error, ...params: Array<any>) {
-    super('RecordNotFound', error, ...params);
+  constructor(error?: Error) {
+    super('RecordNotFound', error);
   }
 }
 export class RecordNotUnique extends DataStoreError {
-  constructor(error?: Error, ...params: Array<any>) {
-    super('RecordNotUnique', error, ...params);
+  constructor(error?: Error) {
+    super('RecordNotUnique', error);
   }
 }
 export class SchemaError extends DataStoreError {
-  constructor(error?: Error, ...params: Array<any>) {
-    super('SchemaError', error, ...params);
+  constructor(message: string) {
+    super('SchemaError', null, message);
   }
 }
 export class UnknownError extends DataStoreError {
-  constructor(error?: Error, ...params: Array<any>) {
-    super('UnknownError', error, ...params);
+  constructor(error?: Error) {
+    super('UnknownError', error);
   }
 }
