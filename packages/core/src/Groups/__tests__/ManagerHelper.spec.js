@@ -44,10 +44,12 @@ describe('GroupManagerHelper', () => {
     const userId = random(tcrypto.HASH_SIZE);
     userCreation = await testGenerator.makeUserCreation(userId);
 
-    provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
     localUser = (({ findUserKey: () => userCreation.testUser.userKeys[0] }: any): LocalUser);
     userGroup = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user], []);
-    provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
+    provisionalIdentityManager = (({
+      findPrivateProvisionalKeys: () => null,
+      refreshProvisionalPrivateKeys: () => null,
+    }: any): ProvisionalIdentityManager);
   });
 
   describe('assertPublicIdentities()', () => {
@@ -63,37 +65,39 @@ describe('GroupManagerHelper', () => {
 
   describe('groupFromUserGroupEntry()', () => {
     describe('with internal groups', () => {
-      it('can create a group with a userGroupCreation action', async () => {
-        const group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+      it('can create a group with a userGroupCreation action', () => {
+        const group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroup.group);
       });
 
-      it('can create a group with a userGroupCreation action from a provisional user', async () => {
-        const provisionalResult = await testGenerator.makeProvisionalUser();
-        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => provisionalResult.provisionalUserKeys }: any): ProvisionalIdentityManager);
+      it('can create a group with a userGroupCreation action from a provisional user', () => {
+        const provisionalResult = testGenerator.makeProvisionalUser();
+        // $FlowIgnore[cannot-write]
+        provisionalIdentityManager.findPrivateProvisionalKeys = () => provisionalResult.provisionalUserKeys;
 
         userGroup = testGenerator.makeUserGroupCreation(userCreation, [], [provisionalResult.publicProvisionalUser]);
-        const group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+        const group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroup.group);
       });
 
       it('can update a group with a userGroupAddition', async () => {
-        let group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+        let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
         const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup.group, [userCreation2.user]);
 
-        group = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, localUser, provisionalIdentityManager);
+        group = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, localUser, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroupAddition.group);
       });
 
-      it('can update a group with a userGroupAddition from a provisional user', async () => {
-        let group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
-        const provisionalResult = await testGenerator.makeProvisionalUser();
-        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => provisionalResult.provisionalUserKeys }: any): ProvisionalIdentityManager);
+      it('can update a group with a userGroupAddition from a provisional user', () => {
+        let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+        const provisionalResult = testGenerator.makeProvisionalUser();
+        // $FlowIgnore[cannot-write]
+        provisionalIdentityManager.findPrivateProvisionalKeys = () => provisionalResult.provisionalUserKeys;
 
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup.group, [], [provisionalResult.publicProvisionalUser]);
 
-        group = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, localUser, provisionalIdentityManager);
+        group = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, localUser, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroupAddition.group);
       });
 
@@ -102,10 +106,10 @@ describe('GroupManagerHelper', () => {
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup.group, [userCreation2.user]);
 
         localUser = (({ findUserKey: () => null }: any): LocalUser);
-        let group = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+        let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
 
         localUser = (({ findUserKey: () => userCreation2.testUser.userKeys[0] }: any): LocalUser);
-        group = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, localUser, provisionalIdentityManager);
+        group = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, localUser, provisionalIdentityManager);
         expect(group).to.deep.equal(userGroupAddition.group);
       });
     });
@@ -115,8 +119,8 @@ describe('GroupManagerHelper', () => {
         localUser = (({ findUserKey: () => null }: any): LocalUser);
       });
 
-      it('can create an external group from a userGroupCreation action', async () => {
-        const externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+      it('can create an external group from a userGroupCreation action', () => {
+        const externalGroup = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
         expect(externalGroup).to.deep.equal(getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry));
       });
 
@@ -127,30 +131,28 @@ describe('GroupManagerHelper', () => {
         let resultGroup = getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry);
         resultGroup = getExternalGroupFromUserGroupAddition(userGroupAddition.userGroupEntry, resultGroup);
 
-        let externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
-        externalGroup = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, externalGroup, localUser, provisionalIdentityManager);
+        let externalGroup = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+        externalGroup = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, externalGroup, localUser, provisionalIdentityManager);
         expect(externalGroup).to.deep.equal(resultGroup);
       });
 
-      it('can create an external group from a userGroupCreation action with a provisional user', async () => {
-        const provisionalResult = await testGenerator.makeProvisionalUser();
-        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => null }: any): ProvisionalIdentityManager);
+      it('can create an external group from a userGroupCreation action with a provisional user', () => {
+        const provisionalResult = testGenerator.makeProvisionalUser();
 
         userGroup = testGenerator.makeUserGroupCreation(userCreation, [], [provisionalResult.publicProvisionalUser]);
-        const externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+        const externalGroup = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
         expect(externalGroup).to.deep.equal(getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry));
       });
 
-      it('can update an external group from a userGroupCreation action with a provisional user', async () => {
-        const provisionalResult = await testGenerator.makeProvisionalUser();
-        provisionalIdentityManager = (({ getPrivateProvisionalKeys: () => null }: any): ProvisionalIdentityManager);
+      it('can update an external group from a userGroupCreation action with a provisional user', () => {
+        const provisionalResult = testGenerator.makeProvisionalUser();
         const userGroupAddition = testGenerator.makeUserGroupAddition(userCreation, userGroup.group, [], [provisionalResult.publicProvisionalUser]);
 
         let resultGroup = getExternalGroupFromUserGroupCreation(userGroup.userGroupEntry);
         resultGroup = getExternalGroupFromUserGroupAddition(userGroupAddition.userGroupEntry, resultGroup);
 
-        let externalGroup = await groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
-        externalGroup = await groupFromUserGroupEntry(userGroupAddition.userGroupEntry, externalGroup, localUser, provisionalIdentityManager);
+        let externalGroup = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
+        externalGroup = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, externalGroup, localUser, provisionalIdentityManager);
         expect(externalGroup).to.deep.equal(resultGroup);
       });
     });

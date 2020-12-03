@@ -64,14 +64,15 @@ function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, localUser:
   return null;
 }
 
-async function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>, provisionalIdentityManager: ProvisionalIdentityManager): Promise<?Object> {
+function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>, provisionalIdentityManager: ProvisionalIdentityManager): ?Object {
   for (const gek of groupKeys) {
-    const correspondingPair = await provisionalIdentityManager.getPrivateProvisionalKeys(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key);
-    if (correspondingPair)
+    const correspondingPair = provisionalIdentityManager.findPrivateProvisionalKeys(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key);
+    if (correspondingPair) {
       return {
         provisionalKeyPair: correspondingPair,
         groupEncryptedKey: gek.encrypted_group_private_encryption_key,
       };
+    }
   }
   return null;
 }
@@ -81,7 +82,7 @@ function provisionalUnseal(ciphertext: Uint8Array, keys: ProvisionalUserKeyPairs
   return tcrypto.sealDecrypt(intermediate, keys.appEncryptionKeyPair);
 }
 
-async function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): Promise<?Uint8Array> {
+function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): ?Uint8Array {
   const userKeys = findMyUserKeys(entry.encrypted_group_private_encryption_keys_for_users, localUser);
 
   if (userKeys) {
@@ -89,7 +90,7 @@ async function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: L
   }
 
   if (entry.encrypted_group_private_encryption_keys_for_provisional_users) {
-    const provisionalKeys = await findMyProvisionalKeys(entry.encrypted_group_private_encryption_keys_for_provisional_users, provisionalIdentityManager);
+    const provisionalKeys = findMyProvisionalKeys(entry.encrypted_group_private_encryption_keys_for_provisional_users, provisionalIdentityManager);
     if (provisionalKeys) {
       return provisionalUnseal(provisionalKeys.groupEncryptedKey, provisionalKeys.provisionalKeyPair);
     }
@@ -113,12 +114,12 @@ function externalToInternal(externalGroup: ExternalGroup, groupPrivateEncryption
   };
 }
 
-export async function groupFromUserGroupEntry(
+export function groupFromUserGroupEntry(
   entry: UserGroupEntry,
   previousGroup: ?Group,
   localUser: LocalUser,
   provisionalIdentityManager: ProvisionalIdentityManager
-): Promise<Group> {
+): Group {
   // Previous group already has every field we need
   if (previousGroup && isInternalGroup(previousGroup)) {
     return {
@@ -144,7 +145,7 @@ export async function groupFromUserGroupEntry(
     encryptedPrivateSignatureKey,
   };
 
-  const groupPrivateEncryptionKey = await findGroupPrivateEncryptionKey(entry, localUser, provisionalIdentityManager);
+  const groupPrivateEncryptionKey = findGroupPrivateEncryptionKey(entry, localUser, provisionalIdentityManager);
 
   // If found, return an internal group
   if (groupPrivateEncryptionKey) {
@@ -166,12 +167,15 @@ export function verifyGroup(groupDataWithDevices: GroupDataWithDevices) {
 export async function groupsFromEntries(entries: Array<UserGroupEntry>, devicePublicSignatureKeyMap: Map<b64string, Uint8Array>, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): Promise<Array<Group>> {
   const groupsMap: Map<b64string, GroupDataWithDevices> = new Map();
 
+  // Refresh only once (i.e. a single API call), then loop to find the groups
+  await provisionalIdentityManager.refreshProvisionalPrivateKeys();
+
   for (const entry of entries) {
     const b64groupId = utils.toBase64(entry.group_id ? entry.group_id : entry.public_signature_key);
     const previousData: GroupDataWithDevices = groupsMap.get(b64groupId) || [];
     const previousGroup = previousData.length ? previousData[previousData.length - 1].group : null;
 
-    const group = await groupFromUserGroupEntry(entry, previousGroup, localUser, provisionalIdentityManager);
+    const group = groupFromUserGroupEntry(entry, previousGroup, localUser, provisionalIdentityManager);
     const devicePublicSignatureKey = devicePublicSignatureKeyMap.get(utils.toBase64(entry.author));
     if (!devicePublicSignatureKey) {
       throw new InternalError('author device publicSignatureKey missing');

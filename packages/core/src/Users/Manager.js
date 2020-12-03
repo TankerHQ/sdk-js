@@ -64,7 +64,8 @@ export default class UserManager {
   _getDeviceKeysFromIds(userIdToUserMap: Map<b64string, User>, deviceIdToUserIdMap: Map<b64string, b64string>, devicesIds: Array<Uint8Array>): Map<b64string, Uint8Array> {
     const devicesPublicSignatureKeys: Map<b64string, Uint8Array> = new Map();
     for (const deviceId of devicesIds) {
-      const userId = deviceIdToUserIdMap.get(utils.toBase64(deviceId));
+      const base64DeviceId = utils.toBase64(deviceId);
+      const userId = deviceIdToUserIdMap.get(base64DeviceId);
       if (!userId) {
         throw new InternalError('Assertion error: no such author user id');
       }
@@ -76,7 +77,7 @@ export default class UserManager {
       if (!device) {
         throw new InternalError('Assertion error: no such author device');
       }
-      devicesPublicSignatureKeys.set(utils.toBase64(deviceId), device.devicePublicSignatureKey);
+      devicesPublicSignatureKeys.set(base64DeviceId, device.devicePublicSignatureKey);
     }
     return devicesPublicSignatureKeys;
   }
