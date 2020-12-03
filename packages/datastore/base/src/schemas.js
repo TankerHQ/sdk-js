@@ -14,7 +14,7 @@ function assertSchemasVersions(allSchemas: Schema[][]): void {
   for (const table of allSchemas) {
     const tableVersions = table.map(v => v.version);
     if (!scalarArrayEqual(allVersions, tableVersions)) {
-      throw new errors.SchemaError(undefined, `Assertion error: tables have different schema versions: ${JSON.stringify(allSchemas[0])} and ${JSON.stringify(table)}`);
+      throw new errors.SchemaError(`Assertion error: tables have different schema versions: ${JSON.stringify(allSchemas[0])} and ${JSON.stringify(table)}`);
     }
   }
 }
@@ -38,7 +38,7 @@ export const mergeSchemas = (schemas: Schema[], ...otherSchemas: Schema[][]) => 
 
   // verify we have defined consecutive versions
   if (result.length !== result.filter(r => !!r).length) {
-    throw new errors.SchemaError(undefined, 'Versions are not consecutive');
+    throw new errors.SchemaError('Versions are not consecutive');
   }
 
   return result;

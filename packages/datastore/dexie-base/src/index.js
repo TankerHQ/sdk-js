@@ -200,7 +200,7 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
       throw new dbErrors.UnknownError(e);
     }
 
-    // undefined is return when record not found
+    // undefined is returned when record not found
     if (!record) {
       throw new dbErrors.RecordNotFound();
     }
