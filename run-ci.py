@@ -253,9 +253,12 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
 
 
 def get_branch_name() -> str:
-    branch = tankerci.git.get_current_branch(Path().getcwd())
+    branch = os.environ.get("CI_COMMIT_BRANCH", None)
+    if not branch:
+        branch = tankerci.git.get_current_branch(Path().getcwd())
     if not branch:
         ui.fatal("Not on a branch, can't report size")
+    ui.info(f"Running on branch {branch}")
     return branch
 
 
@@ -280,17 +283,22 @@ def report_size() -> None:
     )
 
 
-def benchmark() -> None:
+def benchmark(*, runner: str) -> None:
     tankerci.reporting.assert_can_send_metrics()
 
     branch = get_branch_name()
     _, commit_id = tankerci.git.run_captured(os.getcwd(), "rev-parse", "HEAD")
 
-    tankerci.run("yarn", "benchmark")
+    if runner == "linux":
+        tankerci.js.run_yarn("benchmark", "--browsers", "ChromeInDocker")
+    else:
+        raise RuntimeError(f"unsupported runner {runner}")
     benchmark_output = Path("benchmarks.json")
     benchmark_results = json.loads(benchmark_output.read_text())
 
-    hostname = benchmark_results["context"]["host"]
+    hostname = os.environ.get("CI_RUNNER_DESCRIPTION", None)
+    if not hostname:
+        hostname = benchmark_results["context"]["host"]
 
     for browser in benchmark_results["browsers"]:
         # map the name to something more friendly
@@ -332,7 +340,8 @@ def _main() -> None:
 
     subparsers.add_parser("mirror")
 
-    subparsers.add_parser("benchmark")
+    benchmark_parser = subparsers.add_parser("benchmark")
+    benchmark_parser.add_argument("--runner", required=True)
 
     args = parser.parse_args()
     if args.command == "check":
@@ -349,8 +358,9 @@ def _main() -> None:
     elif args.command == "e2e":
         e2e(use_local_sources=args.use_local_sources)
     elif args.command == "benchmark":
+        tankerci.js.yarn_install()
         report_size()
-        benchmark()
+        benchmark(runner=args.runner)
     else:
         parser.print_help()
         sys.exit(1)
