@@ -8,7 +8,8 @@
     "proof": "yarn lint:js && yarn test"
   },
   "resolutions": {
-    "**/minimist": "1.2.5"
+    "**/minimist": "1.2.5",
+    "node-fetch": "^2.6.1"
   },
   "workspaces": {
     "packages": [

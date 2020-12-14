@@ -26,7 +26,7 @@
     "build:verification-ui-base": "rollup --config packages/verification-ui/config/rollup.js",
     "build:verification-ui-umd": "webpack --config packages/verification-ui/config/webpack.config.production.js",
     "build:verification-ui": "yarn build:verification-ui-base && yarn build:verification-ui-umd",
-    "start:verification-ui": "webpack-dev-server -w --hot --config packages/verification-ui/config/webpack.config.development.js",
+    "start:verification-ui": "webpack serve -w --hot --config packages/verification-ui/config/webpack.config.development.js",
     "lint:js": "eslint \"packages/**/*.js\"",
     "lint:flow": "flow check",
     "test": "mocha \"packages/**/src/**/*.spec{,.node}.js\" --exit --require ./config/babel.require-hook.js --recursive --full-trace --trace-warnings --reporter=spec",
@@ -52,19 +52,19 @@
     "coverage": "nyc --reporter=lcov --reporter=text-summary yarn test"
   },
   "dependencies": {
-    "@babel/core": "7.12.9",
+    "@babel/core": "7.12.10",
     "@babel/eslint-parser": "7.12.1",
     "@babel/plugin-proposal-class-properties": "7.12.1",
-    "@babel/plugin-transform-flow-strip-types": "7.12.1",
-    "@babel/plugin-transform-runtime": "7.12.1",
-    "@babel/preset-env": "7.12.7",
-    "@babel/preset-react": "7.12.7",
-    "@babel/register": "7.12.1",
-    "babel-loader": "8.2.1",
+    "@babel/plugin-transform-flow-strip-types": "7.12.10",
+    "@babel/plugin-transform-runtime": "7.12.10",
+    "@babel/preset-env": "7.12.10",
+    "@babel/preset-react": "7.12.10",
+    "@babel/register": "7.12.10",
+    "babel-loader": "8.2.2",
     "babel-plugin-istanbul": "6.0.0",
-    "codecov": "3.8.0",
+    "codecov": "3.8.1",
     "colorette": "1.2.1",
-    "eslint": "7.14.0",
+    "eslint": "7.15.0",
     "eslint-config-airbnb": "18.2.1",
     "eslint-plugin-chai-expect": "2.2.0",
     "eslint-plugin-chai-friendly": "0.6.0",
@@ -89,12 +89,12 @@
     "karma-webpack": "4.0.2",
     "mocha": "8.2.1",
     "nyc": "15.1.0",
-    "rollup": "2.33.3",
+    "rollup": "2.35.0",
     "rollup-plugin-babel": "4.4.0",
     "rollup-plugin-flow": "1.1.1",
     "rollup-plugin-local-resolve": "1.0.7",
     "webpack": "4.44.2",
-    "webpack-cli": "3.3.12",
+    "webpack-cli": "4.2.0",
     "webpack-dev-server": "3.11.0"
   },
   "workspaces": [
@@ -117,9 +117,7 @@
     "instrument": false
   },
   "resolutions": {
-    "ini": "^1.3.7",
     "node-fetch": "^2.6.1",
-    "node-forge": "^0.10.0",
     "node-sass": "^5.0.0"
   }
 }
