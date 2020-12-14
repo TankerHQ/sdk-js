@@ -291,6 +291,13 @@ def benchmark(*, runner: str) -> None:
 
     if runner == "linux":
         tankerci.js.run_yarn("benchmark", "--browsers", "ChromeInDocker")
+    elif runner == "macos":
+        tankerci.run("killall", "Safari", check=False)
+        delete_safari_state()
+        tankerci.js.run_yarn("benchmark", "--browsers", "Safari")
+    elif runner == "windows-edge":
+        kill_windows_processes()
+        tankerci.js.run_yarn("benchmark", "--browsers", "EdgeHeadless")
     else:
         raise RuntimeError(f"unsupported runner {runner}")
     benchmark_output = Path("benchmarks.json")
@@ -304,6 +311,10 @@ def benchmark(*, runner: str) -> None:
         # map the name to something more friendly
         if browser["name"].startswith("Chrome Headless"):
             browser_name = "chrome-headless"
+        elif browser["name"].startswith("Safari"):
+            browser_name = "safari"
+        elif browser["name"].startswith("Edge"):
+            browser_name = "edge"
         else:
             raise RuntimeError(f"unsupported browser {browser['name']}")
 
@@ -317,7 +328,11 @@ def benchmark(*, runner: str) -> None:
                     "scenario": benchmark["name"].lower(),
                     "host": hostname,
                 },
-                fields={"real_time": benchmark["real_time"], "commit_id": commit_id},
+                fields={
+                    "real_time": benchmark["real_time"],
+                    "commit_id": commit_id,
+                    "browser_full_name": browser["name"],
+                },
             )
 
 
@@ -359,7 +374,9 @@ def _main() -> None:
         e2e(use_local_sources=args.use_local_sources)
     elif args.command == "benchmark":
         tankerci.js.yarn_install()
-        report_size()
+        if args.runner == "linux":
+            # size is the same on all platforms, we can track it only on linux
+            report_size()
         benchmark(runner=args.runner)
     else:
         parser.print_help()

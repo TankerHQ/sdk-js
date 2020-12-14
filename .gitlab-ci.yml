@@ -67,14 +67,34 @@ check/linux/nightly:
   tags:
     - linux
 
+# Benchmark jobs are pinned on a machine to have more consistent results.
+
 check/linux/benchmark-nightly:
   stage: check
-  # only:
-  #   - schedules
+  only:
+    - schedules
   script:
-    - poetry run python run-ci.py benchmark
+    - poetry run python run-ci.py benchmark --runner linux
   tags:
     - LinuxSlave-3
+
+check/macos/benchmark-nightly:
+  stage: check
+  only:
+    - schedules
+  script:
+    - poetry run python run-ci.py benchmark --runner macos
+  tags:
+    - MacOSSlave-2
+
+check/windows/benchmark-nightly:
+  stage: check
+  only:
+    - schedules
+  script:
+    - poetry run python run-ci.py benchmark --runner windows-edge
+  tags:
+    - WindowsSlave-2
 
 check/macos/nightly:
   stage: check
