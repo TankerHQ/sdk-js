@@ -1,6 +1,8 @@
 // @noflow
 const getBabelConfig = require('./babel.config');
 
+const coverage = ['false', '0'].includes(process.env.COVERAGE) ? false : true;
+
 // Install the "require hook" which will:
 //   - bind itself to node's require
 //   - automatically compile on the fly all the files subsequently required by node
@@ -11,5 +13,5 @@ const getBabelConfig = require('./babel.config');
 require('@babel/register')({
   // Babelify everything except node_modules that are not our own stuff
   ignore: [file => file.includes('node_modules') && !file.includes('@tanker')],
-  ...getBabelConfig({ target: 'node', coverage: true }),
+  ...getBabelConfig({ target: 'node', coverage }),
 });
