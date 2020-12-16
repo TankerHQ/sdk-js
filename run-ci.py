@@ -1,12 +1,13 @@
 from typing import Any, Callable
 import argparse
 import os
+from pathlib import Path
 import re
+import shutil
 import sys
 import time
 
 import cli_ui as ui
-from path import Path
 import psutil
 
 import tankerci.conan
@@ -52,7 +53,7 @@ def onerror(navigator: str) -> Callable[..., None]:
             f"unable to delete path: {path}\n",
             f"error: {e}",
         )
-        Path(path).rmtree(ignore_errors=True)
+        shutil.rmtree(path, ignore_errors=True)
 
     return fcn
 
@@ -61,7 +62,7 @@ def delete_ie_state() -> None:
     kill_windows_processes()
     localappdata = os.environ.get("LOCALAPPDATA")
     ie_db_path = Path(r"%s\Microsoft\Internet Explorer\Indexed DB" % localappdata)
-    ie_db_path.rmtree(onerror=onerror("IE"))
+    shutil.rmtree(ie_db_path, onerror=onerror("IE"))
 
     """
     This magic value is the combination of the following bitflags:
@@ -83,7 +84,8 @@ def delete_ie_state() -> None:
 
 def delete_safari_state() -> None:
     safari_user_path = Path(r"~/Library/Safari").expanduser()
-    safari_user_path.rmtree_p()
+    if safari_user_path.exists():
+        shutil.rmtree(safari_user_path)
 
 
 def run_tests_in_browser_ten_times(*, runner: str) -> None:
@@ -119,7 +121,7 @@ def run_tests_in_browser(*, runner: str) -> None:
 
 
 def run_sdk_compat_tests() -> None:
-    cwd = Path.getcwd() / "ci/compat"
+    cwd = Path.cwd() / "ci/compat"
     tankerci.js.yarn_install_deps(cwd=cwd)
     tankerci.js.run_yarn("proof", cwd=cwd)
 
@@ -177,7 +179,7 @@ def compat() -> None:
 
 def e2e(*, use_local_sources: bool) -> None:
     if use_local_sources:
-        base_path = Path.getcwd().parent
+        base_path = Path.cwd().parent
     else:
         base_path = tankerci.git.prepare_sources(
             repos=["sdk-python", "sdk-js", "qa-python-js"]
@@ -201,7 +203,6 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
 
 
-
 def deploy_sdk(*, env: str, git_tag: str) -> None:
     tankerci.js.yarn_install_deps()
     version = tankerci.bump.version_from_git_tag(git_tag)
@@ -219,7 +220,10 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
         {"build": "types", "publish": ["@tanker/types"]},
         {
             "build": "streams",
-            "publish": ["@tanker/stream-base", "@tanker/stream-cloud-storage",],
+            "publish": [
+                "@tanker/stream-base",
+                "@tanker/stream-cloud-storage",
+            ],
         },
         {
             "build": "datastores",
