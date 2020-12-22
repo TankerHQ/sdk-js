@@ -3,6 +3,8 @@
 
 // Number of times to loop over the same benchmark
 const sampleCount = 5;
+// Duration threshold over which we should not take more samples
+const stopSamplingThreshold = 5;
 
 const benchmarks = [];
 let beforeAll = null;
@@ -77,6 +79,9 @@ export class State {
       const end = getTime();
       const time = end - this.startTime - this.pauseDuration;
       this.durations.push(time);
+
+      if (time > stopSamplingThreshold)
+        return false;
     }
     this.startTime = getTime();
     this.pauseDuration = 0.0;
@@ -100,7 +105,8 @@ export function benchmark(name: string, fn: Function) {
       await fn(state);
 
       // skip the first element, consider it warm-up
-      state.durations.shift();
+      if (state.durations.length >= 2)
+        state.durations.shift();
       const averageTime = state.durations.reduce((a, b) => a + b) / state.durations.length;
       result({
         id: name,
