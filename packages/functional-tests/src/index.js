@@ -3,7 +3,7 @@ import { utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
-import { AppHelper, admindUrl, appdUrl, idToken, oidcSettings } from './helpers';
+import { makePrefix, AppHelper, admindUrl, appdUrl, idToken, oidcSettings } from './helpers';
 import type { TestArgs, TestResources } from './helpers';
 
 import { generateEncryptionStreamTests } from './encryptionStream';
@@ -70,3 +70,5 @@ export function generateFunctionalTests(
     generateFakeAuthenticationTests(args);
   });
 }
+
+export { makePrefix, AppHelper, admindUrl, appdUrl, idToken, oidcSettings };

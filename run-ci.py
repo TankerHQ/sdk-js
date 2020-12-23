@@ -6,12 +6,14 @@ import re
 import shutil
 import sys
 import time
+import json
 
 import cli_ui as ui
 import psutil
 
 import tankerci.conan
 import tankerci.js
+import tankerci.reporting
 
 
 class TestFailed(Exception):
@@ -250,6 +252,90 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
             publish_npm_package(package_name, version)
 
 
+def get_branch_name() -> str:
+    branch = os.environ.get("CI_COMMIT_BRANCH", None)
+    if not branch:
+        branch = tankerci.git.get_current_branch(Path().getcwd())
+    if not branch:
+        ui.fatal("Not on a branch, can't report size")
+    ui.info(f"Running on branch {branch}")
+    return branch
+
+
+def report_size() -> None:
+    tankerci.reporting.assert_can_send_metrics()
+
+    branch = get_branch_name()
+    _, commit_id = tankerci.git.run_captured(os.getcwd(), "rev-parse", "HEAD")
+
+    tankerci.run("yarn", "build:client-browser-umd")
+    lib_path = Path("packages/client-browser/dist/umd/tanker-client-browser.min.js")
+    size = lib_path.getsize()
+    tankerci.reporting.send_metric(
+        f"benchmark",
+        tags={
+            "project": "sdk-js",
+            "branch": branch,
+            "object": "client-browser-umd",
+            "scenario": "size",
+        },
+        fields={"value": size, "commit_id": commit_id},
+    )
+
+
+def benchmark(*, runner: str) -> None:
+    tankerci.reporting.assert_can_send_metrics()
+
+    branch = get_branch_name()
+    _, commit_id = tankerci.git.run_captured(os.getcwd(), "rev-parse", "HEAD")
+
+    if runner == "linux":
+        tankerci.js.run_yarn("benchmark", "--browsers", "ChromeInDocker")
+    elif runner == "macos":
+        tankerci.run("killall", "Safari", check=False)
+        delete_safari_state()
+        tankerci.js.run_yarn("benchmark", "--browsers", "Safari")
+    elif runner == "windows-edge":
+        kill_windows_processes()
+        tankerci.js.run_yarn("benchmark", "--browsers", "EdgeHeadless")
+    else:
+        raise RuntimeError(f"unsupported runner {runner}")
+    benchmark_output = Path("benchmarks.json")
+    benchmark_results = json.loads(benchmark_output.read_text())
+
+    hostname = os.environ.get("CI_RUNNER_DESCRIPTION", None)
+    if not hostname:
+        hostname = benchmark_results["context"]["host"]
+
+    for browser in benchmark_results["browsers"]:
+        # map the name to something more friendly
+        if browser["name"].startswith("Chrome Headless"):
+            browser_name = "chrome-headless"
+        elif browser["name"].startswith("Safari"):
+            browser_name = "safari"
+        elif browser["name"].startswith("Edge"):
+            browser_name = "edge"
+        else:
+            raise RuntimeError(f"unsupported browser {browser['name']}")
+
+        for benchmark in browser["benchmarks"]:
+            tankerci.reporting.send_metric(
+                f"benchmark",
+                tags={
+                    "project": "sdk-js",
+                    "branch": branch,
+                    "browser": browser_name,
+                    "scenario": benchmark["name"].lower(),
+                    "host": hostname,
+                },
+                fields={
+                    "real_time": benchmark["real_time"],
+                    "commit_id": commit_id,
+                    "browser_full_name": browser["name"],
+                },
+            )
+
+
 def _main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
@@ -269,6 +355,9 @@ def _main() -> None:
 
     subparsers.add_parser("mirror")
 
+    benchmark_parser = subparsers.add_parser("benchmark")
+    benchmark_parser.add_argument("--runner", required=True)
+
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
@@ -283,6 +372,12 @@ def _main() -> None:
         compat()
     elif args.command == "e2e":
         e2e(use_local_sources=args.use_local_sources)
+    elif args.command == "benchmark":
+        tankerci.js.yarn_install()
+        if args.runner == "linux":
+            # size is the same on all platforms, we can track it only on linux
+            report_size()
+        benchmark(runner=args.runner)
     else:
         parser.print_help()
         sys.exit(1)

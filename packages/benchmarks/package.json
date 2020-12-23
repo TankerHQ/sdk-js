@@ -1,14 +1,14 @@
 {
-  "name": "@tanker/functional-tests",
+  "name": "@tanker/benchmarks",
   "version": "0.0.1",
   "private": true,
   "license": "UNLICENSED",
-  "main": "src/index.js",
   "dependencies": {
     "@tanker/client-browser": "0.0.1",
     "@tanker/client-node": "0.0.1",
     "@tanker/core": "0.0.1",
     "@tanker/crypto": "0.0.1",
+    "@tanker/functional-tests": "0.0.1",
     "@tanker/datastore-pouchdb-memory": "0.0.1",
     "@tanker/fake-authentication": "0.0.1",
     "@tanker/file-ponyfill": "0.0.1",
