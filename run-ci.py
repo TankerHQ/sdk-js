@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, cast
 import argparse
 import os
 from pathlib import Path
@@ -255,22 +255,23 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
 def get_branch_name() -> str:
     branch = os.environ.get("CI_COMMIT_BRANCH", None)
     if not branch:
-        branch = tankerci.git.get_current_branch(Path().getcwd())
+        branch = tankerci.git.get_current_branch(Path.cwd())
     if not branch:
         ui.fatal("Not on a branch, can't report size")
     ui.info(f"Running on branch {branch}")
-    return branch
+    # branch is not Optional anymore
+    return cast(str, branch)
 
 
 def report_size() -> None:
     tankerci.reporting.assert_can_send_metrics()
 
     branch = get_branch_name()
-    _, commit_id = tankerci.git.run_captured(os.getcwd(), "rev-parse", "HEAD")
+    _, commit_id = tankerci.git.run_captured(Path.cwd(), "rev-parse", "HEAD")
 
     tankerci.run("yarn", "build:client-browser-umd")
     lib_path = Path("packages/client-browser/dist/umd/tanker-client-browser.min.js")
-    size = lib_path.getsize()
+    size = lib_path.stat().st_size
     tankerci.reporting.send_metric(
         f"benchmark",
         tags={
@@ -287,7 +288,7 @@ def benchmark(*, runner: str) -> None:
     tankerci.reporting.assert_can_send_metrics()
 
     branch = get_branch_name()
-    _, commit_id = tankerci.git.run_captured(os.getcwd(), "rev-parse", "HEAD")
+    _, commit_id = tankerci.git.run_captured(Path.cwd(), "rev-parse", "HEAD")
 
     if runner == "linux":
         tankerci.js.run_yarn("benchmark", "--browsers", "ChromeInDocker")
