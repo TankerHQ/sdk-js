@@ -1,3 +1,5 @@
+image: registry.gitlab.com/tankerhq/docker/sdk-js:latest
+
 stages:
   - check
   - deploy
@@ -181,6 +183,7 @@ check/e2e:
     - linux
   except:
     - schedules
+  image: registry.gitlab.com/tankerhq/docker/e2e:latest
 
 audit:
   stage: check
