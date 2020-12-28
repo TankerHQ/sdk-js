@@ -364,7 +364,6 @@ class TestGenerator {
       signatureKeyPair,
       encryptionKeyPair,
       lastGroupBlock: userGroupEntry.hash,
-      groupVersion: 2
     };
 
     return {
@@ -424,7 +423,6 @@ class TestGenerator {
 
     const group = { ...previousGroup };
     group.lastGroupBlock = userGroupEntry.hash;
-    group.groupVersion = 3;
 
     return {
       userGroupEntry,

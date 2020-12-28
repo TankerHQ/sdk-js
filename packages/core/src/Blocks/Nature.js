@@ -53,8 +53,8 @@ export function preferredNature(kind: NatureKind): Nature {
     case NATURE_KIND.key_publish_to_provisional_user: return NATURE.key_publish_to_provisional_user;
     case NATURE_KIND.device_revocation: return NATURE.device_revocation_v2;
     case NATURE_KIND.device_creation: return NATURE.device_creation_v3;
-    case NATURE_KIND.user_group_creation: return NATURE.user_group_creation_v2;
-    case NATURE_KIND.user_group_addition: return NATURE.user_group_addition_v2;
+    case NATURE_KIND.user_group_creation: return NATURE.user_group_creation_v3;
+    case NATURE_KIND.user_group_addition: return NATURE.user_group_addition_v3;
     case NATURE_KIND.provisional_identity_claim: return NATURE.provisional_identity_claim;
     default: throw new InternalError(`invalid kind: ${kind}`);
   }

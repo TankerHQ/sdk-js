@@ -7,7 +7,7 @@ import UserManager from '../Users/Manager';
 import LocalUser from '../LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 
-import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV2, makeUserGroupAdditionV3 } from './Serialize';
+import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV3 } from './Serialize';
 import type { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
 import type { InternalGroup, Group } from './types';
@@ -83,9 +83,7 @@ export default class GroupManager {
     const users = await this._UserManager.getUsers(permanentIdentities);
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
-    const makeUserGroupAddition = existingGroup.groupVersion === 3 ? makeUserGroupAdditionV3 : makeUserGroupAdditionV2;
-
-    const { payload, nature } = makeUserGroupAddition(
+    const { payload, nature } = makeUserGroupAdditionV3(
       internalGroupId,
       existingGroup.signatureKeyPair.privateKey,
       existingGroup.lastGroupBlock,
