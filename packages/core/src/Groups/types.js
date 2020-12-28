@@ -4,8 +4,8 @@ import { tcrypto } from '@tanker/crypto';
 
 type GroupBase = {|
   groupId: Uint8Array,
-  publicSignatureKey: Uint8Array,
-  publicEncryptionKey: Uint8Array,
+  lastPublicSignatureKey: Uint8Array,
+  lastPublicEncryptionKey: Uint8Array,
   lastGroupBlock: Uint8Array,
 |};
 
@@ -16,12 +16,12 @@ export type ExternalGroup = {|
 
 export type InternalGroup = {|
   ...GroupBase,
-  signatureKeyPair: tcrypto.SodiumKeyPair,
-  encryptionKeyPair: tcrypto.SodiumKeyPair,
+  signatureKeyPairs: Array<tcrypto.SodiumKeyPair>,
+  encryptionKeyPairs: Array<tcrypto.SodiumKeyPair>,
 |};
 
 export type Group = InternalGroup | ExternalGroup;
 
 export function isInternalGroup(group: Group): bool %checks {
-  return !!group.encryptionKeyPair;
+  return !!group.encryptionKeyPairs && group.encryptionKeyPairs.length !== 0;
 }

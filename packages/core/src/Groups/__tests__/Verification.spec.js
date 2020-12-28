@@ -45,7 +45,7 @@ describe('BlockVerification', () => {
         .to.not.throw();
     });
     it('should reject a group creation if it already exists', async () => {
-      group.publicEncryptionKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
+      group.lastPublicEncryptionKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
       assertFailWithNature(
         () => verifyUserGroupCreation(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
         'group_already_exists'

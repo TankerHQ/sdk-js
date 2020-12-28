@@ -17,8 +17,8 @@ function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): 
 
   return {
     groupId: userGroupCreation.public_signature_key,
-    publicSignatureKey: userGroupCreation.public_signature_key,
-    publicEncryptionKey: userGroupCreation.public_encryption_key,
+    lastPublicSignatureKey: userGroupCreation.public_signature_key,
+    lastPublicEncryptionKey: userGroupCreation.public_encryption_key,
     lastGroupBlock: userGroupEntry.hash,
     encryptedPrivateSignatureKey: userGroupCreation.encrypted_group_private_signature_key,
   };

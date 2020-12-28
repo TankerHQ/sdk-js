@@ -4,7 +4,7 @@ import { InternalError } from '@tanker/errors';
 
 import { tcrypto, utils, encryptionV2 } from '@tanker/crypto';
 
-const GROUP_ENCRYPTION_KEY_PAIRS_TABLE = 'group_encryption_key_pairs';
+const GROUP_ENCRYPTION_KEYS_TABLE = 'group_encryption_keys';
 
 const schemaV3 = {
   tables: [{
@@ -26,15 +26,26 @@ const schemaV8 = {
     ...schemaV7.tables.map(t => ({ ...t, deleted: true })),
     // And replace by the new table
     {
-      name: GROUP_ENCRYPTION_KEY_PAIRS_TABLE,
+      name: 'group_encryption_key_pairs',
       indexes: [['publicEncryptionKey']],
     },
   ]
 };
 
-type GroupKeyRecord = {
+const schemaV11 = {
+  tables: [
+    // Delete all previous tables
+    ...schemaV8.tables.map(t => ({ ...t, deleted: true })),
+    // And replace by the new table
+    {
+      name: GROUP_ENCRYPTION_KEYS_TABLE,
+    },
+  ]
+};
+
+type GroupEncryptionKeyPairRecord = {
   groupId: Uint8Array,
-  publicEncryptionKey: Uint8Array,
+  encryptionKeyPair: tcrypto.SodiumKeyPair,
 };
 
 export default class GroupStore {
@@ -53,6 +64,7 @@ export default class GroupStore {
     { version: 8, ...schemaV8 },
     { version: 9, ...schemaV8 },
     { version: 10, ...schemaV8 },
+    { version: 11, ...schemaV11 },
   ];
 
   constructor(ds: DataStore<*>, userSecret: Uint8Array) {
@@ -73,61 +85,26 @@ export default class GroupStore {
     this._ds = null;
   }
 
-  saveGroupKeyPair = async (groupId: Uint8Array, groupEncryptionKeyPair: tcrypto.SodiumKeyPair) => {
-    const encryptedPrivateKey = encryptionV2.serialize(encryptionV2.encrypt(this._userSecret, groupEncryptionKeyPair.privateKey));
+  saveGroupEncryptionKeys = async (groupKeys: Array<GroupEncryptionKeyPairRecord>) => {
+    const b64GroupKeyPairs = groupKeys.map(gk => {
+      const encryptedPrivateKey = encryptionV2.serialize(encryptionV2.encrypt(this._userSecret, gk.encryptionKeyPair.privateKey));
 
-    const b64GroupId = utils.toBase64(groupId);
-    const b64PublicEncryptionKey = utils.toBase64(groupEncryptionKeyPair.publicKey);
-    const b64PrivateEncryptionKey = utils.toBase64(encryptedPrivateKey);
+      const b64GroupId = utils.toBase64(gk.groupId);
+      const b64PublicEncryptionKey = utils.toBase64(gk.encryptionKeyPair.publicKey);
+      const b64PrivateEncryptionKey = utils.toBase64(encryptedPrivateKey);
 
-    // We never want to overwrite a key
-    const existingKey = await this._ds.first(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
-      selector: {
-        publicEncryptionKey: { $eq: b64PublicEncryptionKey },
-      }
+      return { _id: b64PublicEncryptionKey, groupId: b64GroupId, privateEncryptionKey: b64PrivateEncryptionKey };
     });
 
-    if (existingKey && existingKey.privateEncryptionKey) {
-      return;
-    }
-
-    await this._ds.put(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
-      _id: b64GroupId,
-      publicEncryptionKey: b64PublicEncryptionKey,
-      privateEncryptionKey: b64PrivateEncryptionKey
-    });
+    await this._ds.bulkAdd(GROUP_ENCRYPTION_KEYS_TABLE, b64GroupKeyPairs);
   }
 
-  saveGroupsPublicKeys = async (groupKeys: Array<GroupKeyRecord>) => {
-    const b64GroupIds = [];
-    const b64GroupKeys = [];
-
-    groupKeys.forEach(gk => {
-      const groupId = utils.toBase64(gk.groupId); //eslint-disable-line no-underscore-dangle
-      const publicEncryptionKey = utils.toBase64(gk.publicEncryptionKey);
-
-      b64GroupIds.push(groupId);
-      b64GroupKeys.push({ _id: groupId, publicEncryptionKey });
-    });
-
-    // We never want to overwrite a key
-    const existingB64GroupIds = (await this._ds.find(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
-      selector: {
-        _id: { $in: b64GroupIds },
-      }
-    })).map(record => record._id); //eslint-disable-line no-underscore-dangle
-
-    const groupKeysToSave = b64GroupKeys.filter(gkr => !existingB64GroupIds.includes(gkr._id)); //eslint-disable-line no-underscore-dangle
-
-    await this._ds.bulkPut(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, groupKeysToSave);
-  }
-
-  async findGroupKeyPair(publicKey: Uint8Array): Promise<?tcrypto.SodiumKeyPair> {
+  async findGroupEncryptionKeyPair(publicKey: Uint8Array): Promise<?tcrypto.SodiumKeyPair> {
     const b64PublicKey = utils.toBase64(publicKey);
 
-    const existingKey = await this._ds.first(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
+    const existingKey = await this._ds.first(GROUP_ENCRYPTION_KEYS_TABLE, {
       selector: {
-        publicEncryptionKey: { $eq: b64PublicKey },
+        _id: b64PublicKey,
       }
     });
 
@@ -139,18 +116,5 @@ export default class GroupStore {
     const privateKey = encryptionV2.decrypt(this._userSecret, encryptionV2.unserialize(encryptedPrivateEncryptionKey));
 
     return { publicKey, privateKey };
-  }
-
-  async findGroupsPublicKeys(groupIds: Array<Uint8Array>): Promise<Array<GroupKeyRecord>> {
-    const records = await this._ds.find(GROUP_ENCRYPTION_KEY_PAIRS_TABLE, {
-      selector: {
-        _id: { $in: groupIds.map(groupId => utils.toBase64(groupId)) },
-      }
-    });
-
-    return records.map(r => ({
-      groupId: utils.fromBase64(r._id), //eslint-disable-line no-underscore-dangle
-      publicEncryptionKey: utils.fromBase64(r.publicEncryptionKey),
-    }));
   }
 }

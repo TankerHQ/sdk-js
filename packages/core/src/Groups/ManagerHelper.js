@@ -3,6 +3,7 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument, InternalError } from '@tanker/errors';
 
 import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, ProvisionalGroupEncryptedKeyV3, UserGroupEntry } from './Serialize';
+import { isGroupAddition } from './Serialize';
 import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
 
@@ -40,13 +41,6 @@ export function assertExpectedGroups(groups: Array<Group>, expectedGroupIds: Arr
   }
   if (missingGroupIds.length > 0) {
     const message = `The following groups do not exist on the trustchain: "${missingGroupIds.join('", "')}"`;
-    throw new InvalidArgument(message);
-  }
-}
-
-export function assertExpectedGroupsByPublicKey(groups: Array<Group>, expectedGroupPublicKey: Uint8Array) {
-  if (groups.length !== 1 || !utils.equalArray(groups[0].publicEncryptionKey, expectedGroupPublicKey)) {
-    const message = `The following group do not exist on the trustchain. Public encryption key: "${utils.toBase64(expectedGroupPublicKey)}"`;
     throw new InvalidArgument(message);
   }
 }
@@ -97,20 +91,32 @@ function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUs
   }
 }
 
-function externalToInternal(externalGroup: ExternalGroup, groupPrivateEncryptionKey: Uint8Array): InternalGroup {
+function externalToInternal(externalGroup: ExternalGroup, previousGroup: ?Group, groupPrivateEncryptionKey: Uint8Array): InternalGroup {
   const { encryptedPrivateSignatureKey, ...groupBase } = externalGroup;
-  const groupPrivateSignatureKey = tcrypto.sealDecrypt(encryptedPrivateSignatureKey, { publicKey: groupBase.publicEncryptionKey, privateKey: groupPrivateEncryptionKey });
+  const groupPrivateSignatureKey = tcrypto.sealDecrypt(encryptedPrivateSignatureKey, { publicKey: groupBase.lastPublicEncryptionKey, privateKey: groupPrivateEncryptionKey });
+
+  const signatureKeyPairs = [];
+  const encryptionKeyPairs = [];
+
+  if (previousGroup && isInternalGroup(previousGroup)) {
+    signatureKeyPairs.push(...previousGroup.signatureKeyPairs);
+    encryptionKeyPairs.push(...previousGroup.encryptionKeyPairs);
+  }
+
+  signatureKeyPairs.push({
+    publicKey: groupBase.lastPublicSignatureKey,
+    privateKey: groupPrivateSignatureKey,
+  });
+
+  encryptionKeyPairs.push({
+    publicKey: groupBase.lastPublicEncryptionKey,
+    privateKey: groupPrivateEncryptionKey,
+  });
 
   return {
     ...groupBase,
-    signatureKeyPair: {
-      publicKey: groupBase.publicSignatureKey,
-      privateKey: groupPrivateSignatureKey,
-    },
-    encryptionKeyPair: {
-      publicKey: groupBase.publicEncryptionKey,
-      privateKey: groupPrivateEncryptionKey,
-    }
+    signatureKeyPairs,
+    encryptionKeyPairs
   };
 }
 
@@ -121,7 +127,7 @@ export function groupFromUserGroupEntry(
   provisionalIdentityManager: ProvisionalIdentityManager
 ): Group {
   // Previous group already has every field we need
-  if (previousGroup && isInternalGroup(previousGroup)) {
+  if (previousGroup && isInternalGroup(previousGroup) && (isGroupAddition(entry) || utils.equalArray(previousGroup.lastPublicEncryptionKey, entry.public_encryption_key))) {
     return {
       ...previousGroup,
       lastGroupBlock: entry.hash,
@@ -130,17 +136,19 @@ export function groupFromUserGroupEntry(
 
   // Extract info from external group or UserGroupCreationEntry
   const groupId = previousGroup && previousGroup.groupId || entry.public_signature_key && entry.public_signature_key;
-  const publicSignatureKey = previousGroup && previousGroup.publicSignatureKey || entry.public_signature_key && entry.public_signature_key;
-  const publicEncryptionKey = previousGroup && previousGroup.publicEncryptionKey || entry.public_encryption_key && entry.public_encryption_key;
-  const encryptedPrivateSignatureKey = previousGroup && previousGroup.encryptedPrivateSignatureKey || entry.encrypted_group_private_signature_key && entry.encrypted_group_private_signature_key;
-  if (!groupId || !publicSignatureKey || !publicEncryptionKey || !encryptedPrivateSignatureKey) {
+  const lastPublicSignatureKey = entry.public_signature_key || previousGroup && previousGroup.lastPublicSignatureKey;
+  const lastPublicEncryptionKey = entry.public_encryption_key || previousGroup && previousGroup.lastPublicEncryptionKey;
+  // $FlowIgnore[prop-missing] encryptedPrivateSignatureKey should exist
+  const encryptedPrivateSignatureKey = entry.encrypted_group_private_signature_key || previousGroup && previousGroup.encryptedPrivateSignatureKey;
+
+  if (!groupId || !lastPublicSignatureKey || !lastPublicEncryptionKey || !encryptedPrivateSignatureKey) {
     throw new InternalError('Assertion error: invalid group/entry combination');
   }
 
   const externalGroup = {
     groupId,
-    publicSignatureKey,
-    publicEncryptionKey,
+    lastPublicSignatureKey,
+    lastPublicEncryptionKey,
     lastGroupBlock: entry.hash,
     encryptedPrivateSignatureKey,
   };
@@ -149,7 +157,7 @@ export function groupFromUserGroupEntry(
 
   // If found, return an internal group
   if (groupPrivateEncryptionKey) {
-    return externalToInternal(externalGroup, groupPrivateEncryptionKey);
+    return externalToInternal(externalGroup, previousGroup, groupPrivateEncryptionKey);
   }
 
   // Return an external group

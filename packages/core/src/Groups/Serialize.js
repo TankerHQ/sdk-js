@@ -116,6 +116,10 @@ type UserGroupAdditionEntry = {|
 
 export type UserGroupEntry = UserGroupCreationEntry | UserGroupAdditionEntry;
 
+export function isGroupAddition(entry: UserGroupEntry): %checks {
+  return !entry.public_encryption_key;
+}
+
 function serializeGroupEncryptedKeyV1(gek: GroupEncryptedKeyV1): Uint8Array {
   return utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key);
 }

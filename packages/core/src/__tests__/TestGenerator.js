@@ -303,7 +303,7 @@ class TestGenerator {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = random(tcrypto.MAC_SIZE);
 
-    const { payload, nature } = makeKeyPublish(recipient.publicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
+    const { payload, nature } = makeKeyPublish(recipient.lastPublicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
 
     const keyPublish = getKeyPublishEntryFromBlock(block);
@@ -359,10 +359,10 @@ class TestGenerator {
     const userGroupEntry = getGroupEntryFromBlock(block);
     const group = {
       groupId: signatureKeyPair.publicKey,
-      publicSignatureKey: signatureKeyPair.publicKey,
-      publicEncryptionKey: encryptionKeyPair.publicKey,
-      signatureKeyPair,
-      encryptionKeyPair,
+      lastPublicSignatureKey: signatureKeyPair.publicKey,
+      lastPublicEncryptionKey: encryptionKeyPair.publicKey,
+      signatureKeyPairs: [signatureKeyPair],
+      encryptionKeyPairs: [encryptionKeyPair],
       lastGroupBlock: userGroupEntry.hash,
     };
 
@@ -374,8 +374,8 @@ class TestGenerator {
   }
 
   makeUserGroupAdditionV2 = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
-    const signatureKeyPair = previousGroup.signatureKeyPair || null;
-    const encryptionKeyPair = previousGroup.encryptionKeyPair || null;
+    const signatureKeyPair = previousGroup.signatureKeyPairs ? previousGroup.signatureKeyPairs[0] : null;
+    const encryptionKeyPair = previousGroup.encryptionKeyPairs ? previousGroup.encryptionKeyPairs[0] : null;
     if (!signatureKeyPair || !encryptionKeyPair) {
       throw new Error('This group has no key pairs!');
     }
@@ -403,8 +403,8 @@ class TestGenerator {
   }
 
   makeUserGroupAdditionV3 = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
-    const signatureKeyPair = previousGroup.signatureKeyPair || null;
-    const encryptionKeyPair = previousGroup.encryptionKeyPair || null;
+    const signatureKeyPair = previousGroup.signatureKeyPairs ? previousGroup.signatureKeyPairs[0] : null;
+    const encryptionKeyPair = previousGroup.encryptionKeyPairs ? previousGroup.encryptionKeyPairs[0] : null;
     if (!signatureKeyPair || !encryptionKeyPair) {
       throw new Error('This group has no key pairs!');
     }

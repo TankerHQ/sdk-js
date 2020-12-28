@@ -33,7 +33,7 @@ export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSigna
   if (!tcrypto.verifySignature(entry.hash, entry.signature, devicePublicSignatureKey))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', entry);
 
-  if (existingGroup && !utils.equalArray(existingGroup.publicEncryptionKey, currentPayload.public_encryption_key)) {
+  if (existingGroup && !utils.equalArray(existingGroup.lastPublicEncryptionKey, currentPayload.public_encryption_key)) {
     throw new InvalidBlockError('group_already_exists', 'a group with the same public signature key already exists', entry);
   }
 
@@ -76,7 +76,7 @@ export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSigna
   } else {
     throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
   }
-  if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentGroup.publicSignatureKey))
+  if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentGroup.lastPublicSignatureKey))
     throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', entry);
 }
 
