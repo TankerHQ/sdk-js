@@ -60,7 +60,7 @@ const BenchmarkReporter = function (baseReporterDecorator) {
   const specComplete = function (browser, result) {
     if (result.success) {
       resultSet.append(browser.name, result);
-      this.write(`Benchmark "${result.id}": ${result.duration}s\n`);
+      this.write(`Benchmark "${result.id}": ${result.duration.toFixed(2)}s\n`);
     } else if (result.skipped) {
       this.write(`Benchmark "${result.id}" SKIPPED\n`);
     } else {
@@ -119,5 +119,9 @@ module.exports = (config) => {
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: true,
+
+    // Some tests may be very slow
+    browserNoActivityTimeout: 180000,
+    browserDisconnectTimeout: 175000,
   });
 };
