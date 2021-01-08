@@ -33,8 +33,7 @@ export const decryptVerificationKey = (encryptedVerificationKey: Uint8Array, use
   if (encryptedVerificationKey.length < encryptionV2.overhead) {
     throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
   }
-
-  return utils.toString(encryptionV2.compatDecrypt(userSecret, encryptedVerificationKey));
+  return utils.toString(encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedVerificationKey)));
 };
 
 export const ghostDeviceToVerificationKey = (ghostDevice: GhostDevice) => utils.toB64Json({
