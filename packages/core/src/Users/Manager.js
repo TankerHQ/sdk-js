@@ -18,13 +18,13 @@ export default class UserManager {
     this._localUser = localUser;
   }
 
-  async findUser(userId: Uint8Array, options: PullOptions = {}) {
-    const blocks = await this._getUserBlocksByUserIds([userId], options);
+  async getUsersFromUserIds(userIds: Array<Uint8Array>, options: PullOptions = {}): Promise<Array<User>> {
+    const blocks = await this._getUserBlocksByUserIds(userIds, options);
     const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);
-    return userIdToUserMap.get(utils.toBase64(userId));
+    return Array.from(userIdToUserMap.values());
   }
 
-  async getUsers(publicIdentities: Array<PublicPermanentIdentity>, options: PullOptions = {}): Promise<Array<User>> {
+  async getUsersFromPublicIdentities(publicIdentities: Array<PublicPermanentIdentity>, options: PullOptions = {}): Promise<Array<User>> {
     if (publicIdentities.length === 0) {
       return [];
     }

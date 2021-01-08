@@ -15,7 +15,7 @@ type GroupEncryptedKeyV1 = {|
     encrypted_group_private_encryption_key: Uint8Array,
   |};
 
-type GroupEncryptedKeyV2 = {|
+export type GroupEncryptedKeyV2 = {|
     user_id: Uint8Array,
     public_user_encryption_key: Uint8Array,
     encrypted_group_private_encryption_key: Uint8Array,
@@ -519,6 +519,19 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   throw new InternalError('Assertion error: wrong type for getGroupEntryFromBlock');
 }
 
+export function getUserGroupEntryVersion(entry: UserGroupEntry): number {
+  if (entry.nature === NATURE.user_group_creation_v1 || entry.nature === NATURE.user_group_addition_v1) {
+    return 1;
+  }
+  if (entry.nature === NATURE.user_group_creation_v2 || entry.nature === NATURE.user_group_addition_v2) {
+    return 2;
+  }
+  if (entry.nature === NATURE.user_group_creation_v3 || entry.nature === NATURE.user_group_addition_v3 || entry.nature === NATURE.user_group_update) {
+    return 3;
+  }
+  throw new InternalError(`Assertion error: invalid user group nature: ${entry.nature}`);
+}
+
 export const getUserGroupCreationBlockSignDataV1 = (record: UserGroupCreationRecordV1): Uint8Array => utils.concatArrays(
   record.public_signature_key,
   record.public_encryption_key,
@@ -774,29 +787,27 @@ export const makeUserGroupUpdate = (
 
   const finalUsers = [];
 
-  const userIdsToRemove = usersToRemove ? usersToRemove.map(userToRemove => utils.fromBase64(userToRemove.value)) : null;
-  finalUsers.push(...usersInGroup.filter(userInGroup => {
+  const b64UserIdsToRemove = usersToRemove ? usersToRemove.map(userToRemove => userToRemove.value) : null;
+  finalUsers.push(...usersInGroup.filter((userInGroup) => {
+    const b64UserId = utils.toBase64(userInGroup.userId);
     // Filter the users to remove
-    if (userIdsToRemove) {
-      return !utils.containArray(userIdsToRemove, userInGroup.userId);
+    if (b64UserIdsToRemove) {
+      return !b64UserIdsToRemove.includes(b64UserId);
     }
     return true;
   }));
 
   // Add the users from usersToAdd
   if (usersToAdd) {
-    // Used to remove the duplicate users
-    const b64FinalUserIds = new Set(...finalUsers.map(finalUser => utils.toBase64(finalUser.userId)));
-    for (const userToAdd of usersToAdd) {
-      const b64UserToAddId = utils.toBase64(userToAdd.userId);
-      if (!b64FinalUserIds.has(b64UserToAddId)) {
-        finalUsers.push(userToAdd);
-        b64FinalUserIds.add(b64UserToAddId);
-      }
-    }
+    finalUsers.push(...usersToAdd);
   }
 
-  const keysForUsers = finalUsers.map(u => {
+  // Remove the duplicates
+  const b64FinalUsersIds = finalUsers.map(finalUser => utils.toBase64(finalUser.userId));
+  const keysForUsers = finalUsers.filter((finalUser, index) => {
+    const b64FinalUserId = utils.toBase64(finalUser.userId);
+    return b64FinalUsersIds.indexOf(b64FinalUserId) === index;
+  }).map(u => {
     const userPublicKey = getLastUserPublicKey(u);
     if (!userPublicKey)
       throw new InternalError('Assertion error: addToUserGroup: user does not have user keys');

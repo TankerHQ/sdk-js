@@ -281,7 +281,7 @@ export class Client {
     return { root, histories };
   }
 
-  getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions) => {
+  getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions = {}) => {
     const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
     const result = { root: '', histories: [] };
@@ -294,7 +294,7 @@ export class Client {
     return result;
   }
 
-  getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions) => {
+  getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions = {}) => {
     if (!this._deviceId)
       throw new InternalError('Assertion error: trying to get user histories without a device id');
 
@@ -386,23 +386,31 @@ export class Client {
     return sessionToken;
   }
 
-  getGroupHistories = (query: string): Promise<$Exact<{ histories: Array<b64string> }>> => { // eslint-disable-line arrow-body-style
-    return this._apiCall(`/user-group-histories?${query}&is_light=true`);
+  putGroup = async (body: any): Promise<void> => {
+    await this._apiCall('/user-groups', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
-  getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<$Exact<{ histories: Array<b64string> }>> => {
+  getGroupHistories = (query: string): Promise<$Exact<{ histories: Array<b64string> }>> => { // eslint-disable-line arrow-body-style
+    return this._apiCall(`/user-group-histories?${query}`);
+  }
+
+  getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>, options: PullOptions): Promise<$Exact<{ histories: Array<b64string> }>> => {
     const result = { histories: [] };
 
     for (let i = 0; i < groupIds.length; i += MAX_QUERY_STRING_ITEMS) {
-      const query = `user_group_ids[]=${groupIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&user_group_ids[]=')}`;
+      const query = `user_group_ids[]=${groupIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&user_group_ids[]=')}&is_light=${options.isLight ? 'true' : 'false'}`;
       const response = await this.getGroupHistories(query);
       result.histories = result.histories.concat(response.histories);
     }
     return result;
   }
 
-  getGroupHistoriesByGroupPublicEncryptionKey = (groupPublicEncryptionKey: Uint8Array) => {
-    const query = `user_group_public_encryption_key=${urlize(groupPublicEncryptionKey)}`;
+  getGroupHistoriesByGroupPublicEncryptionKey = (groupPublicEncryptionKey: Uint8Array, options: PullOptions = {}) => {
+    const query = `user_group_public_encryption_key=${urlize(groupPublicEncryptionKey)}&is_light=${options.isLight ? 'true' : 'false'}`;
     return this.getGroupHistories(query);
   }
 

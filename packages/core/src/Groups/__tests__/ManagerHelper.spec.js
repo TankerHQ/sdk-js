@@ -1,9 +1,9 @@
 // @flow
 import { tcrypto, random, utils } from '@tanker/crypto';
-import { GroupTooBig, InvalidArgument } from '@tanker/errors';
+import { GroupTooBig, InvalidArgument, InternalError, UnsupportedGroupVersion } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import { MAX_GROUP_MEMBERS_PER_OPERATION, assertPublicIdentities, groupFromUserGroupEntry, groupsFromEntries } from '../ManagerHelper';
+import { MAX_GROUP_MEMBERS_PER_OPERATION, assertPublicIdentities, groupFromUserGroupEntry, groupsFromEntries, getUsersAndProvisionalUsersFromHistoryForUpdate } from '../ManagerHelper';
 import type { UserGroupCreationRecord, UserGroupUpdateRecord, UserGroupEntry } from '../Serialize';
 
 import { type ExternalGroup } from '../types';
@@ -375,4 +375,113 @@ describe('GroupManagerHelper', () => {
   };
   describeGroupAdditionTests(2);
   describeGroupAdditionTests(3);
+
+  describe('getUsersAndProvisionalUsersFromHistoryForUpdate', () => {
+    it('throws if there is no UserGroupCreation or UserGroupUpdate', async () => {
+      const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const userGroupAddition = testGenerator.makeUserGroupAdditionV3(userCreation, userGroupCreation, [userCreation2.user]);
+      expect(() => getUsersAndProvisionalUsersFromHistoryForUpdate([userGroupAddition.block])).to.throw(InternalError);
+    });
+
+    it('throws when using UserGroupAddition v2 with provisional users', () => {
+      const provisionalResult = testGenerator.makeProvisionalUser();
+      const userGroupAddition = testGenerator.makeUserGroupAdditionV2(userCreation, userGroupCreation, [], [provisionalResult.publicProvisionalUser]);
+      expect(() => getUsersAndProvisionalUsersFromHistoryForUpdate([userGroupCreation.block, userGroupAddition.block])).to.throw(UnsupportedGroupVersion);
+    });
+
+    it('returns users and provisional users when using UserGroupAddition v2 without provisional users', async () => {
+      const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const userGroupAddition = testGenerator.makeUserGroupAdditionV2(userCreation, userGroupCreation, [userCreation2.user], []);
+      const { usersFromHistory, provisionalUsersFromHistory } = getUsersAndProvisionalUsersFromHistoryForUpdate([userGroupCreation.block, userGroupAddition.block]);
+
+      const expectedUsers = [...userGroupAddition.userGroupEntry.encrypted_group_private_encryption_keys_for_users, ...userGroupCreation.userGroupEntry.encrypted_group_private_encryption_keys_for_users];
+      const expectedProvisionalUsers = [];
+
+      expect(usersFromHistory).to.deep.equal(expectedUsers);
+      expect(provisionalUsersFromHistory).to.deep.equal(expectedProvisionalUsers);
+    });
+
+    it('returns users and provisional users when using UserGroupAddition v3', async () => {
+      const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const provisionalResult1 = testGenerator.makeProvisionalUser();
+      const provisionalResult2 = testGenerator.makeProvisionalUser();
+
+      const userGroupAddition = testGenerator.makeUserGroupAdditionV3(userCreation, userGroupCreation, [userCreation2.user], [provisionalResult1.publicProvisionalUser, provisionalResult2.publicProvisionalUser]);
+
+      const { usersFromHistory, provisionalUsersFromHistory } = getUsersAndProvisionalUsersFromHistoryForUpdate([userGroupCreation.block, userGroupAddition.block]);
+
+      const expectedUsers = [...userGroupAddition.userGroupEntry.encrypted_group_private_encryption_keys_for_users, ...userGroupCreation.userGroupEntry.encrypted_group_private_encryption_keys_for_users];
+      // $FlowIgnore provisional users exist
+      const expectedProvisionalUsers = [...userGroupAddition.userGroupEntry.encrypted_group_private_encryption_keys_for_provisional_users];
+      expect(usersFromHistory).to.deep.equal(expectedUsers);
+      expect(provisionalUsersFromHistory).to.deep.equal(expectedProvisionalUsers);
+    });
+
+    it('returns users and provisional users when using UserGroupUpdate', async () => {
+      const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const userCreation3 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const provisionalResult1 = testGenerator.makeProvisionalUser();
+      const provisionalResult2 = testGenerator.makeProvisionalUser();
+
+      // User group creation with user1, user2 and provisionalUser1
+      const userGroupCreation2 = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user, userCreation2.user], [provisionalResult1.publicProvisionalUser]);
+      // User group update with user1, user3 and provisionalUser2
+      const userGroupUpdate = testGenerator.makeUserGroupUpdate(userCreation, userGroupCreation2, [userCreation3.user], [provisionalResult2.publicProvisionalUser], [userCreation2.testUser.publicPermanentIdentity], [provisionalResult1.publicProvisionalIdentity]);
+
+      const { usersFromHistory, provisionalUsersFromHistory } = getUsersAndProvisionalUsersFromHistoryForUpdate([userGroupCreation2.block, userGroupUpdate.block]);
+
+      const expectedUsers = [...userGroupUpdate.userGroupEntry.encrypted_group_private_encryption_keys_for_users];
+      // $FlowIgnore provisional users exist
+      const expectedProvisionalUsers = [...userGroupUpdate.userGroupEntry.encrypted_group_private_encryption_keys_for_provisional_users];
+
+      expect(usersFromHistory).to.deep.equal(expectedUsers);
+      expect(provisionalUsersFromHistory).to.deep.equal(expectedProvisionalUsers);
+    });
+
+    it('returns users and provisional users when using UserGroupAddition v3 after UserGroupUpdate', async () => {
+      const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const userCreation3 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const provisionalResult1 = testGenerator.makeProvisionalUser();
+      const provisionalResult2 = testGenerator.makeProvisionalUser();
+
+      // User group creation with user1, user2 and provisionalUser1
+      const userGroupCreation2 = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user, userCreation2.user], [provisionalResult1.publicProvisionalUser]);
+      // User group update with user1, user3 and provisionalUser2
+      const userGroupUpdate = testGenerator.makeUserGroupUpdate(userCreation, userGroupCreation2, [userCreation3.user], [provisionalResult2.publicProvisionalUser], [userCreation2.testUser.publicPermanentIdentity], [provisionalResult1.publicProvisionalIdentity]);
+      // User group addition with user2 and provisionalUser1
+      const userGroupAddition = testGenerator.makeUserGroupAdditionV3(userCreation, userGroupUpdate, [userCreation2.user], [provisionalResult1.publicProvisionalUser]);
+
+      const { usersFromHistory, provisionalUsersFromHistory } = getUsersAndProvisionalUsersFromHistoryForUpdate([userGroupCreation2.block, userGroupUpdate.block, userGroupAddition.block]);
+
+      const expectedUsers = [...userGroupAddition.userGroupEntry.encrypted_group_private_encryption_keys_for_users, ...userGroupUpdate.userGroupEntry.encrypted_group_private_encryption_keys_for_users];
+      // $FlowIgnore provisional users exist
+      const expectedProvisionalUsers = [...userGroupAddition.userGroupEntry.encrypted_group_private_encryption_keys_for_provisional_users, ...userGroupUpdate.userGroupEntry.encrypted_group_private_encryption_keys_for_provisional_users];
+
+      expect(usersFromHistory).to.deep.equal(expectedUsers);
+      expect(provisionalUsersFromHistory).to.deep.equal(expectedProvisionalUsers);
+    });
+
+    it('returns users and provisional users when using UserGroupAddition v3 after UserGroupUpdate', async () => {
+      const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const userCreation3 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
+      const provisionalResult1 = testGenerator.makeProvisionalUser();
+      const provisionalResult2 = testGenerator.makeProvisionalUser();
+
+      // User group creation with user1, user2 and provisionalUser1
+      const userGroupCreation2 = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user, userCreation2.user], [provisionalResult1.publicProvisionalUser]);
+      // User group update with user1, user3 and provisionalUser2
+      const userGroupUpdate = testGenerator.makeUserGroupUpdate(userCreation, userGroupCreation2, [userCreation3.user], [provisionalResult2.publicProvisionalUser], [userCreation2.testUser.publicPermanentIdentity], [provisionalResult1.publicProvisionalIdentity]);
+      // User group update with user1, user2 and provisionalUser1
+      const userGroupUpdate2 = testGenerator.makeUserGroupUpdate(userCreation, userGroupUpdate, [userCreation2.user], [provisionalResult1.publicProvisionalUser], [userCreation3.testUser.publicPermanentIdentity], [provisionalResult2.publicProvisionalIdentity]);
+
+      const { usersFromHistory, provisionalUsersFromHistory } = getUsersAndProvisionalUsersFromHistoryForUpdate([userGroupCreation2.block, userGroupUpdate.block, userGroupUpdate2.block]);
+
+      const expectedUsers = [...userGroupUpdate2.userGroupEntry.encrypted_group_private_encryption_keys_for_users];
+      // $FlowIgnore provisional users exist
+      const expectedProvisionalUsers = [...userGroupUpdate2.userGroupEntry.encrypted_group_private_encryption_keys_for_provisional_users];
+
+      expect(usersFromHistory).to.deep.equal(expectedUsers);
+      expect(provisionalUsersFromHistory).to.deep.equal(expectedProvisionalUsers);
+    });
+  });
 });

@@ -143,9 +143,8 @@ export class Session extends EventEmitter {
   verifyProvisionalIdentity = (...args: any) => this._forward(this._provisionalIdentityManager, 'verifyProvisionalIdentity', ...args)
 
   createGroup = (...args: any) => this._forward(this._groupManager, 'createGroup', ...args)
+  addGroupMembers = (...args: any) => this._forward(this._groupManager, 'addGroupMembers', ...args)
   updateGroupMembers = (...args: any) => this._forward(this._groupManager, 'updateGroupMembers', ...args)
-
-  findUser = (...args: any) => this._forward(this._userManager, 'findUser', ...args)
 
   createEncryptionSession = (...args: any) => this._forward(this._dataProtector, 'createEncryptionSession', (l) => {
     this.on('status_change', l);

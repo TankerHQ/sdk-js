@@ -407,20 +407,31 @@ export class Tanker extends EventEmitter {
     return this.session.createGroup(users);
   }
 
-  async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd: Array<string> }>): Promise<void> {
+  async updateGroupMembers(groupId: string, args: $Exact<{usersToAdd?: Array<string>, usersToRemove?: Array<string>}>): Promise<void> {
     assertStatus(this.status, statuses.READY, 'update a group');
     if (!args)
-      throw new InvalidArgument('usersToAdd', '{ usersToAdd: Array<string> }', args);
+      throw new InvalidArgument('usersToAdd or usersToRemove', '{ usersToAdd?: Array<string>, usersToRemove?: Array<string> }', args);
 
-    const { usersToAdd } = args;
+    const { usersToAdd, usersToRemove } = args;
 
-    if (!usersToAdd || !(usersToAdd instanceof Array) || usersToAdd.length === 0)
+    if (usersToAdd && !(usersToAdd instanceof Array)) {
       throw new InvalidArgument('usersToAdd', 'Array<string>', usersToAdd);
-    usersToAdd.forEach(user => assertNotEmptyString(user, 'usersToAdd'));
+    }
+
+    if (usersToRemove && !(usersToRemove instanceof Array)) {
+      throw new InvalidArgument('usersToRemove', 'Array<string>', usersToRemove);
+    }
+
+    if ((!usersToAdd || usersToAdd.length === 0) && (!usersToRemove || usersToRemove.length === 0)) {
+      throw new InvalidArgument('usersToAdd or usersToRemove', '{ usersToAdd?: Array<string>, usersToRemove?: Array<string> }', args);
+    }
 
     assertB64StringWithSize(groupId, 'groupId', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
-    return this.session.updateGroupMembers(groupId, usersToAdd);
+    if (!usersToRemove) {
+      return this.session.addGroupMembers(groupId, usersToAdd);
+    }
+    return this.session.updateGroupMembers(groupId, usersToAdd, usersToRemove);
   }
 
   async createEncryptionStream(options: EncryptionOptions = {}): Promise<EncryptionStream> {
