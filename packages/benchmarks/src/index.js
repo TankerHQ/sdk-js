@@ -243,7 +243,7 @@ benchmarkAddGroupMembersWith(1000);
 // PreCond: a session is open and a resource was encrypted
 // PostCond: the resource is shared with the users
 function benchmarkShareWithUsers(count: number) {
-  benchmark(`shareWithUsers_${count}`, async (state) => {
+  benchmark(`share_withUsers_${count}`, async (state) => {
     const publicIdentities = [...Array(count).keys()].map(n => makePublicIdentity(benchmarkAppId, n));
 
     while (state.iter()) {
@@ -293,11 +293,11 @@ function benchmarkShareWithGroup(benchmarkName: string, groupId: string) {
   });
 }
 
-benchmarkShareWithGroup('shareWithGroup_1', '80ngpVLQ8cfglO5cC7I6a2Ph5QRfKPUVkXWOul5e6RM=');
-benchmarkShareWithGroup('shareWithGroup_100', 'XhMfSCnOhMlW/KSt5k33eD/FoGG09MRI/6JT8q/YDK0=');
-benchmarkShareWithGroup('shareWithGroup_1000', 'dzNO6xPpz9r2Wpe2Xxdl+9WiO6E/m8GVhv0RwvUcc0Q=');
-benchmarkShareWithGroup('shareWithGroup_4000', '/2fnEK7f7d82WECEvjvoC3T1DgFR0ZGMZkgJji33FwA=');
+benchmarkShareWithGroup('share_withGroup_1', '80ngpVLQ8cfglO5cC7I6a2Ph5QRfKPUVkXWOul5e6RM=');
+benchmarkShareWithGroup('share_withGroup_100', 'XhMfSCnOhMlW/KSt5k33eD/FoGG09MRI/6JT8q/YDK0=');
+benchmarkShareWithGroup('share_withGroup_1000', 'dzNO6xPpz9r2Wpe2Xxdl+9WiO6E/m8GVhv0RwvUcc0Q=');
+benchmarkShareWithGroup('share_withGroup_4000', '/2fnEK7f7d82WECEvjvoC3T1DgFR0ZGMZkgJji33FwA=');
 
-benchmarkShareWithGroup('shareWithGroupMultiAuthor_100', 'n08iCwU+/QYAPKCqDBPD4dUK2oVyO1V3EwB3fo7Yz6U=');
-benchmarkShareWithGroup('shareWithGroupMultiAuthor_1000', 'XyR77EErpEZ+ZCAjLTOQzUrH5dfck6avsZPLvZ/Ebmc=');
-benchmarkShareWithGroup('shareWithGroupMultiAuthor_4000', 'rD3EO/d4S8dI20aybJUZcGiACV5kD298K8szq6ZWm0w=');
+benchmarkShareWithGroup('share_withGroupMultiAuthor_100', 'n08iCwU+/QYAPKCqDBPD4dUK2oVyO1V3EwB3fo7Yz6U=');
+benchmarkShareWithGroup('share_withGroupMultiAuthor_1000', 'XyR77EErpEZ+ZCAjLTOQzUrH5dfck6avsZPLvZ/Ebmc=');
+benchmarkShareWithGroup('share_withGroupMultiAuthor_4000', 'rD3EO/d4S8dI20aybJUZcGiACV5kD298K8szq6ZWm0w=');
