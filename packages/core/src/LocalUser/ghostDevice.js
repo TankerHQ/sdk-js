@@ -42,7 +42,7 @@ export const ghostDeviceToVerificationKey = (ghostDevice: GhostDevice) => utils.
   privateSignatureKey: utils.toBase64(ghostDevice.privateSignatureKey),
 });
 
-export const ghostDeviceToEncryptedVerificationKey = (ghostDevice: GhostDevice, userSecret: Uint8Array) => encryptionV2.compatEncrypt(userSecret, utils.fromString(ghostDeviceToVerificationKey(ghostDevice)));
+export const ghostDeviceToEncryptedVerificationKey = (ghostDevice: GhostDevice, userSecret: Uint8Array) => encryptionV2.serialize(encryptionV2.encrypt(userSecret, utils.fromString(ghostDeviceToVerificationKey(ghostDevice))));
 
 export const ghostDeviceKeysFromVerificationKey = (verificationKey: b64string): GhostDeviceKeys => {
   const ghostDevice = extractGhostDevice(verificationKey);

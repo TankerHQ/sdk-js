@@ -60,8 +60,3 @@ export const compatDecrypt = (key: Uint8Array, buffer: Uint8Array, additionalDat
     return decrypt(key, unserialize(bufferWithVersion), additionalData);
   }
 };
-
-export const compatEncrypt = (key: Uint8Array, clearData: Uint8Array, additionalData?: Uint8Array) => {
-  const data = encrypt(key, clearData, additionalData);
-  return utils.concatArrays(data.iv, data.encryptedData);
-};

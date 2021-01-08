@@ -122,7 +122,7 @@ export class LocalUserManager extends EventEmitter {
     };
 
     if (verification.email || verification.passphrase || verification.oidcIdToken) {
-      request.encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
+      request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
     }
 
