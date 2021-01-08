@@ -105,6 +105,15 @@ export function equalArray(b1: Uint8Array, b2: Uint8Array): bool {
   return true;
 }
 
+export function containArray(b1: Array<Uint8Array>, b2: Uint8Array) {
+  for (const b of b1) {
+    if (equalArray(b, b2)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function isNullArray(bytes: Uint8Array): bool {
   if (!(bytes instanceof Uint8Array))
     throw new TypeError('"bytes" is not a Uint8Array');
