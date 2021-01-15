@@ -121,7 +121,7 @@ module.exports = (config) => {
     singleRun: true,
 
     // Some tests may be very slow
-    browserNoActivityTimeout: 180000,
-    browserDisconnectTimeout: 175000,
+    browserNoActivityTimeout: 240000,
+    browserDisconnectTimeout: 230000,
   });
 };
