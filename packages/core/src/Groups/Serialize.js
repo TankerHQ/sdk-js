@@ -436,6 +436,19 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   throw new InternalError('Assertion error: wrong type for getGroupEntryFromBlock');
 }
 
+export function getUserGroupEntryVersion(entry: UserGroupEntry): number {
+  if (entry.nature === NATURE.user_group_creation_v1 || entry.nature === NATURE.user_group_addition_v1) {
+    return 1;
+  }
+  if (entry.nature === NATURE.user_group_creation_v2 || entry.nature === NATURE.user_group_addition_v2) {
+    return 2;
+  }
+  if (entry.nature === NATURE.user_group_creation_v3 || entry.nature === NATURE.user_group_addition_v3) {
+    return 3;
+  }
+  throw new InternalError(`Assertion error: invalid user group nature: ${entry.nature}`);
+}
+
 export const getUserGroupCreationBlockSignDataV1 = (record: UserGroupCreationRecordV1): Uint8Array => utils.concatArrays(
   record.public_signature_key,
   record.public_encryption_key,
@@ -560,7 +573,7 @@ export const makeUserGroupCreation = (signatureKeyPair: tcrypto.SodiumKeyPair, e
   return { payload: serializeUserGroupCreationV2(payload), nature: preferredNature(NATURE_KIND.user_group_creation) };
 };
 
-export const makeUserGroupAddition = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
+export const makeUserGroupAdditionV2 = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
   const keysForUsers = users.map(u => {
     const userPublicKey = getLastUserPublicKey(u);
     if (!userPublicKey)
@@ -599,5 +612,49 @@ export const makeUserGroupAddition = (groupId: Uint8Array, privateSignatureKey: 
   const signData = getUserGroupAdditionBlockSignDataV2(payload);
   payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
 
-  return { payload: serializeUserGroupAdditionV2(payload), nature: preferredNature(NATURE_KIND.user_group_addition) };
+  return { payload: serializeUserGroupAdditionV2(payload), nature: NATURE.user_group_addition_v2 };
+};
+
+export const makeUserGroupAdditionV3 = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
+  const keysForUsers = users.map(u => {
+    const userPublicKey = getLastUserPublicKey(u);
+    if (!userPublicKey)
+      throw new InternalError('addToUserGroup: user does not have user keys');
+    return {
+      user_id: u.userId,
+      public_user_encryption_key: userPublicKey,
+      encrypted_group_private_encryption_key: tcrypto.sealEncrypt(privateEncryptionKey, userPublicKey),
+    };
+  });
+
+  const keysForProvisionalUsers = provisionalUsers.map(u => {
+    const preEncryptedKey = tcrypto.sealEncrypt(
+      privateEncryptionKey,
+      u.appEncryptionPublicKey,
+    );
+    const encryptedKey = tcrypto.sealEncrypt(
+      preEncryptedKey,
+      u.tankerEncryptionPublicKey,
+    );
+    return {
+      app_provisional_user_public_signature_key: u.appSignaturePublicKey,
+      tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
+      app_provisional_user_public_encryption_key: u.appEncryptionPublicKey,
+      tanker_provisional_user_public_encryption_key: u.tankerEncryptionPublicKey,
+      encrypted_group_private_encryption_key: encryptedKey,
+    };
+  });
+
+  const payload = {
+    group_id: groupId,
+    previous_group_block: previousGroupBlock,
+    encrypted_group_private_encryption_keys_for_users: keysForUsers,
+    encrypted_group_private_encryption_keys_for_provisional_users: keysForProvisionalUsers,
+    self_signature_with_current_key: new Uint8Array(0),
+  };
+
+  const signData = getUserGroupAdditionBlockSignDataV3(payload);
+  payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
+
+  return { payload: serializeUserGroupAdditionV3(payload), nature: NATURE.user_group_addition_v3 };
 };

@@ -10,7 +10,7 @@ import {
 
 import { type TrustchainCreationEntry, trustchainCreationFromBlock } from '../LocalUser/Serialize';
 import { userEntryFromBlock, type DeviceCreationEntry, type DeviceRevocationEntry } from '../Users/Serialize';
-import { type UserGroupEntry, getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAddition } from '../Groups/Serialize';
+import { type UserGroupEntry, getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV2, makeUserGroupAdditionV3 } from '../Groups/Serialize';
 import { type KeyPublishEntry, getKeyPublishEntryFromBlock, makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
 
 import { hashBlock, createBlock } from '../Blocks/Block';
@@ -364,6 +364,7 @@ class TestGenerator {
       signatureKeyPair,
       encryptionKeyPair,
       lastGroupBlock: userGroupEntry.hash,
+      groupVersion: 2
     };
 
     return {
@@ -373,7 +374,7 @@ class TestGenerator {
     };
   }
 
-  makeUserGroupAddition = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
+  makeUserGroupAdditionV2 = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
     const signatureKeyPair = previousGroup.signatureKeyPair || null;
     const encryptionKeyPair = previousGroup.encryptionKeyPair || null;
     if (!signatureKeyPair || !encryptionKeyPair) {
@@ -381,7 +382,7 @@ class TestGenerator {
     }
 
     this._trustchainIndex += 1;
-    const { payload, nature } = makeUserGroupAddition(
+    const { payload, nature } = makeUserGroupAdditionV2(
       previousGroup.groupId,
       signatureKeyPair.privateKey,
       previousGroup.lastGroupBlock,
@@ -394,6 +395,36 @@ class TestGenerator {
 
     const group = { ...previousGroup };
     group.lastGroupBlock = userGroupEntry.hash;
+
+    return {
+      userGroupEntry,
+      block,
+      group,
+    };
+  }
+
+  makeUserGroupAdditionV3 = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
+    const signatureKeyPair = previousGroup.signatureKeyPair || null;
+    const encryptionKeyPair = previousGroup.encryptionKeyPair || null;
+    if (!signatureKeyPair || !encryptionKeyPair) {
+      throw new Error('This group has no key pairs!');
+    }
+
+    this._trustchainIndex += 1;
+    const { payload, nature } = makeUserGroupAdditionV3(
+      previousGroup.groupId,
+      signatureKeyPair.privateKey,
+      previousGroup.lastGroupBlock,
+      encryptionKeyPair.privateKey,
+      newMembers,
+      provisionalUsers
+    );
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
+    const userGroupEntry = getGroupEntryFromBlock(block);
+
+    const group = { ...previousGroup };
+    group.lastGroupBlock = userGroupEntry.hash;
+    group.groupVersion = 3;
 
     return {
       userGroupEntry,
