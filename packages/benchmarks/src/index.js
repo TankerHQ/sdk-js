@@ -102,6 +102,7 @@ benchmark('stop', async (state) => {
   while (state.iter()) {
     state.pause();
     await tanker.start(identity);
+    await tanker.getDeviceList(); // force a session authentication
     state.unpause();
     await tanker.stop();
   }
