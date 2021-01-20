@@ -133,14 +133,6 @@ describe('BlockVerification', () => {
           'invalid_group_id'
         );
       });
-
-      it('should reject a group addition if the group does match', async () => {
-        group.lastGroupBlock = random(tcrypto.HASH_SIZE);
-        assertFailWithNature(
-          () => verifyUserGroupAddition(userGroupEntry, user.devices[0].devicePublicSignatureKey, group),
-          'invalid_previous_group_block'
-        );
-      });
     });
   };
   describeGroupAdditionTests(2);

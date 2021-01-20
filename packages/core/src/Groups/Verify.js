@@ -63,9 +63,6 @@ export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSigna
   if (!currentGroup)
     throw new InvalidBlockError('invalid_group_id', 'cannot find group id', entry);
 
-  if (!utils.equalArray(currentPayload.previous_group_block, currentGroup.lastGroupBlock))
-    throw new InvalidBlockError('invalid_previous_group_block', 'previous group block does not match for this group id', { entry, currentGroup });
-
   let selfSigBuffer;
   if (entry.nature === NATURE.user_group_addition_v1) {
     const versionedPayload: UserGroupAdditionRecordV1 = (currentPayload: any);
