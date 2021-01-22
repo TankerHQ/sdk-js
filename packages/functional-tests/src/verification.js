@@ -176,6 +176,9 @@ export const generateVerificationTests = (args: TestArgs) => {
       it('fails to verify with a wrong passphrase', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
       });
 
       it('fails to verify without having registered a passphrase', async () => {
@@ -184,6 +187,9 @@ export const generateVerificationTests = (args: TestArgs) => {
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.PreconditionFailed);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
       });
 
       it('can register a verification passphrase, update it, and verify with the new passphrase only', async () => {
@@ -207,18 +213,32 @@ export const generateVerificationTests = (args: TestArgs) => {
         await expect(expectVerification(bobPhone, bobIdentity, { email, verificationCode })).to.be.fulfilled;
       });
 
+      it('fails to register with a wrong verification code', async () => {
+        const verificationCode = await appHelper.getWrongVerificationCode(email);
+        await expect(bobLaptop.registerIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobLaptop.status).to.equal(IDENTITY_REGISTRATION_NEEDED);
+      });
+
       it('fails to verify with a wrong verification code', async () => {
         let verificationCode = await appHelper.getVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         verificationCode = await appHelper.getWrongVerificationCode(email);
         await expect(expectVerification(bobPhone, bobIdentity, { email, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
       });
 
       it('fails to verify without having registered an email address', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const verificationCode = await appHelper.getVerificationCode(email);
         await expect(expectVerification(bobPhone, bobIdentity, { email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
+
+        // status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
       });
     });
 
@@ -248,6 +268,9 @@ export const generateVerificationTests = (args: TestArgs) => {
         jwtBinParts[2][5] += 1; // break signature
         const forgedIdToken = jwtBinParts.map(part => utils.toSafeBase64(part)).join('.').replace(/=/g, '');
         await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: forgedIdToken })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
       });
 
       it('fails to verify a valid token for the wrong user', async () => {
@@ -278,7 +301,7 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         expect(attachResult).to.deep.equal({
-          status: bobLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          status: IDENTITY_VERIFICATION_NEEDED,
           verificationMethod: { type: 'email', email },
         });
 
@@ -302,7 +325,7 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         expect(attachResult).to.deep.equal({
-          status: bobLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          status: IDENTITY_VERIFICATION_NEEDED,
           verificationMethod: { type: 'email', email },
         });
 
@@ -358,6 +381,9 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         it('throws InvalidVerification when using an obviously wrong verification key', async () => {
           await expect(bobPhone.registerIdentity({ verificationKey: 'not_a_verification_key' })).to.be.rejectedWith(errors.InvalidVerification);
+
+          // The status must not change so that retry is possible
+          expect(bobPhone.status).to.equal(IDENTITY_REGISTRATION_NEEDED);
         });
 
         it('throws InvalidVerification when using a corrupt verification key', async () => {
@@ -370,6 +396,8 @@ export const generateVerificationTests = (args: TestArgs) => {
           for (let i = 0; i < badKeys.length; i++) {
             const badKey = badKeys[i];
             await expect(bobPhone.registerIdentity({ verificationKey: badKey }), `bad verification key #${i}`).to.be.rejectedWith(errors.InvalidVerification);
+            // The status must not change so that retry is possible
+            expect(bobPhone.status).to.equal(IDENTITY_REGISTRATION_NEEDED);
           }
         });
       });
@@ -382,10 +410,16 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         it('throws InvalidVerification when using an obviously wrong verification key', async () => {
           await expect(bobPhone.verifyIdentity({ verificationKey: 'not_a_verification_key' })).to.be.rejectedWith(errors.InvalidVerification);
+
+          // The status must not change so that retry is possible
+          expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
         });
 
         it('throws InvalidVerification when using a verification key different from the one used at registration', async () => {
           await expect(bobPhone.verifyIdentity({ verificationKey: verificationKeyNotUsed })).to.be.rejectedWith(errors.InvalidVerification);
+
+          // The status must not change so that retry is possible
+          expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
         });
 
         it('throws InvalidVerification when using a corrupt verification key', async () => {
@@ -398,6 +432,8 @@ export const generateVerificationTests = (args: TestArgs) => {
           for (let i = 0; i < badKeys.length; i++) {
             const badKey = badKeys[i];
             await expect(bobPhone.verifyIdentity({ verificationKey: badKey }), `bad verification key #${i}`).to.be.rejectedWith(errors.InvalidVerification);
+            // The status must not change so that retry is possible
+            expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
           }
         });
       });

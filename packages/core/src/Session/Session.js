@@ -1,7 +1,7 @@
 // @flow
 import EventEmitter from 'events';
 
-import { OperationCanceled, NetworkError, DeviceRevoked, InternalError } from '@tanker/errors';
+import { TankerError, DeviceRevoked, ExpiredVerification, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
 
 import Storage, { type DataStoreOptions } from './Storage';
 import { Client, type ClientOptions } from '../Network/Client';
@@ -39,20 +39,22 @@ export class Session extends EventEmitter {
     this._status = statuses.STOPPED;
 
     this._localUserManager = new LocalUserManager(userData, client, storage.keyStore);
-    this._localUserManager.on('error', (e: Error) => {
+    this._localUserManager.on('error', async (e: Error) => {
       // These are expected errors respectively when no network access and
       // when stopping the session while another API call is in progress.
       if (e instanceof NetworkError || e instanceof OperationCanceled) {
         return;
       }
 
-      if (e instanceof DeviceRevoked) {
-        /* no await */ this._handleDeviceRevocation();
-        return;
+      try {
+        if (e instanceof TankerError)
+          await this._handleUnrecoverableError(e);
+        throw e;
+      } catch (e2) {
+        if (!(e instanceof DeviceRevoked))
+          console.error('Unexpected fatal error caught on the local user manager:', e2);
+        /* noawait */ this.stop();
       }
-
-      console.error('Unexpected fatal error caught on the local user manager:', e);
-      this.emit('fatal_error', e);
     });
 
     this._userManager = new UserManager(client, this._localUserManager.localUser);
@@ -99,20 +101,20 @@ export class Session extends EventEmitter {
     this.removeAllListeners();
   }
 
-  _wipeDeviceAndStop = async () => {
+  _wipeDeviceAndStop = async (isRevocation: bool) => {
     await this._client.close();
     await this._storage.nuke();
     this.status = statuses.STOPPED;
-    this.emit('device_revoked');
+    if (isRevocation) this.emit('device_revoked');
     this.removeAllListeners();
   }
 
   createUser = async (...args: any) => {
-    await this._localUserManager.createUser(...args);
+    await this._forwardAndStopOnFail(this._localUserManager, 'createUser', ...args);
     this.status = statuses.READY;
   }
   createNewDevice = async (...args: any) => {
-    await this._localUserManager.createNewDevice(...args);
+    await this._forwardAndStopOnFail(this._localUserManager, 'createNewDevice', ...args);
     this.status = statuses.READY;
   }
   revokeDevice = (...args: any) => this._forward(this._localUserManager, 'revokeDevice', ...args)
@@ -144,19 +146,33 @@ export class Session extends EventEmitter {
     this.on('status_change', l);
   }, ...args);
 
-  _handleDeviceRevocation = async () => {
+  _assertRevocation = async () => {
     try {
       await this._localUserManager.updateLocalUser();
-      throw new InternalError('Assertion error: the server is rejecting us but we are not revoked');
+      throw new InternalError('The server is rejecting us but we are not revoked');
     } catch (e) {
-      // We confirmed from the blocks returned by the server that we're actually revoked
-      if (e instanceof DeviceRevoked) {
-        await this._wipeDeviceAndStop();
-        return;
+      // We haven't be able to confirm from the blocks returned by the server that we're actually revoked
+      if (!(e instanceof DeviceRevoked)) {
+        throw e;
       }
+    }
+  }
 
+  _assertUnrecoverableError = async (e: TankerError) => {
+    const unrecoverableApiCodes = ['invalid_challenge_signature', 'invalid_challenge_public_key', 'device_not_found'];
+    if (!(e instanceof InternalError) || !unrecoverableApiCodes.includes(e.apiCode)) {
       throw e;
     }
+  }
+
+  _handleUnrecoverableError = async (e: TankerError) => {
+    if (e instanceof DeviceRevoked) {
+      await this._assertRevocation();
+    } else {
+      await this._assertUnrecoverableError(e);
+    }
+
+    await this._wipeDeviceAndStop(e instanceof DeviceRevoked);
   }
 
   _forward = async (manager: any, func: string, ...args: any) => {
@@ -164,8 +180,23 @@ export class Session extends EventEmitter {
       const res = await manager[func].call(manager, ...args);
       return res;
     } catch (e) {
-      if (e instanceof DeviceRevoked) {
-        await this._handleDeviceRevocation();
+      await this._handleUnrecoverableError(e);
+      throw e;
+    }
+  }
+
+  _forwardAndStopOnFail = async (manager: any, func: string, ...args: any) => {
+    try {
+      const res = await this._forward(manager, func, ...args);
+      return res;
+    } catch (e) {
+      try {
+        const retryableErrors = [ExpiredVerification, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed, TooManyAttempts];
+        if (!retryableErrors.some((errClass) => e instanceof errClass)) {
+          await this.stop();
+        }
+      } catch (stopError) {
+        console.error('Unexpected error while stopping the current session', stopError);
       }
       throw e;
     }
