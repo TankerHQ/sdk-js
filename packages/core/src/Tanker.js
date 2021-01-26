@@ -78,9 +78,9 @@ export class Tanker extends EventEmitter {
       assertB64StringWithSize(options.appId, 'options.appId', tcrypto.HASH_SIZE);
       this._trustchainId = ((options.appId: any): string);
     } else if ('trustchainId' in options) {
-      assertB64StringWithSize(options.trustchainId, 'trustchainId.appId', tcrypto.HASH_SIZE);
+      console.warn('The "trustchainId" option is deprecated in favor of "appId", it will be removed in the future');
+      assertB64StringWithSize(options.trustchainId, 'options.trustchainId', tcrypto.HASH_SIZE);
       this._trustchainId = ((options.trustchainId: any): string);
-      console.warn('"trustchainId" option has been deprecated in favor of "appId", it will be removed in the next major release.');
     } else {
       throw new InvalidArgument('options.appId', 'string', options.appId);
     }
@@ -147,10 +147,16 @@ export class Tanker extends EventEmitter {
   }
 
   on(eventName: string, listener: any): any {
+    if (eventName === 'deviceRevoked') {
+      console.warn('The "deviceRevoked" event is deprecated, it will be removed in the future');
+    }
     return super.on(eventName, listener);
   }
 
   once(eventName: string, listener: any): any {
+    if (eventName === 'deviceRevoked') {
+      console.warn('The "deviceRevoked" event is deprecated, it will be removed in the future');
+    }
     return super.once(eventName, listener);
   }
 
@@ -305,6 +311,7 @@ export class Tanker extends EventEmitter {
   }
 
   async revokeDevice(b64DeviceId: b64string): Promise<void> {
+    console.warn('The "revokeDevice" method is deprecated, it will be removed in the future');
     assertStatus(this.status, statuses.READY, 'revoke a device');
     assertB64StringWithSize(b64DeviceId, 'deviceId', tcrypto.HASH_SIZE);
     const deviceId = utils.fromBase64(b64DeviceId);

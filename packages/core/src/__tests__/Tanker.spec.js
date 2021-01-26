@@ -3,7 +3,7 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
-import { expect } from '@tanker/test-utils';
+import { expect, silencer } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
@@ -127,8 +127,10 @@ describe('Tanker', () => {
     });
 
     it('accepts the deprecated trustchainId option', () => {
+      silencer.silence('warn', /deprecated/);
       const { appId: trustchainId, ...defaultOptions } = makeTestTankerOptions();
       expect(() => new Tanker({ trustchainId, ...defaultOptions })).not.to.throw();
+      silencer.restore();
     });
   });
 
@@ -285,10 +287,14 @@ describe('Tanker', () => {
           'AAAA='
         ];
 
+        silencer.silence('warn', /deprecated/);
+
         for (let i = 0; i < badArgs.length; i++) {
           const arg = ((badArgs[i]: any): b64string);
           await expect(tanker.revokeDevice(arg), `revoke test #${i}`).to.be.rejectedWith(InvalidArgument);
         }
+
+        silencer.restore();
       });
 
       it('creating a group should throw if invalid argument given', async () => {
