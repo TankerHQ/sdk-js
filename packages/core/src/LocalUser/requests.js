@@ -10,7 +10,7 @@ type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,
 }> | $Exact<{
   hashed_email: Uint8Array,
-  encrypted_email: Uint8Array,
+  v2_encrypted_email: Uint8Array,
   verification_code: string,
 }> | $Exact<{
   oidc_id_token: string,
@@ -20,7 +20,7 @@ export const formatVerificationRequest = (verification: RemoteVerification, loca
   if (verification.email) {
     return {
       hashed_email: generichash(utils.fromString(verification.email)),
-      encrypted_email: encryptionV2.compatEncrypt(localUser.userSecret, utils.fromString(verification.email)),
+      v2_encrypted_email: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.email))),
       verification_code: verification.verificationCode,
     };
   }

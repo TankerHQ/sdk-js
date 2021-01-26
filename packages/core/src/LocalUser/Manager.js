@@ -75,7 +75,7 @@ export class LocalUserManager extends EventEmitter {
         if (encryptedEmail.length < encryptionV2.overhead) {
           throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
         }
-        method.email = utils.toString(encryptionV2.compatDecrypt(this._localUser.userSecret, encryptedEmail));
+        method.email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
         delete method.encrypted_email;
       } else if (method.type === 'oidc_id_token') {
         return { type: 'oidcIdToken' };
@@ -122,7 +122,7 @@ export class LocalUserManager extends EventEmitter {
     };
 
     if (verification.email || verification.passphrase || verification.oidcIdToken) {
-      request.encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
+      request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
     }
 
