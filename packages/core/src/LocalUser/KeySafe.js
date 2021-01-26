@@ -72,10 +72,9 @@ export async function serializeKeySafe(keySafe: KeySafe, userSecret: Uint8Array)
   return utils.toBase64(encrypted);
 }
 
-export async function deserializeKeySafe(serializedSafe: b64string, userSecret: Uint8Array): Promise<$Exact<{ safe: KeySafe, upgraded: bool }>> {
+export async function deserializeKeySafe(serializedSafe: b64string, userSecret: Uint8Array): Promise<?KeySafe> {
   const encryptedSafe = utils.fromBase64(serializedSafe);
   const safe = await decryptObject(userSecret, encryptedSafe);
-  let upgraded = false;
 
   // Validation
   if (!safe || typeof safe !== 'object') {
@@ -83,11 +82,9 @@ export async function deserializeKeySafe(serializedSafe: b64string, userSecret: 
   }
 
   // Format upgrades
-  if (!safe.provisionalUserKeys || safe.provisionalUserKeys instanceof Array) {
-    // Add an empty default for devices created before SDK v2.0.0
-    safe.provisionalUserKeys = {};
-    upgraded = true;
+  if (!safe.deviceId) {
+    return null;
   }
 
-  return { safe, upgraded };
+  return safe;
 }
