@@ -30,7 +30,7 @@ const makeTanker = (appIdOverride: ?string): Tanker => {
     appId: appIdOverride || appId,
     // $FlowIgnore adapter key is passed as a default option by @tanker/client-browser
     dataStore: { prefix: makePrefix() },
-    sdkType: 'js-benchmarks-web',
+    sdkType: 'js-benchmarks-tests-web',
     url: appdUrl,
   });
 
