@@ -141,7 +141,7 @@ export class LocalUser extends EventEmitter {
   _initializeWithUserBlocks = (userBlocks: Array<string>) => {
     let user = null;
     const encryptedUserKeys: Array<UserKeys | UserKeyPair> = [];
-    let deviceId;
+    let deviceFound = false;
 
     for (const b64Block of userBlocks) {
       const userEntry = userEntryFromBlock(b64Block);
@@ -149,8 +149,8 @@ export class LocalUser extends EventEmitter {
         const deviceCreationEntry = ((userEntry: any): DeviceCreationEntry);
         verifyDeviceCreation(deviceCreationEntry, user, this.trustchainId, this.trustchainPublicKey);
         user = applyDeviceCreationToUser(deviceCreationEntry, user);
-        if (utils.equalArray(this.deviceEncryptionKeyPair.publicKey, deviceCreationEntry.public_encryption_key)) {
-          deviceId = deviceCreationEntry.hash;
+        if (utils.equalArray(this.deviceId, deviceCreationEntry.hash)) {
+          deviceFound = true;
           if (deviceCreationEntry.user_key_pair) {
             encryptedUserKeys.unshift(deviceCreationEntry.user_key_pair);
           }
@@ -171,10 +171,10 @@ export class LocalUser extends EventEmitter {
       }
     }
 
-    if (!deviceId) {
-      throw new InternalError('Assertion error: Cannot decrypt keys: current device not found');
+    if (!deviceFound) {
+      throw new InternalError('Could not find our device in user blocks');
     }
-    const localUserKeys = this._decryptUserKeys(encryptedUserKeys, deviceId);
+    const localUserKeys = this._decryptUserKeys(encryptedUserKeys, this.deviceId);
 
     if (!user) {
       throw new InternalError('Assertion error: No user');
@@ -184,7 +184,6 @@ export class LocalUser extends EventEmitter {
     }
     this._userKeys = localUserKeys.userKeys;
     this._currentUserKey = localUserKeys.currentUserKey;
-    this._deviceId = deviceId;
     this._devices = user.devices;
   }
 
