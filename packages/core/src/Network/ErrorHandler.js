@@ -1,5 +1,5 @@
 // @flow
-import { Conflict, DeviceRevoked, ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
+import { Conflict, DeviceRevoked, ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, UpgradeRequired } from '@tanker/errors';
 
 const apiCodeErrorMap = {
   block_limits_exceeded: PreconditionFailed,
@@ -17,6 +17,7 @@ const apiCodeErrorMap = {
   verification_code_not_found: InvalidVerification,
   verification_method_not_set: PreconditionFailed,
   verification_key_not_found: PreconditionFailed,
+  upgrade_required: UpgradeRequired,
 };
 
 export const genericErrorHandler = (apiMethod: string, apiRoute: string, error: Object) => {
