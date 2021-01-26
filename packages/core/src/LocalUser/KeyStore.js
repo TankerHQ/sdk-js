@@ -92,9 +92,9 @@ export default class KeyStore {
 
   // remove everything except private device keys.
   clearCache(userSecret: Uint8Array): Promise<void> {
-    delete this._safe.deviceId;
     delete this._safe.trustchainPublicKey;
     this._safe.provisionalUserKeys = {};
+    this._safe.localUserKeys = null;
     return this._saveSafe(userSecret);
   }
 
