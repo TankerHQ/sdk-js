@@ -11,7 +11,7 @@ import { type ProvisionalUserKeyPairs } from '../LocalUser/KeySafe';
 import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import LocalUser from '../LocalUser/LocalUser';
 
-export const MAX_GROUP_SIZE = 1000;
+export const MAX_GROUP_MEMBERS_PER_OPERATION = 1000;
 
 export type GroupData = Array<{|
   entry: UserGroupEntry,
@@ -27,8 +27,8 @@ export type GroupDataWithDevices = Array<{|
 export function assertPublicIdentities(publicIdentities: Array<b64string>) {
   if (publicIdentities.length === 0)
     throw new InvalidArgument('publicIdentities', 'non empty Array<b64string>', '[]');
-  if (publicIdentities.length > MAX_GROUP_SIZE)
-    throw new GroupTooBig(`A group cannot have more than ${MAX_GROUP_SIZE} members`);
+  if (publicIdentities.length > MAX_GROUP_MEMBERS_PER_OPERATION)
+    throw new GroupTooBig(`You cannot add more than ${MAX_GROUP_MEMBERS_PER_OPERATION} members at once to a group`);
 }
 
 export function assertExpectedGroups(groups: Array<Group>, expectedGroupIds: Array<Uint8Array>) {
