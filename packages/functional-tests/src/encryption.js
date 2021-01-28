@@ -233,6 +233,15 @@ export const generateEncryptionTests = (args: TestArgs) => {
         expect(decrypted).to.equal(clearText);
       });
 
+      it('shares the same resourceId twice', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+        await bobLaptop.share([resourceId, resourceId], { shareWithUsers: [alicePublicIdentity] });
+
+        const decrypted = await aliceLaptop.decrypt(encrypted);
+        expect(decrypted).to.equal(clearText);
+      });
+
       it('shares an existing resource with a provisional identity', async () => {
         const email = 'alice.test@tanker.io';
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);

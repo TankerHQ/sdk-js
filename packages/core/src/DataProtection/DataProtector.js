@@ -280,7 +280,8 @@ export class DataProtector {
 
   async share(resourceIds: Array<b64string>, sharingOptions: SharingOptions): Promise<void> {
     // nothing to return, just wait for the promises to finish
-    const keys = await Promise.all(resourceIds.map(async (b64ResourceId) => {
+    const uniqueResourceIds = [...new Set(resourceIds)];
+    const keys = await Promise.all(uniqueResourceIds.map(async (b64ResourceId) => {
       const resourceId = utils.fromBase64(b64ResourceId);
       const key = await this._resourceManager.findKeyFromResourceId(resourceId);
       return { resourceId, key };
