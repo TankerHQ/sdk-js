@@ -62,7 +62,7 @@ describe('Local User', () => {
       userKeys: {},
       currentUserKey: null,
       devices: [],
-      deviceId: null,
+      deviceId: deviceCreation2.testDevice.id,
       trustchainPublicKey: null
     };
     localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
@@ -70,7 +70,6 @@ describe('Local User', () => {
 
   it('initializes data correctly', async () => {
     await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block]);
-    expect(localUser.deviceId).to.deep.equal(deviceCreation2.unverifiedDeviceCreation.hash);
     expect(localUser.trustchainPublicKey).to.deep.equal(trustchainCreation.trustchainKeys.publicKey);
   });
 
@@ -99,7 +98,7 @@ describe('Local User', () => {
         userKeys: {},
         currentUserKey: null,
         devices: [],
-        deviceId: null,
+        deviceId: deviceCreation3.testDevice.id,
         trustchainPublicKey: null,
       };
       localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);

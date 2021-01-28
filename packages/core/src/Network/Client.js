@@ -147,12 +147,14 @@ export class Client {
       const { challenge } = await this._cancelable(
         () => this._baseApiCall(`/devices/${urlize(deviceId)}/challenges`, { method: 'POST' })
       )();
+
       const signature = signChallenge(deviceSignatureKeyPair, challenge);
+      const signaturePublicKey = deviceSignatureKeyPair.publicKey;
 
       const { access_token: accessToken, is_revoked: isRevoked } = await this._cancelable(
         () => this._baseApiCall(`/devices/${urlize(deviceId)}/sessions`, {
           method: 'POST',
-          body: JSON.stringify(b64RequestObject({ signature, challenge })),
+          body: JSON.stringify(b64RequestObject({ signature, challenge, signature_public_key: signaturePublicKey })),
           headers: { 'Content-Type': 'application/json' },
         })
       )();

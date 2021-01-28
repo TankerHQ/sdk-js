@@ -69,7 +69,8 @@ export default class KeyStore {
       this._safe.signaturePair = localData.deviceSignatureKeyPair;
     if (localData.deviceEncryptionKeyPair)
       this._safe.encryptionPair = localData.deviceEncryptionKeyPair;
-    this._safe.deviceId = localData.deviceId ? utils.toBase64(localData.deviceId) : null;
+    if (localData.deviceId)
+      this._safe.deviceId = utils.toBase64(localData.deviceId);
     this._safe.devices = localData.devices;
     this._safe.trustchainPublicKey = localData.trustchainPublicKey ? utils.toBase64(localData.trustchainPublicKey) : null;
     return this._saveSafe(userSecret);
@@ -92,9 +93,9 @@ export default class KeyStore {
 
   // remove everything except private device keys.
   clearCache(userSecret: Uint8Array): Promise<void> {
-    delete this._safe.deviceId;
     delete this._safe.trustchainPublicKey;
     this._safe.provisionalUserKeys = {};
+    this._safe.localUserKeys = null;
     return this._saveSafe(userSecret);
   }
 
@@ -123,7 +124,6 @@ export default class KeyStore {
   async initData(userSecret: Uint8Array): Promise<void> {
     let record: Object;
     let safe: ?KeySafe;
-    let upgraded: bool = false;
 
     // Try to get safe from the storage, might not exist yet
     try {
@@ -139,7 +139,7 @@ export default class KeyStore {
     // Try to deserialize the safe
     try {
       if (record) {
-        ({ safe, upgraded } = await deserializeKeySafe(record.encryptedSafe, userSecret));
+        safe = await deserializeKeySafe(record.encryptedSafe, userSecret);
       }
     } catch (e) {
       // Log unexpected error. That said, there's not much that can be done...
@@ -158,10 +158,5 @@ export default class KeyStore {
 
     // Read-only (non writable, non enumerable, non reconfigurable)
     Object.defineProperty(this, '_safe', { value: safe });
-
-    // If the format of the safe has changed, save the upgraded version
-    if (upgraded) {
-      await this._saveSafe(userSecret);
-    }
   }
 }

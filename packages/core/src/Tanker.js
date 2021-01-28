@@ -193,7 +193,6 @@ export class Tanker extends EventEmitter {
 
     // Watch and start the session
     session.on('device_revoked', () => this._deviceRevoked());
-    session.on('fatal_error', () => this.stop());
     session.on('status_change', (s) => this.emit('statusChange', s));
     await session.start();
 
