@@ -177,8 +177,7 @@ export class Session extends EventEmitter {
 
   _forward = async (manager: any, func: string, ...args: any) => {
     try {
-      const res = await manager[func].call(manager, ...args);
-      return res;
+      return await manager[func].call(manager, ...args);
     } catch (e) {
       await this._handleUnrecoverableError(e);
       throw e;
@@ -187,8 +186,7 @@ export class Session extends EventEmitter {
 
   _forwardAndStopOnFail = async (manager: any, func: string, ...args: any) => {
     try {
-      const res = await this._forward(manager, func, ...args);
-      return res;
+      return await this._forward(manager, func, ...args);
     } catch (e) {
       try {
         const retryableErrors = [ExpiredVerification, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed, TooManyAttempts];
