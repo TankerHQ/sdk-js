@@ -366,7 +366,7 @@ export class Client {
   }
 
   getGroupHistories = (query: string): Promise<$Exact<{ histories: Array<b64string> }>> => { // eslint-disable-line arrow-body-style
-    return this._apiCall(`/user-group-histories?${query}`);
+    return this._apiCall(`/user-group-histories?${query}&is_light=true`);
   }
 
   getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<$Exact<{ histories: Array<b64string> }>> => {
