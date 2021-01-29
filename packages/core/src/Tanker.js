@@ -1,6 +1,6 @@
 // @flow
 import EventEmitter from 'events';
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { random, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
@@ -95,6 +95,9 @@ export class Tanker extends EventEmitter {
     this._options = options;
 
     const clientOptions: ClientOptions = {
+      instanceInfo: {
+        id: utils.toBase64(random(16)),
+      },
       sdkInfo: {
         type: options.sdkType,
         version: Tanker.version,
