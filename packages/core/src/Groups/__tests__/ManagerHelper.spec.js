@@ -4,7 +4,8 @@ import { GroupTooBig, InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
 import { MAX_GROUP_MEMBERS_PER_OPERATION, assertPublicIdentities, groupFromUserGroupEntry, groupsFromEntries } from '../ManagerHelper';
-import { type UserGroupCreationRecord, type UserGroupEntry, getUserGroupEntryVersion } from '../Serialize';
+import type { UserGroupCreationRecord, UserGroupEntry } from '../Serialize';
+
 import { type ExternalGroup } from '../types';
 
 import TestGenerator, { type TestDeviceCreation, type TestUserGroup } from '../../__tests__/TestGenerator';
@@ -19,7 +20,6 @@ function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): 
     publicSignatureKey: userGroupCreation.public_signature_key,
     publicEncryptionKey: userGroupCreation.public_encryption_key,
     lastGroupBlock: userGroupEntry.hash,
-    groupVersion: getUserGroupEntryVersion(userGroupEntry),
     encryptedPrivateSignatureKey: userGroupCreation.encrypted_group_private_signature_key,
   };
 }
@@ -27,7 +27,6 @@ function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): 
 function getExternalGroupFromUserGroupAddition(userGroupEntry: UserGroupEntry, previousGroup: ExternalGroup): ExternalGroup {
   const externalGroup: ExternalGroup = {
     ...previousGroup,
-    groupVersion: getUserGroupEntryVersion(userGroupEntry),
     lastGroupBlock: userGroupEntry.hash,
   };
   return externalGroup;

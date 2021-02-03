@@ -436,19 +436,6 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   throw new InternalError('Assertion error: wrong type for getGroupEntryFromBlock');
 }
 
-export function getUserGroupEntryVersion(entry: UserGroupEntry): number {
-  if (entry.nature === NATURE.user_group_creation_v1 || entry.nature === NATURE.user_group_addition_v1) {
-    return 1;
-  }
-  if (entry.nature === NATURE.user_group_creation_v2 || entry.nature === NATURE.user_group_addition_v2) {
-    return 2;
-  }
-  if (entry.nature === NATURE.user_group_creation_v3 || entry.nature === NATURE.user_group_addition_v3) {
-    return 3;
-  }
-  throw new InternalError(`Assertion error: invalid user group nature: ${entry.nature}`);
-}
-
 export const getUserGroupCreationBlockSignDataV1 = (record: UserGroupCreationRecordV1): Uint8Array => utils.concatArrays(
   record.public_signature_key,
   record.public_encryption_key,
@@ -554,6 +541,8 @@ export const makeUserGroupCreation = (signatureKeyPair: tcrypto.SodiumKeyPair, e
     return {
       app_provisional_user_public_signature_key: u.appSignaturePublicKey,
       tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
+      app_provisional_user_public_encryption_key: u.appEncryptionPublicKey,
+      tanker_provisional_user_public_encryption_key: u.tankerEncryptionPublicKey,
       encrypted_group_private_encryption_key: encryptedKey,
     };
   });
@@ -567,10 +556,10 @@ export const makeUserGroupCreation = (signatureKeyPair: tcrypto.SodiumKeyPair, e
     self_signature: new Uint8Array(0),
   };
 
-  const signData = getUserGroupCreationBlockSignDataV2(payload);
+  const signData = getUserGroupCreationBlockSignDataV3(payload);
   payload.self_signature = tcrypto.sign(signData, signatureKeyPair.privateKey);
 
-  return { payload: serializeUserGroupCreationV2(payload), nature: preferredNature(NATURE_KIND.user_group_creation) };
+  return { payload: serializeUserGroupCreationV3(payload), nature: preferredNature(NATURE_KIND.user_group_creation) };
 };
 
 export const makeUserGroupAdditionV2 = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
