@@ -12,8 +12,9 @@ import { b64RequestObject, urlize } from './utils';
 export const defaultApiEndpoint = 'https://api.tanker.io';
 
 export type ClientOptions = {
-  url: string,
+  instanceInfo: { id: string },
   sdkInfo: { type: string, version: string },
+  url: string,
 };
 
 const MAX_QUERY_STRING_ITEMS = 100;
@@ -34,6 +35,7 @@ export class Client {
   declare _cancelationHandle: PromiseWrapper<void>;
   declare _deviceId: Uint8Array | null;
   declare _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
+  declare _instanceId: string;
   declare _isRevoked: bool;
   declare _retryDelayGenerator: DelayGenerator;
   declare _sdkType: string;
@@ -41,7 +43,7 @@ export class Client {
   declare _userId: Uint8Array;
 
   constructor(appId: Uint8Array, userId: Uint8Array, options: ClientOptions) {
-    const { url, sdkInfo } = { url: defaultApiEndpoint, ...options };
+    const { instanceInfo, sdkInfo, url } = { url: defaultApiEndpoint, ...options };
     this._accessToken = '';
     this._apiEndpoint = url;
     this._apiRootPath = `/v2/apps/${urlize(appId)}`;
@@ -49,6 +51,7 @@ export class Client {
     this._cancelationHandle = new PromiseWrapper<void>();
     this._deviceId = null;
     this._deviceSignatureKeyPair = null;
+    this._instanceId = instanceInfo.id;
     this._isRevoked = false;
     this._retryDelayGenerator = exponentialDelayGenerator;
     this._sdkType = sdkInfo.type;
@@ -75,6 +78,7 @@ export class Client {
 
       // $FlowIgnore Only using bare objects as headers so we're fine...
       const headers: { [string]: string } = (init && init.headers) || {};
+      headers['X-Tanker-Instanceid'] = this._instanceId;
       headers['X-Tanker-Sdktype'] = this._sdkType;
       headers['X-Tanker-Sdkversion'] = this._sdkVersion;
 
