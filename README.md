@@ -2,7 +2,7 @@
 [license-link]: https://opensource.org/licenses/Apache-2.0
 
 [travis-badge]: https://img.shields.io/travis/TankerHQ/sdk-js/master.svg?label=Build
-[travis-link]: https://travis-ci.org/TankerHQ/sdk-js
+[travis-link]: https://travis-ci.com/TankerHQ/sdk-js
 
 [codecov-badge]: https://img.shields.io/codecov/c/github/TankerHQ/sdk-js.svg?label=Coverage
 [codecov-link]: https://codecov.io/gh/TankerHQ/sdk-js
