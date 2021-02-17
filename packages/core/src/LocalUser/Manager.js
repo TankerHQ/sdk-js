@@ -181,7 +181,7 @@ export class LocalUserManager extends EventEmitter {
   }
 
   updateLocalUser = async () => {
-    const { root, histories } = await this._client.getUserHistoriesByUserIds([this._localUser.userId]);
+    const { root, histories } = await this._client.getUserHistoriesByUserIds([this._localUser.userId], { isLight: false });
     const localUserBlocks = [root, ...histories];
     this._localUser.initializeWithBlocks(localUserBlocks);
     await this._keyStore.save(this._localUser.localData, this._localUser.userSecret);
