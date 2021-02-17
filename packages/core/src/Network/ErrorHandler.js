@@ -2,7 +2,7 @@
 import { Conflict, DeviceRevoked, ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, UpgradeRequired } from '@tanker/errors';
 
 const apiCodeErrorMap = {
-  block_limits_exceeded: PreconditionFailed,
+  blocked: PreconditionFailed,
   conflict: Conflict,
   device_revoked: DeviceRevoked,
   group_too_big: GroupTooBig,
