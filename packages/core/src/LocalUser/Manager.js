@@ -13,7 +13,7 @@ import type { Verification, VerificationMethod, RemoteVerification } from './typ
 import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
 
-import type { Client } from '../Network/Client';
+import type { Client, PullOptions } from '../Network/Client';
 import { statuses, type Status } from '../Session/status';
 import type { Device } from '../Users/types';
 
@@ -94,7 +94,7 @@ export class LocalUserManager extends EventEmitter {
     this._localUser.deviceEncryptionKeyPair = encryptionKeyPair;
     this._localUser.deviceSignatureKeyPair = signatureKeyPair;
 
-    await this.updateLocalUser();
+    await this.updateLocalUser({ isLight: true });
   }
 
   createUser = async (verification: Verification): Promise<void> => {
@@ -159,7 +159,7 @@ export class LocalUserManager extends EventEmitter {
   }
 
   revokeDevice = async (deviceToRevokeId: Uint8Array): Promise<void> => {
-    await this.updateLocalUser();
+    await this.updateLocalUser({ isLight: false });
 
     const { payload, nature } = makeDeviceRevocation(this._localUser.devices, this._localUser.currentUserKey, deviceToRevokeId);
     const block = this._localUser.makeBlock(payload, nature);
@@ -167,7 +167,7 @@ export class LocalUserManager extends EventEmitter {
   }
 
   listDevices = async (): Promise<Array<Device>> => {
-    await this.updateLocalUser();
+    await this.updateLocalUser({ isLight: false });
     const devices = this._localUser.devices;
     return devices.filter(d => !d.isGhostDevice);
   }
@@ -175,13 +175,16 @@ export class LocalUserManager extends EventEmitter {
   findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair> => {
     const userKey = this._localUser.findUserKey(publicKey);
     if (!userKey) {
-      await this.updateLocalUser();
+      await this.updateLocalUser({ isLight: true });
     }
     return this._localUser.findUserKey(publicKey);
   }
 
-  updateLocalUser = async () => {
-    const { root, histories } = await this._client.getUserHistoriesByUserIds([this._localUser.userId], { isLight: false });
+  updateLocalUser = async (options: PullOptions = {}) => {
+    // To update the local user, we can't just get our user because in light
+    // mode, only the first device will be returned. So we pull by device to get
+    // at least the first device and our device.
+    const { root, histories } = await this._client.getUserHistoriesByDeviceIds([this._localUser.deviceId], options);
     const localUserBlocks = [root, ...histories];
     this._localUser.initializeWithBlocks(localUserBlocks);
     await this._keyStore.save(this._localUser.localData, this._localUser.userSecret);

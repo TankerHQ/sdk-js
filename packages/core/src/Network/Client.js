@@ -283,10 +283,6 @@ export class Client {
   }
 
   getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions) => {
-    if (this._isRevoked && userIds.length === 1 && utils.equalArray(userIds[0], this._userId)) {
-      return this.getRevokedDeviceHistory();
-    }
-
     const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
     const result = { root: '', histories: [] };
@@ -300,6 +296,13 @@ export class Client {
   }
 
   getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions) => {
+    if (!this._deviceId)
+      throw new InternalError('Assertion error: trying to get user histories without a device id');
+
+    if (this._isRevoked && deviceIds.length === 1 && utils.equalArray(deviceIds[0], this._deviceId)) {
+      return this.getRevokedDeviceHistory();
+    }
+
     const urlizedDeviceIds = unique(deviceIds.map(deviceId => urlize(deviceId)));
     const result = { root: '', histories: [] };
     const gotBlocks = new Set();
