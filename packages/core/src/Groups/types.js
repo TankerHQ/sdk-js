@@ -22,6 +22,6 @@ export type InternalGroup = {|
 
 export type Group = InternalGroup | ExternalGroup;
 
-export function isInternalGroup(group: Group): %checks {
+export function isInternalGroup(group: Group): bool %checks {
   return !!group.encryptionKeyPair;
 }
