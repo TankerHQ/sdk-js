@@ -239,7 +239,7 @@ export default class ProvisionalIdentityManager {
   }
 
   async _claimProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity, tankerKeys: TankerProvisionalKeys): Promise<void> {
-    await this._localUserManager.updateLocalUser();
+    await this._localUserManager.updateLocalUser({ isLight: true });
 
     const appProvisionalUserPrivateSignatureKey = utils.fromBase64(provisionalIdentity.private_signature_key);
     const appProvisionalUserPrivateEncryptionKey = utils.fromBase64(provisionalIdentity.private_encryption_key);

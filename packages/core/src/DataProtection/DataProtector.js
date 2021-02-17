@@ -143,7 +143,7 @@ export class DataProtector {
       throw new InternalError('Assertion error: shareWithSelf must be defined here');
     const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, encryptionOptions.shareWithSelf);
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesWithSelf);
-    const users = await this._userManager.getUsers(permanentIdentities);
+    const users = await this._userManager.getUsers(permanentIdentities, { isLight: true });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     if (encryptionOptions.shareWithSelf) {
