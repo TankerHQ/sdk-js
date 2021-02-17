@@ -56,15 +56,15 @@ export type ProvisionalUserKeys = {|
 export type SecretIdentity = SecretPermanentIdentity | SecretProvisionalIdentity;
 export type PublicIdentity = PublicPermanentIdentity | PublicProvisionalIdentity;
 
-function isPermanentIdentity(identity: SecretIdentity | PublicIdentity): %checks {
+function isPermanentIdentity(identity: SecretIdentity | PublicIdentity): bool %checks {
   return identity.target === 'user';
 }
 
-function isPublicPermanentIdentity(identity: SecretPermanentIdentity | PublicPermanentIdentity): %checks {
+function isPublicPermanentIdentity(identity: SecretPermanentIdentity | PublicPermanentIdentity): bool %checks {
   return !('user_secret' in identity);
 }
 
-function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): %checks {
+function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): bool %checks {
   return identity.target === 'email';
 }
 
