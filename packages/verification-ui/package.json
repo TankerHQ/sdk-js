@@ -32,10 +32,10 @@
     "@tanker/errors": "0.0.1",
     "@tanker/http-utils": "0.0.1",
     "dumb-reducer": "^2.0.3",
-    "polished": "^4.0.3",
+    "polished": "^4.1.0",
     "react-hot-loader": "^4.13.0",
     "react-motion": "^0.5.2",
-    "styled-components": "^5.2.0",
+    "styled-components": "^5.2.1",
     "styled-normalize": "^8.0.7"
   },
   "devDependencies": {
