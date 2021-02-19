@@ -9,7 +9,14 @@ import { _deserializeProvisionalIdentity } from '@tanker/identity';
 import { type ClientOptions, defaultApiEndpoint } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 
-import type { Verification, EmailVerification, OIDCVerification, RemoteVerification, VerificationMethod } from './LocalUser/types';
+import type {
+  Verification,
+  EmailVerification,
+  OIDCVerification,
+  RemoteVerification,
+  VerificationMethod,
+  VerificationOptions
+} from './LocalUser/types';
 import { assertVerification } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
 
@@ -17,7 +24,15 @@ import { assertStatus, statusDefs, statuses, type Status } from './Session/statu
 import { Session } from './Session/Session';
 
 import type { OutputOptions, ProgressOptions, EncryptionOptions, SharingOptions } from './DataProtection/options';
-import { defaultDownloadType, extractOutputOptions, extractProgressOptions, extractEncryptionOptions, extractSharingOptions, isObject, isSharingOptionsEmpty } from './DataProtection/options';
+import {
+  defaultDownloadType,
+  extractOutputOptions,
+  extractProgressOptions,
+  extractEncryptionOptions,
+  extractSharingOptions,
+  isObject,
+  isSharingOptionsEmpty
+} from './DataProtection/options';
 import type { EncryptionStream } from './DataProtection/EncryptionStream';
 import type { DecryptionStream } from './DataProtection/DecryptionStream';
 import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/types';
@@ -104,15 +119,23 @@ export class Tanker extends EventEmitter {
       },
       url: defaultApiEndpoint,
     };
-    if (options.url) { clientOptions.url = options.url; }
+    if (options.url) {
+      clientOptions.url = options.url;
+    }
     this._clientOptions = clientOptions;
 
     const datastoreOptions: DataStoreOptions = {
       adapter: options.dataStore.adapter
     };
-    if (options.dataStore.prefix) { datastoreOptions.prefix = options.dataStore.prefix; }
-    if (options.dataStore.dbPath) { datastoreOptions.dbPath = options.dataStore.dbPath; }
-    if (options.dataStore.url) { datastoreOptions.url = options.dataStore.url; }
+    if (options.dataStore.prefix) {
+      datastoreOptions.prefix = options.dataStore.prefix;
+    }
+    if (options.dataStore.dbPath) {
+      datastoreOptions.dbPath = options.dataStore.dbPath;
+    }
+    if (options.dataStore.url) {
+      datastoreOptions.url = options.dataStore.url;
+    }
     this._dataStoreOptions = datastoreOptions;
 
     /* eslint-disable no-underscore-dangle */
@@ -205,16 +228,31 @@ export class Tanker extends EventEmitter {
     return this.status;
   }
 
-  async registerIdentity(verification: Verification): Promise<void> {
+  async registerIdentity(verification: Verification, options?: VerificationOptions): Promise<?string> {
     assertStatus(this.status, statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
     assertVerification(verification);
+
     await this.session.createUser(verification);
+
+    if (options && options.withToken) {
+      return this.session.getSessionCertificateProof(verification);
+    }
   }
 
-  async verifyIdentity(verification: Verification): Promise<void> {
-    assertStatus(this.status, statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
+  async verifyIdentity(verification: Verification, options?: VerificationOptions): Promise<?string> {
+    if (options && options.withToken) {
+      assertStatus(this.status, [statuses.IDENTITY_VERIFICATION_NEEDED, statuses.READY], 'verify an identity with proof');
+    } else {
+      assertStatus(this.status, statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
+    }
     assertVerification(verification);
-    await this.session.createNewDevice(verification);
+    if (this.status === statuses.IDENTITY_VERIFICATION_NEEDED) {
+      await this.session.createNewDevice(verification);
+    }
+
+    if (options && options.withToken) {
+      return this.session.getSessionCertificateProof(verification);
+    }
   }
 
   async setVerificationMethod(verification: RemoteVerification): Promise<void> {
@@ -273,12 +311,15 @@ export class Tanker extends EventEmitter {
   _deviceRevoked = async (): Promise<void> => {
     this.session = null; // the session has already closed itself
     this.emit('deviceRevoked');
-  }
+  };
 
-  async getDeviceList(): Promise<Array<{id: string, isRevoked: bool}>> {
+  async getDeviceList(): Promise<Array<{ id: string, isRevoked: bool }>> {
     assertStatus(this.status, statuses.READY, 'get the device list');
     const devices = await this.session.listDevices();
-    return devices.map(d => ({ id: utils.toBase64(d.deviceId), isRevoked: d.revoked }));
+    return devices.map(d => ({
+      id: utils.toBase64(d.deviceId),
+      isRevoked: d.revoked
+    }));
   }
 
   async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {
@@ -389,7 +430,10 @@ export class Tanker extends EventEmitter {
 
   async decrypt(cipher: Data, options?: $Shape<ProgressOptions> = {}): Promise<string> {
     const progressOptions = extractProgressOptions(options);
-    return utils.toString(await this.decryptData(cipher, { ...progressOptions, type: Uint8Array }));
+    return utils.toString(await this.decryptData(cipher, {
+      ...progressOptions,
+      type: Uint8Array
+    }));
   }
 
   async upload<T: Data>(clearData: Data, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<string> {

@@ -17,6 +17,8 @@ export type OIDCVerification = $Exact<{ oidcIdToken: string }>;
 export type Verification = EmailVerification | PassphraseVerification | KeyVerification | OIDCVerification;
 export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification;
 
+export type VerificationOptions = $Exact<{ withToken?: bool }>;
+
 const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken'];
 const validKeys = [...validMethods, 'verificationCode'];
 
