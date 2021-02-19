@@ -19,6 +19,7 @@ export const NATURE = Object.freeze({
   user_group_addition_v2: 16,
   user_group_creation_v3: 17,
   user_group_addition_v3: 18,
+  session_certificate: 19,
 });
 
 const NATURE_INT = Object.values(NATURE);
@@ -40,6 +41,7 @@ export const NATURE_KIND = Object.freeze({
   user_group_addition: 7,
   key_publish_to_provisional_user: 8,
   provisional_identity_claim: 9,
+  session_certificate: 10,
 });
 
 export type NatureKind = $Values<typeof NATURE_KIND>;
@@ -56,6 +58,7 @@ export function preferredNature(kind: NatureKind): Nature {
     case NATURE_KIND.user_group_creation: return NATURE.user_group_creation_v3;
     case NATURE_KIND.user_group_addition: return NATURE.user_group_addition_v3;
     case NATURE_KIND.provisional_identity_claim: return NATURE.provisional_identity_claim;
+    case NATURE_KIND.session_certificate: return NATURE.session_certificate;
     default: throw new InternalError(`invalid kind: ${kind}`);
   }
 }
@@ -79,6 +82,7 @@ export function natureKind(val: Nature): NatureKind {
     case NATURE.user_group_addition_v2: return NATURE_KIND.user_group_addition;
     case NATURE.user_group_addition_v3: return NATURE_KIND.user_group_addition;
     case NATURE.provisional_identity_claim: return NATURE_KIND.provisional_identity_claim;
+    case NATURE.session_certificate: return NATURE_KIND.session_certificate;
     default: throw new InternalError(`invalid nature: ${val}`);
   }
 }
