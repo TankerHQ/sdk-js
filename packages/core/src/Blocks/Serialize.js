@@ -1,6 +1,7 @@
 // @flow
 import varint from 'varint';
 import { InternalError } from '@tanker/errors';
+import { utils } from '@tanker/crypto';
 
 type Unserializer = (src: Uint8Array, offset: number) => { newOffset: number, [name: string]: any };
 
@@ -11,6 +12,11 @@ export function getArray(src: Uint8Array, offset: number, name: string = 'value'
   const buffer = new Uint8Array(src.subarray(pos, pos + len)); // don't use slice, doesn't work on IE11
   pos += len;
   return { [name]: buffer, newOffset: pos };
+}
+
+export function getString(src: Uint8Array, offset: number, name: string = 'value'): Object {
+  const result = getArray(src, offset, name);
+  return { [name]: utils.toString(result[name]), newOffset: result.newOffset };
 }
 
 export function setStaticArray(src: Uint8Array, dest: Uint8Array, offset: number = 0): number {

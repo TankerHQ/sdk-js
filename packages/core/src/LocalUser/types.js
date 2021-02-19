@@ -3,10 +3,11 @@ import { InvalidArgument } from '@tanker/errors';
 import { assertNotEmptyString } from '@tanker/types';
 
 export type EmailVerificationMethod = $Exact<{ type: 'email', email: string }>;
-type PassphraseVerificationMethod = $Exact<{ type: 'passphrase' }>;
-type KeyVerificationMethod = $Exact<{ type: 'verificationKey' }>;
+export type PassphraseVerificationMethod = $Exact<{ type: 'passphrase' }>;
+export type KeyVerificationMethod = $Exact<{ type: 'verificationKey' }>;
+export type OIDCVerificationMethod = $Exact<{ type: 'oidcIdToken' }>;
 
-export type VerificationMethod = EmailVerificationMethod | PassphraseVerificationMethod | KeyVerificationMethod;
+export type VerificationMethod = EmailVerificationMethod | PassphraseVerificationMethod | KeyVerificationMethod | OIDCVerificationMethod;
 
 export type EmailVerification = $Exact<{ email: string, verificationCode: string }>;
 export type PassphraseVerification = $Exact<{ passphrase: string }>;
