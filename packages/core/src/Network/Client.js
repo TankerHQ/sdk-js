@@ -376,6 +376,25 @@ export class Client {
     });
   }
 
+  getSessionCertificateProof = async (body: any): Promise<b64string> => {
+    const path = `/users/${urlize(this._userId)}/session-certificates`;
+
+    try {
+      const { proof } = await this._apiCall(path, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      return proof;
+    } catch (e) {
+      if (e instanceof TankerError) {
+        if (e.apiCode === 'app_not_found') throw new PreconditionFailed(e);
+        if (e.apiCode === 'user_not_found') throw new PreconditionFailed(e);
+      }
+      throw e;
+    }
+  }
+
   getGroupHistories = (query: string): Promise<$Exact<{ histories: Array<b64string> }>> => { // eslint-disable-line arrow-body-style
     return this._apiCall(`/user-group-histories?${query}&is_light=true`);
   }

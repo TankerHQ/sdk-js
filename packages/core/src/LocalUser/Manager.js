@@ -16,6 +16,7 @@ import type { UserData, DelegationToken } from './UserData';
 import type { Client, PullOptions } from '../Network/Client';
 import { statuses, type Status } from '../Session/status';
 import type { Device } from '../Users/types';
+import { makeSessionCertificate } from './SessionCertificate';
 
 export type PrivateProvisionalKeys = {|
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
@@ -170,6 +171,14 @@ export class LocalUserManager extends EventEmitter {
     await this.updateLocalUser({ isLight: false });
     const devices = this._localUser.devices;
     return devices.filter(d => !d.isGhostDevice);
+  }
+
+  getSessionCertificateProof = async (verification: Verification): Promise<string> => {
+    await this.updateLocalUser();
+
+    const { payload, nature } = makeSessionCertificate(verification);
+    const block = this._localUser.makeBlock(payload, nature);
+    return this._client.getSessionCertificateProof({ session_certificate: block });
   }
 
   findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair> => {
