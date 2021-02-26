@@ -3,7 +3,7 @@ import { InternalError, InvalidArgument } from '@tanker/errors';
 import { generichash, utils, tcrypto, number } from '@tanker/crypto';
 import varint from 'varint';
 import type {
-  VerificationMethod, Verification,
+  VerificationMethod, VerificationWithToken,
 } from './types';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import { NATURE_KIND, preferredNature } from '../Blocks/Nature';
@@ -25,7 +25,7 @@ export type SessionCertificateRecord = {|
   session_public_signature_key: Uint8Array,
 |};
 
-function verificationToVerificationMethod(verification: Verification): VerificationMethod {
+function verificationToVerificationMethod(verification: VerificationWithToken): VerificationMethod {
   if ('email' in verification)
     // $FlowIgnore[prop-missing]
     return { type: 'email', email: verification.email };
@@ -73,7 +73,7 @@ export const unserializeSessionCertificate = (payload: Uint8Array): SessionCerti
 ]);
 
 export const makeSessionCertificate = (
-  verification: Verification
+  verification: VerificationWithToken
 ) => {
   const verifMethod = verificationToVerificationMethod(verification);
   let verifTarget;

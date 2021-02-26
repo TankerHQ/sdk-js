@@ -10,7 +10,6 @@ import type KeyStore from './KeyStore';
 import LocalUser from './LocalUser';
 import { formatVerificationRequest } from './requests';
 import type {
-  Verification,
   VerificationMethod,
   VerificationWithToken,
   RemoteVerificationWithToken
@@ -179,12 +178,16 @@ export class LocalUserManager extends EventEmitter {
     return devices.filter(d => !d.isGhostDevice);
   }
 
-  getSessionCertificateProof = async (verification: Verification): Promise<string> => {
+  getSessionCertificateProof = async (verification: VerificationWithToken): Promise<string> => {
     await this.updateLocalUser();
 
     const { payload, nature } = makeSessionCertificate(verification);
     const block = this._localUser.makeBlock(payload, nature);
-    return this._client.getSessionCertificateProof({ session_certificate: block });
+
+    if (verification.withToken === undefined)
+      throw new InternalError('Cannot get a session certificate without withToken');
+
+    return this._client.getSessionCertificateProof({ session_certificate: block, nonce: verification.withToken.nonce });
   }
 
   findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair> => {
