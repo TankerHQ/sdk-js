@@ -27,8 +27,11 @@ export type SessionCertificateRecord = {|
 
 function verificationToVerificationMethod(verification: VerificationWithToken): VerificationMethod {
   if ('email' in verification)
-    // $FlowIgnore[prop-missing]
-    return { type: 'email', email: verification.email };
+    return {
+      type: 'email',
+      // $FlowIgnore[prop-missing]
+      email: verification.email
+    };
   if ('passphrase' in verification)
     // $FlowIgnore[prop-missing]
     return { type: 'passphrase' };
