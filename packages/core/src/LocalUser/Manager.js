@@ -90,9 +90,13 @@ export class LocalUserManager extends EventEmitter {
     });
   }
 
-  setVerificationMethod = (verification: RemoteVerificationWithToken): Promise<void> => this._client.setVerificationMethod({
-    verification: formatVerificationRequest(verification, this._localUser),
-  });
+  setVerificationMethod = (verification: RemoteVerificationWithToken): Promise<void> => {
+    const requestVerification = formatVerificationRequest(verification, this._localUser);
+    requestVerification.with_token = verification.withToken; // May be undefined
+    return this._client.setVerificationMethod({
+      verification: requestVerification,
+    });
+  }
 
   updateDeviceInfo = async (id: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, signatureKeyPair: tcrypto.SodiumKeyPair): Promise<void> => {
     this._localUser.deviceId = id;
@@ -129,7 +133,7 @@ export class LocalUserManager extends EventEmitter {
     if (verification.email || verification.passphrase || verification.oidcIdToken) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
-      request.verification.withToken = verification.withToken; // May be undefined
+      request.verification.with_token = verification.withToken; // May be undefined
     }
 
     await this._client.createUser(firstDeviceId, firstDeviceSignatureKeyPair, request);
@@ -252,7 +256,7 @@ export class LocalUserManager extends EventEmitter {
     }
     const remoteVerification: RemoteVerificationWithToken = (verification: any);
     const request = { verification: formatVerificationRequest(remoteVerification, this._localUser) };
-    request.verification.withToken = verification.withToken; // May be undefined
+    request.verification.with_token = verification.withToken; // May be undefined
     const encryptedVerificationKey = await this._client.getVerificationKey(request);
     return decryptVerificationKey(encryptedVerificationKey, this._localUser.userSecret);
   }

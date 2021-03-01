@@ -4,19 +4,19 @@ import { encryptionV2, generichash, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type LocalUser from './LocalUser';
-import type { RemoteVerification, RemoteVerificationWithToken, WithTokenOptions } from './types';
+import type { RemoteVerification, RemoteVerificationWithToken } from './types';
 
 type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,
-  ...WithTokenOptions
+  with_token?: {| nonce: string |}
 }> | $Exact<{
   hashed_email: Uint8Array,
   v2_encrypted_email: Uint8Array,
   verification_code: string,
-  ...WithTokenOptions
+  with_token?: {| nonce: string |}
 }> | $Exact<{
   oidc_id_token: string,
-  ...WithTokenOptions
+  with_token?: {| nonce: string |}
 }>;
 
 export const formatVerificationRequest = (verification: RemoteVerification | RemoteVerificationWithToken, localUser: LocalUser): VerificationRequest => {
