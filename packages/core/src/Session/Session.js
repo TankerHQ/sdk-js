@@ -148,7 +148,7 @@ export class Session extends EventEmitter {
 
   _assertRevocation = async () => {
     try {
-      await this._localUserManager.updateLocalUser();
+      await this._localUserManager.updateLocalUser({ isLight: true });
       throw new InternalError('The server is rejecting us but we are not revoked');
     } catch (e) {
       // We haven't be able to confirm from the blocks returned by the server that we're actually revoked

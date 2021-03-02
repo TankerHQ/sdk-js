@@ -49,7 +49,7 @@ export default class GroupManager {
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
-    const users = await this._UserManager.getUsers(permanentIdentities);
+    const users = await this._UserManager.getUsers(permanentIdentities, { isLight: true });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
@@ -80,7 +80,7 @@ export default class GroupManager {
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
-    const users = await this._UserManager.getUsers(permanentIdentities);
+    const users = await this._UserManager.getUsers(permanentIdentities, { isLight: true });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     const { payload, nature } = makeUserGroupAdditionV3(
@@ -161,7 +161,7 @@ export default class GroupManager {
     const entries = blocks.map(block => getGroupEntryFromBlock(block));
 
     const deviceIds = entries.map(entry => entry.author);
-    const devicePublicSignatureKeyMap = await this._UserManager.getDeviceKeysByDevicesIds(deviceIds);
+    const devicePublicSignatureKeyMap = await this._UserManager.getDeviceKeysByDevicesIds(deviceIds, { isLight: true });
 
     return groupsFromEntries(entries, devicePublicSignatureKeyMap, this._localUser, this._provisionalIdentityManager);
   }

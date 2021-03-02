@@ -17,6 +17,10 @@ export type ClientOptions = {
   url: string,
 };
 
+export type PullOptions = {
+  isLight?: bool,
+};
+
 const MAX_QUERY_STRING_ITEMS = 100;
 
 function unique(vals: Array<string>): Array<string> {
@@ -278,16 +282,12 @@ export class Client {
     return { root, histories };
   }
 
-  getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>) => {
-    if (this._isRevoked && userIds.length === 1 && utils.equalArray(userIds[0], this._userId)) {
-      return this.getRevokedDeviceHistory();
-    }
-
+  getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions) => {
     const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
     const result = { root: '', histories: [] };
     for (let i = 0; i < urlizedUserIds.length; i += MAX_QUERY_STRING_ITEMS) {
-      const query = `user_ids[]=${urlizedUserIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&user_ids[]=')}`;
+      const query = `is_light=${options.isLight ? 'true' : 'false'}&user_ids[]=${urlizedUserIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&user_ids[]=')}`;
       const response = await this.getUserHistories(query);
       result.root = response.root;
       result.histories = result.histories.concat(response.histories);
@@ -295,12 +295,19 @@ export class Client {
     return result;
   }
 
-  getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>) => {
+  getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions) => {
+    if (!this._deviceId)
+      throw new InternalError('Assertion error: trying to get user histories without a device id');
+
+    if (this._isRevoked && deviceIds.length === 1 && utils.equalArray(deviceIds[0], this._deviceId)) {
+      return this.getRevokedDeviceHistory();
+    }
+
     const urlizedDeviceIds = unique(deviceIds.map(deviceId => urlize(deviceId)));
     const result = { root: '', histories: [] };
     const gotBlocks = new Set();
     for (let i = 0; i < urlizedDeviceIds.length; i += MAX_QUERY_STRING_ITEMS) {
-      const query = `device_ids[]=${urlizedDeviceIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&device_ids[]=')}`;
+      const query = `is_light=${options.isLight ? 'true' : 'false'}&device_ids[]=${urlizedDeviceIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&device_ids[]=')}`;
       const response = await this.getUserHistories(query);
       result.root = response.root;
       // We may ask for the same user twice, but through two different device
