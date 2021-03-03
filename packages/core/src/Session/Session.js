@@ -125,7 +125,7 @@ export class Session extends EventEmitter {
   getVerificationMethods = (...args: any) => this._forward(this._localUserManager, 'getVerificationMethods', ...args)
   generateVerificationKey = (...args: any) => this._forward(this._localUserManager, 'generateVerificationKey', ...args)
 
-  getSessionCertificateProof = async (...args: any) => this._forward(this._localUserManager, 'getSessionCertificateProof', ...args);
+  getSessionToken = async (...args: any) => this._forward(this._localUserManager, 'getSessionToken', ...args);
 
   upload = (...args: any) => this._forward(this._cloudStorageManager, 'upload', ...args)
   download = (...args: any) => this._forward(this._cloudStorageManager, 'download', ...args)

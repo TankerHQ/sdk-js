@@ -376,16 +376,17 @@ export class Client {
     });
   }
 
-  getSessionCertificateProof = async (body: any): Promise<b64string> => {
+  getSessionToken = async (body: any): Promise<b64string> => {
     const path = `/users/${urlize(this._userId)}/session-certificates`;
 
     try {
-      const { proof } = await this._apiCall(path, {
+      // eslint-disable-next-line camelcase
+      const { session_token: sessionToken } = await this._apiCall(path, {
         method: 'POST',
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },
       });
-      return proof;
+      return sessionToken;
     } catch (e) {
       if (e instanceof TankerError) {
         if (e.apiCode === 'app_not_found') throw new PreconditionFailed(e);

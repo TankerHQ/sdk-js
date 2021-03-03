@@ -182,7 +182,7 @@ export class LocalUserManager extends EventEmitter {
     return devices.filter(d => !d.isGhostDevice);
   }
 
-  getSessionCertificateProof = async (verification: VerificationWithToken): Promise<string> => {
+  getSessionToken = async (verification: VerificationWithToken): Promise<string> => {
     await this.updateLocalUser();
 
     const { payload, nature } = makeSessionCertificate(verification);
@@ -191,7 +191,7 @@ export class LocalUserManager extends EventEmitter {
     if (verification.withToken === undefined)
       throw new InternalError('Cannot get a session certificate without withToken');
 
-    return this._client.getSessionCertificateProof({ session_certificate: block, nonce: verification.withToken.nonce });
+    return this._client.getSessionToken({ session_certificate: block, nonce: verification.withToken.nonce });
   }
 
   findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair> => {

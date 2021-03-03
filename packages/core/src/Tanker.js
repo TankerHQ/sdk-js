@@ -241,7 +241,7 @@ export class Tanker extends EventEmitter {
     await this.session.createUser(verifWithToken);
 
     if (options && options.withToken) {
-      return this.session.getSessionCertificateProof(verifWithToken);
+      return this.session.getSessionToken(verifWithToken);
     }
   }
 
@@ -262,7 +262,7 @@ export class Tanker extends EventEmitter {
     }
 
     if (options && options.withToken) {
-      return this.session.getSessionCertificateProof(verifWithToken);
+      return this.session.getSessionToken(verifWithToken);
     }
   }
 
@@ -282,7 +282,7 @@ export class Tanker extends EventEmitter {
     await this.session.setVerificationMethod(verifWithToken);
 
     if (options && options.withToken) {
-      return this.session.getSessionCertificateProof(verifWithToken);
+      return this.session.getSessionToken(verifWithToken);
     }
   }
 
