@@ -17,6 +17,7 @@ import { generateRevocationTests } from './revocation';
 import { generateSessionTests } from './session';
 import { generateUploadTests } from './upload';
 import { generateVerificationTests } from './verification';
+import { generateSessionTokenTests } from './sessionToken';
 
 export function generateFunctionalTests(
   name: string,
@@ -68,6 +69,7 @@ export function generateFunctionalTests(
     generateRevocationTests(args);
     generateNetworkTests(args);
     generateFakeAuthenticationTests(args);
+    generateSessionTokenTests(args);
   });
 }
 
