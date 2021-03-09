@@ -142,7 +142,7 @@ export class LocalUserManager extends EventEmitter {
 
   createNewDevice = async (verification: VerificationWithToken): Promise<void> => {
     try {
-      const verificationKey = await this._getVerificationKey(verification);
+      const verificationKey = await this.getVerificationKey(verification);
       const ghostDevice = extractGhostDevice(verificationKey);
 
       const ghostSignatureKeyPair = tcrypto.getSignatureKeyPairFromPrivateKey(ghostDevice.privateSignatureKey);
@@ -250,7 +250,7 @@ export class LocalUserManager extends EventEmitter {
     });
   }
 
-  _getVerificationKey = async (verification: VerificationWithToken) => {
+  getVerificationKey = async (verification: VerificationWithToken) => {
     if (verification.verificationKey) {
       return verification.verificationKey;
     }

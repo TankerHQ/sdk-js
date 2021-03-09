@@ -259,6 +259,8 @@ export class Tanker extends EventEmitter {
 
     if (this.status === statuses.IDENTITY_VERIFICATION_NEEDED) {
       await this.session.createNewDevice(verifWithToken);
+    } else {
+      await this.session.getVerificationKey(verification);
     }
 
     if (options && options.withToken) {

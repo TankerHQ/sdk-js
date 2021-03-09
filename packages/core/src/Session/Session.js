@@ -117,6 +117,7 @@ export class Session extends EventEmitter {
     await this._forwardAndStopOnFail(this._localUserManager, 'createNewDevice', ...args);
     this.status = statuses.READY;
   }
+  getVerificationKey = async (...args: any) => this._forward(this._localUserManager, 'getVerificationKey', ...args)
   revokeDevice = (...args: any) => this._forward(this._localUserManager, 'revokeDevice', ...args)
   listDevices = (...args: any) => this._forward(this._localUserManager, 'listDevices', ...args)
   deviceId = () => this._localUserManager.localUser.deviceId

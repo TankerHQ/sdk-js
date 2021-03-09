@@ -206,7 +206,6 @@ export class Client {
 
   getVerificationKey = async (body: any): Promise<Uint8Array> => {
     const path = `/users/${urlize(this._userId)}/verification-key`;
-
     const options = {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),
