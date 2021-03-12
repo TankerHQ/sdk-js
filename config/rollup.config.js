@@ -1,5 +1,5 @@
 // @noflow
-const babel = require('rollup-plugin-babel');
+const babel = require('@rollup/plugin-babel').default;
 const localResolve = require('rollup-plugin-local-resolve');
 
 const copy = require('./rollup-plugin-copy-edit');
@@ -25,7 +25,7 @@ const makeConfig = ({ input, output, target, copies }) => ({
     babel({
       exclude: 'node_modules/**', // only transpile our source code
       babelrc: false,
-      runtimeHelpers: true,
+      babelHelpers: target === 'browser' ? 'runtime' : 'bundled',
       ...getBabelConfig({ target: targetMap[target], react: true }),
     }),
     copy(copies)
