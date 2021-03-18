@@ -4,19 +4,22 @@ import { encryptionV2, generichash, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type LocalUser from './LocalUser';
-import type { RemoteVerification } from './types';
+import type { RemoteVerification, RemoteVerificationWithToken, WithTokenOptions } from './types';
 
 type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,
+  ...WithTokenOptions
 }> | $Exact<{
   hashed_email: Uint8Array,
   v2_encrypted_email: Uint8Array,
   verification_code: string,
+  ...WithTokenOptions
 }> | $Exact<{
   oidc_id_token: string,
+  ...WithTokenOptions
 }>;
 
-export const formatVerificationRequest = (verification: RemoteVerification, localUser: LocalUser): VerificationRequest => {
+export const formatVerificationRequest = (verification: RemoteVerification | RemoteVerificationWithToken, localUser: LocalUser): VerificationRequest => {
   if (verification.email) {
     return {
       hashed_email: generichash(utils.fromString(verification.email)),

@@ -9,7 +9,12 @@ import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './
 import type KeyStore from './KeyStore';
 import LocalUser from './LocalUser';
 import { formatVerificationRequest } from './requests';
-import type { Verification, VerificationMethod, RemoteVerification } from './types';
+import type {
+  Verification,
+  VerificationMethod,
+  VerificationWithToken,
+  RemoteVerificationWithToken
+} from './types';
 import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
 
@@ -86,7 +91,7 @@ export class LocalUserManager extends EventEmitter {
     });
   }
 
-  setVerificationMethod = (verification: RemoteVerification): Promise<void> => this._client.setVerificationMethod({
+  setVerificationMethod = (verification: RemoteVerificationWithToken): Promise<void> => this._client.setVerificationMethod({
     verification: formatVerificationRequest(verification, this._localUser),
   });
 
@@ -98,7 +103,7 @@ export class LocalUserManager extends EventEmitter {
     await this.updateLocalUser({ isLight: true });
   }
 
-  createUser = async (verification: Verification): Promise<void> => {
+  createUser = async (verification: VerificationWithToken): Promise<void> => {
     let ghostDeviceKeys;
     if (verification.verificationKey) {
       try {
@@ -125,13 +130,14 @@ export class LocalUserManager extends EventEmitter {
     if (verification.email || verification.passphrase || verification.oidcIdToken) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
+      request.verification.withToken = verification.withToken; // May be undefined
     }
 
     await this._client.createUser(firstDeviceId, firstDeviceSignatureKeyPair, request);
     await this.updateDeviceInfo(firstDeviceId, firstDeviceEncryptionKeyPair, firstDeviceSignatureKeyPair);
   }
 
-  createNewDevice = async (verification: Verification): Promise<void> => {
+  createNewDevice = async (verification: VerificationWithToken): Promise<void> => {
     try {
       const verificationKey = await this._getVerificationKey(verification);
       const ghostDevice = extractGhostDevice(verificationKey);
@@ -237,12 +243,13 @@ export class LocalUserManager extends EventEmitter {
     });
   }
 
-  _getVerificationKey = async (verification: Verification) => {
+  _getVerificationKey = async (verification: VerificationWithToken) => {
     if (verification.verificationKey) {
       return verification.verificationKey;
     }
-    const remoteVerification: RemoteVerification = (verification: any);
+    const remoteVerification: RemoteVerificationWithToken = (verification: any);
     const request = { verification: formatVerificationRequest(remoteVerification, this._localUser) };
+    request.verification.withToken = verification.withToken; // May be undefined
     const encryptedVerificationKey = await this._client.getVerificationKey(request);
     return decryptVerificationKey(encryptedVerificationKey, this._localUser.userSecret);
   }

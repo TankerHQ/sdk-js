@@ -17,6 +17,10 @@ export type OIDCVerification = $Exact<{ oidcIdToken: string }>;
 export type Verification = EmailVerification | PassphraseVerification | KeyVerification | OIDCVerification;
 export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification;
 
+export type WithTokenOptions = {| withToken?: {| nonce: string |} |};
+export type VerificationWithToken = {| ...Verification, ...WithTokenOptions |};
+export type RemoteVerificationWithToken = {| ...RemoteVerification, ...WithTokenOptions |};
+
 export type VerificationOptions = $Exact<{ withToken?: bool }>;
 
 const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken'];

@@ -15,7 +15,7 @@ import type {
   OIDCVerification,
   RemoteVerification,
   VerificationMethod,
-  VerificationOptions
+  VerificationOptions, VerificationWithToken
 } from './LocalUser/types';
 import { assertVerification } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
@@ -232,37 +232,50 @@ export class Tanker extends EventEmitter {
     assertStatus(this.status, statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
     assertVerification(verification);
 
-    await this.session.createUser(verification);
+    // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
+    const verifWithToken = (verification: VerificationWithToken);
+    if (options && options.withToken) {
+      verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
+    }
+
+    await this.session.createUser(verifWithToken);
 
     if (options && options.withToken) {
-      return this.session.getSessionCertificateProof(verification);
+      return this.session.getSessionCertificateProof(verifWithToken);
     }
   }
 
   async verifyIdentity(verification: Verification, options?: VerificationOptions): Promise<?string> {
+    assertVerification(verification);
+
+    // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
+    const verifWithToken = (verification: VerificationWithToken);
     if (options && options.withToken) {
       assertStatus(this.status, [statuses.IDENTITY_VERIFICATION_NEEDED, statuses.READY], 'verify an identity with proof');
+      verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
     } else {
       assertStatus(this.status, statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
     }
-    assertVerification(verification);
+
     if (this.status === statuses.IDENTITY_VERIFICATION_NEEDED) {
-      await this.session.createNewDevice(verification);
+      await this.session.createNewDevice(verifWithToken);
     }
 
     if (options && options.withToken) {
-      return this.session.getSessionCertificateProof(verification);
+      return this.session.getSessionCertificateProof(verifWithToken);
     }
   }
 
   async setVerificationMethod(verification: RemoteVerification): Promise<void> {
     assertStatus(this.status, statuses.READY, 'set a verification method');
-
     assertVerification(verification);
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
 
-    return this.session.setVerificationMethod(verification);
+    // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
+    const verifWithToken = (verification: VerificationWithToken);
+
+    return this.session.setVerificationMethod(verifWithToken);
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {
