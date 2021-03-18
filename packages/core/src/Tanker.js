@@ -266,7 +266,7 @@ export class Tanker extends EventEmitter {
     }
   }
 
-  async setVerificationMethod(verification: RemoteVerification): Promise<void> {
+  async setVerificationMethod(verification: RemoteVerification, options?: VerificationOptions): Promise<?string> {
     assertStatus(this.status, statuses.READY, 'set a verification method');
     assertVerification(verification);
     if ('verificationKey' in verification)
@@ -275,7 +275,15 @@ export class Tanker extends EventEmitter {
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
     const verifWithToken = (verification: VerificationWithToken);
 
-    return this.session.setVerificationMethod(verifWithToken);
+    if (options && options.withToken) {
+      verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
+    }
+
+    await this.session.setVerificationMethod(verifWithToken);
+
+    if (options && options.withToken) {
+      return this.session.getSessionCertificateProof(verifWithToken);
+    }
   }
 
   async getVerificationMethods(): Promise<Array<VerificationMethod>> {
