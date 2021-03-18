@@ -21,7 +21,7 @@ export type WithTokenOptions = {| withToken?: {| nonce: string |} |};
 export type VerificationWithToken = {| ...Verification, ...WithTokenOptions |};
 export type RemoteVerificationWithToken = {| ...RemoteVerification, ...WithTokenOptions |};
 
-export type VerificationOptions = $Exact<{ withToken?: bool }>;
+export type VerificationOptions = $Exact<{ withSessionToken?: bool }>;
 
 const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken'];
 const validKeys = [...validMethods, 'verificationCode'];
