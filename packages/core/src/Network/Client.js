@@ -377,22 +377,13 @@ export class Client {
 
   getSessionToken = async (body: any): Promise<b64string> => {
     const path = `/users/${urlize(this._userId)}/session-certificates`;
-
-    try {
-      // eslint-disable-next-line camelcase
-      const { session_token: sessionToken } = await this._apiCall(path, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      return sessionToken;
-    } catch (e) {
-      if (e instanceof TankerError) {
-        if (e.apiCode === 'app_not_found') throw new PreconditionFailed(e);
-        if (e.apiCode === 'user_not_found') throw new PreconditionFailed(e);
-      }
-      throw e;
-    }
+    // eslint-disable-next-line camelcase
+    const { session_token: sessionToken } = await this._apiCall(path, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return sessionToken;
   }
 
   getGroupHistories = (query: string): Promise<$Exact<{ histories: Array<b64string> }>> => { // eslint-disable-line arrow-body-style

@@ -234,13 +234,14 @@ export class Tanker extends EventEmitter {
 
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
     const verifWithToken = (verification: VerificationWithToken);
-    if (options && options.withSessionToken) {
+    const withSessionToken = options && options.withSessionToken;
+    if (withSessionToken) {
       verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
     }
 
     await this.session.createUser(verifWithToken);
 
-    if (options && options.withSessionToken) {
+    if (withSessionToken) {
       return this.session.getSessionToken(verifWithToken);
     }
   }
@@ -250,7 +251,8 @@ export class Tanker extends EventEmitter {
 
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
     const verifWithToken = (verification: VerificationWithToken);
-    if (options && options.withSessionToken) {
+    const withSessionToken = options && options.withSessionToken;
+    if (withSessionToken) {
       assertStatus(this.status, [statuses.IDENTITY_VERIFICATION_NEEDED, statuses.READY], 'verify an identity with proof');
       verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
     } else {
@@ -263,7 +265,7 @@ export class Tanker extends EventEmitter {
       await this.session.getVerificationKey(verification);
     }
 
-    if (options && options.withSessionToken) {
+    if (withSessionToken) {
       return this.session.getSessionToken(verifWithToken);
     }
   }
@@ -276,14 +278,15 @@ export class Tanker extends EventEmitter {
 
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
     const verifWithToken = (verification: VerificationWithToken);
+    const withSessionToken = options && options.withSessionToken;
 
-    if (options && options.withSessionToken) {
+    if (withSessionToken) {
       verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
     }
 
     await this.session.setVerificationMethod(verifWithToken);
 
-    if (options && options.withSessionToken) {
+    if (withSessionToken) {
       return this.session.getSessionToken(verifWithToken);
     }
   }

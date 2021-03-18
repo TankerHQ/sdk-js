@@ -6,23 +6,21 @@ import { getPublicIdentity } from '@tanker/identity';
 import { utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
 import type { TestArgs } from './helpers';
-import { appdUrl } from './helpers';
+import { trustchaindUrl } from './helpers';
 
 const { READY } = statuses;
 
 async function checkSessionToken(appHelper, publicIdentity, token, allowedMethods: Array<Object>) {
-  const appId = utils.toSafeBase64(appHelper.appId).replace(/=+$/, '');
-  const url = `${appdUrl}/v2/apps/${appId}/verification/session-token`;
+  const url = `${trustchaindUrl}/verification/session-token`;
   const body = {
+    app_id: utils.toBase64(appHelper.appId),
+    auth_token: appHelper.authToken,
     public_identity: publicIdentity,
     session_token: token,
     allowed_methods: allowedMethods,
   };
   return fetch(url, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${appHelper.authToken}`,
-    },
     body: JSON.stringify(body)
   });
 }
@@ -99,8 +97,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
       const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
         type: 'oidc_id_token',
       }, {
-        type: 'email',
-        email: 'invalid@example.org'
+        type: 'passphrase',
       }, {
         type: 'email',
         email,
