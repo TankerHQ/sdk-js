@@ -15,9 +15,9 @@ import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import GroupManager from '../Groups/Manager';
 import UserManager from '../Users/Manager';
 
-import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH } from './types';
+import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH, getClearSize } from './types';
 import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
-import type { Resource } from './types';
+import type { Resource, EncryptionFormatDescription } from './types';
 
 import { type User, getLastUserPublicKey } from '../Users/types';
 import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
@@ -183,7 +183,7 @@ export class DataProtector {
     return castClearData;
   }
 
-  async _streamDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async _streamDecryptData<T: Data>(encryptedData: Data, encryptionFormat: EncryptionFormatDescription, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const slicer = new SlicerStream({ source: encryptedData });
     const decryptor = await this.createDecryptionStream();
     const merger = new MergerStream(outputOptions);
@@ -192,7 +192,7 @@ export class DataProtector {
 
     decryptor.on('initialized', () => {
       const encryptedSize = getDataLength(encryptedData);
-      const clearSize = decryptor.getClearSize(encryptedSize);
+      const clearSize = getClearSize({ ...encryptionFormat, encryptedChunkSize: decryptor.encryptedChunkSize() }, encryptedSize);
       progressHandler.start(clearSize);
     });
 
@@ -206,10 +206,10 @@ export class DataProtector {
 
   async decryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const leadingBytes = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
-    const encryption = extractEncryptionFormat(leadingBytes);
+    const encryptionFormat = extractEncryptionFormat(leadingBytes);
 
-    if (encryption.features.chunks)
-      return this._streamDecryptData(encryptedData, outputOptions, progressOptions);
+    if (encryptionFormat.features.chunks)
+      return this._streamDecryptData(encryptedData, { version: encryptionFormat.version }, outputOptions, progressOptions);
 
     return this._simpleDecryptData(encryptedData, outputOptions, progressOptions);
   }

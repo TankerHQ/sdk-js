@@ -4,6 +4,8 @@ import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
 
+import { extractEncryptionFormat } from './types';
+
 export type ResourceIdKeyMapper = {
   findKey: (Uint8Array) => Promise<Key>
 };
@@ -41,14 +43,76 @@ export class DecryptionStream extends Transform {
     };
   }
 
+  encryptedChunkSize(): number {
+    return this._state.maxEncryptedChunkSize;
+  }
+
   async _initializeStreams(headOfEncryptedData: Uint8Array) {
+    let encryption;
+    try {
+      encryption = extractEncryptionFormat(headOfEncryptedData);
+    } catch (e) {
+      throw new InvalidArgument('encryptedData', e, headOfEncryptedData);
+    }
+
+    if (encryption.features.chunks) {
+      await this._initializeStreamDecryption(headOfEncryptedData);
+    } else {
+      await this._initializeSimpleDecryption();
+    }
+
+    this._bindStreams();
+    this._state.initialized = true;
+    this.emit('initialized');
+  }
+
+  _bindStreams() {
+    this._decryptionStream.on('data', (data) => this.push(data));
+    [this._resizerStream, this._decryptionStream].forEach((stream) => stream.on('error', (error) => this.destroy(error)));
+
+    this._resizerStream.pipe(this._decryptionStream);
+  }
+
+  async _initializeSimpleDecryption() {
+    // buffering input bytes until every byte is received
+    this._resizerStream = new ResizerStream(Number.MAX_SAFE_INTEGER);
+
+    this._decryptionStream = new Transform({
+      writableHighWaterMark: 1,
+      writableObjectMode: true,
+      readableHighWaterMark: 1,
+      readableObjectMode: true,
+
+      // transform will only be called once when every data has been received
+      transform: async (encryptedChunk, encoding, done) => {
+        const encryption = extractEncryptionFormat(encryptedChunk);
+        const resourceId = encryption.extractResourceId(encryptedChunk);
+        const key = await this._mapper.findKey(resourceId);
+
+        let clearData;
+
+        try {
+          // $FlowIgnore Already checked we are using a simple encryption
+          clearData = encryption.decrypt(key, encryption.unserialize(encryptedChunk));
+          this._decryptionStream.push(clearData);
+        } catch (error) {
+          const b64ResourceId = utils.toBase64(resourceId);
+          done(new DecryptionFailed({ error, b64ResourceId }));
+          return;
+        }
+        done();
+      },
+    });
+  }
+
+  async _initializeStreamDecryption(headOfEncryptedData: Uint8Array) {
     let encryptedChunkSize;
     let resourceId;
 
     try {
       ({ encryptedChunkSize, resourceId } = encryptionV4.unserialize(headOfEncryptedData));
     } catch (e) {
-      throw new InvalidArgument('encryptedData', e, headOfEncryptedData);
+      throw new InvalidArgument('encryptedData is illformed for stream decryption');
     }
 
     const key = await this._mapper.findKey(resourceId);
@@ -71,7 +135,8 @@ export class DecryptionStream extends Transform {
           const clearData = encryptionV4.decrypt(key, this._state.index, encryptionV4.unserialize(encryptedChunk));
           this._decryptionStream.push(clearData);
         } catch (error) {
-          return done(new DecryptionFailed({ error, b64ResourceId }));
+          done(new DecryptionFailed({ error, b64ResourceId }));
+          return;
         }
         this._state.lastEncryptedChunkSize = encryptedChunk.length;
         this._state.index += 1; // safe as long as index < 2^53
@@ -88,31 +153,24 @@ export class DecryptionStream extends Transform {
         done();
       },
     });
-
-    const forwardData = (data) => this.push(data);
-    this._decryptionStream.on('data', forwardData);
-    const forwardError = (error) => this.emit('error', error);
-    [this._resizerStream, this._decryptionStream].forEach((stream) => stream.on('error', forwardError));
-
-    this._resizerStream.pipe(this._decryptionStream);
-
-    this._state.initialized = true;
-    this.emit('initialized');
   }
 
   async _transform(encryptedData: Uint8Array, encoding: ?string, done: DoneCallback) {
-    if (!(encryptedData instanceof Uint8Array))
-      return done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
+    if (!(encryptedData instanceof Uint8Array)) {
+      done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
+      return;
+    }
 
     if (!this._state.initialized) {
       try {
         await this._initializeStreams(encryptedData);
       } catch (err) {
-        return done(err);
+        done(err);
+        return;
       }
     }
 
-    this._resizerStream.write(encryptedData, done);
+    this._resizerStream.write(encryptedData, encoding, done);
   }
 
   _flush(done: DoneCallback) {
@@ -122,12 +180,7 @@ export class DecryptionStream extends Transform {
       return;
     }
 
-    this._decryptionStream.on('end', done);
+    this._decryptionStream.once('end', done);
     this._resizerStream.end();
   }
-
-  getClearSize = (encryptedSize: number): number => encryptionV4.getClearSize(
-    encryptedSize,
-    this._state.maxEncryptedChunkSize,
-  );
 }

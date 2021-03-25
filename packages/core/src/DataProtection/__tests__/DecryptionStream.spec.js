@@ -256,7 +256,7 @@ describe('DecryptionStream', () => {
     });
 
     it('throws InvalidArgument when the header is corrupted', async () => {
-      chunks[0][0] += 1;
+      chunks[0][0] = 255; // unknown version number
       stream.write(chunks[0]);
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });

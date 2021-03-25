@@ -54,7 +54,8 @@ export class EncryptionStream extends Transform {
           const encryptedChunk = this._encryptChunk(clearData);
           this._encryptionStream.push(encryptedChunk);
         } catch (err) {
-          return done(err);
+          done(err);
+          return;
         }
         done();
       },
@@ -66,18 +67,16 @@ export class EncryptionStream extends Transform {
             const encryptedChunk = this._encryptChunk(new Uint8Array(0));
             this._encryptionStream.push(encryptedChunk);
           } catch (err) {
-            return done(err);
+            done(err);
+            return;
           }
         }
         done();
       },
     });
 
-    const forwardData = (data) => this.push(data);
-    this._encryptionStream.on('data', forwardData);
-    const forwardError = (error) => this.emit('error', error);
-    [this._resizerStream, this._encryptionStream].forEach((stream) => stream.on('error', forwardError));
-
+    this._encryptionStream.on('data', (data) => this.push(data));
+    [this._resizerStream, this._encryptionStream].forEach((stream) => stream.on('error', (error) => this.destroy(error)));
     this._resizerStream.pipe(this._encryptionStream);
   }
 
@@ -92,13 +91,14 @@ export class EncryptionStream extends Transform {
   _transform(clearData: Uint8Array, encoding: ?string, done: DoneCallback) {
     if (!(clearData instanceof Uint8Array)) {
       done(new InvalidArgument('clearData', 'Uint8Array', clearData));
-    } else {
-      this._resizerStream.write(clearData, encoding, done);
+      return;
     }
+
+    this._resizerStream.write(clearData, encoding, done);
   }
 
   _flush(done: DoneCallback) {
-    this._encryptionStream.on('end', done);
+    this._encryptionStream.once('end', done);
     this._resizerStream.end();
   }
 
