@@ -10,6 +10,7 @@ const lazypipe = require('lazypipe');
 const inky = require('inky');
 const fs = require('fs');
 const siphon = require('siphon-media-query');
+const { sass } = require('@mr-hope/gulp-sass');
 
 const $ = plugins();
 
@@ -45,14 +46,14 @@ function resetPages(done) {
 }
 
 // Compile Sass into CSS
-function sass() {
+function buildSass() {
   return gulp
     .src('src/assets/scss/app.scss')
     .pipe($.if(!PRODUCTION, $.sourcemaps.init()))
     .pipe(
-      $.sass({
+      sass({
         includePaths: ['../../node_modules/foundation-emails/scss'],
-      }).on('error', $.sass.logError),
+      }).on('error', sass.logError),
     )
     .pipe($.if(!PRODUCTION, $.sourcemaps.write()))
     .pipe(gulp.dest('dist/css'));
@@ -120,12 +121,12 @@ function server(done) {
 function watch() {
   gulp.watch('src/pages/**/*.html').on('change', gulp.series(pages, inline, browser.reload));
   gulp.watch(['src/layouts/**/*', 'src/partials/**/*']).on('change', gulp.series(resetPages, pages, inline, browser.reload));
-  gulp.watch(['../scss/**/*.scss', 'src/assets/scss/**/*.scss']).on('change', gulp.series(resetPages, sass, pages, inline, browser.reload));
+  gulp.watch(['../scss/**/*.scss', 'src/assets/scss/**/*.scss']).on('change', gulp.series(resetPages, buildSass, pages, inline, browser.reload));
   gulp.watch('src/assets/img/**/*').on('change', gulp.series(images, browser.reload));
 }
 
 // Build the "dist" folder by running all of the above tasks
-gulp.task('build', gulp.series(clean, pages, sass, images, inline));
+gulp.task('build', gulp.series(clean, pages, buildSass, images, inline));
 
 // Build emails, run the server, and watch for file changes
 gulp.task('default', gulp.series('build', server, watch));
