@@ -19,6 +19,7 @@ async function checkSessionToken(appHelper, publicIdentity, token, allowedMethod
     session_token: token,
     allowed_methods: allowedMethods,
   };
+  console.log(JSON.stringify(body));
   return fetch(url, {
     method: 'POST',
     body: JSON.stringify(body)
@@ -26,7 +27,7 @@ async function checkSessionToken(appHelper, publicIdentity, token, allowedMethod
 }
 
 export const generateSessionTokenTests = (args: TestArgs) => {
-  describe('session token (2FA)', () => {
+  describe.only('session token (2FA)', () => {
     let bobLaptop;
     let bobIdentity;
     let bobPublicIdentity;

@@ -17,7 +17,7 @@ import type {
   VerificationMethod,
   VerificationOptions, VerificationWithToken
 } from './LocalUser/types';
-import { assertVerification } from './LocalUser/types';
+import { assertVerification, assertVerificationOptions } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
 
 import { assertStatus, statusDefs, statuses, type Status } from './Session/status';
@@ -231,6 +231,7 @@ export class Tanker extends EventEmitter {
   async registerIdentity(verification: Verification, options?: VerificationOptions): Promise<?string> {
     assertStatus(this.status, statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
     assertVerification(verification);
+    assertVerificationOptions(options);
 
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
     const verifWithToken = (verification: VerificationWithToken);
@@ -248,6 +249,7 @@ export class Tanker extends EventEmitter {
 
   async verifyIdentity(verification: Verification, options?: VerificationOptions): Promise<?string> {
     assertVerification(verification);
+    assertVerificationOptions(options);
 
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
     const verifWithToken = (verification: VerificationWithToken);
@@ -273,6 +275,7 @@ export class Tanker extends EventEmitter {
   async setVerificationMethod(verification: RemoteVerification, options?: VerificationOptions): Promise<?string> {
     assertStatus(this.status, statuses.READY, 'set a verification method');
     assertVerification(verification);
+    assertVerificationOptions(options);
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
 
