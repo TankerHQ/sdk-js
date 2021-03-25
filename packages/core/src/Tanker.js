@@ -237,6 +237,8 @@ export class Tanker extends EventEmitter {
     const verifWithToken = (verification: VerificationWithToken);
     const withSessionToken = options && options.withSessionToken;
     if (withSessionToken) {
+      if ('verificationKey' in verification)
+        throw new InvalidArgument('verification', 'cannot get a session token for a verification key', verification);
       verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
     }
 
@@ -256,6 +258,8 @@ export class Tanker extends EventEmitter {
     const withSessionToken = options && options.withSessionToken;
     if (withSessionToken) {
       assertStatus(this.status, [statuses.IDENTITY_VERIFICATION_NEEDED, statuses.READY], 'verify an identity with proof');
+      if ('verificationKey' in verification)
+        throw new InvalidArgument('verification', 'cannot get a session token for a verification key', verification);
       verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
     } else {
       assertStatus(this.status, statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
