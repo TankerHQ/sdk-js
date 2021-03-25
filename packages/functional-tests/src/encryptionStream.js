@@ -3,6 +3,7 @@ import { errors } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
+import { MergerStream, Readable, Writable } from '@tanker/stream-base';
 
 import type { TestArgs } from './helpers';
 
@@ -21,6 +22,14 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
       stream.on('data', data => result.push(data));
       stream.on('end', () => resolve(result));
       stream.on('error', reject);
+    });
+
+    // copy paste of the same function from core/src/CloudStorage/Manager.js
+    const pipeStreams = (
+      { streams, resolveEvent }: { streams: Array<Readable | Writable>, resolveEvent: string }
+    ) => new Promise((resolve, reject) => {
+      streams.forEach(stream => stream.on('error', reject));
+      streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
     });
 
     const setupTestData = () => {
@@ -150,6 +159,45 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
         encryptor.pipe(decryptor);
 
         await expect(watchPromise).to.be.rejectedWith(errors.InvalidArgument);
+      });
+    });
+
+    describe('DecryptionStream compatibility', () => {
+      it('can decrypt a simple encrypted resource', async () => {
+        const protectedData = await aliceLaptop.encryptData(smallClearData, { type: Uint8Array });
+        const decryptor = await aliceLaptop.createDecryptionStream();
+        const merger = new MergerStream({ type: Uint8Array });
+
+        decryptor.write(protectedData);
+        decryptor.end();
+
+        const data = await pipeStreams({ resolveEvent: 'data', streams: [decryptor, merger] });
+        expect(data).to.deep.equal(smallClearData);
+      });
+    });
+
+    describe('EncryptionStream compatibility', () => {
+      const createAliceStreamEncryptedData = async (data: Uint8Array) => {
+        const encryptor = await aliceLaptop.createEncryptionStream();
+        encryptor.write(data);
+        encryptor.end();
+
+        const merger = new MergerStream({ type: Uint8Array });
+        return pipeStreams({ resolveEvent: 'data', streams: [encryptor, merger] });
+      };
+
+      it('can encrypt for the decryptData function', async () => {
+        const encryptedData = await createAliceStreamEncryptedData(smallClearData);
+        const decryptedData = await aliceLaptop.decryptData(encryptedData, { type: Uint8Array });
+        expect(decryptedData).to.deep.equal(smallClearData);
+      });
+
+      it('can encrypt data for the decrypt function', async () => {
+        const str = 'hello';
+
+        const encryptedData = await createAliceStreamEncryptedData(utils.fromString(str));
+        const decryptedData = await aliceLaptop.decrypt(encryptedData);
+        expect(decryptedData).to.deep.equal(str);
       });
     });
   });
