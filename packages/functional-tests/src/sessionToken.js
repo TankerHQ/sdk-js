@@ -1,5 +1,5 @@
 // @flow
-import { statuses } from '@tanker/core';
+import { errors } from '@tanker/core';
 import { expect, uuid } from '@tanker/test-utils';
 
 import { getPublicIdentity } from '@tanker/identity';
@@ -7,8 +7,6 @@ import { utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
 import type { TestArgs } from './helpers';
 import { trustchaindUrl } from './helpers';
-
-const { READY } = statuses;
 
 async function checkSessionToken(appHelper, publicIdentity, token, allowedMethods: Array<Object>) {
   const url = `${trustchaindUrl}/verification/session-token`;
@@ -19,7 +17,6 @@ async function checkSessionToken(appHelper, publicIdentity, token, allowedMethod
     session_token: token,
     allowed_methods: allowedMethods,
   };
-  console.log(JSON.stringify(body));
   return fetch(url, {
     method: 'POST',
     body: JSON.stringify(body)
@@ -27,7 +24,7 @@ async function checkSessionToken(appHelper, publicIdentity, token, allowedMethod
 }
 
 export const generateSessionTokenTests = (args: TestArgs) => {
-  describe.only('session token (2FA)', () => {
+  describe('session token (2FA)', () => {
     let bobLaptop;
     let bobIdentity;
     let bobPublicIdentity;
@@ -55,9 +52,15 @@ export const generateSessionTokenTests = (args: TestArgs) => {
     it('can get a session token after registerIdentity', async () => {
       const email = 'john.doe@tanker.io';
       const verificationCode = await appHelper.getVerificationCode(email);
-
       const token = await bobLaptop.registerIdentity({ email, verificationCode }, { withSessionToken: true });
-      expect(token).to.be.a('string');
+
+      const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
+        type: 'email',
+        email,
+      }]);
+      expect(response.status).to.eq(200);
+      const result = await response.json();
+      expect(result.verification_method).to.eq('email');
     });
 
     it('can use setVerificationMethod to get a session token', async () => {
@@ -66,21 +69,20 @@ export const generateSessionTokenTests = (args: TestArgs) => {
       const email = 'john.doe@tanker.io';
       const verificationCode = await appHelper.getVerificationCode(email);
       const token = await bobLaptop.setVerificationMethod({ email, verificationCode }, { withSessionToken: true });
-      expect(token).to.be.a('string');
+
+      const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
+        type: 'email',
+        email,
+      }]);
+      expect(response.status).to.eq(200);
+      const result = await response.json();
+      expect(result.verification_method).to.eq('email');
     });
 
     it('can use verifyIdentity to get a session token when Ready', async () => {
       const passphrase = 'Observers disagree about the lengths of objects';
       await bobLaptop.registerIdentity({ passphrase });
-      expect(bobLaptop.status).to.equal(READY);
-
       const token = await bobLaptop.verifyIdentity({ passphrase }, { withSessionToken: true });
-      expect(token).to.be.a('string');
-    });
-
-    it('can check a session token returned by registerIdentity', async () => {
-      const passphrase = 'The ladder will not be able to fit';
-      const token = await bobLaptop.registerIdentity({ passphrase }, { withSessionToken: true });
 
       const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
         type: 'passphrase',
