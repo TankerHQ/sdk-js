@@ -12,7 +12,7 @@ import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProte
 import type { EncryptionFormatDescription, Resource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
-import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
+import { defaultDownloadType } from '../DataProtection/options';
 import type { OutputOptions, ProgressOptions, EncryptionOptions } from '../DataProtection/options';
 import { UploadStream } from './UploadStream';
 import { DownloadStream } from './DownloadStream';
@@ -55,89 +55,26 @@ export class CloudStorageManager {
     return JSON.parse(jsonMetadata);
   }
 
-  async upload(clearData: Data, encryptionOptions: EncryptionOptions, resourceMetadata: ResourceMetadata, progressOptions: ProgressOptions): Promise<string> {
-    const encryptor = await this._dataProtector.createEncryptionStream(encryptionOptions);
-    const { _resourceId: resourceId, _key: key } = encryptor;
-    const b64ResourceId = utils.toBase64(resourceId);
-
+  async upload(clearData: Data, encryptionOptions: EncryptionOptions, resourceMetadata: ResourceMetadata, progressOptions: ProgressOptions): Promise<b64string> {
     const totalClearSize = getDataLength(clearData);
-    const totalEncryptedSize = encryptor.getEncryptedSize(totalClearSize);
-
-    const metadata: $Shape<Metadata> = {
-      ...resourceMetadata,
-      encryptionFormat: getStreamEncryptionFormatDescription(),
-    };
-
-    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, { resourceId, key });
-
-    const {
-      urls,
-      headers,
-      service,
-      recommended_chunk_size: recommendedChunkSize
-    } = await this._client.getFileUploadURL(resourceId, encryptedMetadata, totalEncryptedSize);
-
-    if (!streamCloudStorage[service])
-      throw new InternalError(`unsupported cloud storage service: ${service}`);
-
-    const streamService = streamCloudStorage[service];
-    const { UploadStream: CloudUploadStream } = streamService;
-
     const slicer = new SlicerStream({ source: clearData });
-    const uploader = new CloudUploadStream(urls, headers, totalEncryptedSize, recommendedChunkSize);
-
-    const progressHandler = new ProgressHandler(progressOptions).start(totalEncryptedSize);
-    uploader.on('uploaded', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
-
-    const streams = [slicer, encryptor];
-
-    // Some version of Edge (e.g. version 18) fail to handle the 308 HTTP status used by
-    // GCS in a non-standard way (no redirection expected) when uploading in chunks. So we
-    // add a merger stream before the uploader to ensure there's a single upload request
-    // returning the 200 HTTP status.
-    if (service === 'GCS' && isEdge()) {
-      const merger = new MergerStream({ type: Uint8Array });
-      streams.push(merger);
-    } else if (service === 'S3') {
-      const resizer = new ResizerStream(recommendedChunkSize);
-      streams.push(resizer);
-    }
-
-    streams.push(uploader);
+    const uploadStream = await this.createUploadStream(totalClearSize, encryptionOptions, resourceMetadata, progressOptions);
+    const streams = [slicer, uploadStream];
 
     await pipeStreams({ streams, resolveEvent: 'finish' });
 
-    return b64ResourceId;
+    return uploadStream.resourceId;
   }
 
   async download<T: Data>(b64ResourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
-    const resourceId = utils.fromBase64(b64ResourceId);
+    const downloadStream = await this.createDownloadStream(b64ResourceId, progressOptions);
+    const merger = new MergerStream({
+      type: defaultDownloadType,
+      ...outputOptions,
+      ...downloadStream.metadata
+    });
 
-    const { head_url: headUrl, get_url: getUrl, service } = await this._client.getFileDownloadURL(resourceId); // eslint-disable-line no-underscore-dangle
-
-    if (!streamCloudStorage[service])
-      throw new InternalError(`unsupported cloud storage service: ${service}`);
-
-    const { DownloadStream: CloudDownloadStream } = streamCloudStorage[service];
-
-    const downloadChunkSize = 1024 * 1024;
-    const downloader = new CloudDownloadStream(b64ResourceId, headUrl, getUrl, downloadChunkSize);
-
-    const { metadata: encryptedMetadata, encryptedContentLength } = await downloader.getMetadata();
-    const { encryptionFormat, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
-    const combinedOutputOptions = extractOutputOptions({ type: defaultDownloadType, ...outputOptions, ...fileMetadata });
-    const merger = new MergerStream(combinedOutputOptions);
-
-    const decryptor = await this._dataProtector.createDecryptionStream();
-
-    // SDKs up to v2.2.1 did not set an encryption format in the metadata
-    if (encryptionFormat) {
-      const clearSize = getClearSize(encryptionFormat, encryptedContentLength);
-      const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
-      decryptor.on('data', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
-    }
-
-    return pipeStreams({ streams: [downloader, decryptor, merger], resolveEvent: 'data' });
+    return pipeStreams({ streams: [downloadStream, merger], resolveEvent: 'data' });
   }
 
   async createUploadStream(clearSize: number, encryptionOptions: EncryptionOptions, resourceMetadata: ResourceMetadata, progressOptions: ProgressOptions): Promise<UploadStream> {
