@@ -47,6 +47,22 @@ export const assertNotEmptyString = (arg: any, argName: string) => {
   }
 };
 
+export const assertInteger = (arg: any, argName: string, isUnsigned: bool) => {
+  if (typeof arg !== 'number') {
+    throw new InvalidArgument(argName, `${argName} should be an integer`, arg);
+  }
+
+  // Number.isFinite is not supported by IE
+  // eslint-disable-next-line no-restricted-globals
+  if (!isFinite(arg) || Math.floor(arg) !== arg) {
+    throw new InvalidArgument(argName, `${argName} should be an integer`, arg);
+  }
+
+  if (isUnsigned && arg < 0) {
+    throw new InvalidArgument(argName, `${argName} should be unsigned`, arg);
+  }
+};
+
 export const assertB64StringWithSize = (arg: any, argName: string, expectedSize: number) => {
   assertNotEmptyString(arg, argName);
 

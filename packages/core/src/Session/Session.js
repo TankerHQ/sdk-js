@@ -130,6 +130,8 @@ export class Session extends EventEmitter {
 
   upload = (...args: any) => this._forward(this._cloudStorageManager, 'upload', ...args)
   download = (...args: any) => this._forward(this._cloudStorageManager, 'download', ...args)
+  createUploadStream = (...args: any) => this._forward(this._cloudStorageManager, 'createUploadStream', ...args)
+  createDownloadStream = (...args: any) => this._forward(this._cloudStorageManager, 'createDownloadStream', ...args)
 
   encryptData = (...args: any) => this._forward(this._dataProtector, 'encryptData', ...args)
   decryptData = (...args: any) => this._forward(this._dataProtector, 'decryptData', ...args)

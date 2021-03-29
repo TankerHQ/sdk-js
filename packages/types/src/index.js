@@ -6,6 +6,7 @@ export {
   getConstructor,
   getConstructorName,
   getDataLength,
+  assertInteger,
   assertNotEmptyString,
   assertB64StringWithSize
 } from './data-types';
