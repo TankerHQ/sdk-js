@@ -1,6 +1,6 @@
 // @flow
 import EventEmitter from 'events';
-import { random, tcrypto, utils, type b64string } from '@tanker/crypto';
+import { randomBase64Token, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
@@ -111,7 +111,7 @@ export class Tanker extends EventEmitter {
 
     const clientOptions: ClientOptions = {
       instanceInfo: {
-        id: utils.toBase64(random(16)),
+        id: randomBase64Token(),
       },
       sdkInfo: {
         type: options.sdkType,
@@ -239,7 +239,7 @@ export class Tanker extends EventEmitter {
     if (withSessionToken) {
       if ('verificationKey' in verification)
         throw new InvalidArgument('verification', 'cannot get a session token for a verification key', verification);
-      verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
+      verifWithToken.withToken = { nonce: randomBase64Token() };
     }
 
     await this.session.createUser(verifWithToken);
@@ -260,7 +260,7 @@ export class Tanker extends EventEmitter {
       assertStatus(this.status, [statuses.IDENTITY_VERIFICATION_NEEDED, statuses.READY], 'verify an identity with proof');
       if ('verificationKey' in verification)
         throw new InvalidArgument('verification', 'cannot get a session token for a verification key', verification);
-      verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
+      verifWithToken.withToken = { nonce: randomBase64Token() };
     } else {
       assertStatus(this.status, statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
     }
@@ -288,7 +288,7 @@ export class Tanker extends EventEmitter {
     const withSessionToken = options && options.withSessionToken;
 
     if (withSessionToken) {
-      verifWithToken.withToken = { nonce: utils.toBase64(random(16)) };
+      verifWithToken.withToken = { nonce: randomBase64Token() };
     }
 
     await this.session.setVerificationMethod(verifWithToken);

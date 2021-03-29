@@ -1,5 +1,7 @@
 // @flow
 import crypto from 'crypto';
+import { toBase64 } from './utils';
+import { type b64string } from './aliases';
 
 export function random(size: number): Uint8Array {
   // Calling getRandomValues() with a zero-length buffer throws InvalidStateError on Edge
@@ -17,4 +19,9 @@ export function random(size: number): Uint8Array {
   }
 
   return new Uint8Array(crypto.randomBytes(size));
+}
+
+// A string with enough entropy to not collide or be guessable
+export function randomBase64Token(): b64string {
+  return toBase64(random(16));
 }
