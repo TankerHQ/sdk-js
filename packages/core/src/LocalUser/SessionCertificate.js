@@ -33,24 +33,19 @@ function verificationToVerificationMethod(verification: VerificationWithToken): 
       email: verification.email
     };
   if ('passphrase' in verification)
-    // $FlowIgnore[prop-missing]
     return { type: 'passphrase' };
   if ('verificationKey' in verification)
-    // $FlowIgnore[prop-missing]
     return { type: 'verificationKey' };
   if ('oidcIdToken' in verification)
-    // $FlowIgnore[prop-missing]
     return { type: 'oidcIdToken' };
-  throw new InvalidArgument('verification', 'unknown verification method in verificationToVerificationMethod', verification);
+  throw new InvalidArgument('verification', 'unknown verification method used in verification', verification);
 }
 
 export const serializeSessionCertificate = (sessionCertificate: SessionCertificateRecord): Uint8Array => {
-  if (!(sessionCertificate.verification_method_type in VERIFICATION_METHOD_TYPES_INT)) {
+  if (!(sessionCertificate.verification_method_type in VERIFICATION_METHOD_TYPES_INT))
     throw new InternalError('Assertion error: invalid session certificate method type');
-  }
-  if (sessionCertificate.verification_method_target.length !== tcrypto.HASH_SIZE) {
+  if (sessionCertificate.verification_method_target.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid session certificate method target size');
-  }
   if (sessionCertificate.session_public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
     throw new InternalError('Assertion error: invalid session public signature key size');
 

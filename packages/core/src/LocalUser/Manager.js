@@ -189,7 +189,7 @@ export class LocalUserManager extends EventEmitter {
     const block = this._localUser.makeBlock(payload, nature);
 
     if (!verification.withToken)
-      throw new InternalError('Cannot get a session certificate without withToken');
+      throw new InternalError('Assertion error: Cannot get a session certificate without withToken');
 
     return this._client.getSessionToken({ session_certificate: block, nonce: verification.withToken.nonce });
   }
