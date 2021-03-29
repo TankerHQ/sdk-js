@@ -3,9 +3,10 @@ import { errors } from '@tanker/core';
 import { encryptionV4, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect, sinon } from '@tanker/test-utils';
+import { SlicerStream, MergerStream } from '@tanker/stream-base';
 
 import type { TestArgs } from './helpers';
-import { expectProgressReport, expectType, expectDeepEqual } from './helpers';
+import { expectProgressReport, expectType, expectDeepEqual, pipeStreams } from './helpers';
 
 export const generateUploadTests = (args: TestArgs) => {
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
@@ -65,15 +66,10 @@ export const generateUploadTests = (args: TestArgs) => {
           });
         });
 
-        it('can report progress at upload and download', async () => {
+        const expectUploadProgressReport = (onProgress: sinon.proxyApi, clearSize: number) => {
           // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
           const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
-          const onProgress = sinon.fake();
-
-          const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2];
-
-          const fileId = await aliceLaptop.upload(clear, { onProgress });
           const encryptedSize = encryptionV4.getEncryptedSize(clearSize, encryptionV4.defaultMaxEncryptedChunkSize);
           let chunkSize;
           if (storage === 's3') {
@@ -85,9 +81,37 @@ export const generateUploadTests = (args: TestArgs) => {
           }
           expectProgressReport(onProgress, encryptedSize, chunkSize);
           onProgress.resetHistory();
+        };
+
+        it('can report progress at simple upload and download', async () => {
+          const onProgress = sinon.fake();
+          const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2];
+
+          const fileId = await aliceLaptop.upload(clear, { onProgress });
+          expectUploadProgressReport(onProgress, clearSize);
 
           const decrypted = await aliceLaptop.download(fileId, { onProgress });
           expectType(decrypted, originalType);
+          expectDeepEqual(decrypted, clear);
+          expectProgressReport(onProgress, clearSize, encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
+        });
+
+        it('can report progress at stream upload and download', async () => {
+          const onProgress = sinon.fake();
+          const { type, resource: clear, size: clearSize } = args.resources.medium[0];
+
+          const uploadStream = await aliceLaptop.createUploadStream(clearSize, { onProgress });
+          const fileId = uploadStream.resourceId;
+          const slicer = new SlicerStream({ source: clear });
+          await pipeStreams({ streams: [slicer, uploadStream], resolveEvent: 'finish' });
+
+          expectUploadProgressReport(onProgress, clearSize);
+
+          const downloadStream = await aliceLaptop.createDownloadStream(fileId, { onProgress });
+          const merger = new MergerStream({ type, ...downloadStream.metadata });
+          const decrypted = await pipeStreams({ streams: [downloadStream, merger], resolveEvent: 'data' });
+
+          expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
           expectProgressReport(onProgress, clearSize, encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
         });
@@ -100,6 +124,32 @@ export const generateUploadTests = (args: TestArgs) => {
           const decrypted = await bobLaptop.download(fileId);
 
           expectType(decrypted, originalType);
+          expectDeepEqual(decrypted, clear);
+        });
+
+        it('can download a file shared via upload with streams', async () => {
+          const { type, resource: clear, size: clearSize } = args.resources.medium[0];
+
+          const uploadStream = await aliceLaptop.createUploadStream(clearSize, { shareWithUsers: [bobPublicIdentity] });
+          const fileId = uploadStream.resourceId;
+          const slicer = new SlicerStream({ source: clear });
+          await pipeStreams({ streams: [slicer, uploadStream], resolveEvent: 'finish' });
+
+          const decrypted = await bobLaptop.download(fileId, { type });
+
+          expectDeepEqual(decrypted, clear);
+        });
+
+        it('can download with streams a file shared via upload', async () => {
+          const { type, resource: clear } = args.resources.medium[0];
+
+          const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity] });
+
+          const downloadStream = await bobLaptop.createDownloadStream(fileId);
+          const merger = new MergerStream({ type, ...downloadStream.metadata });
+          const decrypted = await pipeStreams({ streams: [downloadStream, merger], resolveEvent: 'data' });
+
+          expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
         });
 
@@ -159,6 +209,18 @@ export const generateUploadTests = (args: TestArgs) => {
           });
 
           await Promise.all(promises);
+        });
+
+        it('throws InvalidArgument if given too much data', async () => {
+          const clearSize = 50;
+          const uploadStream = await aliceLaptop.createUploadStream(clearSize);
+
+          await expect(new Promise((resolve, reject) => {
+            uploadStream.on('error', reject);
+            uploadStream.on('finish', resolve);
+            uploadStream.write(new Uint8Array(clearSize + 1));
+            uploadStream.end();
+          })).to.be.rejectedWith(errors.InvalidArgument);
         });
       });
     });
