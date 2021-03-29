@@ -11,10 +11,11 @@ import type { Client } from '../Network/Client';
 import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProtection/types';
 import type { EncryptionFormatDescription, Resource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
-import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
+import { defaultDownloadType, extractOutputOptions } from '../DataProtection/options';
 import type { OutputOptions, ProgressOptions, EncryptionOptions } from '../DataProtection/options';
 import { UploadStream } from './UploadStream';
+import { DownloadStream } from './DownloadStream';
 
 const pipeStreams = (
   { streams, resolveEvent }: { streams: Array<Readable | Writable>, resolveEvent: string }
@@ -117,10 +118,10 @@ export class CloudStorageManager {
     if (!streamCloudStorage[service])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
 
-    const { DownloadStream } = streamCloudStorage[service];
+    const { DownloadStream: CloudDownloadStream } = streamCloudStorage[service];
 
     const downloadChunkSize = 1024 * 1024;
-    const downloader = new DownloadStream(b64ResourceId, headUrl, getUrl, downloadChunkSize);
+    const downloader = new CloudDownloadStream(b64ResourceId, headUrl, getUrl, downloadChunkSize);
 
     const { metadata: encryptedMetadata, encryptedContentLength } = await downloader.getMetadata();
     const { encryptionFormat, ...fileMetadata } = await this._decryptMetadata(encryptedMetadata);
@@ -188,6 +189,36 @@ export class CloudStorageManager {
     streams.push(uploader);
 
     return new UploadStream(b64ResourceId, streams);
+  }
+
+  async createDownloadStream(b64ResourceId: string, progressOptions: ProgressOptions): Promise<DownloadStream> {
+    const resourceId = utils.fromBase64(b64ResourceId);
+
+    const { head_url: headUrl, get_url: getUrl, service } = await this._client.getFileDownloadURL(resourceId);
+
+    if (!streamCloudStorage[service])
+      throw new InternalError(`unsupported cloud storage service: ${service}`);
+
+    const { DownloadStream: CloudDownloadStream } = streamCloudStorage[service];
+
+    const downloadChunkSize = 1024 * 1024;
+    const downloader = new CloudDownloadStream(b64ResourceId, headUrl, getUrl, downloadChunkSize);
+
+    const { metadata: encryptedMetadata, encryptedContentLength } = await downloader.getMetadata();
+    const { encryptionFormat, ...resourceMetadata } = await this._decryptMetadata(encryptedMetadata);
+
+    const decryptor = await this._dataProtector.createDecryptionStream();
+
+    // SDKs up to v2.2.1 did not set an encryption format in the metadata
+    if (encryptionFormat) {
+      const clearSize = getClearSize(encryptionFormat, encryptedContentLength);
+      const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
+      decryptor.on('data', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
+    }
+
+    const streams = [downloader, decryptor];
+
+    return new DownloadStream(streams, resourceMetadata);
   }
 }
 
