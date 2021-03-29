@@ -151,6 +151,15 @@ export const generateUploadTests = (args: TestArgs) => {
 
           await Promise.all(promises);
         });
+
+        it('throws InvalidArgument if given an invalid clearSize', async () => {
+          const promises = [undefined, null, 'not a resourceId', [], {}, -1].map(async (invalidClearSize, i) => {
+            // $FlowExpectedError Giving invalid clearSize
+            await expect(aliceLaptop.createUploadStream(invalidClearSize), `failed test #${i}`).to.be.rejectedWith(errors.InvalidArgument);
+          });
+
+          await Promise.all(promises);
+        });
       });
     });
   });

@@ -81,6 +81,32 @@ export const isSharingOptionsEmpty = (opts: SharingOptions): bool => {
   return true;
 };
 
+export const extractResourceMetadata = (options: Object, input?: Data): ResourceMetadata => {
+  if (!isObject(options))
+    throw new InvalidArgument('options', '{ mime?: string, name?: string, lastModified?: number }', options);
+
+  const resourceMetadata: $Shape<ResourceMetadata> = {};
+  if (globalThis.Blob && input instanceof globalThis.Blob) {
+    resourceMetadata.mime = input.type;
+  }
+  if (globalThis.File && input instanceof globalThis.File) {
+    resourceMetadata.name = input.name;
+    resourceMetadata.lastModified = input.lastModified;
+  }
+
+  if (typeof options.mime === 'string') {
+    resourceMetadata.mime = options.mime;
+  }
+  if (typeof options.name === 'string') {
+    resourceMetadata.name = options.name;
+  }
+  if (typeof options.lastModified === 'number') {
+    resourceMetadata.lastModified = options.lastModified;
+  }
+
+  return resourceMetadata;
+};
+
 export const extractOutputOptions = <T: Data>(options: Object, input?: Data): OutputOptions<T> => {
   if (!isObject(options))
     throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
@@ -96,26 +122,9 @@ export const extractOutputOptions = <T: Data>(options: Object, input?: Data): Ou
   }
 
   const outputOptions: OutputOptions<T> = {
-    type: outputType
+    ...(extractResourceMetadata(options, input): $Shape<OutputOptions<T>>),
+    type: outputType,
   };
-
-  if (globalThis.Blob && input instanceof globalThis.Blob) {
-    outputOptions.mime = input.type;
-  }
-  if (globalThis.File && input instanceof globalThis.File) {
-    outputOptions.name = input.name;
-    outputOptions.lastModified = input.lastModified;
-  }
-
-  if (typeof options.mime === 'string') {
-    outputOptions.mime = options.mime;
-  }
-  if (typeof options.name === 'string') {
-    outputOptions.name = options.name;
-  }
-  if (typeof options.lastModified === 'number') {
-    outputOptions.lastModified = options.lastModified;
-  }
 
   return outputOptions;
 };
