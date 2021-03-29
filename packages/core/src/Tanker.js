@@ -29,6 +29,7 @@ import {
   extractOutputOptions,
   extractProgressOptions,
   extractEncryptionOptions,
+  extractResourceMetadata,
   extractSharingOptions,
   isObject,
   isSharingOptionsEmpty
@@ -37,6 +38,8 @@ import type { EncryptionStream } from './DataProtection/EncryptionStream';
 import type { DecryptionStream } from './DataProtection/DecryptionStream';
 import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/types';
 import type { EncryptionSession } from './DataProtection/EncryptionSession';
+import type { UploadStream } from './CloudStorage/UploadStream';
+import type { DownloadStream } from './CloudStorage/DownloadStream';
 
 import { TANKER_SDK_VERSION } from './version';
 
@@ -473,24 +476,46 @@ export class Tanker extends EventEmitter {
     assertStatus(this.status, statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
-    const outputOptions = extractOutputOptions(options, clearData);
+    const resourceMetadata = extractResourceMetadata(options, clearData);
     const progressOptions = extractProgressOptions(options);
     const encryptionOptions = extractEncryptionOptions(options);
 
-    return this.session.upload(clearData, encryptionOptions, outputOptions, progressOptions);
+    return this.session.upload(clearData, encryptionOptions, resourceMetadata, progressOptions);
   }
 
-  async download<T: Data>(resourceId: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async download<T: Data>(resourceId: b64string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertStatus(this.status, statuses.READY, 'download a file');
     assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 
     if (!isObject(options))
-      throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
+      throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number, onProgress?: OnProgress }', options);
 
     const outputOptions = extractOutputOptions({ type: defaultDownloadType, ...options });
     const progressOptions = extractProgressOptions(options);
 
     return this.session.download(resourceId, outputOptions, progressOptions);
+  }
+
+  async createUploadStream(clearSize: number, options?: $Shape<EncryptionOptions & ResourceMetadata & ProgressOptions> = {}): Promise<UploadStream> {
+    assertStatus(this.status, statuses.READY, 'upload a file using stream');
+
+    const resourceMetadata = extractResourceMetadata(options);
+    const progressOptions = extractProgressOptions(options);
+    const encryptionOptions = extractEncryptionOptions(options);
+
+    return this.session.createUploadStream(clearSize, encryptionOptions, resourceMetadata, progressOptions);
+  }
+
+  async createDownloadStream(resourceId: b64string, options?: $Shape<ProgressOptions> = {}): Promise<DownloadStream> {
+    assertStatus(this.status, statuses.READY, 'download a file using stream');
+    assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
+
+    if (!isObject(options))
+      throw new InvalidArgument('options', '{ onProgress?: OnProgress }', options);
+
+    const progressOptions = extractProgressOptions(options);
+
+    return this.session.createDownloadStream(resourceId, progressOptions);
   }
 
   async createEncryptionSession(options: EncryptionOptions = {}): Promise<EncryptionSession> {
