@@ -206,7 +206,6 @@ export class Client {
 
   getVerificationKey = async (body: any): Promise<Uint8Array> => {
     const path = `/users/${urlize(this._userId)}/verification-key`;
-
     const options = {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),
@@ -374,6 +373,17 @@ export class Client {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  getSessionToken = async (body: any): Promise<b64string> => {
+    const path = `/users/${urlize(this._userId)}/session-certificates`;
+    // eslint-disable-next-line camelcase
+    const { session_token: sessionToken } = await this._apiCall(path, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return sessionToken;
   }
 
   getGroupHistories = (query: string): Promise<$Exact<{ histories: Array<b64string> }>> => { // eslint-disable-line arrow-body-style

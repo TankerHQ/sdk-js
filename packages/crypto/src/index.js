@@ -2,7 +2,7 @@
 
 import * as tcrypto from './tcrypto';
 import * as aead from './aead';
-import { random } from './random';
+import { random, randomBase64Token } from './random';
 import { generichash } from './hash';
 import * as utils from './utils';
 import * as number from './number';
@@ -18,6 +18,7 @@ export {
   aead,
   tcrypto,
   random,
+  randomBase64Token,
   generichash,
   number,
   utils,

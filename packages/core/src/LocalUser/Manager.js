@@ -9,13 +9,18 @@ import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './
 import type KeyStore from './KeyStore';
 import LocalUser from './LocalUser';
 import { formatVerificationRequest } from './requests';
-import type { Verification, VerificationMethod, RemoteVerification } from './types';
+import type {
+  VerificationMethod,
+  VerificationWithToken,
+  RemoteVerificationWithToken
+} from './types';
 import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
 
 import type { Client, PullOptions } from '../Network/Client';
 import { statuses, type Status } from '../Session/status';
 import type { Device } from '../Users/types';
+import { makeSessionCertificate } from './SessionCertificate';
 
 export type PrivateProvisionalKeys = {|
   appEncryptionKeyPair: tcrypto.SodiumKeyPair,
@@ -85,9 +90,13 @@ export class LocalUserManager extends EventEmitter {
     });
   }
 
-  setVerificationMethod = (verification: RemoteVerification): Promise<void> => this._client.setVerificationMethod({
-    verification: formatVerificationRequest(verification, this._localUser),
-  });
+  setVerificationMethod = (verification: RemoteVerificationWithToken): Promise<void> => {
+    const requestVerification = formatVerificationRequest(verification, this._localUser);
+    requestVerification.with_token = verification.withToken; // May be undefined
+    return this._client.setVerificationMethod({
+      verification: requestVerification,
+    });
+  }
 
   updateDeviceInfo = async (id: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, signatureKeyPair: tcrypto.SodiumKeyPair): Promise<void> => {
     this._localUser.deviceId = id;
@@ -97,7 +106,7 @@ export class LocalUserManager extends EventEmitter {
     await this.updateLocalUser({ isLight: true });
   }
 
-  createUser = async (verification: Verification): Promise<void> => {
+  createUser = async (verification: VerificationWithToken): Promise<void> => {
     let ghostDeviceKeys;
     if (verification.verificationKey) {
       try {
@@ -124,15 +133,16 @@ export class LocalUserManager extends EventEmitter {
     if (verification.email || verification.passphrase || verification.oidcIdToken) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
+      request.verification.with_token = verification.withToken; // May be undefined
     }
 
     await this._client.createUser(firstDeviceId, firstDeviceSignatureKeyPair, request);
     await this.updateDeviceInfo(firstDeviceId, firstDeviceEncryptionKeyPair, firstDeviceSignatureKeyPair);
   }
 
-  createNewDevice = async (verification: Verification): Promise<void> => {
+  createNewDevice = async (verification: VerificationWithToken): Promise<void> => {
     try {
-      const verificationKey = await this._getVerificationKey(verification);
+      const verificationKey = await this.getVerificationKey(verification);
       const ghostDevice = extractGhostDevice(verificationKey);
 
       const ghostSignatureKeyPair = tcrypto.getSignatureKeyPairFromPrivateKey(ghostDevice.privateSignatureKey);
@@ -170,6 +180,18 @@ export class LocalUserManager extends EventEmitter {
     await this.updateLocalUser({ isLight: false });
     const devices = this._localUser.devices;
     return devices.filter(d => !d.isGhostDevice);
+  }
+
+  getSessionToken = async (verification: VerificationWithToken): Promise<string> => {
+    await this.updateLocalUser();
+
+    const { payload, nature } = makeSessionCertificate(verification);
+    const block = this._localUser.makeBlock(payload, nature);
+
+    if (!verification.withToken)
+      throw new InternalError('Assertion error: Cannot get a session certificate without withToken');
+
+    return this._client.getSessionToken({ session_certificate: block, nonce: verification.withToken.nonce });
   }
 
   findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair> => {
@@ -228,12 +250,13 @@ export class LocalUserManager extends EventEmitter {
     });
   }
 
-  _getVerificationKey = async (verification: Verification) => {
+  getVerificationKey = async (verification: VerificationWithToken) => {
     if (verification.verificationKey) {
       return verification.verificationKey;
     }
-    const remoteVerification: RemoteVerification = (verification: any);
+    const remoteVerification: RemoteVerificationWithToken = (verification: any);
     const request = { verification: formatVerificationRequest(remoteVerification, this._localUser) };
+    request.verification.with_token = verification.withToken; // May be undefined
     const encryptedVerificationKey = await this._client.getVerificationKey(request);
     return decryptVerificationKey(encryptedVerificationKey, this._localUser.userSecret);
   }

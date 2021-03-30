@@ -117,6 +117,7 @@ export class Session extends EventEmitter {
     await this._forwardAndStopOnFail(this._localUserManager, 'createNewDevice', ...args);
     this.status = statuses.READY;
   }
+  getVerificationKey = async (...args: any) => this._forward(this._localUserManager, 'getVerificationKey', ...args)
   revokeDevice = (...args: any) => this._forward(this._localUserManager, 'revokeDevice', ...args)
   listDevices = (...args: any) => this._forward(this._localUserManager, 'listDevices', ...args)
   deviceId = () => this._localUserManager.localUser.deviceId
@@ -124,6 +125,8 @@ export class Session extends EventEmitter {
   setVerificationMethod = (...args: any) => this._forward(this._localUserManager, 'setVerificationMethod', ...args)
   getVerificationMethods = (...args: any) => this._forward(this._localUserManager, 'getVerificationMethods', ...args)
   generateVerificationKey = (...args: any) => this._forward(this._localUserManager, 'generateVerificationKey', ...args)
+
+  getSessionToken = async (...args: any) => this._forward(this._localUserManager, 'getSessionToken', ...args);
 
   upload = (...args: any) => this._forward(this._cloudStorageManager, 'upload', ...args)
   download = (...args: any) => this._forward(this._cloudStorageManager, 'download', ...args)

@@ -87,6 +87,10 @@ export class AppHelper {
     await this._update({ storage_provider: 'none' });
   }
 
+  async set2FA() {
+    await this._update({ session_certificates_enabled: true });
+  }
+
   generateIdentity(userId?: string): Promise<b64string> {
     const id = userId || uuid.v4();
     return createIdentity(utils.toBase64(this.appId), utils.toBase64(this.appKeyPair.privateKey), id);

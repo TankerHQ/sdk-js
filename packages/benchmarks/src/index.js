@@ -19,6 +19,7 @@ let appId;
 before(async () => {
   appHelper = await AppHelper.newApp();
   appId = utils.toBase64(appHelper.appId);
+  await appHelper.set2FA();
 });
 
 after(async () => {
@@ -146,6 +147,29 @@ benchmark('verifyIdentity_passphrase', async (state) => {
     state.unpause();
     await tanker2.start(identity);
     await tanker2.verifyIdentity({ passphrase: 'passphrase' });
+    state.pause();
+    await tanker2.stop();
+  }
+});
+
+// What: starts and verifies an identity with a passphrase and asks for a session token
+// PreCond: an identity was registered with another device
+// PostCond: the session is open and we have a session token
+benchmark('verifyIdentity_passphrase_withToken', async (state) => {
+  const tanker = makeTanker();
+  const identity = await appHelper.generateIdentity();
+  await tanker.start(identity);
+  await tanker.registerIdentity({ passphrase: 'passphrase' });
+  await tanker.stop();
+
+  while (state.iter()) {
+    state.pause();
+    const tanker2 = makeTanker();
+    state.unpause();
+    await tanker2.start(identity);
+    const token = await tanker2.verifyIdentity({ passphrase: 'passphrase' }, { withSessionToken: true });
+    if (!token)
+      throw new Error("no session token received, this benchmark isn't benchmarking what we thought it would");
     state.pause();
     await tanker2.stop();
   }
