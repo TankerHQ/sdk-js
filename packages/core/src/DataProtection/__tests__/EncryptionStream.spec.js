@@ -1,14 +1,13 @@
 // @flow
+import { Writable } from '@tanker/stream-base';
 import { aead, random, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
-import { expect } from '@tanker/test-utils';
+import { expect, BufferingObserver } from '@tanker/test-utils';
 
 import { EncryptionStream } from '../EncryptionStream';
 import PromiseWrapper from '../../PromiseWrapper';
 
 describe('EncryptionStream', () => {
-  const headerV4Length = 21;
-
   let buffer: Array<Uint8Array>;
   let key;
   let resourceId;
@@ -100,7 +99,7 @@ describe('EncryptionStream', () => {
   it('encrypts chunks of fixed size', async () => {
     const msg = utils.fromString('message');
 
-    const encryptedChunkSize = msg.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD + headerV4Length;
+    const encryptedChunkSize = msg.length + encryptionV4.overhead;
 
     const stream = new EncryptionStream(resourceId, key, encryptedChunkSize);
     const sync = watchStream(stream);
@@ -126,7 +125,7 @@ describe('EncryptionStream', () => {
   it('encrypts chunks of fixed size except last one', async () => {
     const msg = utils.fromString('message');
 
-    const encryptedChunkSize = msg.length + tcrypto.SYMMETRIC_ENCRYPTION_OVERHEAD + headerV4Length;
+    const encryptedChunkSize = msg.length + encryptionV4.overhead;
 
     const stream = new EncryptionStream(resourceId, key, encryptedChunkSize);
     const sync = watchStream(stream);
@@ -147,6 +146,51 @@ describe('EncryptionStream', () => {
       const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]));
       const expectedMsg = index === 2 ? msg.subarray(1) : msg;
       expect(clearData).to.deep.equal(expectedMsg);
+    });
+  });
+
+  const coef = 3;
+  describe(`buffers at most ${coef} * clear chunk size`, () => {
+    const writeDelay = 50;
+
+    [10, 50, 100, 1000].forEach((chunkSize) => {
+      it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks`, async () => {
+        const chunk = new Uint8Array(chunkSize);
+        const inputSize = 10 * chunkSize;
+        const bufferCounter = new BufferingObserver();
+        const encryptionStream = new EncryptionStream(resourceId, key, chunkSize + encryptionV4.overhead);
+        const slowWritable = new Writable({
+          highWaterMark: 1,
+          objectMode: true,
+          write: async (data, encoding, done) => {
+            await new Promise(r => setTimeout(r, writeDelay));
+            bufferCounter.incrementOutputAndSnapshot(data.length - encryptionV4.overhead);
+            done();
+          }
+        });
+
+        const continueWriting = () => {
+          do {
+            bufferCounter.incrementInput(chunk.length);
+          } while (bufferCounter.inputWritten < inputSize && encryptionStream.write(chunk));
+
+          if (bufferCounter.inputWritten >= inputSize) {
+            encryptionStream.end();
+          }
+        };
+
+        await new Promise((resolve, reject) => {
+          encryptionStream.on('error', reject);
+          encryptionStream.on('drain', continueWriting);
+          slowWritable.on('finish', resolve);
+          encryptionStream.pipe(slowWritable);
+          continueWriting();
+        });
+
+        bufferCounter.snapshots.forEach((bufferedLength) => {
+          expect(bufferedLength).to.be.at.most(coef * chunkSize, `buffered data exceeds threshold (${coef} * chunk size): got ${bufferedLength}, chunk size ${chunkSize})`);
+        });
+      });
     });
   });
 });

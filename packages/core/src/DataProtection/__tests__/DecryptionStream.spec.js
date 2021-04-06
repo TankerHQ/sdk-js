@@ -1,7 +1,8 @@
 // @flow
 import { utils, random, tcrypto, encryptionV4 } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
-import { expect, sinon } from '@tanker/test-utils';
+import { expect, sinon, BufferingObserver } from '@tanker/test-utils';
+import { Writable } from '@tanker/stream-base';
 
 import { DecryptionStream } from '../DecryptionStream';
 import PromiseWrapper from '../../PromiseWrapper';
@@ -264,6 +265,56 @@ describe('DecryptionStream', () => {
     it('throws DecryptionFailed when data is written in wrong order', async () => {
       stream.write(chunks[1]);
       await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
+    });
+  });
+
+  const coef = 3;
+  describe(`buffers at most ${coef} * max encrypted chunk size`, () => {
+    const writeDelay = 50;
+
+    [10, 50, 100, 1000].forEach((chunkSize) => {
+      it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks`, async () => {
+        const chunk = '0'.repeat(chunkSize);
+        const inputSize = 10 * (chunkSize + encryptionV4.overhead);
+        const bufferCounter = new BufferingObserver();
+        const slowWritable = new Writable({
+          highWaterMark: 1,
+          objectMode: true,
+          write: async (data, encoding, done) => {
+            await new Promise(r => setTimeout(r, writeDelay));
+            bufferCounter.incrementOutputAndSnapshot(data.length + encryptionV4.overhead);
+            done();
+          }
+        });
+
+        let idx = -1;
+        let msg;
+        const continueWriting = () => {
+          do {
+            idx += 1;
+            msg = encryptMsg(idx, chunk);
+            bufferCounter.incrementInput(msg.encrypted.length);
+          } while (bufferCounter.inputWritten < inputSize && stream.write(msg.encrypted));
+
+          if (bufferCounter.inputWritten >= inputSize) {
+            const emptyMsg = encryptMsg(idx, '');
+            stream.write(emptyMsg.encrypted);
+            stream.end();
+          }
+        };
+
+        await new Promise((resolve, reject) => {
+          stream.on('error', reject);
+          stream.on('drain', continueWriting);
+          slowWritable.on('finish', resolve);
+          stream.pipe(slowWritable);
+          continueWriting();
+        });
+
+        bufferCounter.snapshots.forEach((bufferedLength) => {
+          expect(bufferedLength).to.be.at.most(coef * (chunkSize + encryptionV4.overhead), `buffered data exceeds threshold (${coef} * chunk size): got ${bufferedLength}, chunk (size: ${chunkSize} + overhead: ${encryptionV4.overhead})`);
+        });
+      });
     });
   });
 });
