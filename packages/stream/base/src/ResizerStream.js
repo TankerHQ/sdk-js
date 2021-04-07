@@ -4,6 +4,14 @@ import { Transform } from 'readable-stream';
 import Uint8Buffer from './Uint8Buffer';
 import type { DoneCallback } from './types';
 
+// If we need to reduce the buffered memory an implementation may be found on commit
+// a021aba46ba1f7eada53666b14c758b0a253d7d3 (this commit never made it to master)
+// it was inspired by the following stackoverflow comment:
+// - https://stackoverflow.com/a/43811543
+//
+// The current implementation holds at most 3x the input chunk size.
+// The implem from a021aba46ba1f7eada53666b14c758b0a253d7d3 used at most 2x.
+
 export default class ResizerStream extends Transform {
   _buffer: Uint8Buffer;
   _outputSize: number;
