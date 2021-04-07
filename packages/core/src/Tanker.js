@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import { randomBase64Token, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
-import type { Data } from '@tanker/types';
+import type { Data, ResourceMetadata } from '@tanker/types';
 import { _deserializeProvisionalIdentity } from '@tanker/identity';
 
 import { type ClientOptions, defaultApiEndpoint } from './Network/Client';
@@ -469,7 +469,7 @@ export class Tanker extends EventEmitter {
     }));
   }
 
-  async upload<T: Data>(clearData: Data, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<string> {
+  async upload(clearData: Data, options?: $Shape<EncryptionOptions & ResourceMetadata & ProgressOptions> = {}): Promise<string> {
     assertStatus(this.status, statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 

@@ -2,7 +2,8 @@
 import type { b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import globalThis from '@tanker/global-this';
-import { getConstructor, type Data, assertNotEmptyString } from '@tanker/types';
+import { getConstructor, assertNotEmptyString } from '@tanker/types';
+import type { Data, ResourceMetadata } from '@tanker/types';
 
 import type { OnProgress } from './ProgressHandler';
 
@@ -10,7 +11,9 @@ const MAX_SHARE_RECIPIENTS = 100;
 
 export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Array;
 
-export type OutputOptions<T: Data> = $Exact<{ type: Class<T>, mime?: string, name?: string, lastModified?: number }>;
+export type FormatOptions<T:Data> = $Exact<{ type: Class<T> }>;
+
+export type OutputOptions<T: Data> = $Exact<FormatOptions<T> & ResourceMetadata>;
 
 export type ProgressOptions = { onProgress?: OnProgress };
 
