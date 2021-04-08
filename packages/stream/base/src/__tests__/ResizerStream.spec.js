@@ -1,5 +1,6 @@
 // @flow
-import { expect } from '@tanker/test-utils';
+import { Writable } from 'readable-stream';
+import { expect, BufferingObserver } from '@tanker/test-utils';
 
 import ResizerStream from '../ResizerStream';
 
@@ -79,5 +80,54 @@ describe('ResizerStream', () => {
 
     expect(buffer.length).to.be.equal(1);
     expect(buffer[0].length).to.be.equal(20);
+  });
+
+  const coef = 3;
+  describe(`buffers at most ${coef} * max encrypted chunk size`, () => {
+    const writeDelay = 10;
+
+    [10, 50, 100].forEach((chunkSize) => {
+      [1, 2, 3, 7].forEach((nbDiv) => {
+        const resizeSize = Math.ceil(chunkSize / nbDiv);
+        const inputSize = chunkSize * 5;
+        it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks resized to ${resizeSize}`, async () => {
+          const stream = new ResizerStream(resizeSize);
+          const bufferCounter = new BufferingObserver();
+          const slowWritable = new Writable({
+            highWaterMark: 1,
+            objectMode: true,
+            write: async (data, encoding, done) => {
+              await new Promise(r => setTimeout(r, writeDelay));
+              bufferCounter.incrementOutputAndSnapshot(data.length);
+              done();
+            }
+          });
+
+          const chunk = new Uint8Array(chunkSize);
+          const continueWriting = () => {
+            do {
+              bufferCounter.incrementInput(chunk.length);
+            } while (bufferCounter.inputWritten < inputSize && stream.write(chunk));
+
+            if (bufferCounter.inputWritten >= inputSize) {
+              stream.end();
+            }
+          };
+
+          await new Promise((resolve, reject) => {
+            stream.on('error', reject);
+            stream.on('drain', continueWriting);
+            slowWritable.on('finish', resolve);
+            stream.pipe(slowWritable);
+
+            continueWriting();
+          });
+
+          bufferCounter.snapshots.forEach((bufferedLength) => {
+            expect(bufferedLength).to.be.at.most(coef * chunkSize, `buffered data exceeds threshold (${coef} * chunk size): got ${bufferedLength}, chunk (size: ${chunkSize})`);
+          });
+        });
+      });
+    });
   });
 });
