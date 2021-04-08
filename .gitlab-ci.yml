@@ -1,4 +1,4 @@
-image: registry.gitlab.com/tankerhq/docker/sdk-js:latest
+image: registry.gitlab.com/tankerhq/docker/node:latest
 
 stages:
   - check
