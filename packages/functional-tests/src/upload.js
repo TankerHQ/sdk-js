@@ -2,13 +2,16 @@
 import { errors } from '@tanker/core';
 import { encryptionV4, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
-import { expect, sinon } from '@tanker/test-utils';
-import { SlicerStream, MergerStream } from '@tanker/stream-base';
+import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
+import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
 
 import type { TestArgs } from './helpers';
 import { expectProgressReport, expectType, expectDeepEqual, pipeStreams } from './helpers';
 
 export const generateUploadTests = (args: TestArgs) => {
+  // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
+  const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
+
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
   const forEachSize = (sizes: Array<string>, fun: (size: string) => void) => {
     const availableSizes = Object.keys(args.resources);
@@ -67,9 +70,6 @@ export const generateUploadTests = (args: TestArgs) => {
         });
 
         const expectUploadProgressReport = (onProgress: sinon.proxyApi, clearSize: number) => {
-          // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
-          const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
-
           const encryptedSize = encryptionV4.getEncryptedSize(clearSize, encryptionV4.defaultMaxEncryptedChunkSize);
           let chunkSize;
           if (storage === 's3') {
@@ -201,6 +201,115 @@ export const generateUploadTests = (args: TestArgs) => {
 
           await Promise.all(promises);
         });
+
+        // no need to check for edge with gcs (the upload ends in one request anyway)
+        const canTestBackPressure = !(isEdge() && storage === 'gcs');
+
+        if (canTestBackPressure) {
+          const KB = 1024;
+          const MB = KB * KB;
+
+          describe('UploadStream', () => {
+            // we buffer data upload depending on the cloud provider
+            const maxBufferedLength = storage === 's3' ? 40 * MB : 15 * MB;
+            // more chunk are needed for s3 since we need one more resizer
+            const nbChunk = storage === 's3' ? 8 : 4;
+            const chunkSize = 7 * MB;
+            const inputSize = nbChunk * chunkSize;
+            it(`buffers at most ${maxBufferedLength / MB}MB when uploading ${inputSize / MB}MB split in ${nbChunk} chunks`, async () => {
+              const chunk = new Uint8Array(chunkSize);
+              const bufferCounter = new BufferingObserver();
+              const timeout = makeTimeoutPromise(50);
+              let prevCount = 0;
+              const uploadStream = await aliceLaptop.createUploadStream(inputSize, {
+                onProgress: (progressReport) => {
+                  const newBytes = progressReport.currentBytes - prevCount;
+                  prevCount = progressReport.currentBytes;
+                  bufferCounter.incrementOutputAndSnapshot(newBytes);
+                }
+              });
+
+              // hijack tail write to lock upload until stream is flooded
+              // eslint-disable-next-line no-underscore-dangle
+              const write = uploadStream._tailStream._write.bind(uploadStream._tailStream);
+              // eslint-disable-next-line no-underscore-dangle
+              uploadStream._tailStream._write = async (...vals) => {
+                await timeout.promise;
+                write(...vals);
+              };
+
+              const continueWriting = () => {
+                do {
+                  // flood every stream before unlocking writting end
+                  timeout.reset();
+                  bufferCounter.incrementInput(chunk.length);
+                } while (uploadStream.write(chunk) && bufferCounter.inputWritten < inputSize);
+
+                if (bufferCounter.inputWritten >= inputSize) {
+                  uploadStream.end();
+                }
+              };
+
+              await new Promise((resolve, reject) => {
+                uploadStream.on('error', reject);
+                uploadStream.on('drain', continueWriting);
+                uploadStream.on('finish', resolve);
+                continueWriting();
+              });
+
+              bufferCounter.snapshots.forEach((bufferedLength) => {
+                expect(bufferedLength).to.be.at.most(maxBufferedLength + encryptionV4.defaultMaxEncryptedChunkSize, `buffered data exceeds threshold max buffered size: got ${bufferedLength}, max ${maxBufferedLength})`);
+              });
+            });
+          });
+
+          describe('DownloadStream', () => {
+            const storageChunkDownloadSize = 1 * MB;
+            const maxBufferedLength = 2 * storageChunkDownloadSize + 5 * encryptionV4.defaultMaxEncryptedChunkSize;
+            const payloadSize = 30;
+            it(`buffers at most ${maxBufferedLength / MB}MB when downloading ${payloadSize}MB`, async () => {
+              const inputSize = payloadSize * MB;
+              const bufferCounter = new BufferingObserver();
+              const resourceId = await aliceLaptop.upload(new Uint8Array(inputSize));
+              const timeout = makeTimeoutPromise(700);
+
+              const downloadStream = await aliceLaptop.createDownloadStream(resourceId);
+              // hijack push to control size of output buffer
+              // eslint-disable-next-line no-underscore-dangle
+              const push = downloadStream._headStream.push.bind(downloadStream._headStream);
+              // eslint-disable-next-line no-underscore-dangle
+              downloadStream._headStream.push = (data) => {
+                timeout.reset();
+                if (data) {
+                  bufferCounter.incrementInput(data.length);
+                }
+
+                return push(data);
+              };
+
+              const slowWritable = new Writable({
+                objectMode: true,
+                highWaterMark: 1,
+                write: async (buffer, encoding, done) => {
+                  // flood every stream before unlocking writting end
+                  await timeout.promise;
+                  bufferCounter.incrementOutputAndSnapshot(buffer.length);
+                  done();
+                }
+              });
+
+              await new Promise((resolve, reject) => {
+                downloadStream.on('error', reject);
+                downloadStream.on('end', resolve);
+                downloadStream.pipe(slowWritable);
+              });
+
+              bufferCounter.snapshots.forEach((bufferedLength) => {
+                expect(bufferedLength).to.be.at.most(maxBufferedLength, `buffered data exceeds threshold max buffered size: got ${bufferedLength}, max buffered size ${maxBufferedLength}`);
+              });
+            });
+          });
+        }
       });
     });
   });
