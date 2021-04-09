@@ -8,6 +8,8 @@ import globalThis from '@tanker/global-this';
 
 export type Data = ArrayBuffer | Blob | Buffer | File | Uint8Array;
 
+export type ResourceMetadata = $Exact<{ mime?: string, name?: string, lastModified?: number }>;
+
 // Detect types available in this environment
 const dataTypeDefs = (() => {
   const defs = [];
@@ -129,7 +131,7 @@ const toUint8Array = async (value: Data, maxBytes: ?number): Promise<Uint8Array>
 
 export async function castData<T: Data>(
   input: Data,
-  options: { type: Class<T>, mime?: string, name?: string, lastModified?: number },
+  options: $Shape<{ type: Class<T> } & ResourceMetadata>,
   maxBytes?: number,
 ): Promise<T> {
   const { type, ...fileOpts } = options;

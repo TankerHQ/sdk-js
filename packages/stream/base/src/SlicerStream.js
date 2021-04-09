@@ -17,7 +17,7 @@ export default class SlicerStream extends Readable {
   _readingState: {
     byteSize: number,
     byteIndex: number,
-    readInProgress?: bool,
+    readInProgress: bool,
   };
   _fileReader: FileReader;
 
@@ -48,11 +48,22 @@ export default class SlicerStream extends Readable {
     }
   }
 
-  _read = (/* size: number */) => {
-    if (this._mode === 'binary') {
-      this._readBinary();
-    } else {
-      this._readFile();
+  _read = async (/* size: number */) => {
+    if (this._readingState.readInProgress)
+      return;
+    this._readingState.readInProgress = true;
+
+    try {
+      if (this._mode === 'binary') {
+        while (this._readBinary());
+      } else {
+        while (await this._readFile());
+      }
+    } catch (error) {
+      this.destroy(error);
+      return;
+    } finally {
+      this._readingState.readInProgress = false;
     }
   }
 
@@ -66,6 +77,7 @@ export default class SlicerStream extends Readable {
     this._readingState = {
       byteSize: this._source.length,
       byteIndex: 0,
+      readInProgress: false,
     };
   }
 
@@ -77,16 +89,13 @@ export default class SlicerStream extends Readable {
     const bytes = this._source.subarray(startIndex, endIndex);
     const pushMore = this.push(bytes);
 
-    if (endIndex >= byteSize) {
-      this.push(null);
-      return;
-    }
-
     this._readingState.byteIndex = endIndex;
-
-    if (pushMore) {
-      this._readBinary();
+    if (endIndex === byteSize) {
+      this.push(null);
+      return false;
     }
+
+    return pushMore;
   }
 
   /**
@@ -97,25 +106,29 @@ export default class SlicerStream extends Readable {
     this._mode = 'file';
     this._source = source;
     this._fileReader = new FileReader(source);
+    this._readingState = {
+      byteSize: 0,
+      byteIndex: 0,
+      readInProgress: false,
+    };
   }
 
   _readFile = async () => {
-    try {
-      const buffer = await this._fileReader.readAsArrayBuffer(this._outputSize);
-      const length = buffer.byteLength;
+    const buffer = await this._fileReader.readAsArrayBuffer(this._outputSize);
+    const length = buffer.byteLength;
 
-      if (length === 0) {
-        this.push(null);
-        return;
-      }
-
-      this.push(new Uint8Array(buffer));
-
-      if (length < this._outputSize) {
-        this.push(null);
-      }
-    } catch (error) {
-      this.emit('error', error);
+    if (length === 0) {
+      this.push(null);
+      return false;
     }
+
+    const pushMore = this.push(new Uint8Array(buffer));
+
+    if (length < this._outputSize) {
+      this.push(null);
+      return false;
+    }
+
+    return pushMore;
   }
 }

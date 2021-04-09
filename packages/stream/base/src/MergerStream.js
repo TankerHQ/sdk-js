@@ -1,15 +1,13 @@
 // @flow
 import { InvalidArgument } from '@tanker/errors';
-import { assertDataTypeClass, castData } from '@tanker/types';
+import { assertDataTypeClass, castData, type ResourceMetadata, type Data } from '@tanker/types';
 
 import ResizerStream from './ResizerStream';
 
-type Destination = ArrayBuffer | Blob | Buffer | File | Uint8Array;
+export default class MergerStream<T: Data> extends ResizerStream {
+  _options: { type: Class<T> } & ResourceMetadata;
 
-export default class MergerStream<T: Destination> extends ResizerStream {
-  _options: { type: Class<T>, mime?: string, name?: string, lastModified?: number };
-
-  constructor(options: { type: Class<T>, mime?: string, name?: string, lastModified?: number }) {
+  constructor(options: $Shape<{ type: Class<T> } & ResourceMetadata>) {
     // Note: can't use Infinity as it will be forwarded to the writableHighWaterMark option
     super(Number.MAX_SAFE_INTEGER);
 

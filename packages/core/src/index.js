@@ -25,7 +25,8 @@ import { fromBase64, toBase64, prehashPassword } from './utils';
 export default Tanker;
 
 export type { b64string } from '@tanker/crypto';
-export type { OutputOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
+export type { ResourceMetadata } from '@tanker/types';
+export type { OutputOptions, FormatOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
 export type { EmailVerification, PassphraseVerification, KeyVerification, Verification, VerificationMethod } from './LocalUser/types';
 export type { TankerOptions } from './Tanker';
 
