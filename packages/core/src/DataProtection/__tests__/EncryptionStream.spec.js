@@ -2,10 +2,10 @@
 import { Writable } from '@tanker/stream-base';
 import { aead, random, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
-import { expect, BufferingObserver } from '@tanker/test-utils';
+import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 
 import { EncryptionStream } from '../EncryptionStream';
-import PromiseWrapper from '../../PromiseWrapper';
+import { PromiseWrapper } from '../../PromiseWrapper';
 
 describe('EncryptionStream', () => {
   let buffer: Array<Uint8Array>;
@@ -151,19 +151,18 @@ describe('EncryptionStream', () => {
 
   const coef = 3;
   describe(`buffers at most ${coef} * clear chunk size`, () => {
-    const writeDelay = 50;
-
     [10, 50, 100, 1000].forEach((chunkSize) => {
       it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks`, async () => {
         const chunk = new Uint8Array(chunkSize);
         const inputSize = 10 * chunkSize;
         const bufferCounter = new BufferingObserver();
         const encryptionStream = new EncryptionStream(resourceId, key, chunkSize + encryptionV4.overhead);
+        const timeout = makeTimeoutPromise(50);
         const slowWritable = new Writable({
           highWaterMark: 1,
           objectMode: true,
           write: async (data, encoding, done) => {
-            await new Promise(r => setTimeout(r, writeDelay));
+            await timeout.promise;
             bufferCounter.incrementOutputAndSnapshot(data.length - encryptionV4.overhead);
             done();
           }
@@ -171,6 +170,8 @@ describe('EncryptionStream', () => {
 
         const continueWriting = () => {
           do {
+            // flood every stream before unlocking writting end
+            timeout.reset();
             bufferCounter.incrementInput(chunk.length);
           } while (bufferCounter.inputWritten < inputSize && encryptionStream.write(chunk));
 
