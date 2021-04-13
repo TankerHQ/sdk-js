@@ -111,7 +111,7 @@ check/macos/nightly:
   except:
     - schedules
   tags:
-    - linux
+    - LinuxSlave-1
 
 deploy/sdk:
   extends: .deploy
