@@ -172,16 +172,24 @@ check/compat/master:
   tags:
     - linux
 
-check/e2e:
+.check/e2e:
   stage: check
-  when: manual
   script:
     - poetry run python run-ci.py e2e
   tags:
     - linux
+  image: registry.gitlab.com/tankerhq/docker/e2e:latest
+
+check/e2e:
+  extends: .check/e2e
+  when: manual
   except:
     - schedules
-  image: registry.gitlab.com/tankerhq/docker/e2e:latest
+
+check/e2e/nightly:
+  extends: .check/e2e
+  only:
+    - schedules
 
 audit:
   stage: check

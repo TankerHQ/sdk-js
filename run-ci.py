@@ -11,6 +11,7 @@ import json
 import cli_ui as ui
 import psutil
 
+import tankerci
 import tankerci.conan
 import tankerci.js
 import tankerci.reporting
@@ -188,7 +189,7 @@ def e2e(*, use_local_sources: bool) -> None:
         )
     tankerci.conan.set_home_isolation()
     tankerci.conan.update_config()
-    with base_path / "sdk-python":
+    with tankerci.working_directory(base_path / "sdk-python"):
         tankerci.run("poetry", "install", "--no-root")
         tankerci.conan.install_tanker_source(
             tankerci.conan.TankerSource.SAME_AS_BRANCH,
@@ -198,9 +199,9 @@ def e2e(*, use_local_sources: bool) -> None:
             tanker_deployed_ref=None,
         )
         tankerci.run("poetry", "install")
-    with base_path / "sdk-js":
+    with tankerci.working_directory(base_path / "sdk-js"):
         tankerci.js.yarn_install()
-    with base_path / "qa-python-js":
+    with tankerci.working_directory(base_path / "qa-python-js"):
         tankerci.run("poetry", "install")
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
 
