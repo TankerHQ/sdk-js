@@ -120,6 +120,7 @@ deploy/sdk:
   only:
     - /\Av[0-9.]+(-(alpha|beta)[0-9]+)?\z/
   script:
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "${HOME}/.npmrc"
     - poetry run python run-ci.py deploy
         --env ${CI_ENVIRONMENT_NAME} --git-tag ${CI_COMMIT_TAG}
 
