@@ -15,7 +15,8 @@ export class DownloadStream extends Readable {
 
   constructor(resourceId: string, headUrl: string, getUrl: string, chunkSize: number, verbose: bool = false) {
     super({
-      objectMode: true
+      objectMode: true,
+      highWaterMark: 2,
     });
 
     this._downloadedLength = 0;
