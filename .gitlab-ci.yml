@@ -24,6 +24,7 @@ check/linux:
     expire_in: 7 days
   tags:
     - linux
+    - tanker
 
 check/macos:
   stage: check
@@ -38,6 +39,7 @@ check/macos:
   stage: check
   tags:
     - windows
+    - tanker
 
 check/windows/edge:
   extends: .check/windows
@@ -67,6 +69,7 @@ check/linux/nightly:
     - poetry run python run-ci.py check --runner linux --nightly
   tags:
     - linux
+    - tanker
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
@@ -112,6 +115,7 @@ check/macos/nightly:
     - schedules
   tags:
     - linux
+    - tanker
 
 deploy/sdk:
   extends: .deploy
@@ -127,6 +131,7 @@ deploy/sdk:
 mirror:
   tags:
     - linux
+    - tanker
   stage: deploy
   only:
     - /\Av[0-9.]+\z/   # public release tags only
@@ -153,6 +158,7 @@ pages:
     expire_in: 7 days
   tags:
     - linux
+    - tanker
 
 check/compat:
   stage: check
@@ -163,6 +169,7 @@ check/compat:
     - poetry run python run-ci.py compat
   tags:
     - linux
+    - tanker
 
 check/compat/master:
   stage: check
@@ -172,6 +179,7 @@ check/compat/master:
     - poetry run python run-ci.py compat
   tags:
     - linux
+    - tanker
 
 .check/e2e:
   stage: check
@@ -179,6 +187,7 @@ check/compat/master:
     - poetry run python run-ci.py e2e
   tags:
     - linux
+    - tanker
   image: registry.gitlab.com/tankerhq/docker/e2e:latest
 
 check/e2e:
@@ -199,3 +208,6 @@ audit:
     - yarn audit
   only:
     - schedules
+  tags:
+    - linux
+    - tanker
