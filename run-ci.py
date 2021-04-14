@@ -194,7 +194,7 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.conan.install_tanker_source(
             tankerci.conan.TankerSource.SAME_AS_BRANCH,
             output_path=Path("conan") / "out",
-            profiles=["gcc8-release"],
+            profiles=["linux-release"],
             update=False,
             tanker_deployed_ref=None,
         )
