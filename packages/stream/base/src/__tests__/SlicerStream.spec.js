@@ -2,7 +2,7 @@
 import { Writable } from 'readable-stream';
 import { getConstructor, getConstructorName } from '@tanker/types';
 import FilePonyfill from '@tanker/file-ponyfill';
-import { expect, BufferingObserver } from '@tanker/test-utils';
+import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 
 import SlicerStream from '../SlicerStream';
 
@@ -49,26 +49,31 @@ describe('SlicerStream', () => {
       });
 
       it(`slices a ${classname} in chunks of size ${outputSize} while buffering at most ${outputSize} bytes`, async () => {
-        const writeDelay = 10;
-        const bufferingObserver = new BufferingObserver();
+        const bufferCounter = new BufferingObserver();
+        const stream = new SlicerStream({ source, outputSize });
+        const timeout = makeTimeoutPromise(20);
+
+        // hijack push to control size of output buffer
+        const push = stream.push.bind(stream);
+        stream.push = (data) => {
+          timeout.reset();
+          if (data) {
+            bufferCounter.incrementInput(data.length);
+          }
+
+          return push(data);
+        };
+
         const slowWritable = new Writable({
           highWaterMark: 1,
           objectMode: true,
           write: async (data, encoding, done) => {
-            await new Promise(r => setTimeout(r, writeDelay));
-            bufferingObserver.incrementOutputAndSnapshot(data.length);
+            // flood every stream before unlocking writing end
+            await timeout.promise;
+            bufferCounter.incrementOutputAndSnapshot(data.length);
             done();
           }
         });
-
-        const stream = new SlicerStream({ source, outputSize });
-        // hijack push to control size of output buffer
-        const push = stream.push.bind(stream);
-        stream.push = (data) => {
-          if (data)
-            bufferingObserver.incrementInput(data.length);
-          return push(data);
-        };
 
         await new Promise((resolve, reject) => {
           stream.on('error', reject);
@@ -76,7 +81,7 @@ describe('SlicerStream', () => {
           stream.pipe(slowWritable);
         });
 
-        bufferingObserver.snapshots.forEach((bufferedLength) => {
+        bufferCounter.snapshots.forEach((bufferedLength) => {
           expect(bufferedLength).to.be.at.most(outputSize, `buffered data exceeds threshold: got ${bufferedLength} > ${outputSize}`);
         });
       });
