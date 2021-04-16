@@ -1,10 +1,14 @@
-image: registry.gitlab.com/tankerhq/docker/node:latest
+include:
+  project: TankerHQ/gitlab-ci-files
+  file: /cache.yml
+  ref: 12cd8d49536d2a39cfc3a3fec4a8af3fcd054590
 
 stages:
   - check
   - deploy
 
 default:
+  image: registry.gitlab.com/tankerhq/docker/node:latest
   before_script:
     - poetry -V
     - node -v
@@ -12,6 +16,7 @@ default:
     - poetry run python --version
 
 check/linux:
+  extends: .python-yarn-cache
   stage: check
   except:
     - schedules
@@ -24,7 +29,6 @@ check/linux:
     expire_in: 7 days
   tags:
     - linux
-    - tanker
 
 check/macos:
   stage: check
@@ -62,6 +66,7 @@ check/windows/ie/manual:
     - poetry run python run-ci.py check --runner windows-ie
 
 check/linux/nightly:
+  extends: .python-yarn-cache
   stage: check
   only:
     - schedules
@@ -69,7 +74,6 @@ check/linux/nightly:
     - poetry run python run-ci.py check --runner linux --nightly
   tags:
     - linux
-    - tanker
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
@@ -109,16 +113,11 @@ check/macos/nightly:
   tags:
     - macos
 
-.deploy:
+deploy/sdk:
+  extends: .python-yarn-cache
   stage: deploy
   except:
     - schedules
-  tags:
-    - linux
-    - tanker
-
-deploy/sdk:
-  extends: .deploy
   environment:
     name: prod
   only:
@@ -126,7 +125,9 @@ deploy/sdk:
   script:
     - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "${HOME}/.npmrc"
     - poetry run python run-ci.py deploy
-        --env ${CI_ENVIRONMENT_NAME} --git-tag ${CI_COMMIT_TAG}
+        --env "${CI_ENVIRONMENT_NAME}" --git-tag "${CI_COMMIT_TAG}"
+  tags:
+    - linux
 
 mirror:
   tags:
@@ -158,28 +159,25 @@ pages:
     expire_in: 7 days
   tags:
     - linux
-    - tanker
+
+.check/compat:
+  extends: .python-yarn-cache
+  stage: check
+  script:
+    - poetry run python run-ci.py compat
+  tags:
+    - linux
 
 check/compat:
-  stage: check
+  extends: .check/compat
   when: manual
   except:
     - master
-  script:
-    - poetry run python run-ci.py compat
-  tags:
-    - linux
-    - tanker
 
 check/compat/master:
-  stage: check
+  extends: .check/compat
   only:
     - master
-  script:
-    - poetry run python run-ci.py compat
-  tags:
-    - linux
-    - tanker
 
 .check/e2e:
   stage: check
@@ -202,6 +200,7 @@ check/e2e/nightly:
     - schedules
 
 audit:
+  extends: .yarn-cache
   stage: check
   script:
     - yarn
@@ -210,4 +209,3 @@ audit:
     - schedules
   tags:
     - linux
-    - tanker
