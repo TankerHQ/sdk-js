@@ -119,6 +119,7 @@
   },
   "resolutions": {
     "node-fetch": "^2.6.1",
-    "elliptic": "^6.5.4"
+    "elliptic": "^6.5.4",
+    "ssri": "^6.0.2"
   }
 }
