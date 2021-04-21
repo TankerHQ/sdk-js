@@ -1,6 +1,9 @@
 [license-badge]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 [license-link]: https://opensource.org/licenses/Apache-2.0
 
+[actions-badge]: https://github.com/TankerHQ/sdk-js/actions/workflows/tests.yml/badge.svg
+[actions-link]: https://github.com/TankerHQ/sdk-js/actions/workflows/tests.yml
+
 [codecov-badge]: https://img.shields.io/codecov/c/github/TankerHQ/sdk-js.svg?label=Coverage
 [codecov-link]: https://codecov.io/gh/TankerHQ/sdk-js
 
@@ -31,6 +34,7 @@
 <a href="#readme"><img src="https://tanker.io/images/github-logo.png" alt="Tanker logo" width="180" /></a>
 
 [![License][license-badge]][license-link]
+[![Build][actions-badge]][actions-link]
 [![BrowserStack Status][browserstack-badge]][browserstack-link]
 [![Coverage][codecov-badge]][codecov-link]
 [![Last Commit][last-commit-badge]][last-commit-link]

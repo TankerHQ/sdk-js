@@ -1,0 +1,92 @@
+name: Tests
+on: [push]
+
+jobs:
+  browserstack:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser:
+          - ChromeWindows10
+          - Chrome70Windows7
+          - EdgeWindows10
+          - Edge18Windows10
+          - FirefoxWindows10
+          - Firefox64Windows8
+          - ChomeOSX
+          - FirefoxOSX
+          - Android10
+          - Android6
+          - iOS12
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+      - name: install packages
+        run: yarn install
+      - name: Tests on ${{ matrix.browser }}
+        run: yarn karma --browsers ${{ matrix.browser }}
+        # Browserstack tests are flaky, we allow failures here
+        continue-on-error: true
+        env:
+          BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
+          BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}
+          TANKER_ADMIND_URL: ${{ secrets.TANKER_ADMIND_URL }}
+          TANKER_APPD_URL: ${{ secrets.TANKER_APPD_URL }}
+          TANKER_FAKE_AUTH_URL: ${{ secrets.TANKER_FAKE_AUTH_URL }}
+          TANKER_FILEKIT_BUCKET_NAME: ${{ secrets.TANKER_FILEKIT_BUCKET_NAME }}
+          TANKER_FILEKIT_BUCKET_REGION: ${{ secrets.TANKER_FILEKIT_BUCKET_REGION }}
+          TANKER_FILEKIT_CLIENT_ID: ${{ secrets.TANKER_FILEKIT_CLIENT_ID }}
+          TANKER_FILEKIT_CLIENT_SECRET: ${{ secrets.TANKER_FILEKIT_CLIENT_SECRET }}
+          TANKER_ID_TOKEN: ${{ secrets.TANKER_ID_TOKEN }}
+          TANKER_OIDC_CLIENT_ID: ${{ secrets.TANKER_OIDC_CLIENT_ID }}
+          TANKER_OIDC_CLIENT_SECRET: ${{ secrets.TANKER_OIDC_CLIENT_SECRET }}
+          TANKER_OIDC_KEVIN_EMAIL: ${{ secrets.TANKER_OIDC_KEVIN_EMAIL }}
+          TANKER_OIDC_KEVIN_REFRESH_TOKEN: ${{ secrets.TANKER_OIDC_KEVIN_REFRESH_TOKEN }}
+          TANKER_OIDC_MARTINE_EMAIL: ${{ secrets.TANKER_OIDC_MARTINE_EMAIL }}
+          TANKER_OIDC_MARTINE_REFRESH_TOKEN: ${{ secrets.TANKER_OIDC_MARTINE_REFRESH_TOKEN }}
+          TANKER_OIDC_PROVIDER: ${{ secrets.TANKER_OIDC_PROVIDER }}
+          TANKER_TRUSTCHAIND_URL: ${{ secrets.TANKER_TRUSTCHAIND_URL }}
+  node:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-20.04
+          - macos-10.15
+          - windows-2019
+        node_version:
+          - '12'
+          - '14'
+          - '16'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node_version }}
+      - name: install packages
+        run: yarn install
+      - name: Tests on ${{ matrix.os }} with Node ${{ matrix.node_version }}
+        run: yarn test
+        env:
+          BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
+          BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}
+          TANKER_ADMIND_URL: ${{ secrets.TANKER_ADMIND_URL }}
+          TANKER_APPD_URL: ${{ secrets.TANKER_APPD_URL }}
+          TANKER_FAKE_AUTH_URL: ${{ secrets.TANKER_FAKE_AUTH_URL }}
+          TANKER_FILEKIT_BUCKET_NAME: ${{ secrets.TANKER_FILEKIT_BUCKET_NAME }}
+          TANKER_FILEKIT_BUCKET_REGION: ${{ secrets.TANKER_FILEKIT_BUCKET_REGION }}
+          TANKER_FILEKIT_CLIENT_ID: ${{ secrets.TANKER_FILEKIT_CLIENT_ID }}
+          TANKER_FILEKIT_CLIENT_SECRET: ${{ secrets.TANKER_FILEKIT_CLIENT_SECRET }}
+          TANKER_ID_TOKEN: ${{ secrets.TANKER_ID_TOKEN }}
+          TANKER_OIDC_CLIENT_ID: ${{ secrets.TANKER_OIDC_CLIENT_ID }}
+          TANKER_OIDC_CLIENT_SECRET: ${{ secrets.TANKER_OIDC_CLIENT_SECRET }}
+          TANKER_OIDC_KEVIN_EMAIL: ${{ secrets.TANKER_OIDC_KEVIN_EMAIL }}
+          TANKER_OIDC_KEVIN_REFRESH_TOKEN: ${{ secrets.TANKER_OIDC_KEVIN_REFRESH_TOKEN }}
+          TANKER_OIDC_MARTINE_EMAIL: ${{ secrets.TANKER_OIDC_MARTINE_EMAIL }}
+          TANKER_OIDC_MARTINE_REFRESH_TOKEN: ${{ secrets.TANKER_OIDC_MARTINE_REFRESH_TOKEN }}
+          TANKER_OIDC_PROVIDER: ${{ secrets.TANKER_OIDC_PROVIDER }}
+          TANKER_TRUSTCHAIND_URL: ${{ secrets.TANKER_TRUSTCHAIND_URL }}
