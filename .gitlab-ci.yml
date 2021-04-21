@@ -38,6 +38,7 @@ check/macos:
     - poetry run python run-ci.py check --runner macos
   tags:
     - macos
+    - MacOSSlave-2
 
 .check/windows:
   stage: check
@@ -112,6 +113,7 @@ check/macos/nightly:
     - poetry run python run-ci.py check --runner macos --nightly
   tags:
     - macos
+    - MacOSSlave-2
 
 deploy/sdk:
   extends: .python-yarn-cache
