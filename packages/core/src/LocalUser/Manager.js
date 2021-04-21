@@ -183,7 +183,7 @@ export class LocalUserManager extends EventEmitter {
   }
 
   getSessionToken = async (verification: VerificationWithToken): Promise<string> => {
-    await this.updateLocalUser();
+    await this.updateLocalUser({ isLight: true });
 
     const { payload, nature } = makeSessionCertificate(verification);
     const block = this._localUser.makeBlock(payload, nature);
