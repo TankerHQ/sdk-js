@@ -38,6 +38,7 @@ check/macos:
     - poetry run python run-ci.py check --runner macos
   tags:
     - macos
+    - MacOSSlave-2
 
 .check/windows:
   stage: check
@@ -74,6 +75,8 @@ check/linux/nightly:
     - poetry run python run-ci.py check --runner linux --nightly
   tags:
     - linux
+  # This job can run on a shared runner, which can be slow.
+  timeout: 1 hours 30 minutes
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
@@ -112,6 +115,7 @@ check/macos/nightly:
     - poetry run python run-ci.py check --runner macos --nightly
   tags:
     - macos
+    - MacOSSlave-2
 
 deploy/sdk:
   extends: .python-yarn-cache
