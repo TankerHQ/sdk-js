@@ -45,9 +45,9 @@ export class UploadStream extends Writable {
       const nextLength = prevLength + chunkLength;
       const curChunkIndex = prevLength / this._recommendedChunkSize;
 
-      const lastChunk = nextLength >= this._contentLength;
+      const lastChunk = nextLength === this._contentLength;
 
-      if (prevLength >= this._contentLength)
+      if (nextLength > this._contentLength)
         throw new InvalidArgument('Cannot write to an S3 upload stream past the content length.');
       if (!lastChunk && chunkLength !== this._recommendedChunkSize)
         throw new InvalidArgument(`S3 upload request with invalid chunk length: ${chunkLength} (must be ${this._recommendedChunkSize})`);

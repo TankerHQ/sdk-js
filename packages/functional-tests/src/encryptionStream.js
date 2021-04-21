@@ -3,9 +3,9 @@ import { errors } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
-import { MergerStream, Readable, Writable } from '@tanker/stream-base';
+import { MergerStream } from '@tanker/stream-base';
 
-import type { TestArgs } from './helpers';
+import { type TestArgs, pipeStreams } from './helpers';
 
 export const generateEncryptionStreamTests = (args: TestArgs) => {
   describe('stream encryption', () => {
@@ -22,14 +22,6 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
       stream.on('data', data => result.push(data));
       stream.on('end', () => resolve(result));
       stream.on('error', reject);
-    });
-
-    // copy paste of the same function from core/src/CloudStorage/Manager.js
-    const pipeStreams = (
-      { streams, resolveEvent }: { streams: Array<Readable | Writable>, resolveEvent: string }
-    ) => new Promise((resolve, reject) => {
-      streams.forEach(stream => stream.on('error', reject));
-      streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
     });
 
     const setupTestData = () => {

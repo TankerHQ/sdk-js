@@ -59,8 +59,11 @@ export class UploadStream extends Writable {
       const prevLength = this._uploadedLength;
       const nextLength = prevLength + chunkLength;
 
-      const lastChunk = nextLength >= this._contentLength;
+      const lastChunk = nextLength === this._contentLength;
 
+      if (nextLength > this._contentLength) {
+        throw new InvalidArgument('Cannot write to a GCS upload stream past the content length.');
+      }
       if (!lastChunk && chunkLength % GCSUploadSizeIncrement !== 0) {
         throw new InvalidArgument(`GCS upload request with invalid chunk length: ${chunkLength} (not multiple of 256KiB)`);
       }
