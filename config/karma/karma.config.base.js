@@ -54,8 +54,8 @@ module.exports = {
   // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
   browsers: ['ChromiumHeadless'],
 
-  browserNoActivityTimeout: 60000,
-  browserDisconnectTimeout: 20000,
+  browserNoActivityTimeout: 120000,
+  browserDisconnectTimeout: 40000,
 
   // Concurrency level
   // how many browser should be started simultaneous
