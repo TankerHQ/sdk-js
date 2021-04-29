@@ -466,6 +466,7 @@ export class Tanker extends EventEmitter {
   }
 
   async decrypt(cipher: Data, options?: $Shape<ProgressOptions> = {}): Promise<string> {
+    assertStatus(this.status, statuses.READY, 'decrypt');
     const progressOptions = extractProgressOptions(options);
     return utils.toString(await this.decryptData(cipher, {
       ...progressOptions,
