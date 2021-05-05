@@ -140,36 +140,43 @@ export const generateGroupsTests = (args: TestArgs) => {
         .to.be.rejectedWith(errors.InvalidArgument);
     });
 
-    it('share keys with original provisional group members', async () => {
-      const provisionalEmail = `${uuid.v4()}@tanker.io`;
-      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), provisionalEmail);
-      const provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
+    describe("with provisionals", () => {
+      let provisionalEmail;
+      let provisionalIdentity;
+      let provisionalPublicIdentity;
 
-      const groupId = await bobLaptop.createGroup([provisionalPublicIdentity]);
-      const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+      beforeEach(async () => {
+        provisionalEmail = `${uuid.v4()}@tanker.io`;
+        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), provisionalEmail);
+        provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
 
-      const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
-      await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-      await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+      })
 
-      expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
-    });
+      it('share keys with original provisional group members', async () => {
 
-    it('share keys with added provisional group members', async () => {
-      const provisionalEmail = `${uuid.v4()}@tanker.io`;
-      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), provisionalEmail);
-      const provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
+        const groupId = await bobLaptop.createGroup([provisionalPublicIdentity]);
+        const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
-      const groupId = await bobLaptop.createGroup([bobPublicIdentity]);
+        const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
 
-      await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity] });
-      const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+        expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+      });
 
-      const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
-      await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-      await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+      it('share keys with added provisional group members', async () => {
 
-      expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+        const groupId = await bobLaptop.createGroup([bobPublicIdentity]);
+
+        await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity] });
+        const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+
+        const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+
+        expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+      });
     });
   });
 };
