@@ -289,7 +289,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
           verificationMethod: { type: 'email', email },
         });
         const bobVerificationCode = await appHelper.getVerificationCode(email);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode: bobVerificationCode })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode: bobVerificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
       it('does not throw if nothing to claim and same email registered as verification method', async () => {
@@ -328,7 +328,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const verificationCode = await appHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
       it('gracefully accept an already attached provisional identity', async () => {
@@ -370,11 +370,6 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
-      it('throws when verifying provisional identity without attaching first', async () => {
-        const verificationCode = await appHelper.getVerificationCode(email);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
-      });
-
       it('throw when two users attach the same provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
@@ -383,7 +378,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         verificationCode = await appHelper.getVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidArgument, 'one or more provisional identities are already attached');
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached, 'one or more provisional identities are already attached');
       });
 
       it('can attach a provisional identity after a revocation', async () => {

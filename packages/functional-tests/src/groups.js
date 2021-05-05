@@ -153,30 +153,22 @@ export const generateGroupsTests = (args: TestArgs) => {
         provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
       });
 
-      it('fails when creating a group with an already attach provisional identity with no share', async () => {
-        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        await expect(attachResult).to.deep.equal({
-          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
-          verificationMethod: { type: 'email', email: provisionalEmail },
-        });
+      it('fails when creating a group with an already attached provisional identity with no share', async () => {
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
         const aliceVerificationCode = await appHelper.getVerificationCode(provisionalEmail);
-        await expect(aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode })).to.be.fulfilled;
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode });
 
-        await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejected;
+        await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
-      it('fails when creating a group with an already attach provisional identity', async () => {
+      it('fails when creating a group with an already attached provisional identity', async () => {
         await expect(bobLaptop.encrypt(message, { shareWithUsers: [provisionalPublicIdentity] })).to.be.fulfilled;
 
-        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        await expect(attachResult).to.deep.equal({
-          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
-          verificationMethod: { type: 'email', email: provisionalEmail },
-        });
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
         const aliceVerificationCode = await appHelper.getVerificationCode(provisionalEmail);
-        await expect(aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode })).to.be.fulfilled;
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode });
 
-        await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejected;
+        await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
       it('share keys with original provisional group members', async () => {
