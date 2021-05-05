@@ -13,22 +13,24 @@ export const generateGroupsTests = (args: TestArgs) => {
     let bobLaptop;
     let bobPublicIdentity;
     let unknownPublicIdentity;
+    let appHelper;
     const message = "Two's company, three's a crowd";
 
     before(async () => {
-      const aliceIdentity = await args.appHelper.generateIdentity();
+      ({ appHelper } = args);
+      const aliceIdentity = await appHelper.generateIdentity();
       alicePublicIdentity = await getPublicIdentity(aliceIdentity);
       aliceLaptop = args.makeTanker();
       await aliceLaptop.start(aliceIdentity);
       await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-      const bobIdentity = await args.appHelper.generateIdentity();
+      const bobIdentity = await appHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
       bobLaptop = args.makeTanker();
       await bobLaptop.start(bobIdentity);
       await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-      unknownPublicIdentity = await getPublicIdentity(await args.appHelper.generateIdentity('galette'));
+      unknownPublicIdentity = await getPublicIdentity(await appHelper.generateIdentity('galette'));
     });
 
     after(async () => {
@@ -140,20 +142,44 @@ export const generateGroupsTests = (args: TestArgs) => {
         .to.be.rejectedWith(errors.InvalidArgument);
     });
 
-    describe("with provisionals", () => {
+    describe('with provisionals', () => {
       let provisionalEmail;
       let provisionalIdentity;
       let provisionalPublicIdentity;
 
       beforeEach(async () => {
         provisionalEmail = `${uuid.v4()}@tanker.io`;
-        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), provisionalEmail);
+        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), provisionalEmail);
         provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
+      });
 
-      })
+      it('fails when creating a group with an already attach provisional identity with no share', async () => {
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await expect(attachResult).to.deep.equal({
+          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'email', email: provisionalEmail },
+        });
+        const aliceVerificationCode = await appHelper.getVerificationCode(provisionalEmail);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode })).to.be.fulfilled;
+
+        await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejected;
+      });
+
+      it('fails when creating a group with an already attach provisional identity', async () => {
+        await expect(bobLaptop.encrypt(message, { shareWithUsers: [provisionalPublicIdentity] })).to.be.fulfilled;
+
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await expect(attachResult).to.deep.equal({
+          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'email', email: provisionalEmail },
+        });
+        const aliceVerificationCode = await appHelper.getVerificationCode(provisionalEmail);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode })).to.be.fulfilled;
+
+        await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejected;
+      });
 
       it('share keys with original provisional group members', async () => {
-
         const groupId = await bobLaptop.createGroup([provisionalPublicIdentity]);
         const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
@@ -165,7 +191,6 @@ export const generateGroupsTests = (args: TestArgs) => {
       });
 
       it('share keys with added provisional group members', async () => {
-
         const groupId = await bobLaptop.createGroup([bobPublicIdentity]);
 
         await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity] });

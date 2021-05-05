@@ -16,27 +16,18 @@ import UserManager from '../Users/Manager';
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';
 
-type TankerProvisionalKeys = {|
-  tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
-  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair
-|};
+type TankerProvisionalKeys = {| tankerSignatureKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair |};
 
-const tankerProvisionalKeys = (serverResult) => {
-  if (!serverResult) {
-    return null;
+const tankerProvisionalKeys = (serverResult) => ({
+  tankerSignatureKeyPair: {
+    privateKey: utils.fromBase64(serverResult.private_signature_key),
+    publicKey: utils.fromBase64(serverResult.public_signature_key),
+  },
+  tankerEncryptionKeyPair: {
+    privateKey: utils.fromBase64(serverResult.private_encryption_key),
+    publicKey: utils.fromBase64(serverResult.public_encryption_key),
   }
-
-  return {
-    tankerSignatureKeyPair: {
-      privateKey: utils.fromBase64(serverResult.private_signature_key),
-      publicKey: utils.fromBase64(serverResult.public_signature_key),
-    },
-    tankerEncryptionKeyPair: {
-      privateKey: utils.fromBase64(serverResult.private_encryption_key),
-      publicKey: utils.fromBase64(serverResult.public_encryption_key),
-    }
-  };
-};
+});
 
 export default class ProvisionalIdentityManager {
   _client: Client;
@@ -125,8 +116,7 @@ export default class ProvisionalIdentityManager {
     }
 
     const tankerKeys = await this._getProvisionalIdentityKeys(email, verification);
-    if (tankerKeys)
-      await this._claimProvisionalIdentity(provisionalIdentity, tankerKeys);
+    await this._claimProvisionalIdentity(provisionalIdentity, tankerKeys);
 
     delete this._provisionalIdentity;
   }
@@ -178,7 +168,7 @@ export default class ProvisionalIdentityManager {
     });
   }
 
-  async _getProvisionalIdentityKeys(email: string, verification?: EmailVerification | OIDCVerification): Promise<?TankerProvisionalKeys> {
+  async _getProvisionalIdentityKeys(email: string, verification?: EmailVerification | OIDCVerification): Promise<TankerProvisionalKeys> {
     const urlsafeHashedEmail = utils.toBase64(generichash(utils.fromString(email)));
 
     let body = null;
@@ -190,10 +180,6 @@ export default class ProvisionalIdentityManager {
     }
 
     const provisionalIdentity = await this._client.getProvisionalIdentity(body);
-
-    if (!provisionalIdentity) {
-      return null; // nothing to claim
-    }
 
     if (provisionalIdentity.hashed_email !== urlsafeHashedEmail) {
       throw new InternalError(`Assertion error: failed to get tanker keys for provisional identity with email "${email}"`);

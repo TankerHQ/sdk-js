@@ -274,6 +274,24 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.fulfilled;
       });
 
+      it('throws if claiming a provisional identity already attached by someone else', async () => {
+        const verificationCode = await appHelper.getVerificationCode(email);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
+      });
+
+      it('throws if claiming an already attached provisional', async () => {
+        const aliceVerificationCode = await appHelper.getVerificationCode(email);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: aliceVerificationCode })).to.be.fulfilled;
+
+        const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({
+          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'email', email },
+        });
+        const bobVerificationCode = await appHelper.getVerificationCode(email);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode: bobVerificationCode })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
       it('does not throw if nothing to claim and same email registered as verification method', async () => {
         const verificationCode = await appHelper.getVerificationCode(email);
         await aliceLaptop.setVerificationMethod({ email, verificationCode });

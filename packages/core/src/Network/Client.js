@@ -439,15 +439,8 @@ export class Client {
       headers: { 'Content-Type': 'application/json' },
     };
 
-    try {
-      const { provisional_identity: provisionalIdentity } = await this._apiCall('/provisional-identities', options);
-      return provisionalIdentity;
-    } catch (e) {
-      if (e instanceof TankerError) {
-        if (e.apiCode === 'provisional_identity_not_found') return null;
-      }
-      throw e;
-    }
+    const { provisional_identity: provisionalIdentity } = await this._apiCall('/provisional-identities', options);
+    return provisionalIdentity;
   }
 
   claimProvisionalIdentity = async (body: any): Promise<void> => {
