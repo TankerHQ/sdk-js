@@ -49,7 +49,7 @@ export class Client {
   constructor(appId: Uint8Array, userId: Uint8Array, options: ClientOptions) {
     const { instanceInfo, sdkInfo, url } = { url: defaultApiEndpoint, ...options };
     this._accessToken = '';
-    this._apiEndpoint = url;
+    this._apiEndpoint = url.replace(/\/+$/, '');
     this._apiRootPath = `/v2/apps/${urlize(appId)}`;
     this._appId = appId;
     this._cancelationHandle = new PromiseWrapper<void>();
