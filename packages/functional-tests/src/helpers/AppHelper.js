@@ -43,10 +43,17 @@ export class AppHelper {
   static async newApp(): Promise<AppHelper> {
     const appKeyPair = tcrypto.makeSignKeyPair();
     const rootBlock = makeRootBlock(appKeyPair);
+
+    const { environments } = await requestAdmindWithAuth({ method: 'GET', path: '/environments' });
+    if (environments.length === 0) {
+      throw new Error('Assertion error in functional-tests helper: no environment available');
+    }
+
     const body = {
       root_block: utils.toBase64(serializeBlock(rootBlock)),
       name: `functest-${uuid.v4()}`,
       private_signature_key: utils.toBase64(appKeyPair.privateKey),
+      environment_id: environments[0].id,
     };
     const createResponse = await requestAdmindWithAuth({ method: 'POST', path: '/apps', body });
     const authToken = createResponse.app.auth_token;
