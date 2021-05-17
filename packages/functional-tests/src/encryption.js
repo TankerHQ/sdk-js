@@ -1,5 +1,5 @@
 // @flow
-import { errors } from '@tanker/core';
+import { errors, statuses } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
 import { getConstructorName, getDataLength } from '@tanker/types';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
@@ -7,6 +7,8 @@ import { expect, sinon, uuid } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 import { expectProgressReport, expectType, expectSameType, expectDeepEqual } from './helpers';
+
+const { READY, IDENTITY_VERIFICATION_NEEDED } = statuses;
 
 export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
@@ -264,7 +266,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
         expect(attachResult).to.deep.equal({
-          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          status: IDENTITY_VERIFICATION_NEEDED,
           verificationMethod: { type: 'email', email },
         });
       });
@@ -285,7 +287,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         expect(attachResult).to.deep.equal({
-          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          status: IDENTITY_VERIFICATION_NEEDED,
           verificationMethod: { type: 'email', email },
         });
         const bobVerificationCode = await appHelper.getVerificationCode(email);
@@ -297,7 +299,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await aliceLaptop.setVerificationMethod({ email, verificationCode });
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        expect(attachResult).to.deep.equal({ status: aliceLaptop.constructor.statuses.READY });
+        expect(attachResult).to.deep.equal({ status: READY });
       });
 
       it('decrypt data shared with an attached provisional identity', async () => {
@@ -338,7 +340,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        expect(attachResult).to.deep.equal({ status: aliceLaptop.constructor.statuses.READY });
+        expect(attachResult).to.deep.equal({ status: READY });
       });
 
       it('attach a provisional identity without requesting verification if email already verified', async () => {
@@ -353,7 +355,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await eveLaptop.registerIdentity({ email, verificationCode });
 
         const attachResult = await eveLaptop.attachProvisionalIdentity(provisionalIdentity);
-        expect(attachResult).to.deep.equal({ status: eveLaptop.constructor.statuses.READY });
+        expect(attachResult).to.deep.equal({ status: READY });
 
         const decrypted = await eveLaptop.decrypt(cipherText);
         expect(decrypted).to.equal(clearText);
