@@ -8,8 +8,9 @@ import {
 } from '@tanker/identity';
 
 import {
-  _deserializeIdentity, _deserializePermanentIdentity, _deserializeProvisionalIdentity,
+  _deserializePermanentIdentity, _deserializeProvisionalIdentity,
   _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
+  toIdentityOrderedJson,
 } from '../identity';
 
 describe('Identity', () => {
@@ -22,11 +23,13 @@ describe('Identity', () => {
   const userId = 'b_eich';
   const userEmail = 'brendan.eich@tanker.io';
 
+  let hashedUserEmail;
   let obfuscatedUserId;
 
   before(async () => {
     await cryptoReady;
     obfuscatedUserId = utils.toBase64(obfuscateUserId(utils.fromBase64(trustchain.id), userId));
+    hashedUserEmail = utils.toBase64(generichash(utils.fromString(userEmail)));
   });
 
   describe('deserialize', () => {
@@ -75,6 +78,7 @@ describe('Identity', () => {
 
       // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodPublicIdentity);
+      expect(toIdentityOrderedJson(identity)).to.equal(goodPublicIdentity);
     });
 
     it('can parse a valid non-hashed email public provisional identity', () => {
@@ -88,25 +92,20 @@ describe('Identity', () => {
 
       // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodOldPublicProvisionalIdentity);
+      expect(toIdentityOrderedJson(identity)).to.equal(goodOldPublicProvisionalIdentity);
     });
 
     it('can parse a valid hashed email public provisional identity', () => {
       const identity = _deserializeProvisionalIdentity(goodPublicProvisionalIdentity);
-      const hashedEmail = utils.toBase64(generichash(utils.fromString(userEmail)));
 
       expect(identity.trustchain_id).to.be.equal(trustchain.id);
       expect(identity.target).to.be.equal('hashed_email');
-      expect(identity.value).to.equal(hashedEmail);
+      expect(identity.value).to.equal(hashedUserEmail);
       expect(identity.public_signature_key).to.equal('W7QEQBu9FXcXIpOgq62tPwBiyFAbpT1rAruD0h/NrTA=');
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
 
       // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodPublicProvisionalIdentity);
-    });
-
-    it('can parse both types of secret identities with _deserializeIdentity', () => {
-      expect(_deserializeIdentity(goodPermanentIdentity)).to.deep.equal(_deserializePermanentIdentity(goodPermanentIdentity));
-      expect(_deserializeIdentity(goodProvisionalIdentity)).to.deep.equal(_deserializeProvisionalIdentity(goodProvisionalIdentity));
     });
   });
 

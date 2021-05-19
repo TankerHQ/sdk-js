@@ -9,6 +9,7 @@ export type {
 export {
   _deserializePermanentIdentity, _deserializeProvisionalIdentity,
   _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
+  toIdentityOrderedJson,
 } from './identity';
 
 export { assertUserSecret } from './userSecret';

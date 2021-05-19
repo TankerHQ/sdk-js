@@ -5,6 +5,7 @@ import { utils, generichash, random } from '@tanker/crypto';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
 import { AppHelper, makePrefix, appdUrl, managementSettings, oidcSettings, benchmarkSettings } from '@tanker/functional-tests';
 
+import { toIdentityOrderedJson } from '../../core/src/Identity';
 import { before, after, benchmark } from './framework';
 
 if (!appdUrl || !managementSettings || !oidcSettings) {
@@ -227,7 +228,7 @@ function makePublicIdentity(appIdArg: string, n: number): string {
     target: 'user',
     value: utils.toBase64(obfuscateUserId(utils.fromBase64(appIdArg), n)),
   };
-  return utils.toB64Json(publicIdentity);
+  return toIdentityOrderedJson(publicIdentity);
 }
 
 // What: creates a group

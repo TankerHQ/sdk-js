@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import { InvalidArgument } from '@tanker/errors';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 
 type PermanentIdentityTarget = 'user';
 type SecretProvisionalIdentityTarget = 'email';
@@ -67,6 +67,48 @@ function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): bool 
   return !isPermanentIdentity(identity);
 }
 
+const rubyJsonOrder = {
+  trustchain_id: 1,
+  target: 2,
+  value: 3,
+  delegation_signature: 4,
+  ephemeral_public_signature_key: 5,
+  ephemeral_private_signature_key: 6,
+  user_secret: 7,
+  public_encryption_key: 8,
+  private_encryption_key: 9,
+  public_signature_key: 10,
+  private_signature_key: 11,
+};
+
+function rubyJsonSort(a: string, b: string) {
+  const aIdx = rubyJsonOrder[a];
+  const bIdx = rubyJsonOrder[b];
+  if (!aIdx)
+    throw new InternalError(`Assertion error: unknown identity JSON key: ${a}`);
+  if (!bIdx)
+    throw new InternalError(`Assertion error: unknown identity JSON key: ${b}`);
+  return aIdx - bIdx;
+}
+
+function dumpOrderedJson(o: Object): string {
+  const keys = Object.keys(o).sort(rubyJsonSort);
+  const json = [];
+  for (const k of keys) {
+    let val;
+    if (o[k] !== null && typeof o[k] === 'object')
+      val = dumpOrderedJson(o[k]);
+    else
+      val = JSON.stringify(o[k]);
+    json.push(`"${k}":${val}`);
+  }
+  return `{${json.join(',')}}`;
+}
+
+export function toIdentityOrderedJson(identity: SecretIdentity | PublicIdentity): b64string {
+  return utils.toBase64(utils.fromString(dumpOrderedJson(identity)));
+}
+
 function _deserializeAndFreeze(identity: b64string): Object { // eslint-disable-line no-underscore-dangle
   const result = utils.fromB64Json(identity);
 
@@ -80,14 +122,6 @@ function _deserializeAndFreeze(identity: b64string): Object { // eslint-disable-
   });
 
   return Object.freeze(result);
-}
-
-export function _deserializeIdentity(identity: b64string): SecretIdentity { // eslint-disable-line no-underscore-dangle
-  try {
-    return _deserializeAndFreeze(identity);
-  } catch (e) {
-    throw new InvalidArgument(`Invalid identity provided: ${identity}`);
-  }
 }
 
 export function _deserializePermanentIdentity(identity: b64string): SecretPermanentIdentity { // eslint-disable-line no-underscore-dangle

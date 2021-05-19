@@ -60,8 +60,17 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
       const [pub1, pub2] = await fa.getPublicIdentities([email1, email2]);
       const priv2 = await fa.getIdentity(email2);
 
+      const priv2Identity = utils.fromB64Json(priv2.provisionalIdentity);
+      const expectedProvisionalPub = utils.toB64Json({
+        public_encryption_key: priv2Identity.public_encryption_key,
+        public_signature_key: priv2Identity.public_signature_key,
+        trustchain_id: priv2Identity.trustchain_id,
+        target: 'email',
+        value: priv2Identity.value,
+      });
+
       expectMatchingPublicIdentities(pub1, await getPublicIdentity(priv1.identity));
-      expectMatchingPublicIdentities(pub2, await getPublicIdentity(priv2.provisionalIdentity));
+      expectMatchingPublicIdentities(pub2, expectedProvisionalPub);
     });
 
     it('returns the proper public identity before and after the private identity has been used', async () => {
@@ -73,8 +82,17 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
       await fa.setIdentityRegistered(email);
       const [publicPermIdentity] = await fa.getPublicIdentities([email]);
 
-      expectMatchingPublicIdentities(publicProvIdentity1, await getPublicIdentity(provisionalIdentity));
-      expectMatchingPublicIdentities(publicProvIdentity2, await getPublicIdentity(provisionalIdentity));
+      const provisionalIdentityJson = utils.fromB64Json(provisionalIdentity);
+      const expectedProvisionalPub = utils.toB64Json({
+        public_encryption_key: provisionalIdentityJson.public_encryption_key,
+        public_signature_key: provisionalIdentityJson.public_signature_key,
+        trustchain_id: provisionalIdentityJson.trustchain_id,
+        target: 'email',
+        value: provisionalIdentityJson.value,
+      });
+
+      expectMatchingPublicIdentities(publicProvIdentity1, await expectedProvisionalPub);
+      expectMatchingPublicIdentities(publicProvIdentity2, await expectedProvisionalPub);
       expectMatchingPublicIdentities(publicPermIdentity, await getPublicIdentity(identity));
     });
 
