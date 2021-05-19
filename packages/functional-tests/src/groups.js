@@ -13,22 +13,24 @@ export const generateGroupsTests = (args: TestArgs) => {
     let bobLaptop;
     let bobPublicIdentity;
     let unknownPublicIdentity;
+    let appHelper;
     const message = "Two's company, three's a crowd";
 
     before(async () => {
-      const aliceIdentity = await args.appHelper.generateIdentity();
+      ({ appHelper } = args);
+      const aliceIdentity = await appHelper.generateIdentity();
       alicePublicIdentity = await getPublicIdentity(aliceIdentity);
       aliceLaptop = args.makeTanker();
       await aliceLaptop.start(aliceIdentity);
       await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-      const bobIdentity = await args.appHelper.generateIdentity();
+      const bobIdentity = await appHelper.generateIdentity();
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
       bobLaptop = args.makeTanker();
       await bobLaptop.start(bobIdentity);
       await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-      unknownPublicIdentity = await getPublicIdentity(await args.appHelper.generateIdentity('galette'));
+      unknownPublicIdentity = await getPublicIdentity(await appHelper.generateIdentity('galette'));
     });
 
     after(async () => {
@@ -140,36 +142,58 @@ export const generateGroupsTests = (args: TestArgs) => {
         .to.be.rejectedWith(errors.InvalidArgument);
     });
 
-    it('share keys with original provisional group members', async () => {
-      const provisionalEmail = `${uuid.v4()}@tanker.io`;
-      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), provisionalEmail);
-      const provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
+    describe('with provisionals', () => {
+      let provisionalEmail;
+      let provisionalIdentity;
+      let provisionalPublicIdentity;
 
-      const groupId = await bobLaptop.createGroup([provisionalPublicIdentity]);
-      const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+      beforeEach(async () => {
+        provisionalEmail = `${uuid.v4()}@tanker.io`;
+        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), provisionalEmail);
+        provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
+      });
 
-      const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
-      await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-      await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+      it('fails when creating a group with an already attached provisional identity with no share', async () => {
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        const aliceVerificationCode = await appHelper.getVerificationCode(provisionalEmail);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode });
 
-      expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
-    });
+        await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+      });
 
-    it('share keys with added provisional group members', async () => {
-      const provisionalEmail = `${uuid.v4()}@tanker.io`;
-      const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), provisionalEmail);
-      const provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
+      it('fails when creating a group with an already attached provisional identity', async () => {
+        await expect(bobLaptop.encrypt(message, { shareWithUsers: [provisionalPublicIdentity] })).to.be.fulfilled;
 
-      const groupId = await bobLaptop.createGroup([bobPublicIdentity]);
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        const aliceVerificationCode = await appHelper.getVerificationCode(provisionalEmail);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode });
 
-      await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity] });
-      const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+        await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+      });
 
-      const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
-      await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-      await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+      it('share keys with original provisional group members', async () => {
+        const groupId = await bobLaptop.createGroup([provisionalPublicIdentity]);
+        const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
-      expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+        const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+
+        expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+      });
+
+      it('share keys with added provisional group members', async () => {
+        const groupId = await bobLaptop.createGroup([bobPublicIdentity]);
+
+        await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity] });
+        const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+
+        const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+
+        expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+      });
     });
   });
 };

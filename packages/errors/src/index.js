@@ -6,6 +6,7 @@ export { ExpiredVerification } from './errors/ExpiredVerification';
 export { GroupTooBig } from './errors/GroupTooBig';
 export { InternalError } from './errors/InternalError';
 export { DeviceRevoked } from './errors/DeviceRevoked';
+export { IdentityAlreadyAttached } from './errors/IdentityAlreadyAttached';
 export { InvalidArgument } from './errors/InvalidArgument';
 export { InvalidVerification } from './errors/InvalidVerification';
 export { NetworkError } from './errors/NetworkError';

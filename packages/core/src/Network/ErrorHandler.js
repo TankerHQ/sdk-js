@@ -1,5 +1,5 @@
 // @flow
-import { Conflict, DeviceRevoked, ExpiredVerification, GroupTooBig, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, UpgradeRequired } from '@tanker/errors';
+import { Conflict, DeviceRevoked, ExpiredVerification, GroupTooBig, IdentityAlreadyAttached, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, UpgradeRequired } from '@tanker/errors';
 
 const apiCodeErrorMap = {
   blocked: PreconditionFailed,
@@ -11,7 +11,7 @@ const apiCodeErrorMap = {
   invalid_passphrase: InvalidVerification,
   invalid_token: PreconditionFailed, // invalid or expired access token
   invalid_verification_code: InvalidVerification,
-  provisional_identity_already_attached: InvalidArgument,
+  provisional_identity_already_attached: IdentityAlreadyAttached,
   too_many_attempts: TooManyAttempts,
   verification_code_expired: ExpiredVerification,
   verification_code_not_found: InvalidVerification,

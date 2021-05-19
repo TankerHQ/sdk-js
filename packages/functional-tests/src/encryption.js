@@ -1,5 +1,5 @@
 // @flow
-import { errors } from '@tanker/core';
+import { errors, statuses } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
 import { getConstructorName, getDataLength } from '@tanker/types';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
@@ -7,6 +7,8 @@ import { expect, sinon, uuid } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 import { expectProgressReport, expectType, expectSameType, expectDeepEqual } from './helpers';
+
+const { READY, IDENTITY_VERIFICATION_NEEDED } = statuses;
 
 export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
@@ -264,7 +266,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
         expect(attachResult).to.deep.equal({
-          status: aliceLaptop.constructor.statuses.IDENTITY_VERIFICATION_NEEDED,
+          status: IDENTITY_VERIFICATION_NEEDED,
           verificationMethod: { type: 'email', email },
         });
       });
@@ -274,12 +276,30 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.fulfilled;
       });
 
+      it('throws if claiming a provisional identity already attached by someone else', async () => {
+        const verificationCode = await appHelper.getVerificationCode(email);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
+      });
+
+      it('throws if claiming an already attached provisional', async () => {
+        const aliceVerificationCode = await appHelper.getVerificationCode(email);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: aliceVerificationCode })).to.be.fulfilled;
+
+        const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({
+          status: IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'email', email },
+        });
+        const bobVerificationCode = await appHelper.getVerificationCode(email);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode: bobVerificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+      });
+
       it('does not throw if nothing to claim and same email registered as verification method', async () => {
         const verificationCode = await appHelper.getVerificationCode(email);
         await aliceLaptop.setVerificationMethod({ email, verificationCode });
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        expect(attachResult).to.deep.equal({ status: aliceLaptop.constructor.statuses.READY });
+        expect(attachResult).to.deep.equal({ status: READY });
       });
 
       it('decrypt data shared with an attached provisional identity', async () => {
@@ -310,7 +330,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const verificationCode = await appHelper.getVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejected;
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
       it('gracefully accept an already attached provisional identity', async () => {
@@ -320,7 +340,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        expect(attachResult).to.deep.equal({ status: aliceLaptop.constructor.statuses.READY });
+        expect(attachResult).to.deep.equal({ status: READY });
       });
 
       it('attach a provisional identity without requesting verification if email already verified', async () => {
@@ -335,7 +355,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await eveLaptop.registerIdentity({ email, verificationCode });
 
         const attachResult = await eveLaptop.attachProvisionalIdentity(provisionalIdentity);
-        expect(attachResult).to.deep.equal({ status: eveLaptop.constructor.statuses.READY });
+        expect(attachResult).to.deep.equal({ status: READY });
 
         const decrypted = await eveLaptop.decrypt(cipherText);
         expect(decrypted).to.equal(clearText);
@@ -352,11 +372,6 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
-      it('throws when verifying provisional identity without attaching first', async () => {
-        const verificationCode = await appHelper.getVerificationCode(email);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
-      });
-
       it('throw when two users attach the same provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
@@ -365,7 +380,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         verificationCode = await appHelper.getVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejected;
+        await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached, 'one or more provisional identities are already attached');
       });
 
       it('can attach a provisional identity after a revocation', async () => {
