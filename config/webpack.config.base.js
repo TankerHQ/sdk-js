@@ -4,11 +4,22 @@ const webpack = require('webpack');
 
 const getBabelConfig = require('./babel.config');
 
-const hackAroundSodium = {
-  // libsodium uses fs for some reason, we don't ever want that in a browser
-  fs: 'empty',
-  // libsodium never actually uses node's crypto in our case
-  crypto: 'empty',
+const webResolve = {
+  fallback: {
+    // libsodium does not use fs nor path in browsers.
+    // These packages are referenced in node environment only
+    fs: false,
+    path: false,
+    // libsodium uses node's crypto as a fallback if it doesn't find any other secure
+    // random number generator. In our case `window.crypto` is always available
+    crypto: false,
+
+    // Node.js polyfills were removed from default behavior in Webpack 5
+    // But buffer and process.nextTick are used in `readable-stream` see the README:
+    // - https://github.com/nodejs/readable-stream#usage-in-browsers
+    buffer: require.resolve('buffer/'),
+    process: require.resolve('process/browser'),
+  },
 };
 
 const getBabelLoaders = (env) => {
@@ -73,8 +84,12 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
         ...getBabelLoaders({ target, react, hmre }),
         {
           test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
-          loader: 'url-loader',
-          options: { limit: 25000 },
+          type: 'asset',
+          parser: {
+            dataUrlCondition: {
+              maxSize: 25000
+            },
+          },
         },
       ],
     },
@@ -91,8 +106,17 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
     devServer: undefined,
   };
 
-  if (target === 'web')
-    base.node = hackAroundSodium;
+  if (target === 'web') {
+    // 'es5' is necessary to support IE
+    base.target = ['web', 'es5'];
+    base.resolve = webResolve;
+    base.plugins.push(
+      // Node.js Polyfills were removed in Webpack 5
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
+    );
+  }
 
   return base;
 };

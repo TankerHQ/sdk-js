@@ -4,7 +4,7 @@ const os = require('os');
 const fs = require('fs');
 
 const karmaConfig = require('./karma.config.base');
-const { makeBaseConfig } = require('../webpack.config.base');
+const { makeBaseConfig } = require('./karma.webpack.config');
 const { plugin } = require('./tanker.test.config');
 
 const outputFile = 'benchmarks.json';

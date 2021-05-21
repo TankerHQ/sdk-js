@@ -2,7 +2,7 @@
 const webpack = require('webpack');
 
 const karmaConfig = require('./karma.config.base');
-const { makeBaseConfig } = require('../webpack.config.base');
+const { makeBaseConfig } = require('./karma.webpack.config');
 const { plugin } = require('./tanker.test.config');
 
 module.exports = (config) => {
