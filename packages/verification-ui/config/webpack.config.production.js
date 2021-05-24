@@ -8,7 +8,7 @@ const webpackBaseConfig = makeBaseConfig({ mode: 'production', target: 'web', re
 module.exports = {
   ...webpackBaseConfig,
 
-  entry: [path.resolve(__dirname, '..', 'src', 'index.js')],
+  entry: [path.resolve(__dirname, '..', '..', '..', 'config', 'compat', 'ie11.js'), path.resolve(__dirname, '..', 'src', 'index.js')],
 
   output: {
     filename: 'tanker-verification-ui.min.js',
