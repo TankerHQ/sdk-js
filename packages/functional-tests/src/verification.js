@@ -6,7 +6,7 @@ import { expect, uuid } from '@tanker/test-utils';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
 import type { TestArgs } from './helpers';
-import { oidcSettings, appdUrl } from './helpers';
+import { oidcSettings, trustchaindUrl } from './helpers';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
@@ -31,12 +31,21 @@ async function getGoogleIdToken(refreshToken: string): Promise<string> {
 
 const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod) => {
   // $FlowExpectedError email might not be defined
-  const { type, email } = method;
+  const { type, email, phoneNumber } = method;
   expect(type in verification).to.be.true;
 
   if (type === 'email') {
     // $FlowIgnore I tested the 'email' type already
     expect(email).to.equal(verification.email);
+    expect(phoneNumber).to.be.undefined;
+    // $FlowIgnore I tested the 'email' type
+    expect(verification.phoneNumber).to.be.undefined;
+  } else if (type === 'phoneNumber') {
+    // $FlowIgnore I tested the 'phoneNumber' type already
+    expect(phoneNumber).to.equal(verification.phoneNumber);
+    expect(email).to.be.undefined;
+    // $FlowIgnore I tested the 'phoneNumber' type already
+    expect(verification.email).to.be.undefined;
   }
 };
 
@@ -100,9 +109,23 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'email', email }]);
       });
 
+      it('can test that phone number verification method has been registered', async () => {
+        const phoneNumber = '+33623456789';
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'phoneNumber', phoneNumber }]);
+      });
+
       it('should fail to register an email verification method if the verification code is wrong', async () => {
         const verificationCode = await appHelper.getWrongEmailVerificationCode('john.doe@tanker.io');
         await expect(bobLaptop.registerIdentity({ email: 'elton.doe@tanker.io', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+      });
+
+      it('should fail to register a phone number verification method if the verification code is wrong', async () => {
+        const phoneNumber = '+33623456789';
+        const verificationCode = await appHelper.getWrongSMSVerificationCode(phoneNumber);
+        await expect(bobLaptop.registerIdentity({ phoneNumber, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('should fail to register an email verification method if the verification code is not for the targeted email', async () => {
@@ -110,16 +133,26 @@ export const generateVerificationTests = (args: TestArgs) => {
         await expect(bobLaptop.registerIdentity({ email: 'elton.doe@tanker.io', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
-      it('can test that both verification methods have been registered', async () => {
+      it('should fail to register a phone number verification method if the verification code is not for the targeted phone number', async () => {
+        const verificationCode = await appHelper.getSMSVerificationCode('+33623456789');
+        await expect(bobLaptop.registerIdentity({ phoneNumber: '+33699999999', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+      });
+
+      it('can test that every verification methods have been registered', async () => {
         const email = 'john.doe@tanker.io';
+        const phoneNumber = '+33623456789';
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         await bobLaptop.setVerificationMethod({ passphrase: 'passphrase' });
 
+        const SMSVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode: SMSVerificationCode });
+
         expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([
           { type: 'email', email },
           { type: 'passphrase' },
+          { type: 'phoneNumber', phoneNumber },
         ]);
       });
 
@@ -145,6 +178,28 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(await bobPhone.getVerificationMethods()).to.deep.have.members([{ type: 'email', email }]);
       });
 
+      it('can test that phone number verification method has been updated and use it', async () => {
+        let phoneNumber = '+33623456789';
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        // update phone number
+        phoneNumber = '+33699999999';
+        verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode });
+
+        // check phone number is updated in cache
+        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'phoneNumber', phoneNumber }]);
+
+        // check phone number can be used on new device
+        await bobPhone.start(bobIdentity);
+        verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobPhone.verifyIdentity({ phoneNumber, verificationCode });
+
+        // check received phone number is the updated one on new device
+        expect(await bobPhone.getVerificationMethods()).to.deep.have.members([{ type: 'phoneNumber', phoneNumber }]);
+      });
+
       it('should fail to update the email verification method if the verification code is wrong', async () => {
         let email = 'john.doe@tanker.io';
         let verificationCode = await appHelper.getEmailVerificationCode(email);
@@ -156,6 +211,17 @@ export const generateVerificationTests = (args: TestArgs) => {
         await expect(bobLaptop.setVerificationMethod({ email, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
+      it('should fail to update the phone number verification method if the verification code is wrong', async () => {
+        let phoneNumber = '+33623456789';
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        // try to update phone number with a code containing a typo
+        phoneNumber = '+33699999999';
+        verificationCode = await appHelper.getWrongSMSVerificationCode(phoneNumber);
+        await expect(bobLaptop.setVerificationMethod({ phoneNumber, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+      });
+
       it('should fail to update the email verification method if the verification code is not for the targeted email', async () => {
         const email = 'john.doe@tanker.io';
         let verificationCode = await appHelper.getEmailVerificationCode(email);
@@ -164,6 +230,16 @@ export const generateVerificationTests = (args: TestArgs) => {
         // try to update email with a code for another email address
         verificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+      });
+
+      it('should fail to update the phone number verification method if the verification code is not for the targeted phone number', async () => {
+        const phoneNumber = '+33623456789';
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        // try to update email with a code for another email address
+        verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await expect(bobLaptop.setVerificationMethod({ phoneNumber: '+33699999999', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
     });
 
@@ -183,8 +259,12 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('fails to verify without having registered a passphrase', async () => {
         const email = 'john.doe@tanker.io';
+        const phoneNumber = '+33699999999';
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
+
+        const phoneNumberVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode: phoneNumberVerificationCode });
 
         await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.PreconditionFailed);
 
@@ -233,9 +313,58 @@ export const generateVerificationTests = (args: TestArgs) => {
       });
 
       it('fails to verify without having registered an email address', async () => {
+        const phoneNumber = '+33699999999';
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+        const phoneNumberVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode: phoneNumberVerificationCode });
+
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(expectVerification(bobPhone, bobIdentity, { email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
+
+        // status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+    });
+
+    describe('verification by sms', () => {
+      const phoneNumber = '+33623456789';
+      it('can register a verification phone number and verify with a valid verification code', async () => {
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await expect(expectVerification(bobPhone, bobIdentity, { phoneNumber, verificationCode })).to.be.fulfilled;
+      });
+
+      it('fails to register with a wrong verification code', async () => {
+        const verificationCode = await appHelper.getWrongSMSVerificationCode(phoneNumber);
+        await expect(bobLaptop.registerIdentity({ phoneNumber, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobLaptop.status).to.equal(IDENTITY_REGISTRATION_NEEDED);
+      });
+
+      it('fails to verify with a wrong verification code', async () => {
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        verificationCode = await appHelper.getWrongSMSVerificationCode(phoneNumber);
+        await expect(expectVerification(bobPhone, bobIdentity, { phoneNumber, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+
+      it('fails to verify without having registered a phone number', async () => {
+        const email = 'john.doe@tanker.io';
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+        const emailVerificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.setVerificationMethod({ email, verificationCode: emailVerificationCode });
+
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await expect(expectVerification(bobPhone, bobIdentity, { phoneNumber, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
 
         // status must not change so that retry is possible
         expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
@@ -438,16 +567,17 @@ export const generateVerificationTests = (args: TestArgs) => {
         });
       });
 
-      describe('/v2/apps/{app_id}/verification/email/code HTTP request', () => {
+      describe('/verification/email/code HTTP request', () => {
         it('works', async () => {
-          const appId = utils.toSafeBase64(args.appHelper.appId).replace(/=+$/, '');
           const email = 'bob@tanker.io';
-          const url = `${appdUrl}/v2/apps/${appId}/verification/email/code?email=${encodeURIComponent(email)}`;
+          const url = `${trustchaindUrl}/verification/email/code`;
           const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${args.appHelper.authToken}`,
-            },
+            method: 'POST',
+            body: JSON.stringify({
+              app_id: utils.toBase64(args.appHelper.appId),
+              auth_token: args.appHelper.authToken,
+              email,
+            }),
           });
           expect(response.status).to.eq(200);
           const { verification_code: verificationCode } = await response.json();
@@ -455,6 +585,27 @@ export const generateVerificationTests = (args: TestArgs) => {
           await bobLaptop.registerIdentity({ email, verificationCode });
           const actualMethods = await bobLaptop.getVerificationMethods();
           expect(actualMethods).to.deep.have.members([{ type: 'email', email }]);
+        });
+      });
+
+      describe('/verification/sms/code HTTP request', () => {
+        it('works', async () => {
+          const phoneNumber = '+33623456789';
+          const url = `${trustchaindUrl}/verification/sms/code`;
+          const response = await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+              app_id: utils.toBase64(args.appHelper.appId),
+              auth_token: args.appHelper.authToken,
+              phone_number: phoneNumber,
+            }),
+          });
+          expect(response.status).to.eq(200);
+          const { verification_code: verificationCode } = await response.json();
+          expect(verificationCode).to.not.be.undefined;
+          await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+          const actualMethods = await bobLaptop.getVerificationMethods();
+          expect(actualMethods).to.deep.have.members([{ type: 'phoneNumber', phoneNumber }]);
         });
       });
     });

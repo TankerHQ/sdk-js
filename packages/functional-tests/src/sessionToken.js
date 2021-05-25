@@ -100,8 +100,11 @@ export const generateSessionTokenTests = (args: TestArgs) => {
 
     it('can check a session token with multiple allowed methods', async () => {
       const email = 'john.deer@tanker.io';
+      const phoneNumber = '+33623456789';
       const verificationCode = await appHelper.getEmailVerificationCode(email);
       const token = await bobLaptop.registerIdentity({ email, verificationCode }, { withSessionToken: true });
+      const phoneNumberVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+      await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode: phoneNumberVerificationCode });
 
       const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
         type: 'oidc_id_token',
@@ -110,6 +113,9 @@ export const generateSessionTokenTests = (args: TestArgs) => {
       }, {
         type: 'email',
         email,
+      }, {
+        type: 'phone_number',
+        phoneNumber,
       }]);
       expect(response.status).to.eq(200);
       const result = await response.json();
