@@ -4,7 +4,7 @@ import { ready as cryptoReady, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
-import { requestAppd, requestManagement } from './request';
+import { requestManagement, requestTrustchaind } from './request';
 import { managementSettings, oidcSettings, storageSettings } from './config';
 
 function toUnpaddedSafeBase64(str: Uint8Array): string {
@@ -79,9 +79,27 @@ export class AppHelper {
   }
 
   async getEmailVerificationCode(email: string): Promise<string> {
-    const path = `/v2/apps/${toUnpaddedSafeBase64(this.appId)}/verification/email/code?email=${encodeURIComponent(email)}`;
-    const headers = { Authorization: `Bearer ${this.authToken}` };
-    const { verification_code: verificationCode } = await requestAppd({ method: 'GET', path, headers });
+    const path = '/verification/email/code';
+    const body = {
+      app_id: utils.toBase64(this.appId),
+      auth_token: this.authToken,
+      email,
+    };
+    const { verification_code: verificationCode } = await requestTrustchaind({ method: 'POST', path, body });
+    if (!verificationCode) {
+      throw new Error('Invalid response');
+    }
+    return verificationCode;
+  }
+
+  async getSMSVerificationCode(phoneNumber: string): Promise<string> {
+    const path = '/verification/sms/code';
+    const body = {
+      app_id: utils.toBase64(this.appId),
+      auth_token: this.authToken,
+      phone_number: phoneNumber
+    };
+    const { verification_code: verificationCode } = await requestTrustchaind({ method: 'POST', path, body });
     if (!verificationCode) {
       throw new Error('Invalid response');
     }
@@ -90,6 +108,11 @@ export class AppHelper {
 
   async getWrongEmailVerificationCode(email: string): Promise<string> {
     const code: string = await this.getEmailVerificationCode(email);
+    return this.corruptVerificationCode(code);
+  }
+
+  async getWrongSMSVerificationCode(phoneNumber: string): Promise<string> {
+    const code: string = await this.getSMSVerificationCode(phoneNumber);
     return this.corruptVerificationCode(code);
   }
 
