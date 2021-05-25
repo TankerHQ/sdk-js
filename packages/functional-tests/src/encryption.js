@@ -272,17 +272,17 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('does not throw if nothing to claim', async () => {
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.fulfilled;
       });
 
       it('throws if claiming a provisional identity already attached by someone else', async () => {
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       it('throws if claiming an already attached provisional', async () => {
-        const aliceVerificationCode = await appHelper.getVerificationCode(email);
+        const aliceVerificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(aliceLaptop.verifyProvisionalIdentity({ email, verificationCode: aliceVerificationCode })).to.be.fulfilled;
 
         const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
@@ -290,12 +290,12 @@ export const generateEncryptionTests = (args: TestArgs) => {
           status: IDENTITY_VERIFICATION_NEEDED,
           verificationMethod: { type: 'email', email },
         });
-        const bobVerificationCode = await appHelper.getVerificationCode(email);
+        const bobVerificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode: bobVerificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
       it('does not throw if nothing to claim and same email registered as verification method', async () => {
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.setVerificationMethod({ email, verificationCode });
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
@@ -305,7 +305,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       it('decrypt data shared with an attached provisional identity', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         const decrypted = await aliceLaptop.decrypt(cipherText);
@@ -315,7 +315,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       it('decrypt data shared with an attached provisional identity after session restart', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
         await aliceLaptop.stop();
 
@@ -327,7 +327,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       it('throws when sharing with already claimed identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
@@ -336,7 +336,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       it('gracefully accept an already attached provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
@@ -349,7 +349,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const eveIdentity = await appHelper.generateIdentity();
         const eveLaptop = args.makeTanker();
 
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
 
         await eveLaptop.start(eveIdentity);
         await eveLaptop.registerIdentity({ email, verificationCode });
@@ -368,17 +368,17 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       it('throws when verifying an email that does not match the provisional identity', async () => {
         const anotherEmail = `${uuid.v4()}@tanker.io`;
-        const verificationCode = await appHelper.getVerificationCode(anotherEmail);
+        const verificationCode = await appHelper.getEmailVerificationCode(anotherEmail);
         await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throw when two users attach the same provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        let verificationCode = await appHelper.getVerificationCode(email);
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-        verificationCode = await appHelper.getVerificationCode(email);
+        verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached, 'one or more provisional identities are already attached');
       });
@@ -393,7 +393,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const deviceID = bobPhone.deviceId;
         await bobPhone.revokeDevice(deviceID);
 
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         await bobLaptop.verifyProvisionalIdentity({ email, verificationCode });
         await bobPhone.stop();
@@ -402,7 +402,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       it('decrypt resource on a new device', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
         const alicePhone = args.makeTanker();

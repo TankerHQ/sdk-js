@@ -155,7 +155,7 @@ export const generateGroupsTests = (args: TestArgs) => {
 
       it('fails when creating a group with an already attached provisional identity with no share', async () => {
         await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        const aliceVerificationCode = await appHelper.getVerificationCode(provisionalEmail);
+        const aliceVerificationCode = await appHelper.getEmailVerificationCode(provisionalEmail);
         await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode });
 
         await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
@@ -165,7 +165,7 @@ export const generateGroupsTests = (args: TestArgs) => {
         await expect(bobLaptop.encrypt(message, { shareWithUsers: [provisionalPublicIdentity] })).to.be.fulfilled;
 
         await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        const aliceVerificationCode = await appHelper.getVerificationCode(provisionalEmail);
+        const aliceVerificationCode = await appHelper.getEmailVerificationCode(provisionalEmail);
         await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode: aliceVerificationCode });
 
         await expect(bobLaptop.createGroup([provisionalPublicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
@@ -175,7 +175,7 @@ export const generateGroupsTests = (args: TestArgs) => {
         const groupId = await bobLaptop.createGroup([provisionalPublicIdentity]);
         const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
-        const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
+        const verificationCode = await args.appHelper.getEmailVerificationCode(provisionalEmail);
         await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
         await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
 
@@ -188,7 +188,7 @@ export const generateGroupsTests = (args: TestArgs) => {
         await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity] });
         const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
 
-        const verificationCode = await args.appHelper.getVerificationCode(provisionalEmail);
+        const verificationCode = await args.appHelper.getEmailVerificationCode(provisionalEmail);
         await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
         await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
 

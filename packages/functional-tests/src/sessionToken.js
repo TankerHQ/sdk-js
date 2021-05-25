@@ -51,7 +51,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
 
     it('can get a session token after registerIdentity', async () => {
       const email = 'john.doe@tanker.io';
-      const verificationCode = await appHelper.getVerificationCode(email);
+      const verificationCode = await appHelper.getEmailVerificationCode(email);
       const token = await bobLaptop.registerIdentity({ email, verificationCode }, { withSessionToken: true });
 
       const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
@@ -67,7 +67,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
       await bobLaptop.registerIdentity({ passphrase: 'Space and time are not what you think' });
 
       const email = 'john.doe@tanker.io';
-      const verificationCode = await appHelper.getVerificationCode(email);
+      const verificationCode = await appHelper.getEmailVerificationCode(email);
       const token = await bobLaptop.setVerificationMethod({ email, verificationCode }, { withSessionToken: true });
 
       const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
@@ -100,7 +100,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
 
     it('can check a session token with multiple allowed methods', async () => {
       const email = 'john.deer@tanker.io';
-      const verificationCode = await appHelper.getVerificationCode(email);
+      const verificationCode = await appHelper.getEmailVerificationCode(email);
       const token = await bobLaptop.registerIdentity({ email, verificationCode }, { withSessionToken: true });
 
       const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
@@ -118,7 +118,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
 
     it('fails to check a session token if the allowed_method is wrong', async () => {
       const email = 'john.smith@tanker.io';
-      const verificationCode = await appHelper.getVerificationCode(email);
+      const verificationCode = await appHelper.getEmailVerificationCode(email);
       const token = await bobLaptop.registerIdentity({ email, verificationCode }, { withSessionToken: true });
 
       const response = await checkSessionToken(args.appHelper, bobPublicIdentity, token, [{
@@ -129,7 +129,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
 
     it('fails to check a session token if the token is invalid', async () => {
       const email = 'john.smith@tanker.io';
-      const verificationCode = await appHelper.getVerificationCode(email);
+      const verificationCode = await appHelper.getEmailVerificationCode(email);
       // $FlowIgnore we assert that the token is a string with expect()
       const token = await bobLaptop.registerIdentity({ email, verificationCode }, { withSessionToken: true });
       expect(token).to.be.a('string');

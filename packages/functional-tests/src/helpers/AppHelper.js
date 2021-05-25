@@ -105,7 +105,7 @@ export class AppHelper {
     return createIdentity(utils.toBase64(this.appId), utils.toBase64(this.appKeyPair.privateKey), id);
   }
 
-  async getVerificationCode(email: string): Promise<string> {
+  async getEmailVerificationCode(email: string): Promise<string> {
     const path = `/v2/apps/${toUnpaddedSafeBase64(this.appId)}/verification/email/code?email=${encodeURIComponent(email)}`;
     const headers = { Authorization: `Bearer ${this.authToken}` };
     const { verification_code: verificationCode } = await requestAppd({ method: 'GET', path, headers });
@@ -115,8 +115,12 @@ export class AppHelper {
     return verificationCode;
   }
 
-  async getWrongVerificationCode(email: string): Promise<string> {
-    const code: string = await this.getVerificationCode(email);
+  async getWrongEmailVerificationCode(email: string): Promise<string> {
+    const code: string = await this.getEmailVerificationCode(email);
+    return this.corruptVerificationCode(code);
+  }
+
+  async corruptVerificationCode(code: string): Promise<string> {
     const digits: Array<string> = code.split('');
     const wrongDigitIndex = Math.floor(Math.random() * digits.length);
     const wrongDigit = (parseInt(code[wrongDigitIndex], 10) + 1) % 10;
