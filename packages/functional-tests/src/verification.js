@@ -94,25 +94,25 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('can test that email verification method has been registered', async () => {
         const email = 'john.doe@tanker.io';
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'email', email }]);
       });
 
       it('should fail to register an email verification method if the verification code is wrong', async () => {
-        const verificationCode = await appHelper.getWrongVerificationCode('john.doe@tanker.io');
+        const verificationCode = await appHelper.getWrongEmailVerificationCode('john.doe@tanker.io');
         await expect(bobLaptop.registerIdentity({ email: 'elton.doe@tanker.io', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('should fail to register an email verification method if the verification code is not for the targeted email', async () => {
-        const verificationCode = await appHelper.getVerificationCode('john.doe@tanker.io');
+        const verificationCode = await appHelper.getEmailVerificationCode('john.doe@tanker.io');
         await expect(bobLaptop.registerIdentity({ email: 'elton.doe@tanker.io', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('can test that both verification methods have been registered', async () => {
         const email = 'john.doe@tanker.io';
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         await bobLaptop.setVerificationMethod({ passphrase: 'passphrase' });
@@ -125,12 +125,12 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('can test that email verification method has been updated and use it', async () => {
         let email = 'john.doe@tanker.io';
-        let verificationCode = await appHelper.getVerificationCode(email);
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         // update email
         email = 'elton.doe@tanker.io';
-        verificationCode = await appHelper.getVerificationCode(email);
+        verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.setVerificationMethod({ email, verificationCode });
 
         // check email is updated in cache
@@ -138,7 +138,7 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         // check email can be used on new device
         await bobPhone.start(bobIdentity);
-        verificationCode = await appHelper.getVerificationCode(email);
+        verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobPhone.verifyIdentity({ email, verificationCode });
 
         // check received email is the updated one on new device
@@ -147,29 +147,29 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('should fail to update the email verification method if the verification code is wrong', async () => {
         let email = 'john.doe@tanker.io';
-        let verificationCode = await appHelper.getVerificationCode(email);
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         // try to update email with a code containing a typo
         email = 'elton.doe@tanker.io';
-        verificationCode = await appHelper.getWrongVerificationCode(email);
+        verificationCode = await appHelper.getWrongEmailVerificationCode(email);
         await expect(bobLaptop.setVerificationMethod({ email, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('should fail to update the email verification method if the verification code is not for the targeted email', async () => {
         const email = 'john.doe@tanker.io';
-        let verificationCode = await appHelper.getVerificationCode(email);
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         // try to update email with a code for another email address
-        verificationCode = await appHelper.getVerificationCode(email);
+        verificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       describe('concurrent calls when managing user permanent identity', () => {
         it('cannot registerIdentity() before start() is resolved', async () => {
           const email = 'elton.doe@tanker.io';
-          const verificationCode = await appHelper.getVerificationCode(email);
+          const verificationCode = await appHelper.getEmailVerificationCode(email);
 
           const promise = bobPhone.start(bobIdentity);
           await expect(bobPhone.registerIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed, 'A mutually exclusive call is already in progress');
@@ -179,8 +179,8 @@ export const generateVerificationTests = (args: TestArgs) => {
         it('cannot registerIdentity() concurrently', async () => {
           const email = 'elton.doe@tanker.io';
           const email2 = 'elton.d@tanker.io';
-          const verificationCode = await appHelper.getVerificationCode(email);
-          const verificationCode2 = await appHelper.getVerificationCode(email2);
+          const verificationCode = await appHelper.getEmailVerificationCode(email);
+          const verificationCode2 = await appHelper.getEmailVerificationCode(email2);
 
           await bobPhone.start(bobIdentity);
           const promise = bobPhone.registerIdentity({ email, verificationCode });
@@ -190,7 +190,7 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         it('cannot verifyIdentity() before registerIdentity() is resolved', async () => {
           const email = 'elton.doe@tanker.io';
-          const verificationCode = await appHelper.getVerificationCode(email);
+          const verificationCode = await appHelper.getEmailVerificationCode(email);
 
           await bobPhone.start(bobIdentity);
           const promise = bobPhone.registerIdentity({ email, verificationCode });
@@ -200,14 +200,14 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         it('cannot verifyIdentity() concurrently', async () => {
           const email = 'john.doe@tanker.io';
-          let verificationCode = await appHelper.getVerificationCode(email);
+          let verificationCode = await appHelper.getEmailVerificationCode(email);
 
           await bobLaptop.registerIdentity({ email, verificationCode });
-          verificationCode = await appHelper.getVerificationCode(email);
+          verificationCode = await appHelper.getEmailVerificationCode(email);
 
           await bobPhone.start(bobIdentity);
 
-          verificationCode = await appHelper.getVerificationCode(email);
+          verificationCode = await appHelper.getEmailVerificationCode(email);
           const promise = bobPhone.verifyIdentity({ email, verificationCode });
           await expect(bobPhone.verifyIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed, 'A mutually exclusive call is already in progress');
           await expect(promise).to.not.be.rejected;
@@ -231,7 +231,7 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('fails to verify without having registered a passphrase', async () => {
         const email = 'john.doe@tanker.io';
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
         await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'my pass' })).to.be.rejectedWith(errors.PreconditionFailed);
@@ -254,15 +254,15 @@ export const generateVerificationTests = (args: TestArgs) => {
     describe('verification by email', () => {
       const email = 'john.doe@tanker.io';
       it('can register a verification email and verify with a valid verification code', async () => {
-        let verificationCode = await appHelper.getVerificationCode(email);
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
-        verificationCode = await appHelper.getVerificationCode(email);
+        verificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(expectVerification(bobPhone, bobIdentity, { email, verificationCode })).to.be.fulfilled;
       });
 
       it('fails to register with a wrong verification code', async () => {
-        const verificationCode = await appHelper.getWrongVerificationCode(email);
+        const verificationCode = await appHelper.getWrongEmailVerificationCode(email);
         await expect(bobLaptop.registerIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
 
         // The status must not change so that retry is possible
@@ -270,10 +270,10 @@ export const generateVerificationTests = (args: TestArgs) => {
       });
 
       it('fails to verify with a wrong verification code', async () => {
-        let verificationCode = await appHelper.getVerificationCode(email);
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
-        verificationCode = await appHelper.getWrongVerificationCode(email);
+        verificationCode = await appHelper.getWrongEmailVerificationCode(email);
         await expect(expectVerification(bobPhone, bobIdentity, { email, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
 
         // The status must not change so that retry is possible
@@ -282,7 +282,7 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('fails to verify without having registered an email address', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-        const verificationCode = await appHelper.getVerificationCode(email);
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(expectVerification(bobPhone, bobIdentity, { email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
 
         // status must not change so that retry is possible
