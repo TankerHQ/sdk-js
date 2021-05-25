@@ -121,11 +121,11 @@
     "instrument": false
   },
   "resolutions": {
-    "elliptic": "^6.5.4",
+    "browserslist": "^4.16.6",
     "hosted-git-info": "^2.8.9",
     "lodash": "^4.17.21",
+    "multicast-dns": "^7.2.3",
     "node-fetch": "^2.6.1",
-    "ssri": "^6.0.2",
     "url-parse": "^1.5.1"
   }
 }
