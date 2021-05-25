@@ -6,16 +6,20 @@ export type EmailVerificationMethod = $Exact<{ type: 'email', email: string }>;
 export type PassphraseVerificationMethod = $Exact<{ type: 'passphrase' }>;
 export type KeyVerificationMethod = $Exact<{ type: 'verificationKey' }>;
 export type OIDCVerificationMethod = $Exact<{ type: 'oidcIdToken' }>;
+export type PhoneNumberVerificationMethod = $Exact<{ type: 'phoneNumber', phoneNumber: string}>;
 
-export type VerificationMethod = EmailVerificationMethod | PassphraseVerificationMethod | KeyVerificationMethod | OIDCVerificationMethod;
+export type ProvisionalVerificationMethod = EmailVerificationMethod | PhoneNumberVerificationMethod;
+export type VerificationMethod = PassphraseVerificationMethod | KeyVerificationMethod | OIDCVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod;
 
 export type EmailVerification = $Exact<{ email: string, verificationCode: string }>;
 export type PassphraseVerification = $Exact<{ passphrase: string }>;
 export type KeyVerification = $Exact<{ verificationKey: string }>;
 export type OIDCVerification = $Exact<{ oidcIdToken: string }>;
+export type PhoneNumberVerification = $Exact<{ phoneNumber: string, verificationCode: string }>;
 
-export type Verification = EmailVerification | PassphraseVerification | KeyVerification | OIDCVerification;
-export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification;
+export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
+export type Verification = PassphraseVerification | KeyVerification | OIDCVerification | EmailVerification | PhoneNumberVerification;
+export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification | PhoneNumberVerification;
 
 export type WithTokenOptions = {| withToken?: {| nonce: string |} |};
 export type VerificationWithToken = {| ...Verification, ...WithTokenOptions |};
@@ -23,7 +27,7 @@ export type RemoteVerificationWithToken = {| ...RemoteVerification, ...WithToken
 
 export type VerificationOptions = $Exact<{ withSessionToken?: bool }>;
 
-const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken'];
+const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber'];
 const validKeys = [...validMethods, 'verificationCode'];
 
 const validVerifOptionsKeys = ['withSessionToken'];
@@ -45,6 +49,14 @@ export const assertVerification = (verification: Verification) => {
     assertNotEmptyString(verification.email, 'verification.email');
     if (!('verificationCode' in verification)) {
       throw new InvalidArgument('verification', 'email verification should also have a verificationCode', verification);
+    }
+    // $FlowIgnore[prop-missing]
+    assertNotEmptyString(verification.verificationCode, 'verification.verificationCode');
+  } else if ('phoneNumber' in verification) {
+    // $FlowIgnore[prop-missing]
+    assertNotEmptyString(verification.phoneNumber, 'verification.phoneNumber');
+    if (!('verificationCode' in verification)) {
+      throw new InvalidArgument('verification', 'phone verification should also have a verificationCode', verification);
     }
     // $FlowIgnore[prop-missing]
     assertNotEmptyString(verification.verificationCode, 'verification.verificationCode');

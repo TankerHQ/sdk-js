@@ -80,10 +80,27 @@ export class LocalUserManager extends EventEmitter {
         if (encryptedEmail.length < encryptionV2.overhead) {
           throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
         }
-        method.email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
-        delete method.encrypted_email;
-      } else if (method.type === 'oidc_id_token') {
+        const email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
+        return {
+          type: 'email',
+          email,
+        };
+      }
+
+      if (method.type === 'oidc_id_token') {
         return { type: 'oidcIdToken' };
+      }
+
+      if (method.type === 'phone_number') {
+        const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
+        if (encryptedPhoneNumber.length < encryptionV2.overhead) {
+          throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
+        }
+        const phoneNumber = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedPhoneNumber)));
+        return {
+          type: 'phoneNumber',
+          phoneNumber,
+        };
       }
 
       return method;
@@ -130,7 +147,7 @@ export class LocalUserManager extends EventEmitter {
       first_device_creation: firstDeviceBlock,
     };
 
-    if (verification.email || verification.passphrase || verification.oidcIdToken) {
+    if (verification.email || verification.passphrase || verification.oidcIdToken || verification.phoneNumber) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
       request.verification.with_token = verification.withToken; // May be undefined
