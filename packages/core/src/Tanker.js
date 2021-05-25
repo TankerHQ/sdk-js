@@ -379,7 +379,6 @@ export class Tanker extends EventEmitter {
   }
 
   async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
-    assertStatus(this.status, statuses.READY, 'get a resource id');
     assertDataType(encryptedData, 'encryptedData');
 
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
