@@ -1,6 +1,7 @@
 // @flow
 import { tcrypto, utils, random, type b64string } from '@tanker/crypto';
-import { type PublicProvisionalUser, createIdentity, getPublicIdentity } from '@tanker/identity';
+import type { PublicPermanentIdentity, PublicProvisionalUser, PublicProvisionalIdentity } from '@tanker/identity';
+import { createIdentity, getPublicIdentity } from '@tanker/identity';
 
 import {
   provisionalIdentityClaimFromBlock,
@@ -10,7 +11,7 @@ import {
 
 import { type TrustchainCreationEntry, trustchainCreationFromBlock } from '../LocalUser/Serialize';
 import { userEntryFromBlock, type DeviceCreationEntry, type DeviceRevocationEntry } from '../Users/Serialize';
-import { type UserGroupEntry, getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV2, makeUserGroupAdditionV3 } from '../Groups/Serialize';
+import { type UserGroupEntry, getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV2, makeUserGroupAdditionV3, makeUserGroupUpdate } from '../Groups/Serialize';
 import { type KeyPublishEntry, getKeyPublishEntryFromBlock, makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
 
 import { hashBlock, createBlock } from '../Blocks/Block';
@@ -57,6 +58,7 @@ export type TestUser = {
   ghostDevice: GhostDevice,
   identity: string,
   publicIdentity: string,
+  publicPermanentIdentity: PublicPermanentIdentity,
 };
 
 export type TestTrustchainCreation = {
@@ -88,10 +90,20 @@ export type TestKeyPublish = {
   resourceKey: Uint8Array
 };
 
+export type GroupData = {
+  groupId: Uint8Array,
+  lastGroupBlock: Uint8Array,
+  lastKeyRotationBlock: Uint8Array,
+  signatureKeyPair: tcrypto.SodiumKeyPair,
+  encryptionKeyPair: tcrypto.SodiumKeyPair,
+  members: Array<User>,
+  provisionalMembers: Array<PublicProvisionalUser>
+};
+
 export type TestUserGroup = {
   userGroupEntry: UserGroupEntry,
   block: b64string,
-  group: Group
+  groupData: GroupData,
 };
 
 export type TestIdentityClaim = {
@@ -152,6 +164,13 @@ class TestGenerator {
     const tankerSignatureKeyPair = tcrypto.makeSignKeyPair();
     const tankerEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
     return {
+      publicProvisionalIdentity: {
+        trustchain_id: utils.toBase64(this._trustchainId),
+        target: 'email',
+        value: 'email@example.com',
+        public_signature_key: utils.toBase64(appSignatureKeyPair.publicKey),
+        public_encryption_key: utils.toBase64(appEncryptionKeyPair.publicKey),
+      },
       publicProvisionalUser: {
         trustchainId: this._trustchainId,
         target: 'email',
@@ -199,6 +218,11 @@ class TestGenerator {
       ghostDevice,
       identity,
       publicIdentity,
+      publicPermanentIdentity: {
+        trustchain_id: utils.toBase64(this._trustchainId),
+        target: 'user',
+        value: utils.toBase64(userId),
+      },
     };
 
     return {
@@ -206,7 +230,7 @@ class TestGenerator {
       block: userCreationBlock,
       testUser,
       testDevice,
-      user: this._testUserToUser(testUser)
+      user: this._testUserToUser(testUser),
     };
   }
 
@@ -234,7 +258,7 @@ class TestGenerator {
       block: newDeviceBlock,
       testUser,
       testDevice,
-      user: this._testUserToUser(testUser)
+      user: this._testUserToUser(testUser),
     };
   }
 
@@ -303,7 +327,7 @@ class TestGenerator {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const resourceId = random(tcrypto.MAC_SIZE);
 
-    const { payload, nature } = makeKeyPublish(recipient.publicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
+    const { payload, nature } = makeKeyPublish(recipient.lastPublicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
 
     const keyPublish = getKeyPublishEntryFromBlock(block);
@@ -357,77 +381,166 @@ class TestGenerator {
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
 
     const userGroupEntry = getGroupEntryFromBlock(block);
-    const group = {
+
+    const groupData = {
       groupId: signatureKeyPair.publicKey,
-      publicSignatureKey: signatureKeyPair.publicKey,
-      publicEncryptionKey: encryptionKeyPair.publicKey,
+      lastGroupBlock: userGroupEntry.hash,
+      lastKeyRotationBlock: userGroupEntry.hash,
       signatureKeyPair,
       encryptionKeyPair,
-      lastGroupBlock: userGroupEntry.hash,
+      members,
+      provisionalMembers: provisionalUsers,
     };
 
     return {
       userGroupEntry,
       block,
-      group
+      groupData,
     };
   }
 
-  makeUserGroupAdditionV2 = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
-    const signatureKeyPair = previousGroup.signatureKeyPair || null;
-    const encryptionKeyPair = previousGroup.encryptionKeyPair || null;
-    if (!signatureKeyPair || !encryptionKeyPair) {
-      throw new Error('This group has no key pairs!');
-    }
+  makeUserGroupAdditionV2 = (parentDevice: TestDeviceCreation, previousTestUserGroup: TestUserGroup, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
+    const previousGroupData = previousTestUserGroup.groupData;
 
     this._trustchainIndex += 1;
     const { payload, nature } = makeUserGroupAdditionV2(
-      previousGroup.groupId,
-      signatureKeyPair.privateKey,
-      previousGroup.lastGroupBlock,
-      encryptionKeyPair.privateKey,
+      previousGroupData.groupId,
+      previousGroupData.signatureKeyPair.privateKey,
+      previousGroupData.lastGroupBlock,
+      previousGroupData.encryptionKeyPair.privateKey,
       newMembers,
       provisionalUsers
     );
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
     const userGroupEntry = getGroupEntryFromBlock(block);
 
-    const group = { ...previousGroup };
-    group.lastGroupBlock = userGroupEntry.hash;
+    const members = [];
+    members.push(...previousGroupData.members);
+    members.push(...newMembers);
+
+    const provisionalMembers = [];
+    provisionalMembers.push(...previousGroupData.provisionalMembers);
+    provisionalMembers.push(...provisionalUsers);
+
+    const groupData = {
+      ...previousGroupData,
+      lastGroupBlock: userGroupEntry.hash,
+      members,
+      provisionalMembers: provisionalUsers,
+    };
 
     return {
       userGroupEntry,
       block,
-      group,
+      groupData,
     };
   }
 
-  makeUserGroupAdditionV3 = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
-    const signatureKeyPair = previousGroup.signatureKeyPair || null;
-    const encryptionKeyPair = previousGroup.encryptionKeyPair || null;
-    if (!signatureKeyPair || !encryptionKeyPair) {
-      throw new Error('This group has no key pairs!');
-    }
+  makeUserGroupAdditionV3 = (parentDevice: TestDeviceCreation, previousTestUserGroup: TestUserGroup, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
+    const previousGroupData = previousTestUserGroup.groupData;
 
     this._trustchainIndex += 1;
     const { payload, nature } = makeUserGroupAdditionV3(
-      previousGroup.groupId,
-      signatureKeyPair.privateKey,
-      previousGroup.lastGroupBlock,
-      encryptionKeyPair.privateKey,
+      previousGroupData.groupId,
+      previousGroupData.signatureKeyPair.privateKey,
+      previousGroupData.lastGroupBlock,
+      previousGroupData.encryptionKeyPair.privateKey,
       newMembers,
       provisionalUsers
     );
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
     const userGroupEntry = getGroupEntryFromBlock(block);
 
-    const group = { ...previousGroup };
-    group.lastGroupBlock = userGroupEntry.hash;
+    const members = [];
+    members.push(...previousGroupData.members);
+    members.push(...newMembers);
+
+    const provisionalMembers = [];
+    provisionalMembers.push(...previousGroupData.provisionalMembers);
+    provisionalMembers.push(...provisionalUsers);
+
+    const groupData = {
+      ...previousGroupData,
+      lastGroupBlock: userGroupEntry.hash,
+      members,
+      provisionalMembers: provisionalUsers,
+    };
 
     return {
       userGroupEntry,
       block,
-      group,
+      groupData,
+    };
+  }
+
+  makeUserGroupUpdate = (parentDevice: TestDeviceCreation, previousTestUserGroup: TestUserGroup,
+    membersToAdd?: Array<User>, provisionalUsersToAdd?: Array<PublicProvisionalUser> = [],
+    membersToRemove?: Array<PublicPermanentIdentity>, provisionalUsersToRemove?: Array<PublicProvisionalIdentity> = []): TestUserGroup => {
+    const signatureKeyPair = tcrypto.makeSignKeyPair();
+    const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
+
+    this._trustchainIndex += 1;
+
+    const previousGroupData = previousTestUserGroup.groupData;
+
+    const { payload, nature } = makeUserGroupUpdate(
+      previousGroupData.groupId,
+      signatureKeyPair,
+      encryptionKeyPair,
+      previousGroupData.lastGroupBlock,
+      previousGroupData.lastKeyRotationBlock,
+      previousGroupData.signatureKeyPair.privateKey,
+      previousGroupData.encryptionKeyPair.privateKey,
+      previousGroupData.members,
+      // $FlowIgnore[incompatible-call] Can't cast ReadOnlyArray to Array
+      previousTestUserGroup.userGroupEntry.encrypted_group_private_encryption_keys_for_provisional_users,
+      membersToAdd,
+      provisionalUsersToAdd,
+      membersToRemove,
+      provisionalUsersToRemove,
+    );
+
+    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
+    const userGroupEntry = getGroupEntryFromBlock(block);
+
+    const members = [];
+    members.push(...previousGroupData.members.filter(member => {
+      if (membersToRemove) {
+        const usersIdsToRemove = membersToRemove.map(memberToRemove => utils.fromBase64(memberToRemove.value));
+        return !utils.containArray(usersIdsToRemove, member.userId);
+      }
+      return true;
+    }));
+    if (membersToAdd) {
+      members.push(...membersToAdd);
+    }
+
+    const provisionalMembers = [];
+    provisionalMembers.push(...previousGroupData.provisionalMembers.filter(provisionalMember => {
+      if (provisionalUsersToRemove) {
+        const appSignaturePublicKeys = provisionalUsersToRemove.map(provisionalUserToRemove => utils.fromBase64(provisionalUserToRemove.public_signature_key));
+        return !utils.containArray(appSignaturePublicKeys, provisionalMember.appSignaturePublicKey);
+      }
+      return true;
+    }));
+    if (provisionalUsersToAdd) {
+      provisionalMembers.push(...provisionalUsersToAdd);
+    }
+
+    const groupData = {
+      ...previousGroupData,
+      signatureKeyPair,
+      encryptionKeyPair,
+      lastGroupBlock: userGroupEntry.hash,
+      lastKeyRotationBlock: userGroupEntry.hash,
+      members,
+      provisionalMembers,
+    };
+
+    return {
+      userGroupEntry,
+      block,
+      groupData
     };
   }
 

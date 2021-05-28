@@ -10,18 +10,12 @@ import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV3 } from './Serialize';
 import type { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
-import type { InternalGroup, Group } from './types';
+import { isInternalGroup, type InternalGroup, type Group } from './types';
 import {
   assertExpectedGroups,
-  assertExpectedGroupsByPublicKey,
   assertPublicIdentities,
   groupsFromEntries,
 } from './ManagerHelper';
-
-type CachedPublicKeysResult = {
-  cachedKeys: Array<Uint8Array>,
-  missingGroupIds: Array<Uint8Array>,
-};
 
 export default class GroupManager {
   _localUser: LocalUser;
@@ -52,11 +46,12 @@ export default class GroupManager {
     const users = await this._UserManager.getUsers(permanentIdentities, { isLight: true });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
+    const groupEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
 
     const { payload, nature } = makeUserGroupCreation(
       groupSignatureKeyPair,
-      tcrypto.makeEncryptionKeyPair(),
+      groupEncryptionKeyPair,
       users,
       provisionalUsers
     );
@@ -65,7 +60,11 @@ export default class GroupManager {
 
     await this._client.createGroup({ user_group_creation: block });
 
-    return utils.toBase64(groupSignatureKeyPair.publicKey);
+    const groupId = groupSignatureKeyPair.publicKey;
+
+    await this._groupStore.saveGroupEncryptionKeys([{ groupId, encryptionKeyPair: groupEncryptionKeyPair }]);
+
+    return utils.toBase64(groupId);
   }
 
   async updateGroupMembers(groupId: string, publicIdentities: Array<b64string>): Promise<void> {
@@ -83,11 +82,13 @@ export default class GroupManager {
     const users = await this._UserManager.getUsers(permanentIdentities, { isLight: true });
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
+    const { encryptionKeyPairs, lastGroupBlock, signatureKeyPairs } = existingGroup;
+
     const { payload, nature } = makeUserGroupAdditionV3(
       internalGroupId,
-      existingGroup.signatureKeyPair.privateKey,
-      existingGroup.lastGroupBlock,
-      existingGroup.encryptionKeyPair.privateKey,
+      signatureKeyPairs[signatureKeyPairs.length - 1].privateKey,
+      lastGroupBlock,
+      encryptionKeyPairs[encryptionKeyPairs.length - 1].privateKey,
       users,
       provisionalUsers,
     );
@@ -100,44 +101,53 @@ export default class GroupManager {
   async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {
     if (groupIds.length === 0) return [];
 
-    const { cachedKeys, missingGroupIds } = await this._getCachedGroupsPublicKeys(groupIds);
-    const newKeys = [];
+    const { histories: blocks } = await this._client.getGroupHistoriesByGroupIds(groupIds);
+    const groups = await this._groupsFromBlocks(blocks);
+    assertExpectedGroups(groups, groupIds);
 
-    if (missingGroupIds.length > 0) {
-      const { histories: blocks } = await this._client.getGroupHistoriesByGroupIds(missingGroupIds);
-      const groups = await this._groupsFromBlocks(blocks);
-      assertExpectedGroups(groups, missingGroupIds);
-
-      const records = [];
-      for (const group of groups) {
-        const { groupId, publicEncryptionKey } = group;
-        records.push({ groupId, publicEncryptionKey });
-        newKeys.push(publicEncryptionKey);
+    const encryptionKeysRecord = [];
+    groups.forEach(group => {
+      if (isInternalGroup(group)) {
+        group.encryptionKeyPairs.forEach(encryptionKeyPair => {
+          encryptionKeysRecord.push({ groupId: group.groupId, encryptionKeyPair });
+        });
       }
+    });
 
-      await this._groupStore.saveGroupsPublicKeys(records);
-    }
+    await this._groupStore.saveGroupEncryptionKeys(encryptionKeysRecord);
 
-    return cachedKeys.concat(newKeys);
+    return groups.map(group => group.lastPublicEncryptionKey);
   }
 
   async getGroupEncryptionKeyPair(groupPublicEncryptionKey: Uint8Array) {
-    const cachedEncryptionKeyPair = await this._groupStore.findGroupKeyPair(groupPublicEncryptionKey);
+    const cachedEncryptionKeyPair = await this._groupStore.findGroupEncryptionKeyPair(groupPublicEncryptionKey);
     if (cachedEncryptionKeyPair) {
       return cachedEncryptionKeyPair;
     }
 
     const { histories: blocks } = await this._client.getGroupHistoriesByGroupPublicEncryptionKey(groupPublicEncryptionKey);
     const groups = await this._groupsFromBlocks(blocks);
-    assertExpectedGroupsByPublicKey(groups, groupPublicEncryptionKey);
 
-    const group = groups[0];
-    if (!group.encryptionKeyPair) {
+    let result;
+    const encryptionKeyPairRecords = [];
+    for (const group of groups) {
+      if (isInternalGroup(group)) {
+        for (const encryptionKeyPair of group.encryptionKeyPairs) {
+          encryptionKeyPairRecords.push({ groupId: group.groupId, encryptionKeyPair });
+          if (utils.equalArray(groupPublicEncryptionKey, encryptionKeyPair.publicKey)) {
+            result = encryptionKeyPair;
+          }
+        }
+      }
+    }
+
+    await this._groupStore.saveGroupEncryptionKeys(encryptionKeyPairRecords);
+
+    if (!result) {
       throw new InvalidArgument('Current user is not a group member');
     }
 
-    await this._groupStore.saveGroupKeyPair(group.groupId, group.encryptionKeyPair);
-    return group.encryptionKeyPair;
+    return result;
   }
 
   async _getInternalGroupById(groupId: Uint8Array): Promise<InternalGroup> {
@@ -146,7 +156,7 @@ export default class GroupManager {
     assertExpectedGroups(groups, [groupId]);
 
     const group = groups[0];
-    if (!group.encryptionKeyPair) {
+    if (!isInternalGroup(group)) {
       throw new InvalidArgument('Current user is not a group member');
     }
 
@@ -164,21 +174,5 @@ export default class GroupManager {
     const devicePublicSignatureKeyMap = await this._UserManager.getDeviceKeysByDevicesIds(deviceIds, { isLight: true });
 
     return groupsFromEntries(entries, devicePublicSignatureKeyMap, this._localUser, this._provisionalIdentityManager);
-  }
-
-  async _getCachedGroupsPublicKeys(groupsIds: Array<Uint8Array>): Promise<CachedPublicKeysResult> {
-    const cacheResults = await this._groupStore.findGroupsPublicKeys(groupsIds);
-    const missingGroupIds = [];
-
-    groupsIds.forEach(groupId => {
-      const resultFromCache = cacheResults.find(result => utils.equalArray(result.groupId, groupId));
-      if (!resultFromCache) {
-        missingGroupIds.push(groupId);
-      }
-    });
-    return {
-      cachedKeys: cacheResults.map(res => res.publicEncryptionKey),
-      missingGroupIds,
-    };
   }
 }
