@@ -205,7 +205,7 @@ function obfuscateUserId(appIdArg: Uint8Array, userId: number): Uint8Array {
 
 function makePublicIdentity(appIdArg: string, n: number): string {
   const publicIdentity = {
-    trustchainId: appIdArg,
+    trustchain_id: appIdArg,
     target: 'user',
     value: utils.toBase64(obfuscateUserId(utils.fromBase64(appIdArg), n)),
   };
