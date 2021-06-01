@@ -1,5 +1,6 @@
 // @flow
 
+import { ready as cryptoReady } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
@@ -8,6 +9,8 @@ import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from '../KeySaf
 describe('KeySafe', () => {
   let secret;
   let safe;
+
+  before(() => cryptoReady);
 
   beforeEach(() => {
     secret = createUserSecretBinary('trustchainid', 'user-id');

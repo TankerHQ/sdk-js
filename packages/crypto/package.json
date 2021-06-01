@@ -23,7 +23,7 @@
   "dependencies": {
     "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/errors": "0.0.1",
-    "libsodium-wrappers": "^0.5.1",
+    "libsodium-wrappers": "^0.7.9",
     "varint": "^6.0.0"
   },
   "devDependencies": {

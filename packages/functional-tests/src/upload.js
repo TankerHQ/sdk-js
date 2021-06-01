@@ -2,7 +2,7 @@
 import { errors } from '@tanker/core';
 import { encryptionV4, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
-import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
+import { expect, sinon, BufferingObserver, makeTimeoutPromise, isIE } from '@tanker/test-utils';
 import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
 
 import type { TestArgs } from './helpers';
@@ -11,9 +11,6 @@ import { expectProgressReport, expectType, expectDeepEqual, pipeStreams } from '
 export const generateUploadTests = (args: TestArgs) => {
   // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
   const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
-
-  // Detection of: IE 11
-  const isIE = () => /(Trident)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
   const forEachSize = (sizes: Array<string>, fun: (size: string) => void) => {

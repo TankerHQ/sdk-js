@@ -2,9 +2,12 @@
 import { expect } from '@tanker/test-utils';
 
 import { decryptAEAD, encryptAEAD, extractMac } from '../aead';
+import { ready } from '../ready';
 import { MAC_SIZE, SYMMETRIC_KEY_SIZE, XCHACHA_IV_SIZE } from '../tcrypto';
 
 describe('aead', () => {
+  before(() => ready);
+
   const key = new Uint8Array(SYMMETRIC_KEY_SIZE); // filled with zeros
   const iv = new Uint8Array(XCHACHA_IV_SIZE); // filled with zeros
   const associatedData = new Uint8Array(MAC_SIZE); // filled with zeros

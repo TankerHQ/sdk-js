@@ -1,10 +1,13 @@
 // @flow
 import { expect } from '@tanker/test-utils';
 
+import { ready } from '../ready';
 import { fromString } from '../utils';
 import * as tcrypto from '../tcrypto';
 
 describe('tcrypto', () => {
+  before(() => ready);
+
   it('should be able to encrypt/decrypt with seal method', async () => {
     const keyPair = tcrypto.makeEncryptionKeyPair();
     const text = fromString('plop');

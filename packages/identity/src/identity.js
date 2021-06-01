@@ -1,5 +1,5 @@
 // @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 
 import { obfuscateUserId } from './userId';
@@ -173,6 +173,9 @@ export async function createIdentity(appId: b64string, appSecret: b64string, use
     throw new InvalidArgument('appSecret', 'b64string', appSecret);
   if (!userId || typeof userId !== 'string')
     throw new InvalidArgument('userId', 'string', userId);
+
+  await cryptoReady;
+
   const obfuscatedUserId = obfuscateUserId(utils.fromBase64(appId), userId);
 
   const appSecretBytes = utils.fromBase64(appSecret);
@@ -205,6 +208,9 @@ export async function createProvisionalIdentity(appId: b64string, email: string)
     throw new InvalidArgument('appId', 'b64string', appId);
   if (!email || typeof email !== 'string')
     throw new InvalidArgument('email', 'string', email);
+
+  await cryptoReady;
+
   const encryptionKeys = tcrypto.makeEncryptionKeyPair();
   const signatureKeys = tcrypto.makeSignKeyPair();
 
@@ -225,6 +231,9 @@ export async function createProvisionalIdentity(appId: b64string, email: string)
 export async function getPublicIdentity(tankerIdentity: b64string): Promise<b64string> {
   if (!tankerIdentity || typeof tankerIdentity !== 'string')
     throw new InvalidArgument('tankerIdentity', 'b64string', tankerIdentity);
+
+  await cryptoReady;
+
   const identity = _deserializeIdentity(tankerIdentity);
 
   if (isPermanentIdentity(identity)) {

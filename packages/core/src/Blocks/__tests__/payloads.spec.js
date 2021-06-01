@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, random } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { UpgradeRequired } from '@tanker/errors';
 
@@ -8,6 +8,8 @@ import { serializeBlock, unserializeBlock } from '../payloads';
 import { preferredNature, NATURE_KIND } from '../Nature';
 
 describe('blocks: payloads', () => {
+  before(() => cryptoReady);
+
   it('should throw when unserializing unsupported block version', async () => {
     const block = {
       author: random(tcrypto.HASH_SIZE),

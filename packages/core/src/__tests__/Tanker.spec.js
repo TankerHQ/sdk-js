@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect, silencer } from '@tanker/test-utils';
@@ -44,7 +44,8 @@ describe('Tanker', () => {
     { email: 'valid@tanker.io', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
   ];
 
-  before(() => {
+  before(async () => {
+    await cryptoReady;
     trustchainKeyPair = tcrypto.makeSignKeyPair();
     appId = utils.generateAppID(trustchainKeyPair.publicKey);
 

@@ -1,5 +1,5 @@
 // @flow
-import { utils, type b64string } from '@tanker/crypto';
+import { ready as cryptoReady, utils, type b64string } from '@tanker/crypto';
 import { assertNotEmptyString } from '@tanker/types';
 import { InvalidArgument } from '@tanker/errors';
 
@@ -18,5 +18,8 @@ export function fromBase64(str: b64string): Uint8Array {
 // Keep this function asynchronous for compat with future asynchronous libsodium init
 export async function prehashPassword(password: string): Promise<b64string> {
   assertNotEmptyString(password, 'password');
+
+  await cryptoReady;
+
   return utils.toBase64(utils.prehashPassword(utils.fromString(password)));
 }

@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto, random, generichash, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, random, generichash, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { serializeTrustchainCreation, unserializeTrustchainCreation } from '../Serialize';
@@ -14,6 +14,8 @@ import type { SessionCertificateRecord } from '../SessionCertificate';
 // NOTE: If you ever have to change something here, change it in the Go code too!
 // The test vectors should stay the same
 describe('TrustchainCreation test vectors', () => {
+  before(() => cryptoReady);
+
   it('correctly deserializes a TrustchainCreation test vector', async () => {
     const trustchainCreation = {
       public_signature_key: new Uint8Array([
@@ -29,6 +31,8 @@ describe('TrustchainCreation test vectors', () => {
 });
 
 describe('TrustchainCreation', () => {
+  before(() => cryptoReady);
+
   it('should throw when serializing an invalid TrustchainCreation', async () => {
     const trustchainCreation = {
       public_signature_key: new Uint8Array(0),
@@ -46,6 +50,8 @@ describe('TrustchainCreation', () => {
 });
 
 describe('SessionCertificate', () => {
+  before(() => cryptoReady);
+
   it('should throw when serializing an invalid SessionCertificate', async () => {
     const badSessionCertificate = {
       timestamp: Math.floor(Date.now() / 1000),

@@ -3,6 +3,7 @@ import sodium from 'libsodium-wrappers';
 import { expect } from '@tanker/test-utils';
 
 import { generichash } from '../hash';
+import { ready } from '../ready';
 import { fromString } from '../utils';
 
 function fromHex(str: string): Uint8Array {
@@ -13,6 +14,8 @@ function fromHex(str: string): Uint8Array {
 }
 
 describe('hash', () => {
+  before(() => ready);
+
   it('should not have trivial collisions', async () => {
     const input = 'I went to Yoshinoya a while ago; you know, Yoshinoya?';
     const output1 = generichash(fromString(`${input} AB`));

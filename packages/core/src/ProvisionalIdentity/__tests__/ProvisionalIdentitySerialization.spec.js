@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import {
@@ -14,6 +14,7 @@ import makeUint8Array from '../../__tests__/makeUint8Array';
 // The test vectors should stay the same
 describe('provisional identity serialization: payload test vectors', () => {
   it('correctly deserializes a ProvisionalIdentityClaim test vector', async () => {
+    await cryptoReady;
     const provisionalIdentityClaim = {
       user_id: makeUint8Array('the user id', tcrypto.HASH_SIZE),
       app_provisional_identity_signature_public_key: makeUint8Array('the app sig pub key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),

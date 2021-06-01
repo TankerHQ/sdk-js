@@ -5,8 +5,14 @@
 //       @babel/transform-corejs3 without requiring core-js polyfills
 //       additionally.
 import Promise from 'core-js-pure/features/promise'; // eslint-disable-line import/no-extraneous-dependencies
+import MathImul from 'core-js-pure/features/math/imul'; // eslint-disable-line import/no-extraneous-dependencies
 
-// Promise polyfill required for Dexie 3 in IE11
+// Promise polyfill required for Dexie 3 and libsodium.js in IE11
 if (!window.Promise) {
   window.Promise = Promise;
+}
+
+// Math.imul polyfill required for libsodium.js in IE11
+if (!window.Math.imul) {
+  window.Math.imul = MathImul;
 }

@@ -1,6 +1,6 @@
 // @flow
 import EventEmitter from 'events';
-import { randomBase64Token, tcrypto, utils, type b64string } from '@tanker/crypto';
+import { randomBase64Token, ready as cryptoReady, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertInteger, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
@@ -217,6 +217,8 @@ export class Tanker extends EventEmitter {
     assertStatus(this.status, statuses.STOPPED, 'start a session');
 
     // Prepare the session
+    await cryptoReady;
+
     const userData = this._parseIdentity(identityB64);
     const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
 
@@ -464,6 +466,7 @@ export class Tanker extends EventEmitter {
   }
 
   async decrypt(cipher: Data, options?: $Shape<ProgressOptions> = {}): Promise<string> {
+    assertStatus(this.status, statuses.READY, 'decrypt');
     const progressOptions = extractProgressOptions(options);
     return utils.toString(await this.decryptData(cipher, {
       ...progressOptions,

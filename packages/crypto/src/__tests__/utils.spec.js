@@ -1,7 +1,9 @@
 // @flow
 import { expect } from '@tanker/test-utils';
 import { InvalidArgument } from '@tanker/errors';
+import sodium from 'libsodium-wrappers';
 
+import { ready } from '../ready';
 import {
   concatArrays, equalArray, isNullArray, memzero,
   fromB64Json, fromBase64, fromSafeBase64, toB64Json, toBase64, toSafeBase64,
@@ -17,7 +19,9 @@ describe('utils', () => {
   let str;
   let urlSafeBase64;
 
-  before(() => {
+  before(async () => {
+    await ready;
+
     str = '\u{1F680} Tanker rocks!!!';
     bytes = new Uint8Array([240, 159, 154, 128, 32, 84, 97, 110, 107, 101, 114, 32, 114, 111, 99, 107, 115, 33, 33, 33]);
     base64 = '8J+agCBUYW5rZXIgcm9ja3MhISE=';
@@ -39,6 +43,16 @@ describe('utils', () => {
   describe('bytes <-> base64', () => {
     it('can convert bytes to a base64 string', () => {
       expect(toBase64(bytes)).to.equal(base64);
+    });
+
+    it('can convert huge byte arrays to a base64 string', () => {
+      const arrayLength = 1500;
+      const byteArray = new Uint8Array(arrayLength);
+      for (let index = 0; index < arrayLength; index++) {
+        byteArray[index] = index % 256;
+      }
+      const expected = sodium.to_base64(byteArray, sodium.base64_variants.ORIGINAL);
+      expect(toBase64(byteArray)).to.equal(expected);
     });
 
     it('can convert a base64 string to bytes', () => {

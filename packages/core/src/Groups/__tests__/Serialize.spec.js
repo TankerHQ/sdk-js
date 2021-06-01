@@ -1,6 +1,6 @@
 // @flow
 
-import { tcrypto } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import makeUint8Array from '../../__tests__/makeUint8Array';
@@ -23,6 +23,8 @@ import {
 } from '../Serialize';
 
 describe('groups blocks', () => {
+  before(() => cryptoReady);
+
   it('correctly serializes/deserializes a UserGroupCreation test vector', async () => {
     const userGroupCreation = {
       public_signature_key: makeUint8Array('pub sig key', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
