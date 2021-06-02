@@ -98,10 +98,27 @@ export class Client {
         return;
       }
 
-      const { error, ...responseBody } = await response.json();
-
       if (response.ok) {
-        return responseBody;
+        // Keep the await here to benefit from the enclosing try/catch
+        // and common error handling
+        const responseJSON = await response.json();
+        return responseJSON;
+      }
+
+      // We use response.text() and manual JSON parsing here as the response
+      // may come from the load balancer (e.g. 502 errors), and thus not
+      // contain the common JSON format used in all our API responses
+      const responseText = await response.text();
+
+      let error;
+      try {
+        ({ error } = JSON.parse(responseText));
+      } catch (_) {} // eslint-disable-line no-empty
+
+      if (!error) {
+        const details = responseText ? `response body: "${responseText}"` : 'empty response body';
+        const message = `"${response.status} ${response.statusText}" status with ${details}`;
+        error = { code: '<unknown>', message, status: response.status, trace_id: '<unknown>' };
       }
 
       const apiMethod = init && init.method || 'GET';
