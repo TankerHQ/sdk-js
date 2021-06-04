@@ -32,8 +32,10 @@ const request = async (url: string, { method, path, query, headers = {}, body }:
 
   const parsed = await response.json();
 
-  if (parsed.error)
-    throw new Error(parsed.error.code);
+  if (parsed.error) {
+    const { code, message } = parsed.error;
+    throw new Error(`${code}: ${message}`);
+  }
 
   return parsed;
 };
