@@ -6,6 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@tanker/identity": "^2.15.0",
     "semver": "^7.3.4"
   }
 }

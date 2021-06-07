@@ -1,8 +1,8 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
-import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '@tanker/identity';
 
+import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '../Identity';
 import UserManager from '../Users/Manager';
 import LocalUser from '../LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';

@@ -1,9 +1,9 @@
 // @flow
 import { ready as cryptoReady, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
+import { obfuscateUserId, createUserSecretBinary } from '@tanker/identity';
 
-import { obfuscateUserId } from '../userId';
-import { createUserSecretBinary, assertUserSecret, USER_SECRET_SIZE } from '../userSecret';
+import { assertUserSecret, USER_SECRET_SIZE } from '../userSecret';
 
 const { fromBase64, fromString } = utils;
 
@@ -15,23 +15,6 @@ describe('userSecret', () => {
     await cryptoReady;
     trustchainIdB64 = 'uxTyZYP8OOYP13A4GQC4zfVr7hJz5tsF7YdMpd3PT8w=';
     trustchainId = fromBase64(trustchainIdB64);
-  });
-
-  it('should throw if bad arguments given to createUserSecretBinary', () => {
-    [
-      // $FlowExpectedError
-      [], [undefined, 'fernand'], [trustchainIdB64], [trustchainIdB64, null]
-    ].forEach((badArgs, i) => {
-      // $FlowExpectedError
-      expect(() => createUserSecretBinary(...badArgs), `bad args #${i}`).to.throw('Assertion error');
-    });
-  });
-
-  // Warning! This test only works 99.9999999999999999999999999999999999999999999999999999999999999999999999999991% of the time!
-  it('should give two different secrets for two requests', async () => {
-    const secret1 = createUserSecretBinary(trustchainIdB64, 'mondego');
-    const secret2 = createUserSecretBinary(trustchainIdB64, 'mondego');
-    expect(secret1).to.not.equal(secret2);
   });
 
   it('should throw if bad arguments given to assertUserSecret', () => {

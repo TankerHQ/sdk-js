@@ -26,7 +26,6 @@
     "@tanker/file-ponyfill": "0.0.1",
     "@tanker/global-this": "0.0.1",
     "@tanker/http-utils": "0.0.1",
-    "@tanker/identity": "0.0.1",
     "@tanker/stream-base": "0.0.1",
     "@tanker/stream-cloud-storage": "0.0.1",
     "@tanker/types": "0.0.1",
@@ -34,6 +33,7 @@
   },
   "devDependencies": {
     "@tanker/datastore-dexie-memory": "0.0.1",
+    "@tanker/identity": "^2.15.0",
     "@tanker/test-utils": "0.0.1"
   }
 }

@@ -1,9 +1,9 @@
 // @flow
 import semver from 'semver';
+import { getPublicIdentity } from '@tanker/identity';
 
 import { AppHelper, appdUrl, trustchaindUrl } from '../../../../packages/functional-tests/src/helpers';
 import { fromBase64, toBase64 } from '../../../../packages/client-node';
-import { getPublicIdentity } from '../../../../packages/identity';
 
 export { AppHelper, toBase64 };
 

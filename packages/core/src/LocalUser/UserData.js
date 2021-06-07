@@ -2,7 +2,7 @@
 
 import { utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
-import { _deserializePermanentIdentity, assertUserSecret } from '@tanker/identity';
+import { _deserializePermanentIdentity, assertUserSecret } from '../Identity';
 
 export type DelegationToken = {
   ephemeral_public_signature_key: Uint8Array,

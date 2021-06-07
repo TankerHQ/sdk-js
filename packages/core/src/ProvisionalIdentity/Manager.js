@@ -2,7 +2,7 @@
 
 import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
-import type { SecretProvisionalIdentity, PublicProvisionalIdentity, PublicProvisionalUser } from '@tanker/identity';
+import type { SecretProvisionalIdentity, PublicProvisionalIdentity, PublicProvisionalUser } from '../Identity';
 
 import type { Client } from '../Network/Client';
 import LocalUserManager, { type PrivateProvisionalKeys } from '../LocalUser/Manager';

@@ -4,8 +4,8 @@ import { randomBase64Token, ready as cryptoReady, tcrypto, utils, type b64string
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertInteger, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
-import { _deserializeProvisionalIdentity } from '@tanker/identity';
 
+import { _deserializeProvisionalIdentity } from './Identity';
 import { type ClientOptions, defaultApiEndpoint } from './Network/Client';
 import { type DataStoreOptions } from './Session/Storage';
 

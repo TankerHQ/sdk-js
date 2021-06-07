@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import type { PublicProvisionalUser } from '@tanker/identity';
+import type { PublicProvisionalUser } from '../Identity';
 
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
