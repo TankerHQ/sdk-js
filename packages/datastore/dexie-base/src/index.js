@@ -70,7 +70,7 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
       throw new Error('Invalid empty dbName in config');
     }
 
-    const dbOptions = { autoOpen: true }; // already default
+    const dbOptions = { autoOpen: false };
 
     const db = new Dexie(config.dbName, dbOptions);
 
@@ -79,6 +79,14 @@ export default (Dexie: any) => class DexieBrowserStore implements DataStore<Dexi
     // $FlowIgnore
     await store.defineSchemas(config.schemas);
 
+    try {
+      await db.open();
+    } catch (e) {
+      if (e.name === 'VersionError') {
+        throw new dbErrors.VersionError(e);
+      }
+      throw new dbErrors.UnknownError(e);
+    }
     return store;
   }
 

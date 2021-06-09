@@ -2,6 +2,7 @@
 
 import { utils } from '@tanker/crypto';
 import { errors as dbErrors, mergeSchemas, type DataStore } from '@tanker/datastore-base';
+import { UpgradeRequired } from '@tanker/errors';
 
 import KeyStore from '../LocalUser/KeyStore';
 import ResourceStore from '../Resources/ResourceStore';
@@ -53,8 +54,16 @@ export default class Storage {
     );
 
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
-    // $FlowIgnore DataStore is a flow interface, which does not support static methods
-    this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
+    try {
+      // $FlowIgnore DataStore is a flow interface, which does not support static methods
+      this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
+    } catch (e) {
+      if (e instanceof dbErrors.VersionError) {
+        throw new UpgradeRequired(e);
+      }
+      throw e;
+    }
+
     this._schemas = schemas;
 
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
