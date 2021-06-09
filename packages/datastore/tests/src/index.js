@@ -6,7 +6,7 @@ import { expect, uuid } from '@tanker/test-utils';
 
 export type { DataStore, BaseConfig };
 
-const { RecordNotFound, RecordNotUnique, UnknownError } = dbErrors;
+const { RecordNotFound, RecordNotUnique, UnknownError, VersionError } = dbErrors;
 
 type TestRecord = {|
   _id: string,
@@ -126,6 +126,24 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await expect(storeWithNewSchema.get(tableName, record1._id)).to.be.rejectedWith(UnknownError);
       await storeWithNewSchema.close();
     });
+
+    // pouchDB doesn't handle "schema" versions
+    if (!dataStoreName.match(/pouchdb/)) {
+      it('throws VersionError when opening a storage using downgraded schema', async () => {
+        storeConfig.schemas.push({
+          version: 2,
+          tables: [{
+            name: tableName,
+            indexes: [['a'], ['b'], ['c']],
+          }]
+        });
+        const store = await generator(storeConfig);
+        await store.close();
+
+        storeConfig.schemas.pop();
+        await expect(generator(storeConfig)).to.be.rejectedWith(VersionError);
+      });
+    }
   });
 
   describe('regular operations', () => {
