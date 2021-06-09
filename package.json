@@ -122,6 +122,7 @@
   },
   "resolutions": {
     "browserslist": "^4.16.6",
+    "glob-parent": "^5.1.2",
     "hosted-git-info": "^2.8.9",
     "lodash": "^4.17.21",
     "multicast-dns": "^7.2.3",
