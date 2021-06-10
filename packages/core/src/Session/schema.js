@@ -102,4 +102,5 @@ export const GlobalSchema = [
   { version: 9, tables: tablesV9 },
   { version: 10, tables: tablesV10 },
   { version: 11, tables: tablesV10 },
+  { version: 12, tables: tablesV10 },
 ];
