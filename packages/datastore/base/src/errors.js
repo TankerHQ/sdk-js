@@ -31,3 +31,9 @@ export class UnknownError extends DataStoreError {
     super('UnknownError', error);
   }
 }
+
+export class VersionError extends DataStoreError {
+  constructor(error?: Error) {
+    super('VersionError', error);
+  }
+}
