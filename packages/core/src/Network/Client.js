@@ -139,13 +139,30 @@ export class Client {
       await this._authenticating;
     }
 
+    const accessToken = this._accessToken;
+
     const retryOptions = {
       delayGenerator: this._retryDelayGenerator,
       retries: 1,
       retryCondition: async (error: Error) => {
         if (error instanceof PreconditionFailed && error.apiCode === 'invalid_token') {
-          this._accessToken = '';
-          await this._authenticate();
+          // The access token we are using is invalid/expired.
+          //
+          // We could be in one of the following situations:
+          //
+          // 1. Another API call is already trying to re-authenticate
+          if (this._authenticating) {
+            await this._authenticating;
+          // 2. This is the first API call to attempt a re-authentication. This
+          //    is also the recovery process when this API call occurs after a
+          //    previous re-authentication failure (i.e. access token is '')
+          } else if (this._accessToken === accessToken) {
+            await this._authenticate();
+          }
+          // (else)
+          // 3. Another API call already completed a re-authentication
+
+          // We can safely retry now
           return true;
         }
         return false;
@@ -155,10 +172,12 @@ export class Client {
     return retry(() => this._baseApiCall(path, init), retryOptions);
   })
 
-  _authenticate = this._cancelable(async () => {
+  _authenticate = this._cancelable((): Promise<void> => {
     if (this._authenticating) {
       return this._authenticating;
     }
+
+    this._accessToken = '';
 
     if (!this._deviceId)
       throw new InternalError('Assertion error: trying to authenticate without a device id');
