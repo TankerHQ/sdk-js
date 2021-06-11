@@ -34,8 +34,19 @@ const tablesV3 = [
   {
     name: 'unverified_key_publishes',
     indexes: [['resourceId'], ['nature']]
-  }
-];
+  },
+  {
+    name: 'users',
+    indexes: [['userId']],
+  },
+  {
+    name: 'devices_to_user',
+    indexes: [['deviceId']],
+  },
+  {
+    name: 'user_public_key_to_user',
+    indexes: [['userPublicKey']],
+  }];
 
 const tablesV4 = [
   ...tablesV3,
@@ -100,6 +111,7 @@ export const GlobalSchema = [
   { version: 7, tables: tablesV6 },
   { version: 8, tables: tablesV8 },
   { version: 9, tables: tablesV9 },
-  { version: 10, tables: tablesV10 },
-  { version: 11, tables: tablesV10 },
+  { version: 10, tables: tablesV9 },
+  { version: 11, tables: tablesV9 },
+  { version: 12, tables: tablesV10 },
 ];
