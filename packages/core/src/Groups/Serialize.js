@@ -1,8 +1,8 @@
 // @flow
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
-import type { PublicProvisionalUser, PublicPermanentIdentity, PublicProvisionalIdentity } from '@tanker/identity';
 
+import type { PublicProvisionalUser, PublicPermanentIdentity, PublicProvisionalIdentity } from '../Identity';
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
 import { type VerificationFields, hashBlock } from '../Blocks/Block';

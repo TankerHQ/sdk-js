@@ -37,6 +37,8 @@ const getBabelLoaders = (env) => {
       test: /\.js$/,
       loader: 'babel-loader',
       options: babelConfig,
+      // @tanker/identity is already transpiled when packaged to npm
+      exclude: /node_modules(\\|\/)@tanker(\\|\/)identity/,
       include: [
         // babelify our own stuff
         /node_modules(\\|\/)@tanker/,

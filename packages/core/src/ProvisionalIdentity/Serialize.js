@@ -1,6 +1,5 @@
 // @flow
 
-import { type ProvisionalUserKeys } from '@tanker/identity';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
@@ -8,6 +7,7 @@ import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 import { type VerificationFields, hashBlock } from '../Blocks/Block';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
+import type { ProvisionalUserKeys } from '../Identity';
 
 export type ProvisionalIdentityClaimRecord = {|
   user_id: Uint8Array,

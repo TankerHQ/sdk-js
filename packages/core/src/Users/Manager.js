@@ -1,12 +1,12 @@
 // @flow
 import { utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
-import { type PublicPermanentIdentity } from '@tanker/identity';
 
-import type { Client, PullOptions } from '../Network/Client';
-import { type User } from './types';
+import type { PublicPermanentIdentity } from '../Identity';
 import LocalUser from '../LocalUser/LocalUser';
 import { usersFromBlocks } from './ManagerHelper';
+import type { Client, PullOptions } from '../Network/Client';
+import type { User } from './types';
 
 // ensure that the UserStore is always up-to-date before requesting it.
 export default class UserManager {
