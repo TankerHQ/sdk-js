@@ -51,9 +51,9 @@ export class Session extends EventEmitter {
           await this._handleUnrecoverableError(e);
         throw e;
       } catch (e2) {
-        if (!(e instanceof DeviceRevoked))
+        if (!(e2 instanceof DeviceRevoked))
           console.error('Unexpected fatal error caught on the local user manager:', e2);
-        /* noawait */ this.stop();
+        /* noawait */ this.stop(e2);
       }
     });
 
@@ -94,8 +94,8 @@ export class Session extends EventEmitter {
     }
   }
 
-  stop = async (): Promise<void> => {
-    await this._client.close();
+  stop = async (reason?: Error): Promise<void> => {
+    await this._client.close(reason);
     await this._storage.close();
     this.status = statuses.STOPPED;
     this.removeAllListeners();

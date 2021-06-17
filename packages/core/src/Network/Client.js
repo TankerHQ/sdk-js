@@ -487,8 +487,8 @@ export class Client {
     });
   }
 
-  close = async (): Promise<void> => {
-    this._cancelationHandle.reject(new OperationCanceled('Closing the client'));
+  close = async (reason?: Error): Promise<void> => {
+    this._cancelationHandle.reject(new OperationCanceled('Closing the client', reason));
 
     if (this._accessToken && this._deviceId) {
       const deviceId = this._deviceId;
