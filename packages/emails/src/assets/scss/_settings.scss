@@ -14,11 +14,13 @@
 
 // 1. Global
 // ---------
+$tanker-blue:     hsl(236, 60%, 55%) !default;        // #454ed1
+$dark-blue:       hsl(234, 37%, 20%) !default;        // #202445
+$aquamarine:      hsl(168, 100%, 54%) !default;       // #15ffcf
 
-$blue: #3d52b8;
-$text: #161f46;
-$grey: #383347;
-$borders-color: #F2F2F2;
+
+$blue: $tanker-blue;
+$text: $dark-blue;
 $white: #fff;
 
 $global-width: 560px;
@@ -27,7 +29,7 @@ $global-gutter: 0;
 $body-background: $white;
 $global-padding: 16px;
 $global-margin: 16px;
-$global-radius: 6px;
+$global-radius: 0;
 $global-rounded: 500px;
 $global-breakpoint: $global-width;
 
@@ -53,7 +55,7 @@ $body-font-family: helvetica, arial, sans-serif;
 $global-font-weight: normal;
 $header-color: inherit;
 $global-line-height: 1.5;
-$global-font-size: 18px;
+$global-font-size: 16px;
 $body-line-height: $global-line-height;
 $header-font-family: $body-font-family;
 $header-font-weight: bold;
@@ -65,8 +67,8 @@ $h5-font-size: 20px;
 $h6-font-size: 18px;
 $header-margin-bottom: 0;
 $paragraph-margin-bottom: 0;
-$small-font-size: 80%;
-$small-font-color: transparentize($grey, .6);
+$small-font-size: 10px;
+$small-font-color: $blue;
 $lead-font-size: $global-font-size * 1.25;
 $lead-line-height: 1.6;
 $text-padding: 15px;

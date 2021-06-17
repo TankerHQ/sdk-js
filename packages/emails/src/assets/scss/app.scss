@@ -10,22 +10,16 @@
 }
 
 .bold {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .verification-code {
-  height: 28px;
-  width: 209px;
-  top: 0;
-  left: 0;
-  padding: 11px 0 11px 11px;
-  background: transparentize(#E6E6E6, .6) linear-gradient(90deg, transparent 0%, transparent 50%, transparentize(#E6E6E6, .2) 50%);
-  color: $grey;
+  padding: 30px;
+  border: 1px solid $aquamarine;
   font-family: arial;
-  font-size: 28px;
-  font-weight: 500;
-  letter-spacing: 10px;
-  line-height: 1;
+  font-size: 38px;
+  letter-spacing: 7px;
+  line-height: 1.16;
   text-align: center;
   overflow: hidden;
   white-space: nowrap;
