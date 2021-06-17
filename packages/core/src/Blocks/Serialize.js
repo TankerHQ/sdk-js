@@ -9,7 +9,7 @@ export function getArray(src: Uint8Array, offset: number, name: string = 'value'
   let pos = offset;
   const len = varint.decode(src, pos);
   pos += varint.decode.bytes;
-  const buffer = new Uint8Array(src.subarray(pos, pos + len)); // don't use slice, doesn't work on IE11
+  const buffer = new Uint8Array(src.buffer, src.byteOffset + pos, len);
   pos += len;
   return { [name]: buffer, newOffset: pos };
 }
@@ -27,18 +27,21 @@ export function setStaticArray(src: Uint8Array, dest: Uint8Array, offset: number
 export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: string = 'value'): { newOffset: number, [name: string]: Uint8Array } {
   if (offset + size > buf.length)
     throw new InternalError('Out of bounds read in getStaticArray');
-  const arr = new Uint8Array(buf.subarray(offset, offset + size)); // don't use slice, doesn't work on IE11
+  const arr = new Uint8Array(buf.buffer, buf.byteOffset + offset, size);
   return { [name]: arr, newOffset: offset + size };
 }
 
 export function unserializeGenericSub(data: Uint8Array, functions: Array<Unserializer>, offset: number, name: string = 'value'): Object {
   let newOffset = offset;
-  let result = {};
+  const resultList = [];
   for (const f of functions) {
-    let value;
-    ({ newOffset, ...value } = f(data, newOffset));
-    result = { ...result, ...value };
+    const parsedResult = f(data, newOffset);
+    resultList.push(parsedResult);
+    newOffset = parsedResult.newOffset;
   }
+
+  const result = Object.assign({}, ...resultList);
+  delete result.newOffset;
 
   return { [name]: result, newOffset };
 }
