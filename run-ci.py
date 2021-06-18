@@ -354,8 +354,6 @@ def _main() -> None:
     e2e_parser = subparsers.add_parser("e2e")
     e2e_parser.add_argument("--use-local-sources", action="store_true", default=False)
 
-    subparsers.add_parser("mirror")
-
     benchmark_parser = subparsers.add_parser("benchmark")
     benchmark_parser.add_argument("--runner", required=True)
 
@@ -367,8 +365,6 @@ def _main() -> None:
     elif args.command == "deploy":
         git_tag = args.git_tag
         deploy_sdk(env=args.env, git_tag=git_tag)
-    elif args.command == "mirror":
-        tankerci.git.mirror(github_url="git@github.com:TankerHQ/sdk-js")
     elif args.command == "compat":
         compat()
     elif args.command == "e2e":
