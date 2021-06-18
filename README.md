@@ -86,7 +86,7 @@ The Core SDK automatically handles complex key exchanges, cryptographic operatio
 
 For more details and advanced examples, please refer to:
 
-* [Core SDK implementation guide](https://docs.tanker.io/latest/#how_to_guides)
+* [Core SDK implementation guide](https://docs.tanker.io/latest/guides/)
 * [Core API reference](https://docs.tanker.io/latest/api/core/js/)
 
 Or fiddle with the [quickstart examples](https://github.com/TankerHQ/quickstart-examples) to see the Tanker SDKs integrated in a collection of demo apps.
