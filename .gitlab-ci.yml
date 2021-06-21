@@ -133,20 +133,6 @@ deploy/sdk:
   tags:
     - linux
 
-mirror:
-  tags:
-    - linux
-    - tanker
-  stage: deploy
-  only:
-    - /\Av[0-9.]+\z/   # public release tags only
-    - master
-
-  except:
-    - schedules
-  script:
-    - poetry run python run-ci.py mirror
-
 pages:
   stage: deploy
   only:
