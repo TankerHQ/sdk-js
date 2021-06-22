@@ -3,6 +3,7 @@ import { expect } from '@tanker/test-utils';
 
 import * as utils from '../utils';
 import * as encryptorV4 from '../EncryptionFormats/v4';
+import { ready as cryptoReady } from '../ready';
 
 const testMessage = utils.fromString('this is a secret');
 const encryptedChunkSize = 70;
@@ -57,6 +58,8 @@ const truncate = (data: Uint8Array): Uint8Array => {
 };
 
 describe('Encryption V4', () => {
+  before(() => cryptoReady);
+
   it('can unserialize a test vector', async () => {
     const unserializedData = encryptorV4.unserialize(chunk1);
     expect(unserializedData.encryptedChunkSize).to.equal(encryptedChunkSize);

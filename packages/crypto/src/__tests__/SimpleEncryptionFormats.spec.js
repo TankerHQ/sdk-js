@@ -8,6 +8,7 @@ import * as encryptorV1 from '../EncryptionFormats/v1';
 import * as encryptorV2 from '../EncryptionFormats/v2';
 import * as encryptorV3 from '../EncryptionFormats/v3';
 import * as encryptorV5 from '../EncryptionFormats/v5';
+import { ready as cryptoReady } from '../ready';
 
 describe('Simple Encryption', () => {
   const clearData = utils.fromString('this is very secret');
@@ -78,6 +79,8 @@ describe('Simple Encryption', () => {
     tamperedData[bytePosition] = (tamperedData[bytePosition] + 1) % 256;
     return tamperedData;
   };
+
+  before(() => cryptoReady);
 
   describe('EncryptionFormatV1', () => {
     it('should unserialize a test vector', () => {
