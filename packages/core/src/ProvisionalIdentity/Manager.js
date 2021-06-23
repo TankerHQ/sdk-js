@@ -139,10 +139,11 @@ export default class ProvisionalIdentityManager {
       return [];
 
     const provisionalHashedEmails = provisionalIdentities.map(provisionalIdentity => {
-      if (provisionalIdentity.target !== 'email') {
-        throw new InvalidArgument(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
+      switch (provisionalIdentity.target) {
+        case 'email': return generichash(utils.fromString(provisionalIdentity.value));
+        case 'hashed_email': return utils.fromBase64(provisionalIdentity.value);
+        default: throw new InvalidArgument(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
       }
-      return generichash(utils.fromString(provisionalIdentity.value));
     });
 
     // Note: public keys are returned in an array matching the original order of provisional identities in the request
