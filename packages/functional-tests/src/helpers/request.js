@@ -1,7 +1,7 @@
 // @flow
 import { fetch } from '@tanker/http-utils';
 
-import { admindUrl, appdUrl, idToken } from './config';
+import { appdUrl, managementSettings } from './config';
 
 type stringToAnyMap = { [string]: any, ...};
 
@@ -41,9 +41,7 @@ const request = async (url: string, { method, path, query, headers = {}, body }:
 };
 
 export const requestAppd = async (req: Request): Promise<stringToAnyMap> => request(appdUrl, req);
-export const requestAdmind = async (req: Request): Promise<stringToAnyMap> => request(admindUrl, req);
-
-export const requestAdmindWithAuth = async (req: Request): Promise<stringToAnyMap> => requestAdmind({
+export const requestManagement = async (req: Request): Promise<stringToAnyMap> => request(managementSettings.url, {
   ...req,
-  headers: { ...req.headers, Authorization: `Bearer ${idToken}` },
+  headers: { ...req.headers, Authorization: `Bearer ${managementSettings.accessToken}` },
 });

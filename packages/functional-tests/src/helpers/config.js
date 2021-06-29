@@ -1,11 +1,14 @@
 // @flow
 // Flow trickery, webpack will actually throw for undefined value
 //  https://github.com/webpack/webpack/blob/0740909b901afa69fcc1657a03215d1e011bb5c3/lib/EnvironmentPlugin.js#L41
-const admindUrl = process.env.TANKER_ADMIND_URL || '';
 const appdUrl = process.env.TANKER_APPD_URL || '';
 const fakeAuthUrl = process.env.TANKER_FAKE_AUTH_URL || '';
 const trustchaindUrl = process.env.TANKER_TRUSTCHAIND_URL || '';
-const idToken = process.env.TANKER_ID_TOKEN || '';
+const managementSettings = {
+  accessToken: process.env.TANKER_MANAGEMENT_API_ACCESS_TOKEN || '',
+  defaultEnvironmentName: process.env.TANKER_MANAGEMENT_API_DEFAULT_ENVIRONMENT_NAME || '',
+  url: process.env.TANKER_MANAGEMENT_API_URL || '',
+};
 const oidcSettings = {
   googleAuth: {
     clientSecret: process.env.TANKER_OIDC_CLIENT_SECRET || '',
@@ -36,4 +39,4 @@ const benchmarkSettings = {
   appSecret: process.env.TANKER_BENCHMARK_APP_SECRET || '',
 };
 
-export { appdUrl, admindUrl, fakeAuthUrl, trustchaindUrl, idToken, oidcSettings, storageSettings, benchmarkSettings };
+export { appdUrl, fakeAuthUrl, trustchaindUrl, managementSettings, oidcSettings, storageSettings, benchmarkSettings };

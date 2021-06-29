@@ -152,7 +152,7 @@ function generateCompatTests(opts) {
       args.appId = toBase64(args.appHelper.appId);
       const aliceId = uuid.v4();
       const bobId = uuid.v4();
-      const appSecret = toBase64(args.appHelper.appKeyPair.privateKey);
+      const appSecret = toBase64(args.appHelper.appSecret);
       const aliceIdentity = await opts.createIdentity(args.appId, appSecret, aliceId);
       const bobIdentity = await opts.createIdentity(args.appId, appSecret, bobId);
 

@@ -1,72 +1,45 @@
 // @flow
 import type { b64string } from '@tanker/core';
-import { hashBlock } from '@tanker/core/src/Blocks/Block';
-import { NATURE_KIND, preferredNature } from '@tanker/core/src/Blocks/Nature';
-import { serializeBlock } from '@tanker/core/src/Blocks/payloads';
-import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
+import { ready as cryptoReady, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
-import { requestAppd, requestAdmindWithAuth } from './request';
-import { oidcSettings, storageSettings } from './config';
+import { requestAppd, requestManagement } from './request';
+import { managementSettings, oidcSettings, storageSettings } from './config';
 
 function toUnpaddedSafeBase64(str: Uint8Array): string {
   const b64 = utils.toSafeBase64(str);
   return b64.substring(0, b64.indexOf('='));
 }
 
-function makeRootBlock(appKeyPair: Object) {
-  const rootBlock = {
-    trustchain_id: new Uint8Array(0),
-    nature: preferredNature(NATURE_KIND.trustchain_creation),
-    author: new Uint8Array(32),
-    payload: appKeyPair.publicKey,
-    signature: new Uint8Array(tcrypto.SIGNATURE_SIZE)
-  };
-
-  rootBlock.trustchain_id = hashBlock(rootBlock);
-
-  return rootBlock;
-}
-
 export class AppHelper {
   appId: Uint8Array;
-  appKeyPair: Object;
+  appSecret: Uint8Array;
   authToken: string;
 
-  constructor(appId: Uint8Array, appKeyPair: Object, authToken: string) {
+  constructor(appId: Uint8Array, appSecret: Uint8Array, authToken: string) {
     this.appId = appId;
-    this.appKeyPair = appKeyPair;
+    this.appSecret = appSecret;
     this.authToken = authToken;
   }
 
   static async newApp(): Promise<AppHelper> {
     await cryptoReady;
-
-    const appKeyPair = tcrypto.makeSignKeyPair();
-    const rootBlock = makeRootBlock(appKeyPair);
-
-    const { environments } = await requestAdmindWithAuth({ method: 'GET', path: '/environments' });
-    if (environments.length === 0) {
-      throw new Error('Assertion error in functional-tests helper: no environment available');
-    }
-
     const body = {
-      root_block: utils.toBase64(serializeBlock(rootBlock)),
       name: `functest-${uuid.v4()}`,
-      private_signature_key: utils.toBase64(appKeyPair.privateKey),
-      environment_id: environments[0].id,
+      environment_name: managementSettings.defaultEnvironmentName,
     };
-    const createResponse = await requestAdmindWithAuth({ method: 'POST', path: '/apps', body });
+    const createResponse = await requestManagement({ method: 'POST', path: '/v1/apps', body });
     const authToken = createResponse.app.auth_token;
-    const appId = rootBlock.trustchain_id;
-    return new AppHelper(appId, appKeyPair, authToken);
+    const appId = utils.fromBase64(createResponse.app.id);
+    const appSecret = utils.fromBase64(createResponse.app.private_signature_key);
+    return new AppHelper(appId, appSecret, authToken);
   }
 
   async _update(body: Object): Promise<Object> {
-    await requestAdmindWithAuth({
+    await requestManagement({
       method: 'PATCH',
-      path: `/apps/${toUnpaddedSafeBase64(this.appId)}`,
+      path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`,
       body,
     });
   }
@@ -102,7 +75,7 @@ export class AppHelper {
 
   generateIdentity(userId?: string): Promise<b64string> {
     const id = userId || uuid.v4();
-    return createIdentity(utils.toBase64(this.appId), utils.toBase64(this.appKeyPair.privateKey), id);
+    return createIdentity(utils.toBase64(this.appId), utils.toBase64(this.appSecret), id);
   }
 
   async getVerificationCode(email: string): Promise<string> {
@@ -125,9 +98,9 @@ export class AppHelper {
   }
 
   async cleanup(): Promise<void> {
-    await requestAdmindWithAuth({
+    await requestManagement({
       method: 'DELETE',
-      path: `/apps/${toUnpaddedSafeBase64(this.appId)}`
+      path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`
     });
   }
 }
