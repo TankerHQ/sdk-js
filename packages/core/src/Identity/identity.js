@@ -4,7 +4,7 @@ import { InternalError, InvalidArgument } from '@tanker/errors';
 
 type PermanentIdentityTarget = 'user';
 type SecretProvisionalIdentityTarget = 'email' | 'phone_number';
-type PublicProvisionalIdentityTarget = 'email' | 'hashed_email' | 'hashed_phone_number';
+export type PublicProvisionalIdentityTarget = 'email' | 'hashed_email' | 'hashed_phone_number';
 
 export type PublicPermanentIdentity = {|
   trustchain_id: b64string,
@@ -63,8 +63,16 @@ function isPublicPermanentIdentity(identity: SecretPermanentIdentity | PublicPer
   return !('user_secret' in identity);
 }
 
-function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): bool %checks {
+export function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): bool %checks {
   return !isPermanentIdentity(identity);
+}
+
+export function identityTargetToVerificationMethodType(target: SecretProvisionalIdentityTarget): string {
+  switch (target) {
+    case 'email': return 'email';
+    case 'phone_number': return 'phoneNumber';
+    default: throw new InternalError('Assertion error: unknown provisional identity target');
+  }
 }
 
 const rubyJsonOrder = {

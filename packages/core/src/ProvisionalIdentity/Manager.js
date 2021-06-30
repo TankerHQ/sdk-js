@@ -8,17 +8,24 @@ import type { Client } from '../Network/Client';
 import LocalUserManager, { type PrivateProvisionalKeys } from '../LocalUser/Manager';
 
 import KeyStore from '../LocalUser/KeyStore';
-import { formatVerificationRequest } from '../LocalUser/requests';
-import type { EmailVerificationMethod, EmailVerification, OIDCVerification } from '../LocalUser/types';
+import { formatProvisionalKeysRequest, formatVerificationRequest } from '../LocalUser/requests';
+import type {
+  OIDCVerification, ProvisionalVerification,
+  ProvisionalVerificationMethod
+} from '../LocalUser/types';
 import { statuses, type Status } from '../Session/status';
 import UserManager from '../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';
+import {
+  identityTargetToVerificationMethodType,
+  isProvisionalIdentity
+} from '../Identity';
 
 type TankerProvisionalKeys = {| tankerSignatureKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair |};
 
-const tankerProvisionalKeys = (serverResult) => ({
+const toTankerProvisionalKeys = (serverResult) => ({
   tankerSignatureKeyPair: {
     privateKey: utils.fromBase64(serverResult.private_signature_key),
     publicKey: utils.fromBase64(serverResult.public_signature_key),
@@ -49,7 +56,7 @@ export default class ProvisionalIdentityManager {
     this._keyStore = keyStore;
   }
 
-  async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: EmailVerificationMethod }> {
+  async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: ProvisionalVerificationMethod }> {
     let hasClaimed = this._localUserManager.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
 
     if (!hasClaimed) {
@@ -61,48 +68,78 @@ export default class ProvisionalIdentityManager {
       return { status: statuses.READY };
     }
 
-    if (provisionalIdentity.target !== 'email') {
+    if (!isProvisionalIdentity(provisionalIdentity)) {
       // Target is already checked when deserializing the provisional identity
       throw new InternalError(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
     }
 
-    const email = provisionalIdentity.value;
-
-    const verificationMethods = await this._localUserManager.getVerificationMethods();
-
-    const emailMethod = verificationMethods.find(method => method.type === 'email');
-
-    // When email is also registered as a verification method:
-    //   - we can directly claim if keys found
-    //   - we know that there's nothing to claim if keys not found
-    if (emailMethod && emailMethod.email === email) {
-      const tankerKeys = await this._getProvisionalIdentityKeys(email);
-      if (tankerKeys) {
-        await this._claimProvisionalIdentity(provisionalIdentity, tankerKeys);
+    const verificationMethod = await this._getVerificationMethodForProvisional(provisionalIdentity);
+    if (verificationMethod) {
+      const attachSuccess = await this._attachProvisionalWithVerifMethod(provisionalIdentity, verificationMethod);
+      if (attachSuccess) {
+        return { status: statuses.READY };
       }
-      return { status: statuses.READY };
     }
 
     this._provisionalIdentity = provisionalIdentity;
-
     return {
       status: statuses.IDENTITY_VERIFICATION_NEEDED,
-      verificationMethod: { type: 'email', email },
+      verificationMethod: this._verificationMethodFromIdentity(provisionalIdentity),
     };
   }
 
-  async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification) {
-    if (!('email' in verification) && !('oidcIdToken' in verification))
+  async _getVerificationMethodForProvisional(provisionalIdentity: SecretProvisionalIdentity): Promise<?ProvisionalVerificationMethod> {
+    const methodType = identityTargetToVerificationMethodType(provisionalIdentity.target);
+    const verificationMethods = await this._localUserManager.getVerificationMethods();
+    // $FlowFixMe We select the verificationMethod using the provisional target
+    return verificationMethods.find(method => method.type === methodType);
+  }
+
+  async _attachProvisionalWithVerifMethod(provisionalIdentity: SecretProvisionalIdentity, verificationMethod: ProvisionalVerificationMethod): Promise<bool> {
+    const expected = {
+      email: verificationMethod.email || null,
+      phone_number: verificationMethod.phoneNumber || null,
+    };
+
+    // When the target is also registered as a verification method:
+    //   - we can directly claim if keys found
+    //   - we know that there's nothing to claim if keys not found
+    if (expected[provisionalIdentity.target] === provisionalIdentity.value) {
+      const tankerKeys = await this._getProvisionalIdentityKeys(provisionalIdentity);
+      if (tankerKeys) {
+        await this._claimProvisionalIdentity(provisionalIdentity, tankerKeys);
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  _verificationMethodFromIdentity(provisionalIdentity: SecretProvisionalIdentity): ProvisionalVerificationMethod {
+    if (provisionalIdentity.target === 'email') {
+      return {
+        type: 'email',
+        email: provisionalIdentity.value,
+      };
+    }
+    if (provisionalIdentity.target === 'phone_number') {
+      return {
+        type: 'phoneNumber',
+        phoneNumber: provisionalIdentity.value,
+      };
+    }
+    // Target is already checked when deserializing the provisional identity
+    throw new InternalError(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
+  }
+
+  async verifyProvisionalIdentity(verification: ProvisionalVerification | OIDCVerification) {
+    if (!('email' in verification) && !('phoneNumber' in verification) && !('oidcIdToken' in verification))
       throw new InternalError(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
 
     if (!this._provisionalIdentity)
       throw new PreconditionFailed('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
 
     const provisionalIdentity = this._provisionalIdentity;
-    const email = provisionalIdentity.value;
-
-    if (verification.email && verification.email !== email)
-      throw new InvalidArgument('"verification.email" does not match provisional identity');
 
     if (verification.oidcIdToken) {
       let jwtPayload;
@@ -111,11 +148,15 @@ export default class ProvisionalIdentityManager {
       } catch (e) {
         throw new InvalidArgument('Failed to parse "verification.oidcIdToken"');
       }
-      if (jwtPayload.email !== email)
+      if (jwtPayload.email !== provisionalIdentity.value)
         throw new InvalidArgument('"verification.oidcIdToken" does not match provisional identity');
+    } else if (provisionalIdentity.target === 'email' && verification.email !== provisionalIdentity.value) {
+      throw new InvalidArgument('"verification.email" does not match provisional identity');
+    } else if (provisionalIdentity.target === 'phone_number' && verification.phoneNumber !== provisionalIdentity.value) {
+      throw new InvalidArgument('"verification.phoneNumber" does not match provisional identity');
     }
 
-    const tankerKeys = await this._getProvisionalIdentityKeys(email, verification);
+    const tankerKeys = await this._getProvisionalIdentityKeys(provisionalIdentity, verification);
     await this._claimProvisionalIdentity(provisionalIdentity, tankerKeys);
 
     delete this._provisionalIdentity;
@@ -147,23 +188,42 @@ export default class ProvisionalIdentityManager {
       }
     }
 
-    const provisionalHashedEmails = provisionalIdentities.map(provisionalIdentity => {
+    const emailHashedValues = [];
+    const phoneNumberHashedValues = [];
+    for (const provisionalIdentity of provisionalIdentities) {
       switch (provisionalIdentity.target) {
-        case 'email': return generichash(utils.fromString(provisionalIdentity.value));
-        case 'hashed_email': return utils.fromBase64(provisionalIdentity.value);
-        default: throw new InvalidArgument(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
+        case 'email':
+          emailHashedValues.push(generichash(utils.fromString(provisionalIdentity.value)));
+          break;
+        case 'hashed_email':
+          emailHashedValues.push(utils.fromBase64(provisionalIdentity.value));
+          break;
+        case 'hashed_phone_number':
+          phoneNumberHashedValues.push(utils.fromBase64(provisionalIdentity.value));
+          break;
+        default:
+          throw new InvalidArgument(`Unsupported provisional identity target: ${provisionalIdentity.target}`);
       }
-    });
+    }
 
-    // Note: public keys are returned in an array matching the original order of provisional identities in the request
-    const tankerPublicKeysByHashedEmail = await this._client.getPublicProvisionalIdentities(provisionalHashedEmails);
+    const tankerPublicKeysByHashedValues = await this._client.getPublicProvisionalIdentities(emailHashedValues, phoneNumberHashedValues);
+    const tankerPublicKeysByEmailHash = tankerPublicKeysByHashedValues.hashedEmails;
+    const tankerPublicKeysByPhoneNumberHash = tankerPublicKeysByHashedValues.hashedPhoneNumbers;
 
-    return provisionalIdentities.map((provisionalIdentity, index) => {
-      const b64HashedEmail = utils.toBase64(provisionalHashedEmails[index]);
-      const tankerPublicKeys = tankerPublicKeysByHashedEmail[b64HashedEmail];
-
+    return provisionalIdentities.map(provisionalIdentity => {
+      let tankerPublicKeys;
+      if (provisionalIdentity.target === 'email') {
+        const emailHash = utils.toBase64(generichash(utils.fromString(provisionalIdentity.value)));
+        tankerPublicKeys = tankerPublicKeysByEmailHash[emailHash];
+      } else if (provisionalIdentity.target === 'hashed_email') {
+        tankerPublicKeys = tankerPublicKeysByEmailHash[provisionalIdentity.value];
+      } else if (provisionalIdentity.target === 'hashed_phone_number') {
+        tankerPublicKeys = tankerPublicKeysByPhoneNumberHash[provisionalIdentity.value];
+      } else {
+        throw new InternalError(`Assertion error: Unreachable if targets have been validated before doing the request (target ${provisionalIdentity.target})`);
+      }
       if (!tankerPublicKeys) {
-        throw new InvalidArgument(`Assertion error: couldn't find or generate tanker public keys for provisional identity: ${provisionalIdentity.value}`);
+        throw new InternalError(`Assertion error: couldn't find or generate tanker public keys for provisional identity: ${provisionalIdentity.value}`);
       }
 
       return {
@@ -178,24 +238,21 @@ export default class ProvisionalIdentityManager {
     });
   }
 
-  async _getProvisionalIdentityKeys(email: string, verification?: EmailVerification | OIDCVerification): Promise<TankerProvisionalKeys> {
-    const urlsafeHashedEmail = utils.toBase64(generichash(utils.fromString(email)));
+  async _getProvisionalIdentityKeys(provIdentity: SecretProvisionalIdentity, verification?: ProvisionalVerification | OIDCVerification): Promise<TankerProvisionalKeys> {
+    let tankerProvisionalKeysReply;
 
-    let body = null;
-
+    const localUser = this._localUserManager.localUser;
     if (verification) {
-      body = {
-        verification: formatVerificationRequest(verification, this._localUserManager.localUser),
-      };
+      tankerProvisionalKeysReply = await this._client.getTankerProvisionalKeysWithVerif({
+        verification: formatVerificationRequest(verification, localUser, provIdentity),
+      });
+    } else {
+      tankerProvisionalKeysReply = await this._client.getTankerProvisionalKeysFromSession(
+        formatProvisionalKeysRequest(provIdentity, localUser),
+      );
     }
 
-    const provisionalIdentity = await this._client.getProvisionalIdentity(body);
-
-    if (provisionalIdentity.hashed_email !== urlsafeHashedEmail) {
-      throw new InternalError(`Assertion error: failed to get tanker keys for provisional identity with email "${email}"`);
-    }
-
-    return tankerProvisionalKeys(provisionalIdentity);
+    return toTankerProvisionalKeys(tankerProvisionalKeysReply);
   }
 
   async refreshProvisionalPrivateKeys() {
@@ -231,7 +288,10 @@ export default class ProvisionalIdentityManager {
 
     const tankerEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
 
-    return { appEncryptionKeyPair, tankerEncryptionKeyPair };
+    return {
+      appEncryptionKeyPair,
+      tankerEncryptionKeyPair
+    };
   }
 
   async _claimProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity, tankerKeys: TankerProvisionalKeys): Promise<void> {
@@ -246,8 +306,15 @@ export default class ProvisionalIdentityManager {
       appSignatureKeyPair: tcrypto.getSignatureKeyPairFromPrivateKey(appProvisionalUserPrivateSignatureKey),
     };
 
-    const { userId, deviceId, currentUserKey } = this._localUserManager.localUser;
-    const { payload, nature } = makeProvisionalIdentityClaim(userId, deviceId, currentUserKey.publicKey, provisionalUserKeys);
+    const {
+      userId,
+      deviceId,
+      currentUserKey
+    } = this._localUserManager.localUser;
+    const {
+      payload,
+      nature
+    } = makeProvisionalIdentityClaim(userId, deviceId, currentUserKey.publicKey, provisionalUserKeys);
 
     const block = this._localUserManager.localUser.makeBlock(payload, nature);
 
