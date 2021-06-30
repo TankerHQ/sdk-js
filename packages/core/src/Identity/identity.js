@@ -3,8 +3,8 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 
 type PermanentIdentityTarget = 'user';
-type SecretProvisionalIdentityTarget = 'email';
-type PublicProvisionalIdentityTarget = 'email' | 'hashed_email';
+type SecretProvisionalIdentityTarget = 'email' | 'phone_number';
+type PublicProvisionalIdentityTarget = 'email' | 'hashed_email' | 'hashed_phone_number';
 
 export type PublicPermanentIdentity = {|
   trustchain_id: b64string,
