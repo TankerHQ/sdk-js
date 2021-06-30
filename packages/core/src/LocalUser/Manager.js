@@ -2,7 +2,7 @@
 import EventEmitter from 'events';
 
 import { encryptionV2, tcrypto, utils } from '@tanker/crypto';
-import { DecryptionFailed, InternalError, InvalidVerification, TankerError } from '@tanker/errors';
+import { InternalError, InvalidVerification, TankerError } from '@tanker/errors';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationKey, ghostDeviceKeysFromVerificationKey, decryptVerificationKey, ghostDeviceToEncryptedVerificationKey, decryptUserKeyForGhostDevice } from './ghostDevice';
 import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './KeySafe';
@@ -77,9 +77,6 @@ export class LocalUserManager extends EventEmitter {
       // Compat: email value might be missing if verification method registered with SDK < 2.0.0
       if (method.type === 'email' && method.encrypted_email) {
         const encryptedEmail = utils.fromBase64(method.encrypted_email);
-        if (encryptedEmail.length < encryptionV2.overhead) {
-          throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
-        }
         const email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
         return {
           type: 'email',
@@ -93,9 +90,6 @@ export class LocalUserManager extends EventEmitter {
 
       if (method.type === 'phone_number') {
         const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
-        if (encryptedPhoneNumber.length < encryptionV2.overhead) {
-          throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
-        }
         const phoneNumber = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedPhoneNumber)));
         return {
           type: 'phoneNumber',
