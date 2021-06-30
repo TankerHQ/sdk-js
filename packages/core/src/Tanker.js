@@ -15,7 +15,7 @@ import type {
   OIDCVerification,
   RemoteVerification,
   VerificationMethod,
-  VerificationOptions, VerificationWithToken
+  VerificationOptions, VerificationWithToken, PhoneNumberVerification
 } from './LocalUser/types';
 import { assertVerification, assertVerificationOptions } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
@@ -328,7 +328,7 @@ export class Tanker extends EventEmitter {
     return this.session.attachProvisionalIdentity(provisionalIdentityObj);
   }
 
-  async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification): Promise<void> {
+  async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification | PhoneNumberVerification): Promise<void> {
     assertStatus(this.status, statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
     return this.session.verifyProvisionalIdentity(verification);

@@ -9,6 +9,8 @@ import { TaskQueue } from '../TaskQueue';
 import { signChallenge } from './Authenticator';
 import { genericErrorHandler } from './ErrorHandler';
 import { b64RequestObject, urlize } from './utils';
+import type { ProvisionalKeysRequest, VerificationRequest } from '../LocalUser/requests';
+import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
 
 export const defaultApiEndpoint = 'https://api.tanker.io';
 
@@ -17,6 +19,19 @@ export type ClientOptions = {
   sdkInfo: { type: string, version: string },
   url: string,
 };
+
+export type ServerPublicProvisionalIdentity = {|
+  app_id: b64string,
+  target: PublicProvisionalIdentityTarget,
+  value: string,
+  public_signature_key: b64string,
+  public_encryption_key: b64string,
+|};
+
+export type PublicProvisionalIdentityResults = {|
+  hashedEmails: { [string]: ServerPublicProvisionalIdentity },
+  hashedPhoneNumbers: { [string]: ServerPublicProvisionalIdentity },
+|};
 
 export type PullOptions = {
   isLight?: bool,
@@ -469,13 +484,44 @@ export class Client {
     return this._apiCall(`/resources/${urlize(resourceId)}/download-url`);
   }
 
-  getPublicProvisionalIdentities = async (hashedEmails: Array<Uint8Array>) => {
-    let result = {};
-    for (let i = 0; i < hashedEmails.length; i += MAX_QUERY_STRING_ITEMS) {
-      const query = `hashed_emails[]=${hashedEmails.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&hashed_emails[]=')}`;
-      const path = `/public-provisional-identities?${query}`;
-      const { public_provisional_identities: publicProvisionalIdentitiesByHashedEmail } = await this._apiCall(path);
-      result = { ...result, ...publicProvisionalIdentitiesByHashedEmail };
+  getPublicProvisionalIdentities = async (hashedEmails: Array<Uint8Array>, hashedPhoneNumbers: Array<Uint8Array>): Promise<PublicProvisionalIdentityResults> => {
+    const MAX_QUERY_ITEMS = 100; // This is probably route-specific, so doesn't need to be global
+    const result = {
+      hashedEmails: {},
+      hashedPhoneNumbers: {},
+    };
+
+    let done = 0;
+    while (done < hashedEmails.length + hashedPhoneNumbers.length) {
+      // First, get as many emails as we have left that can fit in one request
+      let hashedEmailsSlice = [];
+      if (done < hashedEmails.length) {
+        const numEmailsToGet = Math.min(hashedEmails.length - done, MAX_QUERY_ITEMS);
+        hashedEmailsSlice = hashedEmails.slice(done, done + numEmailsToGet);
+        done += numEmailsToGet;
+      }
+
+      // If we had less than MAX_QUERY_ITEMS emails left, then there's room to start requesting phone numbers
+      let hashedPhoneNumbersSlice = [];
+      if (hashedEmailsSlice.length < MAX_QUERY_ITEMS) {
+        const phonesDone = done - hashedEmails.length;
+        const numPhoneNumbersToGet = Math.min(hashedPhoneNumbers.length - phonesDone, MAX_QUERY_ITEMS - hashedEmailsSlice.length);
+        hashedPhoneNumbersSlice = hashedPhoneNumbers.slice(phonesDone, phonesDone + numPhoneNumbersToGet);
+        done += numPhoneNumbersToGet;
+      }
+
+      const options = {
+        method: 'POST',
+        body: JSON.stringify(b64RequestObject({
+          hashed_emails: hashedEmailsSlice,
+          hashed_phone_numbers: hashedPhoneNumbersSlice,
+        })),
+        headers: { 'Content-Type': 'application/json' },
+      };
+
+      const { public_provisional_identities: identitiesBatch } = await this._apiCall('/public-provisional-identities', options);
+      result.hashedEmails = { ...result.hashedEmails, ...identitiesBatch.hashed_emails };
+      result.hashedPhoneNumbers = { ...result.hashedPhoneNumbers, ...identitiesBatch.hashed_phone_numbers };
     }
     return result;
   }
@@ -486,15 +532,27 @@ export class Client {
     return claims;
   }
 
-  getProvisionalIdentity = async (body: any) => {
+  getTankerProvisionalKeysFromSession = async (body: ProvisionalKeysRequest) => {
+    const path = `/users/${urlize(this._userId)}/tanker-provisional-keys`;
     const options = {
       method: 'POST',
-      body: body ? JSON.stringify(b64RequestObject(body)) : '{}',
+      body: JSON.stringify(b64RequestObject(body)),
       headers: { 'Content-Type': 'application/json' },
     };
 
-    const { provisional_identity: provisionalIdentity } = await this._apiCall('/provisional-identities', options);
-    return provisionalIdentity;
+    const { tanker_provisional_keys: provisionalKeys } = await this._apiCall(path, options);
+    return provisionalKeys;
+  }
+
+  getTankerProvisionalKeysWithVerif = async (body: {verification: VerificationRequest}) => {
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(b64RequestObject(body)),
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    const { tanker_provisional_keys: provisionalKeys } = await this._apiCall('/tanker-provisional-keys', options);
+    return provisionalKeys;
   }
 
   claimProvisionalIdentity = async (body: any): Promise<void> => {
