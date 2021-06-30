@@ -56,7 +56,10 @@ export function generateFunctionalTests(
 
     after(async () => {
       silencer.restore();
-      await args.appHelper.cleanup();
+
+      if (args.appHelper) {
+        await args.appHelper.cleanup();
+      }
     });
 
     generateSessionTests(args);
