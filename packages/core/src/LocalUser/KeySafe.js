@@ -1,6 +1,6 @@
 // @flow
 import { tcrypto, utils, encryptionV1, type b64string } from '@tanker/crypto';
-import { DecryptionFailed, InternalError } from '@tanker/errors';
+import { InternalError } from '@tanker/errors';
 
 import { type Device } from '../Users/types';
 
@@ -44,9 +44,6 @@ async function encryptObject(key: Uint8Array, plainObject: Object): Promise<Uint
 }
 
 async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<Object> {
-  if (ciphertext.length < encryptionV1.overhead) {
-    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV1.overhead} for encryption v1` });
-  }
   const jsonBytes = encryptionV1.compatDecrypt(key, ciphertext);
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
     if (typeof v === 'string' && startsWith(v, base64Prefix))

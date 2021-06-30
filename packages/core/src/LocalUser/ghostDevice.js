@@ -1,6 +1,5 @@
 // @flow
 import { utils, tcrypto, encryptionV2, type b64string } from '@tanker/crypto';
-import { DecryptionFailed } from '@tanker/errors';
 
 export type GhostDevice = {
   privateEncryptionKey: Uint8Array,
@@ -29,12 +28,7 @@ export const extractGhostDevice = (verificationKey: b64string): GhostDevice => {
   };
 };
 
-export const decryptVerificationKey = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => {
-  if (encryptedVerificationKey.length < encryptionV2.overhead) {
-    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
-  }
-  return utils.toString(encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedVerificationKey)));
-};
+export const decryptVerificationKey = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => utils.toString(encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedVerificationKey)));
 
 export const ghostDeviceToVerificationKey = (ghostDevice: GhostDevice) => utils.toB64Json({
   privateEncryptionKey: utils.toBase64(ghostDevice.privateEncryptionKey),
