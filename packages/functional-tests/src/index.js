@@ -45,18 +45,18 @@ export function generateFunctionalTests(
 
     before(async () => {
       await cryptoReady;
-      silencer.silence('warn', /deprecated/);
 
       args.appHelper = await AppHelper.newApp();
       const b64DefaultAppId = utils.toBase64(args.appHelper.appId);
 
       args.makeTanker = (b64AppId = b64DefaultAppId) => makeTanker(b64AppId);
+
+      silencer.silence('warn', /deprecated/);
     });
 
     after(async () => {
-      await args.appHelper.cleanup();
-
       silencer.restore();
+      await args.appHelper.cleanup();
     });
 
     generateSessionTests(args);

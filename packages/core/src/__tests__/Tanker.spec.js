@@ -127,12 +127,10 @@ describe('Tanker', () => {
       expect(() => new Tanker(makeTestTankerOptions())).not.to.throw();
     });
 
-    it('accepts the deprecated trustchainId option', () => {
-      silencer.silence('warn', /deprecated/);
+    it('accepts the deprecated trustchainId option', silencer.wrapper('warn', /deprecated/)(() => {
       const { appId: trustchainId, ...defaultOptions } = makeTestTankerOptions();
       expect(() => new Tanker({ trustchainId, ...defaultOptions })).not.to.throw();
-      silencer.restore();
-    });
+    }));
   });
 
   describe('without a session', () => {
@@ -272,7 +270,7 @@ describe('Tanker', () => {
         }
       });
 
-      it('revoking a device should throw if invalid argument given', async () => {
+      it('revoking a device should throw if invalid argument given', silencer.wrapper('warn', /deprecated/)(async () => {
         const badArgs = [
           undefined,
           null,
@@ -283,15 +281,11 @@ describe('Tanker', () => {
           'AAAA='
         ];
 
-        silencer.silence('warn', /deprecated/);
-
         for (let i = 0; i < badArgs.length; i++) {
           const arg = ((badArgs[i]: any): b64string);
           await expect(tanker.revokeDevice(arg), `revoke test #${i}`).to.be.rejectedWith(InvalidArgument);
         }
-
-        silencer.restore();
-      });
+      }));
 
       it('creating a group should throw if invalid argument given', async () => {
         const badArgs = [

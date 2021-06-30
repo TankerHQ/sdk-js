@@ -76,7 +76,7 @@ describe('print', () => {
     }
   });
 
-  it('should gracefully handle values that are not friendly printable', () => {
+  it('should gracefully handle values that are not friendly printable', async () => {
     const circular = {};
     circular.reference = circular;
     expect(safePrintType(circular)).to.equal('Object');
@@ -85,9 +85,9 @@ describe('print', () => {
     const trap = {
       get length() { throw new Error('nope'); },
     };
-    silencer.silence('error');
-    expect(safePrintType(trap)).to.equal('[error printing type]');
-    expect(safePrintValue(trap)).to.equal('[error printing value]');
-    silencer.restore();
+    await silencer.wrapper('error')(() => {
+      expect(safePrintType(trap)).to.equal('[error printing type]');
+      expect(safePrintValue(trap)).to.equal('[error printing value]');
+    });
   });
 });
