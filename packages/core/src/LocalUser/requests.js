@@ -5,8 +5,9 @@ import { InternalError } from '@tanker/errors';
 
 import type LocalUser from './LocalUser';
 import type { RemoteVerification, RemoteVerificationWithToken } from './types';
+import type { SecretProvisionalIdentity } from '../Identity';
 
-type VerificationRequest = $Exact<{
+export type VerificationRequest = $Exact<{
   hashed_passphrase: Uint8Array,
   with_token?: {| nonce: string |}
 }> | $Exact<{
@@ -19,13 +20,28 @@ type VerificationRequest = $Exact<{
   with_token?: {| nonce: string |}
 }> | $Exact<{
   phone_number: string,
-  user_salt: Uint8Array,
   encrypted_phone_number: Uint8Array,
+  user_salt: Uint8Array,
+  provisional_salt?: Uint8Array,
   verification_code: string,
   with_token?: {| nonce: string |}
 }>;
 
-export const formatVerificationRequest = (verification: RemoteVerification | RemoteVerificationWithToken, localUser: LocalUser): VerificationRequest => {
+export type ProvisionalKeysRequest = $Exact<{
+  target: string,
+  email: string,
+}> | $Exact<{
+  target: string,
+  phone_number: string,
+  user_secret_salt: Uint8Array,
+  provisional_salt: Uint8Array,
+}>;
+
+export const formatVerificationRequest = (
+  verification: RemoteVerification | RemoteVerificationWithToken,
+  localUser: LocalUser,
+  provIdentity: ?SecretProvisionalIdentity
+): VerificationRequest => {
   if (verification.email) {
     return {
       hashed_email: generichash(utils.fromString(verification.email)),
@@ -41,8 +57,9 @@ export const formatVerificationRequest = (verification: RemoteVerification | Rem
   if (verification.phoneNumber) {
     return {
       phone_number: verification.phoneNumber,
-      user_salt: generichash(localUser.userSecret),
       encrypted_phone_number: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.phoneNumber))),
+      user_salt: generichash(localUser.userSecret),
+      provisional_salt: provIdentity ? generichash(utils.fromBase64(provIdentity.private_signature_key)) : undefined,
       verification_code: verification.verificationCode,
     };
   }
@@ -52,4 +69,22 @@ export const formatVerificationRequest = (verification: RemoteVerification | Rem
     };
   }
   throw new InternalError('Assertion error: invalid remote verification in formatVerificationRequest');
+};
+
+export const formatProvisionalKeysRequest = (provIdentity: SecretProvisionalIdentity, localUser: LocalUser): ProvisionalKeysRequest => {
+  if (provIdentity.target === 'email') {
+    return {
+      target: provIdentity.target,
+      email: provIdentity.value,
+    };
+  }
+  if (provIdentity.target === 'phone_number') {
+    return {
+      target: provIdentity.target,
+      phone_number: provIdentity.value,
+      user_secret_salt: generichash(localUser.userSecret),
+      provisional_salt: generichash(utils.fromBase64(provIdentity.private_signature_key)),
+    };
+  }
+  throw new InternalError('Assertion error: invalid provisional identity target in formatProvisionalKeysRequest');
 };

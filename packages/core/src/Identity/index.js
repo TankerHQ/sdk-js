@@ -7,9 +7,9 @@ export type {
 } from './identity';
 
 export {
-  _deserializePermanentIdentity, _deserializeProvisionalIdentity,
-  _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
-  _serializeIdentity,
+  _deserializePermanentIdentity, _deserializeProvisionalIdentity, _deserializePublicIdentity,
+  _splitProvisionalAndPermanentPublicIdentities, _serializeIdentity,
+  isProvisionalIdentity, identityTargetToVerificationMethodType,
 } from './identity';
 
 export { assertUserSecret } from './userSecret';

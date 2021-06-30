@@ -254,7 +254,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
     });
 
-    describe('decrypt resources shared with provisional identities', () => {
+    describe('decrypt resources shared with email provisional identities', () => {
       let email;
       let provisionalIdentity;
       let publicProvisionalIdentity;
@@ -292,14 +292,6 @@ export const generateEncryptionTests = (args: TestArgs) => {
         });
         const bobVerificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(bobLaptop.verifyProvisionalIdentity({ email, verificationCode: bobVerificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
-      });
-
-      it('does not throw if nothing to claim and same email registered as verification method', async () => {
-        const verificationCode = await appHelper.getEmailVerificationCode(email);
-        await aliceLaptop.setVerificationMethod({ email, verificationCode });
-
-        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
-        expect(attachResult).to.deep.equal({ status: READY });
       });
 
       it('decrypt data shared with an attached provisional identity', async () => {
@@ -343,7 +335,15 @@ export const generateEncryptionTests = (args: TestArgs) => {
         expect(attachResult).to.deep.equal({ status: READY });
       });
 
-      it('attach a provisional identity without requesting verification if email already verified', async () => {
+      it('attach without another verification if email already verified and claimed', async () => {
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
+        await aliceLaptop.setVerificationMethod({ email, verificationCode });
+
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({ status: READY });
+      });
+
+      it('attach without another verification if phone number already verified', async () => {
         const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
         const eveIdentity = await appHelper.generateIdentity();
@@ -404,6 +404,141 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
+
+        const alicePhone = args.makeTanker();
+        await alicePhone.start(aliceIdentity);
+        await alicePhone.verifyIdentity({ passphrase: 'passphrase' });
+        const decrypted = await alicePhone.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
+        await alicePhone.stop();
+      });
+    });
+
+    describe('decrypt resources shared with phone_number provisional identities', () => {
+      const reservedPhoneNumberPrefix = '+3319900'; // Reserved per https://www.arcep.fr/uploads/tx_gsavis/18-0881.pdf 2.5.12
+      let phoneNumber;
+      let provisionalIdentity;
+      let publicProvisionalIdentity;
+
+      beforeEach(async () => {
+        phoneNumber = reservedPhoneNumberPrefix + (Math.random() + 1).toString().substr(2, 6);
+        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'phone_number', phoneNumber);
+        publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
+
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({
+          status: IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'phoneNumber', phoneNumber },
+        });
+      });
+
+      it('throws if claiming an already attached provisional', async () => {
+        const aliceVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode: aliceVerificationCode })).to.be.fulfilled;
+
+        const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({
+          status: IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'phoneNumber', phoneNumber },
+        });
+        const bobVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await expect(bobLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode: bobVerificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+      });
+
+      it('decrypt data shared with an attached provisional identity', async () => {
+        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await aliceLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode });
+
+        const decrypted = await aliceLaptop.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('decrypt data shared with an attached provisional identity after session restart', async () => {
+        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await aliceLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode });
+        await aliceLaptop.stop();
+
+        await aliceLaptop.start(aliceIdentity);
+        const decrypted = await aliceLaptop.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('throws when sharing with already claimed identity', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await aliceLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode });
+
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+      });
+
+      it('gracefully accept an already attached provisional identity', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await aliceLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode });
+
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({ status: READY });
+      });
+
+      it('attach without another verification if phone number already verified and claimed', async () => {
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await aliceLaptop.setVerificationMethod({ phoneNumber, verificationCode });
+
+        const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({ status: READY });
+      });
+
+      it('attach without another verification if phone number already verified', async () => {
+        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const eveIdentity = await appHelper.generateIdentity();
+        const eveLaptop = args.makeTanker();
+
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+
+        await eveLaptop.start(eveIdentity);
+        await eveLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        const attachResult = await eveLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({ status: READY });
+
+        const decrypted = await eveLaptop.decrypt(cipherText);
+        expect(decrypted).to.equal(clearText);
+        await eveLaptop.stop();
+      });
+
+      it('throws when verifying provisional identity with wrong verification code', async () => {
+        await expect(aliceLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerification);
+      });
+
+      it('throws when verifying a phone number that does not match the provisional identity', async () => {
+        const anotherPhone = reservedPhoneNumberPrefix + (Math.random() + 1).toString().substr(2, 6);
+        const verificationCode = await appHelper.getSMSVerificationCode(anotherPhone);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherPhone, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('throw when two users attach the same provisional identity', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await aliceLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode });
+
+        verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await expect(bobLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode })).to.be.rejectedWith(errors.IdentityAlreadyAttached, 'one or more provisional identities are already attached');
+      });
+
+      it('decrypt resource on a new device', async () => {
+        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await aliceLaptop.verifyProvisionalIdentity({ phoneNumber, verificationCode });
 
         const alicePhone = args.makeTanker();
         await alicePhone.start(aliceIdentity);
