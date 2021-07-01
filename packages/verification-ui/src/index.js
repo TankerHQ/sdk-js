@@ -22,7 +22,7 @@ export class VerificationUI {
     window.document.body.appendChild(this._container);
   }
 
-  _mountAndWrap = (email: string, func: EmailVerification => Promise<void>): Promise<void> => (
+  _mountAndWrap = (email: string, func: EmailVerification => Promise<any>): Promise<void> => (
     new Promise(resolve => {
       this._mount(
         email,

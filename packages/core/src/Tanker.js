@@ -40,6 +40,7 @@ import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtectio
 import type { EncryptionSession } from './DataProtection/EncryptionSession';
 import type { UploadStream } from './CloudStorage/UploadStream';
 import type { DownloadStream } from './CloudStorage/DownloadStream';
+import { Lock } from './lock';
 
 import { TANKER_SDK_VERSION } from './version';
 
@@ -81,6 +82,7 @@ export class Tanker extends EventEmitter {
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
+  _localDeviceLock: Lock;
 
   static version = TANKER_SDK_VERSION;
   static statuses = statuses;
@@ -110,6 +112,7 @@ export class Tanker extends EventEmitter {
     }
 
     assertNotEmptyString(options.sdkType, 'options.sdkType');
+    this._localDeviceLock = new Lock();
     this._options = options;
 
     const clientOptions: ClientOptions = {
@@ -213,7 +216,11 @@ export class Tanker extends EventEmitter {
     return utils.toBase64(deviceId);
   }
 
-  async start(identityB64: b64string) {
+  _lockCall<T>(name: string, f: (...args: any[]) => Promise<T>): (...args: any[]) => Promise<T> {
+    return async (...args: any[]) => this._localDeviceLock.lock(name, () => f(...args));
+  }
+
+  start = this._lockCall('start', async (identityB64: b64string) => {
     assertStatus(this.status, statuses.STOPPED, 'start a session');
 
     // Prepare the session
@@ -231,9 +238,9 @@ export class Tanker extends EventEmitter {
     this.session = session;
 
     return this.status;
-  }
+  });
 
-  async registerIdentity(verification: Verification, options?: VerificationOptions): Promise<?string> {
+  registerIdentity = this._lockCall('registerIdentity', async (verification: Verification, options?: VerificationOptions): Promise<?string> => {
     assertStatus(this.status, statuses.IDENTITY_REGISTRATION_NEEDED, 'register an identity');
     assertVerification(verification);
     assertVerificationOptions(options);
@@ -252,9 +259,9 @@ export class Tanker extends EventEmitter {
     if (withSessionToken) {
       return this.session.getSessionToken(verifWithToken);
     }
-  }
+  })
 
-  async verifyIdentity(verification: Verification, options?: VerificationOptions): Promise<?string> {
+  verifyIdentity = this._lockCall('verifyIdentity', async (verification: Verification, options?: VerificationOptions): Promise<?string> => {
     assertVerification(verification);
     assertVerificationOptions(options);
 
@@ -279,7 +286,7 @@ export class Tanker extends EventEmitter {
     if (withSessionToken) {
       return this.session.getSessionToken(verifWithToken);
     }
-  }
+  })
 
   async setVerificationMethod(verification: RemoteVerification, options?: VerificationOptions): Promise<?string> {
     assertStatus(this.status, statuses.READY, 'set a verification method');
@@ -342,6 +349,7 @@ export class Tanker extends EventEmitter {
     if (this._session) {
       const session = this._session;
       this.session = null;
+      this._localDeviceLock = new Lock();
       await session.stop();
     }
   }

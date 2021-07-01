@@ -165,6 +165,54 @@ export const generateVerificationTests = (args: TestArgs) => {
         verificationCode = await appHelper.getVerificationCode(email);
         await expect(bobLaptop.setVerificationMethod({ email: 'elton@doe.com', verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
+
+      describe('concurrent calls when managing user permanent identity', () => {
+        it('cannot registerIdentity() before start() is resolved', async () => {
+          const email = 'elton.doe@tanker.io';
+          const verificationCode = await appHelper.getVerificationCode(email);
+
+          const promise = bobPhone.start(bobIdentity);
+          await expect(bobPhone.registerIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed, 'A mutually exclusive call is already in progress');
+          await expect(promise).to.not.be.rejected;
+        });
+
+        it('cannot registerIdentity() concurrently', async () => {
+          const email = 'elton.doe@tanker.io';
+          const email2 = 'elton.d@tanker.io';
+          const verificationCode = await appHelper.getVerificationCode(email);
+          const verificationCode2 = await appHelper.getVerificationCode(email2);
+
+          await bobPhone.start(bobIdentity);
+          const promise = bobPhone.registerIdentity({ email, verificationCode });
+          await expect(bobPhone.registerIdentity({ email: email2, verificationCode: verificationCode2 })).to.be.rejectedWith(errors.PreconditionFailed, 'A mutually exclusive call is already in progress');
+          await expect(promise).to.not.be.rejected;
+        });
+
+        it('cannot verifyIdentity() before registerIdentity() is resolved', async () => {
+          const email = 'elton.doe@tanker.io';
+          const verificationCode = await appHelper.getVerificationCode(email);
+
+          await bobPhone.start(bobIdentity);
+          const promise = bobPhone.registerIdentity({ email, verificationCode });
+          await expect(bobPhone.verifyIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed, 'A mutually exclusive call is already in progress');
+          await expect(promise).to.not.be.rejected;
+        });
+
+        it('cannot verifyIdentity() concurrently', async () => {
+          const email = 'john.doe@tanker.io';
+          let verificationCode = await appHelper.getVerificationCode(email);
+
+          await bobLaptop.registerIdentity({ email, verificationCode });
+          verificationCode = await appHelper.getVerificationCode(email);
+
+          await bobPhone.start(bobIdentity);
+
+          verificationCode = await appHelper.getVerificationCode(email);
+          const promise = bobPhone.verifyIdentity({ email, verificationCode });
+          await expect(bobPhone.verifyIdentity({ email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed, 'A mutually exclusive call is already in progress');
+          await expect(promise).to.not.be.rejected;
+        });
+      });
     });
 
     describe('verification by passphrase', () => {
