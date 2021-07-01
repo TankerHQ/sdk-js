@@ -2,7 +2,7 @@
 
 import { utils, encryptionV1, type Key } from '@tanker/crypto';
 import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
-import { DecryptionFailed, InternalError } from '@tanker/errors';
+import { InternalError } from '@tanker/errors';
 
 const TABLE = 'resource_keys';
 
@@ -64,9 +64,6 @@ export default class ResourceStore {
       const result = await this._ds.get(TABLE, b64ResourceId);
       const encryptedKey = utils.fromBase64(result.b64EncryptedKey);
 
-      if (encryptedKey.length < encryptionV1.overhead) {
-        throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV1.overhead} for encryption v1` });
-      }
       return encryptionV1.compatDecrypt(this._userSecret, encryptedKey, resourceId);
     } catch (e) {
       if (e instanceof dbErrors.RecordNotFound) {

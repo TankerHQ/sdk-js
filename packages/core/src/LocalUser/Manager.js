@@ -2,7 +2,7 @@
 import EventEmitter from 'events';
 
 import { encryptionV2, tcrypto, utils } from '@tanker/crypto';
-import { DecryptionFailed, InternalError, InvalidVerification, TankerError } from '@tanker/errors';
+import { InternalError, InvalidVerification, TankerError } from '@tanker/errors';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationKey, ghostDeviceKeysFromVerificationKey, decryptVerificationKey, ghostDeviceToEncryptedVerificationKey, decryptUserKeyForGhostDevice } from './ghostDevice';
 import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './KeySafe';
@@ -77,13 +77,24 @@ export class LocalUserManager extends EventEmitter {
       // Compat: email value might be missing if verification method registered with SDK < 2.0.0
       if (method.type === 'email' && method.encrypted_email) {
         const encryptedEmail = utils.fromBase64(method.encrypted_email);
-        if (encryptedEmail.length < encryptionV2.overhead) {
-          throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${encryptionV2.overhead} for encryption v2` });
-        }
-        method.email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
-        delete method.encrypted_email;
-      } else if (method.type === 'oidc_id_token') {
+        const email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
+        return {
+          type: 'email',
+          email,
+        };
+      }
+
+      if (method.type === 'oidc_id_token') {
         return { type: 'oidcIdToken' };
+      }
+
+      if (method.type === 'phone_number') {
+        const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
+        const phoneNumber = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedPhoneNumber)));
+        return {
+          type: 'phoneNumber',
+          phoneNumber,
+        };
       }
 
       return method;
@@ -130,7 +141,7 @@ export class LocalUserManager extends EventEmitter {
       first_device_creation: firstDeviceBlock,
     };
 
-    if (verification.email || verification.passphrase || verification.oidcIdToken) {
+    if (verification.email || verification.passphrase || verification.oidcIdToken || verification.phoneNumber) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
       request.verification.with_token = verification.withToken; // May be undefined

@@ -1,7 +1,7 @@
 // @flow
 import { fetch } from '@tanker/http-utils';
 
-import { appdUrl, managementSettings } from './config';
+import { trustchaindUrl, managementSettings } from './config';
 
 type stringToAnyMap = { [string]: any, ...};
 
@@ -40,7 +40,7 @@ const request = async (url: string, { method, path, query, headers = {}, body }:
   return parsed;
 };
 
-export const requestAppd = async (req: Request): Promise<stringToAnyMap> => request(appdUrl, req);
+export const requestTrustchaind = async (req: Request): Promise<stringToAnyMap> => request(trustchaindUrl, req);
 export const requestManagement = async (req: Request): Promise<stringToAnyMap> => request(managementSettings.url, {
   ...req,
   headers: { ...req.headers, Authorization: `Bearer ${managementSettings.accessToken}` },

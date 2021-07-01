@@ -1,5 +1,5 @@
 // @flow
-import { InvalidArgument } from '@tanker/errors';
+import { InvalidArgument, DecryptionFailed } from '@tanker/errors';
 
 import varint from 'varint';
 
@@ -34,7 +34,9 @@ export const unserialize = (buffer: Uint8Array): EncryptionData => {
   if (bufferVersion !== version) {
     throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
   }
-
+  if (buffer.length < overhead) {
+    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${overhead} for encryption v2` });
+  }
   const iv = buffer.subarray(1, 1 + tcrypto.XCHACHA_IV_SIZE);
   const encryptedData = buffer.subarray(1 + tcrypto.XCHACHA_IV_SIZE);
   const resourceId = aead.extractMac(encryptedData);

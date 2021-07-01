@@ -17,6 +17,12 @@ type VerificationRequest = $Exact<{
 }> | $Exact<{
   oidc_id_token: string,
   with_token?: {| nonce: string |}
+}> | $Exact<{
+  phone_number: string,
+  user_salt: Uint8Array,
+  encrypted_phone_number: Uint8Array,
+  verification_code: string,
+  with_token?: {| nonce: string |}
 }>;
 
 export const formatVerificationRequest = (verification: RemoteVerification | RemoteVerificationWithToken, localUser: LocalUser): VerificationRequest => {
@@ -30,6 +36,14 @@ export const formatVerificationRequest = (verification: RemoteVerification | Rem
   if (verification.passphrase) {
     return {
       hashed_passphrase: generichash(utils.fromString(verification.passphrase)),
+    };
+  }
+  if (verification.phoneNumber) {
+    return {
+      phone_number: verification.phoneNumber,
+      user_salt: generichash(localUser.userSecret),
+      encrypted_phone_number: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.phoneNumber))),
+      verification_code: verification.verificationCode,
     };
   }
   if (verification.oidcIdToken) {

@@ -13,6 +13,7 @@ export const VERIFICATION_METHOD_TYPES = Object.freeze({
   passphrase: 2,
   verificationKey: 3,
   oidcIdToken: 4,
+  phoneNumber: 5,
 });
 const VERIFICATION_METHOD_TYPES_INT = Object.values(VERIFICATION_METHOD_TYPES);
 export type VerificationMethodType = $Values<typeof VERIFICATION_METHOD_TYPES>;
@@ -31,6 +32,12 @@ function verificationToVerificationMethod(verification: VerificationWithToken): 
       type: 'email',
       // $FlowIgnore[prop-missing]
       email: verification.email
+    };
+  if ('phoneNumber' in verification)
+    return {
+      type: 'phoneNumber',
+      // $FlowIgnore[prop-missing]
+      phoneNumber: verification.phoneNumber,
     };
   if ('passphrase' in verification)
     return { type: 'passphrase' };
@@ -77,6 +84,8 @@ export const makeSessionCertificate = (
   let verifTarget;
   if (verifMethod.type === 'email') {
     verifTarget = generichash(utils.fromString(verifMethod.email));
+  } else if (verifMethod.type === 'phoneNumber') {
+    verifTarget = generichash(utils.fromString(verifMethod.phoneNumber));
   } else {
     verifTarget = new Uint8Array(tcrypto.HASH_SIZE);
   }
