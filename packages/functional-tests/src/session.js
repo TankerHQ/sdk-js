@@ -28,9 +28,7 @@ export const generateSessionTests = (args: TestArgs) => {
       expect(bobLaptop.status).to.equal(STOPPED);
     });
 
-    it('throws when having configured a non existing app', async () => {
-      const silenceError = silencer.silence('error', /trustchain_not_found/);
-
+    it('throws when having configured a non existing app', silencer.wrapper('error', /trustchain_not_found/)(async () => {
       const nonExistentB64AppSecret = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
       const publicKey = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
       const publicKeyBytes = utils.fromBase64(publicKey);
@@ -40,9 +38,7 @@ export const generateSessionTests = (args: TestArgs) => {
       const bobMobile = args.makeTanker(nonExistentB64AppId);
       await expect(bobMobile.start(bobIdentity)).to.be.rejectedWith(errors.PreconditionFailed, 'app_not_found');
       await bobMobile.stop();
-
-      silenceError.restore();
-    });
+    }));
 
     it('throws when giving an invalid identity', async () => {
       await expect(bobLaptop.start('secret')).to.be.rejectedWith(errors.InvalidArgument);

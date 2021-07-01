@@ -3,7 +3,7 @@ import { ready as cryptoReady, utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
-import { makePrefix, AppHelper, admindUrl, appdUrl, idToken, oidcSettings, benchmarkSettings } from './helpers';
+import { makePrefix, AppHelper, appdUrl, managementSettings, oidcSettings, benchmarkSettings } from './helpers';
 import type { TestArgs, TestResources } from './helpers';
 
 import { generateEncryptionStreamTests } from './encryptionStream';
@@ -24,7 +24,7 @@ export function generateFunctionalTests(
   makeTanker: (appId: b64string) => Tanker,
   generateTestResources: () => TestResources,
 ) {
-  if (!admindUrl || !appdUrl || !idToken || !oidcSettings) {
+  if (!appdUrl || !managementSettings || !oidcSettings) {
     // Those functional tests create an app automatically and require TANKER_* env variables
     // to be set (see the ci repository and env variables set on the Tanker Group on GitLab)
     if (process.env.CI) {
@@ -45,18 +45,21 @@ export function generateFunctionalTests(
 
     before(async () => {
       await cryptoReady;
-      silencer.silence('warn', /deprecated/);
 
       args.appHelper = await AppHelper.newApp();
       const b64DefaultAppId = utils.toBase64(args.appHelper.appId);
 
       args.makeTanker = (b64AppId = b64DefaultAppId) => makeTanker(b64AppId);
+
+      silencer.silence('warn', /deprecated/);
     });
 
     after(async () => {
-      await args.appHelper.cleanup();
-
       silencer.restore();
+
+      if (args.appHelper) {
+        await args.appHelper.cleanup();
+      }
     });
 
     generateSessionTests(args);
@@ -74,4 +77,4 @@ export function generateFunctionalTests(
   });
 }
 
-export { makePrefix, AppHelper, admindUrl, appdUrl, idToken, oidcSettings, benchmarkSettings };
+export { makePrefix, AppHelper, appdUrl, managementSettings, oidcSettings, benchmarkSettings };

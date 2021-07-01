@@ -3,11 +3,11 @@
 import { Tanker } from '@tanker/client-browser';
 import { utils, generichash } from '@tanker/crypto';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
-import { AppHelper, makePrefix, admindUrl, appdUrl, idToken, oidcSettings, benchmarkSettings } from '@tanker/functional-tests';
+import { AppHelper, makePrefix, appdUrl, managementSettings, oidcSettings, benchmarkSettings } from '@tanker/functional-tests';
 
 import { before, after, benchmark } from './framework';
 
-if (!admindUrl || !appdUrl || !idToken || !oidcSettings) {
+if (!appdUrl || !managementSettings || !oidcSettings) {
   throw new Error('Can\'t run benchmarks without TANKER_* environment variables');
 }
 
