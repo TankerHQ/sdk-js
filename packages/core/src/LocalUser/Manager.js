@@ -2,7 +2,7 @@
 import EventEmitter from 'events';
 
 import { encryptionV2, tcrypto, utils } from '@tanker/crypto';
-import { InternalError, InvalidVerification, TankerError } from '@tanker/errors';
+import { InternalError, InvalidVerification, UpgradeRequired, TankerError } from '@tanker/errors';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationKey, ghostDeviceKeysFromVerificationKey, decryptVerificationKey, ghostDeviceToEncryptedVerificationKey, decryptUserKeyForGhostDevice } from './ghostDevice';
 import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './KeySafe';
@@ -71,33 +71,42 @@ export class LocalUserManager extends EventEmitter {
       return [{ type: 'verificationKey' }];
     }
 
-    return verificationMethods.map(verificationMethod => {
-      const method = { ...verificationMethod };
+    return verificationMethods.map(method => {
+      switch (method.type) {
+        case 'email': {
+          // Compat: encrypted_email value might be missing.
+          // verification method registered with SDK < 2.0.0 have encrypted_email set to NULL in out database
+          if (!method.encrypted_email) {
+            return {
+              type: 'email',
+            };
+          }
 
-      // Compat: email value might be missing if verification method registered with SDK < 2.0.0
-      if (method.type === 'email' && method.encrypted_email) {
-        const encryptedEmail = utils.fromBase64(method.encrypted_email);
-        const email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
-        return {
-          type: 'email',
-          email,
-        };
+          const encryptedEmail = utils.fromBase64(method.encrypted_email);
+          const email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
+          return {
+            type: 'email',
+            email,
+          };
+        }
+        case 'passphrase': {
+          return { type: 'passphrase' };
+        }
+        case 'oidc_id_token': {
+          return { type: 'oidcIdToken' };
+        }
+        case 'phone_number': {
+          const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
+          const phoneNumber = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedPhoneNumber)));
+          return {
+            type: 'phoneNumber',
+            phoneNumber,
+          };
+        }
+        default: {
+          throw new UpgradeRequired(`unsupported verification method type: ${method.type}`);
+        }
       }
-
-      if (method.type === 'oidc_id_token') {
-        return { type: 'oidcIdToken' };
-      }
-
-      if (method.type === 'phone_number') {
-        const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
-        const phoneNumber = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedPhoneNumber)));
-        return {
-          type: 'phoneNumber',
-          phoneNumber,
-        };
-      }
-
-      return method;
     });
   }
 
