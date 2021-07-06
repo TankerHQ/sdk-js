@@ -18,6 +18,7 @@ describe('utils', () => {
   let noPaddingUrlSafeBase64;
   let str;
   let urlSafeBase64;
+  let rfc2045Base64;
 
   before(async () => {
     await ready;
@@ -28,6 +29,7 @@ describe('utils', () => {
     noPaddingBase64 = '8J+agCBUYW5rZXIgcm9ja3MhISE';
     noPaddingUrlSafeBase64 = '8J-agCBUYW5rZXIgcm9ja3MhISE';
     urlSafeBase64 = '8J-agCBUYW5rZXIgcm9ja3MhISE=';
+    rfc2045Base64 = '8J+a\ngCB  UYW\t5rZX😭Igcm9éja3M hISE=\n';
   });
 
   describe('utf-16 string (DOM String) <-> utf-8 binary representation (Uint8Array)', () => {
@@ -57,6 +59,10 @@ describe('utils', () => {
 
     it('can convert a base64 string to bytes', () => {
       expect(fromBase64(base64)).to.deep.equal(bytes);
+    });
+
+    it('can convert a base64 string following rfc-2045 to bytes', () => {
+      expect(fromBase64(rfc2045Base64)).to.deep.equal(bytes);
     });
 
     it('can convert bytes to a URL-safe base64 string', () => {

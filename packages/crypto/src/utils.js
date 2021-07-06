@@ -82,17 +82,18 @@ function b64ToUint6(charCode) {
   return 0;
 }
 
-const base64RegExp = /^[A-Za-z0-9+/]*={0,2}$/;
-const paddingRegExp = /=+$/;
+const rfc4648Base64RegExp = /^[A-Za-z0-9+/]*={0,2}$/;
+const ignoredCharRegExp = /[^A-Za-z0-9+/]+/g;
 
 export function fromBase64(str: b64string): Uint8Array {
   if (typeof str !== 'string')
     throw new TypeError('"str" is not a string');
 
-  if (!str.match(base64RegExp))
-    throw new TypeError('"str" is not a valid base64 string');
+  if (!str.match(rfc4648Base64RegExp)) {
+    console.warn(`deprecated base64 format: ${new TypeError('"str" is not a valid base64 string according to RFC 4648').message}`);
+  }
 
-  const strNoPadding = str.replace(paddingRegExp, '');
+  const strNoPadding = str.replace(ignoredCharRegExp, '');
   const inLen = strNoPadding.length;
   const outLen = inLen * 3 + 1 >> 2;
   const output = new Uint8Array(outLen);
