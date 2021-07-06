@@ -1,7 +1,7 @@
 // @flow
 
 import { Tanker } from '@tanker/client-browser';
-import { utils, generichash } from '@tanker/crypto';
+import { utils, generichash, random } from '@tanker/crypto';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
 import { AppHelper, makePrefix, appdUrl, managementSettings, oidcSettings, benchmarkSettings } from '@tanker/functional-tests';
 
@@ -37,6 +37,24 @@ const makeTanker = (appIdOverride: ?string): Tanker => {
 
   return tanker;
 };
+
+// What: decode a base64 string
+// PreCond: a valid base64 following rfc 4648 is initialised
+// PostCond: no error is thrown
+benchmark('fromBase64_10MB', (state) => {
+  while (state.iter()) {
+    state.pause();
+    // generate huge base64 string
+    let data = random(10000);
+    while (data.length < 10 * 1000 * 1000) { // 10 MB
+      data = utils.concatArrays(data, data);
+    }
+    const base64 = utils.toBase64(data);
+    state.unpause();
+
+    utils.fromBase64(base64);
+  }
+});
 
 // What: starts and registers an identity with a verification key
 // PreCond: a core as been constructed
