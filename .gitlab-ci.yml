@@ -15,13 +15,23 @@ default:
     - poetry install
     - poetry run python --version
 
-check/linux:
+check/linux/chrome:
   extends: .python-yarn-cache
   stage: check
   except:
     - schedules
   script:
     - poetry run python run-ci.py check --runner linux
+  tags:
+    - linux
+
+check/linux/node:
+  extends: .python-yarn-cache
+  stage: check
+  except:
+    - schedules
+  script:
+    - poetry run python run-ci.py check --runner node
     - mv coverage/lcov-report lcov-report
   artifacts:
     paths:
@@ -140,7 +150,7 @@ pages:
   except:
     - schedules
   dependencies:
-    - check/linux
+    - check/linux/node
   script:
     - mv lcov-report/ public/
   artifacts:
