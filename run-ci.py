@@ -205,7 +205,7 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
 
 
-def deploy_sdk(*, env: str, git_tag: str) -> None:
+def deploy_sdk(*, git_tag: str) -> None:
     tankerci.js.yarn_install_deps()
     version = tankerci.bump.version_from_git_tag(git_tag)
     tankerci.bump.bump_files(version)
@@ -246,7 +246,7 @@ def deploy_sdk(*, env: str, git_tag: str) -> None:
     ]
 
     for config in configs:
-        tankerci.js.yarn_build(delivery=config["build"], env=env)  # type: ignore
+        tankerci.js.yarn_build(delivery=config["build"], env="prod")  # type: ignore
         for package_name in config["publish"]:
             publish_npm_package(package_name, version)
 
@@ -346,7 +346,6 @@ def _main() -> None:
 
     deploy_parser = subparsers.add_parser("deploy")
     deploy_parser.add_argument("--git-tag", required=True)
-    deploy_parser.add_argument("--env", required=True)
 
     subparsers.add_parser("compat")
 
@@ -362,8 +361,7 @@ def _main() -> None:
         nightly = args.nightly
         check(runner=runner, nightly=nightly)
     elif args.command == "deploy":
-        git_tag = args.git_tag
-        deploy_sdk(env=args.env, git_tag=git_tag)
+        deploy_sdk(git_tag=args.git_tag)
     elif args.command == "compat":
         compat()
     elif args.command == "e2e":
