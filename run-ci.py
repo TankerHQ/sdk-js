@@ -165,12 +165,11 @@ def run_tests_in_node() -> None:
 
 def check(*, runner: str, nightly: bool) -> None:
     tankerci.js.yarn_install_deps()
-    if runner == "linux" and not nightly:
-        run_linters()
-        run_tests_in_node()
-
     if nightly:
         run_tests_in_browser_ten_times(runner=runner)
+    elif runner == "node":
+        run_linters()
+        run_tests_in_node()
     else:
         run_tests_in_browser(runner=runner)
 
