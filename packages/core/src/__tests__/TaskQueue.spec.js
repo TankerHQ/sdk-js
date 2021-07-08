@@ -6,6 +6,7 @@ import { TaskQueue } from '../TaskQueue';
 
 describe('TaskQueue', () => {
   const err = new Error('TaskQueue test error');
+  const waitMs = 5;
 
   const defineEnqueueTests = (concurrency: number) => {
     describe(`enqueue with concurrency = ${concurrency}`, () => {
@@ -22,7 +23,7 @@ describe('TaskQueue', () => {
       });
 
       it('resolves with the result of an asynchronous task', async () => {
-        const asyncFunc = () => new Promise(resolve => setTimeout(() => resolve(10), 20));
+        const asyncFunc = () => new Promise(resolve => setTimeout(() => resolve(10), waitMs));
         const value = await q.enqueue(asyncFunc);
         expect(value).to.equal(10);
       });
@@ -33,7 +34,7 @@ describe('TaskQueue', () => {
       });
 
       it('is rejected if an error occurs in an asynchronous task', async () => {
-        const asyncFunc = () => new Promise((_, reject) => setTimeout(() => reject(err), 20));
+        const asyncFunc = () => new Promise((_, reject) => setTimeout(() => reject(err), waitMs));
         await expect(q.enqueue(asyncFunc)).to.be.rejectedWith(err);
       });
 
@@ -63,9 +64,12 @@ describe('TaskQueue', () => {
           scheduledTaskIds.push(taskId);
           scheduled.push({ resolve: () => { pw.resolve(taskId); } });
 
-          // Resolve scheduled tasks when max concurrency reached
+          // When max concurrency reached, resolve scheduled tasks at once, but only
+          // after a few milliseconds to ensure no additional task has been scheduled
           if (scheduled.length === concurrency) {
-            while (scheduled.length) scheduled.shift().resolve();
+            setTimeout(() => {
+              while (scheduled.length) scheduled.shift().resolve();
+            }, waitMs);
           }
 
           return pw.promise;
