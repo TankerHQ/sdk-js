@@ -4,7 +4,7 @@ import { InternalError } from '@tanker/errors';
 
 import { tcrypto, utils, encryptionV2 } from '@tanker/crypto';
 
-const GROUP_ENCRYPTION_KEYS_TABLE = 'group_encryption_keys';
+const GROUPS_ENCRYPTION_KEYS_TABLE = 'groups_encryption_keys';
 
 const schemaV3 = {
   tables: [{
@@ -38,7 +38,17 @@ const schemaV11 = {
     ...schemaV8.tables.map(t => ({ ...t, deleted: true })),
     // And replace by the new table
     {
-      name: GROUP_ENCRYPTION_KEYS_TABLE,
+      name: 'group_encryption_keys',
+    },
+  ]
+};
+
+const schemaV13 = {
+  tables: [
+    ...schemaV11.tables.map(t => ({ ...t, deleted: true })),
+    {
+      name: GROUPS_ENCRYPTION_KEYS_TABLE,
+      indexes: [['groupId']],
     },
   ]
 };
@@ -66,6 +76,7 @@ export default class GroupStore {
     { version: 10, ...schemaV8 },
     { version: 11, ...schemaV11 },
     { version: 12, ...schemaV11 },
+    { version: 13, ...schemaV13 },
   ];
 
   constructor(ds: DataStore<*>, userSecret: Uint8Array) {
@@ -97,13 +108,13 @@ export default class GroupStore {
       return { _id: b64PublicEncryptionKey, groupId: b64GroupId, privateEncryptionKey: b64PrivateEncryptionKey };
     });
 
-    await this._ds.bulkAdd(GROUP_ENCRYPTION_KEYS_TABLE, b64GroupKeyPairs);
+    await this._ds.bulkAdd(GROUPS_ENCRYPTION_KEYS_TABLE, b64GroupKeyPairs);
   }
 
   async findGroupEncryptionKeyPair(publicKey: Uint8Array): Promise<?tcrypto.SodiumKeyPair> {
     const b64PublicKey = utils.toBase64(publicKey);
 
-    const existingKey = await this._ds.first(GROUP_ENCRYPTION_KEYS_TABLE, {
+    const existingKey = await this._ds.first(GROUPS_ENCRYPTION_KEYS_TABLE, {
       selector: {
         _id: b64PublicKey,
       }
