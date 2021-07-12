@@ -443,7 +443,7 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
     return { ...userGroupAction, author, signature, nature, hash };
   }
 
-  throw new InternalError('Assertion error: wrong type for getGroupEntryFromBlock');
+  throw new InternalError(`Assertion error: wrong type for getGroupEntryFromBlock: ${nature}`);
 }
 
 export const getUserGroupCreationBlockSignDataV1 = (record: UserGroupCreationRecordV1): Uint8Array => utils.concatArrays(
