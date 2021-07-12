@@ -3,7 +3,7 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument, InternalError } from '@tanker/errors';
 
 import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, ProvisionalGroupEncryptedKeyV3, UserGroupEntry } from './Serialize';
-import { isGroupAddition, isGroupUpdate, decryptPreviousGroupKey } from './Serialize';
+import { isGroupAddition } from './Serialize';
 import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
 
@@ -98,6 +98,11 @@ function externalToInternal(externalGroup: ExternalGroup, previousGroup: ?Group,
   const signatureKeyPairs = [];
   const encryptionKeyPairs = [];
 
+  if (previousGroup && isInternalGroup(previousGroup)) {
+    signatureKeyPairs.push(...previousGroup.signatureKeyPairs);
+    encryptionKeyPairs.push(...previousGroup.encryptionKeyPairs);
+  }
+
   signatureKeyPairs.push({
     publicKey: groupBase.lastPublicSignatureKey,
     privateKey: groupPrivateSignatureKey,
@@ -122,7 +127,7 @@ export function groupFromUserGroupEntry(
   provisionalIdentityManager: ProvisionalIdentityManager
 ): Group {
   // Previous group already has every field we need
-  if (previousGroup && isInternalGroup(previousGroup) && isGroupAddition(entry)) {
+  if (previousGroup && isInternalGroup(previousGroup) && (isGroupAddition(entry) || utils.equalArray(previousGroup.lastPublicEncryptionKey, entry.public_encryption_key))) {
     return {
       ...previousGroup,
       lastGroupBlock: entry.hash,
@@ -140,15 +145,11 @@ export function groupFromUserGroupEntry(
     throw new InternalError('Assertion error: invalid group/entry combination');
   }
 
-  // In case of group addition, get the lastGroupBlock from the previous group
-  const lastGroupRotationBlock = previousGroup && isGroupAddition(entry) ? previousGroup.lastKeyRotationBlock : entry.hash;
-
   const externalGroup = {
     groupId,
     lastPublicSignatureKey,
     lastPublicEncryptionKey,
     lastGroupBlock: entry.hash,
-    lastKeyRotationBlock: lastGroupRotationBlock,
     encryptedPrivateSignatureKey,
   };
 
@@ -190,30 +191,6 @@ export async function groupsFromEntries(entries: Array<UserGroupEntry>, devicePu
     previousData.push({ group, entry, devicePublicSignatureKey });
 
     groupsMap.set(b64groupId, previousData);
-  }
-
-  for (const groupData of groupsMap.values()) {
-    // Get the last group
-    const lastGroup = groupData[groupData.length - 1].group;
-
-    if (!isInternalGroup(lastGroup)) {
-      continue;
-    }
-    // There is only the last keypair in the array
-    let currentEncryptionKeyPair: ?tcrypto.SodiumKeyPair = lastGroup.encryptionKeyPairs[0];
-
-    if (!currentEncryptionKeyPair) {
-      continue;
-    }
-
-    // Loop the entries backward and find the groupKeyPairs
-    for (const data of groupData.slice().reverse()) {
-      if (isGroupUpdate(data.entry)) {
-        currentEncryptionKeyPair = decryptPreviousGroupKey(data.entry, currentEncryptionKeyPair);
-        // Fill the list of encryption key
-        lastGroup.encryptionKeyPairs.unshift(currentEncryptionKeyPair);
-      }
-    }
   }
 
   const groups: Array<Group> = [];

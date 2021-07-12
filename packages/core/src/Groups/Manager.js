@@ -129,11 +129,11 @@ export default class GroupManager {
     const groups = await this._groupsFromBlocks(blocks);
 
     let result;
-    const encryptionKeyPairRecords = [];
+    const encryptionKeysRecord = [];
     for (const group of groups) {
       if (isInternalGroup(group)) {
         for (const encryptionKeyPair of group.encryptionKeyPairs) {
-          encryptionKeyPairRecords.push({ groupId: group.groupId, encryptionKeyPair });
+          encryptionKeysRecord.push({ groupId: group.groupId, encryptionKeyPair });
           if (utils.equalArray(groupPublicEncryptionKey, encryptionKeyPair.publicKey)) {
             result = encryptionKeyPair;
           }
@@ -141,7 +141,7 @@ export default class GroupManager {
       }
     }
 
-    await this._groupStore.saveGroupEncryptionKeys(encryptionKeyPairRecords);
+    await this._groupStore.saveGroupEncryptionKeys(encryptionKeysRecord);
 
     if (!result) {
       throw new InvalidArgument('Current user is not a group member');

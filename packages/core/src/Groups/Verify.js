@@ -10,7 +10,6 @@ import {
   getUserGroupAdditionBlockSignDataV1,
   getUserGroupAdditionBlockSignDataV2,
   getUserGroupAdditionBlockSignDataV3,
-  getUserGroupUpdateBlockSignData,
   type UserGroupCreationRecord,
   type UserGroupCreationRecordV1,
   type UserGroupCreationRecordV2,
@@ -19,7 +18,6 @@ import {
   type UserGroupAdditionRecordV2,
   type UserGroupAdditionRecordV3,
   type UserGroupAdditionRecord,
-  type UserGroupUpdateRecord,
   type UserGroupEntry,
 } from './Serialize';
 
@@ -76,29 +74,10 @@ export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSigna
     const versionedPayload: UserGroupAdditionRecordV3 = (currentPayload: any);
     selfSigBuffer = getUserGroupAdditionBlockSignDataV3(versionedPayload);
   } else {
-    throw new InvalidBlockError('invalid_nature', 'invalid nature for user group addition', { entry });
+    throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
   }
   if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentGroup.lastPublicSignatureKey))
     throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', entry);
-}
-
-export function verifyUserGroupUpdate(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, currentGroup: ?Group) {
-  const currentPayload: UserGroupUpdateRecord = (entry: any);
-
-  if (!tcrypto.verifySignature(entry.hash, entry.signature, devicePublicSignatureKey))
-    throw new InvalidBlockError('invalid_signature', 'signature is invalid', entry);
-
-  if (!currentGroup)
-    throw new InvalidBlockError('invalid_group_id', 'cannot find group id', entry);
-
-  if (!utils.equalArray(currentPayload.previous_key_rotation_block, currentGroup.lastKeyRotationBlock))
-    throw new InvalidBlockError('invalid_previous_key_rotation_block', 'previous key rotation block does not match for this group id', { entry, currentGroup });
-
-  const selfSigBuffer = getUserGroupUpdateBlockSignData(currentPayload);
-  if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentPayload.public_signature_key))
-    throw new InvalidBlockError('invalid_self_signature_with_current_key', 'self signature with current key is invalid', entry);
-  if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_previous_key, currentGroup.lastPublicSignatureKey))
-    throw new InvalidBlockError('invalid_self_signature_with_previous_key', 'self signature with previous key is invalid', entry);
 }
 
 export function verifyGroupAction(action: UserGroupEntry, devicePublicSignatureKey: Uint8Array, group: ?Group) {
@@ -106,8 +85,6 @@ export function verifyGroupAction(action: UserGroupEntry, devicePublicSignatureK
     verifyUserGroupCreation(action, devicePublicSignatureKey, group);
   } else if (action.nature === NATURE.user_group_addition_v3 || action.nature === NATURE.user_group_addition_v2 || action.nature === NATURE.user_group_addition_v1) {
     verifyUserGroupAddition(action, devicePublicSignatureKey, group);
-  } else if (action.nature === NATURE.user_group_update) {
-    verifyUserGroupUpdate(action, devicePublicSignatureKey, group);
   } else {
     throw new InternalError('Assertion error: entry to verify is not a group');
   }
