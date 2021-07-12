@@ -323,6 +323,8 @@ export function serializeUserGroupCreationV3(userGroupCreation: UserGroupCreatio
 }
 
 export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditionRecordV1): Uint8Array {
+  if (userGroupAddition.group_id.length !== tcrypto.HASH_SIZE)
+    throw new InternalError('Assertion error: invalid user group addition group id size');
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid user group addition previous group block size');
   userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV1('user group addition V1', k));
@@ -339,6 +341,8 @@ export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditio
 }
 
 export function serializeUserGroupAdditionV2(userGroupAddition: UserGroupAdditionRecordV2): Uint8Array {
+  if (userGroupAddition.group_id.length !== tcrypto.HASH_SIZE)
+    throw new InternalError('Assertion error: invalid user group addition group id size');
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid user group addition previous group block size');
   userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group addition V2', k));
@@ -358,6 +362,8 @@ export function serializeUserGroupAdditionV2(userGroupAddition: UserGroupAdditio
 }
 
 export function serializeUserGroupAdditionV3(userGroupAddition: UserGroupAdditionRecordV3): Uint8Array {
+  if (userGroupAddition.group_id.length !== tcrypto.HASH_SIZE)
+    throw new InternalError('Assertion error: invalid user group addition group id size');
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid user group addition previous group block size');
   userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group addition V3', k));
