@@ -74,7 +74,7 @@ export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSigna
     const versionedPayload: UserGroupAdditionRecordV3 = (currentPayload: any);
     selfSigBuffer = getUserGroupAdditionBlockSignDataV3(versionedPayload);
   } else {
-    throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
+    throw new InvalidBlockError('invalid_nature', 'invalid nature for user group addition', { entry });
   }
   if (!tcrypto.verifySignature(selfSigBuffer, currentPayload.self_signature_with_current_key, currentGroup.lastPublicSignatureKey))
     throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', entry);
