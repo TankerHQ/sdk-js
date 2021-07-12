@@ -78,3 +78,10 @@ export function encodeArrayLength(array: Uint8Array | Array<number>): Uint8Array
 export function encodeListLength(array: $ReadOnlyArray<any>): Uint8Array {
   return new Uint8Array(varint.encode(array.length));
 }
+
+export function encodeUint32(val: number): Uint8Array {
+  const a32 = new Uint32Array(1);
+  a32[0] = val;
+  const a8 = new Uint8Array(a32.buffer);
+  return a8;
+}
