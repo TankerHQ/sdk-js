@@ -2,7 +2,7 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import type { PublicProvisionalUser, PublicPermanentIdentity, PublicProvisionalIdentity } from '../Identity';
+import type { PublicProvisionalUser } from '../Identity';
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
 import { type VerificationFields, hashBlock } from '../Blocks/Block';
@@ -104,20 +104,6 @@ export type UserGroupAdditionRecord = {|
     self_signature_with_current_key: Uint8Array,
   |};
 
-export type UserGroupUpdateRecord = {|
-    group_id: Uint8Array,
-    previous_group_block: Uint8Array,
-    previous_key_rotation_block: Uint8Array,
-    public_encryption_key: Uint8Array,
-    public_signature_key: Uint8Array,
-    encrypted_group_private_signature_key: Uint8Array,
-    encrypted_previous_group_private_encryption_key: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
-    encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV3>,
-    self_signature_with_current_key: Uint8Array,
-    self_signature_with_previous_key: Uint8Array,
-  |};
-
 type UserGroupCreationEntry = {|
   ...UserGroupCreationRecord,
   ...VerificationFields
@@ -128,19 +114,10 @@ type UserGroupAdditionEntry = {|
   ...VerificationFields
 |};
 
-type UserGroupUpdateEntry = {|
-  ...UserGroupUpdateRecord,
-  ...VerificationFields
-|};
-
-export type UserGroupEntry = UserGroupCreationEntry | UserGroupAdditionEntry | UserGroupUpdateEntry;
+export type UserGroupEntry = UserGroupCreationEntry | UserGroupAdditionEntry;
 
 export function isGroupAddition(entry: UserGroupEntry): %checks {
   return !entry.public_encryption_key;
-}
-
-export function isGroupUpdate(entry: UserGroupEntry): %checks {
-  return !!entry.encrypted_previous_group_private_encryption_key;
 }
 
 function serializeGroupEncryptedKeyV1(gek: GroupEncryptedKeyV1): Uint8Array {
@@ -428,58 +405,6 @@ export function unserializeUserGroupAdditionV3(src: Uint8Array): UserGroupAdditi
   ]);
 }
 
-export function serializeUserGroupUpdate(userGroupUpdate: UserGroupUpdateRecord): Uint8Array {
-  if (userGroupUpdate.previous_group_block.length !== tcrypto.HASH_SIZE)
-    throw new InternalError('Assertion error: invalid user group update previous group block size');
-  if (userGroupUpdate.previous_key_rotation_block.length !== tcrypto.HASH_SIZE)
-    throw new InternalError('Assertion error: invalid user group update previous key rotation block size');
-  if (userGroupUpdate.self_signature_with_current_key.length !== tcrypto.SIGNATURE_SIZE)
-    throw new InternalError('Assertion error: invalid user group update group self signature size');
-  let provisionalUsers = [];
-  if (userGroupUpdate.encrypted_group_private_encryption_keys_for_provisional_users) {
-    provisionalUsers = userGroupUpdate.encrypted_group_private_encryption_keys_for_provisional_users;
-  }
-  userGroupUpdate.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group update', k));
-  provisionalUsers.forEach(k => checkProvisionalGroupEncryptedKeyV3('user group update', k));
-  return utils.concatArrays(
-    userGroupUpdate.group_id,
-    userGroupUpdate.previous_group_block,
-    userGroupUpdate.previous_key_rotation_block,
-    userGroupUpdate.public_signature_key,
-    userGroupUpdate.public_encryption_key,
-    userGroupUpdate.encrypted_group_private_signature_key,
-    userGroupUpdate.encrypted_previous_group_private_encryption_key,
-    encodeListLength(userGroupUpdate.encrypted_group_private_encryption_keys_for_users),
-    ...userGroupUpdate.encrypted_group_private_encryption_keys_for_users.map(key => serializeGroupEncryptedKeyV2(key)),
-    encodeListLength(provisionalUsers),
-    ...provisionalUsers.map(key => serializeProvisionalGroupEncryptedKeyV3(key)),
-    userGroupUpdate.self_signature_with_current_key,
-    userGroupUpdate.self_signature_with_previous_key,
-  );
-}
-
-export function unserializeUserGroupUpdate(src: Uint8Array): UserGroupUpdateRecord {
-  return unserializeGeneric(src, [
-    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'group_id'),
-    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'previous_group_block'),
-    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'previous_key_rotation_block'),
-    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
-    (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
-    (d, o) => getStaticArray(d, tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE, o, 'encrypted_group_private_signature_key'),
-    (d, o) => getStaticArray(d, tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE, o, 'encrypted_previous_group_private_encryption_key'),
-    (d, o) => unserializeList(d, unserializeGroupEncryptedKeyV2, o, 'encrypted_group_private_encryption_keys_for_users'),
-    (d, o) => unserializeList(d, unserializeProvisionalGroupEncryptedKeyV3, o, 'encrypted_group_private_encryption_keys_for_provisional_users'),
-    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'self_signature_with_current_key'),
-    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'self_signature_with_previous_key'),
-  ]);
-}
-
-export function decryptPreviousGroupKey(userGroupUpdateEntry: UserGroupUpdateEntry, newKeyPair: tcrypto.SodiumKeyPair) {
-  return tcrypto.getEncryptionKeyPairFromPrivateKey(
-    tcrypto.sealDecrypt(userGroupUpdateEntry.encrypted_previous_group_private_encryption_key, newKeyPair)
-  );
-}
-
 export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   const block = unserializeBlock(utils.fromBase64(b64Block));
   const author = block.author;
@@ -509,10 +434,6 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   }
   if (block.nature === NATURE.user_group_addition_v3) {
     const userGroupAction = unserializeUserGroupAdditionV3(block.payload);
-    return { ...userGroupAction, author, signature, nature, hash };
-  }
-  if (block.nature === NATURE.user_group_update) {
-    const userGroupAction = unserializeUserGroupUpdate(block.payload);
     return { ...userGroupAction, author, signature, nature, hash };
   }
 
@@ -584,28 +505,6 @@ export const getUserGroupAdditionBlockSignDataV2 = (record: UserGroupAdditionRec
 export const getUserGroupAdditionBlockSignDataV3 = (record: UserGroupAdditionRecordV3): Uint8Array => utils.concatArrays(
   record.group_id,
   record.previous_group_block,
-  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
-    gek.user_id,
-    gek.public_user_encryption_key,
-    gek.encrypted_group_private_encryption_key
-  )),
-  ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
-    gek.app_provisional_user_public_signature_key,
-    gek.tanker_provisional_user_public_signature_key,
-    gek.app_provisional_user_public_encryption_key,
-    gek.tanker_provisional_user_public_encryption_key,
-    gek.encrypted_group_private_encryption_key
-  ))
-);
-
-export const getUserGroupUpdateBlockSignData = (record: UserGroupUpdateRecord): Uint8Array => utils.concatArrays(
-  record.group_id,
-  record.previous_group_block,
-  record.previous_key_rotation_block,
-  record.public_signature_key,
-  record.public_encryption_key,
-  record.encrypted_group_private_signature_key,
-  record.encrypted_previous_group_private_encryption_key,
   ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
     gek.user_id,
     gek.public_user_encryption_key,
@@ -751,125 +650,4 @@ export const makeUserGroupAdditionV3 = (groupId: Uint8Array, privateSignatureKey
   payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
 
   return { payload: serializeUserGroupAdditionV3(payload), nature: NATURE.user_group_addition_v3 };
-};
-
-export const makeUserGroupUpdate = (
-  groupId: Uint8Array,
-  signatureKeyPair: tcrypto.SodiumKeyPair,
-  encryptionKeyPair: tcrypto.SodiumKeyPair,
-  previousGroupBlock: Uint8Array,
-  previousKeyRotationBlock: Uint8Array,
-  previousPrivateSignatureKey: Uint8Array,
-  previousPrivateEncryptionKey: Uint8Array,
-  usersInGroup: Array<User>,
-  provisionalUsersInGroup?: Array<ProvisionalGroupEncryptedKeyV3>,
-  usersToAdd?: Array<User>,
-  provisionalUsersToAdd?: Array<PublicProvisionalUser>,
-  usersToRemove?: Array<PublicPermanentIdentity>,
-  provisionalUsersToRemove?: Array<PublicProvisionalIdentity>
-) => {
-  if (!usersToRemove && !provisionalUsersToRemove) {
-    throw new InternalError('Assertion error: makeUserGroupUpdate: no users to remove');
-  }
-
-  const finalUsers = [];
-
-  const userIdsToRemove = usersToRemove ? usersToRemove.map(userToRemove => utils.fromBase64(userToRemove.value)) : null;
-  finalUsers.push(...usersInGroup.filter(userInGroup => {
-    // Filter the users to remove
-    if (userIdsToRemove) {
-      return !utils.containArray(userIdsToRemove, userInGroup.userId);
-    }
-    return true;
-  }));
-
-  // Add the users from usersToAdd
-  if (usersToAdd) {
-    // Used to remove the duplicate users
-    const b64FinalUserIds = new Set(...finalUsers.map(finalUser => utils.toBase64(finalUser.userId)));
-    for (const userToAdd of usersToAdd) {
-      const b64UserToAddId = utils.toBase64(userToAdd.userId);
-      if (!b64FinalUserIds.has(b64UserToAddId)) {
-        finalUsers.push(userToAdd);
-        b64FinalUserIds.add(b64UserToAddId);
-      }
-    }
-  }
-
-  const keysForUsers = finalUsers.map(u => {
-    const userPublicKey = getLastUserPublicKey(u);
-    if (!userPublicKey)
-      throw new InternalError('Assertion error: addToUserGroup: user does not have user keys');
-    return {
-      user_id: u.userId,
-      public_user_encryption_key: userPublicKey,
-      encrypted_group_private_encryption_key: tcrypto.sealEncrypt(encryptionKeyPair.privateKey, userPublicKey),
-    };
-  });
-
-  const finalProvisionalUsers = [];
-  const appSignaturePublicKeys = provisionalUsersToRemove ? provisionalUsersToRemove.map(provisionalUserToRemove => utils.fromBase64(provisionalUserToRemove.public_signature_key)) : null;
-
-  // Add provisional users from block history, and filter the ones to remove
-  if (provisionalUsersInGroup) {
-    finalProvisionalUsers.push(...provisionalUsersInGroup.filter(provisionalUser => {
-      if (appSignaturePublicKeys) {
-        return !utils.containArray(appSignaturePublicKeys, provisionalUser.app_provisional_user_public_signature_key);
-      }
-      return true;
-    }).map(provisionalUser => ({
-      appEncryptionPublicKey: provisionalUser.app_provisional_user_public_encryption_key,
-      appSignaturePublicKey: provisionalUser.app_provisional_user_public_signature_key,
-      tankerEncryptionPublicKey: provisionalUser.tanker_provisional_user_public_encryption_key,
-      tankerSignaturePublicKey: provisionalUser.tanker_provisional_user_public_signature_key,
-    })));
-  }
-
-  // Add the new provisional users
-  if (provisionalUsersToAdd) {
-    finalProvisionalUsers.push(...provisionalUsersToAdd.map(provisionalUserToAdd => ({
-      appEncryptionPublicKey: provisionalUserToAdd.appEncryptionPublicKey,
-      appSignaturePublicKey: provisionalUserToAdd.appSignaturePublicKey,
-      tankerEncryptionPublicKey: provisionalUserToAdd.tankerEncryptionPublicKey,
-      tankerSignaturePublicKey: provisionalUserToAdd.tankerSignaturePublicKey,
-    })));
-  }
-
-  const keysForProvisionalUsers = finalProvisionalUsers.map(u => {
-    const preEncryptedKey = tcrypto.sealEncrypt(
-      encryptionKeyPair.privateKey,
-      u.appEncryptionPublicKey,
-    );
-    const encryptedKey = tcrypto.sealEncrypt(
-      preEncryptedKey,
-      u.tankerEncryptionPublicKey,
-    );
-    return {
-      app_provisional_user_public_signature_key: u.appSignaturePublicKey,
-      tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
-      app_provisional_user_public_encryption_key: u.appEncryptionPublicKey,
-      tanker_provisional_user_public_encryption_key: u.tankerEncryptionPublicKey,
-      encrypted_group_private_encryption_key: encryptedKey,
-    };
-  });
-
-  const payload = {
-    group_id: groupId,
-    previous_group_block: previousGroupBlock,
-    previous_key_rotation_block: previousKeyRotationBlock,
-    public_signature_key: signatureKeyPair.publicKey,
-    public_encryption_key: encryptionKeyPair.publicKey,
-    encrypted_group_private_signature_key: tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey),
-    encrypted_previous_group_private_encryption_key: tcrypto.sealEncrypt(previousPrivateEncryptionKey, encryptionKeyPair.publicKey),
-    encrypted_group_private_encryption_keys_for_users: keysForUsers,
-    encrypted_group_private_encryption_keys_for_provisional_users: keysForProvisionalUsers,
-    self_signature_with_current_key: new Uint8Array(0),
-    self_signature_with_previous_key: new Uint8Array(0),
-  };
-
-  const signData = getUserGroupUpdateBlockSignData(payload);
-  payload.self_signature_with_current_key = tcrypto.sign(signData, signatureKeyPair.privateKey);
-  payload.self_signature_with_previous_key = tcrypto.sign(signData, previousPrivateSignatureKey);
-
-  return { payload: serializeUserGroupUpdate(payload), nature: preferredNature(NATURE_KIND.user_group_update) };
 };
