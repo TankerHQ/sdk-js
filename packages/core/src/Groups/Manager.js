@@ -76,8 +76,8 @@ export default class GroupManager {
     return utils.toBase64(groupId);
   }
 
-  async updateGroupMembers(groupId: string, publicIdentities: Array<b64string>): Promise<void> {
-    assertPublicIdentities(publicIdentities);
+  async updateGroupMembers(groupId: string, publicIdentitiesToAdd: Array<b64string>): Promise<void> {
+    assertPublicIdentities(publicIdentitiesToAdd);
 
     const internalGroupId = utils.fromBase64(groupId);
     const existingGroup = await this._getInternalGroupById(internalGroupId);
@@ -86,10 +86,10 @@ export default class GroupManager {
       throw new InvalidArgument('groupId', 'string', groupId);
     }
 
-    const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
-    const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
-    const users = await this._UserManager.getUsers(permanentIdentities, { isLight: true });
-    const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
+    const deserializedIdentitiesToAdd = publicIdentitiesToAdd.map(i => _deserializePublicIdentity(i));
+    const { permanentIdentities: permanentIdentitiesToAdd, provisionalIdentities: provisionalIdentitiesToAdd } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesToAdd);
+    const usersToAdd = await this._UserManager.getUsers(permanentIdentitiesToAdd, { isLight: true });
+    const provisionalUsersToAdd = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentitiesToAdd);
 
     const { encryptionKeyPairs, lastGroupBlock, signatureKeyPairs } = existingGroup;
 
@@ -98,13 +98,13 @@ export default class GroupManager {
       signatureKeyPairs[signatureKeyPairs.length - 1].privateKey,
       lastGroupBlock,
       encryptionKeyPairs[encryptionKeyPairs.length - 1].privateKey,
-      users,
-      provisionalUsers,
+      usersToAdd,
+      provisionalUsersToAdd,
     );
 
-    const block = this._localUser.makeBlock(payload, nature);
+    const additionBlock = this._localUser.makeBlock(payload, nature);
 
-    await this._client.patchGroup({ user_group_addition: block });
+    await this._client.patchGroup({ user_group_addition: additionBlock });
   }
 
   async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {
