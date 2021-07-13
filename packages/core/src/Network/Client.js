@@ -421,6 +421,14 @@ export class Client {
     });
   }
 
+  softUpdateGroup = async (body: any): Promise<void> => {
+    await this._apiCall('/user-groups/soft-update', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   getSessionToken = async (body: any): Promise<b64string> => {
     const path = `/users/${urlize(this._userId)}/session-certificates`;
     // eslint-disable-next-line camelcase

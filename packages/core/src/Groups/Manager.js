@@ -7,7 +7,7 @@ import UserManager from '../Users/Manager';
 import LocalUser from '../LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 
-import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV3 } from './Serialize';
+import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV3, makeUserGroupRemoval } from './Serialize';
 import type { Client } from '../Network/Client';
 import GroupStore from './GroupStore';
 import { isInternalGroup, type InternalGroup, type Group } from './types';
@@ -76,8 +76,9 @@ export default class GroupManager {
     return utils.toBase64(groupId);
   }
 
-  async updateGroupMembers(groupId: string, publicIdentitiesToAdd: Array<b64string>): Promise<void> {
+  async updateGroupMembers(groupId: string, publicIdentitiesToAdd: Array<b64string>, publicIdentitiesToRemove: Array<b64string>): Promise<void> {
     assertPublicIdentities(publicIdentitiesToAdd);
+    assertPublicIdentities(publicIdentitiesToRemove);
 
     const internalGroupId = utils.fromBase64(groupId);
     const existingGroup = await this._getInternalGroupById(internalGroupId);
@@ -86,25 +87,49 @@ export default class GroupManager {
       throw new InvalidArgument('groupId', 'string', groupId);
     }
 
+    const { encryptionKeyPairs, lastGroupBlock, signatureKeyPairs } = existingGroup;
+
     const deserializedIdentitiesToAdd = publicIdentitiesToAdd.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities: permanentIdentitiesToAdd, provisionalIdentities: provisionalIdentitiesToAdd } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesToAdd);
     const usersToAdd = await this._UserManager.getUsers(permanentIdentitiesToAdd, { isLight: true });
     const provisionalUsersToAdd = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentitiesToAdd);
 
-    const { encryptionKeyPairs, lastGroupBlock, signatureKeyPairs } = existingGroup;
+    const deserializedIdentitiesToRemove = publicIdentitiesToRemove.map(i => _deserializePublicIdentity(i));
+    const { permanentIdentities: permanentIdentitiesToRemove, provisionalIdentities: provisionalIdentitiesToRemove } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesToRemove);
+    const usersToRemove = [...new Set(permanentIdentitiesToRemove.map(u => u.value))].map(uid => utils.fromBase64(uid));
+    const provisionalUsersToRemove = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentitiesToRemove);
 
-    const { payload, nature } = makeUserGroupAdditionV3(
-      internalGroupId,
-      signatureKeyPairs[signatureKeyPairs.length - 1].privateKey,
-      lastGroupBlock,
-      encryptionKeyPairs[encryptionKeyPairs.length - 1].privateKey,
-      usersToAdd,
-      provisionalUsersToAdd,
-    );
+    let additionBlock;
+    let removalBlock;
 
-    const additionBlock = this._localUser.makeBlock(payload, nature);
+    if (publicIdentitiesToAdd.length) {
+      const { payload, nature } = makeUserGroupAdditionV3(
+        internalGroupId,
+        signatureKeyPairs[signatureKeyPairs.length - 1].privateKey,
+        lastGroupBlock,
+        encryptionKeyPairs[encryptionKeyPairs.length - 1].privateKey,
+        usersToAdd,
+        provisionalUsersToAdd,
+      );
 
-    await this._client.patchGroup({ user_group_addition: additionBlock });
+      additionBlock = this._localUser.makeBlock(payload, nature);
+    }
+    if (publicIdentitiesToRemove.length) {
+      const { payload, nature } = makeUserGroupRemoval(
+        this._localUser.deviceId,
+        internalGroupId,
+        signatureKeyPairs[signatureKeyPairs.length - 1].privateKey,
+        usersToRemove,
+        provisionalUsersToRemove,
+      );
+
+      removalBlock = this._localUser.makeBlock(payload, nature);
+    }
+
+    if (removalBlock)
+      await this._client.softUpdateGroup({ user_group_addition: additionBlock, user_group_removal: removalBlock });
+    else
+      await this._client.patchGroup({ user_group_addition: additionBlock });
   }
 
   async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {

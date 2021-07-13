@@ -323,12 +323,12 @@ describe('Tanker', () => {
           null,
           {},
           'random string',
-          { usersToAdd: null },
-          { usersToAdd: [] },
+          { usersToAdd: null, usersToRemove: null },
+          { usersToAdd: [], usersToRemove: [] },
           { usersToAdd: [''] },
         ];
         for (let i = 0; i < badUsersArgs.length; i++) {
-          const badUsersArg = ((badUsersArgs[i]: any): $Exact<{ usersToAdd: Array<string> }>);
+          const badUsersArg = ((badUsersArgs[i]: any): $Exact<{ usersToAdd?: Array<string>, usersToRemove?: Array<string> }>);
           await expect(tanker.updateGroupMembers(validGroupId, badUsersArg)).to.be.rejectedWith(InvalidArgument);
         }
       });
