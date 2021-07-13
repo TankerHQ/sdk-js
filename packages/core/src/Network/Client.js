@@ -5,6 +5,7 @@ import { fetch, retry, exponentialDelayGenerator } from '@tanker/http-utils';
 import type { DelayGenerator } from '@tanker/http-utils'; // eslint-disable-line no-unused-vars
 
 import { PromiseWrapper } from '../PromiseWrapper';
+import { TaskQueue } from '../TaskQueue';
 import { signChallenge } from './Authenticator';
 import { genericErrorHandler } from './ErrorHandler';
 import { b64RequestObject, urlize } from './utils';
@@ -21,6 +22,7 @@ export type PullOptions = {
   isLight?: bool,
 };
 
+const MAX_CONCURRENCY = 5;
 const MAX_QUERY_STRING_ITEMS = 100;
 
 function unique(vals: Array<string>): Array<string> {
@@ -39,6 +41,7 @@ export class Client {
   declare _cancelationHandle: PromiseWrapper<void>;
   declare _deviceId: Uint8Array | null;
   declare _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
+  declare _fetchQueue: TaskQueue;
   declare _instanceId: string;
   declare _isRevoked: bool;
   declare _retryDelayGenerator: DelayGenerator;
@@ -55,6 +58,7 @@ export class Client {
     this._cancelationHandle = new PromiseWrapper<void>();
     this._deviceId = null;
     this._deviceSignatureKeyPair = null;
+    this._fetchQueue = new TaskQueue(MAX_CONCURRENCY);
     this._instanceId = instanceInfo.id;
     this._isRevoked = false;
     this._retryDelayGenerator = exponentialDelayGenerator;
@@ -71,7 +75,13 @@ export class Client {
     return Promise.race([this._cancelationHandle.promise, fun(...args)]);
   };
 
-  // Simple fetch wrapper with:
+  // Simple fetch wrapper with limited concurrency
+  _fetch = (input: RequestInfo, init?: RequestOptions): Promise<Response> => {
+    const fn = () => fetch(input, init);
+    return this._fetchQueue.enqueue(fn);
+  }
+
+  // Simple _fetch wrapper with:
   //   - proper headers set (sdk info and authorization)
   //   - generic error handling
   _baseApiCall = async (path: string, init?: RequestOptions): Promise<any> => {
@@ -92,7 +102,7 @@ export class Client {
 
       const url = `${this._apiEndpoint}${this._apiRootPath}${path}`;
 
-      const response = await fetch(url, { ...init, headers });
+      const response = await this._fetch(url, { ...init, headers });
 
       if (response.status === 204) { // no-content: no JSON response to parse
         return;
