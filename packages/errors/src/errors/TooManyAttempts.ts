@@ -1,9 +1,8 @@
-// @flow
 import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
-export class NetworkError extends TankerError {
+export class TooManyAttempts extends TankerError {
   constructor(errorInfo?: ErrorInfo) {
-    super('NetworkError', errorInfo || 'Network error');
+    super('TooManyAttempts', errorInfo);
   }
 }

@@ -1,4 +1,3 @@
-// @flow
 export { TankerError } from './TankerError';
 
 export { DecryptionFailed } from './errors/DecryptionFailed';

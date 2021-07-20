@@ -1,9 +1,8 @@
-// @flow
 import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
-export class ExpiredVerification extends TankerError {
+export class GroupTooBig extends TankerError {
   constructor(errorInfo?: ErrorInfo) {
-    super('ExpiredVerification', errorInfo);
+    super('GroupTooBig', errorInfo);
   }
 }

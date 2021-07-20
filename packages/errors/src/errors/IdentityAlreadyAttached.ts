@@ -1,4 +1,3 @@
-// @flow
 import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
