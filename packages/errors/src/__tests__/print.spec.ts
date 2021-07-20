@@ -1,6 +1,4 @@
-// @flow
 import { expect, silencer } from '@tanker/test-utils';
-
 import { safePrintType, safePrintValue } from '../print';
 
 describe('print', () => {
@@ -24,7 +22,7 @@ describe('print', () => {
       [0, { a: 'a', b: 2 }, null],
       new Uint8Array(5),
       new Uint8Array(1000),
-      (new Uint8Array(5)).buffer,
+      new Uint8Array(5).buffer,
     ];
 
     expectedTypes = [

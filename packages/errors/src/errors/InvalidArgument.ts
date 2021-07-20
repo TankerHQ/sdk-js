@@ -1,4 +1,3 @@
-// @flow
 import { TankerError } from '../TankerError';
 import { safePrintType, safePrintValue } from '../print';
 

@@ -1,9 +1,8 @@
-// @flow
 import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class OperationCanceled extends TankerError {
-  declare next: ?Error;
+  declare next?: Error;
 
   constructor(errorInfo?: ErrorInfo, next?: Error) {
     super('OperationCanceled', errorInfo || 'Operation canceled');
