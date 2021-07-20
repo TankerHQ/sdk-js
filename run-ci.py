@@ -124,13 +124,16 @@ def run_tests_in_browser(*, runner: str) -> None:
         tankerci.js.run_yarn("karma", "--browsers", "IE")
 
 
-def get_package_path(package_name: str) -> Path:
+def get_package_path(package_name: str, *, is_typescript: bool) -> Path:
     m = re.match(r"^@tanker/(?:(datastore|stream)-)?(.*)$", package_name)
     p = Path("packages")
     assert m
     if m[1]:
         p = p.joinpath(m[1])
-    return p.joinpath(m[2]).joinpath("dist")
+    p = p.joinpath(m[2])
+    if not is_typescript:
+        p = p.joinpath("dist")
+    return p
 
 
 def version_to_npm_tag(version: str) -> str:
@@ -141,8 +144,8 @@ def version_to_npm_tag(version: str) -> str:
     return "latest"
 
 
-def publish_npm_package(package_name: str, version: str) -> None:
-    package_path = get_package_path(package_name)
+def publish_npm_package(package_name: str, version: str, is_typescript: bool) -> None:
+    package_path = get_package_path(package_name, is_typescript=is_typescript)
     npm_tag = version_to_npm_tag(version)
     tankerci.run(
         "npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path
@@ -239,7 +242,7 @@ def deploy_sdk(*, git_tag: str) -> None:
     for config in configs:
         tankerci.js.yarn_build(delivery=config["build"], env="prod")  # type: ignore
         for package_name in config["publish"]:
-            publish_npm_package(package_name, version)
+            publish_npm_package(package_name, version, config.get("typescript", False))
 
 
 def get_branch_name() -> str:
