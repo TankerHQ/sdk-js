@@ -3,6 +3,7 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '../Identity';
+import type { PublicPermanentIdentity, PublicProvisionalIdentity } from '../Identity';
 import UserManager from '../Users/Manager';
 import LocalUser from '../LocalUser/LocalUser';
 import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
@@ -21,6 +22,28 @@ type CachedPublicKeysResult = {
   cachedKeys: Array<Uint8Array>,
   missingGroupIds: Array<Uint8Array>,
 };
+
+function checkAddedAndRemoved(permanentIdentitiesToAdd: Array<PublicPermanentIdentity>, permanentIdentitiesToRemove: Array<PublicPermanentIdentity>, provisionalIdentitiesToAdd: Array<PublicProvisionalIdentity>, provisionalIdentitiesToRemove: Array<PublicProvisionalIdentity>) {
+  const addedAndRemovedIdentities: Array<b64string> = [];
+  const userIdsToAdd: Set<b64string> = new Set();
+  const appSignaturePublicKeysToAdd: Set<b64string> = new Set();
+  for (const i of permanentIdentitiesToAdd)
+    userIdsToAdd.add(i.value);
+  for (const i of provisionalIdentitiesToAdd)
+    appSignaturePublicKeysToAdd.add(i.public_signature_key);
+
+  for (const i of permanentIdentitiesToRemove)
+    if (userIdsToAdd.has(i.value))
+      // $FlowIgnore this field is hidden
+      addedAndRemovedIdentities.push(i.serializedIdentity);
+  for (const i of provisionalIdentitiesToRemove)
+    if (appSignaturePublicKeysToAdd.has(i.public_signature_key))
+      // $FlowIgnore this field is hidden
+      addedAndRemovedIdentities.push(i.serializedIdentity);
+
+  if (addedAndRemovedIdentities.length)
+    throw new InvalidArgument(`The identities ${addedAndRemovedIdentities.join(', ')} are both added to and removed from the group.`);
+}
 
 export default class GroupManager {
   _localUser: LocalUser;
@@ -91,11 +114,13 @@ export default class GroupManager {
 
     const deserializedIdentitiesToAdd = publicIdentitiesToAdd.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities: permanentIdentitiesToAdd, provisionalIdentities: provisionalIdentitiesToAdd } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesToAdd);
-    const usersToAdd = await this._UserManager.getUsers(permanentIdentitiesToAdd, { isLight: true });
-    const provisionalUsersToAdd = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentitiesToAdd);
-
     const deserializedIdentitiesToRemove = publicIdentitiesToRemove.map(i => _deserializePublicIdentity(i));
     const { permanentIdentities: permanentIdentitiesToRemove, provisionalIdentities: provisionalIdentitiesToRemove } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesToRemove);
+
+    checkAddedAndRemoved(permanentIdentitiesToAdd, permanentIdentitiesToRemove, provisionalIdentitiesToAdd, provisionalIdentitiesToRemove);
+
+    const usersToAdd = await this._UserManager.getUsers(permanentIdentitiesToAdd, { isLight: true });
+    const provisionalUsersToAdd = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentitiesToAdd);
     const usersToRemove = [...new Set(permanentIdentitiesToRemove.map(u => u.value))].map(uid => utils.fromBase64(uid));
     const provisionalUsersToRemove = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentitiesToRemove);
 
