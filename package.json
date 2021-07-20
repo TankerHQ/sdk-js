@@ -28,7 +28,9 @@
     "build:verification-ui": "yarn build:verification-ui-base && yarn build:verification-ui-umd",
     "start:verification-ui": "webpack serve -w --hot --config packages/verification-ui/config/webpack.config.development.js",
     "lint:js": "eslint \"packages/**/*.js\" && eslint \"packages/**/*.ts\" --no-eslintrc --config \".eslintrc.typescript.yml\"",
+    "lint:ts": "yarn build:ts",
     "lint:flow": "flow check",
+    "lint:types": "yarn lint:ts && yarn lint:flow",
     "test": "mocha \"packages/**/src/**/*.spec{,.node}.[tj]s\" --exit --require ./config/babel.require-hook.js --require ts-node/register --recursive --full-trace --trace-warnings --reporter=spec",
     "test:core": "mocha \"packages/core/src/**/*.spec{,.node}.js\" --exit --require ./config/babel.require-hook.js --recursive --full-trace --trace-warnings --reporter=spec",
     "test:crypto": "mocha \"packages/crypto/src/**/*.spec{,.node}.js\" --exit --require ./config/babel.require-hook.js --recursive --full-trace --trace-warnings --reporter=spec",
@@ -48,7 +50,7 @@
     "debug:streams": "karma start packages/stream/config/karma.config.debug.js",
     "debug:verification-ui": "karma start packages/verification-ui/config/karma.config.debug.js",
     "benchmark": "karma start config/karma/karma.config.benchmark.js",
-    "proof": "yarn lint:js && yarn lint:flow && yarn test",
+    "proof": "yarn lint:js && yarn lint:types && yarn test",
     "coverage": "nyc --reporter=lcov --reporter=text-summary yarn test"
   },
   "dependencies": {
