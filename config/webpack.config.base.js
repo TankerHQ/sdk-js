@@ -25,8 +25,23 @@ const webResolve = {
 const getBabelLoaders = (env) => {
   const babelConfig = getBabelConfig(env);
   const babelConfigForceUMD = getBabelConfig({ ...env, modules: 'umd' });
+  const tsLoaderCompilerOptions = {
+    target: 'es5',
+    declaration: false,
+    importHelpers: true,
+    downlevelIteration: true,
+  };
 
   return [
+    {
+      test: /\.ts$/,
+      loader: 'ts-loader',
+      options: {
+        configFile: path.resolve(__dirname, 'tsconfig.tests.json'),
+        compilerOptions: tsLoaderCompilerOptions,
+      },
+      exclude: /node_modules/,
+    },
     {
       test: /\.js$/,
       loader: 'babel-loader',
@@ -119,6 +134,13 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
       }),
     );
   }
+
+  base.resolve = {
+    ...base.resolve,
+    alias: {
+    },
+    extensions: ['.ts', '.js'],
+  };
 
   return base;
 };
