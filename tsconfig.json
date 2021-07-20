@@ -1,0 +1,14 @@
+{ // used by lint, tests and coverage
+  "extends": "./config/tsconfig.base.json",
+  "ts-node": { // used only to run tests
+    "files": true,
+    "compilerOptions": {
+      "module": "commonjs",
+    },
+  },
+  "references": [
+    { "path": "./config/tsconfig.tests.json" },
+    { "path": "./packages/packages/" },
+  ],
+  "files": []
+}
