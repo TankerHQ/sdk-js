@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "references": [
+    { "path": "./tsconfig.browser.json" },
+    { "path": "./tsconfig.all.json" },
+  ],
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}
