@@ -8,5 +8,8 @@ export class UpgradeRequired extends TankerError {
     } else {
       super('UpgradeRequired', errorInfo);
     }
+
+    // Set the prototype explicitly.
+    Object.setPrototypeOf(this, UpgradeRequired.prototype);
   }
 }

@@ -10,6 +10,10 @@ export class TankerError extends Error {
 
   constructor(name: string = 'TankerError', errorInfo?: ErrorInfo) {
     super();
+
+    // Set the prototype explicitly as advised here:
+    // https://github.com/Microsoft/TypeScript-wiki/blob/main/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, TankerError.prototype);
     this.name = name;
 
     if (typeof errorInfo === 'string') {
@@ -25,12 +29,13 @@ export class TankerError extends Error {
     }
   }
 
-  set message(m: string) {
+  // Hack around TS2340 preventing calls to setter and getter from super
+  // see https://github.com/Microsoft/TypeScript/issues/338
+  public setMessage(m: string) {
     this._message = m;
   }
 
-  // Print every piece of information for `throw err` or `console.log(err)` to give useful information
-  get message() {
+  public getMessage(): string {
     return [
       this._message,
       this.apiCode && `api_code: "${this.apiCode}"`,
@@ -41,7 +46,15 @@ export class TankerError extends Error {
     ].filter(s => !!s).join(', ');
   }
 
-  toString() {
+  override set message(m: string) {
+    this.setMessage(m);
+  }
+
+  override get message(): string {
+    return this.getMessage();
+  }
+
+  override toString() {
     return `[Tanker] ${super.toString()}`;
   }
 }
