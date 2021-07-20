@@ -17,6 +17,11 @@ import {
   groupsFromEntries,
 } from './ManagerHelper';
 
+type CachedPublicKeysResult = {
+  cachedKeys: Array<Uint8Array>,
+  missingGroupIds: Array<Uint8Array>,
+};
+
 export default class GroupManager {
   _localUser: LocalUser;
   _UserManager: UserManager;
@@ -62,7 +67,11 @@ export default class GroupManager {
 
     const groupId = groupSignatureKeyPair.publicKey;
 
-    await this._groupStore.saveGroupEncryptionKeys([{ groupId, encryptionKeyPair: groupEncryptionKeyPair }]);
+    await this._groupStore.saveGroupEncryptionKeys([{
+      groupId,
+      publicEncryptionKey: groupEncryptionKeyPair.publicKey,
+      privateEncryptionKey: groupEncryptionKeyPair.privateKey,
+    }]);
 
     return utils.toBase64(groupId);
   }
@@ -101,22 +110,38 @@ export default class GroupManager {
   async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {
     if (groupIds.length === 0) return [];
 
-    const { histories: blocks } = await this._client.getGroupHistoriesByGroupIds(groupIds);
-    const groups = await this._groupsFromBlocks(blocks);
-    assertExpectedGroups(groups, groupIds);
+    const { cachedKeys, missingGroupIds } = await this._getCachedGroupsPublicKeys(groupIds);
+    const newKeys = [];
 
-    const encryptionKeysRecord = [];
-    groups.forEach(group => {
-      if (isInternalGroup(group)) {
-        group.encryptionKeyPairs.forEach(encryptionKeyPair => {
-          encryptionKeysRecord.push({ groupId: group.groupId, encryptionKeyPair });
-        });
+    if (missingGroupIds.length > 0) {
+      const { histories: blocks } = await this._client.getGroupHistoriesByGroupIds(missingGroupIds);
+      const groups = await this._groupsFromBlocks(blocks);
+      assertExpectedGroups(groups, missingGroupIds);
+
+      const externalGroupRecords = [];
+      const internalGroupRecords = [];
+      for (const group of groups) {
+        if (isInternalGroup(group)) {
+          for (const encryptionKeyPair of group.encryptionKeyPairs) {
+            internalGroupRecords.push({ groupId: group.groupId,
+              publicEncryptionKey: encryptionKeyPair.publicKey,
+              privateEncryptionKey: encryptionKeyPair.privateKey,
+            });
+          }
+        } else {
+          externalGroupRecords.push({
+            groupId: group.groupId,
+            publicEncryptionKey: group.lastPublicEncryptionKey,
+          });
+        }
+        newKeys.push(group.lastPublicEncryptionKey);
       }
-    });
 
-    await this._groupStore.saveGroupEncryptionKeys(encryptionKeysRecord);
+      await this._groupStore.saveGroupPublicEncryptionKeys(externalGroupRecords);
+      await this._groupStore.saveGroupEncryptionKeys(internalGroupRecords);
+    }
 
-    return groups.map(group => group.lastPublicEncryptionKey);
+    return cachedKeys.concat(newKeys);
   }
 
   async getGroupEncryptionKeyPair(groupPublicEncryptionKey: Uint8Array) {
@@ -129,11 +154,14 @@ export default class GroupManager {
     const groups = await this._groupsFromBlocks(blocks);
 
     let result;
-    const encryptionKeysRecord = [];
+    const internalGroupRecords = [];
     for (const group of groups) {
       if (isInternalGroup(group)) {
         for (const encryptionKeyPair of group.encryptionKeyPairs) {
-          encryptionKeysRecord.push({ groupId: group.groupId, encryptionKeyPair });
+          internalGroupRecords.push({ groupId: group.groupId,
+            publicEncryptionKey: encryptionKeyPair.publicKey,
+            privateEncryptionKey: encryptionKeyPair.privateKey,
+          });
           if (utils.equalArray(groupPublicEncryptionKey, encryptionKeyPair.publicKey)) {
             result = encryptionKeyPair;
           }
@@ -141,7 +169,7 @@ export default class GroupManager {
       }
     }
 
-    await this._groupStore.saveGroupEncryptionKeys(encryptionKeysRecord);
+    await this._groupStore.saveGroupEncryptionKeys(internalGroupRecords);
 
     if (!result) {
       throw new InvalidArgument('Current user is not a group member');
@@ -174,5 +202,30 @@ export default class GroupManager {
     const devicePublicSignatureKeyMap = await this._UserManager.getDeviceKeysByDevicesIds(deviceIds, { isLight: true });
 
     return groupsFromEntries(entries, devicePublicSignatureKeyMap, this._localUser, this._provisionalIdentityManager);
+  }
+
+  async _getCachedGroupsPublicKeys(groupsIds: Array<Uint8Array>): Promise<CachedPublicKeysResult> {
+    const cachePublicKeys = await this._groupStore.findGroupsPublicKeys(groupsIds);
+    const missingGroupIds = [];
+
+    const isGroupInCache = {};
+    for (const groupId of groupsIds) {
+      isGroupInCache[utils.toBase64(groupId)] = false;
+    }
+
+    for (const group of cachePublicKeys) {
+      isGroupInCache[utils.toBase64(group.groupId)] = true;
+    }
+
+    for (const groupId of Object.keys(isGroupInCache)) {
+      if (!isGroupInCache[groupId]) {
+        missingGroupIds.push(utils.fromBase64(groupId));
+      }
+    }
+
+    return {
+      cachedKeys: cachePublicKeys.map(r => r.publicEncryptionKey),
+      missingGroupIds,
+    };
   }
 }
