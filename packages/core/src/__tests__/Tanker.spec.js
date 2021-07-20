@@ -326,6 +326,7 @@ describe('Tanker', () => {
           { usersToAdd: null, usersToRemove: null },
           { usersToAdd: [], usersToRemove: [] },
           { usersToAdd: [''] },
+          { usersToRemove: [''] },
         ];
         for (let i = 0; i < badUsersArgs.length; i++) {
           const badUsersArg = ((badUsersArgs[i]: any): $Exact<{ usersToAdd?: Array<string>, usersToRemove?: Array<string> }>);
