@@ -2,9 +2,9 @@ import { expect, silencer } from '@tanker/test-utils';
 import { safePrintType, safePrintValue } from '../print';
 
 describe('print', () => {
-  let values;
-  let expectedTypes;
-  let expectedValues;
+  let values: any[];
+  let expectedTypes: string[];
+  let expectedValues: string[];
 
   before(() => {
     values = [
@@ -75,7 +75,7 @@ describe('print', () => {
   });
 
   it('should gracefully handle values that are not friendly printable', async () => {
-    const circular = {};
+    const circular: { reference?: any } = { };
     circular.reference = circular;
     expect(safePrintType(circular)).to.equal('Object');
     expect(safePrintValue(circular)).to.equal('[object Object]');

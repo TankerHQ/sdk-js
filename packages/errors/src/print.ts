@@ -3,13 +3,14 @@ const constructorNameRegExp = /^.*(?:function|class) +([^( ]+).*$/;
 
 const getConstructorName = (obj: Record<string, any>) => {
   const constructor = obj.constructor;
-
-  if (typeof constructor !== 'function') // e.g. 'undefined' for obj = Object.create(null)
+  if (typeof constructor !== 'function') { // e.g. 'undefined' for obj = Object.create(null)
     return 'Object';
-
-  if (typeof constructor.name === 'string')
+  }
+  if (typeof constructor.name === 'string') {
     return constructor.name;
+  }
 
+  // @ts-expect-error `constructor.toString().trim().split('\n')` is never empty
   return constructor.toString().trim().split('\n')[0].replace(constructorNameRegExp, '$1');
 };
 

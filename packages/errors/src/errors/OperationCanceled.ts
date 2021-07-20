@@ -2,21 +2,20 @@ import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class OperationCanceled extends TankerError {
-  declare next?: Error;
+  declare reason?: Error;
 
-  constructor(errorInfo?: ErrorInfo, next?: Error) {
+  constructor(errorInfo?: ErrorInfo, reason?: Error) {
     super('OperationCanceled', errorInfo || 'Operation canceled');
-    this.next = next;
+
+    // Set the prototype explicitly.
+    Object.setPrototypeOf(this, OperationCanceled.prototype);
+    this.reason = reason;
   }
 
-  set message(msg: string) {
-    super.message = msg;
-  }
-
-  get message() {
-    let message = super.message;
-    if (this.next) {
-      message = `${message}. Previous error: ${this.next.toString()}`;
+  override getMessage(): string {
+    let message = super.getMessage();
+    if (this.reason) {
+      message = `${message}. Cancelation reason: ${this.reason}`;
     }
     return message;
   }

@@ -18,6 +18,9 @@ export class DecryptionFailed extends TankerError {
 
     super('DecryptionFailed', message);
 
+    // Set the prototype explicitly.
+    Object.setPrototypeOf(this, DecryptionFailed.prototype);
+
     this.next = error;
     this.b64ResourceId = b64ResourceId;
   }
