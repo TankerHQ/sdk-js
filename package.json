@@ -51,7 +51,7 @@
     "debug:verification-ui": "karma start packages/verification-ui/config/karma.config.debug.js",
     "benchmark": "karma start config/karma/karma.config.benchmark.js",
     "proof": "yarn lint:js && yarn lint:types && yarn test",
-    "coverage": "nyc --reporter=lcov --reporter=text-summary yarn test"
+    "coverage": "nyc yarn test"
   },
   "dependencies": {
     "@babel/core": "7.12.16",
@@ -129,8 +129,15 @@
       "packages/**/src/__tests__",
       "packages/**/tests"
     ],
-    "sourceMap": false,
-    "instrument": false
+    "reporter": [
+      "lcov",
+      "text-summary"
+    ],
+    "extension": [
+      ".js",
+      ".ts"
+    ],
+    "sourceMap": true
   },
   "resolutions": {
     "browserslist": "^4.16.6",
