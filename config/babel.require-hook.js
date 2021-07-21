@@ -1,7 +1,21 @@
 // @noflow
+const path = require('path');
 const getBabelConfig = require('./babel.config');
 
-const coverage = ['false', '0'].includes(process.env.COVERAGE) ? false : true;
+const coverage = !['false', '0'].includes(process.env.COVERAGE);
+
+const babelConfig = getBabelConfig({ target: 'node', coverage });
+babelConfig.plugins.push([
+  require.resolve('babel-plugin-module-resolver'),
+  {
+    alias: {
+      '@tanker/errors': path.resolve(__dirname, '../packages/errors/src/index.ts'),
+    }
+  }
+]);
+
+// Babelify everything except node_modules that are not our own stuff
+babelConfig.ignore = [file => file.includes('node_modules') && !file.includes('@tanker')];
 
 // Install the "require hook" which will:
 //   - bind itself to node's require
@@ -10,8 +24,4 @@ const coverage = ['false', '0'].includes(process.env.COVERAGE) ? false : true;
 //
 // See: https://babeljs.io/docs/en/babel-register
 //
-require('@babel/register')({
-  // Babelify everything except node_modules that are not our own stuff
-  ignore: [file => file.includes('node_modules') && !file.includes('@tanker')],
-  ...getBabelConfig({ target: 'node', coverage }),
-});
+require('@babel/register')(babelConfig);
