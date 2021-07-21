@@ -154,11 +154,13 @@ def publish_npm_package(package_name: str, version: str, is_typescript: bool) ->
 
 def run_tests_in_node() -> None:
     tankerci.js.run_yarn("exec", "--", "node", "--version")
+    tankerci.js.run_yarn("build:ts")
     tankerci.js.run_yarn("coverage")
 
 
 def lint() -> None:
     tankerci.js.yarn_install_deps()
+    tankerci.js.run_yarn("lint:ts")
     tankerci.js.run_yarn("flow")
     tankerci.js.run_yarn("lint:js")
 
