@@ -86,6 +86,40 @@ describe('utils', () => {
     });
   });
 
+  describe('RFC 4648 test vectors', () => {
+    const bytes4648 = [
+      new Uint8Array([]),
+      new Uint8Array([102]),
+      new Uint8Array([102, 111]),
+      new Uint8Array([102, 111, 111]),
+      new Uint8Array([102, 111, 111, 98]),
+      new Uint8Array([102, 111, 111, 98, 97]),
+      new Uint8Array([102, 111, 111, 98, 97, 114]),
+    ];
+
+    const str4648 = [
+      '',
+      'Zg==',
+      'Zm8=',
+      'Zm9v',
+      'Zm9vYg==',
+      'Zm9vYmE=',
+      'Zm9vYmFy',
+    ];
+
+    it('can convert RFC 4648 test vectors fromBase64', () => {
+      for (let i = 0; i < str4648.length; i++) {
+        expect(fromBase64(str4648[i])).to.deep.equal(bytes4648[i]);
+      }
+    });
+
+    it('can convert RFC 4648 test vectors toBase64', () => {
+      for (let i = 0; i < bytes4648.length; i++) {
+        expect(toBase64(bytes4648[i])).to.deep.equal(str4648[i]);
+      }
+    });
+  });
+
   describe('json base64', () => {
     let obj;
     let objAsJsonB64;

@@ -3,7 +3,7 @@ import FilePonyfill from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 import { InvalidArgument } from '@tanker/errors';
 
-import { castData, getConstructor, getConstructorName, getDataLength, assertInteger } from '../data-types';
+import { castData, getConstructor, getConstructorName, getDataLength, assertInteger, assertString, assertNotEmptyString } from '../data-types';
 
 describe('types', () => {
   // In Edge and IE11, accessing the webkitRelativePath property on File instances triggers
@@ -75,11 +75,11 @@ describe('types', () => {
 
   describe('assertInteger', () => {
     [-37, -5, 0, 7, 331].forEach(n => it(`detects ${n} as an integer`, () => {
-      expect(assertInteger(n, 'n', false)).to.not.throw;
+      expect(() => assertInteger(n, 'n', false)).to.not.throw();
     }));
 
     [0, 7, 331].forEach(n => it(`detects ${n} as an unsigned integer`, () => {
-      expect(assertInteger(n, 'n', true)).to.not.throw;
+      expect(() => assertInteger(n, 'n', true)).to.not.throw();
     }));
 
     it('throw an InvalidArgument when detecting as an integer', () => {
@@ -91,6 +91,30 @@ describe('types', () => {
     it('throw an InvalidArgument when detecting as an unsigned integer', () => {
       [undefined, null, 'not an unsigned integer', [], {}, 0.1, -0.1, -1].forEach((n, i) => {
         expect(() => assertInteger(n, 'n', true), `failed test #${i}`).to.throw(InvalidArgument);
+      });
+    });
+  });
+
+  describe('assertString', () => {
+    ['', 'zzzzzz', "'à-é'ç&é&é&ç"].forEach(str => it(`detects "${str}" as a string`, () => {
+      expect(() => assertString(str, 'str')).to.not.throw();
+    }));
+
+    it('throw an InvalidArgument when detecting a non-string', () => {
+      [undefined, null, [], {}, 0, 1].forEach((str, i) => {
+        expect(() => assertString(str, 'str'), `failed test #${i}`).to.throw(InvalidArgument);
+      });
+    });
+  });
+
+  describe('assertNotEmptyString', () => {
+    ['zzzzzz', "'à-é'ç&é&é&ç"].forEach(str => it(`detects "${str}" as a string`, () => {
+      expect(() => assertNotEmptyString(str, 'str')).to.not.throw();
+    }));
+
+    it('throw an InvalidArgument when detecting a non-string or an empty string', () => {
+      [undefined, null, [], {}, 0, 1, ''].forEach((str, i) => {
+        expect(() => assertNotEmptyString(str, 'str'), `failed test #${i}`).to.throw(InvalidArgument);
       });
     });
   });

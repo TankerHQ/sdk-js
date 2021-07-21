@@ -38,10 +38,14 @@ export const assertDataTypeClass = (value: any, argName: string): void => {
     throw new InvalidArgument(argName, 'class in [ArrayBuffer | Blob | Buffer | File | Uint8Array]', value);
 };
 
-export const assertNotEmptyString = (arg: any, argName: string) => {
+export const assertString = (arg: any, argName: string) => {
   if (typeof arg !== 'string') {
     throw new InvalidArgument(argName, `${argName} should be a string`, arg);
   }
+};
+
+export const assertNotEmptyString = (arg: any, argName: string) => {
+  assertString(arg, argName);
   if (arg.length === 0) {
     throw new InvalidArgument(argName, `${argName} should not be empty`, arg);
   }
