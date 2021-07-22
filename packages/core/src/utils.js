@@ -1,6 +1,6 @@
 // @flow
 import { ready as cryptoReady, utils, type b64string } from '@tanker/crypto';
-import { assertNotEmptyString } from '@tanker/types';
+import { assertString, assertNotEmptyString } from '@tanker/types';
 import { InvalidArgument } from '@tanker/errors';
 
 export function toBase64(bytes: Uint8Array): b64string {
@@ -11,7 +11,7 @@ export function toBase64(bytes: Uint8Array): b64string {
 }
 
 export function fromBase64(str: b64string): Uint8Array {
-  assertNotEmptyString(str, 'str');
+  assertString(str, 'str');
   return utils.fromBase64(str);
 }
 
