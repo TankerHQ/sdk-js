@@ -35,11 +35,11 @@ function checkAddedAndRemoved(permanentIdentitiesToAdd: Array<PublicPermanentIde
   for (const i of permanentIdentitiesToRemove)
     if (userIdsToAdd.has(i.value))
       // $FlowIgnore this field is hidden
-      addedAndRemovedIdentities.push(i.serializedIdentity);
+      addedAndRemovedIdentities.push(i.serializedIdentity || utils.toB64Json(i));
   for (const i of provisionalIdentitiesToRemove)
     if (appSignaturePublicKeysToAdd.has(i.public_signature_key))
       // $FlowIgnore this field is hidden
-      addedAndRemovedIdentities.push(i.serializedIdentity);
+      addedAndRemovedIdentities.push(i.serializedIdentity || utils.toB64Json(i));
 
   if (addedAndRemovedIdentities.length)
     throw new InvalidArgument(`The identities ${addedAndRemovedIdentities.join(', ')} are both added to and removed from the group.`);
