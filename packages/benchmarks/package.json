@@ -13,7 +13,7 @@
     "@tanker/fake-authentication": "0.0.1",
     "@tanker/file-ponyfill": "0.0.1",
     "@tanker/http-utils": "0.0.1",
-    "@tanker/identity": "^2.15.0",
+    "@tanker/identity": "^3.0.0",
     "@tanker/test-utils": "0.0.1",
     "@tanker/types": "0.0.1"
   }

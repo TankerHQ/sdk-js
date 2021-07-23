@@ -1114,31 +1114,30 @@
   resolved "https://registry.yarnpkg.com/@sinonjs/text-encoding/-/text-encoding-0.7.1.tgz#8da5c6530915653f3a1f38fd5f101d8c3f8079c5"
   integrity sha512-+iTbntw2IZPb/anVDbypzfQa+ay64MW0Zo8aJ8gZPWMMK6/OubMVb6lUPMagqjOPnmtauXnFCACVl3O7ogjeqQ==
 
-"@tanker/crypto@2.15.0":
-  version "2.15.0"
-  resolved "https://registry.yarnpkg.com/@tanker/crypto/-/crypto-2.15.0.tgz#51259ff374a3ea07c0fe4bea304d85e5feede097"
-  integrity sha512-di1+HY3/hwd1drmV2ELsTCovHtIsn/Bhzl8hv5N4vI1AWuhlhurtpqrxZZYz3lhqHk5dh33mmtrW+8un/He/xQ==
+"@tanker/crypto@^2.15.0":
+  version "2.19.1"
+  resolved "https://registry.yarnpkg.com/@tanker/crypto/-/crypto-2.19.1.tgz#3da1902e601a1d871b1026d5275dcb878f235c47"
+  integrity sha512-lcIGEGSNPhcq+hyGcHlJNcPVADvwuMVXyEPhuaTqjKW2l/y3aDt03EItgdmAViQFvslOgNTN+EVDrlTiXyuTJg==
   dependencies:
     "@babel/runtime-corejs3" "^7.9.0"
-    "@tanker/errors" "2.15.0"
+    "@tanker/errors" "2.19.1"
     libsodium-wrappers "^0.7.9"
     varint "^6.0.0"
 
-"@tanker/errors@2.15.0":
-  version "2.15.0"
-  resolved "https://registry.yarnpkg.com/@tanker/errors/-/errors-2.15.0.tgz#43835e288fd2a26bbed655e949f59d8fa978a158"
-  integrity sha512-dRhfuCJdF5dgURuJnmzeINHlg0Is3FWMlKnnO208/g6T9YLl8jBGQJbn7OjB1CbWpzLciLvp/s93W/PsOQ7bbA==
+"@tanker/errors@2.19.1":
+  version "2.19.1"
+  resolved "https://registry.yarnpkg.com/@tanker/errors/-/errors-2.19.1.tgz#52e569a4c5dc1bbcf8bacf3f58b33fa61d2a53ef"
+  integrity sha512-gCsXbls7Fgc56ibUph4FBOHsWSXpzWBpNKPBKZzNktbcTqjOnawGB+BY7hSca2kdclvPVpM76grT99xgaLo//w==
   dependencies:
     "@babel/runtime-corejs3" "^7.9.0"
 
-"@tanker/identity@^2.15.0":
-  version "2.15.0"
-  resolved "https://registry.yarnpkg.com/@tanker/identity/-/identity-2.15.0.tgz#b2afb170731307aaa765db0fd1c8ab890a445ed7"
-  integrity sha512-/wL0exG64c4FguKymrlcpVlARLYKUNouM5JWaiiN0C4QBAweImLe+5Wqaa/hwPKXzJlpp+mqUnPuSFmrFMUGBw==
+"@tanker/identity@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@tanker/identity/-/identity-3.0.0.tgz#9ea172d0cb393fcb511257eea5e8dd5fd6d0332b"
+  integrity sha512-boUAQa2wzAhr5xJXx76j6kOXP+ZaBF/1eApIN2jBJBrrIPY9sveMn/BGIqP1BBhWF1yRX0+3IjfBU3slUvfkPw==
   dependencies:
     "@babel/runtime-corejs3" "^7.9.0"
-    "@tanker/crypto" "2.15.0"
-    "@tanker/errors" "2.15.0"
+    "@tanker/crypto" "^2.15.0"
 
 "@tootallnate/once@1":
   version "1.1.2"
