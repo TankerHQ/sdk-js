@@ -1,6 +1,6 @@
 // @flow
 
-import { generichash, tcrypto, utils } from '@tanker/crypto';
+import { generichash, tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import type { SecretProvisionalIdentity, PublicProvisionalIdentity, PublicProvisionalUser } from '../Identity';
 
@@ -134,9 +134,18 @@ export default class ProvisionalIdentityManager {
     return provisionalEncryptionKeyPairs;
   }
 
-  async getProvisionalUsers(provisionalIdentities: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> {
-    if (provisionalIdentities.length === 0)
+  async getProvisionalUsers(provisionalIdentitiesWithDup: Array<PublicProvisionalIdentity>): Promise<Array<PublicProvisionalUser>> {
+    if (provisionalIdentitiesWithDup.length === 0)
       return [];
+
+    const appKeys: Set<b64string> = new Set();
+    const provisionalIdentities: Array<PublicProvisionalIdentity> = [];
+    for (const id of provisionalIdentitiesWithDup) {
+      if (!appKeys.has(id.public_signature_key)) {
+        appKeys.add(id.public_signature_key);
+        provisionalIdentities.push(id);
+      }
+    }
 
     const provisionalHashedEmails = provisionalIdentities.map(provisionalIdentity => {
       switch (provisionalIdentity.target) {
