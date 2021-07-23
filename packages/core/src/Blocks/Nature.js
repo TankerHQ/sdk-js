@@ -6,6 +6,7 @@ export const NATURE = Object.freeze({
   device_creation_v1: 2,
   key_publish_to_device: 3,
   device_revocation_v1: 4,
+  // user_reset: 5,
   device_creation_v2: 6,
   device_creation_v3: 7,
   key_publish_to_user: 8,
@@ -20,6 +21,7 @@ export const NATURE = Object.freeze({
   user_group_creation_v3: 17,
   user_group_addition_v3: 18,
   session_certificate: 19,
+  // user_group_update: 20,
   user_group_removal: 21,
 });
 
