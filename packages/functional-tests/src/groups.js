@@ -82,6 +82,11 @@ export const generateGroupsTests = (args: TestArgs) => {
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
     });
 
+    it('should accept adding duplicate users', async () => {
+      const groupId = await bobLaptop.createGroup([alicePublicIdentity]);
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, bobPublicIdentity] })).to.be.fulfilled;
+    });
+
     it('should accept removing duplicate users', async () => {
       const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity, bobPublicIdentity] })).to.be.fulfilled;
@@ -294,6 +299,11 @@ export const generateGroupsTests = (args: TestArgs) => {
         await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity] })).to.be.fulfilled;
         await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity] })).to.be.fulfilled;
         await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisionalPublicIdentity] })).to.be.fulfilled;
+      });
+
+      it('should add duplicate provisional users', async () => {
+        const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
+        await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity, provisionalPublicIdentity] })).to.be.fulfilled;
       });
 
       it('should remove duplicate provisional users', async () => {
