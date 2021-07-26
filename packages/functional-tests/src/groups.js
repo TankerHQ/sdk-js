@@ -58,9 +58,27 @@ export const generateGroupsTests = (args: TestArgs) => {
       await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
     });
 
+    it('should add two members to a group', async () => {
+      const groupId = await bobLaptop.createGroup([alicePublicIdentity]);
+      await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, charliePublicIdentity] });
+      const data = 'group sharing party';
+      const encryptedData = await aliceLaptop.encrypt(data, { shareWithGroups: [groupId] });
+      expect(await bobLaptop.decrypt(encryptedData)).to.equal(data);
+      expect(await charlieLaptop.decrypt(encryptedData)).to.equal(data);
+    });
+
     it('should remove a member from a group', async () => {
       const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
+    });
+
+    it('should remove two members from a group', async () => {
+      const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity, charliePublicIdentity] })).to.be.fulfilled;
+      const data = 'group sharing party';
+      const encryptedData = await aliceLaptop.encrypt(data, { shareWithGroups: [groupId] });
+      await expect(bobLaptop.decrypt(encryptedData)).to.be.rejectedWith(errors.InvalidArgument);
+      await expect(charlieLaptop.decrypt(encryptedData)).to.be.rejectedWith(errors.InvalidArgument);
     });
 
     it('should remove a member from a group after a first group update', async () => {
@@ -287,11 +305,18 @@ export const generateGroupsTests = (args: TestArgs) => {
       let provisionalEmail;
       let provisionalIdentity;
       let provisionalPublicIdentity;
+      let provisionalEmail2;
+      let provisionalIdentity2;
+      let provisionalPublicIdentity2;
 
       beforeEach(async () => {
         provisionalEmail = `${uuid.v4()}@tanker.io`;
         provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), provisionalEmail);
         provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
+
+        provisionalEmail2 = `${uuid.v4()}@tanker.io`;
+        provisionalIdentity2 = await createProvisionalIdentity(utils.toBase64(appHelper.appId), provisionalEmail2);
+        provisionalPublicIdentity2 = await getPublicIdentity(provisionalIdentity2);
       });
 
       it('should add a provisional member to a group twice then remove it', async () => {
@@ -359,6 +384,24 @@ export const generateGroupsTests = (args: TestArgs) => {
         expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
       });
 
+      it('share keys with two added provisional group members', async () => {
+        const groupId = await bobLaptop.createGroup([bobPublicIdentity]);
+
+        await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisionalPublicIdentity, provisionalPublicIdentity2] });
+        const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+
+        let verificationCode = await args.appHelper.getEmailVerificationCode(provisionalEmail);
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+
+        verificationCode = await args.appHelper.getEmailVerificationCode(provisionalEmail2);
+        await charlieLaptop.attachProvisionalIdentity(provisionalIdentity2);
+        await charlieLaptop.verifyProvisionalIdentity({ email: provisionalEmail2, verificationCode });
+
+        expect(await aliceLaptop.decrypt(encrypted)).to.deep.equal(message);
+        expect(await charlieLaptop.decrypt(encrypted)).to.deep.equal(message);
+      });
+
       it('should update group when claimed provisional users remove a member from group', async () => {
         const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisionalPublicIdentity]);
 
@@ -381,6 +424,23 @@ export const generateGroupsTests = (args: TestArgs) => {
         const verificationCode = await args.appHelper.getEmailVerificationCode(provisionalEmail);
         await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
         await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+
+        await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('should not share keys with two removed provisional group members', async () => {
+        const groupId = await bobLaptop.createGroup([bobPublicIdentity, provisionalPublicIdentity, provisionalPublicIdentity2]);
+        const encrypted = await bobLaptop.encrypt(message, { shareWithGroups: [groupId] });
+
+        await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [provisionalPublicIdentity, provisionalPublicIdentity2] });
+
+        let verificationCode = await args.appHelper.getEmailVerificationCode(provisionalEmail);
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail, verificationCode });
+
+        verificationCode = await args.appHelper.getEmailVerificationCode(provisionalEmail2);
+        await aliceLaptop.attachProvisionalIdentity(provisionalIdentity2);
+        await aliceLaptop.verifyProvisionalIdentity({ email: provisionalEmail2, verificationCode });
 
         await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
