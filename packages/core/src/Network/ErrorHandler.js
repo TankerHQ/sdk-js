@@ -18,6 +18,9 @@ const apiCodeErrorMap = {
   verification_method_not_set: PreconditionFailed,
   verification_key_not_found: PreconditionFailed,
   upgrade_required: UpgradeRequired,
+  not_a_user_group_member: InvalidArgument,
+  empty_user_group: InvalidArgument,
+  missing_user_group_members: InvalidArgument,
 };
 
 export const genericErrorHandler = (apiMethod: string, apiRoute: string, error: Object) => {

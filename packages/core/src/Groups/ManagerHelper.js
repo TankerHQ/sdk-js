@@ -25,8 +25,6 @@ export type GroupDataWithDevices = Array<{|
 |}>;
 
 export function assertPublicIdentities(publicIdentities: Array<b64string>) {
-  if (publicIdentities.length === 0)
-    throw new InvalidArgument('publicIdentities', 'non empty Array<b64string>', '[]');
   if (publicIdentities.length > MAX_GROUP_MEMBERS_PER_OPERATION)
     throw new GroupTooBig(`You cannot add more than ${MAX_GROUP_MEMBERS_PER_OPERATION} members at once to a group`);
 }

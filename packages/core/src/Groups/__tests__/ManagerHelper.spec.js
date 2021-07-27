@@ -1,6 +1,6 @@
 // @flow
 import { ready as cryptoReady, tcrypto, random, utils } from '@tanker/crypto';
-import { GroupTooBig, InvalidArgument } from '@tanker/errors';
+import { GroupTooBig } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
 import { MAX_GROUP_MEMBERS_PER_OPERATION, assertPublicIdentities, groupFromUserGroupEntry, groupsFromEntries } from '../ManagerHelper';
@@ -56,10 +56,6 @@ describe('GroupManagerHelper', () => {
   });
 
   describe('assertPublicIdentities()', () => {
-    it('throws when creating a group with 0 members', () => {
-      expect(() => assertPublicIdentities([])).to.throw(InvalidArgument);
-    });
-
     it('throws when creating a group with 1001 members', () => {
       const users = Array.from({ length: MAX_GROUP_MEMBERS_PER_OPERATION + 1 }, () => 'bob');
       expect(() => assertPublicIdentities(users)).to.throw(GroupTooBig);

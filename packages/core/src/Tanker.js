@@ -413,23 +413,39 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('users', 'Array<string>', users);
     users.forEach(user => assertNotEmptyString(user, 'users'));
 
+    if (users.length === 0)
+      throw new InvalidArgument('no members to add in new group');
+
     return this.session.createGroup(users);
   }
 
-  async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd: Array<string> }>): Promise<void> {
+  async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd?: Array<string>, usersToRemove?: Array<string> }>): Promise<void> {
     assertStatus(this.status, statuses.READY, 'update a group');
-    if (!args)
-      throw new InvalidArgument('usersToAdd', '{ usersToAdd: Array<string> }', args);
+    if (!args || typeof args !== 'object')
+      throw new InvalidArgument('usersToAdd', '{ usersToAdd?: Array<string>, usersToRemove?: Array<string> }', args);
 
-    const { usersToAdd } = args;
+    const { usersToAdd, usersToRemove } = args;
 
-    if (!usersToAdd || !(usersToAdd instanceof Array) || usersToAdd.length === 0)
-      throw new InvalidArgument('usersToAdd', 'Array<string>', usersToAdd);
-    usersToAdd.forEach(user => assertNotEmptyString(user, 'usersToAdd'));
+    if (usersToAdd) {
+      if (!(usersToAdd instanceof Array))
+        throw new InvalidArgument('usersToAdd', 'Array<string>', usersToAdd);
+      usersToAdd.forEach(user => assertNotEmptyString(user, 'usersToAdd'));
+    }
+    if (usersToRemove) {
+      if (!(usersToRemove instanceof Array))
+        throw new InvalidArgument('usersToRemove', 'Array<string>', usersToRemove);
+      usersToRemove.forEach(user => assertNotEmptyString(user, 'usersToRemove'));
+    }
+
+    const nonOptUsersToAdd = usersToAdd || [];
+    const nonOptUsersToRemove = usersToRemove || [];
+
+    if (nonOptUsersToAdd.length === 0 && nonOptUsersToRemove.length === 0)
+      throw new InvalidArgument('no members to add or remove in updateGroupMembers');
 
     assertB64StringWithSize(groupId, 'groupId', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
-    return this.session.updateGroupMembers(groupId, usersToAdd);
+    return this.session.updateGroupMembers(groupId, nonOptUsersToAdd, nonOptUsersToRemove);
   }
 
   async createEncryptionStream(options: EncryptionOptions = {}): Promise<EncryptionStream> {

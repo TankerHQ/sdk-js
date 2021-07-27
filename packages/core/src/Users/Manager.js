@@ -29,11 +29,12 @@ export default class UserManager {
       return [];
     }
 
-    const userIds = publicIdentities.map(u => {
+    const userIdsWithDups = publicIdentities.map(u => {
       if (u.target !== 'user')
         throw new InternalError(`Assertion error: publicIdentity ${u.target} should be 'user'`);
-      return utils.fromBase64(u.value);
+      return u.value;
     });
+    const userIds = [...new Set(userIdsWithDups)].map(u => utils.fromBase64(u));
 
     const blocks = await this._getUserBlocksByUserIds(userIds, options);
     const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);

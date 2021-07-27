@@ -3,7 +3,7 @@ import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type { PublicProvisionalUser } from '../Identity';
-import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength } from '../Blocks/Serialize';
+import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength, encodeUint32 } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
 import { type VerificationFields, hashBlock } from '../Blocks/Block';
 import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
@@ -101,6 +101,18 @@ export type UserGroupAdditionRecord = {|
     previous_group_block: Uint8Array,
     encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKey>,
     encrypted_group_private_encryption_keys_for_provisional_users?: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>,
+    self_signature_with_current_key: Uint8Array,
+  |};
+
+type ProvisionalUserId = {|
+    app_signature_public_key: Uint8Array,
+    tanker_signature_public_key: Uint8Array,
+  |};
+
+export type UserGroupRemovalRecord = {|
+    group_id: Uint8Array,
+    members_to_remove: $ReadOnlyArray<Uint8Array>,
+    provisional_members_to_remove: $ReadOnlyArray<ProvisionalUserId>,
     self_signature_with_current_key: Uint8Array,
   |};
 
@@ -323,6 +335,8 @@ export function serializeUserGroupCreationV3(userGroupCreation: UserGroupCreatio
 }
 
 export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditionRecordV1): Uint8Array {
+  if (userGroupAddition.group_id.length !== tcrypto.HASH_SIZE)
+    throw new InternalError('Assertion error: invalid user group addition group id size');
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid user group addition previous group block size');
   userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV1('user group addition V1', k));
@@ -339,6 +353,8 @@ export function serializeUserGroupAdditionV1(userGroupAddition: UserGroupAdditio
 }
 
 export function serializeUserGroupAdditionV2(userGroupAddition: UserGroupAdditionRecordV2): Uint8Array {
+  if (userGroupAddition.group_id.length !== tcrypto.HASH_SIZE)
+    throw new InternalError('Assertion error: invalid user group addition group id size');
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid user group addition previous group block size');
   userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group addition V2', k));
@@ -358,6 +374,8 @@ export function serializeUserGroupAdditionV2(userGroupAddition: UserGroupAdditio
 }
 
 export function serializeUserGroupAdditionV3(userGroupAddition: UserGroupAdditionRecordV3): Uint8Array {
+  if (userGroupAddition.group_id.length !== tcrypto.HASH_SIZE)
+    throw new InternalError('Assertion error: invalid user group addition group id size');
   if (userGroupAddition.previous_group_block.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid user group addition previous group block size');
   userGroupAddition.encrypted_group_private_encryption_keys_for_users.forEach(k => checkGroupEncryptedKeyV2('user group addition V3', k));
@@ -405,6 +423,54 @@ export function unserializeUserGroupAdditionV3(src: Uint8Array): UserGroupAdditi
   ]);
 }
 
+function checkGroupMemberToRemove(blockType: string, member: Uint8Array): void {
+  if (member.length !== tcrypto.HASH_SIZE)
+    throw new InternalError(`Assertion error: invalid ${blockType} member to remove user ID size`);
+}
+
+function checkGroupProvisionalMemberToRemove(blockType: string, member: ProvisionalUserId): void {
+  if (member.app_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new InternalError(`Assertion error: invalid ${blockType} provisional member to remove app signature public key size`);
+  if (member.tanker_signature_public_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
+    throw new InternalError(`Assertion error: invalid ${blockType} provisional member to remove tanker signature public key size`);
+}
+
+export function serializeUserGroupRemoval(userGroupRemoval: UserGroupRemovalRecord): Uint8Array {
+  if (userGroupRemoval.group_id.length !== tcrypto.HASH_SIZE)
+    throw new InternalError('Assertion error: invalid user group removal group id size');
+  for (const k of userGroupRemoval.members_to_remove)
+    checkGroupMemberToRemove('user group removal', k);
+  for (const k of userGroupRemoval.provisional_members_to_remove)
+    checkGroupProvisionalMemberToRemove('user group removal', k);
+  if (userGroupRemoval.self_signature_with_current_key.length !== tcrypto.SIGNATURE_SIZE)
+    throw new InternalError('Assertion error: invalid user group addition group self signature size');
+
+  return utils.concatArrays(
+    userGroupRemoval.group_id,
+    encodeListLength(userGroupRemoval.members_to_remove),
+    ...userGroupRemoval.members_to_remove,
+    encodeListLength(userGroupRemoval.provisional_members_to_remove),
+    ...userGroupRemoval.provisional_members_to_remove.map(member => utils.concatArrays(member.app_signature_public_key, member.tanker_signature_public_key)),
+    userGroupRemoval.self_signature_with_current_key,
+  );
+}
+
+function unserializeProvisionalUserId(src: Uint8Array, offset: number) {
+  return unserializeGenericSub(src, [
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'app_signature_public_key'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'tanker_signature_public_key'),
+  ], offset);
+}
+
+export function unserializeUserGroupRemoval(src: Uint8Array): UserGroupRemovalRecord {
+  return unserializeGeneric(src, [
+    (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'group_id'),
+    (d, o) => unserializeList(d, (dd, oo) => getStaticArray(dd, tcrypto.HASH_SIZE, oo, 'value'), o, 'members_to_remove'),
+    (d, o) => unserializeList(d, unserializeProvisionalUserId, o, 'provisional_members_to_remove'),
+    (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'self_signature_with_current_key'),
+  ]);
+}
+
 export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
   const block = unserializeBlock(utils.fromBase64(b64Block));
   const author = block.author;
@@ -437,7 +503,7 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
     return { ...userGroupAction, author, signature, nature, hash };
   }
 
-  throw new InternalError('Assertion error: wrong type for getGroupEntryFromBlock');
+  throw new InternalError(`Assertion error: wrong type for getGroupEntryFromBlock: ${nature}`);
 }
 
 export const getUserGroupCreationBlockSignDataV1 = (record: UserGroupCreationRecordV1): Uint8Array => utils.concatArrays(
@@ -516,6 +582,21 @@ export const getUserGroupAdditionBlockSignDataV3 = (record: UserGroupAdditionRec
     gek.app_provisional_user_public_encryption_key,
     gek.tanker_provisional_user_public_encryption_key,
     gek.encrypted_group_private_encryption_key
+  ))
+);
+
+const userGroupRemovalSignaturePrefix = utils.fromString('UserGroupRemoval Signature');
+
+export const getUserGroupRemovalBlockSignData = (record: UserGroupRemovalRecord, authorId: Uint8Array): Uint8Array => utils.concatArrays(
+  userGroupRemovalSignaturePrefix,
+  authorId,
+  record.group_id,
+  encodeUint32(record.members_to_remove.length),
+  ...record.members_to_remove,
+  encodeUint32(record.provisional_members_to_remove.length),
+  ...record.provisional_members_to_remove.map(m => utils.concatArrays(
+    m.app_signature_public_key,
+    m.tanker_signature_public_key,
   ))
 );
 
@@ -650,4 +731,20 @@ export const makeUserGroupAdditionV3 = (groupId: Uint8Array, privateSignatureKey
   payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
 
   return { payload: serializeUserGroupAdditionV3(payload), nature: NATURE.user_group_addition_v3 };
+};
+
+export const makeUserGroupRemoval = (author: Uint8Array, groupId: Uint8Array, privateSignatureKey: Uint8Array, users: Array<Uint8Array>, provisionalUsers: Array<PublicProvisionalUser>) => {
+  const provisionalMembers = provisionalUsers.map(u => ({ app_signature_public_key: u.appSignaturePublicKey, tanker_signature_public_key: u.tankerSignaturePublicKey }));
+
+  const payload = {
+    group_id: groupId,
+    members_to_remove: users,
+    provisional_members_to_remove: provisionalMembers,
+    self_signature_with_current_key: new Uint8Array(0),
+  };
+
+  const signData = getUserGroupRemovalBlockSignData(payload, author);
+  payload.self_signature_with_current_key = tcrypto.sign(signData, privateSignatureKey);
+
+  return { payload: serializeUserGroupRemoval(payload), nature: NATURE.user_group_removal };
 };
