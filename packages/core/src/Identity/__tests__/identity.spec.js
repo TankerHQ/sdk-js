@@ -10,7 +10,7 @@ import {
 import {
   _deserializePermanentIdentity, _deserializeProvisionalIdentity,
   _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
-  toIdentityOrderedJson,
+  _serializeIdentity,
 } from '../identity';
 
 describe('Identity', () => {
@@ -78,7 +78,7 @@ describe('Identity', () => {
 
       // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodPublicIdentity);
-      expect(toIdentityOrderedJson(identity)).to.equal(goodPublicIdentity);
+      expect(_serializeIdentity(identity)).to.equal(goodPublicIdentity);
     });
 
     it('can parse a valid non-hashed email public provisional identity', () => {
@@ -92,7 +92,7 @@ describe('Identity', () => {
 
       // $FlowIgnore hidden property
       expect(identity.serializedIdentity).to.equal(goodOldPublicProvisionalIdentity);
-      expect(toIdentityOrderedJson(identity)).to.equal(goodOldPublicProvisionalIdentity);
+      expect(_serializeIdentity(identity)).to.equal(goodOldPublicProvisionalIdentity);
     });
 
     it('can parse a valid hashed email public provisional identity', () => {

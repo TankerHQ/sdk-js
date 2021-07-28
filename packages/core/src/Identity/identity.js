@@ -105,7 +105,7 @@ function dumpOrderedJson(o: Object): string {
   return `{${json.join(',')}}`;
 }
 
-export function toIdentityOrderedJson(identity: SecretIdentity | PublicIdentity): b64string {
+export function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b64string { // eslint-disable-line no-underscore-dangle
   return utils.toBase64(utils.fromString(dumpOrderedJson(identity)));
 }
 
