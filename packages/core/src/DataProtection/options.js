@@ -1,8 +1,9 @@
 // @flow
 import type { b64string } from '@tanker/crypto';
+import { tcrypto } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import globalThis from '@tanker/global-this';
-import { getConstructor, assertNotEmptyString } from '@tanker/types';
+import { getConstructor, assertNotEmptyString, assertB64StringWithSize } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
 
 import type { OnProgress } from './ProgressHandler';
@@ -23,7 +24,7 @@ export type SharingOptions = { shareWithUsers?: Array<b64string>, shareWithGroup
 
 export const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
-export const extractSharingOptions = (options: Object, error: any = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> }', options)): SharingOptions => {
+export const extractSharingOptions = (options: Object, error: any = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<b64string> }', options)): SharingOptions => {
   if (!isObject(options))
     throw error;
 
@@ -32,21 +33,34 @@ export const extractSharingOptions = (options: Object, error: any = new InvalidA
 
   ['shareWithUsers', 'shareWithGroups'].forEach(key => {
     if (key in options) {
-      const value = options[key];
-      if (!(value instanceof Array))
+      const array = options[key];
+      if (!(array instanceof Array))
         throw error;
-      value.forEach(el => assertNotEmptyString(el, `options.${key}`));
-      sharingOptions[key] = value;
-      recipientCount += value.length;
+
+      sharingOptions[key] = array;
+      recipientCount += array.length;
     }
   });
 
-  if (recipientCount > MAX_SHARE_RECIPIENTS)
+  if (recipientCount > MAX_SHARE_RECIPIENTS) {
     throw new InvalidArgument(
       'options.shareWith*',
       'it is not possible to share with more than 100 recipients at once',
       options
     );
+  }
+
+  if (options.shareWithUsers) {
+    for (const identity of options.shareWithUsers) {
+      assertNotEmptyString(identity, 'options.shareWithUsers');
+    }
+  }
+
+  if (options.shareWithGroups) {
+    for (const groupId of options.shareWithGroups) {
+      assertB64StringWithSize(groupId, 'options.shareWithGroups', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    }
+  }
 
   return sharingOptions;
 };

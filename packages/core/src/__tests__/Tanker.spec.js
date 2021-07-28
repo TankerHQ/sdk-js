@@ -306,12 +306,15 @@ describe('Tanker', () => {
           undefined,
           null,
           {},
-          ''
+          '',
+          'oopsy!',
+          'AAAA=',
+          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=',
         ];
 
         for (let i = 0; i < badGroupIdArgs.length; i++) {
           const badGroupIdArg = ((badGroupIdArgs[i]: any): string);
-          await expect(tanker.updateGroupMembers(badGroupIdArg, { usersToAdd: ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='] })).to.be.rejectedWith(InvalidArgument);
+          await expect(tanker.updateGroupMembers(badGroupIdArg, { usersToAdd: ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='] })).to.be.rejectedWith(InvalidArgument, 'groupId');
         }
       });
 
@@ -334,8 +337,9 @@ describe('Tanker', () => {
         }
       });
 
-      it('sharing should throw if invalid argument given', async () => {
+      it('sharing should throw if invalid options argument given', async () => {
         const notShareWithValues = [
+          undefined,
           null,
           0,
           'noArrayAroundMe',
@@ -345,16 +349,23 @@ describe('Tanker', () => {
           { shareWithGroups: 'noArrayAroundMe' },
           { shareWithUsers: [''] },
           { shareWithGroups: [new Uint8Array(32)] },
+          { shareWithGroups: ['oopsy!'] },
+          { shareWithGroups: ['AAAA='] },
+          { shareWithGroups: ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='] },
           {}, // empty is not allowed on reshare
+          [{ shareWithUsers: ['userId'] }], // unexpected extra outer array
         ];
 
-        notShareWithValues.push(undefined);
-        notShareWithValues.push([{ shareWithUsers: ['userId'] }]); // unexpected extra outer array
+        const resourceId = utils.toBase64(new Uint8Array(16));
 
         for (let i = 0; i < notShareWithValues.length; i++) {
           const arg = ((notShareWithValues[i]: any): SharingOptions);
-          await expect(tanker.share(['resourceId'], arg), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument);
+          await expect(tanker.share([resourceId], arg), `bad share option #${i}`).to.be.rejectedWith(InvalidArgument, 'options');
         }
+      });
+
+      it('sharing should throw if invalid resourceId argument given', async () => {
+        await expect(tanker.share(['resourceId'], { shareWithUsers: ['userId'] })).to.be.rejectedWith(InvalidArgument, 'resourceId');
       });
 
       it('verifying a provisional identity should throw if invalid argument given', async () => {
