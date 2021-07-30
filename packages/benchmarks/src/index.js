@@ -282,6 +282,38 @@ function benchmarkAddGroupMembersWith(count: number) {
 
 benchmarkAddGroupMembersWith(1000);
 
+// What: remove members from a group
+// PreCond: a session is open and a group was created with members
+// PostCond: members were removed from the group
+function benchmarkRemoveGroupMembers(groupSize: number, toRemove: number) {
+  benchmark(`updateGroupMembers_removeMembers_${groupSize}_${toRemove}`, async (state) => {
+    const publicIdentitiesInGroup = [...Array(groupSize).keys()].map(n => makePublicIdentity(benchmarkAppId, n));
+    const publicIdentitiesToRemove = publicIdentitiesInGroup.slice(0, toRemove);
+
+    const tanker = makeTanker(benchmarkAppId);
+    const identity = await createIdentity(benchmarkAppId, benchmarkAppSecret, Math.random().toString());
+    await tanker.start(identity);
+    const verificationKey = await tanker.generateVerificationKey();
+    await tanker.registerIdentity({ verificationKey });
+
+    const publicIdentitiesAndMe = [...publicIdentitiesInGroup, await getPublicIdentity(identity)];
+
+    while (state.iter()) {
+      state.pause();
+      const groupId = await tanker.createGroup(publicIdentitiesAndMe);
+      state.unpause();
+
+      await tanker.updateGroupMembers(groupId, { usersToRemove: publicIdentitiesToRemove });
+    }
+
+    await tanker.stop();
+  });
+}
+
+benchmarkRemoveGroupMembers(1, 1);
+benchmarkRemoveGroupMembers(999, 999);
+benchmarkRemoveGroupMembers(999, 1);
+
 // What: shares a resource with users
 // PreCond: a session is open and a resource was encrypted
 // PostCond: the resource is shared with the users
