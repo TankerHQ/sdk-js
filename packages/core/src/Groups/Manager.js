@@ -2,7 +2,7 @@
 import { tcrypto, utils, type b64string } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 
-import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '../Identity';
+import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, _serializeIdentity } from '../Identity';
 import type { PublicPermanentIdentity, PublicProvisionalIdentity } from '../Identity';
 import UserManager from '../Users/Manager';
 import LocalUser from '../LocalUser/LocalUser';
@@ -35,11 +35,11 @@ function checkAddedAndRemoved(permanentIdentitiesToAdd: Array<PublicPermanentIde
   for (const i of permanentIdentitiesToRemove)
     if (userIdsToAdd.has(i.value))
       // $FlowIgnore this field is hidden
-      addedAndRemovedIdentities.push(i.serializedIdentity || utils.toB64Json(i));
+      addedAndRemovedIdentities.push(i.serializedIdentity || _serializeIdentity(i));
   for (const i of provisionalIdentitiesToRemove)
     if (appSignaturePublicKeysToAdd.has(i.public_signature_key))
       // $FlowIgnore this field is hidden
-      addedAndRemovedIdentities.push(i.serializedIdentity || utils.toB64Json(i));
+      addedAndRemovedIdentities.push(i.serializedIdentity || _serializeIdentity(i));
 
   if (addedAndRemovedIdentities.length)
     throw new InvalidArgument(`The identities ${addedAndRemovedIdentities.join(', ')} are both added to and removed from the group.`);

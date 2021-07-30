@@ -149,7 +149,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       it('encrypt and share with a provisional identity', async () => {
         const email = 'alice.test@tanker.io';
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'email', email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] })).to.be.fulfilled;
       });
@@ -170,7 +170,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       it('throws when sharing with secret provisional identities', async () => {
         const email = 'alice.test@tanker.io';
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'email', email);
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisionalIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
@@ -246,7 +246,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       it('shares an existing resource with a provisional identity', async () => {
         const email = 'alice.test@tanker.io';
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'email', email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
         const cipherText = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(cipherText);
@@ -261,7 +261,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       beforeEach(async () => {
         email = `${uuid.v4()}@tanker.io`;
-        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), email);
+        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'email', email);
         publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisionalIdentity);

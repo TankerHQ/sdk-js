@@ -311,11 +311,11 @@ export const generateGroupsTests = (args: TestArgs) => {
 
       beforeEach(async () => {
         provisionalEmail = `${uuid.v4()}@tanker.io`;
-        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), provisionalEmail);
+        provisionalIdentity = await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'email', provisionalEmail);
         provisionalPublicIdentity = await getPublicIdentity(provisionalIdentity);
 
         provisionalEmail2 = `${uuid.v4()}@tanker.io`;
-        provisionalIdentity2 = await createProvisionalIdentity(utils.toBase64(appHelper.appId), provisionalEmail2);
+        provisionalIdentity2 = await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'email', provisionalEmail2);
         provisionalPublicIdentity2 = await getPublicIdentity(provisionalIdentity2);
       });
 

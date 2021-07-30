@@ -474,7 +474,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
         const email = 'the-ceo@tanker.io';
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), 'email', email);
 
         const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         expect(attachResult).to.deep.equal({
@@ -494,7 +494,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
         const email = oidcSettings.googleAuth.users.martine.email;
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), email);
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), 'email', email);
         const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
 
         const clearText = 'Rivest Shamir Adleman';
