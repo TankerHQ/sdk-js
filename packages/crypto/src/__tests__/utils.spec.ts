@@ -3,17 +3,18 @@ import { expect } from '@tanker/test-utils';
 import { InvalidArgument } from '@tanker/errors';
 import sodium from 'libsodium-wrappers';
 import { ready } from '../ready';
+import type { b64string, safeb64string } from '../aliases';
 import { concatArrays, equalArray, isNullArray, memzero, fromB64Json, fromBase64, fromSafeBase64, toB64Json, toBase64, toSafeBase64, fromString, toString, prehashPassword } from '../utils';
 import { generichash } from '../hash';
 
 describe('utils', () => {
-  let base64;
-  let bytes;
-  let noPaddingBase64;
-  let noPaddingUrlSafeBase64;
-  let str;
-  let urlSafeBase64;
-  let rfc2045Base64;
+  let base64: b64string;
+  let bytes: Uint8Array;
+  let noPaddingBase64: b64string;
+  let noPaddingUrlSafeBase64: safeb64string;
+  let str: string;
+  let urlSafeBase64: safeb64string;
+  let rfc2045Base64: b64string;
 
   before(async () => {
     await ready;
@@ -106,13 +107,13 @@ describe('utils', () => {
 
     it('can convert RFC 4648 test vectors fromBase64', () => {
       for (let i = 0; i < str4648.length; i++) {
-        expect(fromBase64(str4648[i])).to.deep.equal(bytes4648[i]);
+        expect(fromBase64(str4648[i] as b64string)).to.deep.equal(bytes4648[i]);
       }
     });
 
     it('can convert RFC 4648 test vectors toBase64', () => {
       for (let i = 0; i < bytes4648.length; i++) {
-        expect(toBase64(bytes4648[i])).to.deep.equal(str4648[i]);
+        expect(toBase64(bytes4648[i] as Uint8Array)).to.deep.equal(str4648[i]);
       }
     });
   });

@@ -31,14 +31,18 @@ export type SodiumKeyPair = {
 
 export function makeSignKeyPair(): SodiumKeyPair {
   const out = sodium.crypto_sign_keypair();
-  delete out.keyType;
-  return out;
+  return {
+    privateKey: out.privateKey,
+    publicKey: out.publicKey,
+  };
 }
 
 export function makeEncryptionKeyPair(): SodiumKeyPair {
   const out = sodium.crypto_box_keypair();
-  delete out.keyType;
-  return out;
+  return {
+    privateKey: out.privateKey,
+    publicKey: out.publicKey,
+  };
 }
 
 export function getEncryptionKeyPairFromPrivateKey(privKey: Uint8Array): SodiumKeyPair {

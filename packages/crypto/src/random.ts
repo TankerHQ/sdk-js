@@ -8,6 +8,7 @@ export function random(size: number): Uint8Array {
     return new Uint8Array(0);
 
   if (typeof window !== 'undefined') {
+    // @ts-expect-error this is a feature check
     const myCrypto = window.crypto || window.msCrypto;
 
     if (myCrypto && myCrypto.getRandomValues) {
