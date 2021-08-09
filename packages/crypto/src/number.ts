@@ -1,4 +1,3 @@
-// @flow
 /* eslint-disable no-bitwise */
 
 type ByteSize = 1 | 2 | 4 | 8;
@@ -46,7 +45,7 @@ export function toUint32le(value: number): Uint8Array {
 }
 
 // Is the given little endian number <= Number.MAX_SAFE_INTEGER? (i.e. <= 2 ** 53 - 1)
-function isSafeLe(value: Uint8Array): bool {
+function isSafeLe(value: Uint8Array): boolean {
   if (value.length < 7)
     return true;
 
@@ -54,6 +53,7 @@ function isSafeLe(value: Uint8Array): bool {
     return false;
 
   // value is 7 or 8 byte long with most significant byte at index 6
+  // @ts-expect-error value[6] is never undefined
   return value[6] < 32;
 }
 

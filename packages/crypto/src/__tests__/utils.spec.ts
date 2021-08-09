@@ -1,14 +1,9 @@
-// @flow
 import { expect } from '@tanker/test-utils';
+
 import { InvalidArgument } from '@tanker/errors';
 import sodium from 'libsodium-wrappers';
-
 import { ready } from '../ready';
-import {
-  concatArrays, equalArray, isNullArray, memzero,
-  fromB64Json, fromBase64, fromSafeBase64, toB64Json, toBase64, toSafeBase64,
-  fromString, toString, prehashPassword
-} from '../utils';
+import { concatArrays, equalArray, isNullArray, memzero, fromB64Json, fromBase64, fromSafeBase64, toB64Json, toBase64, toSafeBase64, fromString, toString, prehashPassword } from '../utils';
 import { generichash } from '../hash';
 
 describe('utils', () => {
@@ -50,9 +45,11 @@ describe('utils', () => {
     it('can convert huge byte arrays to a base64 string', () => {
       const arrayLength = 1500;
       const byteArray = new Uint8Array(arrayLength);
+
       for (let index = 0; index < arrayLength; index++) {
         byteArray[index] = index % 256;
       }
+
       const expected = sodium.to_base64(byteArray, sodium.base64_variants.ORIGINAL);
       expect(toBase64(byteArray)).to.equal(expected);
     });
@@ -121,8 +118,8 @@ describe('utils', () => {
   });
 
   describe('json base64', () => {
-    let obj;
-    let objAsJsonB64;
+    let obj: { base64: b64string, str: string };
+    let objAsJsonB64: b64string;
 
     before(() => {
       obj = { base64, str };
@@ -171,14 +168,14 @@ describe('utils', () => {
   describe('wrong argument type', () => {
     it('throws TypeError if not given an Uint8Array', () => {
       [concatArrays, equalArray, isNullArray, memzero, toBase64, toSafeBase64, toString].forEach((helper, i) => {
-        // $FlowExpectedError
+        // @ts-expect-error
         expect(() => { helper(str); }, `bad argument #${i}`).to.throw(TypeError);
       });
     });
 
     it('throws TypeError if not given a string', () => {
       [fromB64Json, fromBase64, fromSafeBase64, fromString].forEach((helper, i) => {
-        // $FlowExpectedError
+        // @ts-expect-error
         expect(() => { helper(bytes); }, `bad argument #${i}`).to.throw(TypeError);
       });
     });

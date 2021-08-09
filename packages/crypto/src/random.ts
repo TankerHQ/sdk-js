@@ -1,7 +1,6 @@
-// @flow
 import crypto from 'crypto';
 import { toBase64 } from './utils';
-import { type b64string } from './aliases';
+import type { b64string } from './aliases';
 
 export function random(size: number): Uint8Array {
   // Calling getRandomValues() with a zero-length buffer throws InvalidStateError on Edge

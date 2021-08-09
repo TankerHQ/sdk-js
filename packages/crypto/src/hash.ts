@@ -1,4 +1,3 @@
-// @flow
 import sodium from 'libsodium-wrappers';
 
 export function generichash(data: Uint8Array, bytesize: number = 32): Uint8Array {

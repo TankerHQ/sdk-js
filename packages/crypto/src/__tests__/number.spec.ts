@@ -1,10 +1,8 @@
-// @flow
 import { expect } from '@tanker/test-utils';
-
 import { fromUint32le, fromUint64le, toUint32le, toUint64le } from '../number';
 
 describe('number', () => {
-  let testValues;
+  let testValues: { number: number, bytes: number[] }[];
   const toFuncs = { toUint32le, toUint64le };
   const fromFuncs = { fromUint32le, fromUint64le };
 
@@ -22,6 +20,7 @@ describe('number', () => {
 
   [32, 64].forEach(bitLength => {
     const funcName = `toUint${bitLength}le`;
+    // @ts-expect-error toFuncs[`toUint${bitLength}le`] is defined
     const func = toFuncs[funcName];
 
     describe(funcName, () => {
@@ -45,13 +44,17 @@ describe('number', () => {
 
   [32, 64].forEach(bitLength => {
     const funcName = `fromUint${bitLength}le`;
+    // @ts-expect-error toFuncs[`fromUint${bitLength}le`] is defined
     const func = fromFuncs[funcName];
 
     describe(funcName, () => {
       it('should throw if invalid value to convert', async () => {
         expect(() => func(10)).to.throw(TypeError); // not an Uint8Array
+
         expect(() => func(new Uint8Array(7))).to.throw(TypeError); // wrong length
+
         expect(() => func(new Uint8Array([0, 0, 0, 0, 0, 0, 32, 0]))).to.throw(TypeError); // too big for safe JS calculations
+
         expect(() => func(new Uint8Array([0, 0, 0, 0, 0, 0, 0, 1]))).to.throw(TypeError); // too big for safe JS calculations
       });
 

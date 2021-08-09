@@ -1,4 +1,3 @@
-// @flow
 import { InvalidArgument, DecryptionFailed } from '@tanker/errors';
 
 import varint from 'varint';
@@ -8,9 +7,9 @@ import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 
 export type EncryptionData = {
-  encryptedData: Uint8Array,
-  resourceId: Uint8Array,
-  iv: Uint8Array,
+  encryptedData: Uint8Array;
+  resourceId: Uint8Array;
+  iv: Uint8Array;
 };
 
 export const version = 3;
@@ -30,6 +29,7 @@ export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8A
 
 export const unserialize = (buffer: Uint8Array): EncryptionData => {
   const bufferVersion = varint.decode(buffer);
+
   if (bufferVersion !== version) {
     throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
   }
@@ -47,6 +47,7 @@ export const unserialize = (buffer: Uint8Array): EncryptionData => {
 
 export const encrypt = (key: Uint8Array, plaintext: Uint8Array, additionalData?: Uint8Array): EncryptionData => {
   const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
+
   const encryptedData = aead.encryptAEAD(key, iv, plaintext, additionalData);
   const resourceId = aead.extractMac(encryptedData);
   return { encryptedData, iv, resourceId };

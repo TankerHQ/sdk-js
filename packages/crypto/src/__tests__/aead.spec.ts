@@ -1,4 +1,3 @@
-// @flow
 import { expect } from '@tanker/test-utils';
 
 import { decryptAEAD, encryptAEAD, extractMac } from '../aead';
@@ -9,8 +8,11 @@ describe('aead', () => {
   before(() => ready);
 
   const key = new Uint8Array(SYMMETRIC_KEY_SIZE); // filled with zeros
+
   const iv = new Uint8Array(XCHACHA_IV_SIZE); // filled with zeros
+
   const associatedData = new Uint8Array(MAC_SIZE); // filled with zeros
+
   const clearData = new Uint8Array([116, 101, 115, 116]); // bytes of "test" string
 
   const testVector = new Uint8Array([
@@ -145,11 +147,10 @@ describe('aead', () => {
     it('should extract the last 16 digits of ciphertext', () => {
       const last16Digits = new Uint8Array([
         0xe7, 0x53, 0x56, 0x56, 0x5f, 0x5e, 0xe3, 0x6a, 0x75, 0xe5, 0x9f, 0xd8,
-        0x1d, 0x63, 0x47, 0x9d
+        0x1d, 0x63, 0x47, 0x9d,
       ]);
 
-      expect(extractMac(testVector))
-        .to.deep.equal(last16Digits);
+      expect(extractMac(testVector)).to.deep.equal(last16Digits);
     });
   });
 });

@@ -1,4 +1,3 @@
-// @flow
 import { InvalidArgument, DecryptionFailed } from '@tanker/errors';
 
 import varint from 'varint';
@@ -9,9 +8,9 @@ import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 
 export type EncryptionData = {
-  encryptedData: Uint8Array,
-  resourceId: Uint8Array,
-  iv: Uint8Array,
+  encryptedData: Uint8Array;
+  resourceId: Uint8Array;
+  iv: Uint8Array;
 };
 
 export const version = 5;
@@ -31,6 +30,7 @@ export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8A
 
 export const unserialize = (buffer: Uint8Array): EncryptionData => {
   const bufferVersion = varint.decode(buffer);
+
   if (bufferVersion !== version) {
     throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
   }

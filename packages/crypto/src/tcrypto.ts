@@ -1,4 +1,3 @@
-// @flow
 import sodium from 'libsodium-wrappers';
 import { generichash } from './hash';
 import { concatArrays } from './utils';
@@ -26,8 +25,8 @@ export const SEALED_ENCRYPTION_PRIVATE_KEY_SIZE = 80;
 export const SEALED_SIGNATURE_PRIVATE_KEY_SIZE = 112;
 
 export type SodiumKeyPair = {
-  privateKey: Key,
-  publicKey: Key,
+  privateKey: Key;
+  publicKey: Key;
 };
 
 export function makeSignKeyPair(): SodiumKeyPair {
@@ -63,7 +62,7 @@ export function sign(data: Uint8Array, privateKey: Uint8Array): Uint8Array {
   return sodium.crypto_sign_detached(data, privateKey);
 }
 
-export function verifySignature(data: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): bool {
+export function verifySignature(data: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): boolean {
   return sodium.crypto_sign_verify_detached(signature, data, publicKey);
 }
 
