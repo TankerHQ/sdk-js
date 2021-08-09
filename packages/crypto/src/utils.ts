@@ -13,7 +13,7 @@ function assertArrayTypes(a: Uint8Array, b: Uint8Array) {
   }
 }
 
-function uint6ToB64(uint6) {
+function uint6ToB64(uint6: number) {
   if (uint6 < 26)
     return uint6 + 65;
   if (uint6 < 52)
@@ -49,6 +49,7 @@ export function toBase64(bytes: Uint8Array): b64string {
   for (let byteIndex = 0; byteIndex < byteLength; byteIndex++) {
     mod3 = byteIndex % 3;
 
+    // @ts-expect-error bytes[byteIndex] is never undefined
     uint24 |= bytes[byteIndex] << (16 >>> mod3 & 24);
 
     if (mod3 === 2 || byteLength - byteIndex === 1) {
@@ -60,7 +61,7 @@ export function toBase64(bytes: Uint8Array): b64string {
       uint24 = 0;
 
       if (bufferIndex === bufferLength || byteLength - byteIndex === 1) {
-        result += String.fromCharCode.apply(null, buffer.subarray(0, bufferIndex));
+        result += String.fromCharCode.apply(null, buffer.subarray(0, bufferIndex) as unknown as number[]);
         bufferIndex = 0;
       }
     }
@@ -68,7 +69,7 @@ export function toBase64(bytes: Uint8Array): b64string {
   return result.substr(0, result.length - 2 + mod3) + ['==', '=', ''][mod3];
 }
 
-function b64ToUint6(charCode) {
+function b64ToUint6(charCode: number) {
   if (charCode > 64 && charCode < 91)
     return charCode - 65;
   if (charCode > 96 && charCode < 123)

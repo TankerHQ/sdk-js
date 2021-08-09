@@ -209,7 +209,7 @@ def deploy_sdk(*, git_tag: str) -> None:
     # Publish packages in order so that dependencies don't break during deploy
     configs = [
         {"build": "global-this", "publish": ["@tanker/global-this"]},
-        {"build": "crypto", "publish": ["@tanker/crypto"]},
+        {"build": "crypto", "typescript": True, "publish": ["@tanker/crypto"]},
         {"build": "errors", "typescript": True, "publish": ["@tanker/errors"]},
         {"build": "file-ponyfill", "publish": ["@tanker/file-ponyfill"]},
         {"build": "file-reader", "publish": ["@tanker/file-reader"]},

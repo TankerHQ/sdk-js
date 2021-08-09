@@ -28,18 +28,18 @@ describe('aead', () => {
 
   describe('encryptAEAD', () => {
     it('should throw if no params are given', () => {
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => encryptAEAD()).to.throw(TypeError);
     });
 
     it('should throw if key is undefined', () => {
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => encryptAEAD(undefined, iv, clearData)).to.throw(TypeError);
     });
 
     it('should throw if key type is wrong', () => {
       const badKey = 'ThisIsABadKey';
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => encryptAEAD(badKey, iv, clearData)).to.throw(TypeError);
     });
 
@@ -49,13 +49,13 @@ describe('aead', () => {
     });
 
     it('should throw if iv is undefined', () => {
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => encryptAEAD(key, undefined, clearData)).to.throw(TypeError);
     });
 
     it('should throw if iv type is wrong', () => {
       const badIV = 'ThisIsABadIV';
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => encryptAEAD(key, badIV, clearData)).to.throw(TypeError);
     });
 
@@ -65,7 +65,7 @@ describe('aead', () => {
     });
 
     it('should throw if message is undefined', () => {
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => encryptAEAD(key, iv, undefined)).to.throw(TypeError);
     });
 
@@ -105,6 +105,7 @@ describe('aead', () => {
     const tamperWith = (data: Uint8Array): Uint8Array => {
       const bytePosition = Math.floor(Math.random() * data.length);
       const tamperedData = new Uint8Array(data);
+      // @ts-expect-error bytePosition < data.length
       tamperedData[bytePosition] = (tamperedData[bytePosition] + 1) % 256;
       return tamperedData;
     };

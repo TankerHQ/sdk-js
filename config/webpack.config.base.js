@@ -139,6 +139,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
     ...base.resolve,
     alias: {
       '@tanker/errors': path.resolve(__dirname, '../packages/errors/src/index.ts'),
+      '@tanker/crypto': path.resolve(__dirname, '../packages/crypto/src/index.ts'),
     },
     extensions: ['.ts', '.js'],
   };
