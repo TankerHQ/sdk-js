@@ -1,4 +1,3 @@
-// @flow
 import { InvalidArgument } from '@tanker/errors';
 
 import varint from 'varint';
@@ -12,10 +11,10 @@ import * as number from '../number';
 const uint32Length = 4;
 
 export type EncryptionData = {
-  encryptedData: Uint8Array,
-  resourceId: Uint8Array,
-  ivSeed: Uint8Array,
-  encryptedChunkSize: number,
+  encryptedData: Uint8Array;
+  resourceId: Uint8Array;
+  ivSeed: Uint8Array;
+  encryptedChunkSize: number;
 };
 
 export const version = 4;
@@ -52,6 +51,7 @@ export const serialize = (data: EncryptionData): Uint8Array => utils.concatArray
 
 export const unserialize = (buffer: Uint8Array): EncryptionData => {
   const bufferVersion = varint.decode(buffer);
+
   if (bufferVersion !== version) {
     throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
   }
@@ -90,8 +90,10 @@ export const decrypt = (key: Uint8Array, index: number, data: EncryptionData): U
 
 export const extractResourceId = (buffer: Uint8Array): Uint8Array => {
   const resourceId = unserialize(buffer).resourceId;
+
   if (!resourceId) {
     throw new InvalidArgument('Assertion error: no resourceId in buffer');
   }
+
   return resourceId;
 };

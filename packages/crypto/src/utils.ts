@@ -1,15 +1,14 @@
-// @flow
 /* eslint-disable no-bitwise */
 import sodium from 'libsodium-wrappers';
 import { InvalidArgument } from '@tanker/errors';
 
-import { type b64string, type safeb64string } from './aliases';
+import type { b64string, safeb64string } from './aliases';
 import { generichash } from './hash';
 
 function assertArrayTypes(a: Uint8Array, b: Uint8Array) {
   if (!(a instanceof Uint8Array) || !(b instanceof Uint8Array)) {
-    const typea = (a instanceof Uint8Array) ? 'Uint8Array' : typeof a;
-    const typeb = (b instanceof Uint8Array) ? 'Uint8Array' : typeof b;
+    const typea = a instanceof Uint8Array ? 'Uint8Array' : typeof a;
+    const typeb = b instanceof Uint8Array ? 'Uint8Array' : typeof b;
     throw new TypeError(`Expected two Uint8Arrays, got ${typea} and ${typeb}`);
   }
 }
@@ -51,6 +50,7 @@ export function toBase64(bytes: Uint8Array): b64string {
     mod3 = byteIndex % 3;
 
     uint24 |= bytes[byteIndex] << (16 >>> mod3 & 24);
+
     if (mod3 === 2 || byteLength - byteIndex === 1) {
       buffer[bufferIndex] = uint6ToB64(uint24 >>> 18 & 63);
       buffer[bufferIndex + 1] = uint6ToB64(uint24 >>> 12 & 63);
@@ -101,13 +101,16 @@ export function fromBase64(str: b64string): Uint8Array {
   for (let mod3, mod4, uint24 = 0, outIndex = 0, inIndex = 0; inIndex < inLen; inIndex++) {
     mod4 = inIndex & 3;
     uint24 |= b64ToUint6(strNoPadding.charCodeAt(inIndex)) << 18 - 6 * mod4;
+
     if (mod4 === 3 || inLen - inIndex === 1) {
       for (mod3 = 0; mod3 < 3 && outIndex < outLen; mod3 += 1, outIndex += 1) {
         output[outIndex] = uint24 >>> (16 >>> mod3 & 24) & 255;
       }
+
       uint24 = 0;
     }
   }
+
   return output;
 }
 
@@ -154,11 +157,11 @@ export function fromString(str: string): Uint8Array {
   return sodium.from_string(str);
 }
 
-export function fromB64Json(str: b64string): Object {
+export function fromB64Json(str: b64string): Record<string, any> {
   return JSON.parse(toString(fromBase64(str)));
 }
 
-export function toB64Json(o: Object): b64string {
+export function toB64Json(o: Record<string, any>): b64string {
   return toBase64(fromString(JSON.stringify(o)));
 }
 
@@ -172,12 +175,13 @@ export function concatArrays(...arrays: Array<Uint8Array>): Uint8Array {
       ret.set(elem, offset);
     else
       throw new TypeError(`Expected Uint8Array, got ${typeof elem}`);
+
     offset += elem.length;
   });
   return ret;
 }
 
-export function equalArray(b1: Uint8Array, b2: Uint8Array): bool {
+export function equalArray(b1: Uint8Array, b2: Uint8Array): boolean {
   assertArrayTypes(b1, b2);
 
   if (b1.length !== b2.length)
@@ -196,10 +200,11 @@ export function containArray(b1: Array<Uint8Array>, b2: Uint8Array) {
       return true;
     }
   }
+
   return false;
 }
 
-export function isNullArray(bytes: Uint8Array): bool {
+export function isNullArray(bytes: Uint8Array): boolean {
   if (!(bytes instanceof Uint8Array))
     throw new TypeError('"bytes" is not a Uint8Array');
 
@@ -223,6 +228,7 @@ export function prehashPassword(data: Uint8Array): Uint8Array {
   if (!data || !data.length) {
     throw new InvalidArgument('Cannot hash an empty password');
   }
+
   const pepper = fromString('2NsxLuBPL7JanD2SIjb9erBgVHjMFh');
   return generichash(concatArrays(data, pepper));
 }

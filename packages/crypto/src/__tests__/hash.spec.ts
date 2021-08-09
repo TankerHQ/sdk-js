@@ -1,4 +1,3 @@
-// @flow
 import sodium from 'libsodium-wrappers';
 import { expect } from '@tanker/test-utils';
 

@@ -1,4 +1,3 @@
-// @flow
 import sodium from 'libsodium-wrappers';
 import { MAC_SIZE } from './tcrypto';
 

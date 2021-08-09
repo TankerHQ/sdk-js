@@ -1,4 +1,3 @@
-// @flow
 import * as tcrypto from './tcrypto';
 import * as aead from './aead';
 import { random, randomBase64Token } from './random';
@@ -14,24 +13,6 @@ import * as encryptionV3 from './EncryptionFormats/v3';
 import * as encryptionV4 from './EncryptionFormats/v4';
 import * as encryptionV5 from './EncryptionFormats/v5';
 
-export {
-  aead,
-  generichash,
-  number,
-  random,
-  randomBase64Token,
-  ready,
-  tcrypto,
-  utils,
-  encryptionV1,
-  encryptionV2,
-  encryptionV3,
-  encryptionV4,
-  encryptionV5,
-};
+export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5 };
 
-export type {
-  b64string,
-  safeb64string,
-  Key,
-};
+export type { b64string, safeb64string, Key };

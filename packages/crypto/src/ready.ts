@@ -1,4 +1,3 @@
-// @flow
 import sodium from 'libsodium-wrappers';
 
 const ready = sodium.ready;
