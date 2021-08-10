@@ -8,5 +8,6 @@
   },
   "references": [
     { "path": "../packages/tsconfig.browser.json" },
+    { "path": "../packages/test-utils/config/tsconfig.browser.json" },
   ],
 }

@@ -11,6 +11,7 @@ babelConfig.plugins.push([
     alias: {
       '@tanker/errors': path.resolve(__dirname, '../packages/errors/src/index.ts'),
       '@tanker/crypto': path.resolve(__dirname, '../packages/crypto/src/index.ts'),
+      '@tanker/test-utils': path.resolve(__dirname, '../packages/test-utils/src/index.ts'),
     }
   }
 ]);
