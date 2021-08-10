@@ -1,4 +1,3 @@
-// @flow
 export {
   assertDataType,
   assertDataTypeClass,
@@ -9,7 +8,7 @@ export {
   assertInteger,
   assertString,
   assertNotEmptyString,
-  assertB64StringWithSize
+  assertB64StringWithSize,
 } from './data-types';
 
 export type { Data, ResourceMetadata } from './data-types';

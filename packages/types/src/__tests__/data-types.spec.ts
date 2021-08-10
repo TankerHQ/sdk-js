@@ -1,4 +1,3 @@
-// @flow
 import FilePonyfill from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 import { InvalidArgument } from '@tanker/errors';
@@ -9,17 +8,21 @@ describe('types', () => {
   // In Edge and IE11, accessing the webkitRelativePath property on File instances triggers
   // a "TypeError: Invalid calling object", although the property exists. We avoid this error
   // by comparing only a subset of useful File properties:
-  const fileProps = (obj: Object) => {
+  const fileProps = (obj: Record<string, any>) => {
     const { name, size, type, lastModified } = obj;
     return { name, size, type, lastModified };
   };
-  const expectSameType = (a: Object, b: Object) => expect(getConstructor(a)).to.equal(getConstructor(b));
-  const expectSameLength = (a: Object, b: Object) => expect(getDataLength(a)).to.equal(getDataLength(b));
-  const expectDeepEqual = (a: Object, b: Object) => {
+
+  const expectSameType = (a: Record<string, any>, b: Record<string, any>) => expect(getConstructor(a)).to.equal(getConstructor(b));
+
+  const expectSameLength = (a: Record<string, any>, b: Record<string, any>) => expect(getDataLength(a)).to.equal(getDataLength(b));
+
+  const expectDeepEqual = (a: Record<string, any>, b: Record<string, any>) => {
     if (global.File && a instanceof File) {
       expect(fileProps(a)).to.deep.equal(fileProps(b));
       return;
     }
+
     expect(a).to.deep.equal(b);
   };
 
@@ -29,7 +32,6 @@ describe('types', () => {
   uint8array.set([0, 1, 2, 3, 4, 42, 128, 255]); // no .from() in IE11
 
   const arraybuffer = uint8array.buffer;
-
   values.push({ type: ArrayBuffer, data: arraybuffer });
   values.push({ type: Uint8Array, data: uint8array });
 
