@@ -1,4 +1,3 @@
-import { Class, $Shape } from 'utility-types';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { utils } from '@tanker/crypto';
 
@@ -6,7 +5,11 @@ import FilePonyfill from '@tanker/file-ponyfill';
 import FileReader from '@tanker/file-reader';
 import globalThis from '@tanker/global-this';
 
+import type { Class } from './utils';
+
 export type Data = ArrayBuffer | Blob | Buffer | File | Uint8Array;
+
+type DataName = 'ArrayBuffer' | 'Blob' | 'Buffer' | 'File' | 'FilePonyfill' | 'Uint8Array';
 
 export type ResourceMetadata = {
   mime?: string;
@@ -26,7 +29,7 @@ const dataTypeDefs = (() => {
 
   if (globalThis.File !== undefined) {
     defs.push({ type: File, lengthOf: (arg: File) => arg.size }); // MUST be before FilePonyfill and Blob
-    defs.push({ type: FilePonyfill, lengthOf: (arg: FilePonyfill) => arg.size }); // MUST be before Blob
+    defs.push({ type: FilePonyfill, lengthOf: (arg: typeof FilePonyfill) => arg.size }); // MUST be before Blob
   }
 
   if (globalThis.Blob !== undefined)
@@ -91,7 +94,7 @@ export const assertB64StringWithSize = (arg: any, argName: string, expectedSize:
   }
 };
 
-export const getConstructor = <T extends Data>(instance: T): any => {
+export const getConstructor = <T extends Data>(instance: T): Class<T> => {
   for (const def of dataTypeDefs) {
     if (instance instanceof def.type) {
       return def.type;
@@ -101,7 +104,7 @@ export const getConstructor = <T extends Data>(instance: T): any => {
   throw new InternalError('Assertion error: unhandled type');
 };
 
-export const getConstructorName = (constructor: Record<string, any>): string => {
+export const getConstructorName = (constructor: Record<string, any>): Exclude<DataName, 'FilePonyfill'> => {
   if (constructor === ArrayBuffer)
     return 'ArrayBuffer';
   if (globalThis.Buffer && constructor === Buffer)
@@ -128,15 +131,15 @@ export const getDataLength = (value: Data): number => {
 const defaultMime = 'application/octet-stream';
 
 const fromUint8ArrayToFilePonyfill = (
-  uint8array,
-  { mime, name, lastModified }: { mime?: string; name?: string; lastModified?: number; },
+  uint8array: Uint8Array,
+  { mime, name, lastModified }: { mime?: string; name?: string; lastModified?: number; } = {},
 ) => new FilePonyfill(
   [uint8array],
   name || '',
   { type: mime || defaultMime, lastModified: lastModified || Date.now() },
 );
 
-const fromUint8ArrayTo = {
+const fromUint8ArrayTo: Record<DataName, (uint8array: Uint8Array, options?: { mime?: string }) => Data> = {
   ArrayBuffer: uint8array => (
     uint8array.buffer.byteLength === uint8array.length
       ? uint8array.buffer
@@ -149,7 +152,7 @@ const fromUint8ArrayTo = {
   Uint8Array: uint8array => uint8array,
 };
 
-const toUint8Array = async (value: Data, maxBytes: number | null | undefined): Promise<Uint8Array> => {
+const toUint8Array = async (value: Data, maxBytes?: number): Promise<Uint8Array> => {
   if (value instanceof Uint8Array) // also matches Buffer instances
     return value;
   if (value instanceof ArrayBuffer)
@@ -162,7 +165,7 @@ const toUint8Array = async (value: Data, maxBytes: number | null | undefined): P
 
 export async function castData<T extends Data>(
   input: Data,
-  options: $Shape<{ type: Class<T>; } & ResourceMetadata>,
+  options: { type: Class<T> } & ResourceMetadata,
   maxBytes?: number,
 ): Promise<T> {
   const { type, ...fileOpts } = options;
@@ -172,5 +175,5 @@ export async function castData<T extends Data>(
 
   const uint8array = await toUint8Array(input, maxBytes);
 
-  return fromUint8ArrayTo[getConstructorName(type)](uint8array, fileOpts);
+  return fromUint8ArrayTo[getConstructorName(type)](uint8array, fileOpts) as T;
 }

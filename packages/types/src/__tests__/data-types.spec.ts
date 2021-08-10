@@ -3,6 +3,8 @@ import { expect } from '@tanker/test-utils';
 import { InvalidArgument } from '@tanker/errors';
 
 import { castData, getConstructor, getConstructorName, getDataLength, assertInteger, assertString, assertNotEmptyString } from '../data-types';
+import type { Data } from '../data-types';
+import type { Class } from '../utils';
 
 describe('types', () => {
   // In Edge and IE11, accessing the webkitRelativePath property on File instances triggers
@@ -13,11 +15,11 @@ describe('types', () => {
     return { name, size, type, lastModified };
   };
 
-  const expectSameType = (a: Record<string, any>, b: Record<string, any>) => expect(getConstructor(a)).to.equal(getConstructor(b));
+  const expectSameType = <A extends Data, B extends Data>(a: A, b: B) => expect(getConstructor(a)).to.equal(getConstructor(b));
 
-  const expectSameLength = (a: Record<string, any>, b: Record<string, any>) => expect(getDataLength(a)).to.equal(getDataLength(b));
+  const expectSameLength = <A extends Data, B extends Data>(a: A, b: B) => expect(getDataLength(a)).to.equal(getDataLength(b));
 
-  const expectDeepEqual = (a: Record<string, any>, b: Record<string, any>) => {
+  const expectDeepEqual = <A extends Data, B extends Data>(a: A, b: B) => {
     if (global.File && a instanceof File) {
       expect(fileProps(a)).to.deep.equal(fileProps(b));
       return;
@@ -26,7 +28,7 @@ describe('types', () => {
     expect(a).to.deep.equal(b);
   };
 
-  const values = [];
+  const values: { type: Class<Data>, data: Data }[] = [];
 
   const uint8array = new Uint8Array(8);
   uint8array.set([0, 1, 2, 3, 4, 42, 128, 255]); // no .from() in IE11
