@@ -6,7 +6,7 @@ import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
-import { expectProgressReport, expectType, expectSameType, expectDeepEqual } from './helpers';
+import { expectProgressReport, expectType, expectSameType, expectDeepEqual, expectDecrypt } from './helpers';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED } = statuses;
 
@@ -104,8 +104,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       it('can encrypt and decrypt a text resource', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
-        const decrypted = await bobLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([bobLaptop], clearText, encrypted);
       });
 
       it('can report progress when encrypting and decrypting', async () => {
@@ -132,15 +131,13 @@ export const generateEncryptionTests = (args: TestArgs) => {
     describe('share at encryption time', () => {
       it('encrypt and share with a permanent identity', async () => {
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
-        const decrypted = await aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       it('encrypt and share with a permanent identity and not self', async () => {
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity], shareWithSelf: false });
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-        const decrypted = await aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       it('fails to encrypt and not share with anybody', async () => {
@@ -184,8 +181,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
 
         await aliceLaptop.start(aliceIdentity);
-        const decrypted = await aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       it('shares with a device created after sharing', async () => {
@@ -193,8 +189,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const bobPhone = args.makeTanker();
         await bobPhone.start(bobIdentity);
         await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
-        const decrypted = await bobPhone.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([bobPhone], clearText, encrypted);
         await bobPhone.stop();
       });
     });
@@ -231,8 +226,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const resourceId = await bobLaptop.getResourceId(encrypted);
         await bobLaptop.share([resourceId], { shareWithUsers: [alicePublicIdentity] });
 
-        const decrypted = await aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       it('shares the same resourceId twice', async () => {
@@ -240,8 +234,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const resourceId = await bobLaptop.getResourceId(encrypted);
         await bobLaptop.share([resourceId, resourceId], { shareWithUsers: [alicePublicIdentity] });
 
-        const decrypted = await aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       it('shares an existing resource with a provisional identity', async () => {
@@ -303,25 +296,23 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('decrypt data shared with an attached provisional identity', async () => {
-        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
 
-        const decrypted = await aliceLaptop.decrypt(cipherText);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       it('decrypt data shared with an attached provisional identity after session restart', async () => {
-        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
         await aliceLaptop.stop();
 
         await aliceLaptop.start(aliceIdentity);
-        const decrypted = await aliceLaptop.decrypt(cipherText);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       it('throws when sharing with already claimed identity', async () => {
@@ -344,7 +335,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('attach a provisional identity without requesting verification if email already verified', async () => {
-        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
         const eveIdentity = await appHelper.generateIdentity();
         const eveLaptop = args.makeTanker();
@@ -357,8 +348,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const attachResult = await eveLaptop.attachProvisionalIdentity(provisionalIdentity);
         expect(attachResult).to.deep.equal({ status: READY });
 
-        const decrypted = await eveLaptop.decrypt(cipherText);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([eveLaptop], clearText, encrypted);
         await eveLaptop.stop();
       });
 
@@ -400,7 +390,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('decrypt resource on a new device', async () => {
-        const cipherText = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await aliceLaptop.verifyProvisionalIdentity({ email, verificationCode });
@@ -408,8 +398,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const alicePhone = args.makeTanker();
         await alicePhone.start(aliceIdentity);
         await alicePhone.verifyIdentity({ passphrase: 'passphrase' });
-        const decrypted = await alicePhone.decrypt(cipherText);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([alicePhone], clearText, encrypted);
         await alicePhone.stop();
       });
     });
@@ -452,8 +441,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
     it('can decrypt a resource encrypted from another device', async () => {
       const encrypted = await bobLaptop.encrypt(clearText);
-      const decrypted = await bobPhone.decrypt(encrypted);
-      expect(decrypted).to.equal(clearText);
+      await expectDecrypt([bobPhone], clearText, encrypted);
     });
 
     it('can access a resource encrypted and shared from a device that was then revoked', async () => {
@@ -462,8 +450,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       // revoke bobLaptop
       await bobPhone.revokeDevice(bobLaptop.deviceId);
 
-      const decrypted = await bobPhone.decrypt(encrypted);
-      expect(decrypted).to.equal(clearText);
+      await expectDecrypt([bobPhone], clearText, encrypted);
     });
   });
 
