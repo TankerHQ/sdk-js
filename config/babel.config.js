@@ -44,6 +44,8 @@ const getBabelConfig = ({ target, coverage, react, hmre, modules }) => {
   if (coverage)
     config.plugins.push('istanbul');
 
+  config.presets.push('@babel/preset-typescript');
+
   return config;
 };
 
