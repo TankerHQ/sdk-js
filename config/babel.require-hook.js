@@ -13,6 +13,7 @@ babelConfig.plugins.push([
       '@tanker/crypto': path.resolve(__dirname, '../packages/crypto/src/index.ts'),
       '@tanker/test-utils': path.resolve(__dirname, '../packages/test-utils/src/index.ts'),
       '@tanker/global-this': path.resolve(__dirname, '../packages/global-this/src/index.ts'),
+      '@tanker/types': path.resolve(__dirname, '../packages/types/src/index.ts'),
     }
   }
 ]);

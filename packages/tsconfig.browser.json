@@ -6,6 +6,7 @@
     { "path": "./global-this/config/tsconfig.browser.json" },
     { "path": "./file-ponyfill/config/tsconfig.browser.json" },
     { "path": "./file-reader/config/tsconfig.browser.json" },
+    { "path": "./types/config/tsconfig.browser.json" },
   ],
   "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
 }
