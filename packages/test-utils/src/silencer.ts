@@ -1,4 +1,3 @@
-// @flow
 import sinon from 'sinon';
 
 export const silencer = {
@@ -8,7 +7,9 @@ export const silencer = {
     const originalFunc = console[funcName].bind(console); // eslint-disable-line no-console
     const silencedFunc = (...funcArgs) => !(funcArgs[0].toString() || '').match(regexp) && originalFunc(...funcArgs);
     const stub = sinon.stub(console, funcName).callsFake(silencedFunc);
+
     this._stubs.push(stub);
+
     return stub;
   },
 
@@ -18,7 +19,7 @@ export const silencer = {
   },
 
   wrapper: function wrapper(...silenceArgs: Array<any>) {
-    return (fn: Function) => async (...fnArgs: Array<any>) => {
+    return (fn: (...args: Array<any>) => any) => async (...fnArgs: Array<any>) => {
       const stub = this.silence(...silenceArgs);
 
       try {

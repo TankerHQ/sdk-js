@@ -1,9 +1,7 @@
-// @flow
-
 export const makeTimeoutPromise = (delay: number): {
-    promise: Promise<void>,
-    reset: () => void,
-  } => {
+  promise: Promise<void>;
+  reset: () => void;
+} => {
   let reset;
   let timeout;
 
@@ -12,13 +10,12 @@ export const makeTimeoutPromise = (delay: number): {
       if (timeout) {
         clearTimeout(timeout);
       }
+
       timeout = setTimeout(resolve, delay);
     };
   });
-
   // $FlowIgnore reset is always initialized in the Promise
   reset();
-
   // $FlowIgnore reset is always initialized in the Promise
   return { promise, reset };
 };

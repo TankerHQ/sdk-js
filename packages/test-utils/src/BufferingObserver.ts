@@ -1,5 +1,3 @@
-// @flow
-
 export class BufferingObserver {
   _inputWritten: number = 0;
   _outputWritten: number = 0;
