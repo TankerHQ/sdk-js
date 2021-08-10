@@ -46,7 +46,11 @@ const getBabelLoaders = (env) => {
       test: /\.js$/,
       loader: 'babel-loader',
       options: babelConfig,
-      exclude: /node_modules/,
+      exclude: [
+        /node_modules/,
+        // don't consider babel polyfills when doing feature detection
+        /compat(\\|\/)ie11.js/,
+      ],
     },
     {
       test: /\.js$/,
