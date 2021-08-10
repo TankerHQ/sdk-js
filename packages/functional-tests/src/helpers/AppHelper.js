@@ -1,7 +1,7 @@
 // @flow
 import type { b64string } from '@tanker/core';
 import { ready as cryptoReady, utils } from '@tanker/crypto';
-import { createIdentity } from '@tanker/identity';
+import { getPublicIdentity, createProvisionalIdentity, createIdentity } from '@tanker/identity';
 import { uuid } from '@tanker/test-utils';
 
 import { requestManagement, requestTrustchaind } from './request';
@@ -11,6 +11,12 @@ function toUnpaddedSafeBase64(str: Uint8Array): string {
   const b64 = utils.toSafeBase64(str);
   return b64.substring(0, b64.indexOf('='));
 }
+
+export type AppProvisionalUser = {
+  email: string,
+  identity: string,
+  publicIdentity: string,
+};
 
 export class AppHelper {
   appId: Uint8Array;
@@ -76,6 +82,13 @@ export class AppHelper {
   generateIdentity(userId?: string): Promise<b64string> {
     const id = userId || uuid.v4();
     return createIdentity(utils.toBase64(this.appId), utils.toBase64(this.appSecret), id);
+  }
+
+  async generateEmailProvisionalIdentity(): Promise<AppProvisionalUser> {
+    const email = `${uuid.v4()}@tanker.io`;
+    const identity = await createProvisionalIdentity(utils.toBase64(this.appId), 'email', email);
+    const publicIdentity = await getPublicIdentity(identity);
+    return { email, identity, publicIdentity };
   }
 
   async getEmailVerificationCode(email: string): Promise<string> {
