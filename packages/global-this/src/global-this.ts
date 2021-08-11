@@ -23,8 +23,11 @@ function getGlobalThis() {
     return global;
 
   // Other JS envs not in strict mode
-  if (this)
+  // @ts-expect-error: cannot explicitly type 'this' as any
+  if (this) {
+    // @ts-expect-error: cannot explicitly type 'this' as any
     return this;
+  }
 
   // All other cases
   // See: https://mathiasbynens.be/notes/globalthis
@@ -34,8 +37,10 @@ function getGlobalThis() {
   });
 
   try {
+    // @ts-expect-error: we just defined __global_this__
     return __global_this__;
   } finally {
+    // @ts-expect-error: we just defined __global_this__
     delete Object.prototype.__global_this__;
   }
 };

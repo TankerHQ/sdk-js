@@ -3,6 +3,7 @@
   "references": [
     { "path": "./errors/config/" },
     { "path": "./crypto/config/" },
+    { "path": "./global-this/config/" },
   ],
   "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
 }

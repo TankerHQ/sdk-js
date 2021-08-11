@@ -5,6 +5,10 @@
   ],
   "compilerOptions": {
     "isolatedModules": false,
+    "lib": [
+      "DOM",
+      "WebWorker"
+    ]
   },
   "references": [
     { "path": "../packages/tsconfig.browser.json" },
