@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "build:all": "yarn build:test-utils && yarn build:global-this && yarn build:crypto && yarn build:emails && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:types && yarn build:streams && yarn build:core && yarn build:datastores && yarn build:client-browser && yarn build:client-node && yarn build:verification-ui && yarn build:fake-authentication && yarn build:filekit",
-    "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:crypto",
+    "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:file-ponyfill && yarn build:crypto",
     "build:client-browser-base": "rollup --config packages/client-browser/config/rollup.js",
     "build:client-browser-umd": "webpack --config packages/client-browser/config/webpack.config.js",
     "build:client-browser": "yarn build:client-browser-base && yarn build:client-browser-umd",
@@ -16,7 +16,7 @@
     "build:emails": "cd packages/emails; yarn build",
     "build:errors": "rm -rf packages/errors/dist && tsc --build packages/errors/config/tsconfig.json",
     "build:fake-authentication": "rollup --config packages/fake-authentication/config/rollup.js",
-    "build:file-ponyfill": "rollup --config packages/file-ponyfill/config/rollup.js",
+    "build:file-ponyfill": "rm -rf packages/file-ponyfill/dist && tsc --build packages/file-ponyfill/config/tsconfig.json",
     "build:file-reader": "rollup --config packages/file-reader/config/rollup.js",
     "build:filekit": "rollup --config packages/filekit/config/rollup.js",
     "build:global-this": "rm -rf packages/global-this/dist && tsc --build packages/global-this/config/tsconfig.json",
