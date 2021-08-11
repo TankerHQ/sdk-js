@@ -65,12 +65,12 @@
     "buffer": "5.7.1",
     "codecov": "3.8.1",
     "colorette": "1.2.1",
-    "eslint": "7.20.0",
+    "eslint": "7.28.0",
     "eslint-config-airbnb": "18.2.1",
     "eslint-plugin-chai-expect": "2.2.0",
     "eslint-plugin-chai-friendly": "0.6.0",
     "eslint-plugin-flowtype": "5.2.0",
-    "eslint-plugin-import": "2.22.1",
+    "eslint-plugin-import": "2.24.0",
     "eslint-plugin-jsx-a11y": "6.4.1",
     "eslint-plugin-mocha-no-only": "1.1.1",
     "eslint-plugin-react": "7.22.0",
@@ -120,12 +120,13 @@
   },
   "resolutions": {
     "browserslist": "^4.16.6",
+    "eslint-import-resolver-node": "0.3.4",
     "glob-parent": "^5.1.2",
     "hosted-git-info": "^2.8.9",
     "lodash": "^4.17.21",
     "multicast-dns": "^7.2.3",
     "node-fetch": "^2.6.1",
-    "url-parse": "^1.5.1",
+    "url-parse": "^1.5.3",
     "ws": "^7.4.6"
   }
 }
