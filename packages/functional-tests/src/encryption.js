@@ -144,11 +144,6 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(bobLaptop.encrypt(clearText, { shareWithSelf: false })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
-      it('encrypt and share with a provisional identity', async () => {
-        const provisional = await appHelper.generateEmailProvisionalIdentity();
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
-      });
-
       it('throws when trying to share with more than 100 recipients', async () => {
         const identities = new Array(101).fill(alicePublicIdentity);
 
@@ -233,13 +228,6 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
-
-      it('shares an existing resource with a provisional identity', async () => {
-        const provisional = await appHelper.generateEmailProvisionalIdentity();
-        const cipherText = await bobLaptop.encrypt(clearText);
-        const resourceId = await bobLaptop.getResourceId(cipherText);
-        await expect(bobLaptop.share([resourceId], { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
-      });
     });
 
     describe('decrypt resources shared with provisional identities', () => {
@@ -277,6 +265,15 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
 
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
+      });
+
+      it('shares an existing resource with a provisional identity', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+        await expect(bobLaptop.share([resourceId], { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
+
+        await appHelper.attachProvisionalIdentity(aliceLaptop, provisional);
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
