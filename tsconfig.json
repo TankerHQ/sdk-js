@@ -4,6 +4,7 @@
     "files": true,
     "compilerOptions": {
       "module": "commonjs",
+      "lib": ["DOM", "WebWorker"],
     },
   },
   "references": [
