@@ -321,9 +321,7 @@ export const generateGroupsTests = (args: TestArgs) => {
       });
 
       it('fails when creating a group with an already attached provisional identity with no share', async () => {
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        const aliceVerificationCode = await appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode: aliceVerificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
 
         await expect(bobLaptop.createGroup([provisional.publicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
@@ -331,9 +329,7 @@ export const generateGroupsTests = (args: TestArgs) => {
       it('fails when creating a group with an already attached provisional identity', async () => {
         await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
 
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        const aliceVerificationCode = await appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode: aliceVerificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
 
         await expect(bobLaptop.createGroup([provisional.publicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
@@ -342,9 +338,7 @@ export const generateGroupsTests = (args: TestArgs) => {
         const groupId = await bobLaptop.createGroup([provisional.publicIdentity]);
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
 
-        const verificationCode = await args.appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
 
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
@@ -355,9 +349,7 @@ export const generateGroupsTests = (args: TestArgs) => {
         await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity] });
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
 
-        const verificationCode = await args.appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
 
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
@@ -368,13 +360,8 @@ export const generateGroupsTests = (args: TestArgs) => {
         await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity, provisional2.publicIdentity] });
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
 
-        let verificationCode = await args.appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
-
-        verificationCode = await args.appHelper.getEmailVerificationCode(provisional2.email);
-        await charlieLaptop.attachProvisionalIdentity(provisional2.identity);
-        await charlieLaptop.verifyProvisionalIdentity({ email: provisional2.email, verificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
+        await appHelper.attachVerifyProvisionalIdentity(charlieLaptop, provisional2);
 
         await expectDecrypt([aliceLaptop, charlieLaptop], clearText, encrypted);
       });
@@ -382,9 +369,7 @@ export const generateGroupsTests = (args: TestArgs) => {
       it('should update group when claimed provisional users remove a member from group', async () => {
         const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
 
-        const verificationCode = await args.appHelper.getEmailVerificationCode(provisional.email);
-        await bobLaptop.attachProvisionalIdentity(provisional.identity);
-        await bobLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(bobLaptop, provisional);
 
         await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [alicePublicIdentity] });
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
@@ -398,9 +383,7 @@ export const generateGroupsTests = (args: TestArgs) => {
 
         await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] });
 
-        const verificationCode = await args.appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
 
         await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
@@ -411,13 +394,8 @@ export const generateGroupsTests = (args: TestArgs) => {
 
         await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity, provisional2.publicIdentity] });
 
-        let verificationCode = await args.appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
-
-        verificationCode = await args.appHelper.getEmailVerificationCode(provisional2.email);
-        await aliceLaptop.attachProvisionalIdentity(provisional2.identity);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional2.email, verificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional2);
 
         await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
@@ -425,9 +403,7 @@ export const generateGroupsTests = (args: TestArgs) => {
       it('should fail when removing a claimed provisional user with the provisional identity', async () => {
         const groupId = await bobLaptop.createGroup([bobPublicIdentity, provisional.publicIdentity]);
 
-        const verificationCode = await args.appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
 
         await expect(bobLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
@@ -436,9 +412,7 @@ export const generateGroupsTests = (args: TestArgs) => {
         const groupId = await bobLaptop.createGroup([bobPublicIdentity, provisional.publicIdentity]);
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
 
-        const verificationCode = await args.appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        await aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
 
         await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [alicePublicIdentity] });
 

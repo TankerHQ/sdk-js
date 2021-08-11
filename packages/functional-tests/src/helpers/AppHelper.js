@@ -1,8 +1,8 @@
 // @flow
-import type { b64string } from '@tanker/core';
+import { Tanker, type b64string } from '@tanker/core';
 import { ready as cryptoReady, utils } from '@tanker/crypto';
 import { getPublicIdentity, createProvisionalIdentity, createIdentity } from '@tanker/identity';
-import { uuid } from '@tanker/test-utils';
+import { expect, uuid } from '@tanker/test-utils';
 
 import { requestManagement, requestTrustchaind } from './request';
 import { managementSettings, oidcSettings, storageSettings } from './config';
@@ -89,6 +89,16 @@ export class AppHelper {
     const identity = await createProvisionalIdentity(utils.toBase64(this.appId), 'email', email);
     const publicIdentity = await getPublicIdentity(identity);
     return { email, identity, publicIdentity };
+  }
+
+  async attachVerifyProvisionalIdentity(session: Tanker, provisional: AppProvisionalUser) {
+    const attachResult = await session.attachProvisionalIdentity(provisional.identity);
+    expect(attachResult).to.deep.equal({
+      status: Tanker.statuses.IDENTITY_VERIFICATION_NEEDED,
+      verificationMethod: { type: 'email', email: provisional.email },
+    });
+    const verificationCode = await this.getEmailVerificationCode(provisional.email);
+    await session.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
   }
 
   async getEmailVerificationCode(email: string): Promise<string> {
