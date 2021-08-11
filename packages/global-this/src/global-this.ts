@@ -1,4 +1,3 @@
-// @noflow
 /* eslint-disable */
 
 // Warning: don't replace this module by the core-js-pure ponyfill
@@ -31,7 +30,7 @@ function getGlobalThis() {
   // See: https://mathiasbynens.be/notes/globalthis
   Object.defineProperty(Object.prototype, '__global_this__', {
     get: function () { return this; },
-    configurable: true,
+    configurable: true
   });
 
   try {

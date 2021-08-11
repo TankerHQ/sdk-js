@@ -1,4 +1,3 @@
-// @flow
 /* eslint-disable */
 import { expect } from '@tanker/test-utils';
 
