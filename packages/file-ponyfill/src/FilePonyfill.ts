@@ -1,10 +1,9 @@
-// @noflow
+// @ts-nocheck
 /* eslint-disable */
 
 import globalThis from '@tanker/global-this';
 
 const { File } = globalThis;
-
 // By default, suppose File doesn't need to be ponyfilled
 let FilePonyfill = File;
 

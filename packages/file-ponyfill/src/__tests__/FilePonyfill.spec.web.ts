@@ -1,4 +1,3 @@
-// @flow
 import { expect } from '@tanker/test-utils';
 
 import FilePonyfill from '../FilePonyfill';
@@ -42,7 +41,6 @@ describe('FilePonyfill (web)', () => {
 
   it('can be sliced and read by a regular FileReader', async () => {
     const file = new FilePonyfill([bytes], name);
-
     const reader = new FileReader();
     const readPromise = new Promise((resolve, reject) => {
       reader.addEventListener('error', reject);
@@ -51,12 +49,10 @@ describe('FilePonyfill (web)', () => {
         resolve(new Uint8Array(buffer));
       });
     });
-
     const start = 10;
     const end = 13;
     const byteWindow = file.slice(start, end);
     reader.readAsArrayBuffer(byteWindow);
-
     const result = await readPromise;
     expect(result).to.deep.equal(bytes.subarray(start, end));
   });
