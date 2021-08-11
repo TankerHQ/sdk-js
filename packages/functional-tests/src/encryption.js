@@ -260,7 +260,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode })).to.be.fulfilled;
       });
 
-      it('throws if claiming a provisional identity already attached by someone else', async () => {
+      it('throws if verifying a provisional identity before attaching it', async () => {
         const verificationCode = await appHelper.getEmailVerificationCode(provisional.email);
         await expect(bobLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
