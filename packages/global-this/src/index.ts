@@ -1,4 +1,3 @@
-// @flow
 import { getGlobalThis } from './global-this';
 
 const globalThis = getGlobalThis();
