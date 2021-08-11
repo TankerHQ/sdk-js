@@ -1,4 +1,3 @@
-// @flow
 import File from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 

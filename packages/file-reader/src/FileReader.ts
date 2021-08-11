@@ -1,16 +1,23 @@
-// @flow
 import globalThis from '@tanker/global-this';
 
 class FileReader {
   _source: Blob;
   _reader: globalThis.FileReader;
-  _readPositions: $Exact<{ start: number, end: number }> = { start: 0, end: 0 };
-  _currentRead: ?$Exact<{ resolve: (Uint8Array) => void, reject: (Error) => void }>;
+  _readPositions: {
+    start: number;
+    end: number;
+  } = { start: 0, end: 0 };
+
+  _currentRead: {
+    resolve: (arg0: Uint8Array) => void;
+    reject: (arg0: Error) => void;
+  } | null | undefined;
 
   constructor(source: Blob | File) {
     this._source = source;
 
     this._reader = new globalThis.FileReader();
+
     this._reader.addEventListener('load', this._onLoad.bind(this));
     this._reader.addEventListener('error', this._onError.bind(this));
     this._reader.addEventListener('abort', this._onError.bind(this));
@@ -42,7 +49,9 @@ class FileReader {
       throw new Error('Assertion error: a read operation is already in progress');
   }
 
-  abort() { return this._reader.abort(); }
+  abort() {
+    return this._reader.abort();
+  }
 
   async readAsDataURL() {
     this._assertNoReadInProgress();
