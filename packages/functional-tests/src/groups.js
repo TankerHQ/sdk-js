@@ -94,7 +94,7 @@ export const generateGroupsTests = (args: TestArgs) => {
     it('throw when removing a member from a group twice', async () => {
       const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
     });
 
     it('should accept adding duplicate users', async () => {
@@ -109,7 +109,7 @@ export const generateGroupsTests = (args: TestArgs) => {
 
     it('throw when removing a member not in the group', async () => {
       const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [charliePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [charliePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
     });
 
     it('throws on groupCreation with invalid user', async () => {
@@ -126,7 +126,7 @@ export const generateGroupsTests = (args: TestArgs) => {
     it('throws on groupUpdate by removing invalid users', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [unknownPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument);
+        .to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
     });
 
     it('throws on groupUpdate with invalid group ID', async () => {
@@ -157,7 +157,7 @@ export const generateGroupsTests = (args: TestArgs) => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
 
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [alicePublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument);
+        .to.be.rejectedWith(errors.InvalidArgument, 'removing all members');
     });
 
     it('should publish keys to group', async () => {
@@ -278,14 +278,14 @@ export const generateGroupsTests = (args: TestArgs) => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
       await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] });
       await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument);
+        .to.be.rejectedWith(errors.InvalidArgument, 'You are not a member');
     });
 
     it('should not be able to remove a user to a group you have been removed from', async () => {
       const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
       await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] });
       await expect(bobLaptop.updateGroupMembers(groupId, { usersToRemove: [charliePublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument);
+        .to.be.rejectedWith(errors.InvalidArgument, 'You are not a member');
     });
 
     describe('with provisionals', () => {

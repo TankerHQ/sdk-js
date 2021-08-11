@@ -141,26 +141,24 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('fails to encrypt and not share with anybody', async () => {
-        await expect(bobLaptop.encrypt(clearText, { shareWithSelf: false })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.encrypt(clearText, { shareWithSelf: false })).to.be.rejectedWith(errors.InvalidArgument, 'not share with anybody');
       });
 
       it('throws when trying to share with more than 100 recipients', async () => {
         const identities = new Array(101).fill(alicePublicIdentity);
 
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: identities })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: identities })).to.be.rejectedWith(errors.InvalidArgument, 'more than 100 recipients');
 
         const encryptedData = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(encryptedData);
-        await expect(bobLaptop.share([resourceId], { shareWithUsers: identities })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.share([resourceId], { shareWithUsers: identities })).to.be.rejectedWith(errors.InvalidArgument, 'more than 100 recipients');
       });
 
-      it('throws when sharing with secret permanent identities', async () => {
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [aliceIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
-      });
+      it('throws when sharing with secret identities', async () => {
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [aliceIdentity] })).to.be.rejectedWith(errors.InvalidArgument, 'unexpected secret identity');
 
-      it('throws when sharing with secret provisional identities', async () => {
         const provisional = await appHelper.generateEmailProvisionalIdentity();
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.identity] })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.identity] })).to.be.rejectedWith(errors.InvalidArgument, 'unexpected secret identity');
       });
 
       it('throws when sharing with a permanent identity that is not registered', async () => {
@@ -243,7 +241,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       it('throws if verifying a provisional identity before attaching it', async () => {
         const verificationCode = await appHelper.getEmailVerificationCode(provisional.value);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email: provisional.value, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email: provisional.value, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed, 'without having called attachProvisionalIdentity');
       });
 
       it('throws if claiming an already attached provisional', async () => {
@@ -273,7 +271,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const resourceId = await bobLaptop.getResourceId(encrypted);
         await expect(bobLaptop.share([resourceId], { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
 
-        await appHelper.attachProvisionalIdentity(aliceLaptop, provisional);
+        await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
@@ -331,10 +329,10 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await aliceLaptop.attachProvisionalIdentity(provisional.identity);
         const anotherEmail = `${uuid.v4()}@tanker.io`;
         const verificationCode = await appHelper.getEmailVerificationCode(anotherEmail);
-        await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email: anotherEmail, verificationCode })).to.be.rejectedWith(errors.InvalidArgument, 'does not match provisional identity');
       });
 
-      it('throw when two users attach the same provisional identity', async () => {
+      it('throws when two users attach the same provisional identity', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
 
         await appHelper.attachVerifyProvisionalIdentity(aliceLaptop, provisional);

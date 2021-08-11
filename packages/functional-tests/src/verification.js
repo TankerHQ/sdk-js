@@ -482,7 +482,7 @@ export const generateVerificationTests = (args: TestArgs) => {
           verificationMethod: { type: 'email', email },
         });
 
-        await expect(bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument, 'does not match provisional identity');
         await aliceLaptop.stop();
       });
 
