@@ -147,6 +147,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
       '@tanker/test-utils': path.resolve(__dirname, '../packages/test-utils/src/index.ts'),
       '@tanker/global-this': path.resolve(__dirname, '../packages/global-this/src/index.ts'),
       '@tanker/file-ponyfill': path.resolve(__dirname, '../packages/file-ponyfill/src/index.ts'),
+      '@tanker/file-reader': path.resolve(__dirname, '../packages/file-reader/src/index.ts'),
     },
     extensions: ['.ts', '.js'],
   };

@@ -22,9 +22,16 @@
     "blob",
     "ponyfill"
   ],
-  "main": "src/index.js",
-  "module": "es.js",
-  "browser": "browser.js",
+  "main": "dist/node/index.js",
+  "module": "dist/es/index.js",
+  "browser": "dist/browser/index.js",
+  "types": "dist/types/index.d.js",
+  "files": [
+    "dist/",
+    "README.md",
+    "package.json",
+    "LICENSE"
+  ],
   "dependencies": {
     "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/global-this": "0.0.1"
