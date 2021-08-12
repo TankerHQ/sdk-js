@@ -15,7 +15,7 @@ async function retry<T>(fn: () => Promise<T> | T, opts: RetryOptions): Promise<T
 
   const delays = delayGenerator(retries);
 
-  const doTry = async () => {
+  const doTry = async (): Promise<T> => {
     try {
       return await fn();
     } catch (err) {
@@ -26,15 +26,15 @@ async function retry<T>(fn: () => Promise<T> | T, opts: RetryOptions): Promise<T
       }
 
       if (retryCondition) {
-        const tryAgain = await retryCondition(err);
+        const tryAgain = await retryCondition(err as Error);
 
         if (!tryAgain) {
           throw err;
         }
       }
 
-      // $FlowIgnore done is false, so it's a yielded number (and not an undefined return value)
-      await wait(value);
+      // done is false, so it's a yielded number (and not an undefined return value)
+      await wait(value!);
 
       return doTry();
     }

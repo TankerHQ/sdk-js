@@ -4,7 +4,7 @@ import fetchPonyfill from 'fetch-ponyfill';
 
 // Use the window.fetch if available or the ponyfill otherwise (IE11, Node.js)
 // See: https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch#Browser_compatibility
-let baseFetch;
+let baseFetch: typeof globalThis.fetch;
 
 if (globalThis.fetch && globalThis.Promise) {
   baseFetch = globalThis.fetch;
@@ -22,9 +22,9 @@ if (globalThis.fetch && globalThis.Promise) {
 //     based on XHR, which does not support overriding the Referer header
 //     (see: https://developer.mozilla.org/en-US/docs/Glossary/Forbidden_header_name)
 //
-const stripReferrer = (init?: RequestOptions): RequestOptions => ({ ...init, referrer: '', referrerPolicy: 'no-referrer' });
+const stripReferrer = (init?: RequestInit): RequestInit => ({ ...init, referrer: '', referrerPolicy: 'no-referrer' });
 
-const fetch = (input: RequestInfo, init?: RequestOptions): Promise<Response> => baseFetch(input, stripReferrer(init)).catch(err => {
+const fetch = (input: RequestInfo, init?: RequestInit): Promise<Response> => baseFetch(input, stripReferrer(init)).catch((err: Error) => {
   throw new NetworkError(err.toString());
 });
 

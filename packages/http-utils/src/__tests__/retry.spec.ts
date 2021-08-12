@@ -7,7 +7,7 @@ describe('retry', () => {
   const error = new Error('Expected test error');
   const successfulAttempt = 2;
 
-  let attempts;
+  let attempts: number;
 
   const succeedAt = (attempt: number) => () => {
     attempts += 1;
@@ -35,7 +35,13 @@ describe('retry', () => {
   });
 
   describe('with retry condition', () => {
-    const genericTests = conditions => {
+    type GenericTestsConditions = {
+      alwaysPass: () => boolean | Promise<boolean>;
+      alwaysBlock: () => boolean | Promise<boolean>;
+      blockAfterAttempts: (count: number) => () => boolean | Promise<boolean>;
+    };
+
+    const genericTests = (conditions: GenericTestsConditions) => {
       const { alwaysPass, alwaysBlock, blockAfterAttempts } = conditions;
 
       it('retries if retry condition is met', async () => {
