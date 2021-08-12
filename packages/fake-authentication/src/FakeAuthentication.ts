@@ -4,7 +4,7 @@ export const TANKER_FAKEAUTH_VERSION = '0.0.1';
 
 type PrivateIdentity = {
   identity: string;
-  provisionalIdentity: string;
+  provisionalIdentity?: string;
 };
 
 type PrivateIdentityResponse = {
@@ -44,7 +44,7 @@ const defaultHeaders = {
   'X-Tanker-Sdktype': 'fakeauth-js',
 };
 
-function doFetch(url: string, options: Record<string, any> = {}): Promise<any> {
+function doFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const fetchOptions = {
     ...options,
     headers: { ...options.headers, ...defaultHeaders },
@@ -86,8 +86,9 @@ export default class FakeAuthentication {
 
     const json: PrivateIdentityResponse = await response.json();
 
-    const privateIdentity = {};
-    privateIdentity.identity = json.private_permanent_identity;
+    const privateIdentity: PrivateIdentity = {
+      identity: json.private_permanent_identity,
+    };
 
     if (typeof json.private_provisional_identity === 'string')
       privateIdentity.provisionalIdentity = json.private_provisional_identity;

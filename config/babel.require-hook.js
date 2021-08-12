@@ -15,6 +15,7 @@ babelConfig.plugins.push([
       '@tanker/global-this': path.resolve(__dirname, '../packages/global-this/src/index.ts'),
       '@tanker/types': path.resolve(__dirname, '../packages/types/src/index.ts'),
       '@tanker/http-utils': path.resolve(__dirname, '../packages/http-utils/src/index.ts'),
+      '@tanker/fake-authentication': path.resolve(__dirname, '../packages/fake-authentication/src/index.ts'),
     }
   }
 ]);
