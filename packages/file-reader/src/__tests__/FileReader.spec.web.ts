@@ -17,8 +17,8 @@ describe('FileReader', () => {
   ]);
 
   [
-    { name: 'Blob', builder: (...args) => new Blob(args[0], args[2]) },
-    { name: 'File', builder: (...args) => new File(...args) },
+    { name: 'Blob', builder: (...args: any[]) => new Blob(args[0], args[2]) },
+    { name: 'File', builder: (...args: any[]) => new File(...args) },
   ].forEach(({ name, builder }) => {
     describe(`${name} reading`, () => {
       it('can read a text content', async () => {
@@ -85,10 +85,11 @@ describe('FileReader', () => {
 
         const content = new Uint8Array(binary.length);
         let position = 0;
-        parts.forEach((part, index) => {
+        for (let index = 0; index < parts.length; index++) {
+          const part = parts[index]!;
           content.set(new Uint8Array(part), position);
-          position += partLengths[index];
-        });
+          position += partLengths[index]!;
+        }
         expect(content).to.deep.equal(binary);
       });
 

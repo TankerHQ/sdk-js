@@ -1,5 +1,7 @@
 import globalThis from '@tanker/global-this';
 
+type FileReaderResolver = ((data: string) => void) | ((data: ArrayBuffer) => void);
+
 class FileReader {
   _source: Blob;
   _reader: globalThis.FileReader;
@@ -8,10 +10,10 @@ class FileReader {
     end: number;
   } = { start: 0, end: 0 };
 
-  _currentRead: {
-    resolve: (arg0: Uint8Array) => void;
-    reject: (arg0: Error) => void;
-  } | null | undefined;
+  _currentRead?: {
+    resolve: FileReaderResolver;
+    reject: (err: Error) => void;
+  };
 
   constructor(source: Blob | File) {
     this._source = source;
@@ -28,8 +30,9 @@ class FileReader {
       throw new Error('Assertion error: a result was received but no read operation was in progress');
 
     const { resolve } = this._currentRead;
-    this._currentRead = null;
-    resolve(this._reader.result);
+    this._currentRead = undefined;
+    // we know for sure that `resolve()` accepts `this._reader.result!` as argument
+    resolve(this._reader.result! as any);
   }
 
   _onError() {
@@ -40,8 +43,8 @@ class FileReader {
     }
 
     const { reject } = this._currentRead;
-    this._currentRead = null;
-    reject(this._reader.error);
+    this._currentRead = undefined;
+    reject(this._reader.error!);
   }
 
   _assertNoReadInProgress() {
@@ -53,7 +56,7 @@ class FileReader {
     return this._reader.abort();
   }
 
-  async readAsDataURL() {
+  async readAsDataURL(): Promise<string> {
     this._assertNoReadInProgress();
 
     return new Promise((resolve, reject) => {
@@ -62,7 +65,7 @@ class FileReader {
     });
   }
 
-  async readAsText(encoding?: string) {
+  async readAsText(encoding?: string): Promise<string> {
     this._assertNoReadInProgress();
 
     return new Promise((resolve, reject) => {
@@ -71,7 +74,7 @@ class FileReader {
     });
   }
 
-  async readAsArrayBuffer(byteSize?: number) {
+  async readAsArrayBuffer(byteSize?: number): Promise<ArrayBuffer> {
     this._assertNoReadInProgress();
 
     const start = this._readPositions.end;
@@ -79,7 +82,7 @@ class FileReader {
 
     this._readPositions = { start, end };
 
-    // $FlowIgnore cross-browser compat
+    // @ts-expect-error cross-browser compat
     const blobSlice = Blob.prototype.slice || Blob.prototype.mozSlice || Blob.prototype.webkitSlice;
 
     return new Promise((resolve, reject) => {
