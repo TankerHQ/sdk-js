@@ -7,6 +7,7 @@
     { "path": "./file-ponyfill/config/" },
     { "path": "./file-reader/config/" },
     { "path": "./types/config/" },
+    { "path": "./http-utils/config/" },
   ],
   "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
 }

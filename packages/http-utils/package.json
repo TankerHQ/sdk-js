@@ -12,9 +12,16 @@
   "bugs": {
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
-  "main": "src/index.js",
-  "module": "es.js",
-  "browser": "browser.js",
+  "main": "dist/node/index.js",
+  "module": "dist/es/index.js",
+  "browser": "dist/browser/index.js",
+  "types": "dist/types/index.d.js",
+  "files": [
+    "dist/",
+    "README.md",
+    "package.json",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "cd ../..; yarn test:http-utils"
   },
