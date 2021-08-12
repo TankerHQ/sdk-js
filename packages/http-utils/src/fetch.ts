@@ -1,4 +1,3 @@
-// @flow
 import { NetworkError } from '@tanker/errors';
 import globalThis from '@tanker/global-this';
 import fetchPonyfill from 'fetch-ponyfill';

@@ -1,4 +1,3 @@
-// @flow
 export type DelayGenerator = (retries: number) => Generator<number, void, void>;
 
 export function* zeroDelayGenerator(retries: number): Generator<number, void, void> {
