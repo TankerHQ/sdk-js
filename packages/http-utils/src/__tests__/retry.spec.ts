@@ -1,4 +1,3 @@
-// @flow
 import { expect } from '@tanker/test-utils';
 
 import { zeroDelayGenerator } from '../delay';
@@ -36,7 +35,7 @@ describe('retry', () => {
   });
 
   describe('with retry condition', () => {
-    const genericTests = (conditions) => {
+    const genericTests = conditions => {
       const { alwaysPass, alwaysBlock, blockAfterAttempts } = conditions;
 
       it('retries if retry condition is met', async () => {
@@ -68,7 +67,13 @@ describe('retry', () => {
       genericTests({
         alwaysPass: () => true,
         alwaysBlock: () => false,
-        blockAfterAttempts: (count) => { let calls = 0; return () => { calls += 1; return calls < count; }; },
+        blockAfterAttempts: count => {
+          let calls = 0;
+          return () => {
+            calls += 1;
+            return calls < count;
+          };
+        },
       });
     });
 
@@ -76,7 +81,13 @@ describe('retry', () => {
       genericTests({
         alwaysPass: async () => true,
         alwaysBlock: async () => false,
-        blockAfterAttempts: (count) => { let calls = 0; return async () => { calls += 1; return calls < count; }; },
+        blockAfterAttempts: count => {
+          let calls = 0;
+          return async () => {
+            calls += 1;
+            return calls < count;
+          };
+        },
       });
     });
   });

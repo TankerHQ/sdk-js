@@ -1,12 +1,11 @@
-// @flow
 import type { DelayGenerator } from './delay';
 import { exponentialDelayGenerator } from './delay';
 
-type RetryOptions = $Exact<{
-  retries: number,
-  retryCondition?: (error: Error) => Promise<bool> | bool;
-  delayGenerator?: DelayGenerator,
-}>;
+type RetryOptions = {
+  retries: number;
+  retryCondition?: (error: Error) => Promise<boolean> | boolean;
+  delayGenerator?: DelayGenerator;
+};
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -28,6 +27,7 @@ async function retry<T>(fn: () => Promise<T> | T, opts: RetryOptions): Promise<T
 
       if (retryCondition) {
         const tryAgain = await retryCondition(err);
+
         if (!tryAgain) {
           throw err;
         }
