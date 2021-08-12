@@ -1,21 +1,20 @@
-//@flow
 import { fetch } from '@tanker/http-utils';
 
 export const TANKER_FAKEAUTH_VERSION = '0.0.1';
 
 type PrivateIdentity = {
-  identity: string,
-  provisionalIdentity: string,
+  identity: string;
+  provisionalIdentity: string;
 };
 
 type PrivateIdentityResponse = {
-  private_permanent_identity: string,
-  private_provisional_identity?: string,
+  private_permanent_identity: string;
+  private_provisional_identity?: string;
 };
 
 type PublicIdentitiesResponse = Array<{
-  email: string,
-  public_identity: string,
+  email: string;
+  public_identity: string;
 }>;
 
 // Converts the base64 argument into the unpaddded URL safe variant (RFC 4648)
@@ -34,14 +33,18 @@ const pathJoin = (...args: Array<string>) => {
   return trimSlashes.join('/');
 };
 
-type Config = $Exact<{ appId?: string, trustchainId?: string, url?: string }>;
+type Config = {
+  appId?: string;
+  trustchainId?: string;
+  url?: string;
+};
 
 const defaultHeaders = {
   'X-Tanker-Sdkversion': TANKER_FAKEAUTH_VERSION,
   'X-Tanker-Sdktype': 'fakeauth-js',
 };
 
-function doFetch(url: string, options?: Object = {}): Promise<*> {
+function doFetch(url: string, options: Record<string, any> = {}): Promise<any> {
   const fetchOptions = {
     ...options,
     headers: { ...options.headers, ...defaultHeaders },
@@ -52,6 +55,7 @@ function doFetch(url: string, options?: Object = {}): Promise<*> {
 
 export default class FakeAuthentication {
   appId: string;
+
   baseUrl: string;
 
   constructor(config: Config) {

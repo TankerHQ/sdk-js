@@ -1,4 +1,3 @@
-//@flow
 import FakeAuthentication from './FakeAuthentication';
 
 export { FakeAuthentication };
