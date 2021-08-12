@@ -49,28 +49,28 @@ export const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('should create a group', async () => {
-      await expect(bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity])).to.be.fulfilled;
+      await expect(aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity])).to.be.fulfilled;
     });
 
     it('should add a member to a group', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
       await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
     });
 
     it('should add two members to a group', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
       await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, charliePublicIdentity] });
       const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
       await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
     });
 
     it('should remove a member from a group', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
     });
 
     it('should remove two members from a group', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity, charliePublicIdentity] })).to.be.fulfilled;
       const data = 'group sharing party';
       const encryptedData = await aliceLaptop.encrypt(data, { shareWithGroups: [groupId] });
@@ -79,36 +79,36 @@ export const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('should remove a member from a group after a first group update', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [charliePublicIdentity] })).to.be.fulfilled;
     });
 
     it('should add a member to a group twice then remove it', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
     });
 
     it('throw when removing a member from a group twice', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
     });
 
     it('should accept adding duplicate users', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, bobPublicIdentity] })).to.be.fulfilled;
     });
 
     it('should accept removing duplicate users', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity, bobPublicIdentity] })).to.be.fulfilled;
     });
 
     it('throw when removing a member not in the group', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
       await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [charliePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
     });
 
@@ -161,10 +161,10 @@ export const generateGroupsTests = (args: TestArgs) => {
     });
 
     it('should publish keys to group', async () => {
-      const groupId = await bobLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
 
-      const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-      await expectDecrypt([aliceLaptop], clearText, encrypted);
+      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+      await expectDecrypt([bobLaptop], clearText, encrypted);
     });
 
     it('should publish keys to a group you do not belong to', async () => {
