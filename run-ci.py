@@ -238,7 +238,7 @@ def deploy_sdk(*, git_tag: str) -> None:
         {"build": "client-browser", "publish": ["@tanker/client-browser"]},
         {"build": "client-node", "publish": ["@tanker/client-node"]},
         {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
-        {"build": "fake-authentication", "publish": ["@tanker/fake-authentication"]},
+        {"build": "fake-authentication", "typescript": True, "publish": ["@tanker/fake-authentication"]},
         {"build": "filekit", "publish": ["@tanker/filekit"]},
     ]
 
