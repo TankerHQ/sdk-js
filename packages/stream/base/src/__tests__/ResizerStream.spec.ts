@@ -1,4 +1,3 @@
-// @flow
 import { Writable } from 'readable-stream';
 import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 
@@ -9,21 +8,22 @@ describe('ResizerStream', () => {
   let callback;
 
   before(() => {
-    callback = (data) => buffer.push(data);
+    callback = data => buffer.push(data);
   });
 
   beforeEach(() => {
     buffer = [];
   });
 
-  [5, 30].forEach((dataSize) => {
+  [5, 30].forEach(dataSize => {
     // Create a buffer with consecutive integers: 0, 1, 2, ...
-    const data = new Uint8Array(Array.from({ length: dataSize }, (_, k) => k % 256));
+    const data = new Uint8Array(Array.from({ length: dataSize, }, (_, k) => k % 256));
 
-    [1, 4, 7, 10].forEach((outputSize) => {
+    [1, 4, 7, 10].forEach(outputSize => {
       it(`can split a buffer of size ${dataSize} in chunks of size ${outputSize}`, async () => {
         const expectedChunkCount = Math.ceil(dataSize / outputSize);
         const expectedChunks = new Array(expectedChunkCount);
+
         for (let i = 0; i < expectedChunkCount; i++) {
           expectedChunks[i] = data.subarray(i * outputSize, Math.min((i + 1) * outputSize, dataSize));
         }
@@ -83,11 +83,13 @@ describe('ResizerStream', () => {
   });
 
   const coef = 3;
+
   describe(`buffers at most ${coef} * max encrypted chunk size`, () => {
-    [10, 50, 100].forEach((chunkSize) => {
-      [1, 2, 3, 7].forEach((nbDiv) => {
+    [10, 50, 100].forEach(chunkSize => {
+      [1, 2, 3, 7].forEach(nbDiv => {
         const resizeSize = Math.ceil(chunkSize / nbDiv);
         const inputSize = chunkSize * 5;
+
         it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks resized to ${resizeSize}`, async () => {
           const stream = new ResizerStream(resizeSize);
           const timeout = makeTimeoutPromise(20);
@@ -100,7 +102,7 @@ describe('ResizerStream', () => {
               await timeout.promise;
               bufferCounter.incrementOutputAndSnapshot(data.length);
               done();
-            }
+            },
           });
 
           const chunk = new Uint8Array(chunkSize);
@@ -123,8 +125,7 @@ describe('ResizerStream', () => {
 
             continueWriting();
           });
-
-          bufferCounter.snapshots.forEach((bufferedLength) => {
+          bufferCounter.snapshots.forEach(bufferedLength => {
             expect(bufferedLength).to.be.at.most(coef * chunkSize, `buffered data exceeds threshold (${coef} * chunk size): got ${bufferedLength}, chunk (size: ${chunkSize})`);
           });
         });

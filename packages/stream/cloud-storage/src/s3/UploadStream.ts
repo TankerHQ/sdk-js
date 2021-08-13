@@ -1,4 +1,3 @@
-// @flow
 import { InvalidArgument, InternalError, NetworkError } from '@tanker/errors';
 import { fetch, retry } from '@tanker/http-utils';
 import { Writable } from '@tanker/stream-base';
@@ -6,16 +5,16 @@ import type { DoneCallback } from '@tanker/stream-base';
 
 export class UploadStream extends Writable {
   _contentLength: number;
-  _headers: Object;
+  _headers: Record<string, any>;
   _urls: Array<string>;
   _uploadedLength: number;
   _recommendedChunkSize: number;
-  _verbose: bool;
+  _verbose: boolean;
 
-  constructor(urls: Array<string>, headers: Object, contentLength: number, recommendedChunkSize: number, verbose: bool = false) {
+  constructor(urls: Array<string>, headers: Record<string, any>, contentLength: number, recommendedChunkSize: number, verbose: boolean = false) {
     super({
       highWaterMark: 1,
-      objectMode: true
+      objectMode: true,
     });
 
     this._urls = urls.slice(0, -1);
@@ -38,11 +37,12 @@ export class UploadStream extends Writable {
     }
   }
 
-  async _write(chunk: Uint8Array, encoding: ?string, done: DoneCallback) {
+  async _write(chunk: Uint8Array, encoding?: string, done: DoneCallback) {
     try {
       const chunkLength = chunk.length;
       const prevLength = this._uploadedLength;
       const nextLength = prevLength + chunkLength;
+
       const curChunkIndex = prevLength / this._recommendedChunkSize;
 
       const lastChunk = nextLength === this._contentLength;
@@ -98,11 +98,13 @@ export class UploadStream extends Writable {
     } catch (e) {
       return done(e);
     }
+
     done(null);
   }
 
   makeCompleteMultipartUploadBody(): string {
     const partsXML = this._uploadedPartETags.map((etag, idx) => `<Part><PartNumber>${idx + 1}</PartNumber><ETag>${etag}</ETag></Part>`);
+
     return `<CompleteMultipartUpload>\n${partsXML.join('\n')}\n</CompleteMultipartUpload>`;
   }
 }

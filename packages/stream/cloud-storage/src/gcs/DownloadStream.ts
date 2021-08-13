@@ -1,4 +1,3 @@
-// @flow
 import { InvalidArgument, NetworkError } from '@tanker/errors';
 import { fetch, retry } from '@tanker/http-utils';
 import { Readable } from '@tanker/stream-base';
@@ -10,10 +9,10 @@ export class DownloadStream extends Readable {
   _totalLength: number;
   _headUrl: string;
   _getUrl: string;
-  _verbose: bool;
-  _readInProgress: bool;
+  _verbose: boolean;
+  _readInProgress: boolean;
 
-  constructor(resourceId: string, headUrl: string, getUrl: string, chunkSize: number, verbose: bool = false) {
+  constructor(resourceId: string, headUrl: string, getUrl: string, chunkSize: number, verbose: boolean = false) {
     super({
       objectMode: true,
       highWaterMark: 2,
@@ -35,7 +34,7 @@ export class DownloadStream extends Readable {
     }
   }
 
-  async getMetadata(): Promise<{ metadata: string, encryptedContentLength: number }> {
+  async getMetadata(): Promise<{ metadata: string; encryptedContentLength: number; }> {
     const response = await fetch(this._headUrl, { method: 'HEAD' });
 
     const { ok, status, statusText, headers } = response;
@@ -43,11 +42,11 @@ export class DownloadStream extends Readable {
       if (status === 404) {
         throw new InvalidArgument(`Could not find any uploaded file that matches the provided resourceId: ${this._resourceId}`);
       } else {
-        throw new NetworkError(`S3 metadata head request failed with status ${status}: ${statusText}`);
+        throw new NetworkError(`GCS metadata head request failed with status ${status}: ${statusText}`);
       }
     }
 
-    const metadata = headers.get('x-amz-meta-tanker-metadata') || '';
+    const metadata = headers.get('x-goog-meta-tanker-metadata') || '';
     return { metadata, encryptedContentLength: parseInt(headers.get('content-length'), 10) };
   }
 
@@ -61,6 +60,7 @@ export class DownloadStream extends Readable {
       while (await this._readRequest());
     } catch (e) {
       this.destroy(e);
+      return;
     } finally {
       this._readInProgress = false;
     }
@@ -83,7 +83,7 @@ export class DownloadStream extends Readable {
       const { ok, status, statusText } = resp;
       // Note: status is usually 206 Partial Content
       if (!ok) {
-        throw new NetworkError(`S3 download request failed with status ${status}: ${statusText}`);
+        throw new NetworkError(`GCS download request failed with status ${status}: ${statusText}`);
       }
 
       return resp;
@@ -102,7 +102,7 @@ export class DownloadStream extends Readable {
         const header = headers.get('content-range') || ''; // e.g. "bytes 786432-1048575/1048698"
 
         if (typeof header !== 'string' || !header.match(/^bytes +\d+-\d+\/\d+$/)) {
-          throw new NetworkError(`S3 answered with status 206 but an invalid content-range header: ${header}`);
+          throw new NetworkError(`GCS answered with status 206 but an invalid content-range header: ${header}`);
         }
 
         this._totalLength = parseInt(header.split('/')[1], 10);

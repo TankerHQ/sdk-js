@@ -1,4 +1,3 @@
-// @flow
 import FilePonyfill from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 import { castData, getConstructorName } from '@tanker/types';
@@ -8,24 +7,21 @@ import MergerStream from '../MergerStream';
 describe('MergerStream', () => {
   const testBytes = new Uint8Array([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102]); // 16 bytes
 
-  const inputs = [
-    {
-      bytes: new Uint8Array(0),
-      chunks: [],
-    },
-    {
-      bytes: new Uint8Array(0),
-      chunks: [new Uint8Array(0)],
-    },
-    {
-      bytes: testBytes, // 16 bytes
-      chunks: [
-        testBytes.subarray(0, 8),
-        testBytes.subarray(8, 10),
-        testBytes.subarray(10, testBytes.length),
-      ],
-    }
-  ];
+  const inputs = [{
+    bytes: new Uint8Array(0),
+    chunks: [],
+  }, {
+    bytes: new Uint8Array(0),
+    chunks: [new Uint8Array(0)],
+  }, {
+    bytes: testBytes,
+    // 16 bytes
+    chunks: [
+      testBytes.subarray(0, 8),
+      testBytes.subarray(8, 10),
+      testBytes.subarray(10, testBytes.length)
+    ],
+  }];
 
   const outputOptions = [];
   outputOptions.push({ type: ArrayBuffer });
@@ -52,7 +48,7 @@ describe('MergerStream', () => {
         const stream = new MergerStream(options);
 
         const output: Array<Uint8Array> = [];
-        stream.on('data', (data) => { output.push(data); });
+        stream.on('data', data => { output.push(data); });
 
         const testPromise = new Promise((resolve, reject) => {
           stream.on('error', reject);
@@ -67,9 +63,11 @@ describe('MergerStream', () => {
               if (global.Blob && output[0] instanceof global.Blob && options.mime) {
                 expect(output[0].type).to.equal(options.mime);
               }
+
               if (global.File && output[0] instanceof global.File && options.name) {
                 expect(output[0].name).to.equal(options.name);
               }
+
               resolve();
             } catch (e) {
               reject(e);

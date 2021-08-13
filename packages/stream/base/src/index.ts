@@ -1,4 +1,3 @@
-// @flow
 export { Duplex, Readable, Transform, Writable } from 'readable-stream';
 
 export { default as MergerStream } from './MergerStream';
