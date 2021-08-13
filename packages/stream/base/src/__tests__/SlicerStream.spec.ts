@@ -67,7 +67,7 @@ describe('SlicerStream', () => {
         const slowWritable = new Writable({
           highWaterMark: 1,
           objectMode: true,
-          write: async (data, encoding, done) => {
+          write: async (data, _, done) => {
             // flood every stream before unlocking writing end
             await timeout.promise;
             bufferCounter.incrementOutputAndSnapshot(data.length);

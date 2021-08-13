@@ -1,4 +1,5 @@
 import { Readable } from 'readable-stream';
+import type { Writable, Stream } from 'readable-stream';
 
 // WARNING: don't import the File ponyfill here! We want to test against the real
 //          File constructor, for both real and ponyfilled files to be accepted.
@@ -9,20 +10,27 @@ import { assertDataType } from '@tanker/types';
 type ExternalSource = ArrayBuffer | Buffer | Uint8Array | Blob | File;
 type InternalSource = Uint8Array | Blob | File;
 
-export default class SlicerStream extends Readable {
-  _mode: 'binary' | 'file';
-  _source: InternalSource;
-  _outputSize: number;
-  _readingState: {
+// pipe() is defined in Stream and not Readable according to @types/readable-stream
+export default class SlicerStream extends Readable implements Stream {
+  _mode!: 'binary' | 'file';
+  _source!: InternalSource;
+  _outputSize: number = 5 * 1024 * 1024; // 5MB
+
+  _readingState!: {
     byteSize: number;
     byteIndex: number;
     readInProgress: boolean;
   };
 
-  _fileReader: FileReader;
+  _fileReader!: FileReader;
 
   constructor(options: { source: ExternalSource; outputSize?: number; }) {
-    // $FlowIgnore Use of Object.prototype
+    super({
+      // buffering a single output chunk
+      objectMode: true,
+      highWaterMark: 1,
+    });
+
     if (!options || typeof options !== 'object' || Object.getPrototypeOf(options) !== Object.prototype)
       throw new InvalidArgument('options', 'object', options);
 
@@ -33,13 +41,9 @@ export default class SlicerStream extends Readable {
     if (outputSize && typeof outputSize !== 'number')
       throw new InvalidArgument('options.outputSize', 'number', outputSize);
 
-    super({
-      // buffering a single output chunk
-      objectMode: true,
-      highWaterMark: 1,
-    });
-
-    this._outputSize = outputSize || 5 * 1024 * 1024; // 5MB
+    if (outputSize) {
+      this._outputSize = outputSize;
+    }
 
     if (source instanceof ArrayBuffer || source instanceof Uint8Array) { // also catches Buffer
       this._initBinaryMode(source);
@@ -48,7 +52,7 @@ export default class SlicerStream extends Readable {
     }
   }
 
-  _read = async (/* size: number */) => {
+  override _read = async (/* size: number */) => {
     if (this._readingState.readInProgress)
       return;
     this._readingState.readInProgress = true;
@@ -60,12 +64,17 @@ export default class SlicerStream extends Readable {
         while (await this._readFile());
       }
     } catch (error) {
-      this.destroy(error);
+      this.destroy(error as Error);
       return;
     } finally {
       this._readingState.readInProgress = false;
     }
   };
+
+  // Readable.pipe() is not defined in @types/readable-stream. They use another interface
+  // which does not follow the spec from https://nodejs.org/docs/latest-v16.x/api/stream.html
+  // @ts-expect-error
+  public pipe = <T extends Writable>(destination: T, options?: { end: boolean }): T => super.pipe(destination, options);
 
   /**
    * Binary mode
@@ -85,8 +94,7 @@ export default class SlicerStream extends Readable {
     const { byteSize, byteIndex: startIndex } = this._readingState;
     const endIndex = Math.min(startIndex + this._outputSize, byteSize);
 
-    // $FlowIgnore we know _source is an Uint8Array
-    const bytes = this._source.subarray(startIndex, endIndex);
+    const bytes = (this._source as Uint8Array).subarray(startIndex, endIndex);
     const pushMore = this.push(bytes);
 
     this._readingState.byteIndex = endIndex;

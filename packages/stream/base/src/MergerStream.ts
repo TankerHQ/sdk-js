@@ -7,7 +7,7 @@ import ResizerStream from './ResizerStream';
 export default class MergerStream<T extends Data> extends ResizerStream {
   _options: { type: Class<T> } & ResourceMetadata;
 
-  constructor(options: Partial<{ type: Class<T> } & ResourceMetadata>) {
+  constructor(options: { type: Class<T> } & ResourceMetadata) {
     // Note: can't use Infinity as it will be forwarded to the writableHighWaterMark option
     super(Number.MAX_SAFE_INTEGER);
 
@@ -31,7 +31,7 @@ export default class MergerStream<T extends Data> extends ResizerStream {
     this._options = options;
   }
 
-  async _pushLastChunk() {
+  override async _pushLastChunk() {
     // Always push last chunk even if zero bytes
     const uint8array = this._buffer.consume(this._buffer.byteSize());
     const lastChunk = await castData(uint8array, this._options);

@@ -5,10 +5,10 @@ import ResizerStream from '../ResizerStream';
 
 describe('ResizerStream', () => {
   let buffer: Array<Uint8Array>;
-  let callback;
+  let callback: (data: Uint8Array) => void;
 
   before(() => {
-    callback = data => buffer.push(data);
+    callback = (data: Uint8Array) => { buffer.push(data); };
   });
 
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('ResizerStream', () => {
 
   [5, 30].forEach(dataSize => {
     // Create a buffer with consecutive integers: 0, 1, 2, ...
-    const data = new Uint8Array(Array.from({ length: dataSize, }, (_, k) => k % 256));
+    const data = new Uint8Array(Array.from({ length: dataSize }, (_, k) => k % 256));
 
     [1, 4, 7, 10].forEach(outputSize => {
       it(`can split a buffer of size ${dataSize} in chunks of size ${outputSize}`, async () => {
@@ -62,7 +62,7 @@ describe('ResizerStream', () => {
     });
 
     expect(buffer.length).to.be.equal(1);
-    expect(buffer[0].length).to.be.equal(20);
+    expect((buffer[0]!).length).to.be.equal(20);
   });
 
   it('stores data until outputSize is reached', async () => {
@@ -79,7 +79,7 @@ describe('ResizerStream', () => {
     stream.write(data2);
 
     expect(buffer.length).to.be.equal(1);
-    expect(buffer[0].length).to.be.equal(20);
+    expect((buffer[0]!).length).to.be.equal(20);
   });
 
   const coef = 3;
@@ -97,7 +97,7 @@ describe('ResizerStream', () => {
           const slowWritable = new Writable({
             highWaterMark: 1,
             objectMode: true,
-            write: async (data, encoding, done) => {
+            write: async (data, _, done) => {
               // flood every stream before unlocking writing end
               await timeout.promise;
               bufferCounter.incrementOutputAndSnapshot(data.length);

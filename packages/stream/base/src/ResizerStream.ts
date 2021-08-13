@@ -28,7 +28,7 @@ export default class ResizerStream extends Transform {
     this._outputSize = outputSize;
   }
 
-  _pushChunks() {
+  protected _pushChunks() {
     while (this._buffer.byteSize() >= this._outputSize) {
       const result = this._buffer.consume(this._outputSize);
 
@@ -36,7 +36,7 @@ export default class ResizerStream extends Transform {
     }
   }
 
-  async _pushLastChunk() {
+  protected async _pushLastChunk() {
     if (this._buffer.byteSize()) {
       const result = this._buffer.consume(this._buffer.byteSize());
 
@@ -44,19 +44,19 @@ export default class ResizerStream extends Transform {
     }
   }
 
-  _transform(chunk: Uint8Array, encoding?: string | undefined, done: DoneCallback) {
+  override _transform(chunk: Uint8Array, _: BufferEncoding, done: DoneCallback) {
     this._buffer.push(chunk);
     this._pushChunks();
     done();
   }
 
-  async _flush(done: DoneCallback) {
+  override async _flush(done: DoneCallback) {
     this._pushChunks();
 
     try {
       await this._pushLastChunk();
     } catch (error) {
-      done(error);
+      done(error as Error);
       return;
     }
 
