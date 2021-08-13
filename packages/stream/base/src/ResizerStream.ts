@@ -1,4 +1,3 @@
-// @flow
 import { Transform } from 'readable-stream';
 
 import Uint8Buffer from './Uint8Buffer';
@@ -23,9 +22,8 @@ export default class ResizerStream extends Transform {
       writableObjectMode: false,
       // buffering a single output chunk
       readableHighWaterMark: 1,
-      readableObjectMode: true
+      readableObjectMode: true,
     });
-
     this._buffer = new Uint8Buffer();
     this._outputSize = outputSize;
   }
@@ -33,6 +31,7 @@ export default class ResizerStream extends Transform {
   _pushChunks() {
     while (this._buffer.byteSize() >= this._outputSize) {
       const result = this._buffer.consume(this._outputSize);
+
       this.push(result);
     }
   }
@@ -40,11 +39,12 @@ export default class ResizerStream extends Transform {
   async _pushLastChunk() {
     if (this._buffer.byteSize()) {
       const result = this._buffer.consume(this._buffer.byteSize());
+
       this.push(result);
     }
   }
 
-  _transform(chunk: Uint8Array, encoding: ?string, done: DoneCallback) {
+  _transform(chunk: Uint8Array, encoding?: string | undefined, done: DoneCallback) {
     this._buffer.push(chunk);
     this._pushChunks();
     done();

@@ -1,4 +1,3 @@
-// @flow
 import { Readable } from 'readable-stream';
 
 // WARNING: don't import the File ponyfill here! We want to test against the real
@@ -15,13 +14,14 @@ export default class SlicerStream extends Readable {
   _source: InternalSource;
   _outputSize: number;
   _readingState: {
-    byteSize: number,
-    byteIndex: number,
-    readInProgress: bool,
+    byteSize: number;
+    byteIndex: number;
+    readInProgress: boolean;
   };
+
   _fileReader: FileReader;
 
-  constructor(options: { source: ExternalSource, outputSize?: number }) {
+  constructor(options: { source: ExternalSource; outputSize?: number; }) {
     // $FlowIgnore Use of Object.prototype
     if (!options || typeof options !== 'object' || Object.getPrototypeOf(options) !== Object.prototype)
       throw new InvalidArgument('options', 'object', options);
@@ -65,7 +65,7 @@ export default class SlicerStream extends Readable {
     } finally {
       this._readingState.readInProgress = false;
     }
-  }
+  };
 
   /**
    * Binary mode
@@ -79,7 +79,7 @@ export default class SlicerStream extends Readable {
       byteIndex: 0,
       readInProgress: false,
     };
-  }
+  };
 
   _readBinary = () => {
     const { byteSize, byteIndex: startIndex } = this._readingState;
@@ -96,7 +96,7 @@ export default class SlicerStream extends Readable {
     }
 
     return pushMore;
-  }
+  };
 
   /**
    * File mode
@@ -111,7 +111,7 @@ export default class SlicerStream extends Readable {
       byteIndex: 0,
       readInProgress: false,
     };
-  }
+  };
 
   _readFile = async () => {
     const buffer = await this._fileReader.readAsArrayBuffer(this._outputSize);
@@ -130,5 +130,5 @@ export default class SlicerStream extends Readable {
     }
 
     return pushMore;
-  }
+  };
 }

@@ -1,4 +1,3 @@
-// @flow
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 

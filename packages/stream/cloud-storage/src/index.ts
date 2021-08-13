@@ -1,4 +1,3 @@
-// @flow
 import GCSDownloadStream from './gcs/DownloadStream';
 import GCSUploadStream from './gcs/UploadStream';
 import S3DownloadStream from './s3/DownloadStream';

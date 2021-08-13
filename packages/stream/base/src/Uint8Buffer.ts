@@ -1,4 +1,3 @@
-// @flow
 import { InvalidArgument } from '@tanker/errors';
 
 export default class Uint8Buffer {

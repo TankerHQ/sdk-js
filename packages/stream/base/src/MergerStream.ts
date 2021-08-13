@@ -1,13 +1,13 @@
-// @flow
 import { InvalidArgument } from '@tanker/errors';
-import { assertDataTypeClass, castData, type ResourceMetadata, type Data } from '@tanker/types';
+import type { ResourceMetadata, Data, Class } from '@tanker/types';
+import { assertDataTypeClass, castData } from '@tanker/types';
 
 import ResizerStream from './ResizerStream';
 
-export default class MergerStream<T: Data> extends ResizerStream {
+export default class MergerStream<T extends Data> extends ResizerStream {
   _options: { type: Class<T> } & ResourceMetadata;
 
-  constructor(options: $Shape<{ type: Class<T> } & ResourceMetadata>) {
+  constructor(options: Partial<{ type: Class<T> } & ResourceMetadata>) {
     // Note: can't use Infinity as it will be forwarded to the writableHighWaterMark option
     super(Number.MAX_SAFE_INTEGER);
 

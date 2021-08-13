@@ -1,4 +1,3 @@
-// @flow
 import { Writable } from 'readable-stream';
 import { getConstructor, getConstructorName } from '@tanker/types';
 import FilePonyfill from '@tanker/file-ponyfill';
@@ -37,7 +36,7 @@ describe('SlicerStream', () => {
         await new Promise((resolve, reject) => {
           stream.on('error', reject);
           stream.on('end', resolve);
-          stream.on('data', (data) => { output.push(data); });
+          stream.on('data', data => { output.push(data); });
         });
 
         expect(output).to.have.lengthOf(Math.ceil(bytes.length / outputSize));
@@ -55,8 +54,9 @@ describe('SlicerStream', () => {
 
         // hijack push to control size of output buffer
         const push = stream.push.bind(stream);
-        stream.push = (data) => {
+        stream.push = data => {
           timeout.reset();
+
           if (data) {
             bufferCounter.incrementInput(data.length);
           }
@@ -72,7 +72,7 @@ describe('SlicerStream', () => {
             await timeout.promise;
             bufferCounter.incrementOutputAndSnapshot(data.length);
             done();
-          }
+          },
         });
 
         await new Promise((resolve, reject) => {
@@ -81,7 +81,7 @@ describe('SlicerStream', () => {
           stream.pipe(slowWritable);
         });
 
-        bufferCounter.snapshots.forEach((bufferedLength) => {
+        bufferCounter.snapshots.forEach(bufferedLength => {
           expect(bufferedLength).to.be.at.most(outputSize, `buffered data exceeds threshold: got ${bufferedLength} > ${outputSize}`);
         });
       });
