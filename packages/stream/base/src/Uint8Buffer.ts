@@ -22,13 +22,13 @@ export default class Uint8Buffer {
 
     const result = new Uint8Array(expectedSize);
     let remaining = expectedSize;
-    const memCopy = (dst, src) => {
+    const memCopy = (dst: Uint8Array, src: Uint8Array) => {
       dst.set(src, expectedSize - remaining);
       remaining -= src.length;
     };
 
     while (remaining > 0) {
-      const array = this._arrays.shift();
+      const array = this._arrays.shift()!;
       if (array.length <= remaining) {
         memCopy(result, array);
       } else {

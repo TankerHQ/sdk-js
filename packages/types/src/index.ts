@@ -12,3 +12,4 @@ export {
 } from './data-types';
 
 export type { Data, ResourceMetadata } from './data-types';
+export type { Class } from './utils';

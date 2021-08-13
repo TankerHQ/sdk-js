@@ -3,14 +3,14 @@ import { fetch, retry } from '@tanker/http-utils';
 import { Writable } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
 
-const GCSUploadSizeIncrement = 256 * 1024; // 256KiB
+const gcsUploadSizeIncrement = 256 * 1024; // 256KiB
 
 export class UploadStream extends Writable {
   _contentLength: number;
   _headers: Record<string, any>;
   _initializing: Promise<void>;
   _initUrl: string;
-  _uploadUrl: string;
+  _uploadUrl!: string;
   _uploadedLength: number;
   _verbose: boolean;
 
@@ -20,7 +20,9 @@ export class UploadStream extends Writable {
       objectMode: true,
     });
 
-    this._initUrl = urls[0];
+    if (urls.length !== 1)
+      throw new InternalError(`GCS upload request with invalid number of URLs: ${urls.length} expecting 1`);
+    this._initUrl = urls[0]!;
     this._headers = { ...headers }; // copy
 
     this._contentLength = contentLength;
@@ -53,7 +55,7 @@ export class UploadStream extends Writable {
     this.log(`using upload URL ${this._uploadUrl}`);
   }
 
-  async _write(chunk: Uint8Array, encoding?: string, done: DoneCallback) {
+  override async _write(chunk: Uint8Array, _: string, done: DoneCallback) {
     try {
       await this._initializing;
 
@@ -67,7 +69,7 @@ export class UploadStream extends Writable {
         throw new InvalidArgument('Cannot write to a GCS upload stream past the content length.');
       }
 
-      if (!lastChunk && chunkLength % GCSUploadSizeIncrement !== 0) {
+      if (!lastChunk && chunkLength % gcsUploadSizeIncrement !== 0) {
         throw new InvalidArgument(`GCS upload request with invalid chunk length: ${chunkLength} (not multiple of 256KiB)`);
       }
 
@@ -82,7 +84,7 @@ export class UploadStream extends Writable {
           body: chunk,
         });
         const { ok, status, statusText } = response;
-        const success = lastChunk && ok || !lastChunk && status === 308;
+        const success = (lastChunk && ok) || (!lastChunk && status === 308);
 
         if (!success) {
           throw new NetworkError(`GCS upload request failed with status ${status}: ${statusText}`);
@@ -95,9 +97,12 @@ export class UploadStream extends Writable {
 
       this.emit('uploaded', chunk);
     } catch (e) {
-      return done(e);
+      return done(e as Error);
     }
 
+    // @types/readable-stream is ill-typed. The done callback accepts null as argument
+    // see https://nodejs.org/docs/latest-v16.x/api/stream.html#stream_writable_write_chunk_encoding_callback_1
+    // @ts-expect-error
     done(null); // success
   }
 }

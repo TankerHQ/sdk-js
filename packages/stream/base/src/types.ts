@@ -1,1 +1,1 @@
-export type DoneCallback = (error?: Error | null, data?: unknown) => void;
+export type DoneCallback = (error?: Error, data?: any) => void;

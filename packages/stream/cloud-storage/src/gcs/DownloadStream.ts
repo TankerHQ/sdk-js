@@ -47,10 +47,10 @@ export class DownloadStream extends Readable {
     }
 
     const metadata = headers.get('x-goog-meta-tanker-metadata') || '';
-    return { metadata, encryptedContentLength: parseInt(headers.get('content-length'), 10) };
+    return { metadata, encryptedContentLength: parseInt(headers.get('content-length')!, 10) };
   }
 
-  async _read(/* size: number */) {
+  override async _read(/* size: number */) {
     if (this._readInProgress)
       return;
 
@@ -59,7 +59,7 @@ export class DownloadStream extends Readable {
     try {
       while (await this._readRequest());
     } catch (e) {
-      this.destroy(e);
+      this.destroy(e as Error);
       return;
     } finally {
       this._readInProgress = false;
@@ -105,7 +105,7 @@ export class DownloadStream extends Readable {
           throw new NetworkError(`GCS answered with status 206 but an invalid content-range header: ${header}`);
         }
 
-        this._totalLength = parseInt(header.split('/')[1], 10);
+        this._totalLength = parseInt(header.split('/')[1]!, 10);
       } else {
         this._totalLength = result.length;
       }

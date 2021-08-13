@@ -7,7 +7,9 @@ export class UploadStream extends Writable {
   _contentLength: number;
   _headers: Record<string, any>;
   _urls: Array<string>;
-  _uploadedLength: number;
+  _completeUrl: string;
+  _uploadedPartETags: Array<string> = [];
+  _uploadedLength: number = 0;
   _recommendedChunkSize: number;
   _verbose: boolean;
 
@@ -17,14 +19,14 @@ export class UploadStream extends Writable {
       objectMode: true,
     });
 
+    if (urls.length === 0)
+      throw new InternalError(`S3 upload request with invalid number of signed chunk URLs: ${urls.length}`);
     this._urls = urls.slice(0, -1);
-    this._completeUrl = urls[urls.length - 1];
+    this._completeUrl = urls[urls.length - 1]!;
     this._headers = headers;
     this._contentLength = contentLength;
-    this._uploadedLength = 0;
     this._recommendedChunkSize = recommendedChunkSize;
     this._verbose = verbose;
-    this._uploadedPartETags = [];
 
     const expectedNumChunks = Math.ceil(this._contentLength / this._recommendedChunkSize);
     if (this._urls.length !== expectedNumChunks)
@@ -37,7 +39,7 @@ export class UploadStream extends Writable {
     }
   }
 
-  async _write(chunk: Uint8Array, encoding?: string, done: DoneCallback) {
+  override async _write(chunk: Uint8Array, _: string, done: DoneCallback) {
     try {
       const chunkLength = chunk.length;
       const prevLength = this._uploadedLength;
@@ -55,7 +57,7 @@ export class UploadStream extends Writable {
       await retry(async () => {
         this.log(`uploading chunk ${curChunkIndex} of size ${chunkLength}`);
 
-        const response = await fetch(this._urls[curChunkIndex], {
+        const response = await fetch(this._urls[curChunkIndex]!, {
           method: 'PUT',
           body: chunk,
         });
@@ -65,7 +67,7 @@ export class UploadStream extends Writable {
           throw new NetworkError(`S3 upload request failed with status ${status}: ${statusText}`);
         }
 
-        this._uploadedPartETags.push(response.headers.get('etag'));
+        this._uploadedPartETags.push(response.headers.get('etag')!);
         this._uploadedLength += chunkLength;
       }, {
         retries: 2,
@@ -73,13 +75,16 @@ export class UploadStream extends Writable {
 
       this.emit('uploaded', chunk);
     } catch (e) {
-      return done(e);
+      return done(e as Error);
     }
 
+    // @types/readable-stream is ill-typed. The done callback accepts null as argument
+    // see https://nodejs.org/docs/latest-v16.x/api/stream.html#stream_writable_write_chunk_encoding_callback_1
+    // @ts-expect-error
     done(null); // success
   }
 
-  async _final(done: DoneCallback) {
+  override async _final(done: DoneCallback) {
     try {
       await retry(async () => {
         this.log(`Completing S3 multipart upload of size ${this._contentLength}`);
@@ -96,9 +101,12 @@ export class UploadStream extends Writable {
         retries: 2,
       });
     } catch (e) {
-      return done(e);
+      return done(e as Error);
     }
 
+    // @types/readable-stream is ill-typed. The done callback accepts null as argument
+    // see https://nodejs.org/docs/latest-v16.x/api/stream.html#stream_writable_write_chunk_encoding_callback_1
+    // @ts-expect-error
     done(null);
   }
 

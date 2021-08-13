@@ -1,6 +1,7 @@
 import FilePonyfill from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 import { castData, getConstructorName } from '@tanker/types';
+import type { Class, ResourceMetadata, Data } from '@tanker/types';
 
 import MergerStream from '../MergerStream';
 
@@ -19,11 +20,11 @@ describe('MergerStream', () => {
     chunks: [
       testBytes.subarray(0, 8),
       testBytes.subarray(8, 10),
-      testBytes.subarray(10, testBytes.length)
+      testBytes.subarray(10, testBytes.length),
     ],
   }];
 
-  const outputOptions = [];
+  const outputOptions: Array<{ type: Class<Data> } & ResourceMetadata> = [];
   outputOptions.push({ type: ArrayBuffer });
   outputOptions.push({ type: Uint8Array });
 
@@ -47,17 +48,17 @@ describe('MergerStream', () => {
       it(`can merge ${input.chunks.length} binary chunks into a ${input.bytes.length}-bytes ${getConstructorName(type)}`, async () => {
         const stream = new MergerStream(options);
 
-        const output: Array<Uint8Array> = [];
+        const output: Array<InstanceType<typeof type>> = [];
         stream.on('data', data => { output.push(data); });
 
-        const testPromise = new Promise((resolve, reject) => {
+        const testPromise = new Promise<void>((resolve, reject) => {
           stream.on('error', reject);
           stream.on('end', async () => {
             try {
               expect(output).to.have.lengthOf(1);
               expect(output[0]).to.be.an.instanceOf(type);
 
-              const outputBytes = await castData(output[0], { type: Uint8Array });
+              const outputBytes = await castData(output[0]!, { type: Uint8Array });
               expect(outputBytes).to.deep.equal(input.bytes);
 
               if (global.Blob && output[0] instanceof global.Blob && options.mime) {
