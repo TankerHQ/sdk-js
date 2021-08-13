@@ -254,8 +254,8 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('throws if verifying a provisional identity before attaching it', async () => {
-        const verificationCode = await appHelper.getEmailVerificationCode(provisional.email);
-        await expect(bobLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
+        const verificationCode = await appHelper.getEmailVerificationCode(provisional.value);
+        await expect(bobLaptop.verifyProvisionalIdentity({ email: provisional.value, verificationCode })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       it('throws if claiming an already attached provisional', async () => {
@@ -265,8 +265,8 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       it('does not throw if nothing to claim and same email registered as verification method', async () => {
-        const verificationCode = await appHelper.getEmailVerificationCode(provisional.email);
-        await aliceLaptop.setVerificationMethod({ email: provisional.email, verificationCode });
+        const verificationCode = await appHelper.getEmailVerificationCode(provisional.value);
+        await aliceLaptop.setVerificationMethod({ email: provisional.value, verificationCode });
 
         const attachResult = await aliceLaptop.attachProvisionalIdentity(provisional.identity);
         expect(attachResult).to.deep.equal({ status: READY });
@@ -313,10 +313,10 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const eveIdentity = await appHelper.generateIdentity();
         const eveLaptop = args.makeTanker();
 
-        const verificationCode = await appHelper.getEmailVerificationCode(provisional.email);
+        const verificationCode = await appHelper.getEmailVerificationCode(provisional.value);
 
         await eveLaptop.start(eveIdentity);
-        await eveLaptop.registerIdentity({ email: provisional.email, verificationCode });
+        await eveLaptop.registerIdentity({ email: provisional.value, verificationCode });
 
         const attachResult = await eveLaptop.attachProvisionalIdentity(provisional.identity);
         expect(attachResult).to.deep.equal({ status: READY });
@@ -327,7 +327,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       it('throws when verifying provisional identity with wrong verification code', async () => {
         await aliceLaptop.attachProvisionalIdentity(provisional.identity);
-        await expect(aliceLaptop.verifyProvisionalIdentity({ email: provisional.email, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerification);
+        await expect(aliceLaptop.verifyProvisionalIdentity({ email: provisional.value, verificationCode: 'wrongCode' })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
       it('throws when verifying an email that does not match the provisional identity', async () => {

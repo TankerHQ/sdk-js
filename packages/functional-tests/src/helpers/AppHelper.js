@@ -13,7 +13,8 @@ function toUnpaddedSafeBase64(str: Uint8Array): string {
 }
 
 export type AppProvisionalUser = {
-  email: string,
+  target: string,
+  value: string,
   identity: string,
   publicIdentity: string,
 };
@@ -88,17 +89,17 @@ export class AppHelper {
     const email = `${uuid.v4()}@tanker.io`;
     const identity = await createProvisionalIdentity(utils.toBase64(this.appId), 'email', email);
     const publicIdentity = await getPublicIdentity(identity);
-    return { email, identity, publicIdentity };
+    return { target: 'email', value: email, identity, publicIdentity };
   }
 
   async attachVerifyProvisionalIdentity(session: Tanker, provisional: AppProvisionalUser) {
     const attachResult = await session.attachProvisionalIdentity(provisional.identity);
     expect(attachResult).to.deep.equal({
       status: Tanker.statuses.IDENTITY_VERIFICATION_NEEDED,
-      verificationMethod: { type: 'email', email: provisional.email },
+      verificationMethod: { type: 'email', email: provisional.value },
     });
-    const verificationCode = await this.getEmailVerificationCode(provisional.email);
-    await session.verifyProvisionalIdentity({ email: provisional.email, verificationCode });
+    const verificationCode = await this.getEmailVerificationCode(provisional.value);
+    await session.verifyProvisionalIdentity({ email: provisional.value, verificationCode });
   }
 
   async getEmailVerificationCode(email: string): Promise<string> {
