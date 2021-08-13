@@ -215,7 +215,7 @@ def deploy_sdk(*, git_tag: str) -> None:
         {"build": "file-ponyfill", "typescript": True, "publish": ["@tanker/file-ponyfill"]},
         {"build": "file-reader", "typescript": True, "publish": ["@tanker/file-reader"]},
         {"build": "http-utils", "publish": ["@tanker/http-utils"]},
-        {"build": "types", "publish": ["@tanker/types"]},
+        {"build": "types", "typescript": True, "publish": ["@tanker/types"]},
         {
             "build": "streams",
             "publish": [
