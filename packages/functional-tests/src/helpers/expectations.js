@@ -1,4 +1,5 @@
 // @flow
+import type { Tanker } from '@tanker/core';
 import { encryptionV4 } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
@@ -44,4 +45,10 @@ export const expectDeepEqual = (a: Object, b: Object) => {
     return;
   }
   expect(a).to.deep.equal(b);
+};
+
+export const expectDecrypt = async (sessions: Array<Tanker>, clear: string, encrypted: Uint8Array) => {
+  for (const session of sessions) {
+    expect(await session.decrypt(encrypted)).to.equal(clear);
+  }
 };
