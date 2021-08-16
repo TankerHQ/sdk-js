@@ -90,11 +90,14 @@ export default class GroupManager {
 
     const groupId = groupSignatureKeyPair.publicKey;
 
-    await this._groupStore.saveGroupEncryptionKeys([{
-      groupId,
-      publicEncryptionKey: groupEncryptionKeyPair.publicKey,
-      privateEncryptionKey: groupEncryptionKeyPair.privateKey,
-    }]);
+    // Only save the key if we are in the group
+    const myUserId = utils.toBase64(this._localUser.userId);
+    if (permanentIdentities.find(i => i.value === myUserId))
+      await this._groupStore.saveGroupEncryptionKeys([{
+        groupId,
+        publicEncryptionKey: groupEncryptionKeyPair.publicKey,
+        privateEncryptionKey: groupEncryptionKeyPair.privateKey,
+      }]);
 
     return utils.toBase64(groupId);
   }

@@ -96,9 +96,16 @@ export const generateGroupsTests = (args: TestArgs) => {
 
     it('should not keep the key if we are not part of the group', async () => {
       const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId], shareWithSelf: false });
 
-      await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
+      // This assertion is needed to satisfy flow because _session is optional
+      // eslint-disable-next-line no-underscore-dangle
+      if (!aliceLaptop._session)
+        throw new Error('_session cannot be null');
+
+      // We can't assert this with decrypt because the server will not send the
+      // key publish. This is the only way I have found to assert that.
+      // eslint-disable-next-line no-underscore-dangle
+      await expect(aliceLaptop._session._storage.groupStore._findGroupsByGroupId([groupId])).to.eventually.deep.equal([]);
     });
 
     it('should add a member to a group', async () => {
