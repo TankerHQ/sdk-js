@@ -345,8 +345,9 @@ function benchmarkShareWithUsers(count: number) {
 benchmarkShareWithUsers(1);
 benchmarkShareWithUsers(100);
 
-// What: shares a resource with groups
-// PreCond: a session is open and a resource was encrypted
+// What: shares a resource with a cached group
+// PreCond: a session is open, a resource was encrypted and the group is in the
+//  cache
 // PostCond: the resource is shared with the groups
 function benchmarkShareWithGroup(benchmarkName: string, groupId: string) {
   benchmark(benchmarkName, async (state) => {
@@ -377,3 +378,30 @@ benchmarkShareWithGroup('share_withGroup_4000', '8EySxOOyXktHkSOOgGAKCBRvIalV2iF
 benchmarkShareWithGroup('share_withGroupMultiAuthor_100', 'n08iCwU+/QYAPKCqDBPD4dUK2oVyO1V3EwB3fo7Yz6U=');
 benchmarkShareWithGroup('share_withGroupMultiAuthor_1000', 'XyR77EErpEZ+ZCAjLTOQzUrH5dfck6avsZPLvZ/Ebmc=');
 benchmarkShareWithGroup('share_withGroupMultiAuthor_4000', 'rD3EO/d4S8dI20aybJUZcGiACV5kD298K8szq6ZWm0w=');
+
+function benchmarkShareNoCacheWithGroup(benchmarkName: string, groupId: string) {
+  benchmark(benchmarkName, async (state) => {
+    while (state.iter()) {
+      state.pause();
+      const tanker = makeTanker(benchmarkAppId);
+      const identity = await createIdentity(benchmarkAppId, benchmarkAppSecret, Math.random().toString());
+      await tanker.start(identity);
+      const verificationKey = await tanker.generateVerificationKey();
+      await tanker.registerIdentity({ verificationKey });
+
+      const encryptedData = await tanker.encrypt('make some noise');
+      const resourceId = await tanker.getResourceId(encryptedData);
+      state.unpause();
+
+      await tanker.share([resourceId], { shareWithGroups: [groupId] });
+
+      state.pause();
+      await tanker.stop();
+    }
+  });
+}
+
+benchmarkShareNoCacheWithGroup('share_nocache_withGroup_1', '80ngpVLQ8cfglO5cC7I6a2Ph5QRfKPUVkXWOul5e6RM=');
+benchmarkShareNoCacheWithGroup('share_nocache_withGroup_100', 'XhMfSCnOhMlW/KSt5k33eD/FoGG09MRI/6JT8q/YDK0=');
+benchmarkShareNoCacheWithGroup('share_nocache_withGroup_1000', 'dzNO6xPpz9r2Wpe2Xxdl+9WiO6E/m8GVhv0RwvUcc0Q=');
+benchmarkShareNoCacheWithGroup('share_nocache_withGroup_4000', '8EySxOOyXktHkSOOgGAKCBRvIalV2iFObPGHk1QU63Q=');
