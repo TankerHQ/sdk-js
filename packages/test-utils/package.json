@@ -7,7 +7,7 @@
   "dependencies": {
     "chai": "^4.3.0",
     "chai-as-promised": "^7.1.1",
-    "chai-exclude": "^2.0.2",
+    "chai-exclude": "TankerHQ/chai-exclude",
     "sinon": "^9.2.4",
     "uuid": "^8.3.2"
   }

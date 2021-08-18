@@ -95,7 +95,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
     it('cannot get a session token with a verification key', async () => {
       const verificationKey = await bobLaptop.generateVerificationKey();
       const registerFut = bobLaptop.registerIdentity({ verificationKey }, { withSessionToken: true });
-      await expect(registerFut).to.be.rejectedWith(errors.InvalidArgument);
+      await expect(registerFut).to.be.rejectedWith(errors.InvalidArgument, 'cannot get a session token for a verification key');
     });
 
     it('can check a session token with multiple allowed methods', async () => {
