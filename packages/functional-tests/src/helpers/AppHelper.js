@@ -92,7 +92,15 @@ export class AppHelper {
     return { target: 'email', value: email, identity, publicIdentity };
   }
 
-  async attachVerifyProvisionalIdentity(session: Tanker, provisional: AppProvisionalUser) {
+  async generatePhoneNumberProvisionalIdentity(): Promise<AppProvisionalUser> {
+    const reservedPhoneNumberPrefix = '+3319900'; // Reserved per https://www.arcep.fr/uploads/tx_gsavis/18-0881.pdf 2.5.12
+    const phoneNumber = reservedPhoneNumberPrefix + (Math.random() + 1).toString().substr(2, 6);
+    const identity = await createProvisionalIdentity(utils.toBase64(this.appId), 'phone_number', phoneNumber);
+    const publicIdentity = await getPublicIdentity(identity);
+    return { target: 'phone_number', value: phoneNumber, identity, publicIdentity };
+  }
+
+  async attachVerifyEmailProvisionalIdentity(session: Tanker, provisional: AppProvisionalUser) {
     const attachResult = await session.attachProvisionalIdentity(provisional.identity);
     expect(attachResult).to.deep.equal({
       status: Tanker.statuses.IDENTITY_VERIFICATION_NEEDED,
@@ -100,6 +108,16 @@ export class AppHelper {
     });
     const verificationCode = await this.getEmailVerificationCode(provisional.value);
     await session.verifyProvisionalIdentity({ email: provisional.value, verificationCode });
+  }
+
+  async attachVerifyPhoneNumberProvisionalIdentity(session: Tanker, provisional: AppProvisionalUser) {
+    const attachResult = await session.attachProvisionalIdentity(provisional.identity);
+    expect(attachResult).to.deep.equal({
+      status: Tanker.statuses.IDENTITY_VERIFICATION_NEEDED,
+      verificationMethod: { type: 'phoneNumber', phoneNumber: provisional.value },
+    });
+    const verificationCode = await this.getSMSVerificationCode(provisional.value);
+    await session.verifyProvisionalIdentity({ phoneNumber: provisional.value, verificationCode });
   }
 
   async getEmailVerificationCode(email: string): Promise<string> {
