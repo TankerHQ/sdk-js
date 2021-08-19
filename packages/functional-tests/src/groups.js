@@ -288,13 +288,13 @@ export const generateGroupsTests = (args: TestArgs) => {
         .to.be.rejectedWith(errors.InvalidArgument, 'Current user is not a group member');
     });
 
-    describe('with provisionals', () => {
+    describe('with email (+second phone) provisionals', () => {
       let provisional;
       let provisional2;
 
       beforeEach(async () => {
         provisional = await appHelper.generateEmailProvisionalIdentity();
-        provisional2 = await appHelper.generateEmailProvisionalIdentity();
+        provisional2 = await appHelper.generatePhoneNumberProvisionalIdentity();
       });
 
       it('creates a group with provisional members', async () => {
@@ -326,7 +326,7 @@ export const generateGroupsTests = (args: TestArgs) => {
         await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity, provisional2.publicIdentity] });
 
         await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await appHelper.attachVerifyEmailProvisionalIdentity(charlieLaptop, provisional2);
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(charlieLaptop, provisional2);
 
         await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
       });
@@ -357,7 +357,7 @@ export const generateGroupsTests = (args: TestArgs) => {
         await aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity, provisional2.publicIdentity] });
 
         await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional2);
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(bobLaptop, provisional2);
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
@@ -463,6 +463,63 @@ export const generateGroupsTests = (args: TestArgs) => {
 
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
         await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [charliePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, 'You are not a member of this group');
+      });
+    });
+
+    describe('with phone number provisionals', () => {
+      let provisional;
+
+      beforeEach(async () => {
+        provisional = await appHelper.generatePhoneNumberProvisionalIdentity();
+      });
+
+      it('fails when creating a group with an already attached provisional identity', async () => {
+        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
+
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
+
+        await expect(bobLaptop.createGroup([provisional.publicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+      });
+
+      it('shares keys with added provisional group members', async () => {
+        const groupId = await bobLaptop.createGroup([bobPublicIdentity]);
+
+        await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity] });
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
+
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
+      });
+
+      it('should update group when claimed provisional users remove a member from group', async () => {
+        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
+
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(bobLaptop, provisional);
+
+        await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [alicePublicIdentity] });
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+
+        await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('should not share keys with removed provisional group members', async () => {
+        const groupId = await bobLaptop.createGroup([bobPublicIdentity, provisional.publicIdentity]);
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+
+        await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] });
+
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
+
+        await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('should fail when removing a claimed provisional user with the provisional identity', async () => {
+        const groupId = await bobLaptop.createGroup([bobPublicIdentity, provisional.publicIdentity]);
+
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
+
+        await expect(bobLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
     });
   });
