@@ -262,13 +262,13 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
     });
 
-    describe('decrypt resources shared with provisional identities', () => {
+    describe('decrypt resources shared with email (+phone) provisional identities', () => {
       let provisional;
       let provisional2;
 
       beforeEach(async () => {
         provisional = await appHelper.generateEmailProvisionalIdentity();
-        provisional2 = await appHelper.generateEmailProvisionalIdentity();
+        provisional2 = await appHelper.generatePhoneNumberProvisionalIdentity();
       });
 
       it('does not throw if nothing to claim', async () => {
@@ -294,7 +294,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         expect(attachResult).to.deep.equal({ status: READY });
       });
 
-      it('decrypt data shared with an attached provisional identity', async () => {
+      it('decrypts data encrypted-and-shared with an attached provisional identity', async () => {
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
 
         await appHelper.attachVerifyEmailProvisionalIdentity(aliceLaptop, provisional);
@@ -306,17 +306,26 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const encrypted = await aliceLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity, provisional2.publicIdentity] });
 
         await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await appHelper.attachVerifyEmailProvisionalIdentity(charlieLaptop, provisional2);
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(charlieLaptop, provisional2);
 
         await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
       });
 
-      it('shares an existing resource with a provisional identity', async () => {
+      it('shares an existing resource with an email provisional identity', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(encrypted);
         await expect(bobLaptop.share([resourceId], { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
 
         await appHelper.attachVerifyEmailProvisionalIdentity(aliceLaptop, provisional);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
+      });
+
+      it('shares an existing resource with a phone number provisional identity', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(encrypted);
+        await expect(bobLaptop.share([resourceId], { shareWithUsers: [provisional2.publicIdentity] })).to.be.fulfilled;
+
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional2);
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
@@ -326,7 +335,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(aliceLaptop.share([resourceId], { shareWithUsers: [provisional.publicIdentity, provisional2.publicIdentity] })).to.be.fulfilled;
 
         await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await appHelper.attachVerifyEmailProvisionalIdentity(charlieLaptop, provisional2);
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(charlieLaptop, provisional2);
 
         await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
       });
@@ -425,7 +434,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(appHelper.attachVerifyPhoneNumberProvisionalIdentity(bobLaptop, provisional)).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
-      it('decrypt data shared with an attached provisional identity', async () => {
+      it('decrypts data encrypted-and-shared with an attached provisional identity', async () => {
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
 
         await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
