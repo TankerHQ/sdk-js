@@ -370,13 +370,8 @@ function benchmarkShareWithGroup(benchmarkName: string, groupId: string) {
   });
 }
 
-benchmarkShareWithGroup('share_withGroup_1', '80ngpVLQ8cfglO5cC7I6a2Ph5QRfKPUVkXWOul5e6RM=');
-benchmarkShareWithGroup('share_withGroup_100', 'XhMfSCnOhMlW/KSt5k33eD/FoGG09MRI/6JT8q/YDK0=');
-benchmarkShareWithGroup('share_withGroup_1000', 'dzNO6xPpz9r2Wpe2Xxdl+9WiO6E/m8GVhv0RwvUcc0Q=');
 benchmarkShareWithGroup('share_withGroup_4000', '8EySxOOyXktHkSOOgGAKCBRvIalV2iFObPGHk1QU63Q=');
 
-benchmarkShareWithGroup('share_withGroupMultiAuthor_100', 'n08iCwU+/QYAPKCqDBPD4dUK2oVyO1V3EwB3fo7Yz6U=');
-benchmarkShareWithGroup('share_withGroupMultiAuthor_1000', 'XyR77EErpEZ+ZCAjLTOQzUrH5dfck6avsZPLvZ/Ebmc=');
 benchmarkShareWithGroup('share_withGroupMultiAuthor_4000', 'rD3EO/d4S8dI20aybJUZcGiACV5kD298K8szq6ZWm0w=');
 
 function benchmarkShareNoCacheWithGroup(benchmarkName: string, groupId: string) {
@@ -401,7 +396,4 @@ function benchmarkShareNoCacheWithGroup(benchmarkName: string, groupId: string) 
   });
 }
 
-benchmarkShareNoCacheWithGroup('share_nocache_withGroup_1', '80ngpVLQ8cfglO5cC7I6a2Ph5QRfKPUVkXWOul5e6RM=');
-benchmarkShareNoCacheWithGroup('share_nocache_withGroup_100', 'XhMfSCnOhMlW/KSt5k33eD/FoGG09MRI/6JT8q/YDK0=');
-benchmarkShareNoCacheWithGroup('share_nocache_withGroup_1000', 'dzNO6xPpz9r2Wpe2Xxdl+9WiO6E/m8GVhv0RwvUcc0Q=');
 benchmarkShareNoCacheWithGroup('share_nocache_withGroup_4000', '8EySxOOyXktHkSOOgGAKCBRvIalV2iFObPGHk1QU63Q=');
