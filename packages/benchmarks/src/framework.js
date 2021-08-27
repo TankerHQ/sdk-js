@@ -2,15 +2,21 @@
 /* eslint-disable no-underscore-dangle */
 
 // Number of times to loop over the same benchmark
-const sampleCount = 5;
+let sampleCount = 5;
 // Duration threshold over which we should not take more samples
-const stopSamplingThreshold = 5;
+let stopSamplingThreshold = 5;
 
 const benchmarks = [];
 let beforeAll = null;
 let afterAll = null;
 
 global.__karma__.start = async () => {
+  const config = global.__karma__.config;
+  if (config.sampleCount)
+    sampleCount = config.sampleCount;
+  if (config.stopSamplingThresholdSeconds)
+    stopSamplingThreshold = config.stopSamplingThresholdSeconds;
+
   try {
     if (beforeAll)
       await beforeAll();

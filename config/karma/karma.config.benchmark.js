@@ -85,6 +85,12 @@ module.exports = (config) => {
   config.set({
     ...karmaConfig,
 
+    client: {
+      ...karmaConfig.client,
+      sampleCount: config.sampleCount,
+      stopSamplingThresholdSeconds: config.stopSamplingThresholdSeconds,
+    },
+
     debugMode: true,
 
     plugins: [
