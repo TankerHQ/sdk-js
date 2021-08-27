@@ -1,4 +1,4 @@
-from typing import Any, Callable, cast
+from typing import Any, Callable, Optional, cast
 import argparse
 import os
 from pathlib import Path
@@ -283,21 +283,36 @@ def report_size() -> None:
     )
 
 
-def benchmark(*, runner: str) -> None:
+def benchmark(
+    *,
+    runner: str,
+    iterations: Optional[int],
+    stop_sampling_threshold_seconds: Optional[int],
+) -> None:
     tankerci.reporting.assert_can_send_metrics()
 
     branch = get_branch_name()
     _, commit_id = tankerci.git.run_captured(Path.cwd(), "rev-parse", "HEAD")
 
+    karma_config_args = ["--"]
+    if iterations:
+        karma_config_args.append(f"--sampleCount={iterations}")
+    if stop_sampling_threshold_seconds:
+        karma_config_args.append(
+            f"--stopSamplingThresholdSeconds={stop_sampling_threshold_seconds}"
+        )
+
     if runner == "linux":
-        tankerci.js.run_yarn("benchmark", "--browsers", "ChromeInDocker")
+        tankerci.js.run_yarn(
+            "benchmark", "--browsers", "ChromeInDocker", *karma_config_args
+        )
     elif runner == "macos":
         tankerci.run("killall", "Safari", check=False)
         delete_safari_state()
-        tankerci.js.run_yarn("benchmark", "--browsers", "Safari")
+        tankerci.js.run_yarn("benchmark", "--browsers", "Safari", *karma_config_args)
     elif runner == "windows-edge":
         kill_windows_processes()
-        tankerci.js.run_yarn("benchmark", "--browsers", "EdgeHeadless")
+        tankerci.js.run_yarn("benchmark", "--browsers", "EdgeHeadless", *karma_config_args)
     else:
         raise RuntimeError(f"unsupported runner {runner}")
     benchmark_output = Path("benchmarks.json")
@@ -354,6 +369,10 @@ def _main() -> None:
 
     benchmark_parser = subparsers.add_parser("benchmark")
     benchmark_parser.add_argument("--runner", required=True)
+    benchmark_parser.add_argument("--iterations", default=None, type=int)
+    benchmark_parser.add_argument(
+        "--stop-sampling-threshold-seconds", default=None, type=int
+    )
 
     args = parser.parse_args()
     if args.command == "check":
@@ -371,7 +390,11 @@ def _main() -> None:
         if args.runner == "linux":
             # size is the same on all platforms, we can track it only on linux
             report_size()
-        benchmark(runner=args.runner)
+        benchmark(
+            runner=args.runner,
+            iterations=args.iterations,
+            stop_sampling_threshold_seconds=args.stop_sampling_threshold_seconds,
+        )
     else:
         parser.print_help()
         sys.exit(1)

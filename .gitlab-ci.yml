@@ -95,7 +95,7 @@ check/linux/benchmark-nightly:
   only:
     - schedules
   script:
-    - poetry run python run-ci.py benchmark --runner linux
+    - poetry run python run-ci.py benchmark --runner linux --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - LinuxSlave-3
 
@@ -104,7 +104,7 @@ check/macos/benchmark-nightly:
   only:
     - schedules
   script:
-    - poetry run python run-ci.py benchmark --runner macos
+    - poetry run python run-ci.py benchmark --runner macos --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - MacOSSlave-2
 
@@ -113,7 +113,7 @@ check/windows/benchmark-nightly:
   only:
     - schedules
   script:
-    - poetry run python run-ci.py benchmark --runner windows-edge
+    - poetry run python run-ci.py benchmark --runner windows-edge --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - WindowsSlave-2
 

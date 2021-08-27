@@ -2,15 +2,21 @@
 /* eslint-disable no-underscore-dangle */
 
 // Number of times to loop over the same benchmark
-const sampleCount = 5;
+let sampleCount = 5;
 // Duration threshold over which we should not take more samples
-const stopSamplingThreshold = 5;
+let stopSamplingThreshold = 5;
 
 const benchmarks = [];
 let beforeAll = null;
 let afterAll = null;
 
 global.__karma__.start = async () => {
+  const config = global.__karma__.config;
+  if (config.sampleCount)
+    sampleCount = config.sampleCount;
+  if (config.stopSamplingThresholdSeconds)
+    stopSamplingThreshold = config.stopSamplingThresholdSeconds;
+
   try {
     if (beforeAll)
       await beforeAll();
@@ -97,6 +103,18 @@ export function after(fn: Function) {
   afterAll = fn;
 }
 
+// https://stackoverflow.com/a/53660837/1401962
+function median(numbers: Array<number>) {
+  const sorted = numbers.slice().sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2 === 0) {
+    return (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+
+  return sorted[middle];
+}
+
 export function benchmark(name: string, fn: Function) {
   benchmarks.push(async (result) => {
     try {
@@ -107,11 +125,12 @@ export function benchmark(name: string, fn: Function) {
       // skip the first element, consider it warm-up
       if (state.durations.length >= 2)
         state.durations.shift();
-      const averageTime = state.durations.reduce((a, b) => a + b) / state.durations.length;
+      const meanTime = median(state.durations);
+
       result({
         id: name,
         success: true,
-        duration: averageTime,
+        duration: meanTime,
       });
     } catch (e) {
       console.error(`Benchmark "${name}" failed:`, e);

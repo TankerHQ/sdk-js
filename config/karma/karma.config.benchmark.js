@@ -60,7 +60,7 @@ const BenchmarkReporter = function (baseReporterDecorator) {
   const specComplete = function (browser, result) {
     if (result.success) {
       resultSet.append(browser.name, result);
-      this.write(`Benchmark "${result.id}": ${result.duration.toFixed(2)}s\n`);
+      this.write(`Benchmark "${result.id}": ${result.duration.toFixed(3)}s\n`);
     } else if (result.skipped) {
       this.write(`Benchmark "${result.id}" SKIPPED\n`);
     } else {
@@ -84,6 +84,12 @@ BenchmarkReporter.$inject = ['baseReporterDecorator'];
 module.exports = (config) => {
   config.set({
     ...karmaConfig,
+
+    client: {
+      ...karmaConfig.client,
+      sampleCount: config.sampleCount,
+      stopSamplingThresholdSeconds: config.stopSamplingThresholdSeconds,
+    },
 
     debugMode: true,
 
