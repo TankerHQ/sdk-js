@@ -105,30 +105,57 @@ check/linux/nightly:
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
+bench/linux:
+  extends: .rules/mr/manual
+  stage: bench
+  needs: []
+  script:
+    - poetry run python run-ci.py benchmark --runner linux --compare-results --iterations 30
+  tags:
+    - LinuxSlave-3
+
 bench/linux/nightly:
   stage: bench
   needs: []
   extends: .rules/nightly
   script:
-    - poetry run python run-ci.py benchmark --runner linux --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner linux --upload-results --iterations 100
   tags:
     - LinuxSlave-3
+
+bench/macos:
+  extends: .rules/mr/manual
+  stage: bench
+  needs: []
+  script:
+    - poetry run python run-ci.py benchmark --runner macos --compare-results --iterations 25
+  tags:
+    - MacOSSlave-2
 
 bench/macos/nightly:
   stage: bench
   needs: []
   extends: .rules/nightly
   script:
-    - poetry run python run-ci.py benchmark --runner macos --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner macos --upload-results --iterations 100
   tags:
     - MacOSSlave-2
+
+bench/windows:
+  extends: .rules/mr/manual
+  stage: bench
+  needs: []
+  script:
+    - poetry run python run-ci.py benchmark --runner windows-edge --compare-results --iterations 25
+  tags:
+    - WindowsSlave-2
 
 bench/windows/nightly:
   stage: bench
   needs: []
   extends: .rules/nightly
   script:
-    - poetry run python run-ci.py benchmark --runner windows-edge --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner windows-edge --upload-results --iterations 100
   tags:
     - WindowsSlave-2
 
