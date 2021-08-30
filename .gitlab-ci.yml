@@ -1,10 +1,14 @@
 include:
-  project: TankerHQ/gitlab-ci-files
-  file: /cache.yml
-  ref: 12cd8d49536d2a39cfc3a3fec4a8af3fcd054590
+  - project: TankerHQ/gitlab-ci-files
+    file: /cache.yml
+    ref: 2021-08-26-1
+  - project: TankerHQ/gitlab-ci-files
+    file: /common.yml
+    ref: 2021-08-26-1
 
 stages:
   - check
+  - bench
   - deploy
 
 default:
@@ -90,30 +94,30 @@ check/linux/nightly:
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
-check/linux/benchmark-nightly:
-  stage: check
+bench/linux/nightly:
+  stage: bench
   only:
     - schedules
   script:
-    - poetry run python run-ci.py benchmark --runner linux --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner linux --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - LinuxSlave-3
 
-check/macos/benchmark-nightly:
+bench/macos/nightly:
   stage: check
   only:
     - schedules
   script:
-    - poetry run python run-ci.py benchmark --runner macos --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner macos --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - MacOSSlave-2
 
-check/windows/benchmark-nightly:
+bench/windows/nightly:
   stage: check
   only:
     - schedules
   script:
-    - poetry run python run-ci.py benchmark --runner windows-edge --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner windows-edge --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - WindowsSlave-2
 

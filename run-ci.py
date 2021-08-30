@@ -262,7 +262,7 @@ def get_branch_name() -> str:
     return cast(str, branch)
 
 
-def report_size() -> int:
+def report_size(upload_results: bool) -> int:
     tankerci.reporting.assert_can_send_metrics()
 
     branch = get_branch_name()
@@ -271,16 +271,17 @@ def report_size() -> int:
     tankerci.run("yarn", "build:client-browser-umd")
     lib_path = Path("packages/client-browser/dist/umd/tanker-client-browser.min.js")
     size = lib_path.stat().st_size
-    tankerci.reporting.send_metric(
-        f"benchmark",
-        tags={
-            "project": "sdk-js",
-            "branch": branch,
-            "object": "client-browser-umd",
-            "scenario": "size",
-        },
-        fields={"value": size, "commit_id": commit_id},
-    )
+    if upload_results:
+        tankerci.reporting.send_metric(
+            f"benchmark",
+            tags={
+                "project": "sdk-js",
+                "branch": branch,
+                "object": "client-browser-umd",
+                "scenario": "size",
+            },
+            fields={"value": size, "commit_id": commit_id},
+        )
 
     ui.info(f"Tanker library size: {size / 1024}KiB")
     return size
@@ -289,6 +290,7 @@ def report_size() -> int:
 def benchmark(
     *,
     runner: str,
+    upload_results: bool,
     iterations: Optional[int],
     stop_sampling_threshold_seconds: Optional[int],
 ) -> None:
@@ -342,22 +344,23 @@ def benchmark(
         else:
             raise RuntimeError(f"unsupported browser {browser['name']}")
 
-        for benchmark in browser["benchmarks"]:
-            tankerci.reporting.send_metric(
-                f"benchmark",
-                tags={
-                    "project": "sdk-js",
-                    "branch": branch,
-                    "browser": browser_name,
-                    "scenario": benchmark["name"].lower(),
-                    "host": hostname,
-                },
-                fields={
-                    "real_time": benchmark["real_time"],
-                    "commit_id": commit_id,
-                    "browser_full_name": browser["name"],
-                },
-            )
+        if upload_results:
+            for benchmark in browser["benchmarks"]:
+                tankerci.reporting.send_metric(
+                    f"benchmark",
+                    tags={
+                        "project": "sdk-js",
+                        "branch": branch,
+                        "browser": browser_name,
+                        "scenario": benchmark["name"].lower(),
+                        "host": hostname,
+                    },
+                    fields={
+                        "real_time": benchmark["real_time"],
+                        "commit_id": commit_id,
+                        "browser_full_name": browser["name"],
+                    },
+                )
 
 
 def _main() -> None:
@@ -378,6 +381,9 @@ def _main() -> None:
 
     benchmark_parser = subparsers.add_parser("benchmark")
     benchmark_parser.add_argument("--runner", required=True)
+    benchmark_parser.add_argument(
+        "--upload-results", dest="upload_results", action="store_true"
+    )
     benchmark_parser.add_argument("--iterations", default=None, type=int)
     benchmark_parser.add_argument(
         "--stop-sampling-threshold-seconds", default=None, type=int
@@ -398,9 +404,10 @@ def _main() -> None:
         tankerci.js.yarn_install()
         if args.runner == "linux":
             # size is the same on all platforms, we can track it only on linux
-            report_size()
+            report_size(args.upload_results)
         benchmark(
             runner=args.runner,
+            upload_results=args.upload_results,
             iterations=args.iterations,
             stop_sampling_threshold_seconds=args.stop_sampling_threshold_seconds,
         )
