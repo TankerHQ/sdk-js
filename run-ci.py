@@ -303,16 +303,18 @@ def benchmark(
         )
 
     if runner == "linux":
+        # The first -- is for yarn, otherwise if there is a second --, yarn will swallow the --browsers argument
+        # The second -- (in karma_config_args) is for karma. Hell's full, but there's always JS frameworks.
         tankerci.js.run_yarn(
-            "benchmark", "--browsers", "ChromeInDocker", *karma_config_args
+            "benchmark", "--", "--browsers", "ChromeInDocker", *karma_config_args
         )
     elif runner == "macos":
         tankerci.run("killall", "Safari", check=False)
         delete_safari_state()
-        tankerci.js.run_yarn("benchmark", "--browsers", "Safari", *karma_config_args)
+        tankerci.js.run_yarn("benchmark", "--", "--browsers", "Safari", *karma_config_args)
     elif runner == "windows-edge":
         kill_windows_processes()
-        tankerci.js.run_yarn("benchmark", "--browsers", "EdgeHeadless", *karma_config_args)
+        tankerci.js.run_yarn("benchmark", "--", "--browsers", "EdgeHeadless", *karma_config_args)
     else:
         raise RuntimeError(f"unsupported runner {runner}")
     benchmark_output = Path("benchmarks.json")
