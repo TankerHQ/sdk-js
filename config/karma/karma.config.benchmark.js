@@ -41,6 +41,7 @@ class BenchmarkResultSet {
     benchmarks.push({
       name: result.id,
       real_time: result.duration,
+      stddev: result.stddev,
     });
   }
 }

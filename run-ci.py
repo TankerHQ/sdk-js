@@ -357,6 +357,7 @@ def benchmark(
                     },
                     fields={
                         "real_time": benchmark["real_time"],
+                        "stddev": benchmark["stddev"],
                         "commit_id": commit_id,
                         "browser_full_name": browser["name"],
                     },

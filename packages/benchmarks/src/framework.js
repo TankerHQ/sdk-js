@@ -103,8 +103,12 @@ export function after(fn: Function) {
   afterAll = fn;
 }
 
+function computeAvg(numbers: Array<number>) {
+  return numbers.reduce((a, b) => a + b) / numbers.length;
+}
+
 // https://stackoverflow.com/a/53660837/1401962
-function median(numbers: Array<number>) {
+function computeMedian(numbers: Array<number>) {
   const sorted = numbers.slice().sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
 
@@ -113,6 +117,12 @@ function median(numbers: Array<number>) {
   }
 
   return sorted[middle];
+}
+
+function computeStddev(numbers: Array<number>) {
+  const avg = computeAvg(numbers);
+  const variance = computeAvg(numbers.map(n => (n - avg) * (n - avg)));
+  return Math.sqrt(variance);
 }
 
 export function benchmark(name: string, fn: Function) {
@@ -125,12 +135,14 @@ export function benchmark(name: string, fn: Function) {
       // skip the first element, consider it warm-up
       if (state.durations.length >= 2)
         state.durations.shift();
-      const meanTime = median(state.durations);
+      const median = computeMedian(state.durations);
+      const stddev = computeStddev(state.durations);
 
       result({
         id: name,
         success: true,
-        duration: meanTime,
+        duration: median,
+        stddev,
       });
     } catch (e) {
       console.error(`Benchmark "${name}" failed:`, e);
