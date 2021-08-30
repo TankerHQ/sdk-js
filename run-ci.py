@@ -262,7 +262,7 @@ def get_branch_name() -> str:
     return cast(str, branch)
 
 
-def report_size() -> None:
+def report_size() -> int:
     tankerci.reporting.assert_can_send_metrics()
 
     branch = get_branch_name()
@@ -281,6 +281,9 @@ def report_size() -> None:
         },
         fields={"value": size, "commit_id": commit_id},
     )
+
+    ui.info(f"Tanker library size: {size / 1024}KiB")
+    return size
 
 
 def benchmark(
@@ -311,10 +314,14 @@ def benchmark(
     elif runner == "macos":
         tankerci.run("killall", "Safari", check=False)
         delete_safari_state()
-        tankerci.js.run_yarn("benchmark", "--", "--browsers", "Safari", *karma_config_args)
+        tankerci.js.run_yarn(
+            "benchmark", "--", "--browsers", "Safari", *karma_config_args
+        )
     elif runner == "windows-edge":
         kill_windows_processes()
-        tankerci.js.run_yarn("benchmark", "--", "--browsers", "EdgeHeadless", *karma_config_args)
+        tankerci.js.run_yarn(
+            "benchmark", "--", "--browsers", "EdgeHeadless", *karma_config_args
+        )
     else:
         raise RuntimeError(f"unsupported runner {runner}")
     benchmark_output = Path("benchmarks.json")
