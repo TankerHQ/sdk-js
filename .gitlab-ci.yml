@@ -8,6 +8,7 @@ include:
 
 stages:
   - check
+  - bridge-check
   - bench
   - deploy
 
@@ -163,6 +164,17 @@ check/compat:
     - poetry run python run-ci.py compat
   tags:
     - linux
+
+bridge/compat:
+  stage: bridge-check
+  extends:
+    - .rules/bridge-ci/auto
+    - .variables/bridge-common
+  needs:
+    - check/linux/node
+  trigger:
+    project: TankerHQ/compatibility-tests
+    strategy: depend
 
 .check/e2e:
   extends:
