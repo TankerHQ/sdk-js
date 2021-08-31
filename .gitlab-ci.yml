@@ -155,16 +155,6 @@ pages:
   tags:
     - linux
 
-check/compat:
-  extends:
-    - .python-yarn-cache
-    - .rules/mr/manual/web/auto/nightly
-  stage: check
-  script:
-    - poetry run python run-ci.py compat
-  tags:
-    - linux
-
 bridge/compat:
   stage: bridge-check
   extends:

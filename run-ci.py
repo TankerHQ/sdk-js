@@ -123,12 +123,6 @@ def run_tests_in_browser(*, runner: str) -> None:
         tankerci.js.run_yarn("karma", "--browsers", "IE")
 
 
-def run_sdk_compat_tests() -> None:
-    cwd = Path.cwd() / "ci/compat"
-    tankerci.js.yarn_install_deps(cwd=cwd)
-    tankerci.js.run_yarn("proof", cwd=cwd)
-
-
 def get_package_path(package_name: str) -> Path:
     m = re.match(r"^@tanker/(?:(datastore|stream)-)?(.*)$", package_name)
     p = Path("packages")
@@ -172,11 +166,6 @@ def check(*, runner: str, nightly: bool) -> None:
         run_tests_in_node()
     else:
         run_tests_in_browser(runner=runner)
-
-
-def compat() -> None:
-    tankerci.js.yarn_install_deps()
-    run_sdk_compat_tests()
 
 
 def e2e(*, use_local_sources: bool) -> None:
@@ -375,8 +364,6 @@ def _main() -> None:
     deploy_parser = subparsers.add_parser("deploy")
     deploy_parser.add_argument("--git-tag", required=True)
 
-    subparsers.add_parser("compat")
-
     e2e_parser = subparsers.add_parser("e2e")
     e2e_parser.add_argument("--use-local-sources", action="store_true", default=False)
 
@@ -397,8 +384,6 @@ def _main() -> None:
         check(runner=runner, nightly=nightly)
     elif args.command == "deploy":
         deploy_sdk(git_tag=args.git_tag)
-    elif args.command == "compat":
-        compat()
     elif args.command == "e2e":
         e2e(use_local_sources=args.use_local_sources)
     elif args.command == "benchmark":
