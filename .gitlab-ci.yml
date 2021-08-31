@@ -1,10 +1,14 @@
 include:
-  project: TankerHQ/gitlab-ci-files
-  file: /cache.yml
-  ref: 12cd8d49536d2a39cfc3a3fec4a8af3fcd054590
+  - project: TankerHQ/gitlab-ci-files
+    file: /cache.yml
+    ref: 2021-08-31-1
+  - project: TankerHQ/gitlab-ci-files
+    file: /common.yml
+    ref: 2021-08-31-1
 
 stages:
   - check
+  - bench
   - deploy
 
 default:
@@ -16,20 +20,20 @@ default:
     - poetry run python --version
 
 check/linux/chrome:
-  extends: .python-yarn-cache
+  extends:
+    - .python-yarn-cache
+    - .rules/mr/auto
   stage: check
-  except:
-    - schedules
   script:
     - poetry run python run-ci.py check --runner linux
   tags:
     - linux
 
 check/linux/node:
-  extends: .python-yarn-cache
+  extends:
+    - .python-yarn-cache
+    - .rules/mr/auto
   stage: check
-  except:
-    - schedules
   script:
     - poetry run python run-ci.py check --runner node
     - mv coverage/lcov-report lcov-report
@@ -41,9 +45,10 @@ check/linux/node:
     - linux
 
 check/macos:
+  extends:
+    - .rules/mr/auto
+    # NOTE: This job doesn't have .python-yarn-cache. Is this right?
   stage: check
-  except:
-    - schedules
   script:
     - poetry run python run-ci.py check --runner macos
   tags:
@@ -57,30 +62,31 @@ check/macos:
     - tanker
 
 check/windows/edge:
-  extends: .check/windows
+  extends:
+    - .check/windows
+    - .rules/mr/auto/nightly
   script:
     - poetry run python run-ci.py check --runner windows-edge
 
 check/windows/ie:
-  extends: .check/windows
-  only:
-    - master
+  extends:
+    - .check/windows
+    - .rules/master/nightly
   script:
     - poetry run python run-ci.py check --runner windows-ie
 
 check/windows/ie/manual:
-  extends: .check/windows
-  when: manual
-  except:
-    - master
+  extends:
+    - .check/windows
+    - .rules/mr/manual
   script:
     - poetry run python run-ci.py check --runner windows-ie
 
 check/linux/nightly:
-  extends: .python-yarn-cache
+  extends:
+    - .python-yarn-cache
+    - .rules/nightly
   stage: check
-  only:
-    - schedules
   script:
     - poetry run python run-ci.py check --runner linux --nightly
   tags:
@@ -90,37 +96,33 @@ check/linux/nightly:
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
-check/linux/benchmark-nightly:
-  stage: check
-  only:
-    - schedules
+bench/linux/nightly:
+  stage: bench
+  extends: .rules/nightly
   script:
-    - poetry run python run-ci.py benchmark --runner linux --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner linux --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - LinuxSlave-3
 
-check/macos/benchmark-nightly:
+bench/macos/nightly:
   stage: check
-  only:
-    - schedules
+  extends: .rules/nightly
   script:
-    - poetry run python run-ci.py benchmark --runner macos --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner macos --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - MacOSSlave-2
 
-check/windows/benchmark-nightly:
+bench/windows/nightly:
   stage: check
-  only:
-    - schedules
+  extends: .rules/nightly
   script:
-    - poetry run python run-ci.py benchmark --runner windows-edge --iterations 100 --stop-sampling-threshold-seconds 90
+    - poetry run python run-ci.py benchmark --runner windows-edge --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - WindowsSlave-2
 
 check/macos/nightly:
   stage: check
-  only:
-    - schedules
+  extends: .rules/nightly
   script:
     - poetry run python run-ci.py check --runner macos --nightly
   tags:
@@ -128,12 +130,10 @@ check/macos/nightly:
     - MacOSSlave-2
 
 deploy/sdk:
-  extends: .python-yarn-cache
   stage: deploy
-  except:
-    - schedules
-  only:
-    - /\Av[0-9.]+(-(alpha|beta)[0-9]+)?\z/
+  extends:
+    - .python-yarn-cache
+    - .rules/deploy/js
   script:
     - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "${HOME}/.npmrc"
     - poetry run python run-ci.py deploy --git-tag "${CI_COMMIT_TAG}"
@@ -141,11 +141,8 @@ deploy/sdk:
     - linux
 
 pages:
+  extends: .rules/pages
   stage: deploy
-  only:
-    - master
-  except:
-    - schedules
   dependencies:
     - check/linux/node
   script:
@@ -157,26 +154,19 @@ pages:
   tags:
     - linux
 
-.check/compat:
-  extends: .python-yarn-cache
+check/compat:
+  extends:
+    - .python-yarn-cache
+    - .rules/mr/manual/web/auto/nightly
   stage: check
   script:
     - poetry run python run-ci.py compat
   tags:
     - linux
 
-check/compat:
-  extends: .check/compat
-  when: manual
-  except:
-    - master
-
-check/compat/master:
-  extends: .check/compat
-  only:
-    - master
-
 .check/e2e:
+  extends:
+    - .rules/mr/manual/nightly/auto
   stage: check
   script:
     - poetry run python run-ci.py e2e
@@ -185,24 +175,13 @@ check/compat/master:
     - tanker
   image: registry.gitlab.com/tankerhq/docker/e2e:latest
 
-check/e2e:
-  extends: .check/e2e
-  when: manual
-  except:
-    - schedules
-
-check/e2e/nightly:
-  extends: .check/e2e
-  only:
-    - schedules
-
 audit:
-  extends: .yarn-cache
+  extends:
+    - .yarn-cache
+    - .rules/nightly
   stage: check
   script:
     - yarn
     - yarn audit
-  only:
-    - schedules
   tags:
     - linux
