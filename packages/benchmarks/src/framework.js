@@ -3,8 +3,6 @@
 
 // Number of times to loop over the same benchmark
 let sampleCount = 5;
-// Duration threshold over which we should not take more samples
-let stopSamplingThreshold = 5;
 
 const benchmarks = [];
 let beforeAll = null;
@@ -14,8 +12,6 @@ global.__karma__.start = async () => {
   const config = global.__karma__.config;
   if (config.sampleCount)
     sampleCount = config.sampleCount;
-  if (config.stopSamplingThresholdSeconds)
-    stopSamplingThreshold = config.stopSamplingThresholdSeconds;
 
   try {
     if (beforeAll)
@@ -85,9 +81,6 @@ export class State {
       const end = getTime();
       const time = end - this.startTime - this.pauseDuration;
       this.durations.push(time);
-
-      if (time > stopSamplingThreshold)
-        return false;
     }
     this.startTime = getTime();
     this.pauseDuration = 0.0;
