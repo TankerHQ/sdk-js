@@ -55,6 +55,15 @@ check/macos:
     - macos
     - MacOSSlave-2
 
+check/macos/nightly:
+  stage: check
+  extends: .rules/nightly
+  script:
+    - poetry run python run-ci.py check --runner macos --nightly
+  tags:
+    - macos
+    - MacOSSlave-2
+
 .check/windows:
   stage: check
   tags:
@@ -98,6 +107,7 @@ check/linux/nightly:
 
 bench/linux/nightly:
   stage: bench
+  needs: []
   extends: .rules/nightly
   script:
     - poetry run python run-ci.py benchmark --runner linux --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
@@ -105,7 +115,8 @@ bench/linux/nightly:
     - LinuxSlave-3
 
 bench/macos/nightly:
-  stage: check
+  stage: bench
+  needs: []
   extends: .rules/nightly
   script:
     - poetry run python run-ci.py benchmark --runner macos --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
@@ -113,21 +124,13 @@ bench/macos/nightly:
     - MacOSSlave-2
 
 bench/windows/nightly:
-  stage: check
+  stage: bench
+  needs: []
   extends: .rules/nightly
   script:
     - poetry run python run-ci.py benchmark --runner windows-edge --upload-results --iterations 100 --stop-sampling-threshold-seconds 90
   tags:
     - WindowsSlave-2
-
-check/macos/nightly:
-  stage: check
-  extends: .rules/nightly
-  script:
-    - poetry run python run-ci.py check --runner macos --nightly
-  tags:
-    - macos
-    - MacOSSlave-2
 
 deploy/sdk:
   stage: deploy
