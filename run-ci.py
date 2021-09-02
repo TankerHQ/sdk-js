@@ -218,6 +218,7 @@ def deploy_sdk(*, git_tag: str) -> None:
         {"build": "types", "typescript": True, "publish": ["@tanker/types"]},
         {
             "build": "streams",
+            "typescript": True,
             "publish": [
                 "@tanker/stream-base",
                 "@tanker/stream-cloud-storage",
