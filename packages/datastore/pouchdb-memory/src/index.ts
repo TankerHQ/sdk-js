@@ -1,5 +1,3 @@
-// @flow
-
 import PouchDB from 'pouchdb-core';
 import PouchDBAdapterMemory from 'pouchdb-adapter-memory';
 import PouchDBFind from 'pouchdb-find';
@@ -21,4 +19,4 @@ const PouchDBMemoryBackend = () => {
   return PouchDB.defaults({ adapter: 'memory', auto_compaction: true });
 };
 
-export default () => PouchDBStoreBase(PouchDBMemoryBackend());
+export default (() => PouchDBStoreBase(PouchDBMemoryBackend()));

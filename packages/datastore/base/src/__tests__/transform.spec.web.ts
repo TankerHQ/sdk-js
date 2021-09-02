@@ -1,4 +1,3 @@
-// @flow
 import { expect } from '@tanker/test-utils';
 
 import { fixObjects } from '../transform';
@@ -8,7 +7,8 @@ describe('datastore transform operations (web)', () => {
 
   it('should fix Uint8Array constructor when calling fixObjects on objects of another frame', () => {
     const iframe = document.createElement('iframe');
-    let { body } = document; // eslint-disable-line prefer-const
+    const { body } = document;
+
     /*:: body = notNull(body); */
     body.appendChild(iframe);
 

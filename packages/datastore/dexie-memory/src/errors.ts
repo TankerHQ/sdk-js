@@ -1,8 +1,7 @@
-// @flow
 export class BulkError extends Error {
-  declare failures: $ReadOnlyArray<Error>;
+  declare failures: ReadonlyArray<Error>;
 
-  constructor(errors: $ReadOnlyArray<Error>) {
+  constructor(errors: ReadonlyArray<Error>) {
     super();
     this.name = 'BulkError';
     this.failures = errors;

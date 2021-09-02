@@ -1,35 +1,37 @@
-// @flow
 /* eslint-disable no-underscore-dangle */
 import { utils } from '@tanker/crypto';
-import { errors as dbErrors, type DataStore, type BaseConfig } from '@tanker/datastore-base';
+import type { DataStore, BaseConfig } from '@tanker/datastore-base';
+import { errors as dbErrors } from '@tanker/datastore-base';
 import { expect, uuid } from '@tanker/test-utils';
 
 export type { DataStore, BaseConfig };
 
 const { RecordNotFound, RecordNotUnique, UnknownError, VersionError } = dbErrors;
 
-type TestRecord = {|
-  _id: string,
-  a: string,
-  b: string,
-  c: number,
-  d: ?(string | Uint8Array),
-  e?: string
-|};
+type TestRecord = {
+  _id: string;
+  a: string;
+  b: string;
+  c: number;
+  d?: (string | Uint8Array) | null;
+  e?: string;
+};
 
 // Keep only the original properties, e.g. strip PouchDB private
 // property '_rev' representing the record's current revision.
-const cleanRecord = (record: Object): TestRecord => {
+const cleanRecord = (record: Record<string, any>): TestRecord => {
   const { _id, a, b, c, d } = record;
+
   if ('e' in record) { // optional field
     return { _id, a, b, c, d, e: record.e };
   }
+
   return { _id, a, b, c, d };
 };
 
 const makeDBName = () => `test-db-${uuid.v4().replace('-', '').slice(0, 12)}`;
 
-export type DataStoreGenerator = (baseConfig: BaseConfig) => Promise<DataStore<*>>;
+export type DataStoreGenerator = (baseConfig: BaseConfig) => Promise<DataStore<any>>;
 
 export const generateDataStoreTests = (dataStoreName: string, generator: DataStoreGenerator) => describe(`DataStore generic tests: ${dataStoreName}`, () => {
   // Here are a few useful test constants
@@ -39,8 +41,8 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
     version: 1,
     tables: [{
       name: tableName,
-      indexes: [['a'], ['b'], ['c']]
-    }]
+      indexes: [['a'], ['b'], ['c']],
+    }],
   }];
 
   const binary = new Uint8Array(32);
@@ -93,8 +95,8 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         version: 2,
         tables: [{
           name: tableName,
-          indexes: [['a'], ['b'], ['c'], ['e']] // add index on 'e'
-        }]
+          indexes: [['a'], ['b'], ['c'], ['e']], // add index on 'e'
+        }],
       });
 
       const storeWithNewSchema = await generator(storeConfig);
@@ -117,7 +119,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         tables: [{
           name: tableName,
           deleted: true, // delete the only table
-        }]
+        }],
       });
 
       const storeWithNewSchema = await generator(storeConfig);
@@ -135,7 +137,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
           tables: [{
             name: tableName,
             indexes: [['a'], ['b'], ['c']],
-          }]
+          }],
         });
         const store = await generator(storeConfig);
         await store.close();
@@ -263,6 +265,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         await store.bulkAdd(tableName, [record1, record2]);
         const newRecord2 = { ...record2, e: 'new value' };
         await store.bulkAdd(tableName, [newRecord2, record3]); // expect newRecord2 to be silently ignored
+
         const result2 = await store.getAll(tableName);
         expect(result2.map(cleanRecord)).to.deep.equal([record1, record2, record3]);
       });
@@ -284,6 +287,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         expect(result1.map(cleanRecord)).to.deep.equal([record1, record2, record3]);
 
         await store.bulkDelete(tableName, [record2, record3]); // except record1
+
         const result2 = await store.getAll(tableName);
         expect(result2.map(cleanRecord)).to.deep.equal([record1]);
       });
@@ -294,6 +298,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         expect(result1.map(cleanRecord)).to.deep.equal([record1, record2, record3]);
 
         await store.bulkDelete(tableName, record1, record3); // except record2
+
         const result2 = await store.getAll(tableName);
         expect(result2.map(cleanRecord)).to.deep.equal([record2]);
       });

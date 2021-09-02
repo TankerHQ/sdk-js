@@ -1,4 +1,3 @@
-// @flow
 import { Collection } from './collection'; // eslint-disable-line import/no-cycle
 import { BulkError, ConstraintError } from './errors';
 
@@ -7,7 +6,7 @@ import { BulkError, ConstraintError } from './errors';
 export class Table {
   declare definition: string;
   declare name: string;
-  declare records: Array<Object>;
+  declare records: Array<Record<string, any>>;
 
   constructor(name: string, definition: string) {
     this.definition = definition;
@@ -21,35 +20,40 @@ export class Table {
 
   toArray = async () => [...this.records];
 
-  add = async (record: Object) => {
+  add = async (record: Record<string, any>) => {
     const { _id } = record;
+
     if (this.records.some(r => r._id === _id)) { // eslint-disable-line no-underscore-dangle
       throw new ConstraintError();
     }
+
     this.records.push(record);
-  }
+  };
 
   get = async (id: string) => this.records.find(r => r._id === id); // eslint-disable-line no-underscore-dangle
 
-  put = async (record: Object) => {
+  put = async (record: Record<string, any>) => {
     const { _id } = record;
     const prevIndex = this.records.findIndex(r => r._id === _id); // eslint-disable-line no-underscore-dangle
+
     if (prevIndex !== -1) {
       this.records[prevIndex] = record;
     } else {
       this.records.push(record);
     }
-  }
+  };
 
   delete = async (id: string) => {
     const index = this.records.findIndex(r => r._id === id); // eslint-disable-line no-underscore-dangle
+
     if (index !== -1) {
       this.records.splice(index, 1);
     }
-  }
+  };
 
-  bulkAdd = async (records: Array<Object>) => {
+  bulkAdd = async (records: Array<Record<string, any>>) => {
     const failures = [];
+
     for (const record of records) {
       try {
         await this.add(record);
@@ -57,22 +61,23 @@ export class Table {
         failures.push(e);
       }
     }
+
     if (failures.length > 0) {
       throw new BulkError(failures);
     }
-  }
+  };
 
-  bulkPut = async (records: Array<Object>) => {
+  bulkPut = async (records: Array<Record<string, any>>) => {
     for (const record of records) {
       await this.put(record);
     }
-  }
+  };
 
-  bulkDelete = async (records: Array<Object>) => {
+  bulkDelete = async (records: Array<Record<string, any>>) => {
     for (const record of records) {
       await this.delete(record);
     }
-  }
+  };
 
   toArray = () => new Collection(this).toArray();
 

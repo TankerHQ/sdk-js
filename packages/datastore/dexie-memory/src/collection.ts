@@ -1,15 +1,15 @@
-// @flow
 import { Table } from './table'; // eslint-disable-line import/no-cycle
+
 import { WhereClause } from './where-clause'; // eslint-disable-line import/no-cycle
+
 import { makeSortFunction } from './utils';
 
-type Filter = (record: Object) => bool;
-
+type Filter = (record: Record<string, any>) => boolean;
 // Implements a subset of the Dexie Collection interface
 // See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/collection.d.ts
 export class Collection {
   declare _filters: Array<Filter>;
-  declare _limit: ?number;
+  declare _limit?: number;
   declare _sortDirection: 'asc' | 'desc';
   declare _sortKey: string;
   declare _table: Table;
@@ -24,23 +24,24 @@ export class Collection {
 
   and = (filter: Filter) => {
     this._filters.push(filter);
+
     return this;
-  }
+  };
 
   limit = (limit: number) => {
     this._limit = limit;
     return this;
-  }
+  };
 
   reverse = () => {
     this._sortDirection = this._sortDirection === 'asc' ? 'desc' : 'asc';
     return this;
-  }
+  };
 
   sortBy = (key: string) => {
     this._sortKey = key;
     return this;
-  }
+  };
 
   toArray = async (): Promise<Array<any>> => {
     const initialRecords = [...this._table.records];
@@ -61,7 +62,7 @@ export class Collection {
       return sortedRecord.slice(0, this._limit);
 
     return sortedRecord;
-  }
+  };
 
   where = (key: string) => new WhereClause(this, key);
 }
