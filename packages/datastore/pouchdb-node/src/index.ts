@@ -1,27 +1,25 @@
-// @flow
-
 import path from 'path';
 import fs from 'fs';
 import PouchDB from 'pouchdb-core';
 import PouchDBAdapterLevel from 'pouchdb-adapter-leveldb';
 import PouchDBFind from 'pouchdb-find';
-import PouchDBStoreBase, { type Config as BaseConfig } from '@tanker/datastore-pouchdb-base';
+import type { Config as BaseConfig } from '@tanker/datastore-pouchdb-base';
+import PouchDBStoreBase from '@tanker/datastore-pouchdb-base';
 
-export type Config = {|
-  ...BaseConfig,
-  dbPath: string,
-|};
-
+export type Config = BaseConfig & { dbPath: string; };
 let _initialized = false; // eslint-disable-line no-underscore-dangle
 
 const normalizePath = (dbPath: string) => {
   let normalized = path.normalize(dbPath);
+
   if (normalized.charAt(normalized.length - 1) !== path.sep) {
     normalized += path.sep;
   }
+
   if (!fs.existsSync(normalized) || !fs.lstatSync(normalized).isDirectory()) {
     throw new Error(`dbPath does not point to a directory: ${normalized}`);
   }
+
   return normalized;
 };
 
@@ -37,7 +35,7 @@ const PouchDBNodeBackend = () => {
   return PouchDB.defaults({ adapter: 'leveldb', auto_compaction: true });
 };
 
-export default () => {
+export default (() => {
   const PouchDBStore = PouchDBStoreBase(PouchDBNodeBackend());
 
   return class PouchDBNodeStore extends PouchDBStore {
@@ -49,4 +47,4 @@ export default () => {
       return PouchDBStore.open({ ...otherConfig, dbName: normalizedDbName });
     }
   };
-};
+});

@@ -1,4 +1,3 @@
-// @flow
 import { utils } from '@tanker/crypto';
 
 const base64Prefix = '__BASE64__';
@@ -8,7 +7,7 @@ const toString = Object.prototype.toString;
 
 // Fallback method to test if value constructed in another parent frame (instanceof won't work)
 // See Safari issue: https://github.com/feross/buffer/issues/166
-const getType = (value: mixed): string => {
+const getType = (value: unknown): string => {
   if (value == null)
     return value === undefined ? 'Undefined' : 'Null';
 
@@ -44,6 +43,7 @@ export function serializeBinary(value: any) {
     if (type === 'Uint8Array') {
       return base64Prefix + utils.toBase64(v);
     }
+
     return v;
   });
 }
@@ -55,6 +55,7 @@ export function deserializeBinary(value: any) {
         return utils.fromBase64(v.slice(base64PrefixLength));
       }
     }
+
     return v;
   });
 }

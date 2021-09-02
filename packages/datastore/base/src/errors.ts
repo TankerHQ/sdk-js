@@ -1,10 +1,9 @@
-// @flow
 export class DataStoreError extends Error {
-  next: ?Error;
+  next?: Error;
   name: string;
 
-  constructor(name: string, error: ?Error, messageArg?: string) {
-    const message = messageArg || (error && error.toString()) || '';
+  constructor(name: string, error?: Error, messageArg?: string) {
+    const message = messageArg || error && error.toString() || '';
     super(message);
     this.name = name;
     this.next = error;
@@ -16,16 +15,19 @@ export class RecordNotFound extends DataStoreError {
     super('RecordNotFound', error);
   }
 }
+
 export class RecordNotUnique extends DataStoreError {
   constructor(error?: Error) {
     super('RecordNotUnique', error);
   }
 }
+
 export class SchemaError extends DataStoreError {
   constructor(message: string) {
     super('SchemaError', null, message);
   }
 }
+
 export class UnknownError extends DataStoreError {
   constructor(error?: Error) {
     super('UnknownError', error);

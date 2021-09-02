@@ -1,7 +1,4 @@
-// @flow
-
 import { expect } from '@tanker/test-utils';
-
 import { SchemaError } from '../errors';
 import { mergeSchemas } from '../schemas';
 
@@ -30,22 +27,20 @@ describe('datastore schemas', () => {
         tables: [
           {
             name: 'first',
-            indexes: [['first', 'second'], ['third']]
+            indexes: [['first', 'second'], ['third']],
           },
           {
             name: 'second',
-            indexes: []
-          }]
+            indexes: [],
+          }],
       },
       {
         version: 2,
-        tables: [
-          {
-            name: 'last',
-            indexes: [['last']]
-          }
-        ]
-      }
+        tables: [{
+          name: 'last',
+          indexes: [['last']],
+        }],
+      },
     ];
 
     expect(mergedSchemas).to.deep.equal(expected);

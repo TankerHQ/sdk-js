@@ -1,4 +1,3 @@
-// @flow
 import { errors } from '@tanker/datastore-base';
 
 import { Collection } from './collection';
@@ -17,16 +16,16 @@ const InMemoryDatabaseVersion = {};
 // See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/dexie.d.ts
 export class DexieMemory {
   declare dbName: string;
-  declare _open: bool;
-  declare _tables: { [name: string]: Table };
+  declare _open: boolean;
+  declare _tables: Record<string, Table>;
   declare _version: number;
-
   static dataStoreName = 'DexieMemory';
 
-  constructor(dbName: string, options: Object) {
+  constructor(dbName: string, options: Record<string, any>) {
     if (options.autoOpen) {
       throw new errors.DataStoreError('InvalidArgument', null, 'unsupported option: autoOpen');
     }
+
     if (dbName in InMemoryDatabaseCache) {
       return InMemoryDatabaseCache[dbName];
     }
@@ -40,9 +39,10 @@ export class DexieMemory {
   version = (version: number): any => {
     this._version = version;
     return {
-      stores: (schema: { [name: string]: string }) => {
+      stores: (schema: Record<string, string>) => {
         for (const name of Object.keys(schema)) {
           const definition = schema[name];
+
           if (name in this._tables) {
             if (definition === null) {
               delete this._tables[name];
@@ -53,7 +53,7 @@ export class DexieMemory {
             this._tables[name] = new Table(name, definition);
           }
         }
-      }
+      },
     };
   };
 
@@ -62,10 +62,11 @@ export class DexieMemory {
       throw new Error('[dexie-memory] trying to use a table on a closed database');
 
     return this._tables[name];
-  }
+  };
 
   open = () => {
     const memoryVersion = InMemoryDatabaseVersion[this.dbName];
+
     if (memoryVersion && memoryVersion > this._version) {
       throw new errors.VersionError(new Error(`[dexie-memory] schema version mismatch: required version ${this._version} too low, storage version is already ${memoryVersion}`));
     }
@@ -80,7 +81,7 @@ export class DexieMemory {
     this._tables = {};
     delete InMemoryDatabaseCache[this.dbName];
     delete InMemoryDatabaseVersion[this.dbName];
-  }
+  };
 
   Collection = Collection;
   Table = Table;

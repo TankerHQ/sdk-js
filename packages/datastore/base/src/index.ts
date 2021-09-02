@@ -1,4 +1,3 @@
-// @flow
 import * as errors from './errors';
 import * as transform from './transform';
 
