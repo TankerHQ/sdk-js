@@ -126,8 +126,8 @@ module.exports = (config) => {
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: true,
 
-    // Some tests may be very slow
-    browserNoActivityTimeout: 240000,
-    browserDisconnectTimeout: 230000,
+    // Nightly benchmarks are slow (safari can timeout)
+    browserNoActivityTimeout: 31*60*1000,
+    browserDisconnectTimeout: 30*60*1000,
   });
 };
