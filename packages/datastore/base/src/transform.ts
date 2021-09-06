@@ -15,27 +15,28 @@ const getType = (value: unknown): string => {
 };
 
 function walk(value: any, fun: (v: any, type: string) => any) {
-  let result;
   const type = getType(value);
 
   switch (type) {
     case 'Object':
-      result = { ...value };
+    {
+      const result: Record<string, any> = { ...value };
       Object.keys(result).forEach(k => {
         result[k] = walk(result[k], fun);
       });
-      break;
+      return result;
+    }
     case 'Array':
-      result = [...value];
+    {
+      const result: Array<any> = [...value];
       result.forEach((el, k) => {
         result[k] = walk(el, fun);
       });
-      break;
+      return result;
+    }
     default:
-      result = fun(value, type);
+      return fun(value, type);
   }
-
-  return result;
 }
 
 export function serializeBinary(value: any) {

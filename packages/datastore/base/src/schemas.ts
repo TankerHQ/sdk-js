@@ -9,7 +9,7 @@ function assertSchemasVersions(allSchemas: Schema[][]): void {
   if (allSchemas.length === 0)
     return;
 
-  const allVersions = allSchemas[0].map(v => v.version);
+  const allVersions = allSchemas[0]!.map(v => v.version);
 
   for (const table of allSchemas) {
     const tableVersions = table.map(v => v.version);
@@ -26,7 +26,7 @@ export const mergeSchemas = (schemas: Schema[], ...otherSchemas: Schema[][]) => 
   assertSchemasVersions(nestedList);
 
   const flatList = nestedList.reduce((acc, val) => acc.concat(val), []);
-  const result = [];
+  const result: Schema[] = [];
 
   for (const schema of flatList) {
     const { version, tables } = schema;
@@ -36,7 +36,7 @@ export const mergeSchemas = (schemas: Schema[], ...otherSchemas: Schema[][]) => 
       result[pos] = { version, tables: [] };
     }
 
-    result[pos].tables.push(...tables);
+    (result[pos]!).tables.push(...tables);
   }
 
   // verify we have defined consecutive versions
