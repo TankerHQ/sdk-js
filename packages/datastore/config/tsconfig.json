@@ -1,0 +1,13 @@
+{
+  "extends": "../../../tsconfig.json",
+  "references": [
+    { "path": "../base/config" },
+    { "path": "../dexie-base/config" },
+    { "path": "../dexie-browser/config" },
+    { "path": "../dexie-memory/config" },
+    { "path": "../pouchdb-base/config" },
+    { "path": "../pouchdb-node/config" },
+    { "path": "../pouchdb-memory/config" },
+  ],
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}

@@ -10,6 +10,7 @@
     { "path": "./http-utils/config/tsconfig.browser.json" },
     { "path": "./fake-authentication/config/tsconfig.browser.json" },
     { "path": "./stream/config/tsconfig.browser.json" },
+    { "path": "./datastore/config/tsconfig.browser.json" },
   ],
   "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
 }
