@@ -1,15 +1,14 @@
-import { Table } from './table'; // eslint-disable-line import/no-cycle
+import type { ICollection } from '@tanker/datastore-dexie-base';
 
-import { WhereClause } from './where-clause'; // eslint-disable-line import/no-cycle
+import type { Table } from './table';
+
+import { WhereClause } from './where-clause';
 
 import { makeSortFunction } from './utils';
 
-type Filter = (record: Record<string, any>) => boolean;
-// Implements a subset of the Dexie Collection interface
-// See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/collection.d.ts
-export class Collection {
-  declare _filters: Array<Filter>;
-  declare _limit?: number;
+export class Collection implements ICollection {
+  declare _filters: Array<(x: Record<string, any>) => boolean>;
+  declare _limit: number | null;
   declare _sortDirection: 'asc' | 'desc';
   declare _sortKey: string;
   declare _table: Table;
@@ -22,7 +21,7 @@ export class Collection {
     this._sortKey = '';
   }
 
-  and = (filter: Filter) => {
+  and = (filter: (x: Record<string, any>) => boolean) => {
     this._filters.push(filter);
 
     return this;
@@ -38,12 +37,14 @@ export class Collection {
     return this;
   };
 
-  sortBy = (key: string) => {
+  orderBy = (key: string) => {
     this._sortKey = key;
     return this;
   };
 
-  toArray = async (): Promise<Array<any>> => {
+  sortBy = (key: string) => this.orderBy(key).toArray();
+
+  toArray = async () => {
     const initialRecords = [...this._table.records];
 
     const filteredRecords = this._filters.reduce(

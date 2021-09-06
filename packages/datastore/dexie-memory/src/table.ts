@@ -1,9 +1,9 @@
-import { Collection } from './collection'; // eslint-disable-line import/no-cycle
+import type { ITable } from '@tanker/datastore-dexie-base';
+
+import { Collection } from './collection';
 import { BulkError, ConstraintError } from './errors';
 
-// Implements a subset of the Dexie Table interface
-// See: https://github.com/dfahlander/Dexie.js/blob/master/src/public/types/table.d.ts
-export class Table {
+export class Table implements ITable {
   declare definition: string;
   declare name: string;
   declare records: Array<Record<string, any>>;
@@ -18,72 +18,74 @@ export class Table {
 
   clear = async () => { this.records = []; };
 
-  toArray = async () => [...this.records];
-
   add = async (record: Record<string, any>) => {
-    const { _id } = record;
-
-    if (this.records.some(r => r._id === _id)) { // eslint-disable-line no-underscore-dangle
+    if (this.records.some(r => r['_id'] === record['_id'])) {
       throw new ConstraintError();
     }
 
     this.records.push(record);
+    return record['_id'];
   };
 
-  get = async (id: string) => this.records.find(r => r._id === id); // eslint-disable-line no-underscore-dangle
+  get = async (id: string) => this.records.find(r => r['_id'] === id);
 
   put = async (record: Record<string, any>) => {
-    const { _id } = record;
-    const prevIndex = this.records.findIndex(r => r._id === _id); // eslint-disable-line no-underscore-dangle
+    const prevIndex = this.records.findIndex(r => r['_id'] === record['_id']);
 
     if (prevIndex !== -1) {
       this.records[prevIndex] = record;
     } else {
       this.records.push(record);
     }
+    return record['_id'];
   };
 
   delete = async (id: string) => {
-    const index = this.records.findIndex(r => r._id === id); // eslint-disable-line no-underscore-dangle
+    const index = this.records.findIndex(r => r['_id'] === id);
 
     if (index !== -1) {
       this.records.splice(index, 1);
     }
   };
 
-  bulkAdd = async (records: Array<Record<string, any>>) => {
-    const failures = [];
+  bulkAdd = async (records: readonly Record<string, any>[]) => {
+    const failures: Error[] = [];
+    let res!: string;
 
     for (const record of records) {
       try {
-        await this.add(record);
+        res = await this.add(record);
       } catch (e) {
-        failures.push(e);
+        failures.push(e as Error);
       }
     }
 
     if (failures.length > 0) {
       throw new BulkError(failures);
     }
+    return res;
   };
 
-  bulkPut = async (records: Array<Record<string, any>>) => {
+  bulkPut = async (records: readonly Record<string, any>[]) => {
+    let res!: string;
     for (const record of records) {
       await this.put(record);
     }
+
+    return res;
   };
 
-  bulkDelete = async (records: Array<Record<string, any>>) => {
+  bulkDelete = async (records: ReadonlyArray<string>) => {
     for (const record of records) {
       await this.delete(record);
     }
   };
 
-  toArray = () => new Collection(this).toArray();
+  toArray = async () => new Collection(this).toArray();
 
   // chainable methods
   limit = (limit: number) => new Collection(this).limit(limit);
-  orderBy = (key: string) => new Collection(this).sortBy(key);
+  orderBy = (key: string) => new Collection(this).orderBy(key);
   reverse = () => new Collection(this).reverse();
   where = (key: string) => new Collection(this).where(key);
 }

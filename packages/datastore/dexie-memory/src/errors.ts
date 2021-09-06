@@ -3,6 +3,8 @@ export class BulkError extends Error {
 
   constructor(errors: ReadonlyArray<Error>) {
     super();
+    Object.setPrototypeOf(this, BulkError.prototype);
+
     this.name = 'BulkError';
     this.failures = errors;
   }
@@ -11,6 +13,8 @@ export class BulkError extends Error {
 export class ConstraintError extends Error {
   constructor() {
     super();
+    Object.setPrototypeOf(this, ConstraintError.prototype);
+
     this.name = 'ConstraintError';
   }
 }
