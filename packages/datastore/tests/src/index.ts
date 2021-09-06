@@ -1,15 +1,16 @@
-/* eslint-disable no-underscore-dangle */
+/* eslint-disable no-underscore-dangle, @typescript-eslint/no-unused-expressions */
 import { utils } from '@tanker/crypto';
-import type { DataStore, BaseConfig } from '@tanker/datastore-base';
+import type { DataStore, BaseConfig, SortParams } from '@tanker/datastore-base';
 import { errors as dbErrors } from '@tanker/datastore-base';
 import { expect, uuid } from '@tanker/test-utils';
 
 export type { DataStore, BaseConfig };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const { RecordNotFound, RecordNotUnique, UnknownError, VersionError } = dbErrors;
 
 type TestRecord = {
-  _id: string;
+  _id: string; // eslint-disable-line @typescript-eslint/naming-convention
   a: string;
   b: string;
   c: number;
@@ -20,10 +21,11 @@ type TestRecord = {
 // Keep only the original properties, e.g. strip PouchDB private
 // property '_rev' representing the record's current revision.
 const cleanRecord = (record: Record<string, any>): TestRecord => {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { _id, a, b, c, d } = record;
 
   if ('e' in record) { // optional field
-    return { _id, a, b, c, d, e: record.e };
+    return { _id, a, b, c, d, e: record['e'] };
   }
 
   return { _id, a, b, c, d };
@@ -31,7 +33,7 @@ const cleanRecord = (record: Record<string, any>): TestRecord => {
 
 const makeDBName = () => `test-db-${uuid.v4().replace('-', '').slice(0, 12)}`;
 
-export type DataStoreGenerator = (baseConfig: BaseConfig) => Promise<DataStore<any>>;
+export type DataStoreGenerator = (baseConfig: BaseConfig) => Promise<DataStore>;
 
 export const generateDataStoreTests = (dataStoreName: string, generator: DataStoreGenerator) => describe(`DataStore generic tests: ${dataStoreName}`, () => {
   // Here are a few useful test constants
@@ -56,7 +58,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
   const record3 = { _id: 'key3', a: '3', b: 'z', c: 2, d: binary, e: 'e' };
 
   describe('admin operations', () => {
-    let storeConfig;
+    let storeConfig: BaseConfig;
 
     beforeEach(() => {
       storeConfig = { dbName: makeDBName(), schemas: [...schemas] };
@@ -91,7 +93,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await store.close();
 
       // Upgrade the schema
-      storeConfig.schemas.push({
+      storeConfig.schemas!.push({
         version: 2,
         tables: [{
           name: tableName,
@@ -114,7 +116,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await store.close();
 
       // Upgrade the schema
-      storeConfig.schemas.push({
+      storeConfig.schemas!.push({
         version: 2,
         tables: [{
           name: tableName,
@@ -132,7 +134,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
     // pouchDB doesn't handle "schema" versions
     if (!dataStoreName.match(/pouchdb/)) {
       it('throws VersionError when opening a storage using downgraded schema', async () => {
-        storeConfig.schemas.push({
+        storeConfig.schemas!.push({
           version: 2,
           tables: [{
             name: tableName,
@@ -142,14 +144,14 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         const store = await generator(storeConfig);
         await store.close();
 
-        storeConfig.schemas.pop();
+        storeConfig.schemas!.pop();
         await expect(generator(storeConfig)).to.be.rejectedWith(VersionError);
       });
     }
   });
 
   describe('regular operations', () => {
-    let store;
+    let store: DataStore;
 
     before(async () => {
       store = await generator({ dbName: makeDBName(), schemas });
@@ -187,7 +189,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       it('can add and get back a record containing binary data', async () => {
         await store.add(tableName, record3);
         const actual = await store.get(tableName, record3._id);
-        const actualBinary = actual.d;
+        const actualBinary = actual['d'];
         expect(actualBinary).to.be.instanceof(Uint8Array);
         expect(utils.equalArray(actualBinary, record3.d)).to.be.true;
         expect(actualBinary.length).to.eq(record3.d.length);
@@ -198,7 +200,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         const record4 = { _id: '4', a: { b: { c: binary } } };
         await store.add(tableName, record4);
         const actual = await store.get(tableName, record4._id);
-        const actualBinary = actual.a.b.c;
+        const actualBinary = actual['a'].b.c;
         expect(utils.equalArray(actualBinary, record4.a.b.c)).to.be.true;
         expect(actualBinary.length).to.eq(record4.a.b.c.length);
         expect(cleanRecord(actual)).to.deep.equal(cleanRecord(record4));
@@ -216,7 +218,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
         delete updatedRecord.d;
         await store.put(tableName, updatedRecord);
         const actual = await store.get(tableName, record1._id);
-        expect(actual.a).to.eq('newValue');
+        expect(actual['a']).to.eq('newValue');
         expect('d' in actual).to.be.false;
       });
 
@@ -331,23 +333,23 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
 
       it('can sort results in ascending order', async () => {
         const result = await store.find(tableName, { sort: [{ c: 'asc' }] });
-        expect(result.map(x => x.c)).to.deep.equal([1, 2, 3]);
+        expect(result.map(x => x['c'])).to.deep.equal([1, 2, 3]);
       });
 
       it('can sort results in descending order', async () => {
         const result = await store.find(tableName, { sort: [{ c: 'desc' }] });
-        expect(result.map(x => x.c)).to.deep.equal([3, 2, 1]);
+        expect(result.map(x => x['c'])).to.deep.equal([3, 2, 1]);
       });
 
       it('can limit the number of results', async () => {
         const result1 = await store.find(tableName, { sort: [{ c: 'asc' }], limit: 2 });
         const result2 = await store.find(tableName, { sort: [{ c: 'desc' }], limit: 1 });
-        expect(result1.map(x => x.c)).to.deep.equal([1, 2]);
-        expect(result2.map(x => x.c)).to.deep.equal([3]);
+        expect(result1.map(x => x['c'])).to.deep.equal([1, 2]);
+        expect(result2.map(x => x['c'])).to.deep.equal([3]);
       });
 
       it('can find records with comparison operators', async () => {
-        const sort = [{ c: 'asc' }];
+        const sort: SortParams = [{ c: 'asc' }];
         const result1 = await store.find(tableName, { sort, selector: { c: { $gt: 1 } } });
         const result2 = await store.find(tableName, { sort, selector: { c: { $gte: 2 } } });
         const result3 = await store.find(tableName, { sort, selector: { c: { $lt: 3 } } });
