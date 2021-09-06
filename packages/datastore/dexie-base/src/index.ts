@@ -1,14 +1,20 @@
-import type { DataStore, SortParams, Schema, BaseConfig } from '@tanker/datastore-base';
+import type { DataStore, DataStoreAdapter, SortParams, Schema, BaseConfig } from '@tanker/datastore-base';
 import { errors as dbErrors, transform } from '@tanker/datastore-base';
+import type { Class } from '@tanker/types';
+
+import type { IDexie, ITable, ICollection, IWhereClause } from './types';
 
 export type Config = BaseConfig;
-export type { Schema };
+export type { Schema, IDexie, ITable, ICollection, IWhereClause };
+export type { IndexableType } from './types';
 
 class UnsupportedTypeError extends Error {
-  name: string;
+  override name: string;
 
   constructor(type: string) {
     super(`Dexie can't support search for ${type} values on an index, as they are invalid IndexedDB keys.`);
+    Object.setPrototypeOf(this, UnsupportedTypeError.prototype);
+
     this.name = this.constructor.name;
   }
 }
@@ -16,15 +22,14 @@ class UnsupportedTypeError extends Error {
 const iframe = (typeof window !== 'undefined') && window.parent && window.parent !== window;
 const fromDB = iframe ? transform.fixObjects : transform.identity;
 
-export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dexie> {
-  declare _db: Dexie;
+export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrowserStore implements DataStore {
+  declare _db: IDexie;
   declare _indexes: Record<string, Record<string, boolean>>;
 
-  constructor(db: Dexie) {
+  constructor(db: IDexie) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_db', { value: db, writable: true });
     Object.defineProperty(this, '_indexes', { value: {}, writable: true });
-    return this;
   }
 
   get className(): string {
@@ -33,7 +38,7 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
 
   // Note: this does NOT support multi-column indexes (yet)
   isIndexed(table: string, field: string): boolean {
-    return field === '_id' || !!(this._indexes[table] && this._indexes[table][field]);
+    return field === '_id' || !!(this._indexes[table] && this._indexes[table]![field]);
   }
 
   async close(): Promise<void> {
@@ -43,8 +48,9 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
     try {
       this._db.close(); // completes immediately, no promise
 
+      // @ts-expect-error
       this._db = null;
-      // $FlowIgnore
+      // @ts-expect-error
       this._indexes = null;
     } catch (error) {
       console.error(`Error when closing ${this.className}: `, error);
@@ -57,8 +63,9 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
       return;
 
     await this._db.delete();
+    // @ts-expect-error
     this._db = null;
-    // $FlowIgnore
+    // @ts-expect-error
     this._indexes = null;
   }
 
@@ -73,16 +80,16 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
 
     const dbOptions = { autoOpen: false };
 
-    const db = new Dexie(config.dbName, dbOptions);
+    const db = new DexieClass(config.dbName, dbOptions);
 
     const store = new DexieBrowserStore(db);
 
-    // $FlowIgnore
-    await store.defineSchemas(config.schemas);
+    await store.defineSchemas(config.schemas!);
 
     try {
       await db.open();
-    } catch (e) {
+    } catch (err) {
+      const e = err as Error;
       if (e.name === 'VersionError') {
         throw new dbErrors.VersionError(e);
       }
@@ -111,7 +118,7 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
     for (const schema of schemas) {
       const { version, tables } = schema;
 
-      const definitions = {};
+      const definitions: Record<string, string | null> = {};
 
       for (const table of tables) {
         const { name, indexes, deleted } = table;
@@ -127,9 +134,9 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
                 this._indexes[name] = {};
               }
 
-              this._indexes[name][i[0]] = true; // remember indexed fields
+              this._indexes[name]![i[0]!] = true; // remember indexed fields
 
-              definition.push(i.length === 1 ? i[0] : `[${i.join('+')}]`);
+              definition.push(i.length === 1 ? i[0]! : `[${i.join('+')}]`);
             }
           }
 
@@ -140,7 +147,7 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
       this._db.version(version).stores(definitions);
     }
 
-    const tableMap = {};
+    const tableMap: Record<string, boolean> = {};
 
     for (const schema of schemas) {
       for (const table of schema.tables) {
@@ -152,7 +159,8 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
   add = async (table: string, record: Record<string, any>) => {
     try {
       await this._db.table(table).add(record);
-    } catch (e) {
+    } catch (err) {
+      const e = err as Error;
       if (e.name === 'ConstraintError') {
         throw new dbErrors.RecordNotUnique(e);
       }
@@ -164,7 +172,8 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
   put = async (table: string, record: Record<string, any>) => {
     try {
       await this._db.table(table).put(record);
-    } catch (e) {
+    } catch (err) {
+      const e = err as Error;
       if (e.name === 'ConstraintError') {
         throw new dbErrors.RecordNotUnique(e);
       }
@@ -177,9 +186,10 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
     const allRecords = (records instanceof Array) ? records : [records, ...otherRecords];
     try {
       await this._db.table(table).bulkAdd(allRecords);
-    } catch (e) {
+    } catch (error) {
+      const e = error as Error;
       if (e.name === 'BulkError') {
-        if (e.failures.every(err => err.name === 'ConstraintError')) {
+        if ((e as (Error & { failures: Error[] })).failures.every(err => err.name === 'ConstraintError')) {
           return; // ignore duplicate adds
         }
       }
@@ -192,7 +202,8 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
     const allRecords = (records instanceof Array) ? records : [records, ...otherRecords];
     try {
       await this._db.table(table).bulkPut(allRecords);
-    } catch (e) {
+    } catch (err) {
+      const e = err as Error;
       if (e.name === 'ConstraintError') {
         throw new dbErrors.RecordNotUnique(e);
       }
@@ -204,9 +215,9 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
   bulkDelete = async (table: string, records: Array<Record<string, any>> | Record<string, any>, ...otherRecords: Array<Record<string, any>>) => {
     const allRecords = records instanceof Array ? records : [records, ...otherRecords];
     try {
-      await this._db.table(table).bulkDelete(allRecords.map(r => r._id)); // eslint-disable-line no-underscore-dangle
+      await this._db.table(table).bulkDelete(allRecords.map(r => r['_id']));
     } catch (e) {
-      throw new dbErrors.UnknownError(e);
+      throw new dbErrors.UnknownError(e as Error);
     }
   };
 
@@ -216,7 +227,7 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
     try {
       record = fromDB(await this._db.table(table).get(id));
     } catch (e) {
-      throw new dbErrors.UnknownError(e);
+      throw new dbErrors.UnknownError(e as Error);
     }
 
     // undefined is returned when record not found
@@ -234,10 +245,10 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
 
   find = async (table: string, query: { selector?: Record<string, any>; sort?: SortParams; limit?: number; } = {}) => {
     const { selector, sort, limit } = query;
+    const dexieTable: ITable = this._db.table(table);
+    let index: string | null = null;
 
-    let q = this._db.table(table);
-    let index = null;
-
+    let withSelector: ITable | ICollection = dexieTable;
     if (selector) {
       const keys = Object.keys(selector);
       const fields = [];
@@ -254,36 +265,41 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
         }
       });
 
-      if (index) {
-        q = this._chainWhere(q, index, selector[index]);
-      } else {
+      if (!index) {
         // console.warn('Querying with no indexed field in the selector: ', JSON.stringify(selector)); // eslint-disable-line no-console
         throw new Error('A selector must provide at least one indexed field');
       }
+      const withWhere = this._chainWhere(dexieTable, index, selector[index]);
 
+      withSelector = withWhere;
       if (fields.length > 0) {
         const andValues = { ...selector };
         delete andValues[index];
-        q = this._chainAnd(q, andValues);
+        withSelector = this._chainAnd(withWhere, andValues);
       }
     }
 
+    let withSort: ITable | ICollection | Promise<Array<Record<string, any>>> = withSelector;
     if (sort) {
-      q = this._chainSort(q, sort, index, table);
+      withSort = this._chainSort(withSelector, sort, index, table);
     }
 
+    let withLimit: ITable | ICollection | Promise<Array<Record<string, any>>> = withSort;
     if (limit) {
-      q = this._chainLimit(q, limit);
+      withLimit = this._chainLimit(withSort, limit);
     }
 
+    let res: Promise<Array<Record<string, any>>>;
     // At this point:
-    //   - either sortBy() has been called and q is already a Promise<Array<Object>>,
-    //   - or q is a Dexie Collection or Table to convert to a Promise<Array<Object>>
-    if (q instanceof this._db.Collection || q instanceof this._db.Table) {
-      q = q.toArray();
+    //   - either withLimit is a Dexie Collection or Table to convert to a Promise<Array<Object>>
+    //   - or sortBy() has been called and withLimit is already a Promise<Array<Object>>,
+    if (this._isTable(withLimit) || this._isCollection(withLimit)) {
+      res = (withLimit as ITable | ICollection).toArray();
+    } else {
+      res = withLimit as typeof res;
     }
 
-    return fromDB(await q);
+    return fromDB(await res);
   };
 
   first = async (table: string, query: { selector?: Record<string, any>; sort?: SortParams; } = {}) => {
@@ -295,31 +311,39 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
     try {
       await this._db.table(table).delete(id);
     } catch (e) {
-      throw new dbErrors.UnknownError(e);
+      throw new dbErrors.UnknownError(e as Error);
     }
   };
 
-  _chainWhere<Q>(query: Q, key: string, value: string | number | Record<string, any>): Q {
-    let q: any = query;
+  _isTable(obj: any): boolean {
+    // @ts-expect-error this._db.Table is a Class (has a prototype)
+    return obj instanceof this._db.Table;
+  }
 
-    q = q.where(key); // WhereClause (Dexie)
+  _isCollection(obj: any): boolean {
+    // @ts-expect-error this._db.Collection is a Class (has a prototype)
+    return obj instanceof this._db.Collection;
+  }
 
+  _chainWhere(table: ITable, key: string, value: string | number | Record<string, any>): ICollection {
+    const where: IWhereClause = table.where(key); // WhereClause (Dexie)
+    let res: ICollection;
     // object
     if (value instanceof Object) {
       if ('$in' in value) {
-        q = q.anyOf(value['$in']);
+        res = where.anyOf(value['$in']);
       } else if ('$gt' in value) {
-        q = q.above(value['$gt']);
+        res = where.above(value['$gt']);
       } else if ('$gte' in value) {
-        q = q.aboveOrEqual(value['$gte']);
+        res = where.aboveOrEqual(value['$gte']);
       } else if ('$lt' in value) {
-        q = q.below(value['$lt']);
+        res = where.below(value['$lt']);
       } else if ('$lte' in value) {
-        q = q.belowOrEqual(value['$lte']);
+        res = where.belowOrEqual(value['$lte']);
       } else if ('$eq' in value) {
-        q = q.equals(value['$eq']);
+        res = where.equals(value['$eq']);
       } else if ('$ne' in value) {
-        q = q.notEqual(value['$ne']);
+        res = where.notEqual(value['$ne']);
       } else {
         throw new Error(`A selector provided an unknown value: ${JSON.stringify(value)}`);
       }
@@ -331,18 +355,16 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
         throw new UnsupportedTypeError('null');
       }
 
-      q = q.equals(value);
+      res = where.equals(value);
     }
 
-    return q; // Collection (Dexie)
+    return res; // ICollection (Dexie)
   }
 
-  _chainAnd<Q>(query: Q, andValues: Record<string, any>): Q {
-    let q: any = query;
-
+  _chainAnd(collection: ICollection, andValues: Record<string, any>): ICollection {
     const keys = Object.keys(andValues);
 
-    q = q.and(record => {
+    return collection.and((record: Record<string, any>) => {
       for (const key of keys) {
         const value = andValues[key];
 
@@ -394,50 +416,56 @@ export default ((Dexie: any) => class DexieBrowserStore implements DataStore<Dex
 
       return true;
     });
-    return q; // Collection (Dexie)
   }
 
-  _chainSort<Q>(query: Q, sort: SortParams, index: string | null | undefined, table: string): Q | Promise<Array<Record<string, any>>> {
-    let q: any = query;
-    let sortKey: any = sort[0]; // assume single sort
+  _chainSort(query: ITable | ICollection, sort: SortParams, index: string | null | undefined, table: string): ICollection | Promise<Array<Record<string, any>>> {
+    if (sort.length !== 1) {
+      throw new Error(`Exactly one sort param should be provided: found ${sort.length}`);
+    }
+    const sortParam = sort[0];
 
     let dir = 'asc';
+    let sortKey: string;
+    if (sortParam instanceof Object) {
+      // @ts-expect-error Object.keys() is never empty
+      [sortKey] = Object.keys(sortParam);
 
-    if (sortKey instanceof Object) {
-      [sortKey] = Object.keys(sortKey);
-
-      if (sort[0][sortKey] === 'desc') {
+      if (sortParam[sortKey] === 'desc') {
         dir = 'desc';
       }
+    } else {
+      sortKey = sortParam as string;
     }
 
+    let q = query;
     if (dir === 'desc') {
       q = q.reverse();
     }
 
+    let res: ICollection | Promise<Array<Record<string, any>>>;
     // In Dexie, orderBy() uses backend sorting and needs an index,
     // whereas sortBy() is done in memory on the result array.
     if (
-      (q instanceof this._db.Table)
+      this._isTable(q)
       && (index === sortKey || !index && this.isIndexed(table, sortKey))
     ) {
-      q = q.orderBy(sortKey); // Collection (Dexie)
+      res = (q as ITable).orderBy(sortKey); // ICollection (Dexie)
     } else {
-      q = q.sortBy(sortKey); // Promise<Array<Object>>
+      res = (q as ICollection).sortBy(sortKey); // Promise<Array<Object>>
     }
 
-    return q;
+    return res;
   }
 
-  _chainLimit<Q>(query: Q | Promise<Array<Record<string, any>>>, limit: number): Q | Promise<Array<Record<string, any>>> {
-    let q: any = query;
+  _chainLimit(query: ITable | ICollection | Promise<Array<Record<string, any>>>, limit: number): ICollection | Promise<Array<Record<string, any>>> {
+    let res: ICollection | Promise<Array<Record<string, any>>>;
 
-    if (q instanceof this._db.Collection || q instanceof this._db.Table) {
-      q = q.limit(limit);
+    if (this._isTable(query) || this._isCollection(query)) {
+      res = (query as ITable | ICollection).limit(limit);
     } else {
-      q = q.then(res => res.slice(0, limit));
+      res = (query as Promise<Array<Record<string, any>>>).then((array) => array.slice(0, limit));
     }
 
-    return q;
+    return res;
   }
 });
