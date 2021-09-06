@@ -3,16 +3,15 @@ import { expect } from '@tanker/test-utils';
 import { fixObjects } from '../transform';
 
 describe('datastore transform operations (web)', () => {
-  declare function notNull<T>(body: T | null): T; // eslint-disable-line no-unused-vars
-
   it('should fix Uint8Array constructor when calling fixObjects on objects of another frame', () => {
     const iframe = document.createElement('iframe');
     const { body } = document;
 
-    /*:: body = notNull(body); */
     body.appendChild(iframe);
 
-    const FrameUint8Array = iframe.contentWindow.Uint8Array;
+    // FrameUint8Array is a Class (explaining the `eslint-disable`)
+    // @ts-expect-error Uint8Array is defined in the Window object
+    const FrameUint8Array = iframe.contentWindow.Uint8Array; // eslint-disable-line @typescript-eslint/naming-convention
 
     const obj = { key: new Uint8Array(42) };
     const array = [new Uint8Array(42)];
