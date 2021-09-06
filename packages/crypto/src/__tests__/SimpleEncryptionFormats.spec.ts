@@ -77,8 +77,7 @@ describe('Simple Encryption', () => {
   const tamperWith = (data: Uint8Array): Uint8Array => {
     const bytePosition = Math.floor(Math.random() * data.length);
     const tamperedData = new Uint8Array(data);
-    // @ts-expect-error bytePosition < data.length
-    tamperedData[bytePosition] = (tamperedData[bytePosition] + 1) % 256;
+    tamperedData[bytePosition] = (tamperedData[bytePosition]! + 1) % 256;
     return tamperedData;
   };
 

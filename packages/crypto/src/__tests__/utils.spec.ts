@@ -107,13 +107,13 @@ describe('utils', () => {
 
     it('can convert RFC 4648 test vectors fromBase64', () => {
       for (let i = 0; i < str4648.length; i++) {
-        expect(fromBase64(str4648[i] as b64string)).to.deep.equal(bytes4648[i]);
+        expect(fromBase64(str4648[i]!)).to.deep.equal(bytes4648[i]);
       }
     });
 
     it('can convert RFC 4648 test vectors toBase64', () => {
       for (let i = 0; i < bytes4648.length; i++) {
-        expect(toBase64(bytes4648[i] as Uint8Array)).to.deep.equal(str4648[i]);
+        expect(toBase64(bytes4648[i]!)).to.deep.equal(str4648[i]);
       }
     });
   });
