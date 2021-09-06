@@ -5,12 +5,14 @@ import PouchDBStoreBase from '@tanker/datastore-pouchdb-base';
 
 export type { Config } from '@tanker/datastore-pouchdb-base';
 
-let _initialized = false; // eslint-disable-line no-underscore-dangle
+let _initialized = false; // eslint-disable-line no-underscore-dangle, @typescript-eslint/naming-convention
 
-const PouchDBMemoryBackend = () => {
+const pouchDBMemoryBackend = () => {
   if (!_initialized) {
     PouchDB.plugin(PouchDBAdapterMemory);
     PouchDB.plugin(PouchDBFind);
+
+    // @ts-expect-error willingly add the `dataStoreName` property
     PouchDB.dataStoreName = 'PouchDBMemory';
     _initialized = true;
   }
@@ -19,4 +21,4 @@ const PouchDBMemoryBackend = () => {
   return PouchDB.defaults({ adapter: 'memory', auto_compaction: true });
 };
 
-export default (() => PouchDBStoreBase(PouchDBMemoryBackend()));
+export default (() => PouchDBStoreBase(pouchDBMemoryBackend()));
