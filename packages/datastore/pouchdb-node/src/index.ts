@@ -7,7 +7,7 @@ import type { Config as BaseConfig } from '@tanker/datastore-pouchdb-base';
 import PouchDBStoreBase from '@tanker/datastore-pouchdb-base';
 
 export type Config = BaseConfig & { dbPath: string; };
-let _initialized = false; // eslint-disable-line no-underscore-dangle
+let _initialized = false; // eslint-disable-line no-underscore-dangle, @typescript-eslint/naming-convention
 
 const normalizePath = (dbPath: string) => {
   let normalized = path.normalize(dbPath);
@@ -23,10 +23,12 @@ const normalizePath = (dbPath: string) => {
   return normalized;
 };
 
-const PouchDBNodeBackend = () => {
+const pouchDBNodeBackend = () => {
   if (!_initialized) {
     PouchDB.plugin(PouchDBAdapterLevel);
     PouchDB.plugin(PouchDBFind);
+
+    // @ts-expect-error willingly add the `dataStoreName` property
     PouchDB.dataStoreName = 'PouchDBNode';
     _initialized = true;
   }
@@ -36,11 +38,12 @@ const PouchDBNodeBackend = () => {
 };
 
 export default (() => {
-  const PouchDBStore = PouchDBStoreBase(PouchDBNodeBackend());
+  // PouchDBStore is a Class
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const PouchDBStore = PouchDBStoreBase(pouchDBNodeBackend());
 
   return class PouchDBNodeStore extends PouchDBStore {
-    // $FlowIgnore: open takes a Config argument but parent method takes a BaseConfig
-    static async open(config: Config): Promise<PouchDBStoreBase> {
+    static override async open(config: Config): Promise<PouchDBNodeStore> {
       const { dbPath, dbName, ...otherConfig } = config;
       const normalizedPath = normalizePath(dbPath);
       const normalizedDbName = `${normalizedPath}${dbName}`;
