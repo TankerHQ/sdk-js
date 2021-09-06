@@ -18,6 +18,13 @@ babelConfig.plugins.push([
       '@tanker/fake-authentication': path.resolve(__dirname, '../packages/fake-authentication/src/index.ts'),
       '@tanker/stream-base': path.resolve(__dirname, '../packages/stream/base/src/index.ts'),
       '@tanker/stream-cloud-storage': path.resolve(__dirname, '../packages/stream/cloud-storage/src/index.ts'),
+      '@tanker/datastore-base': path.resolve(__dirname, '../packages/datastore/base/src/index.ts'),
+      '@tanker/datastore-dexie-base': path.resolve(__dirname, '../packages/datastore/dexie-base/src/index.ts'),
+      '@tanker/datastore-dexie-browser': path.resolve(__dirname, '../packages/datastore/dexie-browser/src/index.ts'),
+      '@tanker/datastore-dexie-memory': path.resolve(__dirname, '../packages/datastore/dexie-memory/src/index.ts'),
+      '@tanker/datastore-pouchdb-base': path.resolve(__dirname, '../packages/datastore/pouchdb-base/src/index.ts'),
+      '@tanker/datastore-pouchdb-memory': path.resolve(__dirname, '../packages/datastore/pouchdb-memory/src/index.ts'),
+      '@tanker/datastore-pouchdb-node': path.resolve(__dirname, '../packages/datastore/pouchdb-node/src/index.ts'),
     }
   }
 ]);
