@@ -3,6 +3,6 @@ import { generateDataStoreTests } from '@tanker/datastore-tests';
 
 import DexieStore from '../index';
 
-const createDataStoreGenerator = () => async (baseConfig: BaseConfig): Promise<DataStore<any>> => DexieStore().open(baseConfig);
+const createDataStoreGenerator = () => async (baseConfig: BaseConfig): Promise<DataStore> => DexieStore().open(baseConfig);
 
 generateDataStoreTests('dexie-memory', createDataStoreGenerator());
