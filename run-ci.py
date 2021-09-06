@@ -226,6 +226,7 @@ def deploy_sdk(*, git_tag: str) -> None:
         },
         {
             "build": "datastores",
+            "typescript": True,
             "publish": [
                 "@tanker/datastore-base",
                 "@tanker/datastore-dexie-base",
