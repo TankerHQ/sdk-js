@@ -10,8 +10,7 @@ const getConstructorName = (obj: Record<string, any>) => {
     return constructor.name;
   }
 
-  // @ts-expect-error `constructor.toString().trim().split('\n')` is never empty
-  return constructor.toString().trim().split('\n')[0].replace(constructorNameRegExp, '$1');
+  return constructor.toString().trim().split('\n')[0]!.replace(constructorNameRegExp, '$1');
 };
 
 export const safePrintType = (value: any) => {
