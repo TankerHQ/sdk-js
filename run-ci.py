@@ -22,6 +22,44 @@ class TestFailed(Exception):
     pass
 
 
+# Publish packages in order so that dependencies don't break during deploy
+configs = [
+    {"build": "global-this", "typescript": True, "publish": ["@tanker/global-this"]},
+    {"build": "crypto", "typescript": True, "publish": ["@tanker/crypto"]},
+    {"build": "errors", "typescript": True, "publish": ["@tanker/errors"]},
+    {"build": "file-ponyfill", "typescript": True, "publish": ["@tanker/file-ponyfill"]},
+    {"build": "file-reader", "typescript": True, "publish": ["@tanker/file-reader"]},
+    {"build": "http-utils", "typescript": True, "publish": ["@tanker/http-utils"]},
+    {"build": "types", "typescript": True, "publish": ["@tanker/types"]},
+    {
+        "build": "streams",
+        "typescript": True,
+        "publish": [
+            "@tanker/stream-base",
+            "@tanker/stream-cloud-storage",
+        ],
+    },
+    {
+        "build": "datastores",
+        "typescript": True,
+        "publish": [
+            "@tanker/datastore-base",
+            "@tanker/datastore-dexie-base",
+            "@tanker/datastore-dexie-browser",
+            "@tanker/datastore-pouchdb-base",
+            "@tanker/datastore-pouchdb-memory",
+            "@tanker/datastore-pouchdb-node",
+        ],
+    },
+    {"build": "core", "publish": ["@tanker/core"]},
+    {"build": "client-browser", "publish": ["@tanker/client-browser"]},
+    {"build": "client-node", "publish": ["@tanker/client-node"]},
+    {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
+    {"build": "fake-authentication", "typescript": True, "publish": ["@tanker/fake-authentication"]},
+    {"build": "filekit", "publish": ["@tanker/filekit"]},
+]
+
+
 def find_procs_by_name(name: str) -> psutil.Process:
     "Return a list of processes matching 'name'."
     ls = []
@@ -160,9 +198,25 @@ def run_tests_in_node() -> None:
 
 def lint() -> None:
     tankerci.js.yarn_install_deps()
-    tankerci.js.run_yarn("lint:ts")
+    tankerci.js.run_yarn("build:ts")
     tankerci.js.run_yarn("flow")
     tankerci.js.run_yarn("lint:js")
+
+    for config in configs:
+        if not config.get("typescript", False):
+            continue
+        for package_name in config["publish"]:
+            path = get_package_path(package_name=package_name, is_typescript=True)
+            # override parser-options from './eslintrc.typescript.yml' to the tsconfig
+            # for the current package
+            options = {
+                "project": [
+                    "./config/tsconfig.tests.json",
+                    str(path.joinpath("config", "tsconfig.es.json")),
+                ]
+            }
+            tankerci.js.run_yarn("lint:ts", path.joinpath("**", "*.ts"), "--parser-options", f"{options}")
+            tankerci.js.run_yarn("lint:compat", path.joinpath("**", "dist", "**", "*.js"))
 
 
 def check(*, runner: str, nightly: bool) -> None:
@@ -207,42 +261,6 @@ def deploy_sdk(*, git_tag: str) -> None:
     version = tankerci.bump.version_from_git_tag(git_tag)
     tankerci.bump.bump_files(version)
 
-    # Publish packages in order so that dependencies don't break during deploy
-    configs = [
-        {"build": "global-this", "typescript": True, "publish": ["@tanker/global-this"]},
-        {"build": "crypto", "typescript": True, "publish": ["@tanker/crypto"]},
-        {"build": "errors", "typescript": True, "publish": ["@tanker/errors"]},
-        {"build": "file-ponyfill", "typescript": True, "publish": ["@tanker/file-ponyfill"]},
-        {"build": "file-reader", "typescript": True, "publish": ["@tanker/file-reader"]},
-        {"build": "http-utils", "typescript": True, "publish": ["@tanker/http-utils"]},
-        {"build": "types", "typescript": True, "publish": ["@tanker/types"]},
-        {
-            "build": "streams",
-            "typescript": True,
-            "publish": [
-                "@tanker/stream-base",
-                "@tanker/stream-cloud-storage",
-            ],
-        },
-        {
-            "build": "datastores",
-            "typescript": True,
-            "publish": [
-                "@tanker/datastore-base",
-                "@tanker/datastore-dexie-base",
-                "@tanker/datastore-dexie-browser",
-                "@tanker/datastore-pouchdb-base",
-                "@tanker/datastore-pouchdb-memory",
-                "@tanker/datastore-pouchdb-node",
-            ],
-        },
-        {"build": "core", "publish": ["@tanker/core"]},
-        {"build": "client-browser", "publish": ["@tanker/client-browser"]},
-        {"build": "client-node", "publish": ["@tanker/client-node"]},
-        {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
-        {"build": "fake-authentication", "typescript": True, "publish": ["@tanker/fake-authentication"]},
-        {"build": "filekit", "publish": ["@tanker/filekit"]},
-    ]
 
     for config in configs:
         tankerci.js.yarn_build(delivery=config["build"], env="prod")  # type: ignore
@@ -454,6 +472,8 @@ def _main() -> None:
     )
     benchmark_parser.add_argument("--iterations", default=None, type=int)
 
+    subparsers.add_parser("lint")
+
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
@@ -479,6 +499,8 @@ def _main() -> None:
 
         if args.compare_results:
             compare_benchmark_results(args.runner, bench_results, size)
+    elif args.command == "lint":
+        run_linters()
     else:
         parser.print_help()
         sys.exit(1)
