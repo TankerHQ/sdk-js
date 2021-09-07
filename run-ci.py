@@ -196,6 +196,7 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.run("poetry", "install")
     with tankerci.working_directory(base_path / "sdk-js"):
         tankerci.js.yarn_install()
+        tankerci.js.run_yarn('build:ts')
     with tankerci.working_directory(base_path / "qa-python-js"):
         tankerci.run("poetry", "install")
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
