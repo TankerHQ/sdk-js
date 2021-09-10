@@ -1,11 +1,10 @@
-// @flow
 import varint from 'varint';
 import { InternalError } from '@tanker/errors';
 import { utils } from '@tanker/crypto';
 
-type Unserializer = (src: Uint8Array, offset: number) => { newOffset: number, [name: string]: any };
+type Unserializer = (src: Uint8Array, offset: number) => { newOffset: number; [name: string]: any; };
 
-export function getArray(src: Uint8Array, offset: number, name: string = 'value'): Object {
+export function getArray(src: Uint8Array, offset: number, name: string = 'value'): Record<string, any> {
   let pos = offset;
   const len = varint.decode(src, pos);
   pos += varint.decode.bytes;
@@ -14,7 +13,7 @@ export function getArray(src: Uint8Array, offset: number, name: string = 'value'
   return { [name]: buffer, newOffset: pos };
 }
 
-export function getString(src: Uint8Array, offset: number, name: string = 'value'): Object {
+export function getString(src: Uint8Array, offset: number, name: string = 'value'): Record<string, any> {
   const result = getArray(src, offset, name);
   return { [name]: utils.toString(result[name]), newOffset: result.newOffset };
 }
@@ -24,14 +23,14 @@ export function setStaticArray(src: Uint8Array, dest: Uint8Array, offset: number
   return offset + src.length;
 }
 
-export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: string = 'value'): { newOffset: number, [name: string]: Uint8Array } {
+export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: string = 'value'): { newOffset: number; [name: string]: Uint8Array; } {
   if (offset + size > buf.length)
     throw new InternalError('Out of bounds read in getStaticArray');
   const arr = new Uint8Array(buf.buffer, buf.byteOffset + offset, size);
   return { [name]: arr, newOffset: offset + size };
 }
 
-export function unserializeGenericSub(data: Uint8Array, functions: Array<Unserializer>, offset: number, name: string = 'value'): Object {
+export function unserializeGenericSub(data: Uint8Array, functions: Array<Unserializer>, offset: number, name: string = 'value'): Record<string, any> {
   let newOffset = offset;
   const resultList = [];
   for (const f of functions) {
@@ -52,7 +51,7 @@ export function unserializeGeneric<T>(data: Uint8Array, functions: Array<Unseria
   if (result.newOffset !== data.length)
     throw new InternalError(`deserialization error: trailing garbage data (unserialized cursor: ${result.newOffset}, buffer length: ${data.length})`);
 
-  return ((result.value: any): T);
+  return ((result.value as any) as T);
 }
 
 export function unserializeList(data: Uint8Array, f: Unserializer, offset: number, name: string = 'value') {
@@ -75,7 +74,7 @@ export function encodeArrayLength(array: Uint8Array | Array<number>): Uint8Array
   return new Uint8Array(varint.encode(array.length));
 }
 
-export function encodeListLength(array: $ReadOnlyArray<any>): Uint8Array {
+export function encodeListLength(array: ReadonlyArray<any>): Uint8Array {
   return new Uint8Array(varint.encode(array.length));
 }
 
