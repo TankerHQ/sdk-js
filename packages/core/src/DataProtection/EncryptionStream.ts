@@ -1,5 +1,5 @@
-// @flow
-import { utils, encryptionV4, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
@@ -12,8 +12,8 @@ export class EncryptionStream extends Transform {
   _resizerStream: ResizerStream;
   _resourceId: Uint8Array;
   _state: {
-    index: number,
-    lastClearChunkSize: number,
+    index: number;
+    lastClearChunkSize: number;
   };
 
   constructor(resourceId: Uint8Array, key: Uint8Array, maxEncryptedChunkSize: number = encryptionV4.defaultMaxEncryptedChunkSize) {
@@ -57,10 +57,11 @@ export class EncryptionStream extends Transform {
           done(err);
           return;
         }
+
         done();
       },
 
-      flush: (done) => {
+      flush: done => {
         // flush a last empty block if remaining clear data is an exact multiple of max clear chunk size
         if (this._state.lastClearChunkSize % this._maxClearChunkSize === 0) {
           try {
@@ -71,12 +72,14 @@ export class EncryptionStream extends Transform {
             return;
           }
         }
+
         done();
       },
     });
 
-    this._encryptionStream.on('data', (data) => this.push(data));
-    [this._resizerStream, this._encryptionStream].forEach((stream) => stream.on('error', (error) => this.destroy(error)));
+    this._encryptionStream.on('data', data => this.push(data));
+    [this._resizerStream, this._encryptionStream].forEach(stream => stream.on('error', error => this.destroy(error)));
+
     this._resizerStream.pipe(this._encryptionStream);
   }
 
@@ -88,7 +91,7 @@ export class EncryptionStream extends Transform {
     return encryptedBuffer;
   }
 
-  _transform(clearData: Uint8Array, encoding: ?string, done: DoneCallback) {
+  _transform(clearData: Uint8Array, encoding?: string | null, done: DoneCallback) {
     if (!(clearData instanceof Uint8Array)) {
       done(new InvalidArgument('clearData', 'Uint8Array', clearData));
       return;

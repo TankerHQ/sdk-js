@@ -1,12 +1,12 @@
-// @flow
 import varint from 'varint';
-import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, random, tcrypto, type Key } from '@tanker/crypto';
+import type { Key } from '@tanker/crypto';
+import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, random, tcrypto } from '@tanker/crypto';
 
 import { InvalidArgument } from '@tanker/errors';
 
 export type Resource = {
-  resourceId: Uint8Array,
-  key: Key,
+  resourceId: Uint8Array;
+  key: Key;
 };
 
 // The maximum byte size of a resource encrypted with the "simple" algorithms
@@ -20,8 +20,8 @@ export type Resource = {
 export const SAFE_EXTRACTION_LENGTH = 1 + 16 + 24 + 5 * (1024 * 1024);
 
 export type EncryptionFormatDescription = {
-  version: number,
-  encryptedChunkSize?: number,
+  version: number;
+  encryptedChunkSize?: number;
 };
 
 export function makeResource(): Resource {
@@ -42,7 +42,7 @@ export const getStreamEncryptionFormatDescription = (): EncryptionFormatDescript
 const encryptionFormats = [null, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5];
 
 export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescription, encryptedSize: number): number => {
-  const encryption: Object = encryptionFormats[encryptionFormatDescription.version];
+  const encryption: Record<string, any> = encryptionFormats[encryptionFormatDescription.version];
   if (!encryption)
     throw new InvalidArgument(`Unhandled format version ${encryptionFormatDescription.version} used in encryptedData`);
 
@@ -51,6 +51,7 @@ export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescri
 
 export const extractEncryptionFormat = (encryptedData: Uint8Array) => {
   let version;
+
   try {
     version = varint.decode(encryptedData);
   } catch (e) {
@@ -61,7 +62,6 @@ export const extractEncryptionFormat = (encryptedData: Uint8Array) => {
 
   if (!encryption)
     throw new InvalidArgument(`Unhandled format version ${version} used in encryptedData`);
-
   if (encryptedData.length < encryption.overhead)
     throw new InvalidArgument(`Truncated encrypted data. Length should be at least ${encryption.overhead} with encryption format v${encryption.version}`);
 

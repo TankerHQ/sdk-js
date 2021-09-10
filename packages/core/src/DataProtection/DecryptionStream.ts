@@ -1,5 +1,5 @@
-// @flow
-import { encryptionV4, utils, type Key } from '@tanker/crypto';
+import type { Key } from '@tanker/crypto';
+import { encryptionV4, utils } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { DoneCallback } from '@tanker/stream-base';
@@ -7,17 +7,17 @@ import type { DoneCallback } from '@tanker/stream-base';
 import { extractEncryptionFormat } from './types';
 
 export type ResourceIdKeyMapper = {
-  findKey: (Uint8Array) => Promise<Key>
+  findKey: (resourceID: Uint8Array) => Promise<Key>;
 };
 
 export class DecryptionStream extends Transform {
   _mapper: ResourceIdKeyMapper;
 
   _state: {
-    initialized: bool,
-    index: number,
-    maxEncryptedChunkSize: number,
-    lastEncryptedChunkSize: number,
+    initialized: boolean;
+    index: number;
+    maxEncryptedChunkSize: number;
+    lastEncryptedChunkSize: number;
   };
 
   _resizerStream: ResizerStream;
@@ -49,6 +49,7 @@ export class DecryptionStream extends Transform {
 
   async _initializeStreams(headOfEncryptedData: Uint8Array) {
     let encryption;
+
     try {
       encryption = extractEncryptionFormat(headOfEncryptedData);
     } catch (e) {
@@ -62,13 +63,14 @@ export class DecryptionStream extends Transform {
     }
 
     this._bindStreams();
+
     this._state.initialized = true;
     this.emit('initialized');
   }
 
   _bindStreams() {
-    this._decryptionStream.on('data', (data) => this.push(data));
-    [this._resizerStream, this._decryptionStream].forEach((stream) => stream.on('error', (error) => this.destroy(error)));
+    this._decryptionStream.on('data', data => this.push(data));
+    [this._resizerStream, this._decryptionStream].forEach(stream => stream.on('error', error => this.destroy(error)));
 
     this._resizerStream.pipe(this._decryptionStream);
   }
@@ -100,6 +102,7 @@ export class DecryptionStream extends Transform {
           done(new DecryptionFailed({ error, b64ResourceId }));
           return;
         }
+
         done();
       },
     });
@@ -138,15 +141,18 @@ export class DecryptionStream extends Transform {
           done(new DecryptionFailed({ error, b64ResourceId }));
           return;
         }
+
         this._state.lastEncryptedChunkSize = encryptedChunk.length;
         this._state.index += 1; // safe as long as index < 2^53
 
         done();
       },
-
-      flush: (done) => {
+      flush: done => {
         if (this._state.lastEncryptedChunkSize % this._state.maxEncryptedChunkSize === 0) {
-          done(new DecryptionFailed({ message: 'Data has been truncated', b64ResourceId }));
+          done(new DecryptionFailed({
+            message: 'Data has been truncated',
+            b64ResourceId,
+          }));
           return;
         }
 
@@ -155,7 +161,7 @@ export class DecryptionStream extends Transform {
     });
   }
 
-  async _transform(encryptedData: Uint8Array, encoding: ?string, done: DoneCallback) {
+  async _transform(encryptedData: Uint8Array, encoding?: string | null, done: DoneCallback) {
     if (!(encryptedData instanceof Uint8Array)) {
       done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
       return;

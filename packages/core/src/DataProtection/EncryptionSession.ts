@@ -1,9 +1,10 @@
-// @flow
+import type { b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
+import type { Data } from '@tanker/types';
+import { assertDataType, assertNotEmptyString } from '@tanker/types';
 
-import { utils, type b64string } from '@tanker/crypto';
-import { type Data, assertDataType, assertNotEmptyString } from '@tanker/types';
-
-import { assertStatus, statuses, type Status } from '../Session/status';
+import type { Status } from '../Session/status';
+import { assertStatus, statuses } from '../Session/status';
 import type { OutputOptions, ProgressOptions } from './options';
 import { extractOutputOptions, extractProgressOptions } from './options';
 import type { DataProtector } from './DataProtector';
@@ -29,12 +30,12 @@ export class EncryptionSession {
     return utils.toBase64(this._resource.resourceId);
   }
 
-  async encrypt<T: Data>(clearText: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encrypt<T extends Data>(clearText: string, options?: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertNotEmptyString(clearText, 'clearText');
     return this.encryptData(utils.fromString(clearText), options);
   }
 
-  async encryptData<T: Data>(clearData: Data, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encryptData<T extends Data>(clearData: Data, options?: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertStatus(this._status, statuses.READY, 'encrypt with an encryption session');
     assertDataType(clearData, 'clearData');
 

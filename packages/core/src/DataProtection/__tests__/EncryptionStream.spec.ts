@@ -1,4 +1,3 @@
-// @flow
 import { Writable } from '@tanker/stream-base';
 import { aead, random, ready as cryptoReady, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
@@ -12,10 +11,10 @@ describe('EncryptionStream', () => {
   let key;
   let resourceId;
 
-  const watchStream = (stream) => {
+  const watchStream = stream => {
     const sync = new PromiseWrapper();
-    stream.on('data', (data) => buffer.push(data));
-    stream.on('error', (err) => sync.reject(err));
+    stream.on('data', data => buffer.push(data));
+    stream.on('error', err => sync.reject(err));
     stream.on('end', () => sync.resolve());
     return sync;
   };
@@ -150,10 +149,9 @@ describe('EncryptionStream', () => {
       expect(clearData).to.deep.equal(expectedMsg);
     });
   });
-
   const coef = 3;
   describe(`buffers at most ${coef} * clear chunk size`, () => {
-    [10, 50, 100, 1000].forEach((chunkSize) => {
+    [10, 50, 100, 1000].forEach(chunkSize => {
       it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks`, async () => {
         const chunk = new Uint8Array(chunkSize);
         const inputSize = 10 * chunkSize;
@@ -167,7 +165,7 @@ describe('EncryptionStream', () => {
             await timeout.promise;
             bufferCounter.incrementOutputAndSnapshot(data.length - encryptionV4.overhead);
             done();
-          }
+          },
         });
 
         const continueWriting = () => {
@@ -190,8 +188,11 @@ describe('EncryptionStream', () => {
           continueWriting();
         });
 
-        bufferCounter.snapshots.forEach((bufferedLength) => {
-          expect(bufferedLength).to.be.at.most(coef * chunkSize, `buffered data exceeds threshold (${coef} * chunk size): got ${bufferedLength}, chunk size ${chunkSize})`);
+        bufferCounter.snapshots.forEach(bufferedLength => {
+          expect(bufferedLength).to.be.at.most(
+            coef * chunkSize,
+            `buffered data exceeds threshold (${coef} * chunk size): got ${bufferedLength}, chunk size ${chunkSize})`,
+          );
         });
       });
     });

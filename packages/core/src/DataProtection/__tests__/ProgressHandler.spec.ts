@@ -1,4 +1,3 @@
-// @flow
 import { InvalidArgument } from '@tanker/errors';
 import { expect, sinon } from '@tanker/test-utils';
 
@@ -82,8 +81,8 @@ describe('ProgressHandler', () => {
       () => {},
       { onProgress: false },
       { onProgress: 'on' },
-      { onProgress: { progress: () => {} } },
-    ].forEach((invalidOptions, i) => {
+      { onProgress: { progress: () => {} },
+      }].forEach((invalidOptions, i) => {
       // $FlowExpectedError Giving invalid options
       expect(() => new ProgressHandler(invalidOptions), `failed test #${i}`).to.throw(InvalidArgument);
     });
