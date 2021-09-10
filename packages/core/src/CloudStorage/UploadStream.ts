@@ -1,9 +1,8 @@
-// @flow
-import { Writable, Transform, type DoneCallback } from '@tanker/stream-base';
+import type { DoneCallback } from '@tanker/stream-base';
+import { Writable, Transform } from '@tanker/stream-base';
 import type { b64string } from '@tanker/crypto';
 
-export class UploadStream
-  extends Writable {
+export class UploadStream extends Writable {
   _b64resourceId: b64string;
   _headStream: Transform;
   _tailStream: Writable;
@@ -12,12 +11,10 @@ export class UploadStream
   _tailStreamFinishPromise: Promise<void>;
 
   constructor(b64resourceId: b64string, streams: Array<Transform | Writable>) {
-    super(
-      {
-        highWaterMark: 1,
-        objectMode: true,
-      },
-    );
+    super({
+      highWaterMark: 1,
+      objectMode: true,
+    });
     this._b64resourceId = b64resourceId;
     this._streams = streams;
     this._headStream = this._streams[0];

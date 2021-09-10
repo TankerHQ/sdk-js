@@ -1,5 +1,5 @@
-// @flow
-import { utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 import { MergerStream, ResizerStream, SlicerStream } from '@tanker/stream-base';
 import type { Readable, Writable } from '@tanker/stream-base';
@@ -18,7 +18,7 @@ import { UploadStream } from './UploadStream';
 import { DownloadStream } from './DownloadStream';
 
 const pipeStreams = (
-  { streams, resolveEvent }: { streams: Array<Readable | Writable>, resolveEvent: string }
+  { streams, resolveEvent }: { streams: Array<Readable | Writable>; resolveEvent: string; },
 ) => new Promise((resolve, reject) => {
   streams.forEach(stream => stream.on('error', reject));
   streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
@@ -27,7 +27,7 @@ const pipeStreams = (
 // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
 const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
-type Metadata = $Exact<{ encryptionFormat: EncryptionFormatDescription } & ResourceMetadata>;
+type Metadata = { encryptionFormat: EncryptionFormatDescription; } & ResourceMetadata;
 
 export class CloudStorageManager {
   _client: Client;
@@ -66,12 +66,12 @@ export class CloudStorageManager {
     return uploadStream.resourceId;
   }
 
-  async download<T: Data>(b64ResourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async download<T extends Data>(b64ResourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const downloadStream = await this.createDownloadStream(b64ResourceId, progressOptions);
     const merger = new MergerStream({
       type: defaultDownloadType,
       ...outputOptions,
-      ...downloadStream.metadata
+      ...downloadStream.metadata,
     });
 
     return pipeStreams({ streams: [downloadStream, merger], resolveEvent: 'data' });
@@ -85,7 +85,7 @@ export class CloudStorageManager {
     const totalClearSize = clearSize;
     const totalEncryptedSize = encryptor.getEncryptedSize(totalClearSize);
 
-    const metadata: $Shape<Metadata> = {
+    const metadata: Partial<Metadata> = {
       ...resourceMetadata,
       encryptionFormat: getStreamEncryptionFormatDescription(),
     };
@@ -95,7 +95,7 @@ export class CloudStorageManager {
       urls,
       headers,
       service,
-      recommended_chunk_size: recommendedChunkSize
+      recommended_chunk_size: recommendedChunkSize,
     } = await this._client.getFileUploadURL(resourceId, encryptedMetadata, totalEncryptedSize);
 
     if (!streamCloudStorage[service])
