@@ -1,4 +1,3 @@
-// @flow
 import { generichash } from '@tanker/crypto';
 
 export const USER_SECRET_SIZE = 32;
@@ -8,7 +7,7 @@ function checksumByte(secretRand: Uint8Array, userIdBytes: Uint8Array): number {
   const input = new Uint8Array(USER_SECRET_SIZE - 1 + userIdBytes.length);
   input.set(secretRand);
   input.set(userIdBytes, USER_SECRET_SIZE - 1);
-  return generichash(input, hashSize)[0];
+  return generichash(input, hashSize)[0]!;
 }
 
 export function assertUserSecret(userId: Uint8Array, secret: Uint8Array) {

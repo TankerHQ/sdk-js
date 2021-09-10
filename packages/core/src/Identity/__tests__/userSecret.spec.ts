@@ -1,5 +1,4 @@
-// @flow
-import { ready as cryptoReady, utils } from '@tanker/crypto';
+import { b64string, ready as cryptoReady, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { obfuscateUserId, createUserSecretBinary } from '@tanker/identity';
 
@@ -8,8 +7,8 @@ import { assertUserSecret, USER_SECRET_SIZE } from '../userSecret';
 const { fromBase64, fromString } = utils;
 
 describe('userSecret', () => {
-  let trustchainId;
-  let trustchainIdB64;
+  let trustchainId: Uint8Array;
+  let trustchainIdB64: b64string;
 
   before(async () => {
     await cryptoReady;
@@ -22,12 +21,10 @@ describe('userSecret', () => {
     const hashedUserId = obfuscateUserId(trustchainId, userId);
     const secret = createUserSecretBinary(trustchainIdB64, userId);
     const tooShortSecret = new Uint8Array(USER_SECRET_SIZE - 1);
-
     [
-      // $FlowExpectedError
-      [], [undefined, secret], [hashedUserId], [hashedUserId, null], [userId, secret], [hashedUserId, tooShortSecret]
+      [], [undefined, secret], [hashedUserId], [hashedUserId, null], [userId, secret], [hashedUserId, tooShortSecret],
     ].forEach((badArgs, i) => {
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => assertUserSecret(...badArgs), `bad args #${i}`).to.throw('Assertion error');
     });
   });
@@ -47,14 +44,17 @@ describe('userSecret', () => {
   it('should reject secrets of the wrong user most of the time', async () => {
     const count = 10;
     let rejections = 0;
+
     for (let i = 0; i < count; ++i) {
       const secret = createUserSecretBinary(trustchainIdB64, 'villefort');
+
       try {
         assertUserSecret(obfuscateUserId(trustchainId, 'edmond'), secret);
       } catch (e) {
         rejections += 1;
       }
     }
+
     expect(rejections).that.which.does.have.to.be.above(count / 2);
   });
 });
