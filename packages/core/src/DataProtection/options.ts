@@ -1,10 +1,9 @@
-// @flow
 import type { b64string } from '@tanker/crypto';
 import { tcrypto } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import globalThis from '@tanker/global-this';
 import { getConstructor, assertNotEmptyString, assertB64StringWithSize } from '@tanker/types';
-import type { Data, ResourceMetadata } from '@tanker/types';
+import type { Class, Data, ResourceMetadata } from '@tanker/types';
 
 import type { OnProgress } from './ProgressHandler';
 
@@ -12,19 +11,19 @@ const MAX_SHARE_RECIPIENTS = 100;
 
 export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Array;
 
-export type FormatOptions<T:Data> = $Exact<{ type: Class<T> }>;
+export type FormatOptions<T extends Data> = { type: Class<T>; };
 
-export type OutputOptions<T: Data> = $Exact<FormatOptions<T> & ResourceMetadata>;
+export type OutputOptions<T extends Data> = FormatOptions<T> & ResourceMetadata;
 
-export type ProgressOptions = { onProgress?: OnProgress };
+export type ProgressOptions = { onProgress?: OnProgress; };
 
-export type EncryptionOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool };
+export type EncryptionOptions = { shareWithUsers?: Array<b64string>; shareWithGroups?: Array<string>; shareWithSelf?: boolean; };
 
-export type SharingOptions = { shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string> };
+export type SharingOptions = { shareWithUsers?: Array<b64string>; shareWithGroups?: Array<string>; };
 
-export const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
+export const isObject = (val: Record<string, any>) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
-export const extractSharingOptions = (options: Object, error: any = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<b64string> }', options)): SharingOptions => {
+export const extractSharingOptions = (options: Record<string, any>, error: any = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<b64string> }', options)): SharingOptions => {
   if (!isObject(options))
     throw error;
 
@@ -65,7 +64,7 @@ export const extractSharingOptions = (options: Object, error: any = new InvalidA
   return sharingOptions;
 };
 
-export const extractEncryptionOptions = (options: Object): EncryptionOptions => {
+export const extractEncryptionOptions = (options: Record<string, any>): EncryptionOptions => {
   const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool }', options);
 
   // $FlowIgnore casting SharingOptions to EncryptionOptions is safe
@@ -87,7 +86,7 @@ export const extractEncryptionOptions = (options: Object): EncryptionOptions => 
   return encryptionOptions;
 };
 
-export const isSharingOptionsEmpty = (opts: SharingOptions): bool => {
+export const isSharingOptionsEmpty = (opts: SharingOptions): boolean => {
   if (opts.shareWithGroups && opts.shareWithGroups.length > 0)
     return false;
   if (opts.shareWithUsers && opts.shareWithUsers.length > 0)
@@ -95,11 +94,11 @@ export const isSharingOptionsEmpty = (opts: SharingOptions): bool => {
   return true;
 };
 
-export const extractResourceMetadata = (options: Object, input?: Data): ResourceMetadata => {
+export const extractResourceMetadata = (options: Record<string, any>, input?: Data): ResourceMetadata => {
   if (!isObject(options))
     throw new InvalidArgument('options', '{ mime?: string, name?: string, lastModified?: number }', options);
 
-  const resourceMetadata: $Shape<ResourceMetadata> = {};
+  const resourceMetadata: Partial<ResourceMetadata> = {};
   if (globalThis.Blob && input instanceof globalThis.Blob) {
     resourceMetadata.mime = input.type;
   }
@@ -107,7 +106,6 @@ export const extractResourceMetadata = (options: Object, input?: Data): Resource
     resourceMetadata.name = input.name;
     resourceMetadata.lastModified = input.lastModified;
   }
-
   if (typeof options.mime === 'string') {
     resourceMetadata.mime = options.mime;
   }
@@ -121,7 +119,7 @@ export const extractResourceMetadata = (options: Object, input?: Data): Resource
   return resourceMetadata;
 };
 
-export const extractOutputOptions = <T: Data>(options: Object, input?: Data): OutputOptions<T> => {
+export const extractOutputOptions = <T extends Data>(options: Record<string, any>, input?: Data): OutputOptions<T> => {
   if (!isObject(options))
     throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
 
@@ -136,14 +134,14 @@ export const extractOutputOptions = <T: Data>(options: Object, input?: Data): Ou
   }
 
   const outputOptions: OutputOptions<T> = {
-    ...(extractResourceMetadata(options, input): $Shape<OutputOptions<T>>),
+    ...(extractResourceMetadata(options, input) as Partial<OutputOptions<T>>),
     type: outputType,
   };
 
   return outputOptions;
 };
 
-export const extractProgressOptions = (options: Object): ProgressOptions => {
+export const extractProgressOptions = (options: Record<string, any>): ProgressOptions => {
   const progressOptions = {};
 
   if ('onProgress' in options) {

@@ -1,15 +1,14 @@
-// @flow
 import { InvalidArgument } from '@tanker/errors';
 
-export type ProgressReport = $Exact<{ currentBytes: number, totalBytes?: number }>;
+export type ProgressReport = { currentBytes: number; totalBytes?: number; };
 export type OnProgress = (report: ProgressReport) => void;
 
 export class ProgressHandler {
   _currentBytes: number = 0;
   _onProgress: OnProgress;
-  _totalBytes: ?number;
+  _totalBytes?: number;
 
-  constructor(options: { onProgress?: OnProgress } = {}) {
+  constructor(options: { onProgress?: OnProgress; } = {}) {
     // $FlowIgnore Use of Object.prototype
     if (!options || typeof options !== 'object' || Object.getPrototypeOf(options) !== Object.prototype)
       throw new InvalidArgument('options', 'object', options);
@@ -27,7 +26,7 @@ export class ProgressHandler {
     }
   }
 
-  start = (totalBytes: ?number) => {
+  start = (totalBytes?: number) => {
     if (typeof totalBytes !== 'undefined') {
       if (typeof totalBytes !== 'number' || totalBytes < 0 || Math.floor(totalBytes) !== totalBytes)
         throw new InvalidArgument('totalBytes', 'integer >= 0', totalBytes);
@@ -36,7 +35,7 @@ export class ProgressHandler {
 
     this.report(0);
     return this;
-  }
+  };
 
   report = (bytesRead: number) => {
     this._currentBytes += bytesRead;
@@ -46,5 +45,5 @@ export class ProgressHandler {
       : { currentBytes: this._currentBytes };
 
     this._onProgress(progressReport);
-  }
+  };
 }
