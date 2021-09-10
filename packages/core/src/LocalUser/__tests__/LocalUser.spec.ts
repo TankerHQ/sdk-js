@@ -1,10 +1,9 @@
-// @flow
-
 import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import TestGenerator, { type TestUser } from '../../__tests__/TestGenerator';
+import type { TestUser } from '../../__tests__/TestGenerator';
+import TestGenerator from '../../__tests__/TestGenerator';
 
 import LocalUser from '../LocalUser';
 import { extractUserData } from '../UserData';
@@ -64,7 +63,7 @@ describe('Local User', () => {
       currentUserKey: null,
       devices: [],
       deviceId: deviceCreation2.testDevice.id,
-      trustchainPublicKey: null
+      trustchainPublicKey: null,
     };
     localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
   });
@@ -87,6 +86,7 @@ describe('Local User', () => {
     let deviceCreation3;
     let deviceCreation3Block;
     let deviceRevocationBlock;
+
     beforeEach(() => {
       deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation1, deviceCreation2.testDevice.id);
       deviceRevocationBlock = deviceRevocation.block;

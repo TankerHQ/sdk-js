@@ -1,28 +1,29 @@
-// @flow
-import { tcrypto, utils, encryptionV1, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { tcrypto, utils, encryptionV1 } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import { type Device } from '../Users/types';
+import type { Device } from '../Users/types';
+import '../Users/types';
 
-export type ProvisionalUserKeyPairs = {|
-  id: string,
-  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
-  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
-|};
+export type ProvisionalUserKeyPairs = {
+  id: string;
+  appEncryptionKeyPair: tcrypto.SodiumKeyPair;
+  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair;
+};
 
-export type LocalUserKeys = { currentUserKey: tcrypto.SodiumKeyPair, userKeys: { [string]: tcrypto.SodiumKeyPair }};
+export type LocalUserKeys = { currentUserKey: tcrypto.SodiumKeyPair; userKeys: Record<string, tcrypto.SodiumKeyPair>; };
 
-export type IndexedProvisionalUserKeyPairs = { [id: string]: ProvisionalUserKeyPairs };
+export type IndexedProvisionalUserKeyPairs = Record<string, ProvisionalUserKeyPairs>;
 
-export type KeySafe = {|
-  signaturePair: ?tcrypto.SodiumKeyPair,
-  encryptionPair: ?tcrypto.SodiumKeyPair,
-  provisionalUserKeys: IndexedProvisionalUserKeyPairs,
-  devices: Array<Device>,
-  deviceId: ?b64string,
-  trustchainPublicKey: ?b64string,
-  localUserKeys: ?LocalUserKeys,
-|};
+export type KeySafe = {
+  signaturePair: ?tcrypto.SodiumKeyPair;
+  encryptionPair: ?tcrypto.SodiumKeyPair;
+  provisionalUserKeys: IndexedProvisionalUserKeyPairs;
+  devices: Array<Device>;
+  deviceId: b64string;
+  trustchainPublicKey: ?b64string;
+  localUserKeys: ?LocalUserKeys;
+};
 
 function startsWith(haystack: string, needle: string) {
   if (String.prototype.startsWith)
@@ -33,7 +34,7 @@ function startsWith(haystack: string, needle: string) {
 
 const base64Prefix = '__BASE64__';
 
-async function encryptObject(key: Uint8Array, plainObject: Object): Promise<Uint8Array> {
+async function encryptObject(key: Uint8Array, plainObject: Record<string, any>): Promise<Uint8Array> {
   const json = JSON.stringify(plainObject, (_k, v) => {
     if (v instanceof Uint8Array) {
       return base64Prefix + utils.toBase64(v);
@@ -43,7 +44,7 @@ async function encryptObject(key: Uint8Array, plainObject: Object): Promise<Uint
   return encryptionV1.serialize(encryptionV1.encrypt(key, utils.fromString(json)));
 }
 
-async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<Object> {
+async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<Record<string, any>> {
   const jsonBytes = encryptionV1.compatDecrypt(key, ciphertext);
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
     if (typeof v === 'string' && startsWith(v, base64Prefix))

@@ -1,5 +1,3 @@
-// @flow
-
 import { encryptionV2, generichash, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
@@ -7,25 +5,25 @@ import type LocalUser from './LocalUser';
 import type { RemoteVerification, RemoteVerificationWithToken } from './types';
 import type { SecretProvisionalIdentity } from '../Identity';
 
-export type VerificationRequest = $Exact<{
-  hashed_passphrase: Uint8Array,
-  with_token?: {| nonce: string |}
-}> | $Exact<{
-  hashed_email: Uint8Array,
-  v2_encrypted_email: Uint8Array,
-  verification_code: string,
-  with_token?: {| nonce: string |}
-}> | $Exact<{
-  oidc_id_token: string,
-  with_token?: {| nonce: string |}
-}> | $Exact<{
-  phone_number: string,
-  encrypted_phone_number: Uint8Array,
-  user_salt: Uint8Array,
+export type VerificationRequest = {
+  hashed_passphrase: Uint8Array;
+  with_token?: { nonce: string; };
+} | {
+  hashed_email: Uint8Array;
+  v2_encrypted_email: Uint8Array;
+  verification_code: string;
+  with_token?: { nonce: string; };
+} | {
+  oidc_id_token: string;
+  with_token?: { nonce: string; };
+} | {
+  phone_number: string;
+  encrypted_phone_number: Uint8Array;
+  user_salt: Uint8Array;
   provisional_salt?: Uint8Array,
-  verification_code: string,
-  with_token?: {| nonce: string |}
-}>;
+  verification_code: string;
+  with_token?: { nonce: string; };
+};
 
 export type ProvisionalKeysRequest = $Exact<{
   target: string,
@@ -40,7 +38,7 @@ export type ProvisionalKeysRequest = $Exact<{
 export const formatVerificationRequest = (
   verification: RemoteVerification | RemoteVerificationWithToken,
   localUser: LocalUser,
-  provIdentity: ?SecretProvisionalIdentity
+  provIdentity?: SecretProvisionalIdentity,
 ): VerificationRequest => {
   if (verification.email) {
     return {
@@ -49,11 +47,13 @@ export const formatVerificationRequest = (
       verification_code: verification.verificationCode,
     };
   }
+
   if (verification.passphrase) {
     return {
       hashed_passphrase: generichash(utils.fromString(verification.passphrase)),
     };
   }
+
   if (verification.phoneNumber) {
     return {
       phone_number: verification.phoneNumber,
@@ -63,11 +63,13 @@ export const formatVerificationRequest = (
       verification_code: verification.verificationCode,
     };
   }
+
   if (verification.oidcIdToken) {
     return {
       oidc_id_token: verification.oidcIdToken,
     };
   }
+
   throw new InternalError('Assertion error: invalid remote verification in formatVerificationRequest');
 };
 

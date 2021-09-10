@@ -1,15 +1,15 @@
-// @flow
-
 import { utils } from '@tanker/crypto';
 
 import { InvalidBlockError } from '../errors.internal';
-import { type Nature, natureKind, NATURE_KIND } from '../Blocks/Nature';
+import type { Nature } from '../Blocks/Nature';
+
+import { natureKind, NATURE_KIND } from '../Blocks/Nature';
 
 import type { TrustchainCreationEntry } from './Serialize';
 
 export const rootBlockAuthor = new Uint8Array(32);
 
-function isTrustchainCreation(nature: Nature): bool {
+function isTrustchainCreation(nature: Nature): boolean {
   return natureKind(nature) === NATURE_KIND.trustchain_creation;
 }
 

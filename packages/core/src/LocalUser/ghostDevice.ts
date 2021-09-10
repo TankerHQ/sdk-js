@@ -1,18 +1,18 @@
-// @flow
-import { utils, tcrypto, encryptionV2, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { utils, tcrypto, encryptionV2 } from '@tanker/crypto';
 
 export type GhostDevice = {
-  privateEncryptionKey: Uint8Array,
-  privateSignatureKey: Uint8Array,
-};
-export type GhostDeviceKeys = {
-  encryptionKeyPair: tcrypto.SodiumKeyPair,
-  signatureKeyPair: tcrypto.SodiumKeyPair,
+  privateEncryptionKey: Uint8Array;
+  privateSignatureKey: Uint8Array;
 };
 
+export type GhostDeviceKeys = {
+  encryptionKeyPair: tcrypto.SodiumKeyPair;
+  signatureKeyPair: tcrypto.SodiumKeyPair;
+};
 type EncryptedUserKeyForGhostDevice = {
-  deviceId: Uint8Array,
-  encryptedPrivateUserKey: Uint8Array,
+  deviceId: Uint8Array;
+  encryptedPrivateUserKey: Uint8Array;
 };
 
 export const generateGhostDeviceKeys = (): GhostDeviceKeys => ({
@@ -50,7 +50,7 @@ export const decryptUserKeyForGhostDevice = (ghostDevice: GhostDevice, encrypted
 
   const decryptedUserPrivateKey = tcrypto.sealDecrypt(
     encryptedUserKey.encryptedPrivateUserKey,
-    ghostDeviceEncryptionKeyPair
+    ghostDeviceEncryptionKeyPair,
   );
 
   return tcrypto.getEncryptionKeyPairFromPrivateKey(decryptedUserPrivateKey);

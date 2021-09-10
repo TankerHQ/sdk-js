@@ -1,4 +1,3 @@
-// @flow
 import { ready as cryptoReady } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
@@ -30,6 +29,7 @@ describe('BlockVerification', () => {
   describe('Trustchain creation', () => {
     let unverifiedTrustchainCreation: TrustchainCreationEntry;
     let trustchainId: Uint8Array;
+
     beforeEach(() => {
       const testTrustchainCreation = testGenerator.makeTrustchainCreation();
       unverifiedTrustchainCreation = testTrustchainCreation.unverifiedTrustchainCreation;
@@ -40,7 +40,7 @@ describe('BlockVerification', () => {
       unverifiedTrustchainCreation.author = makeUint8Array('Not 0', 32);
       assertFailWithNature(
         () => verifyTrustchainCreation(unverifiedTrustchainCreation, trustchainId),
-        'invalid_author_for_trustchain_creation'
+        'invalid_author_for_trustchain_creation',
       );
     });
 
@@ -48,7 +48,7 @@ describe('BlockVerification', () => {
       unverifiedTrustchainCreation.signature = makeUint8Array('Not 0', 32);
       assertFailWithNature(
         () => verifyTrustchainCreation(unverifiedTrustchainCreation, trustchainId),
-        'invalid_signature'
+        'invalid_signature',
       );
     });
 
@@ -56,7 +56,7 @@ describe('BlockVerification', () => {
       unverifiedTrustchainCreation.hash = makeUint8Array('Not hash', 32);
       assertFailWithNature(
         () => verifyTrustchainCreation(unverifiedTrustchainCreation, trustchainId),
-        'invalid_root_block'
+        'invalid_root_block',
       );
     });
 
@@ -64,7 +64,7 @@ describe('BlockVerification', () => {
       unverifiedTrustchainCreation.nature = NATURE.user_group_addition_v1;
       assertFailWithNature(
         () => verifyTrustchainCreation(unverifiedTrustchainCreation, trustchainId),
-        'invalid_nature'
+        'invalid_nature',
       );
     });
 
