@@ -1,4 +1,4 @@
-// @flow
+import { $Values } from 'utility-types';
 import { InternalError, PreconditionFailed } from '@tanker/errors';
 
 export const statusDefs = [
@@ -8,7 +8,7 @@ export const statusDefs = [
   /* 3 */ { name: 'IDENTITY_VERIFICATION_NEEDED' },
 ];
 
-export const statuses: { [name: string]: number } = (() => {
+export const statuses: Record<string, number> = (() => {
   const h = {};
   statusDefs.forEach((def, index) => {
     h[def.name] = index;
@@ -32,7 +32,7 @@ export function assertStatus(status: Status, expectedStatus: Status | Array<Stat
     if (expectedStatus.includes(status)) return;
 
     const { name } = statusDefs[status];
-    const expectedNames = expectedStatus.map((es) => statusDefs[es].name);
+    const expectedNames = expectedStatus.map(es => statusDefs[es].name);
     const message = `Expected status in [${expectedNames.join(', ')}] but got ${name} trying to ${to}.`;
     throw new PreconditionFailed(message);
   }
