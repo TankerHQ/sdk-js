@@ -1,13 +1,13 @@
-// @flow
-
-import { tcrypto, type Key } from '@tanker/crypto';
+import type { Key } from '@tanker/crypto';
+import { tcrypto } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 
-import GroupManager from '../Groups/Manager';
-import LocalUserManager from '../LocalUser/Manager';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
+import type GroupManager from '../Groups/Manager';
+import type LocalUserManager from '../LocalUser/Manager';
+import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 
-import { type KeyPublishEntry, isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './Serialize';
+import type { KeyPublishEntry } from './Serialize';
+import { isKeyPublishToUser, isKeyPublishToUserGroup, isKeyPublishToProvisionalUser } from './Serialize';
 
 export class KeyDecryptor {
   _localUserManager: LocalUserManager;
@@ -17,7 +17,7 @@ export class KeyDecryptor {
   constructor(
     localUserManager: LocalUserManager,
     groupManager: GroupManager,
-    provisionalIdentityManager: ProvisionalIdentityManager
+    provisionalIdentityManager: ProvisionalIdentityManager,
   ) {
     this._localUserManager = localUserManager;
     this._groupManager = groupManager;
@@ -25,7 +25,7 @@ export class KeyDecryptor {
   }
 
   async decryptResourceKeyPublishedToUser(keyPublishEntry: KeyPublishEntry): Promise<Key> {
-    if (!keyPublishEntry.recipient) {
+    if (!('recipient' in keyPublishEntry)) {
       throw new InternalError('Assertion error: key publish without recipient');
     }
     const userKey = await this._localUserManager.findUserKey(keyPublishEntry.recipient);
@@ -35,7 +35,7 @@ export class KeyDecryptor {
   }
 
   async decryptResourceKeyPublishedToGroup(keyPublishEntry: KeyPublishEntry): Promise<Key> {
-    if (!keyPublishEntry.recipient) {
+    if (!('recipient' in keyPublishEntry)) {
       throw new InternalError('Assertion error: key publish without recipient');
     }
     const encryptionKeyPair = await this._groupManager.getGroupEncryptionKeyPair(keyPublishEntry.recipient);
@@ -45,9 +45,10 @@ export class KeyDecryptor {
   }
 
   async decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry: KeyPublishEntry): Promise<Key> {
-    if (!keyPublishEntry.recipientAppPublicKey || !keyPublishEntry.recipientTankerPublicKey) {
+    if (!('recipientAppPublicKey' in keyPublishEntry && 'recipientTankerPublicKey' in keyPublishEntry)) {
       throw new InternalError('Assertion error: key publish without recipient');
     }
+
     const keys = await this._provisionalIdentityManager.getPrivateProvisionalKeys(keyPublishEntry.recipientAppPublicKey, keyPublishEntry.recipientTankerPublicKey);
     if (!keys)
       throw new DecryptionFailed({ message: 'Provisional user key not found' });
@@ -66,6 +67,7 @@ export class KeyDecryptor {
     if (isKeyPublishToProvisionalUser(keyPublishEntry.nature)) {
       return this.decryptResourceKeyPublishedToProvisionalIdentity(keyPublishEntry);
     }
+
     throw new InternalError(`Invalid nature for key publish: ${keyPublishEntry.nature}`);
   }
 }

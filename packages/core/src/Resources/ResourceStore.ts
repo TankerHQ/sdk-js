@@ -1,13 +1,13 @@
-// @flow
-
-import { utils, encryptionV1, type Key } from '@tanker/crypto';
-import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
+import type { Key } from '@tanker/crypto';
+import { utils, encryptionV1 } from '@tanker/crypto';
+import type { DataStore } from '@tanker/datastore-base';
+import { errors as dbErrors } from '@tanker/datastore-base';
 import { InternalError } from '@tanker/errors';
 
 const TABLE = 'resource_keys';
 
 export default class ResourceStore {
-  declare _ds: DataStore<*>;
+  declare _ds: DataStore;
   declare _userSecret: Uint8Array;
 
   static schemas = [
@@ -33,7 +33,7 @@ export default class ResourceStore {
     // }
   ];
 
-  constructor(ds: DataStore<*>, userSecret: Uint8Array) {
+  constructor(ds: DataStore, userSecret: Uint8Array) {
     if (!userSecret)
       throw new InternalError('Invalid user secret');
 
@@ -56,6 +56,7 @@ export default class ResourceStore {
         throw e;
       }
     }
+
     await this._ds.put(TABLE, { _id: b64ResourceId, b64EncryptedKey: utils.toBase64(encryptedKey) });
   }
 
@@ -63,7 +64,7 @@ export default class ResourceStore {
     try {
       const b64ResourceId = utils.toBase64(resourceId);
       const result = await this._ds.get(TABLE, b64ResourceId);
-      const encryptedKey = utils.fromBase64(result.b64EncryptedKey);
+      const encryptedKey = utils.fromBase64(result['b64EncryptedKey']!);
 
       return encryptionV1.compatDecrypt(this._userSecret, encryptedKey, resourceId);
     } catch (e) {
@@ -78,11 +79,11 @@ export default class ResourceStore {
     // Erase traces of critical data first
     utils.memzero(this._userSecret);
 
-    // $FlowIgnore
+    // @ts-expect-error
     this._ds = null;
   }
 
-  static async open(ds: DataStore<*>, userSecret: Uint8Array): Promise<any> {
+  static async open(ds: DataStore, userSecret: Uint8Array): Promise<ResourceStore> {
     return new ResourceStore(ds, userSecret);
   }
 }
