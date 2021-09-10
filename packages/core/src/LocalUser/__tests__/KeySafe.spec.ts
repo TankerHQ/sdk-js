@@ -1,5 +1,3 @@
-// @flow
-
 import { ready as cryptoReady } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';

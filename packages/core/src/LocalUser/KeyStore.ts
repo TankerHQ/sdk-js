@@ -1,26 +1,25 @@
-// @flow
-
 import { tcrypto, utils } from '@tanker/crypto';
-import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
+import type { DataStore } from '@tanker/datastore-base';
+import { errors as dbErrors } from '@tanker/datastore-base';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from './KeySafe';
 import type { KeySafe, IndexedProvisionalUserKeyPairs } from './KeySafe';
-import { type Device } from '../Users/types';
+import type { Device } from '../Users/types';
 
 const TABLE = 'device';
 
-export type LocalData = {|
+export type LocalData = {
   currentUserKey: ?tcrypto.SodiumKeyPair;
-  deviceId: ?Uint8Array,
+  deviceId: ?Uint8Array;
   deviceEncryptionKeyPair: ?tcrypto.SodiumKeyPair;
   deviceSignatureKeyPair: ?tcrypto.SodiumKeyPair;
-  devices: Array<Device>,
-  trustchainPublicKey: ?Uint8Array,
-  userKeys: { [string]: tcrypto.SodiumKeyPair };
-|};
+  devices: Array<Device>;
+  trustchainPublicKey: ?Uint8Array;
+  userKeys: Record<string, tcrypto.SodiumKeyPair>;
+};
 
 export default class KeyStore {
-  declare _ds: DataStore<*>;
+  declare _ds: DataStore<any>;
   declare _safe: KeySafe;
 
   static schemas = [
@@ -47,7 +46,7 @@ export default class KeyStore {
     // }
   ];
 
-  constructor(ds: DataStore<*>) {
+  constructor(ds: DataStore<any>) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
   }
@@ -104,7 +103,7 @@ export default class KeyStore {
 
   async close(): Promise<void> {
     // First erase traces of critical data in memory
-    [this._safe.encryptionPair, this._safe.signaturePair].forEach((keyPair) => {
+    [this._safe.encryptionPair, this._safe.signaturePair].forEach(keyPair => {
       if (keyPair) {
         utils.memzero(keyPair.privateKey);
         utils.memzero(keyPair.publicKey);
@@ -118,15 +117,15 @@ export default class KeyStore {
     this._ds = null;
   }
 
-  static async open(ds: DataStore<*>, userSecret: Uint8Array): Promise<KeyStore> {
+  static async open(ds: DataStore<any>, userSecret: Uint8Array): Promise<KeyStore> {
     const keystore = new KeyStore(ds);
     await keystore.initData(userSecret);
     return keystore;
   }
 
   async initData(userSecret: Uint8Array): Promise<void> {
-    let record: Object;
-    let safe: ?KeySafe;
+    let record: Record<string, any>;
+    let safe: ?KeySafe = null;
 
     // Try to get safe from the storage, might not exist yet
     try {
