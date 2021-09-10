@@ -1,4 +1,3 @@
-// @flow
 import { Conflict, DeviceRevoked, ExpiredVerification, GroupTooBig, IdentityAlreadyAttached, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, UpgradeRequired } from '@tanker/errors';
 
 const apiCodeErrorMap = {
@@ -23,7 +22,7 @@ const apiCodeErrorMap = {
   missing_user_group_members: InvalidArgument,
 };
 
-export const genericErrorHandler = (apiMethod: string, apiRoute: string, error: Object) => {
+export const genericErrorHandler = (apiMethod: string, apiRoute: string, error: Record<string, any>) => {
   const { code: apiCode, message, status: httpStatus, trace_id: traceId } = error;
   const apiError = { apiCode, apiMethod, apiRoute, httpStatus, message, traceId };
 
