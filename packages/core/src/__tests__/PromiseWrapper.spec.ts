@@ -1,13 +1,12 @@
-// @flow
 import { expect } from '@tanker/test-utils';
 
 import PromiseWrapper from '../PromiseWrapper';
 
-const afterSomeTimeDo = (f: () => void): TimeoutID => setTimeout(f, 20);
+const afterSomeTimeDo = (f: () => void): ReturnType<typeof setTimeout> => setTimeout(f, 20);
 
 describe('PromiseWrapper', () => {
-  let value;
-  let pw;
+  let value: any;
+  let pw: PromiseWrapper<any>;
 
   beforeEach(() => {
     value = '<a value>';

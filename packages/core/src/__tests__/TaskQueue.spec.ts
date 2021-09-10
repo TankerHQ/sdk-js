@@ -1,4 +1,3 @@
-// @flow
 import { expect } from '@tanker/test-utils';
 
 import { PromiseWrapper } from '../PromiseWrapper';
@@ -39,8 +38,7 @@ describe('TaskQueue', () => {
       });
 
       it('does not break after exceptions in previous tasks', async () => {
-        const pw = new PromiseWrapper();
-
+        const pw = new PromiseWrapper<void>();
         q.enqueue(() => { throw err; }).catch(() => {});
         q.enqueue(pw.resolve);
 
@@ -48,8 +46,8 @@ describe('TaskQueue', () => {
       });
 
       it('executes tasks concurrently up to the maximum concurrency', async () => {
-        const scheduled = [];
-        const scheduledTaskIds = [];
+        const scheduled: Array<{ resolve: () => void }> = [];
+        const scheduledTaskIds: Array<number> = [];
         let nextTaskId = 0;
 
         const task = () => {
@@ -62,13 +60,14 @@ describe('TaskQueue', () => {
           const pw = new PromiseWrapper();
           const taskId = nextTaskId;
           scheduledTaskIds.push(taskId);
-          scheduled.push({ resolve: () => { pw.resolve(taskId); } });
+          scheduled.push({ resolve: () => { pw.resolve(taskId); },
+          });
 
           // When max concurrency reached, resolve scheduled tasks at once, but only
           // after a few milliseconds to ensure no additional task has been scheduled
           if (scheduled.length === concurrency) {
             setTimeout(() => {
-              while (scheduled.length) scheduled.shift().resolve();
+              while (scheduled.length) scheduled.shift()!.resolve();
             }, waitMs);
           }
 
