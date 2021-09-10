@@ -1,5 +1,5 @@
-// @flow
-import { utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -8,20 +8,22 @@ import type { Data } from '@tanker/types';
 
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '../Identity';
 import type { PublicIdentity, PublicProvisionalUser } from '../Identity';
-import { Client } from '../Network/Client';
-import LocalUser from '../LocalUser/LocalUser';
-import ResourceManager from '../Resources/Manager';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
-import GroupManager from '../Groups/Manager';
-import UserManager from '../Users/Manager';
+import type { Client } from '../Network/Client';
+import type LocalUser from '../LocalUser/LocalUser';
+import type ResourceManager from '../Resources/Manager';
+import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
+import type GroupManager from '../Groups/Manager';
+import type UserManager from '../Users/Manager';
 
 import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH, getClearSize } from './types';
 import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
 import type { Resource, EncryptionFormatDescription } from './types';
 
-import { type User, getLastUserPublicKey } from '../Users/types';
-import { NATURE_KIND, type NatureKind } from '../Blocks/Nature';
-import { type Status } from '../Session/status';
+import type { User } from '../Users/types';
+import { getLastUserPublicKey } from '../Users/types';
+import { NATURE_KIND } from '../Blocks/Nature';
+import type { NatureKind } from '../Blocks/Nature';
+import type { Status } from '../Session/status';
 
 import type { OutputOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './options';
 import { EncryptionStream } from './EncryptionStream';
@@ -60,7 +62,7 @@ export class DataProtector {
   _makeKeyPublishBlocks(
     resource: Array<Resource>,
     keys: Array<Uint8Array>,
-    natureKind: NatureKind
+    natureKind: NatureKind,
   ): Array<b64string> {
     const blocks: Array<b64string> = [];
     for (const publicEncryptionKey of keys) {
@@ -74,7 +76,7 @@ export class DataProtector {
 
   _makeKeyPublishToProvisionalIdentityBlocks(
     resource: Array<Resource>,
-    provisionalUsers: Array<PublicProvisionalUser>
+    provisionalUsers: Array<PublicProvisionalUser>,
   ): Array<b64string> {
     const blocks: Array<b64string> = [];
     for (const provisionalUser of provisionalUsers) {
@@ -90,9 +92,13 @@ export class DataProtector {
     resource: Array<Resource>,
     recipientUsers: Array<User>,
     recipientProvisionalUsers: Array<PublicProvisionalUser>,
-    recipientGroupsEncryptionKeys: Array<Uint8Array>
+    recipientGroupsEncryptionKeys: Array<Uint8Array>,
   ): Promise<void> {
-    const body = {
+    const body: {
+      key_publishes_to_user: b64string[];
+      key_publishes_to_user_group: b64string[];
+      key_publishes_to_provisional_user: b64string[];
+    } = {
       key_publishes_to_user: [],
       key_publishes_to_user_group: [],
       key_publishes_to_provisional_user: [],
@@ -120,7 +126,7 @@ export class DataProtector {
     await this._client.publishResourceKeys(body);
   }
 
-  _handleShareWithSelf = (identities: Array<PublicIdentity>, shareWithSelf: bool): Array<PublicIdentity> => {
+  _handleShareWithSelf = (identities: Array<PublicIdentity>, shareWithSelf: boolean): Array<PublicIdentity> => {
     if (shareWithSelf) {
       const selfUserIdB64 = utils.toBase64(this._localUser.userId);
       const trustchainIdB64 = utils.toBase64(this._localUser.trustchainId);
@@ -133,7 +139,7 @@ export class DataProtector {
     }
 
     return identities;
-  }
+  };
 
   async _shareResources(keys: Array<Resource>, encryptionOptions: EncryptionOptions): Promise<void> {
     const groupIds = (encryptionOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
@@ -147,19 +153,19 @@ export class DataProtector {
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
 
     if (encryptionOptions.shareWithSelf) {
-      const [{ resourceId, key }] = keys;
+      const { resourceId, key } = keys[0]!;
       await this._resourceManager.saveResourceKey(resourceId, key);
     }
 
     return this._publishKeys(keys, users, provisionalUsers, groupsKeys);
   }
 
-  async _simpleDecryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async _simpleDecryptData<T extends Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array });
 
     const encryption = extractEncryptionFormat(castEncryptedData);
     const encryptedSize = getDataLength(castEncryptedData);
-    // $FlowIgnore Already checked we are using a simple encryption
+    // @ts-expect-error Already checked we are using a simple encryption
     const clearSize = encryption.getClearSize(encryptedSize);
     const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
 
@@ -169,11 +175,11 @@ export class DataProtector {
     let clearData;
 
     try {
-    // $FlowIgnore Already checked we are using a simple encryption
+      // @ts-expect-error Already checked we are using a simple encryption
       clearData = encryption.decrypt(key, encryption.unserialize(castEncryptedData));
     } catch (error) {
       const b64ResourceId = utils.toBase64(resourceId);
-      throw new DecryptionFailed({ error, b64ResourceId });
+      throw new DecryptionFailed({ error: error as Error, b64ResourceId });
     }
 
     const castClearData = await castData(clearData, outputOptions);
@@ -183,7 +189,7 @@ export class DataProtector {
     return castClearData;
   }
 
-  async _streamDecryptData<T: Data>(encryptedData: Data, encryptionFormat: EncryptionFormatDescription, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async _streamDecryptData<T extends Data>(encryptedData: Data, encryptionFormat: EncryptionFormatDescription, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const slicer = new SlicerStream({ source: encryptedData });
     const decryptor = await this.createDecryptionStream();
     const merger = new MergerStream(outputOptions);
@@ -204,7 +210,7 @@ export class DataProtector {
     });
   }
 
-  async decryptData<T: Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async decryptData<T extends Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const leadingBytes = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
     const encryptionFormat = extractEncryptionFormat(leadingBytes);
 
@@ -214,7 +220,7 @@ export class DataProtector {
     return this._simpleDecryptData(encryptedData, outputOptions, progressOptions);
   }
 
-  async _simpleEncryptData<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async _simpleEncryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const encryption = getSimpleEncryption();
 
     const clearSize = getDataLength(clearData);
@@ -233,7 +239,7 @@ export class DataProtector {
     return castEncryptedData;
   }
 
-  async _simpleEncryptDataWithResource<T: Data>(clearData: Data, sharingOptions: SharingOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource: Resource): Promise<T> {
+  async _simpleEncryptDataWithResource<T extends Data>(clearData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource: Resource): Promise<T> {
     const encryption = getSimpleEncryptionWithFixedResourceId();
 
     const clearSize = getDataLength(clearData);
@@ -251,7 +257,7 @@ export class DataProtector {
     return castEncryptedData;
   }
 
-  async _streamEncryptData<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
+  async _streamEncryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
     const encryptor = await this.createEncryptionStream(encryptionOptions, resource);
 
@@ -268,12 +274,15 @@ export class DataProtector {
     });
   }
 
-  async encryptData<T: Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
+  async encryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
     if (getDataLength(clearData) >= STREAM_THRESHOLD)
       return this._streamEncryptData(clearData, encryptionOptions, outputOptions, progressOptions, resource);
 
-    if (resource)
-      return this._simpleEncryptDataWithResource(clearData, encryptionOptions, outputOptions, progressOptions, resource);
+    if (resource) {
+      // We can ignore the EncryptionOptions (aka SharingOptions) because this path is only accessed through
+      // UploadStream and Encryption session which both manage the share operation on their own
+      return this._simpleEncryptDataWithResource(clearData, outputOptions, progressOptions, resource);
+    }
 
     return this._simpleEncryptData(clearData, encryptionOptions, outputOptions, progressOptions);
   }
@@ -281,7 +290,7 @@ export class DataProtector {
   async share(resourceIds: Array<b64string>, sharingOptions: SharingOptions): Promise<void> {
     // nothing to return, just wait for the promises to finish
     const uniqueResourceIds = [...new Set(resourceIds)];
-    const keys = await Promise.all(uniqueResourceIds.map(async (b64ResourceId) => {
+    const keys = await Promise.all(uniqueResourceIds.map(async b64ResourceId => {
       const resourceId = utils.fromBase64(b64ResourceId);
       const key = await this._resourceManager.findKeyFromResourceId(resourceId);
       return { resourceId, key };
@@ -305,7 +314,7 @@ export class DataProtector {
 
   async createDecryptionStream(): Promise<DecryptionStream> {
     const resourceIdKeyMapper = {
-      findKey: (resourceId) => this._resourceManager.findKeyFromResourceId(resourceId)
+      findKey: (resourceId: Uint8Array) => this._resourceManager.findKeyFromResourceId(resourceId),
     };
     return new DecryptionStream(resourceIdKeyMapper);
   }
@@ -315,7 +324,7 @@ export class DataProtector {
     await this._shareResources([resource], encryptionOptions);
 
     const encryptionSession = new EncryptionSession(this, resource);
-    subscribeToStatusChange((s) => encryptionSession.statusChange(s));
+    subscribeToStatusChange(s => encryptionSession.statusChange(s));
     return encryptionSession;
   }
 }

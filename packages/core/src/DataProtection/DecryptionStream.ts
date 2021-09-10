@@ -1,27 +1,27 @@
-// @flow
-import { encryptionV4, utils, type Key } from '@tanker/crypto';
+import type { Key } from '@tanker/crypto';
+import { encryptionV4, utils } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
-import type { DoneCallback } from '@tanker/stream-base';
+import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import { extractEncryptionFormat } from './types';
 
 export type ResourceIdKeyMapper = {
-  findKey: (Uint8Array) => Promise<Key>
+  findKey: (resourceID: Uint8Array) => Promise<Key>;
 };
 
 export class DecryptionStream extends Transform {
   _mapper: ResourceIdKeyMapper;
 
   _state: {
-    initialized: bool,
-    index: number,
-    maxEncryptedChunkSize: number,
-    lastEncryptedChunkSize: number,
+    initialized: boolean;
+    index: number;
+    maxEncryptedChunkSize: number;
+    lastEncryptedChunkSize: number;
   };
 
-  _resizerStream: ResizerStream;
-  _decryptionStream: Transform;
+  _resizerStream!: ResizerStream;
+  _decryptionStream!: Transform;
 
   constructor(mapper: ResourceIdKeyMapper) {
     super({
@@ -48,12 +48,7 @@ export class DecryptionStream extends Transform {
   }
 
   async _initializeStreams(headOfEncryptedData: Uint8Array) {
-    let encryption;
-    try {
-      encryption = extractEncryptionFormat(headOfEncryptedData);
-    } catch (e) {
-      throw new InvalidArgument('encryptedData', e, headOfEncryptedData);
-    }
+    const encryption = extractEncryptionFormat(headOfEncryptedData);
 
     if (encryption.features.chunks) {
       await this._initializeStreamDecryption(headOfEncryptedData);
@@ -62,13 +57,14 @@ export class DecryptionStream extends Transform {
     }
 
     this._bindStreams();
+
     this._state.initialized = true;
     this.emit('initialized');
   }
 
   _bindStreams() {
-    this._decryptionStream.on('data', (data) => this.push(data));
-    [this._resizerStream, this._decryptionStream].forEach((stream) => stream.on('error', (error) => this.destroy(error)));
+    this._decryptionStream.on('data', data => this.push(data));
+    [this._resizerStream, this._decryptionStream].forEach(stream => stream.on('error', error => this.destroy(error)));
 
     this._resizerStream.pipe(this._decryptionStream);
   }
@@ -84,7 +80,7 @@ export class DecryptionStream extends Transform {
       readableObjectMode: true,
 
       // transform will only be called once when every data has been received
-      transform: async (encryptedChunk, encoding, done) => {
+      transform: async (encryptedChunk: Uint8Array, _: BufferEncoding, done: TransformCallback) => {
         const encryption = extractEncryptionFormat(encryptedChunk);
         const resourceId = encryption.extractResourceId(encryptedChunk);
         const key = await this._mapper.findKey(resourceId);
@@ -92,14 +88,15 @@ export class DecryptionStream extends Transform {
         let clearData;
 
         try {
-          // $FlowIgnore Already checked we are using a simple encryption
+          // @ts-expect-error Already checked we are using a simple encryption
           clearData = encryption.decrypt(key, encryption.unserialize(encryptedChunk));
           this._decryptionStream.push(clearData);
         } catch (error) {
           const b64ResourceId = utils.toBase64(resourceId);
-          done(new DecryptionFailed({ error, b64ResourceId }));
+          done(new DecryptionFailed({ error: error as Error, b64ResourceId }));
           return;
         }
+
         done();
       },
     });
@@ -130,23 +127,27 @@ export class DecryptionStream extends Transform {
       readableHighWaterMark: encryptedChunkSize - encryptionV4.overhead,
       readableObjectMode: false,
 
-      transform: (encryptedChunk, encoding, done) => {
+      transform: (encryptedChunk: Uint8Array, _: BufferEncoding, done: TransformCallback) => {
         try {
           const clearData = encryptionV4.decrypt(key, this._state.index, encryptionV4.unserialize(encryptedChunk));
           this._decryptionStream.push(clearData);
         } catch (error) {
-          done(new DecryptionFailed({ error, b64ResourceId }));
+          done(new DecryptionFailed({ error: error as Error, b64ResourceId }));
           return;
         }
+
         this._state.lastEncryptedChunkSize = encryptedChunk.length;
         this._state.index += 1; // safe as long as index < 2^53
 
         done();
       },
 
-      flush: (done) => {
+      flush: (done: TransformCallback) => {
         if (this._state.lastEncryptedChunkSize % this._state.maxEncryptedChunkSize === 0) {
-          done(new DecryptionFailed({ message: 'Data has been truncated', b64ResourceId }));
+          done(new DecryptionFailed({
+            message: 'Data has been truncated',
+            b64ResourceId,
+          }));
           return;
         }
 
@@ -155,7 +156,7 @@ export class DecryptionStream extends Transform {
     });
   }
 
-  async _transform(encryptedData: Uint8Array, encoding: ?string, done: DoneCallback) {
+  override async _transform(encryptedData: Uint8Array, encoding: BufferEncoding, done: TransformCallback) {
     if (!(encryptedData instanceof Uint8Array)) {
       done(new InvalidArgument('encryptedData', 'Uint8Array', encryptedData));
       return;
@@ -165,15 +166,15 @@ export class DecryptionStream extends Transform {
       try {
         await this._initializeStreams(encryptedData);
       } catch (err) {
-        done(err);
+        done(err as Error);
         return;
       }
     }
 
-    this._resizerStream.write(encryptedData, encoding, done);
+    this._resizerStream.write(encryptedData, encoding, done as WriteCallback);
   }
 
-  _flush(done: DoneCallback) {
+  override _flush(done: TransformCallback) {
     // When end() is called before any data has been written:
     if (!this._state.initialized) {
       done();

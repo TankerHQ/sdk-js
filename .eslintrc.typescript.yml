@@ -82,6 +82,9 @@ rules:
     - selector: typeLike
       format:
         - PascalCase
+  "@typescript-eslint/no-unused-vars":
+    - error
+    - argsIgnorePattern: "^_$"
 
 overrides:
   - files:

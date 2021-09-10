@@ -1,4 +1,3 @@
-// @flow
 import { Writable } from '@tanker/stream-base';
 import { aead, random, ready as cryptoReady, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
@@ -9,13 +8,13 @@ import { PromiseWrapper } from '../../PromiseWrapper';
 
 describe('EncryptionStream', () => {
   let buffer: Array<Uint8Array>;
-  let key;
-  let resourceId;
+  let key: Uint8Array;
+  let resourceId: Uint8Array;
 
-  const watchStream = (stream) => {
-    const sync = new PromiseWrapper();
-    stream.on('data', (data) => buffer.push(data));
-    stream.on('error', (err) => sync.reject(err));
+  const watchStream = (stream: EncryptionStream) => {
+    const sync = new PromiseWrapper<void>();
+    stream.on('data', (data: Uint8Array) => buffer.push(data));
+    stream.on('error', (err: Error) => sync.reject(err));
     stream.on('end', () => sync.resolve());
     return sync;
   };
@@ -57,7 +56,7 @@ describe('EncryptionStream', () => {
     stream.end();
     await sync.promise;
 
-    const data = encryptionV4.unserialize(buffer[0]);
+    const data = encryptionV4.unserialize(buffer[0]!);
 
     expect(data.resourceId).to.deep.equal(resourceId);
     expect(typeof data.encryptedChunkSize).to.equal('number');
@@ -69,7 +68,7 @@ describe('EncryptionStream', () => {
     stream.end();
     await sync.promise;
 
-    expect(encryptionV4.extractResourceId(buffer[0])).to.deep.equal(resourceId);
+    expect(encryptionV4.extractResourceId(buffer[0]!)).to.deep.equal(resourceId);
   });
 
   it('derives its iv and push header before encryption', async () => {
@@ -86,7 +85,7 @@ describe('EncryptionStream', () => {
     await expect(sync.promise).to.be.fulfilled;
 
     expect(buffer.length).to.be.equal(1);
-    const data = encryptionV4.unserialize(buffer[0]);
+    const data = encryptionV4.unserialize(buffer[0]!);
 
     expect(data.resourceId).to.deep.equal(resourceId);
 
@@ -117,8 +116,8 @@ describe('EncryptionStream', () => {
 
     expect(buffer.length).to.equal(3);
 
-    buffer.forEach((chunk, index) => {
-      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]));
+    buffer.forEach((_, index) => {
+      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]!));
       const expectedMsg = index === 2 ? new Uint8Array(0) : msg;
       expect(clearData).to.deep.equal(expectedMsg);
     });
@@ -144,16 +143,15 @@ describe('EncryptionStream', () => {
 
     expect(buffer.length).to.equal(3);
 
-    buffer.forEach((chunk, index) => {
-      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]));
+    buffer.forEach((_, index) => {
+      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]!));
       const expectedMsg = index === 2 ? msg.subarray(1) : msg;
       expect(clearData).to.deep.equal(expectedMsg);
     });
   });
-
   const coef = 3;
   describe(`buffers at most ${coef} * clear chunk size`, () => {
-    [10, 50, 100, 1000].forEach((chunkSize) => {
+    [10, 50, 100, 1000].forEach(chunkSize => {
       it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks`, async () => {
         const chunk = new Uint8Array(chunkSize);
         const inputSize = 10 * chunkSize;
@@ -163,11 +161,11 @@ describe('EncryptionStream', () => {
         const slowWritable = new Writable({
           highWaterMark: 1,
           objectMode: true,
-          write: async (data, encoding, done) => {
+          write: async (data, _, done) => {
             await timeout.promise;
             bufferCounter.incrementOutputAndSnapshot(data.length - encryptionV4.overhead);
             done();
-          }
+          },
         });
 
         const continueWriting = () => {
@@ -190,8 +188,11 @@ describe('EncryptionStream', () => {
           continueWriting();
         });
 
-        bufferCounter.snapshots.forEach((bufferedLength) => {
-          expect(bufferedLength).to.be.at.most(coef * chunkSize, `buffered data exceeds threshold (${coef} * chunk size): got ${bufferedLength}, chunk size ${chunkSize})`);
+        bufferCounter.snapshots.forEach(bufferedLength => {
+          expect(bufferedLength).to.be.at.most(
+            coef * chunkSize,
+            `buffered data exceeds threshold (${coef} * chunk size): got ${bufferedLength}, chunk size ${chunkSize})`,
+          );
         });
       });
     });

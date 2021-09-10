@@ -1,19 +1,19 @@
-// @flow
-import { utils, encryptionV4, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
-import type { DoneCallback } from '@tanker/stream-base';
+import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 export class EncryptionStream extends Transform {
   _maxClearChunkSize: number;
   _maxEncryptedChunkSize: number;
-  _encryptionStream: Transform;
+  _encryptionStream!: Transform;
   _key: Uint8Array;
-  _resizerStream: ResizerStream;
+  _resizerStream!: ResizerStream;
   _resourceId: Uint8Array;
   _state: {
-    index: number,
-    lastClearChunkSize: number,
+    index: number;
+    lastClearChunkSize: number;
   };
 
   constructor(resourceId: Uint8Array, key: Uint8Array, maxEncryptedChunkSize: number = encryptionV4.defaultMaxEncryptedChunkSize) {
@@ -49,34 +49,37 @@ export class EncryptionStream extends Transform {
       readableHighWaterMark: this._maxEncryptedChunkSize,
       readableObjectMode: false,
 
-      transform: (clearData, encoding, done) => {
+      transform: (clearData: Uint8Array, _: BufferEncoding, done: TransformCallback) => {
         try {
           const encryptedChunk = this._encryptChunk(clearData);
           this._encryptionStream.push(encryptedChunk);
         } catch (err) {
-          done(err);
+          done(err as Error);
           return;
         }
+
         done();
       },
 
-      flush: (done) => {
+      flush: (done: TransformCallback) => {
         // flush a last empty block if remaining clear data is an exact multiple of max clear chunk size
         if (this._state.lastClearChunkSize % this._maxClearChunkSize === 0) {
           try {
             const encryptedChunk = this._encryptChunk(new Uint8Array(0));
             this._encryptionStream.push(encryptedChunk);
           } catch (err) {
-            done(err);
+            done(err as Error);
             return;
           }
         }
+
         done();
       },
     });
 
-    this._encryptionStream.on('data', (data) => this.push(data));
-    [this._resizerStream, this._encryptionStream].forEach((stream) => stream.on('error', (error) => this.destroy(error)));
+    this._encryptionStream.on('data', data => this.push(data));
+    [this._resizerStream, this._encryptionStream].forEach(stream => stream.on('error', error => this.destroy(error)));
+
     this._resizerStream.pipe(this._encryptionStream);
   }
 
@@ -88,16 +91,16 @@ export class EncryptionStream extends Transform {
     return encryptedBuffer;
   }
 
-  _transform(clearData: Uint8Array, encoding: ?string, done: DoneCallback) {
+  override _transform(clearData: Uint8Array, encoding: BufferEncoding, done: TransformCallback) {
     if (!(clearData instanceof Uint8Array)) {
       done(new InvalidArgument('clearData', 'Uint8Array', clearData));
       return;
     }
 
-    this._resizerStream.write(clearData, encoding, done);
+    this._resizerStream.write(clearData, encoding, done as WriteCallback);
   }
 
-  _flush(done: DoneCallback) {
+  override _flush(done: TransformCallback) {
     this._encryptionStream.once('end', done);
     this._resizerStream.end();
   }

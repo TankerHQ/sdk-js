@@ -1,9 +1,9 @@
-// @flow
+import type { b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
+import type { Data } from '@tanker/types';
+import { assertDataType, assertNotEmptyString } from '@tanker/types';
 
-import { utils, type b64string } from '@tanker/crypto';
-import { type Data, assertDataType, assertNotEmptyString } from '@tanker/types';
-
-import { assertStatus, statuses, type Status } from '../Session/status';
+import { Status, assertStatus } from '../Session/status';
 import type { OutputOptions, ProgressOptions } from './options';
 import { extractOutputOptions, extractProgressOptions } from './options';
 import type { DataProtector } from './DataProtector';
@@ -18,7 +18,7 @@ export class EncryptionSession {
   constructor(dataProtector: DataProtector, resource: Resource) {
     this._dataProtector = dataProtector;
     this._resource = resource;
-    this._status = statuses.READY;
+    this._status = Status.READY;
   }
 
   statusChange(newStatus: Status) {
@@ -29,23 +29,23 @@ export class EncryptionSession {
     return utils.toBase64(this._resource.resourceId);
   }
 
-  async encrypt<T: Data>(clearText: string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encrypt<T extends Data>(clearText: string, options: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertNotEmptyString(clearText, 'clearText');
     return this.encryptData(utils.fromString(clearText), options);
   }
 
-  async encryptData<T: Data>(clearData: Data, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
-    assertStatus(this._status, statuses.READY, 'encrypt with an encryption session');
+  async encryptData<T extends Data>(clearData: Data, options: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+    assertStatus(this._status, Status.READY, 'encrypt with an encryption session');
     assertDataType(clearData, 'clearData');
 
-    const outputOptions = extractOutputOptions(options, clearData);
+    const outputOptions = extractOutputOptions<T>(options, clearData);
     const progressOptions = extractProgressOptions(options);
 
-    return this._dataProtector.encryptData(clearData, {}, outputOptions, progressOptions, this._resource);
+    return this._dataProtector.encryptData<T>(clearData, {}, outputOptions, progressOptions, this._resource);
   }
 
   async createEncryptionStream(): Promise<EncryptionStream> {
-    assertStatus(this._status, statuses.READY, 'create an encryption stream');
+    assertStatus(this._status, Status.READY, 'create an encryption stream');
     return this._dataProtector.createEncryptionStream({}, this._resource);
   }
 }
