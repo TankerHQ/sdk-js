@@ -1,4 +1,3 @@
-// @flow
 import { ready as cryptoReady, tcrypto, random, utils } from '@tanker/crypto';
 import { GroupTooBig } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
@@ -6,14 +5,15 @@ import { expect } from '@tanker/test-utils';
 import { MAX_GROUP_MEMBERS_PER_OPERATION, assertPublicIdentities, groupFromUserGroupEntry, groupsFromEntries } from '../ManagerHelper';
 import type { UserGroupCreationRecord, UserGroupEntry } from '../Serialize';
 
-import { type ExternalGroup } from '../types';
+import type { ExternalGroup } from '../types';
 
-import TestGenerator, { type TestDeviceCreation, type TestUserGroup } from '../../__tests__/TestGenerator';
-import ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
-import LocalUser from '../../LocalUser/LocalUser';
+import type { TestDeviceCreation, TestUserGroup } from '../../__tests__/TestGenerator';
+import TestGenerator from '../../__tests__/TestGenerator';
+import type ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
+import type LocalUser from '../../LocalUser/LocalUser';
 
 function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): ExternalGroup {
-  const userGroupCreation: UserGroupCreationRecord = (userGroupEntry: any);
+  const userGroupCreation: UserGroupCreationRecord = (userGroupEntry as any);
 
   return {
     groupId: userGroupCreation.public_signature_key,
@@ -35,8 +35,8 @@ function getExternalGroupFromUserGroupAddition(userGroupEntry: UserGroupEntry, p
 describe('GroupManagerHelper', () => {
   let testGenerator: TestGenerator;
   let userCreation: TestDeviceCreation;
-  let provisionalIdentityManager;
-  let localUser;
+  let provisionalIdentityManager: ProvisionalIdentityManager;
+  let localUser: LocalUser;
   let userGroup: TestUserGroup;
 
   before(() => cryptoReady);
@@ -46,13 +46,12 @@ describe('GroupManagerHelper', () => {
     testGenerator.makeTrustchainCreation();
     const userId = random(tcrypto.HASH_SIZE);
     userCreation = await testGenerator.makeUserCreation(userId);
-
-    localUser = (({ findUserKey: () => userCreation.testUser.userKeys[0] }: any): LocalUser);
+    localUser = (({ findUserKey: () => userCreation.testUser.userKeys[0] } as any) as LocalUser);
     userGroup = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user], []);
     provisionalIdentityManager = (({
       findPrivateProvisionalKeys: () => null,
       refreshProvisionalPrivateKeys: () => null,
-    }: any): ProvisionalIdentityManager);
+    } as any) as ProvisionalIdentityManager);
   });
 
   describe('assertPublicIdentities()', () => {
@@ -63,17 +62,18 @@ describe('GroupManagerHelper', () => {
   });
 
   const describeGroupAdditionTests = (version: number) => {
-    let makeUserGroupAddition;
+    let makeUserGroupAddition: typeof testGenerator.makeUserGroupAdditionV2;
     beforeEach(() => {
       makeUserGroupAddition = {
         '2': testGenerator.makeUserGroupAdditionV2, // eslint-disable-line quote-props
         '3': testGenerator.makeUserGroupAdditionV3, // eslint-disable-line quote-props
-      }[version];
+      }[version]!;
 
       if (!makeUserGroupAddition) {
         throw Error('Assertion error: unknown version in test generation');
       }
     });
+
     describe(`user group addition v${version}`, () => {
       describe('groupFromUserGroupEntry()', () => {
         describe('with internal groups', () => {
@@ -84,7 +84,6 @@ describe('GroupManagerHelper', () => {
 
           it('can create a group with a userGroupCreation action from a provisional user', () => {
             const provisionalResult = testGenerator.makeProvisionalUser();
-            // $FlowIgnore[cannot-write]
             provisionalIdentityManager.findPrivateProvisionalKeys = () => provisionalResult.provisionalUserKeys;
 
             userGroup = testGenerator.makeUserGroupCreation(userCreation, [], [provisionalResult.publicProvisionalUser]);
@@ -104,7 +103,6 @@ describe('GroupManagerHelper', () => {
           it('can update a group with a userGroupAddition from a provisional user', () => {
             let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
             const provisionalResult = testGenerator.makeProvisionalUser();
-            // $FlowIgnore[cannot-write]
             provisionalIdentityManager.findPrivateProvisionalKeys = () => provisionalResult.provisionalUserKeys;
 
             const userGroupAddition = makeUserGroupAddition(userCreation, userGroup.group, [], [provisionalResult.publicProvisionalUser]);
@@ -117,10 +115,10 @@ describe('GroupManagerHelper', () => {
             const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
             const userGroupAddition = makeUserGroupAddition(userCreation, userGroup.group, [userCreation2.user]);
 
-            localUser = (({ findUserKey: () => null }: any): LocalUser);
+            localUser = (({ findUserKey: () => null } as any) as LocalUser);
             let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
 
-            localUser = (({ findUserKey: () => userCreation2.testUser.userKeys[0] }: any): LocalUser);
+            localUser = (({ findUserKey: () => userCreation2.testUser.userKeys[0] } as any) as LocalUser);
             group = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, localUser, provisionalIdentityManager);
             expect(group).to.deep.equal(userGroupAddition.group);
           });
@@ -128,7 +126,7 @@ describe('GroupManagerHelper', () => {
 
         describe('with external groups', () => {
           beforeEach(() => {
-            localUser = (({ findUserKey: () => null }: any): LocalUser);
+            localUser = (({ findUserKey: () => null } as any) as LocalUser);
           });
 
           it('can create an external group from a userGroupCreation action', () => {
@@ -197,6 +195,7 @@ describe('GroupManagerHelper', () => {
       });
     });
   };
+
   describeGroupAdditionTests(2);
   describeGroupAdditionTests(3);
 });

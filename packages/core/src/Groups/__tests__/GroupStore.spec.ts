@@ -1,10 +1,7 @@
-// @flow
 import { random, ready as cryptoReady, tcrypto } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
-
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
-
 import GroupStore from '../GroupStore';
 
 describe('GroupStore', () => {
@@ -57,7 +54,7 @@ describe('GroupStore', () => {
       await groupStore.saveGroupEncryptionKeys([{
         groupId,
         publicEncryptionKey: groupKeyPair.publicKey,
-        privateEncryptionKey: groupKeyPair.privateKey
+        privateEncryptionKey: groupKeyPair.privateKey,
       }]);
       const resKeyPair = await groupStore.findGroupEncryptionKeyPair(groupKeyPair.publicKey);
       expect(resKeyPair).to.deep.equal(groupKeyPair);
@@ -70,7 +67,7 @@ describe('GroupStore', () => {
       await groupStore.saveGroupEncryptionKeys([{
         groupId,
         publicEncryptionKey: encryptionKeyPair.publicKey,
-        privateEncryptionKey: encryptionKeyPair.privateKey
+        privateEncryptionKey: encryptionKeyPair.privateKey,
       }]);
       const resKey = await groupStore.findGroupsPublicKeys([groupId]);
       expect(resKey).to.deep.equal([{
@@ -87,9 +84,8 @@ describe('GroupStore', () => {
       await groupStore.saveGroupEncryptionKeys([{
         groupId,
         publicEncryptionKey: groupKeyPair.publicKey,
-        privateEncryptionKey: groupKeyPair.privateKey
+        privateEncryptionKey: groupKeyPair.privateKey,
       }]);
-
       const resKeyPair = await groupStore.findGroupEncryptionKeyPair(groupKeyPair.publicKey);
       expect(resKeyPair).to.deep.equal(groupKeyPair);
     });
@@ -97,6 +93,7 @@ describe('GroupStore', () => {
     it('ignores updates to a group private key', async () => {
       const encryptionKeyPair = tcrypto.makeEncryptionKeyPair();
       const groupId = random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+
       const groupKeyPair = {
         publicKey: encryptionKeyPair.publicKey,
         privateKey: random(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
@@ -105,12 +102,12 @@ describe('GroupStore', () => {
       await groupStore.saveGroupEncryptionKeys([{
         groupId,
         publicEncryptionKey: encryptionKeyPair.publicKey,
-        privateEncryptionKey: encryptionKeyPair.privateKey
+        privateEncryptionKey: encryptionKeyPair.privateKey,
       }]);
       await groupStore.saveGroupEncryptionKeys([{
         groupId,
         publicEncryptionKey: groupKeyPair.publicKey,
-        privateEncryptionKey: groupKeyPair.privateKey
+        privateEncryptionKey: groupKeyPair.privateKey,
       }]);
 
       const resKeyPair = await groupStore.findGroupEncryptionKeyPair(encryptionKeyPair.publicKey);
@@ -134,19 +131,21 @@ describe('GroupStore', () => {
       await groupStore.saveGroupEncryptionKeys([{
         groupId,
         publicEncryptionKey: groupKeyPair2.publicKey,
-        privateEncryptionKey: groupKeyPair2.privateKey
+        privateEncryptionKey: groupKeyPair2.privateKey,
       }]);
+
       // different groupId
       await groupStore.saveGroupEncryptionKeys([{
         groupId: groupId2,
         publicEncryptionKey: groupKeyPair3.publicKey,
-        privateEncryptionKey: groupKeyPair3.privateKey
+        privateEncryptionKey: groupKeyPair3.privateKey,
       }]);
+
       // matching public key and groupId
       await groupStore.saveGroupEncryptionKeys([{
         groupId,
         publicEncryptionKey: groupKeyPair.publicKey,
-        privateEncryptionKey: groupKeyPair.privateKey
+        privateEncryptionKey: groupKeyPair.privateKey,
       }]);
 
       expect(await groupStore.findGroupEncryptionKeyPair(groupKeyPair2.publicKey)).to.be.null;
@@ -162,7 +161,7 @@ describe('GroupStore', () => {
       await groupStore.saveGroupEncryptionKeys([{
         groupId,
         publicEncryptionKey: groupKeyPair.publicKey,
-        privateEncryptionKey: groupKeyPair.privateKey
+        privateEncryptionKey: groupKeyPair.privateKey,
       }]);
       const publicKey = random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE);
 
@@ -193,7 +192,7 @@ describe('GroupStore', () => {
       await groupStore.saveGroupEncryptionKeys([{
         groupId: anotherGroupId,
         publicEncryptionKey: anotherGroupKeyPair.publicKey,
-        privateEncryptionKey: anotherGroupKeyPair.privateKey
+        privateEncryptionKey: anotherGroupKeyPair.privateKey,
       }]);
 
       const result = await groupStore.findGroupsPublicKeys([groupId]);
