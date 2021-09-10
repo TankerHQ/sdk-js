@@ -1,11 +1,9 @@
-// @flow
 import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { NATURE } from '../Blocks/Nature';
 
-import { type DeviceCreationEntry, type DeviceRevocationEntry } from './Serialize';
-
+import type { DeviceCreationEntry, DeviceRevocationEntry } from './Serialize';
 import type { User, Device } from './types';
 
 export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, user: ?User): User {
