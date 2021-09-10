@@ -1,134 +1,126 @@
-// @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type { PublicProvisionalUser } from '../Identity';
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength, encodeUint32 } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
-import { type VerificationFields, hashBlock } from '../Blocks/Block';
+import type { VerificationFields } from '../Blocks/Block';
+import { hashBlock } from '../Blocks/Block';
 import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
 
-import { getLastUserPublicKey, type User } from '../Users/types';
+import type { User } from '../Users/types';
+import { getLastUserPublicKey } from '../Users/types';
 
-type GroupEncryptedKeyV1 = {|
-    public_user_encryption_key: Uint8Array,
-    encrypted_group_private_encryption_key: Uint8Array,
-  |};
+type GroupEncryptedKeyV1 = {
+  public_user_encryption_key: Uint8Array;
+  encrypted_group_private_encryption_key: Uint8Array;
+};
+type GroupEncryptedKeyV2 = {
+  user_id: Uint8Array;
+  public_user_encryption_key: Uint8Array;
+  encrypted_group_private_encryption_key: Uint8Array;
+};
 
-type GroupEncryptedKeyV2 = {|
-    user_id: Uint8Array,
-    public_user_encryption_key: Uint8Array,
-    encrypted_group_private_encryption_key: Uint8Array,
-  |};
+export type ProvisionalGroupEncryptedKeyV2 = {
+  app_provisional_user_public_signature_key: Uint8Array;
+  tanker_provisional_user_public_signature_key: Uint8Array;
+  encrypted_group_private_encryption_key: Uint8Array;
+};
 
-export type ProvisionalGroupEncryptedKeyV2 = {|
-    app_provisional_user_public_signature_key: Uint8Array,
-    tanker_provisional_user_public_signature_key: Uint8Array,
-    encrypted_group_private_encryption_key: Uint8Array,
-  |};
+export type ProvisionalGroupEncryptedKeyV3 = {
+  app_provisional_user_public_signature_key: Uint8Array;
+  tanker_provisional_user_public_signature_key: Uint8Array;
+  app_provisional_user_public_encryption_key: Uint8Array;
+  tanker_provisional_user_public_encryption_key: Uint8Array;
+  encrypted_group_private_encryption_key: Uint8Array;
+};
 
-export type ProvisionalGroupEncryptedKeyV3 = {|
-    app_provisional_user_public_signature_key: Uint8Array,
-    tanker_provisional_user_public_signature_key: Uint8Array,
-    app_provisional_user_public_encryption_key: Uint8Array,
-    tanker_provisional_user_public_encryption_key: Uint8Array,
-    encrypted_group_private_encryption_key: Uint8Array,
-  |};
+export type UserGroupCreationRecordV1 = {
+  public_encryption_key: Uint8Array;
+  public_signature_key: Uint8Array;
+  encrypted_group_private_signature_key: Uint8Array;
+  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKeyV1>;
+  self_signature: Uint8Array;
+};
 
-export type UserGroupCreationRecordV1 = {|
-    public_encryption_key: Uint8Array,
-    public_signature_key: Uint8Array,
-    encrypted_group_private_signature_key: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV1>,
-    self_signature: Uint8Array,
-  |};
+export type UserGroupCreationRecordV2 = {
+  public_encryption_key: Uint8Array;
+  public_signature_key: Uint8Array;
+  encrypted_group_private_signature_key: Uint8Array;
+  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKeyV2>;
+  encrypted_group_private_encryption_keys_for_provisional_users: ReadonlyArray<ProvisionalGroupEncryptedKeyV2>;
+  self_signature: Uint8Array;
+};
 
-export type UserGroupCreationRecordV2 = {|
-    public_encryption_key: Uint8Array,
-    public_signature_key: Uint8Array,
-    encrypted_group_private_signature_key: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
-    encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
-    self_signature: Uint8Array,
-  |};
+export type UserGroupCreationRecordV3 = {
+  public_encryption_key: Uint8Array;
+  public_signature_key: Uint8Array;
+  encrypted_group_private_signature_key: Uint8Array;
+  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKeyV2>;
+  encrypted_group_private_encryption_keys_for_provisional_users: ReadonlyArray<ProvisionalGroupEncryptedKeyV3>;
+  self_signature: Uint8Array;
+};
 
-export type UserGroupCreationRecordV3 = {|
-    public_encryption_key: Uint8Array,
-    public_signature_key: Uint8Array,
-    encrypted_group_private_signature_key: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
-    encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV3>,
-    self_signature: Uint8Array,
-  |};
+export type UserGroupAdditionRecordV1 = {
+  group_id: Uint8Array;
+  previous_group_block: Uint8Array;
+  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKeyV1>;
+  self_signature_with_current_key: Uint8Array;
+};
 
-export type UserGroupAdditionRecordV1 = {|
-    group_id: Uint8Array,
-    previous_group_block: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV1>,
-    self_signature_with_current_key: Uint8Array,
-  |};
+export type UserGroupAdditionRecordV2 = {
+  group_id: Uint8Array;
+  previous_group_block: Uint8Array;
+  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKeyV2>;
+  encrypted_group_private_encryption_keys_for_provisional_users: ReadonlyArray<ProvisionalGroupEncryptedKeyV2>;
+  self_signature_with_current_key: Uint8Array;
+};
 
-export type UserGroupAdditionRecordV2 = {|
-    group_id: Uint8Array,
-    previous_group_block: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
-    encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2>,
-    self_signature_with_current_key: Uint8Array,
-  |};
-
-export type UserGroupAdditionRecordV3 = {|
-    group_id: Uint8Array,
-    previous_group_block: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKeyV2>,
-    encrypted_group_private_encryption_keys_for_provisional_users: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV3>,
-    self_signature_with_current_key: Uint8Array,
-  |};
+export type UserGroupAdditionRecordV3 = {
+  group_id: Uint8Array;
+  previous_group_block: Uint8Array;
+  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKeyV2>;
+  encrypted_group_private_encryption_keys_for_provisional_users: ReadonlyArray<ProvisionalGroupEncryptedKeyV3>;
+  self_signature_with_current_key: Uint8Array;
+};
 
 export type GroupEncryptedKey = GroupEncryptedKeyV1 | GroupEncryptedKeyV2;
 
 // Note: We can't define all those generic types as unions, because unions + spreads *badly* confuse flow. So just manually tell it what the fields are...
-export type UserGroupCreationRecord = {|
-    public_encryption_key: Uint8Array,
-    public_signature_key: Uint8Array,
-    encrypted_group_private_signature_key: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKey>,
-    encrypted_group_private_encryption_keys_for_provisional_users?: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>,
-    self_signature: Uint8Array,
-  |};
+export type UserGroupCreationRecord = {
+  public_encryption_key: Uint8Array;
+  public_signature_key: Uint8Array;
+  encrypted_group_private_signature_key: Uint8Array;
+  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKey>;
+  encrypted_group_private_encryption_keys_for_provisional_users?: ReadonlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>;
+  self_signature: Uint8Array;
+};
 
-export type UserGroupAdditionRecord = {|
-    group_id: Uint8Array,
-    previous_group_block: Uint8Array,
-    encrypted_group_private_encryption_keys_for_users: $ReadOnlyArray<GroupEncryptedKey>,
-    encrypted_group_private_encryption_keys_for_provisional_users?: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>,
-    self_signature_with_current_key: Uint8Array,
-  |};
+export type UserGroupAdditionRecord = {
+  group_id: Uint8Array;
+  previous_group_block: Uint8Array;
+  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKey>;
+  encrypted_group_private_encryption_keys_for_provisional_users?: ReadonlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>;
+  self_signature_with_current_key: Uint8Array;
+};
+type ProvisionalUserId = {
+  app_signature_public_key: Uint8Array;
+  tanker_signature_public_key: Uint8Array;
+};
 
-type ProvisionalUserId = {|
-    app_signature_public_key: Uint8Array,
-    tanker_signature_public_key: Uint8Array,
-  |};
-
-export type UserGroupRemovalRecord = {|
-    group_id: Uint8Array,
-    members_to_remove: $ReadOnlyArray<Uint8Array>,
-    provisional_members_to_remove: $ReadOnlyArray<ProvisionalUserId>,
-    self_signature_with_current_key: Uint8Array,
-  |};
-
-type UserGroupCreationEntry = {|
-  ...UserGroupCreationRecord,
-  ...VerificationFields
-|};
-
-type UserGroupAdditionEntry = {|
-  ...UserGroupAdditionRecord,
-  ...VerificationFields
-|};
+export type UserGroupRemovalRecord = {
+  group_id: Uint8Array;
+  members_to_remove: ReadonlyArray<Uint8Array>;
+  provisional_members_to_remove: ReadonlyArray<ProvisionalUserId>;
+  self_signature_with_current_key: Uint8Array;
+};
+type UserGroupCreationEntry = UserGroupCreationRecord & VerificationFields;
+type UserGroupAdditionEntry = UserGroupAdditionRecord & VerificationFields;
 
 export type UserGroupEntry = UserGroupCreationEntry | UserGroupAdditionEntry;
 
-export function isGroupAddition(entry: UserGroupEntry): %checks {
+export function isGroupAddition(entry: UserGroupEntry) {
   return !entry.public_encryption_key;
 }
 
@@ -140,7 +132,7 @@ function serializeGroupEncryptedKeyV2(gek: GroupEncryptedKeyV2): Uint8Array {
   return utils.concatArrays(
     gek.user_id,
     gek.public_user_encryption_key,
-    gek.encrypted_group_private_encryption_key
+    gek.encrypted_group_private_encryption_key,
   );
 }
 
@@ -148,7 +140,7 @@ function serializeProvisionalGroupEncryptedKeyV2(gek: ProvisionalGroupEncryptedK
   return utils.concatArrays(
     gek.app_provisional_user_public_signature_key,
     gek.tanker_provisional_user_public_signature_key,
-    gek.encrypted_group_private_encryption_key
+    gek.encrypted_group_private_encryption_key,
   );
 }
 
@@ -158,7 +150,7 @@ function serializeProvisionalGroupEncryptedKeyV3(gek: ProvisionalGroupEncryptedK
     gek.tanker_provisional_user_public_signature_key,
     gek.app_provisional_user_public_encryption_key,
     gek.tanker_provisional_user_public_encryption_key,
-    gek.encrypted_group_private_encryption_key
+    gek.encrypted_group_private_encryption_key,
   );
 }
 
@@ -482,22 +474,27 @@ export function getGroupEntryFromBlock(b64Block: b64string): UserGroupEntry {
     const userGroupAction = unserializeUserGroupCreationV1(block.payload);
     return { ...userGroupAction, author, signature, nature, hash };
   }
+
   if (block.nature === NATURE.user_group_creation_v2) {
     const userGroupAction = unserializeUserGroupCreationV2(block.payload);
     return { ...userGroupAction, author, signature, nature, hash };
   }
+
   if (block.nature === NATURE.user_group_creation_v3) {
     const userGroupAction = unserializeUserGroupCreationV3(block.payload);
     return { ...userGroupAction, author, signature, nature, hash };
   }
+
   if (block.nature === NATURE.user_group_addition_v1) {
     const userGroupAction = unserializeUserGroupAdditionV1(block.payload);
     return { ...userGroupAction, author, signature, nature, hash };
   }
+
   if (block.nature === NATURE.user_group_addition_v2) {
     const userGroupAction = unserializeUserGroupAdditionV2(block.payload);
     return { ...userGroupAction, author, signature, nature, hash };
   }
+
   if (block.nature === NATURE.user_group_addition_v3) {
     const userGroupAction = unserializeUserGroupAdditionV3(block.payload);
     return { ...userGroupAction, author, signature, nature, hash };
@@ -510,7 +507,7 @@ export const getUserGroupCreationBlockSignDataV1 = (record: UserGroupCreationRec
   record.public_signature_key,
   record.public_encryption_key,
   record.encrypted_group_private_signature_key,
-  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
+  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key)),
 );
 
 export const getUserGroupCreationBlockSignDataV2 = (record: UserGroupCreationRecordV2): Uint8Array => utils.concatArrays(
@@ -520,13 +517,13 @@ export const getUserGroupCreationBlockSignDataV2 = (record: UserGroupCreationRec
   ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
     gek.user_id,
     gek.public_user_encryption_key,
-    gek.encrypted_group_private_encryption_key
+    gek.encrypted_group_private_encryption_key,
   )),
   ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
     gek.app_provisional_user_public_signature_key,
     gek.tanker_provisional_user_public_signature_key,
-    gek.encrypted_group_private_encryption_key
-  ))
+    gek.encrypted_group_private_encryption_key,
+  )),
 );
 
 export const getUserGroupCreationBlockSignDataV3 = (record: UserGroupCreationRecordV3): Uint8Array => utils.concatArrays(
@@ -536,21 +533,24 @@ export const getUserGroupCreationBlockSignDataV3 = (record: UserGroupCreationRec
   ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
     gek.user_id,
     gek.public_user_encryption_key,
-    gek.encrypted_group_private_encryption_key
+    gek.encrypted_group_private_encryption_key,
   )),
   ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
     gek.app_provisional_user_public_signature_key,
     gek.tanker_provisional_user_public_signature_key,
     gek.app_provisional_user_public_encryption_key,
     gek.tanker_provisional_user_public_encryption_key,
-    gek.encrypted_group_private_encryption_key
-  ))
+    gek.encrypted_group_private_encryption_key,
+  )),
 );
 
 export const getUserGroupAdditionBlockSignDataV1 = (record: UserGroupAdditionRecordV1): Uint8Array => utils.concatArrays(
   record.group_id,
   record.previous_group_block,
-  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(gek.public_user_encryption_key, gek.encrypted_group_private_encryption_key))
+  ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
+    gek.public_user_encryption_key,
+    gek.encrypted_group_private_encryption_key,
+  )),
 );
 
 export const getUserGroupAdditionBlockSignDataV2 = (record: UserGroupAdditionRecordV2): Uint8Array => utils.concatArrays(
@@ -559,13 +559,13 @@ export const getUserGroupAdditionBlockSignDataV2 = (record: UserGroupAdditionRec
   ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
     gek.user_id,
     gek.public_user_encryption_key,
-    gek.encrypted_group_private_encryption_key
+    gek.encrypted_group_private_encryption_key,
   )),
   ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
     gek.app_provisional_user_public_signature_key,
     gek.tanker_provisional_user_public_signature_key,
-    gek.encrypted_group_private_encryption_key
-  ))
+    gek.encrypted_group_private_encryption_key,
+  )),
 );
 
 export const getUserGroupAdditionBlockSignDataV3 = (record: UserGroupAdditionRecordV3): Uint8Array => utils.concatArrays(
@@ -574,15 +574,15 @@ export const getUserGroupAdditionBlockSignDataV3 = (record: UserGroupAdditionRec
   ...record.encrypted_group_private_encryption_keys_for_users.map(gek => utils.concatArrays(
     gek.user_id,
     gek.public_user_encryption_key,
-    gek.encrypted_group_private_encryption_key
+    gek.encrypted_group_private_encryption_key,
   )),
   ...record.encrypted_group_private_encryption_keys_for_provisional_users.map(gek => utils.concatArrays(
     gek.app_provisional_user_public_signature_key,
     gek.tanker_provisional_user_public_signature_key,
     gek.app_provisional_user_public_encryption_key,
     gek.tanker_provisional_user_public_encryption_key,
-    gek.encrypted_group_private_encryption_key
-  ))
+    gek.encrypted_group_private_encryption_key,
+  )),
 );
 
 const userGroupRemovalSignaturePrefix = utils.fromString('UserGroupRemoval Signature');
@@ -594,10 +594,7 @@ export const getUserGroupRemovalBlockSignData = (record: UserGroupRemovalRecord,
   encodeUint32(record.members_to_remove.length),
   ...record.members_to_remove,
   encodeUint32(record.provisional_members_to_remove.length),
-  ...record.provisional_members_to_remove.map(m => utils.concatArrays(
-    m.app_signature_public_key,
-    m.tanker_signature_public_key,
-  ))
+  ...record.provisional_members_to_remove.map(m => utils.concatArrays(m.app_signature_public_key, m.tanker_signature_public_key)),
 );
 
 export const makeUserGroupCreation = (signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
@@ -664,10 +661,7 @@ export const makeUserGroupAdditionV2 = (groupId: Uint8Array, privateSignatureKey
       privateEncryptionKey,
       u.appEncryptionPublicKey,
     );
-    const encryptedKey = tcrypto.sealEncrypt(
-      preEncryptedKey,
-      u.tankerEncryptionPublicKey,
-    );
+    const encryptedKey = tcrypto.sealEncrypt(preEncryptedKey, u.tankerEncryptionPublicKey);
     return {
       app_provisional_user_public_signature_key: u.appSignaturePublicKey,
       tanker_provisional_user_public_signature_key: u.tankerSignaturePublicKey,
@@ -734,7 +728,10 @@ export const makeUserGroupAdditionV3 = (groupId: Uint8Array, privateSignatureKey
 };
 
 export const makeUserGroupRemoval = (author: Uint8Array, groupId: Uint8Array, privateSignatureKey: Uint8Array, users: Array<Uint8Array>, provisionalUsers: Array<PublicProvisionalUser>) => {
-  const provisionalMembers = provisionalUsers.map(u => ({ app_signature_public_key: u.appSignaturePublicKey, tanker_signature_public_key: u.tankerSignaturePublicKey }));
+  const provisionalMembers = provisionalUsers.map(u => ({
+    app_signature_public_key: u.appSignaturePublicKey,
+    tanker_signature_public_key: u.tankerSignaturePublicKey,
+  }));
 
   const payload = {
     group_id: groupId,

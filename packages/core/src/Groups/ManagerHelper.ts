@@ -1,28 +1,30 @@
-// @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { GroupTooBig, InvalidArgument, InternalError } from '@tanker/errors';
 
 import type { GroupEncryptedKey, ProvisionalGroupEncryptedKeyV2, ProvisionalGroupEncryptedKeyV3, UserGroupEntry } from './Serialize';
 import { isGroupAddition } from './Serialize';
-import { isInternalGroup, type Group, type ExternalGroup, type InternalGroup } from './types';
+import type { Group, ExternalGroup, InternalGroup } from './types';
+import { isInternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
 
-import { type ProvisionalUserKeyPairs } from '../LocalUser/KeySafe';
+import type { ProvisionalUserKeyPairs } from '../LocalUser/KeySafe';
+import '../LocalUser/KeySafe';
 import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import LocalUser from '../LocalUser/LocalUser';
 
 export const MAX_GROUP_MEMBERS_PER_OPERATION = 1000;
 
-export type GroupData = Array<{|
-  entry: UserGroupEntry,
-  group: Group,
-|}>;
+export type GroupData = Array<{
+  entry: UserGroupEntry;
+  group: Group;
+}>;
 
-export type GroupDataWithDevices = Array<{|
-  entry: UserGroupEntry,
-  group: Group,
-  devicePublicSignatureKey: Uint8Array
-|}>;
+export type GroupDataWithDevices = Array<{
+  entry: UserGroupEntry;
+  group: Group;
+  devicePublicSignatureKey: Uint8Array;
+}>;
 
 export function assertPublicIdentities(publicIdentities: Array<b64string>) {
   if (publicIdentities.length > MAX_GROUP_MEMBERS_PER_OPERATION)
@@ -31,21 +33,25 @@ export function assertPublicIdentities(publicIdentities: Array<b64string>) {
 
 export function assertExpectedGroups(groups: Array<Group>, expectedGroupIds: Array<Uint8Array>) {
   const missingGroupIds = [];
+
   for (const groupId of expectedGroupIds) {
     const fetchedGroup = groups.find(group => utils.equalArray(group.groupId, groupId));
+
     if (!fetchedGroup) {
       missingGroupIds.push(utils.toBase64(groupId));
     }
   }
+
   if (missingGroupIds.length > 0) {
     const message = `The following groups do not exist on the trustchain: "${missingGroupIds.join('", "')}"`;
     throw new InvalidArgument(message);
   }
 }
 
-function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, localUser: LocalUser): ?Object {
+function findMyUserKeys(groupKeys: ReadonlyArray<GroupEncryptedKey>, localUser: LocalUser): Record<string, any> | null {
   for (const gek of groupKeys) {
     const correspondingPair = localUser.findUserKey(gek.public_user_encryption_key);
+
     if (correspondingPair) {
       return {
         userKeyPair: correspondingPair,
@@ -53,12 +59,14 @@ function findMyUserKeys(groupKeys: $ReadOnlyArray<GroupEncryptedKey>, localUser:
       };
     }
   }
+
   return null;
 }
 
-function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>, provisionalIdentityManager: ProvisionalIdentityManager): ?Object {
+function findMyProvisionalKeys(groupKeys: ReadonlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>, provisionalIdentityManager: ProvisionalIdentityManager): Record<string, any> | null {
   for (const gek of groupKeys) {
     const correspondingPair = provisionalIdentityManager.findPrivateProvisionalKeys(gek.app_provisional_user_public_signature_key, gek.tanker_provisional_user_public_signature_key);
+
     if (correspondingPair) {
       return {
         provisionalKeyPair: correspondingPair,
@@ -66,6 +74,7 @@ function findMyProvisionalKeys(groupKeys: $ReadOnlyArray<ProvisionalGroupEncrypt
       };
     }
   }
+
   return null;
 }
 
@@ -74,7 +83,7 @@ function provisionalUnseal(ciphertext: Uint8Array, keys: ProvisionalUserKeyPairs
   return tcrypto.sealDecrypt(intermediate, keys.appEncryptionKeyPair);
 }
 
-function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): ?Uint8Array {
+function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUser, provisionalIdentityManager: ProvisionalIdentityManager): Uint8Array | undefined {
   const userKeys = findMyUserKeys(entry.encrypted_group_private_encryption_keys_for_users, localUser);
 
   if (userKeys) {
@@ -83,13 +92,14 @@ function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUs
 
   if (entry.encrypted_group_private_encryption_keys_for_provisional_users) {
     const provisionalKeys = findMyProvisionalKeys(entry.encrypted_group_private_encryption_keys_for_provisional_users, provisionalIdentityManager);
+
     if (provisionalKeys) {
       return provisionalUnseal(provisionalKeys.groupEncryptedKey, provisionalKeys.provisionalKeyPair);
     }
   }
 }
 
-function externalToInternal(externalGroup: ExternalGroup, previousGroup: ?Group, groupPrivateEncryptionKey: Uint8Array): InternalGroup {
+function externalToInternal(externalGroup: ExternalGroup, previousGroup: Group | null | undefined, groupPrivateEncryptionKey: Uint8Array): InternalGroup {
   const { encryptedPrivateSignatureKey, ...groupBase } = externalGroup;
   const groupPrivateSignatureKey = tcrypto.sealDecrypt(encryptedPrivateSignatureKey, { publicKey: groupBase.lastPublicEncryptionKey, privateKey: groupPrivateEncryptionKey });
 
@@ -114,15 +124,15 @@ function externalToInternal(externalGroup: ExternalGroup, previousGroup: ?Group,
   return {
     ...groupBase,
     signatureKeyPairs,
-    encryptionKeyPairs
+    encryptionKeyPairs,
   };
 }
 
 export function groupFromUserGroupEntry(
   entry: UserGroupEntry,
-  previousGroup: ?Group,
+  previousGroup: Group | null,
   localUser: LocalUser,
-  provisionalIdentityManager: ProvisionalIdentityManager
+  provisionalIdentityManager: ProvisionalIdentityManager,
 ): Group {
   // Previous group already has every field we need
   if (previousGroup && isInternalGroup(previousGroup) && (isGroupAddition(entry) || utils.equalArray(previousGroup.lastPublicEncryptionKey, entry.public_encryption_key))) {
@@ -183,18 +193,22 @@ export async function groupsFromEntries(entries: Array<UserGroupEntry>, devicePu
 
     const group = groupFromUserGroupEntry(entry, previousGroup, localUser, provisionalIdentityManager);
     const devicePublicSignatureKey = devicePublicSignatureKeyMap.get(utils.toBase64(entry.author));
+
     if (!devicePublicSignatureKey) {
       throw new InternalError('author device publicSignatureKey missing');
     }
+
     previousData.push({ group, entry, devicePublicSignatureKey });
 
     groupsMap.set(b64groupId, previousData);
   }
 
   const groups: Array<Group> = [];
+
   for (const groupData of groupsMap.values()) {
     verifyGroup(groupData);
     groups.push(groupData[groupData.length - 1].group);
   }
+
   return groups;
 }
