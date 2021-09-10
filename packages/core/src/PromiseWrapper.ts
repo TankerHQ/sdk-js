@@ -1,9 +1,8 @@
-// @flow
 export class PromiseWrapper<T> {
   promise: Promise<T>;
-  resolve: (T) => void;
-  reject: (any) => void;
-  settled: bool = false;
+  resolve: (arg0: T) => void;
+  reject: (arg0: any) => void;
+  settled: boolean = false;
 
   constructor() {
     this.promise = new Promise((resolve, reject) => {

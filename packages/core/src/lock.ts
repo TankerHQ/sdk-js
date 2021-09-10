@@ -1,8 +1,8 @@
-// @flow
 import { PreconditionFailed } from '@tanker/errors';
 
 export class Lock {
   declare _owner: ?string;
+
   constructor() {
     this._owner = null;
   }
@@ -24,7 +24,7 @@ export class Lock {
     return res;
   }
 
-  get locked(): bool {
+  get locked(): boolean {
     return !!this._owner;
   }
 

@@ -1,13 +1,14 @@
-// @flow
 import EventEmitter from 'events';
-import { randomBase64Token, ready as cryptoReady, tcrypto, utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { randomBase64Token, ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertInteger, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
 
 import { _deserializeProvisionalIdentity } from './Identity';
-import { type ClientOptions, defaultApiEndpoint } from './Network/Client';
-import { type DataStoreOptions } from './Session/Storage';
+import type { ClientOptions } from './Network/Client';
+import { defaultApiEndpoint } from './Network/Client';
+import type { DataStoreOptions } from './Session/Storage';
 
 import type {
   Verification,
@@ -15,12 +16,15 @@ import type {
   OIDCVerification,
   RemoteVerification,
   VerificationMethod,
-  VerificationOptions, VerificationWithToken, PhoneNumberVerification
+  VerificationOptions,
+  VerificationWithToken,
+  PhoneNumberVerification,
 } from './LocalUser/types';
 import { assertVerification, assertVerificationOptions } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
 
-import { assertStatus, statusDefs, statuses, type Status } from './Session/status';
+import type { Status } from './Session/status';
+import { assertStatus, statusDefs, statuses } from './Session/status';
 import { Session } from './Session/Session';
 
 import type { OutputOptions, ProgressOptions, EncryptionOptions, SharingOptions } from './DataProtection/options';
@@ -32,7 +36,7 @@ import {
   extractResourceMetadata,
   extractSharingOptions,
   isObject,
-  isSharingOptionsEmpty
+  isSharingOptionsEmpty,
 } from './DataProtection/options';
 import type { EncryptionStream } from './DataProtection/EncryptionStream';
 import type { DecryptionStream } from './DataProtection/DecryptionStream';
@@ -44,21 +48,21 @@ import { Lock } from './lock';
 
 import { TANKER_SDK_VERSION } from './version';
 
-export type TankerCoreOptions = $Exact<{
-  appId?: b64string,
-  trustchainId?: b64string,
-  url?: string,
-  dataStore: DataStoreOptions,
-  sdkType: string,
-}>;
+export type TankerCoreOptions = {
+  appId?: b64string;
+  trustchainId?: b64string;
+  url?: string;
+  dataStore: DataStoreOptions;
+  sdkType: string;
+};
 
-export type TankerOptions = $Exact<{
-  appId?: b64string,
-  trustchainId?: b64string,
-  url?: string,
-  dataStore?: DataStoreOptions,
-  sdkType?: string,
-}>;
+export type TankerOptions = {
+  appId?: b64string;
+  trustchainId?: b64string;
+  url?: string;
+  dataStore?: DataStoreOptions;
+  sdkType?: string;
+};
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
@@ -78,7 +82,7 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerCore
 
 export class Tanker extends EventEmitter {
   _trustchainId: b64string;
-  _session: ?Session;
+  _session?: Session;
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
@@ -96,11 +100,11 @@ export class Tanker extends EventEmitter {
 
     if ('appId' in options) {
       assertB64StringWithSize(options.appId, 'options.appId', tcrypto.HASH_SIZE);
-      this._trustchainId = ((options.appId: any): string);
+      this._trustchainId = ((options.appId as any) as string);
     } else if ('trustchainId' in options) {
       console.warn('The "trustchainId" option is deprecated in favor of "appId", it will be removed in the future');
       assertB64StringWithSize(options.trustchainId, 'options.trustchainId', tcrypto.HASH_SIZE);
-      this._trustchainId = ((options.trustchainId: any): string);
+      this._trustchainId = ((options.trustchainId as any) as string);
     } else {
       throw new InvalidArgument('options.appId', 'string', options.appId);
     }
@@ -131,7 +135,7 @@ export class Tanker extends EventEmitter {
     this._clientOptions = clientOptions;
 
     const datastoreOptions: DataStoreOptions = {
-      adapter: options.dataStore.adapter
+      adapter: options.dataStore.adapter,
     };
     if (options.dataStore.prefix) {
       datastoreOptions.prefix = options.dataStore.prefix;
@@ -182,6 +186,7 @@ export class Tanker extends EventEmitter {
     if (eventName === 'deviceRevoked') {
       console.warn('The "deviceRevoked" event is deprecated, it will be removed in the future');
     }
+
     return super.on(eventName, listener);
   }
 
@@ -189,6 +194,7 @@ export class Tanker extends EventEmitter {
     if (eventName === 'deviceRevoked') {
       console.warn('The "deviceRevoked" event is deprecated, it will be removed in the future');
     }
+
     return super.once(eventName, listener);
   }
 
@@ -227,11 +233,11 @@ export class Tanker extends EventEmitter {
     await cryptoReady;
 
     const userData = this._parseIdentity(identityB64);
-    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
 
+    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
     // Watch and start the session
     session.on('device_revoked', () => this._deviceRevoked());
-    session.on('status_change', (s) => this.emit('statusChange', s));
+    session.on('status_change', s => this.emit('statusChange', s));
     await session.start();
 
     // Set the session only if properly started
@@ -246,7 +252,7 @@ export class Tanker extends EventEmitter {
     assertVerificationOptions(options);
 
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
-    const verifWithToken = (verification: VerificationWithToken);
+    const verifWithToken = (verification as VerificationWithToken);
     const withSessionToken = options && options.withSessionToken;
     if (withSessionToken) {
       if ('verificationKey' in verification)
@@ -259,14 +265,14 @@ export class Tanker extends EventEmitter {
     if (withSessionToken) {
       return this.session.getSessionToken(verifWithToken);
     }
-  })
+  });
 
   verifyIdentity = this._lockCall('verifyIdentity', async (verification: Verification, options?: VerificationOptions): Promise<?string> => {
     assertVerification(verification);
     assertVerificationOptions(options);
 
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
-    const verifWithToken = (verification: VerificationWithToken);
+    const verifWithToken = (verification as VerificationWithToken);
     const withSessionToken = options && options.withSessionToken;
     if (withSessionToken) {
       assertStatus(this.status, [statuses.IDENTITY_VERIFICATION_NEEDED, statuses.READY], 'verify an identity with proof');
@@ -286,17 +292,18 @@ export class Tanker extends EventEmitter {
     if (withSessionToken) {
       return this.session.getSessionToken(verifWithToken);
     }
-  })
+  });
 
   async setVerificationMethod(verification: RemoteVerification, options?: VerificationOptions): Promise<?string> {
     assertStatus(this.status, statuses.READY, 'set a verification method');
     assertVerification(verification);
     assertVerificationOptions(options);
+
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
 
     // $FlowIgnore Flow will complain that an _optional_ field is missing, because we're casting _from_ $Exact...
-    const verifWithToken = (verification: VerificationWithToken);
+    const verifWithToken = (verification as VerificationWithToken);
     const withSessionToken = options && options.withSessionToken;
 
     if (withSessionToken) {
@@ -320,7 +327,7 @@ export class Tanker extends EventEmitter {
     return this.session.generateVerificationKey();
   }
 
-  async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<*> {
+  async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<any> {
     assertStatus(this.status, statuses.READY, 'attach a provisional identity');
 
     const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
@@ -359,12 +366,13 @@ export class Tanker extends EventEmitter {
     this.emit('deviceRevoked');
   };
 
-  async getDeviceList(): Promise<Array<{ id: string, isRevoked: bool }>> {
+  async getDeviceList(): Promise<Array<{ id: string; isRevoked: boolean; }>> {
     assertStatus(this.status, statuses.READY, 'get the device list');
+
     const devices = await this.session.listDevices();
     return devices.map(d => ({
       id: utils.toBase64(d.deviceId),
-      isRevoked: d.revoked
+      isRevoked: d.revoked,
     }));
   }
 
@@ -381,7 +389,7 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument(
         'options.shareWith*',
         'options.shareWithUsers or options.shareWithGroups must contain recipients',
-        options
+        options,
       );
     }
 
@@ -419,8 +427,9 @@ export class Tanker extends EventEmitter {
     return this.session.createGroup(users);
   }
 
-  async updateGroupMembers(groupId: string, args: $Exact<{ usersToAdd?: Array<string>, usersToRemove?: Array<string> }>): Promise<void> {
+  async updateGroupMembers(groupId: string, args: { usersToAdd?: Array<string>; usersToRemove?: Array<string>; }): Promise<void> {
     assertStatus(this.status, statuses.READY, 'update a group');
+
     if (!args || typeof args !== 'object')
       throw new InvalidArgument('usersToAdd', '{ usersToAdd?: Array<string>, usersToRemove?: Array<string> }', args);
 
@@ -462,7 +471,7 @@ export class Tanker extends EventEmitter {
     return this.session.createDecryptionStream();
   }
 
-  async encryptData<T: Data>(clearData: Data, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encryptData<T extends Data>(clearData: Data, options?: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertStatus(this.status, statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
@@ -473,13 +482,13 @@ export class Tanker extends EventEmitter {
     return this.session.encryptData(clearData, encryptionOptions, outputOptions, progressOptions);
   }
 
-  async encrypt<T: Data>(plain: string, options?: $Shape<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
+  async encrypt<T extends Data>(plain: string, options?: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
     assertStatus(this.status, statuses.READY, 'encrypt');
     assertNotEmptyString(plain, 'plain');
     return this.encryptData(utils.fromString(plain), options);
   }
 
-  async decryptData<T: Data>(encryptedData: Data, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async decryptData<T extends Data>(encryptedData: Data, options?: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertStatus(this.status, statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
@@ -489,16 +498,16 @@ export class Tanker extends EventEmitter {
     return this.session.decryptData(encryptedData, outputOptions, progressOptions);
   }
 
-  async decrypt(cipher: Data, options?: $Shape<ProgressOptions> = {}): Promise<string> {
+  async decrypt(cipher: Data, options?: Partial<ProgressOptions> = {}): Promise<string> {
     assertStatus(this.status, statuses.READY, 'decrypt');
     const progressOptions = extractProgressOptions(options);
     return utils.toString(await this.decryptData(cipher, {
       ...progressOptions,
-      type: Uint8Array
+      type: Uint8Array,
     }));
   }
 
-  async upload(clearData: Data, options?: $Shape<EncryptionOptions & ResourceMetadata & ProgressOptions> = {}): Promise<string> {
+  async upload(clearData: Data, options?: Partial<EncryptionOptions & ResourceMetadata & ProgressOptions> = {}): Promise<string> {
     assertStatus(this.status, statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
@@ -509,7 +518,7 @@ export class Tanker extends EventEmitter {
     return this.session.upload(clearData, encryptionOptions, resourceMetadata, progressOptions);
   }
 
-  async download<T: Data>(resourceId: b64string, options?: $Shape<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async download<T extends Data>(resourceId: b64string, options?: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
     assertStatus(this.status, statuses.READY, 'download a file');
     assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 
@@ -522,7 +531,7 @@ export class Tanker extends EventEmitter {
     return this.session.download(resourceId, outputOptions, progressOptions);
   }
 
-  async createUploadStream(clearSize: number, options?: $Shape<EncryptionOptions & ResourceMetadata & ProgressOptions> = {}): Promise<UploadStream> {
+  async createUploadStream(clearSize: number, options?: Partial<EncryptionOptions & ResourceMetadata & ProgressOptions> = {}): Promise<UploadStream> {
     assertStatus(this.status, statuses.READY, 'upload a file using stream');
     assertInteger(clearSize, 'clearSize', true);
 
@@ -533,7 +542,7 @@ export class Tanker extends EventEmitter {
     return this.session.createUploadStream(clearSize, encryptionOptions, resourceMetadata, progressOptions);
   }
 
-  async createDownloadStream(resourceId: b64string, options?: $Shape<ProgressOptions> = {}): Promise<DownloadStream> {
+  async createDownloadStream(resourceId: b64string, options?: Partial<ProgressOptions> = {}): Promise<DownloadStream> {
     assertStatus(this.status, statuses.READY, 'download a file using stream');
     assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 

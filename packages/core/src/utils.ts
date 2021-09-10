@@ -1,5 +1,5 @@
-// @flow
-import { ready as cryptoReady, utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { ready as cryptoReady, utils } from '@tanker/crypto';
 import { assertString, assertNotEmptyString } from '@tanker/types';
 import { InvalidArgument } from '@tanker/errors';
 
