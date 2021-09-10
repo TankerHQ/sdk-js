@@ -1,10 +1,9 @@
-// @flow
 import { generichash, ready as cryptoReady, utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 import {
   obfuscateUserId, createIdentity,
-  createProvisionalIdentity, getPublicIdentity
+  createProvisionalIdentity, getPublicIdentity,
 } from '@tanker/identity';
 
 import {
@@ -28,6 +27,7 @@ describe('Identity', () => {
 
   before(async () => {
     await cryptoReady;
+
     obfuscatedUserId = utils.toBase64(obfuscateUserId(utils.fromBase64(trustchain.id), userId));
     hashedUserEmail = utils.toBase64(generichash(utils.fromString(userEmail)));
   });
@@ -132,6 +132,7 @@ describe('Identity', () => {
 
     it('splits identities as expected', async () => {
       const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities([publicIdentity, publicProvisionalIdentity]);
+
       expect(permanentIdentities).to.deep.equal([publicIdentity]);
       expect(provisionalIdentities).to.deep.equal([publicProvisionalIdentity]);
     });
