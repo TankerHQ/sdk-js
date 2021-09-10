@@ -1,4 +1,3 @@
-// @flow
 import { expect } from '@tanker/test-utils';
 
 import PromiseWrapper from '../PromiseWrapper';
