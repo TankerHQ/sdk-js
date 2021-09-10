@@ -1,12 +1,11 @@
-// @flow
 import { PromiseWrapper } from './PromiseWrapper';
 
 type Fn<T> = () => Promise<T> | T;
-type Task<T> = { fn: Fn<T>, pw: PromiseWrapper<T> };
+type Task<T> = { fn: Fn<T>; pw: PromiseWrapper<T>; };
 
 export class TaskQueue {
   declare _maxConcurrency: number;
-  declare _resumeScheduled: bool;
+  declare _resumeScheduled: boolean;
   declare _runningTasks: number;
   declare _tasks: Array<Task<any>>;
 
@@ -25,7 +24,7 @@ export class TaskQueue {
   }
 
   async _dequeue() {
-    const { fn, pw } = this._tasks.shift();
+    const { fn, pw } = this._tasks.shift()!;
     this._runningTasks += 1;
 
     try {
@@ -57,5 +56,5 @@ export class TaskQueue {
     } finally {
       this._resumeScheduled = false;
     }
-  }
+  };
 }

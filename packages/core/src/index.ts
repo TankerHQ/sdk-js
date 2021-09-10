@@ -1,5 +1,3 @@
-// @flow
-
 // import
 import {
   DecryptionFailed,
@@ -19,7 +17,7 @@ import {
 } from '@tanker/errors';
 
 import { Tanker, optionsWithDefaults } from './Tanker';
-import { statuses } from './Session/status';
+import { Status, statuses } from './Session/status';
 import { fromBase64, toBase64, prehashPassword } from './utils';
 
 // export
@@ -53,6 +51,7 @@ export {
   errors,
   fromBase64,
   optionsWithDefaults,
+  Status,
   statuses,
   toBase64,
   prehashPassword,
