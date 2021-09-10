@@ -1,4 +1,3 @@
-// @flow
 import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
@@ -8,7 +7,7 @@ import { InvalidBlockError } from '../../errors.internal';
 
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../Verify';
 import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Serialize';
-import { type User } from '../types';
+import type { User } from '../types';
 
 import { NATURE } from '../../Blocks/Nature';
 
@@ -56,14 +55,15 @@ describe('BlockVerification', () => {
       unverifiedUserCreation.delegation_signature[0] += 1;
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedUserCreation, null, trustchainId, trustchainKeys.publicKey),
-        'invalid_delegation_signature'
+        'invalid_delegation_signature',
       );
     });
+
     it('should reject an incorrectly signed user creation', () => {
       unverifiedUserCreation.signature[0] += 1;
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedUserCreation, null, trustchainId, trustchainKeys.publicKey),
-        'invalid_signature'
+        'invalid_signature',
       );
     });
 
@@ -76,7 +76,7 @@ describe('BlockVerification', () => {
       user.devices[0].revoked = true;
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainId, trustchainKeys.publicKey),
-        'revoked_author_error'
+        'revoked_author_error',
       );
     });
 
@@ -84,7 +84,7 @@ describe('BlockVerification', () => {
       user.userId = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainId, trustchainKeys.publicKey),
-        'forbidden'
+        'forbidden',
       );
     });
 
@@ -92,14 +92,14 @@ describe('BlockVerification', () => {
       user.userPublicKeys[0] = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainId, trustchainKeys.publicKey),
-        'invalid_public_user_key'
+        'invalid_public_user_key',
       );
     });
 
     it('should reject a deviceCreationV3 if it is signed by the trustchain but the user exists', () => {
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedUserCreation, user, trustchainId, trustchainKeys.publicKey),
-        'invalid_author'
+        'invalid_author',
       );
     });
 
@@ -107,7 +107,7 @@ describe('BlockVerification', () => {
       unverifiedUserCreation.author = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedUserCreation, null, trustchainId, trustchainKeys.publicKey),
-        'invalid_author'
+        'invalid_author',
       );
     });
 
@@ -115,7 +115,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceCreation.last_reset = new Uint8Array([1]);
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainId, trustchainKeys.publicKey),
-        'invalid_last_reset'
+        'invalid_last_reset',
       );
     });
 
@@ -123,7 +123,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceCreation.nature = NATURE.device_creation_v1;
       assertFailWithNature(
         () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainId, trustchainKeys.publicKey),
-        'forbidden'
+        'forbidden',
       );
     });
 
@@ -144,6 +144,7 @@ describe('BlockVerification', () => {
   describe('device revocation', () => {
     let user: User;
     let unverifiedDeviceRevocation: DeviceRevocationEntry;
+
     beforeEach(async () => {
       testGenerator.makeTrustchainCreation();
       const userId = random(tcrypto.HASH_SIZE);
@@ -162,7 +163,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.device_id = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_revoked_device'
+        'invalid_revoked_device',
       );
     });
 
@@ -170,7 +171,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.signature[0] += 1;
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_signature'
+        'invalid_signature',
       );
     });
 
@@ -178,7 +179,7 @@ describe('BlockVerification', () => {
       user.devices[1].revoked = true;
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'device_already_revoked'
+        'device_already_revoked',
       );
     });
 
@@ -187,7 +188,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.user_keys.private_keys.push(unverifiedDeviceRevocation.user_keys.private_keys[0]);
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_new_key'
+        'invalid_new_key',
       );
     });
 
@@ -196,7 +197,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.user_keys.private_keys = [];
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_new_key'
+        'invalid_new_key',
       );
     });
 
@@ -205,7 +206,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.user_keys.private_keys[0].recipient = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_new_key'
+        'invalid_new_key',
       );
     });
 
@@ -214,7 +215,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.user_keys = null;
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'missing_user_keys'
+        'missing_user_keys',
       );
     });
 
@@ -223,7 +224,7 @@ describe('BlockVerification', () => {
       unverifiedDeviceRevocation.user_keys.previous_public_encryption_key = new Uint8Array([1]);
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_previous_key'
+        'invalid_previous_key',
       );
     });
 
@@ -232,7 +233,7 @@ describe('BlockVerification', () => {
       delete unverifiedDeviceRevocation.user_keys;
       assertFailWithNature(
         () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_revocation_version'
+        'invalid_revocation_version',
       );
     });
 

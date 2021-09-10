@@ -1,15 +1,13 @@
-// @flow
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { InvalidBlockError } from '../errors.internal';
 
-import { type User, getLastUserPublicKey } from './types';
+import type { User } from './types';
+import { getLastUserPublicKey } from './types';
 import type { DeviceCreationEntry, DeviceRevocationEntry } from './Serialize';
 
-import {
-  NATURE,
-} from '../Blocks/Nature';
+import { NATURE } from '../Blocks/Nature';
 
 export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?User, trustchainId: Uint8Array, trustchainPublicKey: Uint8Array) {
   if (!utils.isNullArray(entry.last_reset))
