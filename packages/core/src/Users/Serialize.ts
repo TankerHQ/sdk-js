@@ -1,56 +1,50 @@
-// @flow
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { getStaticArray, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from '../Blocks/Serialize';
-import { type VerificationFields, hashBlock } from '../Blocks/Block';
+import type { VerificationFields } from '../Blocks/Block';
+import { hashBlock } from '../Blocks/Block';
 import { unserializeBlock } from '../Blocks/payloads';
 import { NATURE } from '../Blocks/Nature';
 
-type UserPrivateKey = {|
-  recipient: Uint8Array,
-  key: Uint8Array,
-|};
+type UserPrivateKey = {
+  recipient: Uint8Array;
+  key: Uint8Array;
+};
 
-export type UserKeyPair = {|
-  public_encryption_key: Uint8Array,
-  encrypted_private_encryption_key: Uint8Array,
-|};
+export type UserKeyPair = {
+  public_encryption_key: Uint8Array;
+  encrypted_private_encryption_key: Uint8Array;
+};
 
-export type UserKeys = {|
-  public_encryption_key: Uint8Array,
-  previous_public_encryption_key: Uint8Array,
-  encrypted_previous_encryption_key: Uint8Array,
-  private_keys: Array<UserPrivateKey>,
-|};
+export type UserKeys = {
+  public_encryption_key: Uint8Array;
+  previous_public_encryption_key: Uint8Array;
+  encrypted_previous_encryption_key: Uint8Array;
+  private_keys: Array<UserPrivateKey>;
+};
 
-export type DeviceCreationRecord = {|
-  last_reset: Uint8Array,
-  ephemeral_public_signature_key: Uint8Array,
-  user_id: Uint8Array,
-  delegation_signature: Uint8Array,
-  public_signature_key: Uint8Array,
-  public_encryption_key: Uint8Array,
-  user_key_pair: UserKeyPair,
-  is_ghost_device: bool,
+export type DeviceCreationRecord = {
+  last_reset: Uint8Array;
+  ephemeral_public_signature_key: Uint8Array;
+  user_id: Uint8Array;
+  delegation_signature: Uint8Array;
+  public_signature_key: Uint8Array;
+  public_encryption_key: Uint8Array;
+  user_key_pair: UserKeyPair;
+  is_ghost_device: boolean;
 
-  revoked: number,
-|};
+  revoked: number;
+};
 
-export type DeviceRevocationRecord = {|
-  device_id: Uint8Array,
-  user_keys?: UserKeys,
-|};
+export type DeviceRevocationRecord = {
+  device_id: Uint8Array;
+  user_keys?: UserKeys;
+};
 
-export type DeviceCreationEntry = {|
-  ...DeviceCreationRecord,
-  ...VerificationFields
-|};
+export type DeviceCreationEntry = DeviceCreationRecord & VerificationFields;
 
-export type DeviceRevocationEntry = {|
-  ...DeviceRevocationRecord,
-  ...VerificationFields,
-|};
+export type DeviceRevocationEntry = DeviceRevocationRecord & VerificationFields;
 
 export type UserEntry = DeviceCreationEntry | DeviceRevocationEntry;
 
@@ -101,7 +95,6 @@ export function serializeUserDeviceV3(userDevice: DeviceCreationRecord): Uint8Ar
     userDevice.delegation_signature,
     userDevice.public_signature_key,
     userDevice.public_encryption_key,
-    // $FlowIssue user_key_pair is not null, I checked for that...
     serializeUserKeyPair(userDevice.user_key_pair),
     deviceFlags,
   );
@@ -132,15 +125,15 @@ function unserializeUserKeys(src: Uint8Array, offset: number) {
 
 export function unserializeUserDeviceV1(src: Uint8Array): DeviceCreationRecord {
   return unserializeGeneric(src, [
-    (d, o) => ({ last_reset: new Uint8Array(tcrypto.HASH_SIZE), newOffset: o }),
+    (_, o) => ({ last_reset: new Uint8Array(tcrypto.HASH_SIZE), newOffset: o }),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'ephemeral_public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'user_id'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'delegation_signature'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
-    (d, o) => ({ user_key_pair: null, newOffset: o }),
-    (d, o) => ({ is_ghost_device: false, newOffset: o }),
-    (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
+    (_, o) => ({ user_key_pair: null, newOffset: o }),
+    (_, o) => ({ is_ghost_device: false, newOffset: o }),
+    (_, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }
 
@@ -152,23 +145,23 @@ export function unserializeUserDeviceV2(src: Uint8Array): DeviceCreationRecord {
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'delegation_signature'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
-    (d, o) => ({ user_key_pair: null, newOffset: o }),
-    (d, o) => ({ is_ghost_device: false, newOffset: o }),
-    (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
+    (_, o) => ({ user_key_pair: null, newOffset: o }),
+    (_, o) => ({ is_ghost_device: false, newOffset: o }),
+    (_, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }
 
 export function unserializeUserDeviceV3(src: Uint8Array): DeviceCreationRecord {
   return unserializeGeneric(src, [
-    (d, o) => ({ last_reset: new Uint8Array(tcrypto.HASH_SIZE), newOffset: o }),
+    (_, o) => ({ last_reset: new Uint8Array(tcrypto.HASH_SIZE), newOffset: o }),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'ephemeral_public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'user_id'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'delegation_signature'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
     (d, o) => unserializeUserKeyPair(d, o),
-    (d, o) => ({ is_ghost_device: !!(d[o] & 0x01), newOffset: o + 1 }), // eslint-disable-line no-bitwise
-    (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
+    (d, o) => ({ is_ghost_device: !!(d[o]! & 0x01), newOffset: o + 1 }), // eslint-disable-line no-bitwise
+    (_, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }
 
@@ -199,12 +192,12 @@ export function serializeDeviceRevocationV2(deviceRevocation: DeviceRevocationRe
 
   return utils.concatArrays(
     deviceRevocation.device_id,
-    serializeUserKeys(deviceRevocation.user_keys)
+    serializeUserKeys(deviceRevocation.user_keys),
   );
 }
 
 export function unserializeDeviceRevocationV1(src: Uint8Array): DeviceRevocationRecord {
-  return { device_id: getStaticArray(src, tcrypto.HASH_SIZE, 0).value };
+  return { device_id: getStaticArray(src, tcrypto.HASH_SIZE, 0)['value']! };
 }
 
 export function unserializeDeviceRevocationV2(src: Uint8Array): DeviceRevocationRecord {
@@ -214,11 +207,11 @@ export function unserializeDeviceRevocationV2(src: Uint8Array): DeviceRevocation
   ]);
 }
 
-export function isDeviceCreation(nature: number): bool {
+export function isDeviceCreation(nature: number): boolean {
   return nature === NATURE.device_creation_v1 || nature === NATURE.device_creation_v2 || nature === NATURE.device_creation_v3;
 }
 
-export function isDeviceRevocation(nature: number): bool {
+export function isDeviceRevocation(nature: number): boolean {
   return nature === NATURE.device_revocation_v1 || nature === NATURE.device_revocation_v2;
 }
 

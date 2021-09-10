@@ -1,12 +1,12 @@
-// @flow
-import { utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 
 import { _serializeIdentity } from '../Identity';
 import type { PublicPermanentIdentity } from '../Identity';
 import type { Client, PullOptions } from '../Network/Client';
-import { type User } from './types';
-import LocalUser from '../LocalUser/LocalUser';
+import type { User } from './types';
+import type { LocalUser } from '../LocalUser/LocalUser';
 import { usersFromBlocks } from './ManagerHelper';
 
 // ensure that the UserStore is always up-to-date before requesting it.
@@ -47,7 +47,7 @@ export default class UserManager {
     const invalidPublicIdentities = [];
     for (const publicIdentity of publicIdentities) {
       if (!userIdToUserMap.has(publicIdentity.value)) {
-        // $FlowIgnore serializedIdentity is a "hidden" property (non enumerable, not declared in types)
+        // @ts-expect-error serializedIdentity is a "hidden" property (non enumerable, not declared in types)
         invalidPublicIdentities.push(publicIdentity.serializedIdentity || _serializeIdentity(publicIdentity));
       }
     }
@@ -58,7 +58,6 @@ export default class UserManager {
 
   async getDeviceKeysByDevicesIds(devicesIds: Array<Uint8Array>, options: PullOptions = {}) {
     const blocks = await this._getUserBlocksByDeviceIds(devicesIds, options);
-
     const { userIdToUserMap, deviceIdToUserIdMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);
     return this._getDeviceKeysFromIds(userIdToUserMap, deviceIdToUserIdMap, devicesIds);
   }
@@ -87,10 +86,10 @@ export default class UserManager {
   _getUserBlocksByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions): Promise<Array<b64string>> => {
     const { histories } = await this._client.getUserHistoriesByUserIds(userIds, options);
     return histories;
-  }
+  };
 
   _getUserBlocksByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions): Promise<Array<b64string>> => {
     const { histories } = await this._client.getUserHistoriesByDeviceIds(deviceIds, options);
     return histories;
-  }
+  };
 }
