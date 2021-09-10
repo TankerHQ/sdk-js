@@ -25,6 +25,7 @@ babelConfig.plugins.push([
       '@tanker/datastore-pouchdb-base': path.resolve(__dirname, '../packages/datastore/pouchdb-base/src/index.ts'),
       '@tanker/datastore-pouchdb-memory': path.resolve(__dirname, '../packages/datastore/pouchdb-memory/src/index.ts'),
       '@tanker/datastore-pouchdb-node': path.resolve(__dirname, '../packages/datastore/pouchdb-node/src/index.ts'),
+      '@tanker/core': path.resolve(__dirname, '../packages/core/src/index.ts'),
     }
   }
 ]);
