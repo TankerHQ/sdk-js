@@ -1,5 +1,5 @@
-// @flow
-import { utils, type Key, type b64string } from '@tanker/crypto';
+import type { Key, b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 
 import { getKeyPublishEntryFromBlock } from './Serialize';
 import { KeyDecryptor } from './KeyDecryptor';
@@ -13,7 +13,7 @@ import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 export class ResourceManager {
   declare _client: Client;
   declare _keyDecryptor: KeyDecryptor;
-  declare _keyLookupsInProgress: { [b64ResourceId: b64string]: Promise<Key>};
+  declare _keyLookupsInProgress: Record<b64string, Promise<Key>>;
   declare _resourceStore: ResourceStore;
 
   constructor(
@@ -21,7 +21,7 @@ export class ResourceManager {
     resourceStore: ResourceStore,
     localUserManager: LocalUserManager,
     groupManager: GroupManager,
-    provisionalIdentityManager: ProvisionalIdentityManager
+    provisionalIdentityManager: ProvisionalIdentityManager,
   ) {
     this._client = client;
     this._keyDecryptor = new KeyDecryptor(localUserManager, groupManager, provisionalIdentityManager);
@@ -54,7 +54,7 @@ export class ResourceManager {
     return resourceKey;
   }
 
-  saveResourceKey = (resourceId: Uint8Array, key: Uint8Array): Promise<void> => this._resourceStore.saveResourceKey(resourceId, key)
+  saveResourceKey = (resourceId: Uint8Array, key: Uint8Array): Promise<void> => this._resourceStore.saveResourceKey(resourceId, key);
 }
 
 export default ResourceManager;
