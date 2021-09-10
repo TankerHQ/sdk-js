@@ -1,4 +1,4 @@
-// @flow
+import { $Values } from 'utility-types';
 import { InternalError } from '@tanker/errors';
 
 export const NATURE = Object.freeze({
@@ -29,7 +29,7 @@ const NATURE_INT = Object.values(NATURE);
 
 export type Nature = $Values<typeof NATURE>;
 
-export function natureExists(nature: number): bool {
+export function natureExists(nature: number): boolean {
   return NATURE_INT.includes(nature);
 }
 

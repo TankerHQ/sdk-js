@@ -1,16 +1,17 @@
-// @flow
 import varint from 'varint';
-import { generichash, tcrypto, utils, type b64string } from '@tanker/crypto';
-import { type Nature } from './Nature';
+import type { b64string } from '@tanker/crypto';
+import { generichash, tcrypto, utils } from '@tanker/crypto';
 
-import { type Block, type BlockNoSignature, serializeBlock } from './payloads';
+import type { Nature } from './Nature';
+import type { Block, BlockNoSignature } from './payloads';
+import { serializeBlock } from './payloads';
 
-export type VerificationFields = {|
-  nature: Nature,
-  author: Uint8Array,
-  hash: Uint8Array,
-  signature: Uint8Array
-|};
+export type VerificationFields = {
+  nature: Nature;
+  author: Uint8Array;
+  hash: Uint8Array;
+  signature: Uint8Array;
+};
 
 function natureToVarint(nature: Nature): Uint8Array {
   const out = new Uint8Array(8);
@@ -24,12 +25,12 @@ export function hashBlock(block: Block | BlockNoSignature): Uint8Array {
   return generichash(fullPayload);
 }
 
-export function createBlock(payload: Uint8Array, nature: Nature, trustchainId: Uint8Array, author: Uint8Array, signatureKey: Uint8Array): { block: b64string, hash: Uint8Array} {
+export function createBlock(payload: Uint8Array, nature: Nature, trustchainId: Uint8Array, author: Uint8Array, signatureKey: Uint8Array): { block: b64string; hash: Uint8Array; } {
   const block = {
     trustchain_id: trustchainId,
     nature,
     author,
-    payload
+    payload,
   };
   const hash = hashBlock(block);
   const signature = tcrypto.sign(hash, signatureKey);

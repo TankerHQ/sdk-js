@@ -1,4 +1,3 @@
-// @flow
 import { expect } from '@tanker/test-utils';
 import { InternalError } from '@tanker/errors';
 
@@ -7,8 +6,8 @@ import type { Nature, NatureKind } from '../Nature';
 
 describe('blocks: natures', () => {
   // Extract minimum and maximum object values (without Flow issues...)
-  const minMax = <T: number>(obj: { [string]: T }): [T, T] => {
-    const values = ((Object.values(obj): any): Array<T>);
+  const minMax = <T extends number>(obj: Record<string, T>): [T, T] => {
+    const values = ((Object.values(obj) as any) as Array<T>);
     let min = values.shift();
     let max = min;
     values.forEach(value => {
@@ -41,7 +40,7 @@ describe('blocks: natures', () => {
 
   describe('preferredNature', () => {
     it('should map each kind into a preferred nature of the same kind', () => {
-      for (const kind of ((Object.values(NATURE_KIND): any): Array<NatureKind>)) {
+      for (const kind of ((Object.values(NATURE_KIND) as any) as Array<NatureKind>)) {
         const nature = preferredNature(kind);
         expect(natureKind(nature)).to.equal(kind);
       }
