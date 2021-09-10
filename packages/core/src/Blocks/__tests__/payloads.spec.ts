@@ -1,9 +1,6 @@
-// @flow
-
 import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { UpgradeRequired } from '@tanker/errors';
-
 import { serializeBlock, unserializeBlock } from '../payloads';
 import { preferredNature, NATURE_KIND } from '../Nature';
 
@@ -16,7 +13,7 @@ describe('blocks: payloads', () => {
       signature: random(tcrypto.SIGNATURE_SIZE),
       trustchain_id: random(tcrypto.HASH_SIZE),
       payload: new Uint8Array(0),
-      nature: NATURE_KIND.key_publish_to_device,
+      nature: preferredNature(NATURE_KIND.key_publish_to_device),
     };
     const serializedBlock = serializeBlock(block);
     serializedBlock[0] = 99;
@@ -31,7 +28,6 @@ describe('blocks: payloads', () => {
       payload: new Uint8Array(0),
       nature: Number.MAX_SAFE_INTEGER,
     };
-    // $FlowExpectedError Unknown nature
     const serializedBlock = serializeBlock(block);
     expect(() => unserializeBlock(serializedBlock)).to.throw(UpgradeRequired);
   });
@@ -42,7 +38,7 @@ describe('blocks: payloads', () => {
       nature: preferredNature(NATURE_KIND.key_publish_to_device),
       payload: random(450),
       author: random(tcrypto.HASH_SIZE),
-      signature: random(tcrypto.SIGNATURE_SIZE)
+      signature: random(tcrypto.SIGNATURE_SIZE),
     };
 
     expect(unserializeBlock(serializeBlock(block))).to.deep.equal(block);

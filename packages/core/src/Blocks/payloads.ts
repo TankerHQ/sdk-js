@@ -1,24 +1,22 @@
-// @flow
 import varint from 'varint';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError, UpgradeRequired } from '@tanker/errors';
 
 import { getArray, getStaticArray, encodeArrayLength } from './Serialize';
 
-import { type Nature, natureExists } from './Nature';
+import type { Nature } from './Nature';
+import { natureExists } from './Nature';
 
-export type BlockNoSignature = {|
-  trustchain_id: Uint8Array,
-  nature: Nature,
-  payload: Uint8Array,
-  author: Uint8Array,
-|};
+export type BlockNoSignature = {
+  trustchain_id: Uint8Array;
+  nature: Nature;
+  payload: Uint8Array;
+  author: Uint8Array;
+};
 
-export type Block = {|
-  ...BlockNoSignature,
-  signature: Uint8Array,
-|};
-
+export type Block = BlockNoSignature & {
+  signature: Uint8Array;
+};
 // Warning: When incrementing the block version, make sure to add a block signature to the v2.
 const currentVersion = 1;
 
@@ -42,7 +40,7 @@ export function serializeBlock(block: Block): Uint8Array {
     encodeArrayLength(block.payload),
     block.payload,
     block.author,
-    block.signature
+    block.signature,
   );
 }
 
@@ -56,18 +54,18 @@ export function unserializeBlock(src: Uint8Array): Block {
   /*const index = */varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   ({ value, newOffset } = getStaticArray(src, trustchainIdSize, newOffset));
-  const trustchain_id = value; // eslint-disable-line camelcase
+  const trustchain_id = value!; // eslint-disable-line camelcase
   value = varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   const nature = value;
   if (!natureExists(nature))
     throw new UpgradeRequired(`unknown block nature: ${nature}`);
   ({ value, newOffset } = getArray(src, newOffset));
-  const payload = value;
+  const payload = value!;
   ({ value, newOffset } = getStaticArray(src, hashSize, newOffset));
-  const author = value;
+  const author = value!;
   ({ value, newOffset } = getStaticArray(src, signatureSize, newOffset));
-  const signature = value;
+  const signature = value!;
 
   return { trustchain_id, nature, payload, author, signature };
 }
