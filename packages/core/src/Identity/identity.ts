@@ -1,69 +1,67 @@
-// @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 
 type PermanentIdentityTarget = 'user';
 type SecretProvisionalIdentityTarget = 'email' | 'phone_number';
 export type PublicProvisionalIdentityTarget = 'email' | 'hashed_email' | 'hashed_phone_number';
 
-export type PublicPermanentIdentity = {|
-  trustchain_id: b64string,
-  target: PermanentIdentityTarget,
-  value: b64string,
-|};
+export type PublicPermanentIdentity = {
+  trustchain_id: b64string;
+  target: PermanentIdentityTarget;
+  value: b64string;
+};
 
-export type SecretPermanentIdentity = {|
-  ...PublicPermanentIdentity,
-  ephemeral_public_signature_key: b64string,
-  ephemeral_private_signature_key: b64string,
-  delegation_signature: b64string,
-  user_secret: b64string,
-|};
+export type SecretPermanentIdentity = PublicPermanentIdentity & {
+  ephemeral_public_signature_key: b64string;
+  ephemeral_private_signature_key: b64string;
+  delegation_signature: b64string;
+  user_secret: b64string;
+};
 
-export type PublicProvisionalIdentity = {|
-  trustchain_id: b64string,
-  target: PublicProvisionalIdentityTarget,
-  value: string,
-  public_signature_key: b64string,
-  public_encryption_key: b64string,
-|};
+export type PublicProvisionalIdentity = {
+  trustchain_id: b64string;
+  target: PublicProvisionalIdentityTarget;
+  value: string;
+  public_signature_key: b64string;
+  public_encryption_key: b64string;
+};
 
-export type SecretProvisionalIdentity = {|
-  ...PublicProvisionalIdentity,
-  target: SecretProvisionalIdentityTarget,
-  private_encryption_key: b64string,
-  private_signature_key: b64string,
-|};
+export type SecretProvisionalIdentity = PublicProvisionalIdentity & {
+  target: SecretProvisionalIdentityTarget;
+  private_encryption_key: b64string;
+  private_signature_key: b64string;
+};
 
-export type PublicProvisionalUser = {|
-  trustchainId: Uint8Array,
-  target: string,
-  value: string,
-  appSignaturePublicKey: Uint8Array,
-  appEncryptionPublicKey: Uint8Array,
-  tankerSignaturePublicKey: Uint8Array,
-  tankerEncryptionPublicKey: Uint8Array,
-|};
+export type PublicProvisionalUser = {
+  trustchainId: Uint8Array;
+  target: string;
+  value: string;
+  appSignaturePublicKey: Uint8Array;
+  appEncryptionPublicKey: Uint8Array;
+  tankerSignaturePublicKey: Uint8Array;
+  tankerEncryptionPublicKey: Uint8Array;
+};
 
-export type ProvisionalUserKeys = {|
-  appSignatureKeyPair: tcrypto.SodiumKeyPair,
-  appEncryptionKeyPair: tcrypto.SodiumKeyPair,
-  tankerSignatureKeyPair: tcrypto.SodiumKeyPair,
-  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair,
-|};
+export type ProvisionalUserKeys = {
+  appSignatureKeyPair: tcrypto.SodiumKeyPair;
+  appEncryptionKeyPair: tcrypto.SodiumKeyPair;
+  tankerSignatureKeyPair: tcrypto.SodiumKeyPair;
+  tankerEncryptionKeyPair: tcrypto.SodiumKeyPair;
+};
 
 export type SecretIdentity = SecretPermanentIdentity | SecretProvisionalIdentity;
 export type PublicIdentity = PublicPermanentIdentity | PublicProvisionalIdentity;
 
-function isPermanentIdentity(identity: SecretIdentity | PublicIdentity): bool %checks {
+function isPermanentIdentity(identity: SecretIdentity | PublicIdentity): boolean {
   return identity.target === 'user';
 }
 
-function isPublicPermanentIdentity(identity: SecretPermanentIdentity | PublicPermanentIdentity): bool %checks {
+function isPublicPermanentIdentity(identity: SecretPermanentIdentity | PublicPermanentIdentity): boolean {
   return !('user_secret' in identity);
 }
 
-export function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): bool %checks {
+export function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): boolean {
   return !isPermanentIdentity(identity);
 }
 
@@ -99,17 +97,18 @@ function rubyJsonSort(a: string, b: string) {
   return aIdx - bIdx;
 }
 
-function dumpOrderedJson(o: Object): string {
+function dumpOrderedJson(o: Record<string, any>): string {
   const keys = Object.keys(o).sort(rubyJsonSort);
   const json = [];
+
   for (const k of keys) {
     let val;
     if (o[k] !== null && typeof o[k] === 'object')
       val = dumpOrderedJson(o[k]);
-    else
-      val = JSON.stringify(o[k]);
+    else val = JSON.stringify(o[k]);
     json.push(`"${k}":${val}`);
   }
+
   return `{${json.join(',')}}`;
 }
 
@@ -117,9 +116,8 @@ export function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b
   return utils.toBase64(utils.fromString(dumpOrderedJson(identity)));
 }
 
-function _deserializeAndFreeze(identity: b64string): Object { // eslint-disable-line no-underscore-dangle
+function _deserializeAndFreeze(identity: b64string): Record<string, any> { // eslint-disable-line no-underscore-dangle
   const result = utils.fromB64Json(identity);
-
   // Hidden property that carries the original serialized version of the
   // identity for debugging purposes (e.g. error messages)
   Object.defineProperty(result, 'serializedIdentity', {

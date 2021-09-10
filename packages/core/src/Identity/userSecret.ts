@@ -1,4 +1,3 @@
-// @flow
 import { generichash } from '@tanker/crypto';
 
 export const USER_SECRET_SIZE = 32;
