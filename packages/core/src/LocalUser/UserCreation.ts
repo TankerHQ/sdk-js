@@ -1,20 +1,15 @@
-// @flow
-
 import { tcrypto, utils } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 
-import { serializeUserDeviceV3,
-  type UserKeys,
-  serializeDeviceRevocationV2
-} from '../Users/Serialize';
+import type { UserKeys } from '../Users/Serialize';
+import { serializeUserDeviceV3, serializeDeviceRevocationV2 } from '../Users/Serialize';
 
-import { type Device } from '../Users/types';
+import type { Device } from '../Users/types';
 
 import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 import { createBlock } from '../Blocks/Block';
-
-import { type GhostDevice, type GhostDeviceKeys } from './ghostDevice';
-import { type DelegationToken } from './UserData';
+import type { GhostDevice, GhostDeviceKeys } from './ghostDevice';
+import type { DelegationToken } from './UserData';
 
 export const generateDeviceFromGhostDevice = (
   trustchainId: Uint8Array,
@@ -30,7 +25,7 @@ export const generateDeviceFromGhostDevice = (
 
   const encryptedUserKeyForNewDevice = tcrypto.sealEncrypt(
     userKeys.privateKey,
-    encryptionKeyPair.publicKey
+    encryptionKeyPair.publicKey,
   );
 
   const payload = serializeUserDeviceV3({
@@ -47,14 +42,13 @@ export const generateDeviceFromGhostDevice = (
     is_ghost_device: false,
     revoked: Number.MAX_SAFE_INTEGER,
   });
-
   return {
     ...createBlock(
       payload,
       preferredNature(NATURE_KIND.device_creation),
       trustchainId,
       ghostDeviceId,
-      ephemeralKeys.privateKey
+      ephemeralKeys.privateKey,
     ),
     encryptionKeyPair,
     signatureKeyPair,
@@ -65,7 +59,7 @@ export const generateUserCreation = (
   trustchainId: Uint8Array,
   userId: Uint8Array,
   ghostDeviceKeys: GhostDeviceKeys,
-  delegationToken: DelegationToken
+  delegationToken: DelegationToken,
 ) => {
   const userKeys = tcrypto.makeEncryptionKeyPair();
   const encryptedUserKey = tcrypto.sealEncrypt(
@@ -93,7 +87,7 @@ export const generateUserCreation = (
     preferredNature(NATURE_KIND.device_creation),
     trustchainId,
     trustchainId,
-    delegationToken.ephemeral_private_signature_key
+    delegationToken.ephemeral_private_signature_key,
   );
 
   const ghostDevice = {
@@ -106,7 +100,7 @@ export const generateUserCreation = (
     userId,
     ghostDevice,
     hash,
-    userKeys
+    userKeys,
   );
 
   return {
@@ -147,11 +141,11 @@ const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKe
 };
 
 export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
-  const remainingDevices = [];
+  const remainingDevices: Device[] = [];
   let deviceToRevokeFound = false;
   let deviceAlreadyRevoked = false;
 
-  devices.forEach((device) => {
+  devices.forEach(device => {
     if (utils.equalArray(device.deviceId, deviceId)) {
       deviceToRevokeFound = true;
       deviceAlreadyRevoked = device.revoked;
@@ -170,7 +164,7 @@ export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tc
   const userKeys = rotateUserKeys(remainingDevices, currentUserKeys);
   const revocationRecord = {
     device_id: deviceId,
-    user_keys: userKeys
+    user_keys: userKeys,
   };
 
   return { payload: serializeDeviceRevocationV2(revocationRecord), nature: preferredNature(NATURE_KIND.device_revocation) };

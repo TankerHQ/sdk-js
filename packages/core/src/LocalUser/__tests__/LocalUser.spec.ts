@@ -1,16 +1,17 @@
-// @flow
-
 import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import TestGenerator, { type TestUser } from '../../__tests__/TestGenerator';
+import type { TestUser, TestTrustchainCreation, TestDeviceCreation, TestDeviceRevocation } from '../../__tests__/TestGenerator';
+import TestGenerator from '../../__tests__/TestGenerator';
 
 import LocalUser from '../LocalUser';
 import { extractUserData } from '../UserData';
+import type { UserData } from '../UserData';
 
 const localUserKeysFromTestUser = (user: TestUser) => {
-  const userKeys = {};
+  const userKeys: Record<b64string, tcrypto.SodiumKeyPair> = {};
   let currentUserKey;
 
   user.userKeys.forEach(userKey => {
@@ -22,31 +23,29 @@ const localUserKeysFromTestUser = (user: TestUser) => {
 };
 
 describe('Local User', () => {
-  let localUser;
-  let trustchainCreation;
-  let trustchainCreationBlock;
-  let deviceCreation1;
-  let deviceCreation1Block;
-  let deviceCreation2;
-  let deviceCreation2Block;
-  let testGenerator;
-  let trustchainId;
-  let trustchainKeyPair;
-  let userIdString;
-  let identity;
-  let userData;
+  let localUser: LocalUser;
+  let trustchainCreation: TestTrustchainCreation;
+  let trustchainCreationBlock: b64string;
+  let deviceCreation1: TestDeviceCreation;
+  let deviceCreation1Block: b64string;
+  let deviceCreation2: TestDeviceCreation;
+  let deviceCreation2Block: b64string;
+  let testGenerator: TestGenerator;
+  let trustchainKeyPair: tcrypto.SodiumKeyPair;
+  let userIdString: string;
+  let identity: b64string;
+  let userData: UserData;
 
   before(async () => {
     await cryptoReady;
     trustchainKeyPair = tcrypto.makeSignKeyPair();
-    trustchainId = utils.generateAppID(trustchainKeyPair.publicKey);
     userIdString = 'clear user id';
   });
 
   beforeEach(async () => {
     testGenerator = new TestGenerator();
     trustchainCreation = testGenerator.makeTrustchainCreation();
-    trustchainId = utils.toBase64(trustchainCreation.unverifiedTrustchainCreation.hash);
+    const trustchainId = utils.toBase64(trustchainCreation.unverifiedTrustchainCreation.hash);
     trustchainKeyPair = trustchainCreation.trustchainKeys;
     identity = await createIdentity(trustchainId, utils.toBase64(trustchainKeyPair.privateKey), userIdString);
     userData = extractUserData(identity);
@@ -64,7 +63,7 @@ describe('Local User', () => {
       currentUserKey: null,
       devices: [],
       deviceId: deviceCreation2.testDevice.id,
-      trustchainPublicKey: null
+      trustchainPublicKey: null,
     };
     localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
   });
@@ -83,10 +82,11 @@ describe('Local User', () => {
   });
 
   describe('with revocation before own creation', () => {
-    let deviceRevocation;
-    let deviceCreation3;
-    let deviceCreation3Block;
-    let deviceRevocationBlock;
+    let deviceRevocation: TestDeviceRevocation;
+    let deviceCreation3: TestDeviceCreation;
+    let deviceCreation3Block: b64string;
+    let deviceRevocationBlock: b64string;
+
     beforeEach(() => {
       deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation1, deviceCreation2.testDevice.id);
       deviceRevocationBlock = deviceRevocation.block;

@@ -1,20 +1,17 @@
-// @flow
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { getStaticArray } from '../Blocks/Serialize';
 import { NATURE } from '../Blocks/Nature';
 import { unserializeBlock } from '../Blocks/payloads';
-import { type VerificationFields, hashBlock } from '../Blocks/Block';
+import type { VerificationFields } from '../Blocks/Block';
+import { hashBlock } from '../Blocks/Block';
 
-export type TrustchainCreationRecord = {|
-  public_signature_key: Uint8Array,
-|};
+export type TrustchainCreationRecord = {
+  public_signature_key: Uint8Array;
+};
 
-export type TrustchainCreationEntry = {|
-  ...TrustchainCreationRecord,
-  ...VerificationFields
-|};
+export type TrustchainCreationEntry = TrustchainCreationRecord & VerificationFields;
 
 export function serializeTrustchainCreation(trustchainCreation: TrustchainCreationRecord): Uint8Array {
   if (trustchainCreation.public_signature_key.length !== tcrypto.SIGNATURE_PUBLIC_KEY_SIZE)
@@ -25,7 +22,7 @@ export function serializeTrustchainCreation(trustchainCreation: TrustchainCreati
 
 export function unserializeTrustchainCreation(src: Uint8Array): TrustchainCreationRecord {
   const { value } = getStaticArray(src, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, 0);
-  return { public_signature_key: value };
+  return { public_signature_key: value! };
 }
 
 export function trustchainCreationFromBlock(b64Block: string): TrustchainCreationEntry {
