@@ -1,5 +1,3 @@
-// @flow
-
 import { ready as cryptoReady, tcrypto } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
@@ -38,7 +36,8 @@ describe('groups blocks', () => {
         {
           public_user_encryption_key: makeUint8Array('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
-        }],
+        },
+      ],
       self_signature: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 
@@ -98,7 +97,7 @@ describe('groups blocks', () => {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     ]);
 
     expect(serializeUserGroupCreationV1(userGroupCreation)).to.deep.equal(payload);
@@ -120,7 +119,8 @@ describe('groups blocks', () => {
           user_id: makeUint8Array('second user id', tcrypto.HASH_SIZE),
           public_user_encryption_key: makeUint8Array('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
-        }],
+        },
+      ],
       encrypted_group_private_encryption_keys_for_provisional_users: [
         {
           app_provisional_user_public_signature_key: makeUint8Array('app provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
@@ -131,7 +131,8 @@ describe('groups blocks', () => {
           app_provisional_user_public_signature_key: makeUint8Array('2nd app provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_provisional_user_public_signature_key: makeUint8Array('2nd tanker provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('2nd provisional user encrypted group priv key', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
-        }],
+        },
+      ],
       self_signature: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 
@@ -259,7 +260,8 @@ describe('groups blocks', () => {
           user_id: makeUint8Array('second user id', tcrypto.HASH_SIZE),
           public_user_encryption_key: makeUint8Array('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
-        }],
+        },
+      ],
       encrypted_group_private_encryption_keys_for_provisional_users: [
         {
           app_provisional_user_public_signature_key: makeUint8Array('app provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
@@ -274,7 +276,8 @@ describe('groups blocks', () => {
           app_provisional_user_public_encryption_key: makeUint8Array('2nd app provisional enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_provisional_user_public_encryption_key: makeUint8Array('2nd tanker provisional enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('2nd provisional user encrypted group priv key', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
-        }],
+        },
+      ],
       self_signature: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 
@@ -411,10 +414,12 @@ describe('groups blocks', () => {
         public_signature_key: new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
         public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
         encrypted_group_private_signature_key: new Uint8Array(tcrypto.SEALED_SIGNATURE_PRIVATE_KEY_SIZE),
-        encrypted_group_private_encryption_keys_for_users: [{
-          public_user_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-          encrypted_group_private_encryption_key: new Uint8Array(tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
-        }],
+        encrypted_group_private_encryption_keys_for_users: [
+          {
+            public_user_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
+            encrypted_group_private_encryption_key: new Uint8Array(tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
+          },
+        ],
         self_signature: new Uint8Array(tcrypto.SIGNATURE_SIZE),
       };
     });
@@ -435,10 +440,12 @@ describe('groups blocks', () => {
         expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
       });
     });
+
     it('should throw when serializing a user group creation block with invalid public_user_encryption_key', async () => {
       userGroupCreation.encrypted_group_private_encryption_keys_for_users[0].public_user_encryption_key = new Uint8Array(0);
       expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
     });
+
     it('should throw when serializing a user group creation block with invalid encrypted_group_private_encryption_key', async () => {
       userGroupCreation.encrypted_group_private_encryption_keys_for_users[0].encrypted_group_private_encryption_key = new Uint8Array(0);
       expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
@@ -457,7 +464,8 @@ describe('groups blocks', () => {
         {
           public_user_encryption_key: makeUint8Array('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
-        }],
+        },
+      ],
       self_signature_with_current_key: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 
@@ -473,39 +481,36 @@ describe('groups blocks', () => {
       // varint
       0x02,
       // public user encryption key 1
-      0x70, 0x75, 0x62,
-      0x20, 0x75, 0x73, 0x65, 0x72, 0x20, 0x6b, 0x65, 0x79, 0x00, 0x00, 0x00,
+      0x70, 0x75, 0x62, 0x20, 0x75, 0x73, 0x65, 0x72, 0x20, 0x6b, 0x65, 0x79,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       // encrypted group private encryption key 1
-      0x65, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74,
-      0x65, 0x64, 0x20, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x20, 0x70, 0x72, 0x69,
-      0x76, 0x20, 0x6b, 0x65, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x65, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x65, 0x64, 0x20, 0x67, 0x72,
+      0x6f, 0x75, 0x70, 0x20, 0x70, 0x72, 0x69, 0x76, 0x20, 0x6b, 0x65, 0x79,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       // public user encryption key 2
-      0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x20, 0x70, 0x75, 0x62, 0x20,
-      0x75, 0x73, 0x65, 0x72, 0x20, 0x6b, 0x65, 0x79, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x20, 0x70, 0x75, 0x62, 0x20, 0x75,
+      0x73, 0x65, 0x72, 0x20, 0x6b, 0x65, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       // encrypted group private encryption key 2
-      0x73, 0x65, 0x63,
-      0x6f, 0x6e, 0x64, 0x20, 0x65, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x65,
-      0x64, 0x20, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x20, 0x70, 0x72, 0x69, 0x76,
-      0x20, 0x6b, 0x65, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x20, 0x65, 0x6e, 0x63, 0x72, 0x79,
+      0x70, 0x74, 0x65, 0x64, 0x20, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x20, 0x70,
+      0x72, 0x69, 0x76, 0x20, 0x6b, 0x65, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       // self signature
-      0x73, 0x65, 0x6c, 0x66, 0x20, 0x73, 0x69,
-      0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x73, 0x65, 0x6c, 0x66, 0x20, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75,
+      0x72, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+      0x00, 0x00, 0x00, 0x00,
     ]);
 
     expect(serializeUserGroupAdditionV1(userGroupAdd)).to.deep.equal(payload);
@@ -526,7 +531,8 @@ describe('groups blocks', () => {
           user_id: makeUint8Array('second user id', tcrypto.HASH_SIZE),
           public_user_encryption_key: makeUint8Array('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
-        }],
+        },
+      ],
       encrypted_group_private_encryption_keys_for_provisional_users: [
         {
           app_provisional_user_public_signature_key: makeUint8Array('app provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
@@ -537,7 +543,8 @@ describe('groups blocks', () => {
           app_provisional_user_public_signature_key: makeUint8Array('2nd app provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_provisional_user_public_signature_key: makeUint8Array('2nd tanker provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('2nd provisional encrypted group priv key', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
-        }],
+        },
+      ],
       self_signature_with_current_key: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 
@@ -653,7 +660,8 @@ describe('groups blocks', () => {
           user_id: makeUint8Array('second user id', tcrypto.HASH_SIZE),
           public_user_encryption_key: makeUint8Array('second pub user key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('second encrypted group priv key', tcrypto.SEALED_ENCRYPTION_PRIVATE_KEY_SIZE),
-        }],
+        },
+      ],
       encrypted_group_private_encryption_keys_for_provisional_users: [
         {
           app_provisional_user_public_signature_key: makeUint8Array('app provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
@@ -668,7 +676,8 @@ describe('groups blocks', () => {
           app_provisional_user_public_encryption_key: makeUint8Array('2nd app provisional enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_provisional_user_public_encryption_key: makeUint8Array('2nd tanker provisional enc key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           encrypted_group_private_encryption_key: makeUint8Array('2nd provisional encrypted group priv key', tcrypto.TWO_TIMES_SEALED_KEY_SIZE),
-        }],
+        },
+      ],
       self_signature_with_current_key: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 
@@ -819,7 +828,8 @@ describe('groups blocks', () => {
         {
           app_signature_public_key: makeUint8Array('2nd app provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
           tanker_signature_public_key: makeUint8Array('2nd tanker provisional sig key', tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        }],
+        },
+      ],
       self_signature_with_current_key: makeUint8Array('self signature', tcrypto.SIGNATURE_SIZE),
     };
 

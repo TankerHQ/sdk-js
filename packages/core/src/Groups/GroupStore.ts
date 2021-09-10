@@ -1,8 +1,9 @@
-// @flow
-import { type DataStore } from '@tanker/datastore-base';
+import type { DataStore } from '@tanker/datastore-base';
+import '@tanker/datastore-base';
 import { InternalError } from '@tanker/errors';
 
-import { tcrypto, utils, encryptionV2, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { tcrypto, utils, encryptionV2 } from '@tanker/crypto';
 
 const GROUPS_ENCRYPTION_KEYS_TABLE = 'groups_encryption_keys';
 
@@ -10,14 +11,14 @@ const schemaV3 = {
   tables: [{
     name: 'groups',
     indexes: [['publicEncryptionKey']],
-  }]
+  }],
 };
 
 const schemaV7 = {
   tables: [...schemaV3.tables, {
     name: 'groups_pending_encryption_keys',
     indexes: [['publicSignatureKeys']],
-  }]
+  }],
 };
 
 const schemaV8 = {
@@ -29,7 +30,7 @@ const schemaV8 = {
       name: 'group_encryption_key_pairs',
       indexes: [['publicEncryptionKey']],
     },
-  ]
+  ],
 };
 
 const schemaV11 = {
@@ -40,7 +41,7 @@ const schemaV11 = {
     {
       name: 'group_encryption_keys',
     },
-  ]
+  ],
 };
 
 const schemaV13 = {
@@ -50,29 +51,25 @@ const schemaV13 = {
       name: GROUPS_ENCRYPTION_KEYS_TABLE,
       indexes: [['groupId']],
     },
-  ]
+  ],
 };
 
 type GroupPublicEncryptionKeyRecord = {
-  groupId: Uint8Array,
-  publicEncryptionKey: Uint8Array,
+  groupId: Uint8Array;
+  publicEncryptionKey: Uint8Array;
 };
 
-type GroupEncryptionKeyPairRecord = {
-  ...GroupPublicEncryptionKeyRecord,
-  privateEncryptionKey: Uint8Array,
-};
+type GroupEncryptionKeyPairRecord = GroupPublicEncryptionKeyRecord & { privateEncryptionKey: Uint8Array; };
 
 type GroupEntry = {
-  _id: b64string, // publicEncryptionKey
-  groupId: b64string,
-  privateEncryptionKey: ?b64string,
+  _id: b64string; // publicEncryptionKey
+  groupId: b64string;
+  privateEncryptionKey?: b64string;
 };
 
 export default class GroupStore {
-  declare _ds: DataStore<*>;
+  declare _ds: DataStore<any>;
   declare _userSecret: Uint8Array;
-
   static schemas = [
     // this store didn't exist in schema version 1 and 2
     { version: 1, tables: [] },
@@ -90,7 +87,7 @@ export default class GroupStore {
     { version: 13, ...schemaV13 },
   ];
 
-  constructor(ds: DataStore<*>, userSecret: Uint8Array) {
+  constructor(ds: DataStore<any>, userSecret: Uint8Array) {
     if (!userSecret)
       throw new InternalError('Invalid user secret');
 
@@ -99,7 +96,7 @@ export default class GroupStore {
     Object.defineProperty(this, '_userSecret', { value: userSecret }); // + not writable
   }
 
-  static async open(ds: DataStore<*>, userSecret: Uint8Array): Promise<GroupStore> {
+  static async open(ds: DataStore<any>, userSecret: Uint8Array): Promise<GroupStore> {
     return new GroupStore(ds, userSecret);
   }
 
@@ -112,22 +109,24 @@ export default class GroupStore {
     const b64groupPK = groupPublicKeys.map(gpk => ({ _id: utils.toBase64(gpk.publicEncryptionKey), groupId: utils.toBase64(gpk.groupId) }));
     const knownGroupEntries = await this._findGroupsByGroupId(b64groupPK.map(g => g.groupId));
     const knownGroups = {};
+
     for (const entry of knownGroupEntries) {
       knownGroups[entry.groupId] = true;
     }
 
     // We never want duplicate groupIds
-    const toInsert = b64groupPK.filter((gk) => !knownGroups[gk.groupId]);
+    const toInsert = b64groupPK.filter(gk => !knownGroups[gk.groupId]);
 
     // bulkAdd never inserts duplicate `_id`
     await this._ds.bulkAdd(GROUPS_ENCRYPTION_KEYS_TABLE, toInsert);
-  }
+  };
 
-  _canUpdateEntry(record: GroupEntry, knownEntry: ?GroupEntry): bool {
+  _canUpdateEntry(record: GroupEntry, knownEntry?: GroupEntry): boolean {
     // keep new record
     if (!knownEntry) {
       return true;
     }
+
     // keep unset privateKeys where entries `groupId` and `_id` match
     return !knownEntry.privateEncryptionKey
         && record._id === knownEntry._id // eslint-disable-line no-underscore-dangle
@@ -146,6 +145,7 @@ export default class GroupStore {
 
     const knownGroupIdEntries = await this._findGroupsByGroupId(b64groupKeys.map(g => g.groupId));
     const knownGroupIds = {};
+
     for (const entry of knownGroupIdEntries) {
       knownGroupIds[entry.groupId] = entry;
     }
@@ -153,23 +153,27 @@ export default class GroupStore {
     // eslint-disable-next-line no-underscore-dangle
     const knownIdEntries = await this._findGroupsByPublicKey(b64groupKeys.map(g => g._id));
     const knownIds = {};
+
     for (const entry of knownIdEntries) {
       knownIds[entry.groupId] = entry;
     }
 
-    const toInsert = b64groupKeys.filter(gk => this._canUpdateEntry(gk, knownGroupIds[gk.groupId]))
-      .filter(gk => this._canUpdateEntry(gk, knownIds[gk._id])); // eslint-disable-line no-underscore-dangle
+    const toInsert = b64groupKeys.filter(
+      gk => this._canUpdateEntry(gk, knownGroupIds[gk.groupId]),
+    ).filter(
+      gk => this._canUpdateEntry(gk, knownIds[gk._id]), // eslint-disable-line no-underscore-dangle
+    );
 
     await this._ds.bulkPut(GROUPS_ENCRYPTION_KEYS_TABLE, toInsert);
-  }
+  };
 
-  async findGroupEncryptionKeyPair(publicKey: Uint8Array): Promise<?tcrypto.SodiumKeyPair> {
+  async findGroupEncryptionKeyPair(publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair | null | undefined> {
     const b64PublicKey = utils.toBase64(publicKey);
 
     const existingKey = await this._ds.first(GROUPS_ENCRYPTION_KEYS_TABLE, {
       selector: {
         _id: b64PublicKey,
-      }
+      },
     });
 
     if (!existingKey || !existingKey.privateEncryptionKey) {
@@ -195,7 +199,7 @@ export default class GroupStore {
     return this._ds.find(GROUPS_ENCRYPTION_KEYS_TABLE, {
       selector: {
         groupId: { $in: groupIds },
-      }
+      },
     });
   }
 
@@ -203,7 +207,7 @@ export default class GroupStore {
     return this._ds.find(GROUPS_ENCRYPTION_KEYS_TABLE, {
       selector: {
         _id: { $in: Ids },
-      }
+      },
     });
   }
 }
