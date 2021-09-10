@@ -1,8 +1,8 @@
-// @flow
-
 import { utils } from '@tanker/crypto';
-import { errors as dbErrors, mergeSchemas, type DataStore } from '@tanker/datastore-base';
+import type { DataStore } from '@tanker/datastore-base';
+import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
+import type { Class } from '@tanker/types';
 
 import KeyStore from '../LocalUser/KeyStore';
 import ResourceStore from '../Resources/ResourceStore';
@@ -12,16 +12,16 @@ import { GlobalSchema, TABLE_METADATA } from './schema';
 const STORAGE_VERSION_KEY = 'storageVersion';
 const CURRENT_STORAGE_VERSION = 1;
 
-export type DataStoreOptions = $Exact<{
-  adapter: () => Class<DataStore<any>>,
-  prefix?: string,
-  dbPath?: string,
-  url?: string
-}>;
+export type DataStoreOptions = {
+  adapter: () => Class<DataStore<any>>;
+  prefix?: string;
+  dbPath?: string;
+  url?: string;
+};
 
 export default class Storage {
   _options: DataStoreOptions;
-  _datastore: DataStore<*>;
+  _datastore: DataStore<any>;
   _keyStore: KeyStore;
   _resourceStore: ResourceStore;
   _groupStore: GroupStore;
@@ -52,8 +52,8 @@ export default class Storage {
       ResourceStore.schemas,
       GroupStore.schemas,
     );
-
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
+
     try {
       // $FlowIgnore DataStore is a flow interface, which does not support static methods
       this._datastore = await adapter().open({ dbName, dbPath, schemas, url });

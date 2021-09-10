@@ -1,8 +1,8 @@
-// @flow
 import { PreconditionFailed } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import { assertStatus, statusDefs, statuses, type Status } from '../status';
+import type { Status } from '../status';
+import { assertStatus, statusDefs, statuses } from '../status';
 
 describe('assertStatus', () => {
   let operation;
@@ -10,7 +10,7 @@ describe('assertStatus', () => {
 
   before(() => {
     operation = 'an operation';
-    allStatuses = ((Object.values(statuses): any): Array<Status>);
+    allStatuses = ((Object.values(statuses) as any) as Array<Status>);
   });
 
   it('does not throw if expected status', () => {
@@ -22,10 +22,11 @@ describe('assertStatus', () => {
   it('throws a PreconditionFailed error if unexpected status', () => {
     statusDefs.forEach((def, status) => {
       const expectedStatus = (status + 1) % statusDefs.length; // next status
+
       const { name: expectedName } = statusDefs[expectedStatus];
       const { name } = def;
       expect(
-        () => assertStatus(status, expectedStatus, operation)
+        () => assertStatus(status, expectedStatus, operation),
       ).to.throw(PreconditionFailed, expectedName, name, operation);
     });
   });
@@ -38,10 +39,10 @@ describe('assertStatus', () => {
 
   it('throws a PreconditionFailed error if status not in the list', () => {
     statusDefs.forEach((def, status) => {
-      const otherStatuses = allStatuses.filter((s) => s !== status);
+      const otherStatuses = allStatuses.filter(s => s !== status);
       const { name } = def;
       expect(
-        () => assertStatus(status, otherStatuses, operation)
+        () => assertStatus(status, otherStatuses, operation),
       ).to.throw(PreconditionFailed, name, operation);
     });
   });
