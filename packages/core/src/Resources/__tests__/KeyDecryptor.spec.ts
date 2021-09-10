@@ -1,5 +1,3 @@
-// @flow
-
 import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
@@ -9,9 +7,10 @@ import { KeyDecryptor } from '../KeyDecryptor';
 import GroupManager from '../../Groups/Manager';
 import LocalUserManager from '../../LocalUser/Manager';
 import ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
-import { type Nature, NATURE } from '../../Blocks/Nature';
+import type { Nature } from '../../Blocks/Nature';
+import { NATURE } from '../../Blocks/Nature';
 
-import { type KeyPublishEntry } from '../Serialize';
+import type { KeyPublishEntry } from '../Serialize';
 
 const refDeviceId = new Uint8Array([0, 0, 7]);
 
@@ -19,6 +18,7 @@ class LocalUserStub {
   _keyPair;
   deviceId;
   privateEncryptionKey;
+
   constructor(deviceId, keyPair) {
     this._keyPair = keyPair;
     this.deviceId = deviceId;
@@ -31,7 +31,7 @@ class LocalUserStub {
   empty = () => {
     this.getDevicePublicEncryptionKey = () => null;
     this.findUserKey = () => null;
-  }
+  };
 }
 
 function makeKeyPublish(nature: Nature, key): KeyPublishEntry {
@@ -39,7 +39,7 @@ function makeKeyPublish(nature: Nature, key): KeyPublishEntry {
     recipient: refDeviceId,
     resourceId: refDeviceId,
     nature,
-    key
+    key,
   };
 }
 
@@ -48,7 +48,7 @@ describe('KeyDecryptor', () => {
   let decryptor: KeyDecryptor;
   let localUser: LocalUserStub;
   let groupManager;
-  const provisionalIdentityManager = (({}: any): ProvisionalIdentityManager);
+  const provisionalIdentityManager = (({} as any) as ProvisionalIdentityManager);
 
   before(async () => {
     await cryptoReady;
@@ -62,10 +62,10 @@ describe('KeyDecryptor', () => {
 
   beforeEach(() => {
     localUser = new LocalUserStub(refDeviceId, keys);
-    const castedLocalUser = ((localUser: any): LocalUserManager);
+    const castedLocalUser = ((localUser as any) as LocalUserManager);
 
     groupManager = { getGroupEncryptionKeyPair: () => null };
-    const castedGroupManager = ((groupManager: any): GroupManager);
+    const castedGroupManager = ((groupManager as any) as GroupManager);
 
     decryptor = new KeyDecryptor(castedLocalUser, castedGroupManager, provisionalIdentityManager);
   });
@@ -73,7 +73,7 @@ describe('KeyDecryptor', () => {
   it('can decrypt key published to user', async () => {
     const keyPublish = makeKeyPublish(
       NATURE.key_publish_to_user,
-      tcrypto.sealEncrypt(keys.publicKey, keys.publicKey)
+      tcrypto.sealEncrypt(keys.publicKey, keys.publicKey),
     );
 
     const res = await decryptor.keyFromKeyPublish(keyPublish);
@@ -84,7 +84,7 @@ describe('KeyDecryptor', () => {
   it('can decrypt key published to group', async () => {
     const keyPublish = makeKeyPublish(
       NATURE.key_publish_to_user_group,
-      tcrypto.sealEncrypt(keys.publicKey, keys.publicKey)
+      tcrypto.sealEncrypt(keys.publicKey, keys.publicKey),
     );
 
     groupManager.getGroupEncryptionKeyPair = () => keys;
@@ -95,7 +95,7 @@ describe('KeyDecryptor', () => {
   });
 
   it('throws when not called with a key publish', async () => {
-    const badKeyPublish = (({ nature: 42 }: any): KeyPublishEntry);
+    const badKeyPublish = (({ nature: 42 } as any) as KeyPublishEntry);
 
     await expect(decryptor.keyFromKeyPublish(badKeyPublish)).to.be.rejectedWith(InternalError);
   });
@@ -103,7 +103,7 @@ describe('KeyDecryptor', () => {
   it('throws when user key cannot be found', async () => {
     const keyPublish = makeKeyPublish(
       NATURE.key_publish_to_user,
-      new Uint8Array([0])
+      new Uint8Array([0]),
     );
     localUser.empty();
 
@@ -113,7 +113,7 @@ describe('KeyDecryptor', () => {
   it('throws when group key cannot be found', async () => {
     const keyPublish = makeKeyPublish(
       NATURE.key_publish_to_user_group,
-      new Uint8Array([0])
+      new Uint8Array([0]),
     );
     localUser.empty();
 

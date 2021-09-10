@@ -1,33 +1,28 @@
-// @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
-import type { PublicProvisionalUser } from '../Identity';
+import type { b64string } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 
+import type { PublicProvisionalUser } from '../Identity';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
-import { preferredNature, type Nature, type NatureKind, NATURE_KIND, NATURE } from '../Blocks/Nature';
+import type { Nature, NatureKind } from '../Blocks/Nature';
+import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
 
-type KeyPublishRecord = {|
-  recipient: Uint8Array,
-  resourceId: Uint8Array,
-  key: Uint8Array,
-|};
+type KeyPublishRecord = {
+  recipient: Uint8Array;
+  resourceId: Uint8Array;
+  key: Uint8Array;
+};
 
-type KeyPublishToProvisionalUserRecord = {|
-  recipientAppPublicKey: Uint8Array,
-  recipientTankerPublicKey: Uint8Array,
-  resourceId: Uint8Array,
-  key: Uint8Array,
-|};
+type KeyPublishToProvisionalUserRecord = {
+  recipientAppPublicKey: Uint8Array;
+  recipientTankerPublicKey: Uint8Array;
+  resourceId: Uint8Array;
+  key: Uint8Array;
+};
 
-type KeyPublishToSingleRecipientEntry = {|
-  ...KeyPublishRecord,
-  nature: Nature,
-|};
+type KeyPublishToSingleRecipientEntry = KeyPublishRecord & { nature: Nature; };
 
-type KeyPublishToProvisionalUserEntry = {|
-  ...KeyPublishToProvisionalUserRecord,
-  nature: Nature,
-|};
+type KeyPublishToProvisionalUserEntry = KeyPublishToProvisionalUserRecord & { nature: Nature; };
 
 export type KeyPublishEntry = KeyPublishToSingleRecipientEntry | KeyPublishToProvisionalUserEntry;
 

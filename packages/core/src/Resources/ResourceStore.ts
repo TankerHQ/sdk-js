@@ -1,13 +1,13 @@
-// @flow
-
-import { utils, encryptionV1, type Key } from '@tanker/crypto';
-import { errors as dbErrors, type DataStore } from '@tanker/datastore-base';
+import type { Key } from '@tanker/crypto';
+import { utils, encryptionV1 } from '@tanker/crypto';
+import type { DataStore } from '@tanker/datastore-base';
+import { errors as dbErrors } from '@tanker/datastore-base';
 import { InternalError } from '@tanker/errors';
 
 const TABLE = 'resource_keys';
 
 export default class ResourceStore {
-  declare _ds: DataStore<*>;
+  declare _ds: DataStore<any>;
   declare _userSecret: Uint8Array;
 
   static schemas = [
@@ -33,7 +33,7 @@ export default class ResourceStore {
     // }
   ];
 
-  constructor(ds: DataStore<*>, userSecret: Uint8Array) {
+  constructor(ds: DataStore<any>, userSecret: Uint8Array) {
     if (!userSecret)
       throw new InternalError('Invalid user secret');
 
@@ -56,6 +56,7 @@ export default class ResourceStore {
         throw e;
       }
     }
+
     await this._ds.put(TABLE, { _id: b64ResourceId, b64EncryptedKey: utils.toBase64(encryptedKey) });
   }
 
@@ -82,7 +83,7 @@ export default class ResourceStore {
     this._ds = null;
   }
 
-  static async open(ds: DataStore<*>, userSecret: Uint8Array): Promise<any> {
+  static async open(ds: DataStore<any>, userSecret: Uint8Array): Promise<any> {
     return new ResourceStore(ds, userSecret);
   }
 }
