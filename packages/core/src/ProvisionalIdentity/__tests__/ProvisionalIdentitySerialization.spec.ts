@@ -1,5 +1,3 @@
-// @flow
-
 import { ready as cryptoReady, tcrypto } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 

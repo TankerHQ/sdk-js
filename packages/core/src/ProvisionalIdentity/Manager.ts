@@ -1,19 +1,20 @@
-// @flow
-
-import { generichash, tcrypto, utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import type { SecretProvisionalIdentity, PublicProvisionalIdentity, PublicProvisionalUser } from '../Identity';
 
 import type { Client } from '../Network/Client';
-import LocalUserManager, { type PrivateProvisionalKeys } from '../LocalUser/Manager';
+import type { PrivateProvisionalKeys } from '../LocalUser/Manager';
+import LocalUserManager from '../LocalUser/Manager';
 
 import KeyStore from '../LocalUser/KeyStore';
 import { formatProvisionalKeysRequest, formatVerificationRequest } from '../LocalUser/requests';
-import type {
+import type { 
   OIDCVerification, ProvisionalVerification,
   ProvisionalVerificationMethod
 } from '../LocalUser/types';
-import { statuses, type Status } from '../Session/status';
+import type { Status } from '../Session/status';
+import { statuses } from '../Session/status';
 import UserManager from '../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
@@ -23,9 +24,9 @@ import {
   isProvisionalIdentity
 } from '../Identity';
 
-type TankerProvisionalKeys = {| tankerSignatureKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair |};
+type TankerProvisionalKeys = { tankerSignatureKeyPair: tcrypto.SodiumKeyPair; tankerEncryptionKeyPair: tcrypto.SodiumKeyPair; };
 
-const toTankerProvisionalKeys = (serverResult) => ({
+const tankerProvisionalKeys = serverResult => ({
   tankerSignatureKeyPair: {
     privateKey: utils.fromBase64(serverResult.private_signature_key),
     publicKey: utils.fromBase64(serverResult.public_signature_key),
@@ -33,7 +34,7 @@ const toTankerProvisionalKeys = (serverResult) => ({
   tankerEncryptionKeyPair: {
     privateKey: utils.fromBase64(serverResult.private_encryption_key),
     publicKey: utils.fromBase64(serverResult.public_encryption_key),
-  }
+  },
 });
 
 export default class ProvisionalIdentityManager {
@@ -41,7 +42,7 @@ export default class ProvisionalIdentityManager {
   _keyStore: KeyStore;
   _localUserManager: LocalUserManager;
   _userManager: UserManager;
-  _provisionalIdentity: ?SecretProvisionalIdentity;
+  _provisionalIdentity?: SecretProvisionalIdentity;
   _keyStore: KeyStore;
 
   constructor(
@@ -88,7 +89,7 @@ export default class ProvisionalIdentityManager {
     };
   }
 
-  async _getVerificationMethodForProvisional(provisionalIdentity: SecretProvisionalIdentity): Promise<?ProvisionalVerificationMethod> {
+  async _getVerificationMethodForProvisional(provisionalIdentity: SecretProvisionalIdentity): Promise<ProvisionalVerificationMethod | null> {
     const methodType = identityTargetToVerificationMethodType(provisionalIdentity.target);
     const verificationMethods = await this._localUserManager.getVerificationMethods();
     // $FlowFixMe We select the verificationMethod using the provisional target
@@ -275,7 +276,7 @@ export default class ProvisionalIdentityManager {
       await this._localUserManager.addProvisionalUserKey(
         claimEntry.app_provisional_identity_signature_public_key,
         claimEntry.tanker_provisional_identity_signature_public_key,
-        privateProvisionalKeys
+        privateProvisionalKeys,
       );
     }
   }

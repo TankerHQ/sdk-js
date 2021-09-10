@@ -1,7 +1,4 @@
-// @flow
-
 import { tcrypto, utils } from '@tanker/crypto';
-
 import { InvalidBlockError } from '../errors.internal';
 import type { ClaimEntry } from './Serialize';
 
