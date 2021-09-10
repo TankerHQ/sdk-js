@@ -1,4 +1,3 @@
-// @flow
 import { PreconditionFailed } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
@@ -38,7 +37,7 @@ describe('Lock', () => {
     });
 
     it('set the _caller attribute', async () => {
-      await expect(lock.lock(caller, () => new Promise((resolve) => {
+      await expect(lock.lock(caller, () => new Promise(resolve => {
         expect(lock.owner).to.eq(caller);
         resolve();
       }))).to.not.be.rejected;
