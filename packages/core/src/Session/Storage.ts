@@ -1,31 +1,30 @@
-// @flow
-
 import { utils } from '@tanker/crypto';
-import { errors as dbErrors, mergeSchemas, type DataStore } from '@tanker/datastore-base';
+import type { DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
+import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
 
 import KeyStore from '../LocalUser/KeyStore';
 import ResourceStore from '../Resources/ResourceStore';
 import GroupStore from '../Groups/GroupStore';
-import { GlobalSchema, TABLE_METADATA } from './schema';
+import { globalSchema, TABLE_METADATA } from './schema';
 
 const STORAGE_VERSION_KEY = 'storageVersion';
 const CURRENT_STORAGE_VERSION = 1;
 
-export type DataStoreOptions = $Exact<{
-  adapter: () => Class<DataStore<any>>,
-  prefix?: string,
-  dbPath?: string,
-  url?: string
-}>;
+export type DataStoreOptions = {
+  adapter: () => DataStoreAdapter;
+  prefix?: string;
+  dbPath?: string;
+  url?: string;
+};
 
 export default class Storage {
   _options: DataStoreOptions;
-  _datastore: DataStore<*>;
-  _keyStore: KeyStore;
-  _resourceStore: ResourceStore;
-  _groupStore: GroupStore;
-  _schemas: any;
+  _datastore!: DataStore;
+  _keyStore!: KeyStore;
+  _resourceStore!: ResourceStore;
+  _groupStore!: GroupStore;
+  _schemas!: Schema[];
 
   constructor(options: DataStoreOptions) {
     this._options = options;
@@ -47,15 +46,15 @@ export default class Storage {
     const { adapter, prefix, dbPath, url } = this._options;
 
     const schemas = mergeSchemas(
-      GlobalSchema,
+      globalSchema,
       KeyStore.schemas,
       ResourceStore.schemas,
       GroupStore.schemas,
     );
-
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
+
     try {
-      // $FlowIgnore DataStore is a flow interface, which does not support static methods
+      // @ts-expect-error forward `dbPath` for pouchdb Adapters
       this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
     } catch (e) {
       if (e instanceof dbErrors.VersionError) {
@@ -95,7 +94,7 @@ export default class Storage {
     let currentVersion;
     try {
       const record = await this._datastore.get(TABLE_METADATA, STORAGE_VERSION_KEY);
-      currentVersion = record.storageVersion;
+      currentVersion = record['storageVersion'];
     } catch (e) {
       if (!(e instanceof dbErrors.RecordNotFound)) {
         throw e;
@@ -108,7 +107,7 @@ export default class Storage {
   }
 
   async cleanupCaches(userSecret: Uint8Array) {
-    const currentSchema = this._schemas[this._schemas.length - 1];
+    const currentSchema = this._schemas[this._schemas.length - 1]!;
     const cacheTables = currentSchema.tables.filter(t => !t.persistent && !t.deleted).map(t => t.name);
     for (const table of cacheTables) {
       await this._datastore.clear(table);

@@ -1,24 +1,23 @@
-// @flow
-import { type TableSchema } from '@tanker/datastore-base';
+import type { TableSchema } from '@tanker/datastore-base';
+import '@tanker/datastore-base';
 
 export const TABLE_METADATA = 'trustchain_metadata';
 
 const tablesV1 = [{
   name: 'trustchain',
-  indexes: [['index'], ['user_id'], ['public_signature_key'], ['hash'], ['nature'], ['mac']]
+  indexes: [['index'], ['user_id'], ['public_signature_key'], ['hash'], ['nature'], ['mac']],
 }];
 
 const tablesV2 = [{
   name: 'trustchain',
-  indexes: [['index'], ['user_id'], ['public_signature_key'], ['hash'], ['nature'], ['mac'], ['user_public_key'], ['group_public_encryption_key']]
+  indexes: [['index'], ['user_id'], ['public_signature_key'], ['hash'], ['nature'], ['mac'], ['user_public_key'], ['group_public_encryption_key']],
 }, {
   name: 'users',
   indexes: [['userId']],
 }, {
   name: 'devices_to_user',
   indexes: [['deviceId']],
-},
-{
+}, {
   name: 'user_public_key_to_user',
   indexes: [['userPublicKey']],
 }];
@@ -26,14 +25,14 @@ const tablesV2 = [{
 const tablesV3 = [
   {
     name: 'trustchain',
-    indexes: [['index'], ['user_id'], ['public_signature_key'], ['hash'], ['nature'], ['mac'], ['user_public_key'], ['group_public_encryption_key'], ['group_id']]
+    indexes: [['index'], ['user_id'], ['public_signature_key'], ['hash'], ['nature'], ['mac'], ['user_public_key'], ['group_public_encryption_key'], ['group_id']],
   },
   {
     name: TABLE_METADATA,
   },
   {
     name: 'unverified_key_publishes',
-    indexes: [['resourceId'], ['nature']]
+    indexes: [['resourceId'], ['nature']],
   },
   {
     name: 'users',
@@ -46,38 +45,41 @@ const tablesV3 = [
   {
     name: 'user_public_key_to_user',
     indexes: [['userPublicKey']],
-  }];
+  },
+];
 
 const tablesV4 = [
   ...tablesV3,
   {
     name: 'unverified_user_groups',
-    indexes: [['index'], ['group_id']]
-  }, {
+    indexes: [['index'], ['group_id']],
+  },
+  {
     name: 'encryption_key_to_group_id',
   },
   {
     name: 'unverified_user_entries',
-    indexes: [['hash'], ['user_id'], ['index']]
-  }, {
+    indexes: [['hash'], ['user_id'], ['index']],
+  },
+  {
     name: 'device_to_user',
-    indexes: [['device_id']]
-  }, {
+    indexes: [['device_id']],
+  },
+  {
     name: 'user_last_indexes',
-    indexes: [['user_id']]
-  }
+    indexes: [['user_id']],
+  },
 ];
 
 const tablesV6 = [
-  ...tablesV4,
-  {
+  ...tablesV4, {
     name: 'unverified_invite_claims',
-    indexes: [['index'], ['user_id']]
+    indexes: [['index'], ['user_id']],
   }];
 
 const tablesV8 = tablesV6.map<TableSchema>(def => {
   const deleted = ['unverified_user_groups', 'encryption_key_to_group_id'].includes(def.name);
-  return deleted ? ({ ...def, deleted: true }) : def;
+  return deleted ? { ...def, deleted: true } : def;
 });
 
 const tablesV9 = tablesV8.filter(def => !def.deleted).map<TableSchema>(def => {
@@ -89,7 +91,7 @@ const tablesV9 = tablesV8.filter(def => !def.deleted).map<TableSchema>(def => {
     'user_last_indexes',
     'unverified_invite_claims',
   ].includes(def.name);
-  return deleted ? ({ ...def, deleted: true }) : def;
+  return deleted ? { ...def, deleted: true } : def;
 });
 
 const tablesV10 = tablesV9.filter(def => !def.deleted).map<TableSchema>(def => {
@@ -98,10 +100,10 @@ const tablesV10 = tablesV9.filter(def => !def.deleted).map<TableSchema>(def => {
     'devices_to_user',
     'user_public_key_to_user',
   ].includes(def.name);
-  return deleted ? ({ ...def, deleted: true }) : def;
+  return deleted ? { ...def, deleted: true } : def;
 });
 
-export const GlobalSchema = [
+export const globalSchema = [
   { version: 1, tables: tablesV1 },
   { version: 2, tables: tablesV2 },
   { version: 3, tables: tablesV3 },
