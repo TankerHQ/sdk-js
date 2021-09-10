@@ -1,29 +1,24 @@
-// @flow
-
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
-import { type VerificationFields, hashBlock } from '../Blocks/Block';
+import type { VerificationFields } from '../Blocks/Block';
+import { hashBlock } from '../Blocks/Block';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
 import type { ProvisionalUserKeys } from '../Identity';
 
-export type ProvisionalIdentityClaimRecord = {|
-  user_id: Uint8Array,
-  app_provisional_identity_signature_public_key: Uint8Array,
-  tanker_provisional_identity_signature_public_key: Uint8Array,
-  author_signature_by_app_key: Uint8Array,
-  author_signature_by_tanker_key: Uint8Array,
-  recipient_user_public_key: Uint8Array,
-  encrypted_provisional_identity_private_keys: Uint8Array,
-|};
+export type ProvisionalIdentityClaimRecord = {
+  user_id: Uint8Array;
+  app_provisional_identity_signature_public_key: Uint8Array;
+  tanker_provisional_identity_signature_public_key: Uint8Array;
+  author_signature_by_app_key: Uint8Array;
+  author_signature_by_tanker_key: Uint8Array;
+  recipient_user_public_key: Uint8Array;
+  encrypted_provisional_identity_private_keys: Uint8Array;
+};
 
-export type ClaimEntry = {|
-  ...ProvisionalIdentityClaimRecord,
-  ...VerificationFields,
-  device_id: Uint8Array
-|};
+export type ClaimEntry = ProvisionalIdentityClaimRecord & VerificationFields & { device_id: Uint8Array; };
 
 export function serializeProvisionalIdentityClaim(provisionalIdentityClaim: ProvisionalIdentityClaimRecord): Uint8Array {
   if (provisionalIdentityClaim.user_id.length !== tcrypto.HASH_SIZE)

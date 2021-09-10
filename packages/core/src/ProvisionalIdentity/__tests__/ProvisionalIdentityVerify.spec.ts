@@ -1,11 +1,9 @@
-// @flow
 import { expect } from '@tanker/test-utils';
-
 import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 
 import { InvalidBlockError } from '../../errors.internal';
 
-import { type User } from '../../Users/types';
+import type { User } from '../../Users/types';
 import type { ClaimEntry } from '../Serialize';
 import { verifyProvisionalIdentityClaim } from '../Verify';
 
@@ -50,7 +48,7 @@ describe('BlockVerification', () => {
       unverifiedProvisionalIdentityClaim.user_id[0] += 1;
       assertFailWithNature(
         () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0].devicePublicSignatureKey, userId),
-        'invalid_author'
+        'invalid_author',
       );
     });
 
@@ -58,7 +56,7 @@ describe('BlockVerification', () => {
       unverifiedProvisionalIdentityClaim.signature[0] += 1;
       assertFailWithNature(
         () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0].devicePublicSignatureKey, userId),
-        'invalid_signature'
+        'invalid_signature',
       );
     });
 
@@ -66,7 +64,7 @@ describe('BlockVerification', () => {
       unverifiedProvisionalIdentityClaim.author_signature_by_app_key[0] += 1;
       assertFailWithNature(
         () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0].devicePublicSignatureKey, userId),
-        'invalid_signature'
+        'invalid_signature',
       );
     });
 
@@ -74,7 +72,7 @@ describe('BlockVerification', () => {
       unverifiedProvisionalIdentityClaim.author_signature_by_tanker_key[0] += 1;
       assertFailWithNature(
         () => verifyProvisionalIdentityClaim(unverifiedProvisionalIdentityClaim, user.devices[0].devicePublicSignatureKey, userId),
-        'invalid_signature'
+        'invalid_signature',
       );
     });
   });
