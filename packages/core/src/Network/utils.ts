@@ -1,8 +1,7 @@
-// @flow
 import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-const isObject = (val: Object) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
+const isObject = (val: unknown) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
 export function b64RequestObject(requestObject: any): any {
   if (requestObject instanceof Uint8Array) {
@@ -16,9 +15,10 @@ export function b64RequestObject(requestObject: any): any {
   if (!isObject(requestObject))
     throw new InternalError('Assertion error: b64RequestObject operates only on Object, Array and Uint8Array instances');
 
-  const result = {};
+  const result: Record<string, any> = {};
 
-  Object.entries(requestObject).forEach(([key, value]) => {
+  Object.keys(requestObject).forEach(key => {
+    const value = requestObject[key];
     if (value instanceof Uint8Array) {
       result[key] = utils.toBase64(value);
     } else if (Array.isArray(value)) {

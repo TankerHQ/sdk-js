@@ -1,8 +1,8 @@
-// @flow
-import { tcrypto, utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { TankerError, DeviceRevoked, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
 import { fetch, retry, exponentialDelayGenerator } from '@tanker/http-utils';
-import type { DelayGenerator } from '@tanker/http-utils'; // eslint-disable-line no-unused-vars
+import type { DelayGenerator } from '@tanker/http-utils';
 
 import { PromiseWrapper } from '../PromiseWrapper';
 import { TaskQueue } from '../TaskQueue';
@@ -15,26 +15,26 @@ import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
 export const defaultApiEndpoint = 'https://api.tanker.io';
 
 export type ClientOptions = {
-  instanceInfo: { id: string },
-  sdkInfo: { type: string, version: string },
-  url: string,
+  instanceInfo: { id: string; };
+  sdkInfo: { type: string; version: string; };
+  url?: string;
 };
 
-export type ServerPublicProvisionalIdentity = {|
-  app_id: b64string,
-  target: PublicProvisionalIdentityTarget,
-  value: string,
-  public_signature_key: b64string,
-  public_encryption_key: b64string,
-|};
+export type ServerPublicProvisionalIdentity = {
+  app_id: b64string;
+  target: PublicProvisionalIdentityTarget;
+  value: string;
+  public_signature_key: b64string;
+  public_encryption_key: b64string;
+};
 
-export type PublicProvisionalIdentityResults = {|
-  hashedEmails: { [string]: ServerPublicProvisionalIdentity },
-  hashedPhoneNumbers: { [string]: ServerPublicProvisionalIdentity },
-|};
+export type PublicProvisionalIdentityResults = {
+  hashedEmails: Record<string, ServerPublicProvisionalIdentity>;
+  hashedPhoneNumbers: Record<string, ServerPublicProvisionalIdentity>;
+};
 
 export type PullOptions = {
-  isLight?: bool,
+  isLight?: boolean;
 };
 
 const MAX_CONCURRENCY = 5;
@@ -52,13 +52,13 @@ export class Client {
   declare _apiEndpoint: string;
   declare _apiRootPath: string;
   declare _appId: Uint8Array;
-  declare _authenticating: ?Promise<void>;
+  declare _authenticating: Promise<void> | null;
   declare _cancelationHandle: PromiseWrapper<void>;
   declare _deviceId: Uint8Array | null;
   declare _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
   declare _fetchQueue: TaskQueue;
   declare _instanceId: string;
-  declare _isRevoked: bool;
+  declare _isRevoked: boolean;
   declare _retryDelayGenerator: DelayGenerator;
   declare _sdkType: string;
   declare _sdkVersion: string;
@@ -82,31 +82,31 @@ export class Client {
     this._userId = userId;
   }
 
-  // $FlowIgnore Our first promise will always reject so the return type doesn't matter
-  _cancelable = <F: Function>(fun: F): F => (...args: Array<any>) => {
+  _cancelable = <R>(fun: (...args: Array<any>) => Promise<R>) => (...args: Array<any>) => {
+    // cancelationHandle.promise always rejects. It's returned type doesn't matter
     if (this._cancelationHandle.settled) {
-      return this._cancelationHandle.promise;
+      return this._cancelationHandle.promise as any as Promise<R>;
     }
-    return Promise.race([this._cancelationHandle.promise, fun(...args)]);
+    return Promise.race([this._cancelationHandle.promise as any as Promise<R>, fun(...args)]);
   };
 
   // Simple fetch wrapper with limited concurrency
-  _fetch = (input: RequestInfo, init?: RequestOptions): Promise<Response> => {
+  _fetch = (input: RequestInfo, init?: RequestInit): Promise<Response> => {
     const fn = () => fetch(input, init);
+
     return this._fetchQueue.enqueue(fn);
-  }
+  };
 
   // Simple _fetch wrapper with:
   //   - proper headers set (sdk info and authorization)
   //   - generic error handling
-  _baseApiCall = async (path: string, init?: RequestOptions): Promise<any> => {
+  _baseApiCall = async (path: string, init?: RequestInit): Promise<any> => {
     try {
       if (!path || path[0] !== '/') {
         throw new InvalidArgument('"path" should be non empty and start with "/"');
       }
 
-      // $FlowIgnore Only using bare objects as headers so we're fine...
-      const headers: { [string]: string } = (init && init.headers) || {};
+      const headers: Record<string, string> = init && init.headers as Record<string, string> | undefined || {};
       headers['X-Tanker-Instanceid'] = this._instanceId;
       headers['X-Tanker-Sdktype'] = this._sdkType;
       headers['X-Tanker-Sdkversion'] = this._sdkVersion;
@@ -148,18 +148,19 @@ export class Client {
 
       const apiMethod = init && init.method || 'GET';
       genericErrorHandler(apiMethod, url, error);
-    } catch (e) {
+    } catch (err) {
+      const e = err as Error;
       if (e instanceof DeviceRevoked) this._isRevoked = true;
       if (e instanceof TankerError) throw e;
       throw new InternalError(e.toString());
     }
-  }
+  };
 
   // Advanced _baseApiCall wrapper with additional capabilities:
   //   - await authentication if in progress
   //   - smart retry on authentication failure (e.g. expired token)
   //   - call in progress can be canceled if close() called
-  _apiCall = this._cancelable(async (path: string, init?: RequestOptions): Promise<any> => {
+  _apiCall = this._cancelable(async (path: string, init?: RequestInit): Promise<any> => {
     if (this._authenticating) {
       await this._authenticating;
     }
@@ -186,7 +187,6 @@ export class Client {
           }
           // (else)
           // 3. Another API call already completed a re-authentication
-
           // We can safely retry now
           return true;
         }
@@ -195,7 +195,7 @@ export class Client {
     };
 
     return retry(() => this._baseApiCall(path, init), retryOptions);
-  })
+  });
 
   _authenticate = this._cancelable((): Promise<void> => {
     if (this._authenticating) {
@@ -214,7 +214,7 @@ export class Client {
 
     const auth = async () => {
       const { challenge } = await this._cancelable(
-        () => this._baseApiCall(`/devices/${urlize(deviceId)}/challenges`, { method: 'POST' })
+        () => this._baseApiCall(`/devices/${urlize(deviceId)}/challenges`, { method: 'POST' }),
       )();
 
       const signature = signChallenge(deviceSignatureKeyPair, challenge);
@@ -225,7 +225,7 @@ export class Client {
           method: 'POST',
           body: JSON.stringify(b64RequestObject({ signature, challenge, signature_public_key: signaturePublicKey })),
           headers: { 'Content-Type': 'application/json' },
-        })
+        }),
       )();
 
       this._accessToken = accessToken;
@@ -248,7 +248,7 @@ export class Client {
         throw new DeviceRevoked();
       }
     });
-  }
+  };
 
   getUser = async () => {
     const path = `/users/${urlize(this._userId)}`;
@@ -263,7 +263,7 @@ export class Client {
       }
       throw e;
     }
-  }
+  };
 
   getVerificationKey = async (body: any): Promise<Uint8Array> => {
     const path = `/users/${urlize(this._userId)}/verification-key`;
@@ -276,7 +276,7 @@ export class Client {
     const { encrypted_verification_key: key } = await this._apiCall(path, options);
 
     return utils.fromBase64(key);
-  }
+  };
 
   getEncryptionKey = async (ghostDevicePublicSignatureKey: Uint8Array) => {
     const query = `ghost_device_public_signature_key=${urlize(ghostDevicePublicSignatureKey)}`;
@@ -294,9 +294,10 @@ export class Client {
       if (e instanceof TankerError) {
         if (e.apiCode === 'device_not_found') throw new InvalidVerification(e);
       }
+
       throw e;
     }
-  }
+  };
 
   createUser = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: any): Promise<void> => {
     const path = `/users/${urlize(this._userId)}`;
@@ -312,7 +313,7 @@ export class Client {
     this._accessToken = accessToken;
     this._deviceId = deviceId;
     this._deviceSignatureKeyPair = deviceSignatureKeyPair;
-  }
+  };
 
   createDevice = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: any): Promise<void> => {
     const options = {
@@ -326,26 +327,35 @@ export class Client {
     this._accessToken = accessToken;
     this._deviceId = deviceId;
     this._deviceSignatureKeyPair = deviceSignatureKeyPair;
-  }
+  };
 
-  getUserHistories = async (query: string): Promise<$Exact<{ root: b64string, histories: Array<b64string> }>> => {
+  getUserHistories = async (query: string): Promise<{
+    root: b64string;
+    histories: Array<b64string>;
+  }> => {
     const path = `/user-histories?${query}`;
-    const { root, histories } = await this._apiCall(path);
-    return { root, histories };
-  }
+    const {
+      root,
+      histories,
+    } = await this._apiCall(path);
+    return {
+      root,
+      histories,
+    };
+  };
 
-  getRevokedDeviceHistory = async (): Promise<$Exact<{ root: b64string, histories: Array<b64string> }>> => {
+  getRevokedDeviceHistory = async (): Promise<{ root: b64string; histories: Array<b64string>; }> => {
     if (!this._deviceId)
       throw new InternalError('Assertion error: trying to get revoked device history without a device id');
     const deviceId = this._deviceId;
     const { root, history: histories } = await this._apiCall(`/devices/${urlize(deviceId)}/revoked-device-history`);
     return { root, histories };
-  }
+  };
 
   getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions) => {
     const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
-    const result = { root: '', histories: [] };
+    const result: { root: b64string; histories: Array<b64string>; } = { root: '', histories: [] };
     for (let i = 0; i < urlizedUserIds.length; i += MAX_QUERY_STRING_ITEMS) {
       const query = `is_light=${options.isLight ? 'true' : 'false'}&user_ids[]=${urlizedUserIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&user_ids[]=')}`;
       const response = await this.getUserHistories(query);
@@ -353,19 +363,20 @@ export class Client {
       result.histories = result.histories.concat(response.histories);
     }
     return result;
-  }
+  };
 
   getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions) => {
     if (!this._deviceId)
       throw new InternalError('Assertion error: trying to get user histories without a device id');
 
-    if (this._isRevoked && deviceIds.length === 1 && utils.equalArray(deviceIds[0], this._deviceId)) {
+    if (this._isRevoked && deviceIds.length === 1 && utils.equalArray(deviceIds[0]!, this._deviceId)) {
       return this.getRevokedDeviceHistory();
     }
 
     const urlizedDeviceIds = unique(deviceIds.map(deviceId => urlize(deviceId)));
-    const result = { root: '', histories: [] };
+    const result: { root: b64string; histories: Array<b64string>; } = { root: '', histories: [] };
     const gotBlocks = new Set();
+
     for (let i = 0; i < urlizedDeviceIds.length; i += MAX_QUERY_STRING_ITEMS) {
       const query = `is_light=${options.isLight ? 'true' : 'false'}&device_ids[]=${urlizedDeviceIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&device_ids[]=')}`;
       const response = await this.getUserHistories(query);
@@ -379,21 +390,23 @@ export class Client {
         gotBlocks.add(block);
     }
     return result;
-  }
+  };
 
   getVerificationMethods = async () => {
     const path = `/users/${urlize(this._userId)}/verification-methods`;
     const { verification_methods: verificationMethods } = await this._apiCall(path);
     return verificationMethods;
-  }
+  };
 
   setVerificationMethod = async (body: any) => {
     await this._apiCall(`/users/${urlize(this._userId)}/verification-methods`, {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
-  }
+  };
 
   getResourceKey = async (resourceId: Uint8Array): Promise<b64string> => {
     const query = `resource_ids[]=${urlize(resourceId)}`;
@@ -402,7 +415,7 @@ export class Client {
       throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
     }
     return resourceKeys[0];
-  }
+  };
 
   publishResourceKeys = async (body: any): Promise<void> => {
     await this._apiCall('/resource-keys', {
@@ -410,7 +423,7 @@ export class Client {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
-  }
+  };
 
   revokeDevice = async (body: any): Promise<void> => {
     await this._apiCall('/device-revocations', {
@@ -418,7 +431,7 @@ export class Client {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
-  }
+  };
 
   createGroup = async (body: any): Promise<void> => {
     await this._apiCall('/user-groups', {
@@ -426,7 +439,7 @@ export class Client {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
-  }
+  };
 
   patchGroup = async (body: any): Promise<void> => {
     await this._apiCall('/user-groups', {
@@ -434,7 +447,7 @@ export class Client {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
-  }
+  };
 
   softUpdateGroup = async (body: any): Promise<void> => {
     await this._apiCall('/user-groups/soft-update', {
@@ -442,7 +455,7 @@ export class Client {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
-  }
+  };
 
   getSessionToken = async (body: any): Promise<b64string> => {
     const path = `/users/${urlize(this._userId)}/session-certificates`;
@@ -453,14 +466,12 @@ export class Client {
       headers: { 'Content-Type': 'application/json' },
     });
     return sessionToken;
-  }
+  };
 
-  getGroupHistories = (query: string): Promise<$Exact<{ histories: Array<b64string> }>> => { // eslint-disable-line arrow-body-style
-    return this._apiCall(`/user-group-histories?${query}&is_light=true`);
-  }
+  getGroupHistories = (query: string): Promise<{ histories: Array<b64string>; }> => this._apiCall(`/user-group-histories?${query}&is_light=true`);
 
-  getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<$Exact<{ histories: Array<b64string> }>> => {
-    const result = { histories: [] };
+  getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<{ histories: Array<b64string>; }> => {
+    const result: { histories: Array<b64string>; } = { histories: [] };
 
     for (let i = 0; i < groupIds.length; i += MAX_QUERY_STRING_ITEMS) {
       const query = `user_group_ids[]=${groupIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&user_group_ids[]=')}`;
@@ -468,21 +479,19 @@ export class Client {
       result.histories = result.histories.concat(response.histories);
     }
     return result;
-  }
+  };
 
   getGroupHistoriesByGroupPublicEncryptionKey = (groupPublicEncryptionKey: Uint8Array) => {
     const query = `user_group_public_encryption_key=${urlize(groupPublicEncryptionKey)}`;
     return this.getGroupHistories(query);
-  }
+  };
 
   getFileUploadURL = (resourceId: Uint8Array, metadata: b64string, uploadContentLength: number) => {
     const query = `metadata=${urlize(metadata)}&upload_content_length=${uploadContentLength}`;
     return this._apiCall(`/resources/${urlize(resourceId)}/upload-url?${query}`);
-  }
+  };
 
-  getFileDownloadURL = (resourceId: Uint8Array) => { // eslint-disable-line arrow-body-style
-    return this._apiCall(`/resources/${urlize(resourceId)}/download-url`);
-  }
+  getFileDownloadURL = (resourceId: Uint8Array) => this._apiCall(`/resources/${urlize(resourceId)}/download-url`);
 
   getPublicProvisionalIdentities = async (hashedEmails: Array<Uint8Array>, hashedPhoneNumbers: Array<Uint8Array>): Promise<PublicProvisionalIdentityResults> => {
     const MAX_QUERY_ITEMS = 100; // This is probably route-specific, so doesn't need to be global
@@ -494,7 +503,7 @@ export class Client {
     let done = 0;
     while (done < hashedEmails.length + hashedPhoneNumbers.length) {
       // First, get as many emails as we have left that can fit in one request
-      let hashedEmailsSlice = [];
+      let hashedEmailsSlice: Uint8Array[] = [];
       if (done < hashedEmails.length) {
         const numEmailsToGet = Math.min(hashedEmails.length - done, MAX_QUERY_ITEMS);
         hashedEmailsSlice = hashedEmails.slice(done, done + numEmailsToGet);
@@ -502,7 +511,7 @@ export class Client {
       }
 
       // If we had less than MAX_QUERY_ITEMS emails left, then there's room to start requesting phone numbers
-      let hashedPhoneNumbersSlice = [];
+      let hashedPhoneNumbersSlice: Uint8Array[] = [];
       if (hashedEmailsSlice.length < MAX_QUERY_ITEMS) {
         const phonesDone = done - hashedEmails.length;
         const numPhoneNumbersToGet = Math.min(hashedPhoneNumbers.length - phonesDone, MAX_QUERY_ITEMS - hashedEmailsSlice.length);
@@ -523,14 +532,15 @@ export class Client {
       result.hashedEmails = { ...result.hashedEmails, ...identitiesBatch.hashed_emails };
       result.hashedPhoneNumbers = { ...result.hashedPhoneNumbers, ...identitiesBatch.hashed_phone_numbers };
     }
+
     return result;
-  }
+  };
 
   getProvisionalIdentityClaims = async () => {
     const path = `/users/${urlize(this._userId)}/provisional-identity-claims`;
     const { provisional_identity_claims: claims } = await this._apiCall(path);
     return claims;
-  }
+  };
 
   getTankerProvisionalKeysFromSession = async (body: ProvisionalKeysRequest) => {
     const path = `/users/${urlize(this._userId)}/tanker-provisional-keys`;
@@ -542,9 +552,9 @@ export class Client {
 
     const { tanker_provisional_keys: provisionalKeys } = await this._apiCall(path, options);
     return provisionalKeys;
-  }
+  };
 
-  getTankerProvisionalKeysWithVerif = async (body: {verification: VerificationRequest}) => {
+  getTankerProvisionalKeysWithVerif = async (body: { verification: VerificationRequest }) => {
     const options = {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),
@@ -553,7 +563,7 @@ export class Client {
 
     const { tanker_provisional_keys: provisionalKeys } = await this._apiCall('/tanker-provisional-keys', options);
     return provisionalKeys;
-  }
+  };
 
   claimProvisionalIdentity = async (body: any): Promise<void> => {
     await this._apiCall('/provisional-identity-claims', {
@@ -561,7 +571,7 @@ export class Client {
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
-  }
+  };
 
   close = async (reason?: Error): Promise<void> => {
     this._cancelationHandle.reject(new OperationCanceled('Closing the client', reason));
@@ -583,5 +593,5 @@ export class Client {
     this._accessToken = '';
     this._deviceId = null;
     this._deviceSignatureKeyPair = null;
-  }
+  };
 }
