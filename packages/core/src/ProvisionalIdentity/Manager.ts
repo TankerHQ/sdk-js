@@ -1,31 +1,33 @@
-// @flow
-
-import { generichash, tcrypto, utils, type b64string } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
+import { generichash, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import type { SecretProvisionalIdentity, PublicProvisionalIdentity, PublicProvisionalUser } from '../Identity';
 
 import type { Client } from '../Network/Client';
-import LocalUserManager, { type PrivateProvisionalKeys } from '../LocalUser/Manager';
+import type { PrivateProvisionalKeys, LocalUserManager } from '../LocalUser/Manager';
 
-import KeyStore from '../LocalUser/KeyStore';
+import type KeyStore from '../LocalUser/KeyStore';
 import { formatProvisionalKeysRequest, formatVerificationRequest } from '../LocalUser/requests';
 import type {
-  OIDCVerification, ProvisionalVerification,
-  ProvisionalVerificationMethod
+  EmailVerification,
+  EmailVerificationMethod,
+  OIDCVerification, PhoneNumberVerification, PhoneNumberVerificationMethod, ProvisionalVerification,
+  ProvisionalVerificationMethod,
 } from '../LocalUser/types';
-import { statuses, type Status } from '../Session/status';
-import UserManager from '../Users/Manager';
+import { Status } from '../Session/status';
+import type UserManager from '../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';
 import {
   identityTargetToVerificationMethodType,
-  isProvisionalIdentity
+  isProvisionalIdentity,
 } from '../Identity';
 
-type TankerProvisionalKeys = {| tankerSignatureKeyPair: tcrypto.SodiumKeyPair, tankerEncryptionKeyPair: tcrypto.SodiumKeyPair |};
+type TankerProvisionalKeys = { tankerSignatureKeyPair: tcrypto.SodiumKeyPair; tankerEncryptionKeyPair: tcrypto.SodiumKeyPair; };
+type TankerProvisionalIdentityResp = { private_signature_key: string, public_signature_key: string; private_encryption_key: string; public_encryption_key: string; };
 
-const toTankerProvisionalKeys = (serverResult) => ({
+const toTankerProvisionalKeys = (serverResult: TankerProvisionalIdentityResp) => ({
   tankerSignatureKeyPair: {
     privateKey: utils.fromBase64(serverResult.private_signature_key),
     publicKey: utils.fromBase64(serverResult.public_signature_key),
@@ -33,7 +35,7 @@ const toTankerProvisionalKeys = (serverResult) => ({
   tankerEncryptionKeyPair: {
     privateKey: utils.fromBase64(serverResult.private_encryption_key),
     publicKey: utils.fromBase64(serverResult.public_encryption_key),
-  }
+  },
 });
 
 export default class ProvisionalIdentityManager {
@@ -41,8 +43,7 @@ export default class ProvisionalIdentityManager {
   _keyStore: KeyStore;
   _localUserManager: LocalUserManager;
   _userManager: UserManager;
-  _provisionalIdentity: ?SecretProvisionalIdentity;
-  _keyStore: KeyStore;
+  _provisionalIdentity?: SecretProvisionalIdentity;
 
   constructor(
     client: Client,
@@ -65,7 +66,7 @@ export default class ProvisionalIdentityManager {
     }
 
     if (hasClaimed) {
-      return { status: statuses.READY };
+      return { status: Status.READY };
     }
 
     if (!isProvisionalIdentity(provisionalIdentity)) {
@@ -77,28 +78,28 @@ export default class ProvisionalIdentityManager {
     if (verificationMethod) {
       const attachSuccess = await this._attachProvisionalWithVerifMethod(provisionalIdentity, verificationMethod);
       if (attachSuccess) {
-        return { status: statuses.READY };
+        return { status: Status.READY };
       }
     }
 
     this._provisionalIdentity = provisionalIdentity;
     return {
-      status: statuses.IDENTITY_VERIFICATION_NEEDED,
+      status: Status.IDENTITY_VERIFICATION_NEEDED,
       verificationMethod: this._verificationMethodFromIdentity(provisionalIdentity),
     };
   }
 
-  async _getVerificationMethodForProvisional(provisionalIdentity: SecretProvisionalIdentity): Promise<?ProvisionalVerificationMethod> {
+  async _getVerificationMethodForProvisional(provisionalIdentity: SecretProvisionalIdentity): Promise<ProvisionalVerificationMethod | null> {
     const methodType = identityTargetToVerificationMethodType(provisionalIdentity.target);
     const verificationMethods = await this._localUserManager.getVerificationMethods();
-    // $FlowFixMe We select the verificationMethod using the provisional target
+    // @ts-expect-error We select the verificationMethod using the provisional target
     return verificationMethods.find(method => method.type === methodType);
   }
 
-  async _attachProvisionalWithVerifMethod(provisionalIdentity: SecretProvisionalIdentity, verificationMethod: ProvisionalVerificationMethod): Promise<bool> {
+  async _attachProvisionalWithVerifMethod(provisionalIdentity: SecretProvisionalIdentity, verificationMethod: ProvisionalVerificationMethod): Promise<boolean> {
     const expected = {
-      email: verificationMethod.email || null,
-      phone_number: verificationMethod.phoneNumber || null,
+      email: (verificationMethod as EmailVerificationMethod).email || null,
+      phone_number: (verificationMethod as PhoneNumberVerificationMethod).phoneNumber || null,
     };
 
     // When the target is also registered as a verification method:
@@ -141,18 +142,18 @@ export default class ProvisionalIdentityManager {
 
     const provisionalIdentity = this._provisionalIdentity;
 
-    if (verification.oidcIdToken) {
+    if ('oidcIdToken' in verification) {
       let jwtPayload;
       try {
-        jwtPayload = JSON.parse(utils.toString(utils.fromSafeBase64(verification.oidcIdToken.split('.')[1])));
+        jwtPayload = JSON.parse(utils.toString(utils.fromSafeBase64(verification.oidcIdToken.split('.')[1]!)));
       } catch (e) {
         throw new InvalidArgument('Failed to parse "verification.oidcIdToken"');
       }
       if (jwtPayload.email !== provisionalIdentity.value)
         throw new InvalidArgument('"verification.oidcIdToken" does not match provisional identity');
-    } else if (provisionalIdentity.target === 'email' && verification.email !== provisionalIdentity.value) {
+    } else if (provisionalIdentity.target === 'email' && (verification as EmailVerification).email !== provisionalIdentity.value) {
       throw new InvalidArgument('"verification.email" does not match provisional identity');
-    } else if (provisionalIdentity.target === 'phone_number' && verification.phoneNumber !== provisionalIdentity.value) {
+    } else if (provisionalIdentity.target === 'phone_number' && (verification as PhoneNumberVerification).phoneNumber !== provisionalIdentity.value) {
       throw new InvalidArgument('"verification.phoneNumber" does not match provisional identity');
     }
 
@@ -162,11 +163,11 @@ export default class ProvisionalIdentityManager {
     delete this._provisionalIdentity;
   }
 
-  findPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): ?PrivateProvisionalKeys {
+  findPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): PrivateProvisionalKeys | null {
     return this._localUserManager.findProvisionalUserKey(appPublicSignatureKey, tankerPublicSignatureKey);
   }
 
-  async getPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): Promise<?PrivateProvisionalKeys> {
+  async getPrivateProvisionalKeys(appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): Promise<PrivateProvisionalKeys | null> {
     let provisionalEncryptionKeyPairs = this.findPrivateProvisionalKeys(appPublicSignatureKey, tankerPublicSignatureKey);
     if (!provisionalEncryptionKeyPairs) {
       await this.refreshProvisionalPrivateKeys();
@@ -256,15 +257,15 @@ export default class ProvisionalIdentityManager {
   }
 
   async refreshProvisionalPrivateKeys() {
-    const claimBlocks = await this._client.getProvisionalIdentityClaims();
+    const claimBlocks: string[] = await this._client.getProvisionalIdentityClaims();
 
     const claimEntries = claimBlocks.map(block => provisionalIdentityClaimFromBlock(block));
     const authorDevices = claimEntries.map(entry => entry.author);
     const authorDeviceKeysMap = await this._userManager.getDeviceKeysByDevicesIds(authorDevices, { isLight: true });
 
     for (let i = 0, length = claimEntries.length; i < length; i++) {
-      const claimEntry = claimEntries[i];
-      const authorDevicePublicSignatureKey = authorDeviceKeysMap.get(utils.toBase64(authorDevices[i]));
+      const claimEntry = claimEntries[i]!;
+      const authorDevicePublicSignatureKey = authorDeviceKeysMap.get(utils.toBase64(authorDevices[i]!));
       if (!authorDevicePublicSignatureKey) {
         throw new InternalError('refreshProvisionalPrivateKeys: author device should have a public signature key');
       }
@@ -275,13 +276,15 @@ export default class ProvisionalIdentityManager {
       await this._localUserManager.addProvisionalUserKey(
         claimEntry.app_provisional_identity_signature_public_key,
         claimEntry.tanker_provisional_identity_signature_public_key,
-        privateProvisionalKeys
+        privateProvisionalKeys,
       );
     }
   }
 
   async _decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): Promise<PrivateProvisionalKeys> {
-    const userKeyPair = await this._localUserManager.findUserKey(recipientUserPublicKey);
+    // not sure if this '!' should instead result in an error
+    // The execution pass is to convoluted to deduce it at first glance
+    const userKeyPair = (await this._localUserManager.findUserKey(recipientUserPublicKey))!;
 
     const provisionalUserPrivateKeys = tcrypto.sealDecrypt(encryptedPrivateProvisionalKeys, userKeyPair);
     const appEncryptionKeyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(new Uint8Array(provisionalUserPrivateKeys.subarray(0, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE)));
@@ -290,7 +293,7 @@ export default class ProvisionalIdentityManager {
 
     return {
       appEncryptionKeyPair,
-      tankerEncryptionKeyPair
+      tankerEncryptionKeyPair,
     };
   }
 
@@ -309,11 +312,11 @@ export default class ProvisionalIdentityManager {
     const {
       userId,
       deviceId,
-      currentUserKey
+      currentUserKey,
     } = this._localUserManager.localUser;
     const {
       payload,
-      nature
+      nature,
     } = makeProvisionalIdentityClaim(userId, deviceId, currentUserKey.publicKey, provisionalUserKeys);
 
     const block = this._localUserManager.localUser.makeBlock(payload, nature);
