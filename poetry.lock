@@ -689,7 +689,7 @@ reference = "gitlab"
 
 [[package]]
 name = "tankerci"
-version = "2021.9.3567"
+version = "2021.9.3584"
 description = "Tanker CI library"
 category = "main"
 optional = false
@@ -794,11 +794,11 @@ reference = "gitlab"
 
 [[package]]
 name = "unidecode"
-version = "1.2.0"
+version = "1.3.1"
 description = "ASCII transliterations of Unicode text"
 category = "main"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+python-versions = ">=3.5"
 
 [package.source]
 type = "legacy"
@@ -843,7 +843,7 @@ reference = "gitlab"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "b849a81f687d80c21d97825f5b5d3a227b11d6c77f7e89996ddeb6b54fa0fa91"
+content-hash = "8e06df1ebe538d6071fb9d300d59714dddd4282bd14f7c2616cf5b7f710b511f"
 
 [metadata.files]
 attrs = [
@@ -1150,8 +1150,8 @@ tabulate = [
     {file = "tabulate-0.8.9.tar.gz", hash = "sha256:eb1d13f25760052e8931f2ef80aaf6045a6cceb47514db8beab24cded16f13a7"},
 ]
 tankerci = [
-    {file = "tankerci-2021.9.3567-py3-none-any.whl", hash = "sha256:c6b9b0c15c9d6959caff5db17483265372827928aff71e5f87751e717f27a777"},
-    {file = "tankerci-2021.9.3567.tar.gz", hash = "sha256:6d337cc9a31fa50847b47bbd30ff3008fc820bb48f41e035766ddf7d7b62dbeb"},
+    {file = "tankerci-2021.9.3584-py3-none-any.whl", hash = "sha256:ffc1d972ae45e7105a48b677aa14e5f0b48db2d694286aa7db0661066d32fb3b"},
+    {file = "tankerci-2021.9.3584.tar.gz", hash = "sha256:5f9ca50e262df4f49e99eb0b9fdc0cab353daf362272a67d289faed384bfe08f"},
 ]
 tbump = [
     {file = "tbump-6.3.1-py3-none-any.whl", hash = "sha256:60a8b0e36654c705a359b0a1af289eff2397d4482a348219e150ee1169d63c7f"},
@@ -1203,8 +1203,8 @@ typing-extensions = [
     {file = "typing_extensions-3.10.0.2.tar.gz", hash = "sha256:49f75d16ff11f1cd258e1b988ccff82a3ca5570217d7ad8c5f48205dd99a677e"},
 ]
 unidecode = [
-    {file = "Unidecode-1.2.0-py2.py3-none-any.whl", hash = "sha256:12435ef2fc4cdfd9cf1035a1db7e98b6b047fe591892e81f34e94959591fad00"},
-    {file = "Unidecode-1.2.0.tar.gz", hash = "sha256:8d73a97d387a956922344f6b74243c2c6771594659778744b2dbdaad8f6b727d"},
+    {file = "Unidecode-1.3.1-py3-none-any.whl", hash = "sha256:5f58926b9125b499f8ab6816828e737578fa3e31fa24d351a3ab7f4b7c064ab0"},
+    {file = "Unidecode-1.3.1.tar.gz", hash = "sha256:6efac090bf8f29970afc90caf4daae87b172709b786cb1b4da2d0c0624431ecc"},
 ]
 urllib3 = [
     {file = "urllib3-1.25.11-py2.py3-none-any.whl", hash = "sha256:f5321fbe4bf3fefa0efd0bfe7fb14e90909eb62a48ccda331726b4319897dd5e"},
