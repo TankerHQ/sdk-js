@@ -1,4 +1,4 @@
-import { generichash, ready as cryptoReady, utils } from '@tanker/crypto';
+import { b64string, generichash, ready as cryptoReady, utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 import {
@@ -11,6 +11,10 @@ import {
   _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
   _serializeIdentity,
 } from '../identity';
+import type {
+  SecretPermanentIdentity, PublicIdentity,
+  SecretProvisionalIdentity,
+} from '../identity';
 
 describe('Identity', () => {
   const trustchain = {
@@ -22,8 +26,8 @@ describe('Identity', () => {
   const userId = 'b_eich';
   const userEmail = 'brendan.eich@tanker.io';
 
-  let hashedUserEmail;
-  let obfuscatedUserId;
+  let hashedUserEmail: b64string;
+  let obfuscatedUserId: b64string;
 
   before(async () => {
     await cryptoReady;
@@ -50,7 +54,7 @@ describe('Identity', () => {
       expect(identity.ephemeral_private_signature_key).to.equal('jEDT4wQCc1DFwodXNPHFClndTPnFuFmXhBt+isKU4ZpeHeLTENOmvcde0HZDnXtAq/drM3Ncstcx0kNNIfht3g==');
       expect(identity.user_secret).to.equal('7FSf/n0e76QT3s0DkvetRVVJhXZGEjOxj5EWAFexvjI=');
 
-      // $FlowIgnore hidden property
+      // @ts-expect-error hidden property
       expect(identity.serializedIdentity).to.equal(goodPermanentIdentity);
     });
 
@@ -65,7 +69,7 @@ describe('Identity', () => {
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
       expect(identity.private_encryption_key).to.equal('4QB5TWmvcBrgeyDDLhULINU6tbqAOEQ8v9pjDkPcybA=');
 
-      // $FlowIgnore hidden property
+      // @ts-expect-error hidden property
       expect(identity.serializedIdentity).to.equal(goodProvisionalIdentity);
     });
 
@@ -76,7 +80,7 @@ describe('Identity', () => {
       expect(identity.target).to.equal('user');
       expect(identity.value).to.equal(obfuscatedUserId);
 
-      // $FlowIgnore hidden property
+      // @ts-expect-error hidden property
       expect(identity.serializedIdentity).to.equal(goodPublicIdentity);
       expect(_serializeIdentity(identity)).to.equal(goodPublicIdentity);
     });
@@ -90,7 +94,7 @@ describe('Identity', () => {
       expect(identity.public_signature_key).to.equal('W7QEQBu9FXcXIpOgq62tPwBiyFAbpT1rAruD0h/NrTA=');
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
 
-      // $FlowIgnore hidden property
+      // @ts-expect-error hidden property
       expect(identity.serializedIdentity).to.equal(goodOldPublicProvisionalIdentity);
       expect(_serializeIdentity(identity)).to.equal(goodOldPublicProvisionalIdentity);
     });
@@ -104,20 +108,20 @@ describe('Identity', () => {
       expect(identity.public_signature_key).to.equal('W7QEQBu9FXcXIpOgq62tPwBiyFAbpT1rAruD0h/NrTA=');
       expect(identity.public_encryption_key).to.equal('/2j4dI3r8PlvCN3uW4HhA5wBtMKOcACd38K6N0q+mFU=');
 
-      // $FlowIgnore hidden property
+      // @ts-expect-error hidden property
       expect(identity.serializedIdentity).to.equal(goodPublicProvisionalIdentity);
     });
   });
 
   describe('_splitProvisionalAndPermanentPublicIdentities', () => {
-    let b64Identity;
-    let identity;
-    let b64PublicIdentity;
-    let publicIdentity;
-    let b64ProvisionalIdentity;
-    let provisionalIdentity;
-    let b64PublicProvisionalIdentity;
-    let publicProvisionalIdentity;
+    let b64Identity: b64string;
+    let identity: SecretPermanentIdentity;
+    let b64PublicIdentity: b64string;
+    let publicIdentity: PublicIdentity;
+    let b64ProvisionalIdentity: b64string;
+    let provisionalIdentity: SecretProvisionalIdentity;
+    let b64PublicProvisionalIdentity: b64string;
+    let publicProvisionalIdentity: PublicIdentity;
 
     before(async () => {
       b64Identity = await createIdentity(trustchain.id, trustchain.sk, userId);
@@ -138,12 +142,11 @@ describe('Identity', () => {
     });
 
     it('throws when given a secret permanent identity', async () => {
-      // $FlowIgnore testing edge case with permanentIdentity
       expect(() => _splitProvisionalAndPermanentPublicIdentities([identity, publicProvisionalIdentity])).to.throw(InvalidArgument);
     });
 
     it('throws when given a secret provisional identity', async () => {
-      // $FlowIgnore testing edge case with permanentIdentity
+      // @ts-expect-error testing edge case with permanentIdentity
       expect(() => _splitProvisionalAndPermanentPublicIdentities([publicIdentity, provisionalIdentity])).to.throw(InvalidArgument);
     });
   });
