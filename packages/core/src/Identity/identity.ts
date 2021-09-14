@@ -19,15 +19,18 @@ export type SecretPermanentIdentity = PublicPermanentIdentity & {
   user_secret: b64string;
 };
 
-export type PublicProvisionalIdentity = {
+type ProvisionalIdentityBase = {
   trustchain_id: b64string;
-  target: PublicProvisionalIdentityTarget;
   value: string;
   public_signature_key: b64string;
   public_encryption_key: b64string;
 };
 
-export type SecretProvisionalIdentity = PublicProvisionalIdentity & {
+export type PublicProvisionalIdentity = ProvisionalIdentityBase & {
+  target: PublicProvisionalIdentityTarget;
+};
+
+export type SecretProvisionalIdentity = ProvisionalIdentityBase & {
   target: SecretProvisionalIdentityTarget;
   private_encryption_key: b64string;
   private_signature_key: b64string;
@@ -73,7 +76,7 @@ export function identityTargetToVerificationMethodType(target: SecretProvisional
   }
 }
 
-const rubyJsonOrder = {
+const rubyJsonOrder: Record<string, number> = {
   trustchain_id: 1,
   target: 2,
   value: 3,
@@ -131,10 +134,10 @@ function _deserializeAndFreeze(identity: b64string): Record<string, any> { // es
 }
 
 export function _deserializePermanentIdentity(identity: b64string): SecretPermanentIdentity { // eslint-disable-line no-underscore-dangle
-  let result;
+  let result: SecretPermanentIdentity;
 
   try {
-    result = _deserializeAndFreeze(identity);
+    result = _deserializeAndFreeze(identity) as any;
   } catch (e) {
     throw new InvalidArgument(`Invalid secret permanent identity provided: ${identity}`);
   }
@@ -149,10 +152,10 @@ export function _deserializePermanentIdentity(identity: b64string): SecretPerman
 }
 
 export function _deserializeProvisionalIdentity(identity: b64string): SecretProvisionalIdentity { // eslint-disable-line no-underscore-dangle
-  let result;
+  let result: SecretProvisionalIdentity;
 
   try {
-    result = _deserializeAndFreeze(identity);
+    result = _deserializeAndFreeze(identity) as any;
   } catch (e) {
     throw new InvalidArgument(`Invalid provisional identity provided: ${identity}`);
   }
@@ -165,7 +168,7 @@ export function _deserializeProvisionalIdentity(identity: b64string): SecretProv
 
 export function _deserializePublicIdentity(identity: b64string): PublicIdentity { // eslint-disable-line no-underscore-dangle
   try {
-    return _deserializeAndFreeze(identity);
+    return _deserializeAndFreeze(identity) as any;
   } catch (e) {
     throw new InvalidArgument(`Invalid public identity provided: ${identity}`);
   }
@@ -182,14 +185,14 @@ export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<
         throw new InvalidArgument('unexpected secret identity, only public identities are allowed');
       }
 
-      permanentIdentities.push(identity);
+      permanentIdentities.push(identity as PublicPermanentIdentity);
     } else {
       // Check that the provisional identities are not secret provisional identities
       if ('private_encryption_key' in identity) {
         throw new InvalidArgument('unexpected secret identity, only public identities are allowed');
       }
 
-      provisionalIdentities.push(identity);
+      provisionalIdentities.push(identity as PublicProvisionalIdentity);
     }
   }
 
