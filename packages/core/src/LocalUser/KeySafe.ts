@@ -16,16 +16,17 @@ export type LocalUserKeys = { currentUserKey: tcrypto.SodiumKeyPair; userKeys: R
 export type IndexedProvisionalUserKeyPairs = Record<string, ProvisionalUserKeyPairs>;
 
 export type KeySafe = {
-  signaturePair: ?tcrypto.SodiumKeyPair;
-  encryptionPair: ?tcrypto.SodiumKeyPair;
+  signaturePair: tcrypto.SodiumKeyPair | null;
+  encryptionPair: tcrypto.SodiumKeyPair | null;
   provisionalUserKeys: IndexedProvisionalUserKeyPairs;
   devices: Array<Device>;
-  deviceId: b64string;
-  trustchainPublicKey: ?b64string;
-  localUserKeys: ?LocalUserKeys;
+  deviceId?: b64string | null;
+  trustchainPublicKey?: b64string | null;
+  localUserKeys: LocalUserKeys | null;
 };
 
 function startsWith(haystack: string, needle: string) {
+  // @ts-expect-error `String`.prototype.startsWith()` is not defined in IE
   if (String.prototype.startsWith)
     return haystack.startsWith(needle);
 
@@ -44,7 +45,7 @@ async function encryptObject(key: Uint8Array, plainObject: Record<string, any>):
   return encryptionV1.serialize(encryptionV1.encrypt(key, utils.fromString(json)));
 }
 
-async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<Record<string, any>> {
+async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<any> {
   const jsonBytes = encryptionV1.compatDecrypt(key, ciphertext);
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
     if (typeof v === 'string' && startsWith(v, base64Prefix))
@@ -70,9 +71,9 @@ export async function serializeKeySafe(keySafe: KeySafe, userSecret: Uint8Array)
   return utils.toBase64(encrypted);
 }
 
-export async function deserializeKeySafe(serializedSafe: b64string, userSecret: Uint8Array): Promise<?KeySafe> {
+export async function deserializeKeySafe(serializedSafe: b64string, userSecret: Uint8Array): Promise<KeySafe | null> {
   const encryptedSafe = utils.fromBase64(serializedSafe);
-  const safe = await decryptObject(userSecret, encryptedSafe);
+  const safe: KeySafe = await decryptObject(userSecret, encryptedSafe);
 
   // Validation
   if (!safe || typeof safe !== 'object') {

@@ -3,10 +3,11 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
 import { deserializeKeySafe, generateKeySafe, serializeKeySafe } from '../KeySafe';
+import type { KeySafe } from '../KeySafe';
 
 describe('KeySafe', () => {
-  let secret;
-  let safe;
+  let secret: Uint8Array;
+  let safe: KeySafe;
 
   before(() => cryptoReady);
 
