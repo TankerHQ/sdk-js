@@ -1,4 +1,4 @@
-import { tcrypto } from '@tanker/crypto';
+import type { tcrypto } from '@tanker/crypto';
 
 type GroupBase = {
   groupId: Uint8Array;
@@ -19,5 +19,5 @@ export type InternalGroup = GroupBase & {
 export type Group = InternalGroup | ExternalGroup;
 
 export function isInternalGroup(group: Group): boolean {
-  return !!group.encryptionKeyPairs && group.encryptionKeyPairs.length !== 0;
+  return 'encryptionKeyPairs' in group && group.encryptionKeyPairs.length !== 0;
 }

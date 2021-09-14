@@ -27,7 +27,7 @@ import { InvalidBlockError } from '../errors.internal';
 
 import { NATURE } from '../Blocks/Nature';
 
-export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, existingGroup?: Group) {
+export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, existingGroup: Group | null) {
   const currentPayload: UserGroupCreationRecord = (entry as any);
 
   if (!tcrypto.verifySignature(entry.hash, entry.signature, devicePublicSignatureKey))
@@ -55,7 +55,7 @@ export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSigna
     throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', entry);
 }
 
-export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, currentGroup?: Group) {
+export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, currentGroup: Group | null) {
   const currentPayload: UserGroupAdditionRecord = (entry as any);
 
   if (!tcrypto.verifySignature(entry.hash, entry.signature, devicePublicSignatureKey))
@@ -82,7 +82,7 @@ export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSigna
     throw new InvalidBlockError('invalid_self_signature', 'self signature is invalid', entry);
 }
 
-export function verifyGroupAction(action: UserGroupEntry, devicePublicSignatureKey: Uint8Array, group?: Group) {
+export function verifyGroupAction(action: UserGroupEntry, devicePublicSignatureKey: Uint8Array, group: Group | null) {
   if (action.nature === NATURE.user_group_creation_v3 || action.nature === NATURE.user_group_creation_v2 || action.nature === NATURE.user_group_creation_v1) {
     verifyUserGroupCreation(action, devicePublicSignatureKey, group);
   } else if (action.nature === NATURE.user_group_addition_v3 || action.nature === NATURE.user_group_addition_v2 || action.nature === NATURE.user_group_addition_v1) {

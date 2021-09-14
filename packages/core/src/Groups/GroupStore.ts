@@ -68,7 +68,7 @@ type GroupEntry = {
 };
 
 export default class GroupStore {
-  declare _ds: DataStore<any>;
+  declare _ds: DataStore;
   declare _userSecret: Uint8Array;
   static schemas = [
     // this store didn't exist in schema version 1 and 2
@@ -87,7 +87,7 @@ export default class GroupStore {
     { version: 13, ...schemaV13 },
   ];
 
-  constructor(ds: DataStore<any>, userSecret: Uint8Array) {
+  constructor(ds: DataStore, userSecret: Uint8Array) {
     if (!userSecret)
       throw new InternalError('Invalid user secret');
 
@@ -96,19 +96,19 @@ export default class GroupStore {
     Object.defineProperty(this, '_userSecret', { value: userSecret }); // + not writable
   }
 
-  static async open(ds: DataStore<any>, userSecret: Uint8Array): Promise<GroupStore> {
+  static async open(ds: DataStore, userSecret: Uint8Array): Promise<GroupStore> {
     return new GroupStore(ds, userSecret);
   }
 
   async close(): Promise<void> {
-    // $FlowIgnore
+    // @ts-expect-error
     this._ds = null;
   }
 
   saveGroupPublicEncryptionKeys = async (groupPublicKeys: Array<GroupPublicEncryptionKeyRecord>): Promise<void> => {
     const b64groupPK = groupPublicKeys.map(gpk => ({ _id: utils.toBase64(gpk.publicEncryptionKey), groupId: utils.toBase64(gpk.groupId) }));
     const knownGroupEntries = await this._findGroupsByGroupId(b64groupPK.map(g => g.groupId));
-    const knownGroups = {};
+    const knownGroups: Record<string, boolean> = {};
 
     for (const entry of knownGroupEntries) {
       knownGroups[entry.groupId] = true;
@@ -144,7 +144,7 @@ export default class GroupStore {
     });
 
     const knownGroupIdEntries = await this._findGroupsByGroupId(b64groupKeys.map(g => g.groupId));
-    const knownGroupIds = {};
+    const knownGroupIds: Record<string, GroupEntry> = {};
 
     for (const entry of knownGroupIdEntries) {
       knownGroupIds[entry.groupId] = entry;
@@ -152,7 +152,7 @@ export default class GroupStore {
 
     // eslint-disable-next-line no-underscore-dangle
     const knownIdEntries = await this._findGroupsByPublicKey(b64groupKeys.map(g => g._id));
-    const knownIds = {};
+    const knownIds: Record<string, GroupEntry> = {};
 
     for (const entry of knownIdEntries) {
       knownIds[entry.groupId] = entry;
@@ -176,11 +176,11 @@ export default class GroupStore {
       },
     });
 
-    if (!existingKey || !existingKey.privateEncryptionKey) {
+    if (!existingKey || !existingKey['privateEncryptionKey']) {
       return null;
     }
 
-    const encryptedPrivateEncryptionKey = utils.fromBase64(existingKey.privateEncryptionKey);
+    const encryptedPrivateEncryptionKey = utils.fromBase64(existingKey['privateEncryptionKey']!);
     const privateKey = encryptionV2.decrypt(this._userSecret, encryptionV2.unserialize(encryptedPrivateEncryptionKey));
 
     return { publicKey, privateKey };
@@ -200,7 +200,7 @@ export default class GroupStore {
       selector: {
         groupId: { $in: groupIds },
       },
-    });
+    }) as unknown as Array<GroupEntry>;
   }
 
   async _findGroupsByPublicKey(Ids: Array<b64string>): Promise<Array<GroupEntry>> {
@@ -208,6 +208,6 @@ export default class GroupStore {
       selector: {
         _id: { $in: Ids },
       },
-    });
+    }) as unknown as Array<GroupEntry>;
   }
 }

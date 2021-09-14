@@ -4,13 +4,13 @@ import { InvalidArgument } from '@tanker/errors';
 
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, _serializeIdentity } from '../Identity';
 import type { PublicPermanentIdentity, PublicProvisionalIdentity } from '../Identity';
-import UserManager from '../Users/Manager';
-import LocalUser from '../LocalUser/LocalUser';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
+import type UserManager from '../Users/Manager';
+import type LocalUser from '../LocalUser/LocalUser';
+import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 
 import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV3, makeUserGroupRemoval } from './Serialize';
 import type { Client } from '../Network/Client';
-import GroupStore from './GroupStore';
+import type GroupStore from './GroupStore';
 import type { InternalGroup, Group } from './types';
 import { isInternalGroup } from './types';
 import { assertExpectedGroups, assertPublicIdentities, groupsFromEntries } from './ManagerHelper';
@@ -33,12 +33,12 @@ function checkAddedAndRemoved(permanentIdentitiesToAdd: Array<PublicPermanentIde
 
   for (const i of permanentIdentitiesToRemove)
     if (userIdsToAdd.has(i.value))
-      // $FlowIgnore this field is hidden
+      // @ts-expect-error this field is hidden
       addedAndRemovedIdentities.push(i.serializedIdentity || _serializeIdentity(i));
 
   for (const i of provisionalIdentitiesToRemove)
     if (appSignaturePublicKeysToAdd.has(i.public_signature_key))
-      // $FlowIgnore this field is hidden
+      // @ts-expect-error this field is hidden
       addedAndRemovedIdentities.push(i.serializedIdentity || _serializeIdentity(i));
 
   if (addedAndRemovedIdentities.length)
@@ -133,8 +133,8 @@ export default class GroupManager {
     if (publicIdentitiesToAdd.length) {
       const { payload, nature } = makeUserGroupAdditionV3(
         internalGroupId,
-        signatureKeyPairs[signatureKeyPairs.length - 1].privateKey,
-        lastGroupBlock, encryptionKeyPairs[encryptionKeyPairs.length - 1].privateKey,
+        signatureKeyPairs[signatureKeyPairs.length - 1]!.privateKey,
+        lastGroupBlock, encryptionKeyPairs[encryptionKeyPairs.length - 1]!.privateKey,
         usersToAdd,
         provisionalUsersToAdd,
       );
@@ -145,7 +145,7 @@ export default class GroupManager {
       const { payload, nature } = makeUserGroupRemoval(
         this._localUser.deviceId,
         internalGroupId,
-        signatureKeyPairs[signatureKeyPairs.length - 1].privateKey,
+        signatureKeyPairs[signatureKeyPairs.length - 1]!.privateKey,
         usersToRemove,
         provisionalUsersToRemove,
       );
@@ -176,9 +176,10 @@ export default class GroupManager {
       const internalGroupRecords = [];
       for (const group of groups) {
         if (isInternalGroup(group)) {
-          for (const encryptionKeyPair of group.encryptionKeyPairs) {
+          const internalGroup = group as InternalGroup;
+          for (const encryptionKeyPair of internalGroup.encryptionKeyPairs) {
             internalGroupRecords.push({
-              groupId: group.groupId,
+              groupId: internalGroup.groupId,
               publicEncryptionKey: encryptionKeyPair.publicKey,
               privateEncryptionKey: encryptionKeyPair.privateKey,
             });
@@ -214,9 +215,10 @@ export default class GroupManager {
     const internalGroupRecords = [];
     for (const group of groups) {
       if (isInternalGroup(group)) {
-        for (const encryptionKeyPair of group.encryptionKeyPairs) {
+        const internalGroup = group as InternalGroup;
+        for (const encryptionKeyPair of internalGroup.encryptionKeyPairs) {
           internalGroupRecords.push({
-            groupId: group.groupId,
+            groupId: internalGroup.groupId,
             publicEncryptionKey: encryptionKeyPair.publicKey,
             privateEncryptionKey: encryptionKeyPair.privateKey,
           });
@@ -242,12 +244,12 @@ export default class GroupManager {
     const groups = await this._groupsFromBlocks(blocks);
     assertExpectedGroups(groups, [groupId]);
 
-    const group = groups[0];
+    const group = groups[0]!;
     if (!isInternalGroup(group)) {
       throw new InvalidArgument('Current user is not a group member');
     }
 
-    return group;
+    return group as InternalGroup;
   }
 
   async _groupsFromBlocks(blocks: Array<b64string>): Promise<Array<Group>> {
@@ -267,7 +269,7 @@ export default class GroupManager {
     const cachePublicKeys = await this._groupStore.findGroupsPublicKeys(groupsIds);
     const missingGroupIds = [];
 
-    const isGroupInCache = {};
+    const isGroupInCache: Record<b64string, boolean> = {};
     for (const groupId of groupsIds) {
       isGroupInCache[utils.toBase64(groupId)] = false;
     }
