@@ -24,7 +24,7 @@ export class TaskQueue {
   }
 
   async _dequeue() {
-    const { fn, pw } = this._tasks.shift();
+    const { fn, pw } = this._tasks.shift()!;
     this._runningTasks += 1;
 
     try {
