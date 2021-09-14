@@ -9,7 +9,6 @@ export class ProgressHandler {
   _totalBytes?: number;
 
   constructor(options: { onProgress?: OnProgress; } = {}) {
-    // $FlowIgnore Use of Object.prototype
     if (!options || typeof options !== 'object' || Object.getPrototypeOf(options) !== Object.prototype)
       throw new InvalidArgument('options', 'object', options);
 
@@ -22,7 +21,7 @@ export class ProgressHandler {
       this._onProgress = onProgress;
     } else {
       // default to no-op
-      this._onProgress = (report: ProgressReport) => {}; // eslint-disable-line no-unused-vars
+      this._onProgress = (_: ProgressReport) => {};
     }
   }
 

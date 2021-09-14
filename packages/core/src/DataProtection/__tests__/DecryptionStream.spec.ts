@@ -1,3 +1,4 @@
+import type { SinonSpy } from 'sinon';
 import { utils, random, ready as cryptoReady, tcrypto, encryptionV4 } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
@@ -6,24 +7,42 @@ import { Writable } from '@tanker/stream-base';
 import { DecryptionStream } from '../DecryptionStream';
 import { PromiseWrapper } from '../../PromiseWrapper';
 
+// extract from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/repeat#polyfill
+// without error checking
+function repeat(string: string, c: number) {
+  let str = string;
+  let count = c;
+  if (str.length === 0 || count === 0)
+    return '';
+
+  const maxCount = str.length * count;
+  count = Math.floor(Math.log(count) / Math.log(2));
+  while (count) {
+    str += str;
+    count -= 1;
+  }
+  str += str.substring(0, maxCount - str.length);
+  return str;
+}
+
 describe('DecryptionStream', () => {
   let buffer: Array<Uint8Array>;
-  let key;
-  let resourceId;
-  let mapper;
-  let stream;
-  let sync;
+  let key: Uint8Array;
+  let resourceId: Uint8Array;
+  let mapper: { findKey: SinonSpy<any[], Promise<Uint8Array>> };
+  let stream: DecryptionStream;
+  let sync: PromiseWrapper<void>;
 
-  const watchStream = str => {
-    const pw = new PromiseWrapper();
+  const watchStream = (str: DecryptionStream) => {
+    const pw = new PromiseWrapper<void>();
     buffer = [];
-    str.on('data', data => buffer.push(data));
-    str.on('error', err => pw.reject(err));
+    str.on('data', (data: Uint8Array) => buffer.push(data));
+    str.on('error', (err: Error) => pw.reject(err));
     str.on('end', () => pw.resolve());
     return pw;
   };
 
-  const encryptMsg = (index, str) => {
+  const encryptMsg = (index: number, str: string) => {
     const clear = utils.fromString(str);
     const encryptedChunkSize = encryptionV4.overhead + clear.length;
     const encrypted = encryptionV4.serialize(encryptionV4.encrypt(key, index, resourceId, encryptedChunkSize, clear));
@@ -165,7 +184,7 @@ describe('DecryptionStream', () => {
     expect(mapper.findKey.calledOnce).to.be.true;
     expect(mapper.findKey.args[0]).to.deep.equal([resourceId]);
     expect(buffer.length).to.equal(1);
-    expect(utils.toString(buffer[0])).to.equal(testMessage);
+    expect(utils.toString(buffer[0]!)).to.equal(testMessage);
   });
 
   it('can decrypt a test vector (with multiple chunks)', async () => {
@@ -224,7 +243,7 @@ describe('DecryptionStream', () => {
   });
 
   describe('Errors', () => {
-    let chunks;
+    let chunks: Array<Uint8Array>;
 
     beforeEach(async () => {
       const msg1 = encryptMsg(0, '1st message');
@@ -238,31 +257,31 @@ describe('DecryptionStream', () => {
     });
 
     it('throws DecryptionFailed when missing empty chunk after only maximum size chunks', async () => {
-      stream.write(chunks[0]); // valid chunk of the maximum size
+      stream.write(chunks[0]!); // valid chunk of the maximum size
       stream.end();
       await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
     it('throws DecryptionFailed when data is corrupted', async () => {
-      chunks[0][61] += 1;
-      stream.write(chunks[0]); // corrupted chunk
+      chunks[0]![61] += 1;
+      stream.write(chunks[0]!); // corrupted chunk
       await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
     it('throws InvalidArgument when the header is not fully given during first write', async () => {
-      const incompleteHeader = chunks[0].subarray(0, 1);
+      const incompleteHeader = chunks[0]!.subarray(0, 1);
       stream.write(incompleteHeader);
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
     it('throws InvalidArgument when the header is corrupted', async () => {
-      chunks[0][0] = 255; // unknown version number
+      chunks[0]![0] = 255; // unknown version number
       stream.write(chunks[0]);
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
     it('throws DecryptionFailed when data is written in wrong order', async () => {
-      stream.write(chunks[1]);
+      stream.write(chunks[1]!);
       await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
   });
@@ -272,13 +291,13 @@ describe('DecryptionStream', () => {
     [10, 50, 100, 1000].forEach(chunkSize => {
       it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks`, async () => {
         const timeout = makeTimeoutPromise(50);
-        const chunk = '0'.repeat(chunkSize);
+        const chunk = repeat('0', chunkSize);
         const inputSize = 10 * (chunkSize + encryptionV4.overhead);
         const bufferCounter = new BufferingObserver();
         const slowWritable = new Writable({
           highWaterMark: 1,
           objectMode: true,
-          write: async (data, encoding, done) => {
+          write: async (data, _, done) => {
             // flood every stream before unlocking writing end
             await timeout.promise;
             bufferCounter.incrementOutputAndSnapshot(data.length + encryptionV4.overhead);

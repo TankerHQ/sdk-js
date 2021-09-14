@@ -42,7 +42,7 @@ export const getStreamEncryptionFormatDescription = (): EncryptionFormatDescript
 const encryptionFormats = [null, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5];
 
 export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescription, encryptedSize: number): number => {
-  const encryption: Record<string, any> = encryptionFormats[encryptionFormatDescription.version];
+  const encryption: { getClearSize(encryptedSize: number, chunkSize?: number | undefined): number; } | null | undefined = encryptionFormats[encryptionFormatDescription.version];
   if (!encryption)
     throw new InvalidArgument(`Unhandled format version ${encryptionFormatDescription.version} used in encryptedData`);
 
