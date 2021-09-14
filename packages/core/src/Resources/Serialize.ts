@@ -4,8 +4,8 @@ import { tcrypto, utils } from '@tanker/crypto';
 import type { PublicProvisionalUser } from '../Identity';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import { unserializeBlock } from '../Blocks/payloads';
-import type { Nature, NatureKind } from '../Blocks/Nature';
 import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
+import type { NatureKind, Nature } from '../Blocks/Nature';
 
 type KeyPublishRecord = {
   recipient: Uint8Array;

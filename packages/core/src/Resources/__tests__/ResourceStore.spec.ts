@@ -7,19 +7,15 @@ import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/Test
 import SharedKeystore from '../ResourceStore';
 
 describe('ResourceStore', () => {
-  let dbName;
-  let userSecret;
-  let sharedKeystoreConfig;
-  let sharedKeystore;
-  let datastore;
+  let sharedKeystore: SharedKeystore;
 
   before(() => cryptoReady);
 
   beforeEach(async () => {
-    dbName = `sharedKeystore-test-${makePrefix()}`;
-    userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
-    sharedKeystoreConfig = { dbName, ...dataStoreConfig, schemas: SharedKeystore.schemas };
-    datastore = await openDataStore(sharedKeystoreConfig);
+    const dbName = `sharedKeystore-test-${makePrefix()}`;
+    const userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
+    const sharedKeystoreConfig = { dbName, ...dataStoreConfig, schemas: SharedKeystore.schemas };
+    const datastore = await openDataStore(sharedKeystoreConfig);
     sharedKeystore = await SharedKeystore.open(datastore, userSecret);
   });
 
