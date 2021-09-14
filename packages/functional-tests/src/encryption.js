@@ -225,6 +225,10 @@ export const generateEncryptionTests = (args: TestArgs) => {
           .to.be.rejectedWith(errors.InvalidArgument, evePublicIdentity);
       });
 
+      it('is a noop to share an empty resource array', async () => {
+        await expect(bobLaptop.share([], { shareWithUsers: [alicePublicIdentity] })).to.be.fulfilled;
+      });
+
       it('shares an existing resource with a permanent identity', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(encrypted);
