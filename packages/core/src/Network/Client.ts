@@ -2,7 +2,7 @@ import type { b64string } from '@tanker/crypto';
 import { tcrypto, utils } from '@tanker/crypto';
 import { TankerError, DeviceRevoked, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
 import { fetch, retry, exponentialDelayGenerator } from '@tanker/http-utils';
-import type { DelayGenerator } from '@tanker/http-utils'; // eslint-disable-line no-unused-vars
+import type { DelayGenerator } from '@tanker/http-utils';
 
 import { PromiseWrapper } from '../PromiseWrapper';
 import { TaskQueue } from '../TaskQueue';
@@ -17,7 +17,7 @@ export const defaultApiEndpoint = 'https://api.tanker.io';
 export type ClientOptions = {
   instanceInfo: { id: string; };
   sdkInfo: { type: string; version: string; };
-  url: string;
+  url?: string;
 };
 
 export type ServerPublicProvisionalIdentity = {
@@ -52,10 +52,10 @@ export class Client {
   declare _apiEndpoint: string;
   declare _apiRootPath: string;
   declare _appId: Uint8Array;
-  declare _authenticating: ?Promise<void>;
+  declare _authenticating: Promise<void> | null;
   declare _cancelationHandle: PromiseWrapper<void>;
-  declare _deviceId: ?Uint8Array;
-  declare _deviceSignatureKeyPair: ?tcrypto.SodiumKeyPair;
+  declare _deviceId: Uint8Array | null;
+  declare _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
   declare _fetchQueue: TaskQueue;
   declare _instanceId: string;
   declare _isRevoked: boolean;
@@ -82,16 +82,16 @@ export class Client {
     this._userId = userId;
   }
 
-  // $FlowIgnore Our first promise will always reject so the return type doesn't matter
-  _cancelable = <F extends (...args: Array<any>) => any>(fun: F): F => (...args: Array<any>) => {
+  _cancelable = <R>(fun: (...args: Array<any>) => Promise<R>) => (...args: Array<any>) => {
+    // cancelationHandle.promise always rejects. It's returned type doesn't matter
     if (this._cancelationHandle.settled) {
-      return this._cancelationHandle.promise;
+      return this._cancelationHandle.promise as any as Promise<R>;
     }
-    return Promise.race([this._cancelationHandle.promise, fun(...args)]);
+    return Promise.race([this._cancelationHandle.promise as any as Promise<R>, fun(...args)]);
   };
 
   // Simple fetch wrapper with limited concurrency
-  _fetch = (input: RequestInfo, init?: RequestOptions): Promise<Response> => {
+  _fetch = (input: RequestInfo, init?: RequestInit): Promise<Response> => {
     const fn = () => fetch(input, init);
 
     return this._fetchQueue.enqueue(fn);
@@ -100,14 +100,13 @@ export class Client {
   // Simple _fetch wrapper with:
   //   - proper headers set (sdk info and authorization)
   //   - generic error handling
-  _baseApiCall = async (path: string, init?: RequestOptions): Promise<any> => {
+  _baseApiCall = async (path: string, init?: RequestInit): Promise<any> => {
     try {
       if (!path || path[0] !== '/') {
         throw new InvalidArgument('"path" should be non empty and start with "/"');
       }
 
-      // $FlowIgnore Only using bare objects as headers so we're fine...
-      const headers: Record<string, string> = init && init.headers || {};
+      const headers: Record<string, string> = init && init.headers as Record<string, string> | undefined || {};
       headers['X-Tanker-Instanceid'] = this._instanceId;
       headers['X-Tanker-Sdktype'] = this._sdkType;
       headers['X-Tanker-Sdkversion'] = this._sdkVersion;
@@ -149,7 +148,8 @@ export class Client {
 
       const apiMethod = init && init.method || 'GET';
       genericErrorHandler(apiMethod, url, error);
-    } catch (e) {
+    } catch (err) {
+      const e = err as Error;
       if (e instanceof DeviceRevoked) this._isRevoked = true;
       if (e instanceof TankerError) throw e;
       throw new InternalError(e.toString());
@@ -160,7 +160,7 @@ export class Client {
   //   - await authentication if in progress
   //   - smart retry on authentication failure (e.g. expired token)
   //   - call in progress can be canceled if close() called
-  _apiCall = this._cancelable(async (path: string, init?: RequestOptions): Promise<any> => {
+  _apiCall = this._cancelable(async (path: string, init?: RequestInit): Promise<any> => {
     if (this._authenticating) {
       await this._authenticating;
     }
@@ -355,7 +355,7 @@ export class Client {
   getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions) => {
     const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
-    const result = { root: '', histories: [] };
+    const result: { root: b64string; histories: Array<b64string>; } = { root: '', histories: [] };
     for (let i = 0; i < urlizedUserIds.length; i += MAX_QUERY_STRING_ITEMS) {
       const query = `is_light=${options.isLight ? 'true' : 'false'}&user_ids[]=${urlizedUserIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&user_ids[]=')}`;
       const response = await this.getUserHistories(query);
@@ -369,12 +369,12 @@ export class Client {
     if (!this._deviceId)
       throw new InternalError('Assertion error: trying to get user histories without a device id');
 
-    if (this._isRevoked && deviceIds.length === 1 && utils.equalArray(deviceIds[0], this._deviceId)) {
+    if (this._isRevoked && deviceIds.length === 1 && utils.equalArray(deviceIds[0]!, this._deviceId)) {
       return this.getRevokedDeviceHistory();
     }
 
     const urlizedDeviceIds = unique(deviceIds.map(deviceId => urlize(deviceId)));
-    const result = { root: '', histories: [] };
+    const result: { root: b64string; histories: Array<b64string>; } = { root: '', histories: [] };
     const gotBlocks = new Set();
 
     for (let i = 0; i < urlizedDeviceIds.length; i += MAX_QUERY_STRING_ITEMS) {
@@ -468,11 +468,10 @@ export class Client {
     return sessionToken;
   };
 
-  getGroupHistories = (query: string): Promise<{ histories: Array<b64string>; }> => // eslint-disable-line arrow-body-style
-    this._apiCall(`/user-group-histories?${query}&is_light=true`);
+  getGroupHistories = (query: string): Promise<{ histories: Array<b64string>; }> => this._apiCall(`/user-group-histories?${query}&is_light=true`);
 
   getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<{ histories: Array<b64string>; }> => {
-    const result = { histories: [] };
+    const result: { histories: Array<b64string>; } = { histories: [] };
 
     for (let i = 0; i < groupIds.length; i += MAX_QUERY_STRING_ITEMS) {
       const query = `user_group_ids[]=${groupIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&user_group_ids[]=')}`;
@@ -492,8 +491,7 @@ export class Client {
     return this._apiCall(`/resources/${urlize(resourceId)}/upload-url?${query}`);
   };
 
-  getFileDownloadURL = (resourceId: Uint8Array) => // eslint-disable-line arrow-body-style
-    this._apiCall(`/resources/${urlize(resourceId)}/download-url`);
+  getFileDownloadURL = (resourceId: Uint8Array) => this._apiCall(`/resources/${urlize(resourceId)}/download-url`);
 
   getPublicProvisionalIdentities = async (hashedEmails: Array<Uint8Array>, hashedPhoneNumbers: Array<Uint8Array>): Promise<PublicProvisionalIdentityResults> => {
     const MAX_QUERY_ITEMS = 100; // This is probably route-specific, so doesn't need to be global
@@ -505,7 +503,7 @@ export class Client {
     let done = 0;
     while (done < hashedEmails.length + hashedPhoneNumbers.length) {
       // First, get as many emails as we have left that can fit in one request
-      let hashedEmailsSlice = [];
+      let hashedEmailsSlice: Uint8Array[] = [];
       if (done < hashedEmails.length) {
         const numEmailsToGet = Math.min(hashedEmails.length - done, MAX_QUERY_ITEMS);
         hashedEmailsSlice = hashedEmails.slice(done, done + numEmailsToGet);
@@ -513,7 +511,7 @@ export class Client {
       }
 
       // If we had less than MAX_QUERY_ITEMS emails left, then there's room to start requesting phone numbers
-      let hashedPhoneNumbersSlice = [];
+      let hashedPhoneNumbersSlice: Uint8Array[] = [];
       if (hashedEmailsSlice.length < MAX_QUERY_ITEMS) {
         const phonesDone = done - hashedEmails.length;
         const numPhoneNumbersToGet = Math.min(hashedPhoneNumbers.length - phonesDone, MAX_QUERY_ITEMS - hashedEmailsSlice.length);
@@ -554,9 +552,9 @@ export class Client {
 
     const { tanker_provisional_keys: provisionalKeys } = await this._apiCall(path, options);
     return provisionalKeys;
-  }
+  };
 
-  getTankerProvisionalKeysWithVerif = async (body: {verification: VerificationRequest}) => {
+  getTankerProvisionalKeysWithVerif = async (body: { verification: VerificationRequest }) => {
     const options = {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),
@@ -565,7 +563,7 @@ export class Client {
 
     const { tanker_provisional_keys: provisionalKeys } = await this._apiCall('/tanker-provisional-keys', options);
     return provisionalKeys;
-  }
+  };
 
   claimProvisionalIdentity = async (body: any): Promise<void> => {
     await this._apiCall('/provisional-identity-claims', {

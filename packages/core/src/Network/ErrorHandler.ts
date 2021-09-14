@@ -1,6 +1,7 @@
-import { Conflict, DeviceRevoked, ExpiredVerification, GroupTooBig, IdentityAlreadyAttached, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, UpgradeRequired } from '@tanker/errors';
+import { TankerError, Conflict, DeviceRevoked, ExpiredVerification, GroupTooBig, IdentityAlreadyAttached, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, UpgradeRequired } from '@tanker/errors';
+import type { Class } from '@tanker/types';
 
-const apiCodeErrorMap = {
+const apiCodeErrorMap: Record<string, Class<TankerError>> = {
   blocked: PreconditionFailed,
   conflict: Conflict,
   device_revoked: DeviceRevoked,
@@ -26,7 +27,8 @@ export const genericErrorHandler = (apiMethod: string, apiRoute: string, error: 
   const { code: apiCode, message, status: httpStatus, trace_id: traceId } = error;
   const apiError = { apiCode, apiMethod, apiRoute, httpStatus, message, traceId };
 
-  const ErrorClass = apiCodeErrorMap[apiError.apiCode] || InternalError;
+  // ErrorClass is a Class
+  const ErrorClass = apiCodeErrorMap[apiError.apiCode] || InternalError; // eslint-disable-line @typescript-eslint/naming-convention
 
   if (ErrorClass === InvalidArgument) {
     throw new ErrorClass(apiError.message);
