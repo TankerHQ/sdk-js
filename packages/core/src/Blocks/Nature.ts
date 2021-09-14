@@ -1,4 +1,3 @@
-import { $Values } from 'utility-types';
 import { InternalError } from '@tanker/errors';
 
 export const NATURE = Object.freeze({
@@ -27,10 +26,10 @@ export const NATURE = Object.freeze({
 
 const NATURE_INT = Object.values(NATURE);
 
-export type Nature = $Values<typeof NATURE>;
+export type Nature = typeof NATURE[keyof typeof NATURE];
 
-export function natureExists(nature: number): boolean {
-  return NATURE_INT.includes(nature);
+export function natureExists(nature: number): nature is Nature {
+  return nature in NATURE_INT;
 }
 
 export const NATURE_KIND = Object.freeze({
@@ -48,7 +47,7 @@ export const NATURE_KIND = Object.freeze({
   user_group_removal: 11,
 });
 
-export type NatureKind = $Values<typeof NATURE_KIND>;
+export type NatureKind = typeof NATURE_KIND[keyof typeof NATURE_KIND];
 
 export function preferredNature(kind: NatureKind): Nature {
   switch (kind) {
