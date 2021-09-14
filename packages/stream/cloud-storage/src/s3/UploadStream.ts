@@ -1,7 +1,7 @@
 import { InvalidArgument, InternalError, NetworkError } from '@tanker/errors';
 import { fetch, retry } from '@tanker/http-utils';
 import { Writable } from '@tanker/stream-base';
-import type { DoneCallback } from '@tanker/stream-base';
+import type { WriteCallback } from '@tanker/stream-base';
 
 export class UploadStream extends Writable {
   _contentLength: number;
@@ -39,7 +39,7 @@ export class UploadStream extends Writable {
     }
   }
 
-  override async _write(chunk: Uint8Array, _: string, done: DoneCallback) {
+  override async _write(chunk: Uint8Array, _: string, done: WriteCallback) {
     try {
       const chunkLength = chunk.length;
       const prevLength = this._uploadedLength;
@@ -78,13 +78,10 @@ export class UploadStream extends Writable {
       return done(e as Error);
     }
 
-    // @types/readable-stream is ill-typed. The done callback accepts null as argument
-    // see https://nodejs.org/docs/latest-v16.x/api/stream.html#stream_writable_write_chunk_encoding_callback_1
-    // @ts-expect-error
     done(null); // success
   }
 
-  override async _final(done: DoneCallback) {
+  override async _final(done: WriteCallback) {
     try {
       await retry(async () => {
         this.log(`Completing S3 multipart upload of size ${this._contentLength}`);
@@ -104,9 +101,6 @@ export class UploadStream extends Writable {
       return done(e as Error);
     }
 
-    // @types/readable-stream is ill-typed. The done callback accepts null as argument
-    // see https://nodejs.org/docs/latest-v16.x/api/stream.html#stream_writable_write_chunk_encoding_callback_1
-    // @ts-expect-error
     done(null);
   }
 

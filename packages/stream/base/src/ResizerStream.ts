@@ -1,7 +1,7 @@
 import { Transform } from 'readable-stream';
 
 import Uint8Buffer from './Uint8Buffer';
-import type { DoneCallback } from './types';
+import type { TransformCallback } from './types';
 
 // If we need to reduce the buffered memory an implementation may be found on commit
 // a021aba46ba1f7eada53666b14c758b0a253d7d3 (this commit never made it to master)
@@ -44,13 +44,13 @@ export default class ResizerStream extends Transform {
     }
   }
 
-  override _transform(chunk: Uint8Array, _: BufferEncoding, done: DoneCallback) {
+  override _transform(chunk: Uint8Array, _: BufferEncoding, done: TransformCallback) {
     this._buffer.push(chunk);
     this._pushChunks();
     done();
   }
 
-  override async _flush(done: DoneCallback) {
+  override async _flush(done: TransformCallback) {
     this._pushChunks();
 
     try {
