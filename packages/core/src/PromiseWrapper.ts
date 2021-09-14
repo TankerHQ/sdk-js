@@ -1,7 +1,7 @@
 export class PromiseWrapper<T> {
   promise: Promise<T>;
-  resolve: (arg0: T) => void;
-  reject: (arg0: any) => void;
+  resolve!: (result: T) => void;
+  reject!: (error: any) => void;
   settled: boolean = false;
 
   constructor() {
