@@ -13,7 +13,7 @@ describe('blocks: payloads', () => {
       signature: random(tcrypto.SIGNATURE_SIZE),
       trustchain_id: random(tcrypto.HASH_SIZE),
       payload: new Uint8Array(0),
-      nature: NATURE_KIND.key_publish_to_device,
+      nature: preferredNature(NATURE_KIND.key_publish_to_device),
     };
     const serializedBlock = serializeBlock(block);
     serializedBlock[0] = 99;
@@ -28,7 +28,6 @@ describe('blocks: payloads', () => {
       payload: new Uint8Array(0),
       nature: Number.MAX_SAFE_INTEGER,
     };
-    // $FlowExpectedError Unknown nature
     const serializedBlock = serializeBlock(block);
     expect(() => unserializeBlock(serializedBlock)).to.throw(UpgradeRequired);
   });

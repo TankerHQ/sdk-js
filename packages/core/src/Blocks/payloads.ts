@@ -54,18 +54,18 @@ export function unserializeBlock(src: Uint8Array): Block {
   /*const index = */varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   ({ value, newOffset } = getStaticArray(src, trustchainIdSize, newOffset));
-  const trustchain_id = value; // eslint-disable-line camelcase
+  const trustchain_id = value!; // eslint-disable-line camelcase
   value = varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   const nature = value;
   if (!natureExists(nature))
     throw new UpgradeRequired(`unknown block nature: ${nature}`);
   ({ value, newOffset } = getArray(src, newOffset));
-  const payload = value;
+  const payload = value!;
   ({ value, newOffset } = getStaticArray(src, hashSize, newOffset));
-  const author = value;
+  const author = value!;
   ({ value, newOffset } = getStaticArray(src, signatureSize, newOffset));
-  const signature = value;
+  const signature = value!;
 
   return { trustchain_id, nature, payload, author, signature };
 }

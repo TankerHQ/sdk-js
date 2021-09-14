@@ -15,7 +15,7 @@ export function getArray(src: Uint8Array, offset: number, name: string = 'value'
 
 export function getString(src: Uint8Array, offset: number, name: string = 'value'): Record<string, any> {
   const result = getArray(src, offset, name);
-  return { [name]: utils.toString(result[name]), newOffset: result.newOffset };
+  return { [name]: utils.toString(result[name]), newOffset: result['newOffset'] };
 }
 
 export function setStaticArray(src: Uint8Array, dest: Uint8Array, offset: number = 0): number {
@@ -23,14 +23,17 @@ export function setStaticArray(src: Uint8Array, dest: Uint8Array, offset: number
   return offset + src.length;
 }
 
-export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: string = 'value'): { newOffset: number; [name: string]: Uint8Array; } {
+type StaticArray = { [name: string]: Uint8Array; } & { newOffset: number; };
+export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: Exclude<string, 'newOffset'> = 'value'): StaticArray {
   if (offset + size > buf.length)
     throw new InternalError('Out of bounds read in getStaticArray');
   const arr = new Uint8Array(buf.buffer, buf.byteOffset + offset, size);
-  return { [name]: arr, newOffset: offset + size };
+  return { [name]: arr, newOffset: offset + size } as StaticArray;
 }
 
-export function unserializeGenericSub(data: Uint8Array, functions: Array<Unserializer>, offset: number, name: string = 'value'): Record<string, any> {
+// @ts-expect-error precondition: 'newOffset' is never used as a name, thus, [name] can never be a number
+type UnserializedSub = { newOffset: number, [name: string]: Record<string, Uint8Array> };
+export function unserializeGenericSub(data: Uint8Array, functions: Array<Unserializer>, offset: number, name: string = 'value'): UnserializedSub {
   let newOffset = offset;
   const resultList = [];
   for (const f of functions) {
@@ -39,9 +42,10 @@ export function unserializeGenericSub(data: Uint8Array, functions: Array<Unseria
     newOffset = parsedResult.newOffset;
   }
 
-  const result = Object.assign({}, ...resultList);
-  delete result.newOffset;
+  const result: Record<string, Uint8Array> = Object.assign({}, ...resultList);
+  delete result['newOffset'];
 
+  // @ts-expect-error precondition: 'newOffset' is never used as a name, thus, [name] can never be a number
   return { [name]: result, newOffset };
 }
 
@@ -51,7 +55,7 @@ export function unserializeGeneric<T>(data: Uint8Array, functions: Array<Unseria
   if (result.newOffset !== data.length)
     throw new InternalError(`deserialization error: trailing garbage data (unserialized cursor: ${result.newOffset}, buffer length: ${data.length})`);
 
-  return ((result.value as any) as T);
+  return ((result['value'] as any) as T);
 }
 
 export function unserializeList(data: Uint8Array, f: Unserializer, offset: number, name: string = 'value') {
