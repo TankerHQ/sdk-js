@@ -2,7 +2,7 @@ import type { b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 import { MergerStream, ResizerStream, SlicerStream } from '@tanker/stream-base';
-import type { Readable, Writable } from '@tanker/stream-base';
+import type { Readable, Transform, Writable } from '@tanker/stream-base';
 import streamCloudStorage from '@tanker/stream-cloud-storage';
 import { getDataLength } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
@@ -17,17 +17,22 @@ import type { OutputOptions, ProgressOptions, EncryptionOptions } from '../DataP
 import { UploadStream } from './UploadStream';
 import { DownloadStream } from './DownloadStream';
 
-const pipeStreams = (
+const pipeStreams = <T>(
   { streams, resolveEvent }: { streams: Array<Readable | Writable>; resolveEvent: string; },
-) => new Promise((resolve, reject) => {
-  streams.forEach(stream => stream.on('error', reject));
-  streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
-});
+) => new Promise((resolve: (value: T) => void, reject: (reason?: any) => void) => {
+    streams.forEach(stream => stream.on('error', reject));
+    // @types/readable-stream is ill-typed. The `pipe()` is part of the interface of Readable
+    // see https://nodejs.org/docs/latest-v16.x/api/stream.html#stream_readable_pipe_destination_options
+    // We also know that the first stream is a Readable, the last a Writable and every stream in between a Transform
+    // @ts-expect-error
+    streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
+  });
 
 // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
 const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
 type Metadata = { encryptionFormat: EncryptionFormatDescription; } & ResourceMetadata;
+type CloudStorageServices = keyof typeof streamCloudStorage;
 
 export class CloudStorageManager {
   _client: Client;
@@ -66,7 +71,7 @@ export class CloudStorageManager {
     return uploadStream.resourceId;
   }
 
-  async download<T extends Data>(b64ResourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async download<T extends Data>(b64ResourceId: string, outputOptions: Partial<OutputOptions<T>>, progressOptions: ProgressOptions): Promise<T> {
     const downloadStream = await this.createDownloadStream(b64ResourceId, progressOptions);
     const merger = new MergerStream({
       type: defaultDownloadType,
@@ -85,7 +90,7 @@ export class CloudStorageManager {
     const totalClearSize = clearSize;
     const totalEncryptedSize = encryptor.getEncryptedSize(totalClearSize);
 
-    const metadata: Partial<Metadata> = {
+    const metadata: Metadata = {
       ...resourceMetadata,
       encryptionFormat: getStreamEncryptionFormatDescription(),
     };
@@ -98,18 +103,19 @@ export class CloudStorageManager {
       recommended_chunk_size: recommendedChunkSize,
     } = await this._client.getFileUploadURL(resourceId, encryptedMetadata, totalEncryptedSize);
 
-    if (!streamCloudStorage[service])
+    if (!streamCloudStorage[service as CloudStorageServices])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
 
-    const streamService = streamCloudStorage[service];
-    const { UploadStream: CloudUploadStream } = streamService;
+    const streamService = streamCloudStorage[service as CloudStorageServices];
+    // CloudUploadStream is a Class
+    const { UploadStream: CloudUploadStream } = streamService; // eslint-disable-line @typescript-eslint/naming-convention
 
     const uploader = new CloudUploadStream(urls, headers, totalEncryptedSize, recommendedChunkSize);
 
     const progressHandler = new ProgressHandler(progressOptions).start(totalEncryptedSize);
     uploader.on('uploaded', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
 
-    const streams = [encryptor];
+    const streams: (Transform | Writable)[] = [encryptor];
 
     // Some version of Edge (e.g. version 18) fail to handle the 308 HTTP status used by
     // GCS in a non-standard way (no redirection expected) when uploading in chunks. So we
@@ -133,10 +139,11 @@ export class CloudStorageManager {
 
     const { head_url: headUrl, get_url: getUrl, service } = await this._client.getFileDownloadURL(resourceId);
 
-    if (!streamCloudStorage[service])
+    if (!streamCloudStorage[service as CloudStorageServices]!)
       throw new InternalError(`unsupported cloud storage service: ${service}`);
 
-    const { DownloadStream: CloudDownloadStream } = streamCloudStorage[service];
+    // CloudDownloadStream is a Class
+    const { DownloadStream: CloudDownloadStream } = streamCloudStorage[service as CloudStorageServices]; // eslint-disable-line @typescript-eslint/naming-convention
 
     const downloadChunkSize = 1024 * 1024;
     const downloader = new CloudDownloadStream(b64ResourceId, headUrl, getUrl, downloadChunkSize);
