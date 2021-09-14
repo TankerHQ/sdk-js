@@ -27,15 +27,16 @@ export const extractSharingOptions = (options: Record<string, any>, error: any =
   if (!isObject(options))
     throw error;
 
-  const sharingOptions = {};
+  const sharingOptions: SharingOptions = {};
   let recipientCount = 0;
 
   ['shareWithUsers', 'shareWithGroups'].forEach(key => {
     if (key in options) {
-      const array = options[key];
+      const array: Array<string> = options[key];
       if (!(array instanceof Array))
         throw error;
-
+      array.forEach(el => assertNotEmptyString(el, `options.${key}`));
+      // @ts-expect-error '[key]' is always a field of 'SharingOption'
       sharingOptions[key] = array;
       recipientCount += array.length;
     }
@@ -45,18 +46,18 @@ export const extractSharingOptions = (options: Record<string, any>, error: any =
     throw new InvalidArgument(
       'options.shareWith*',
       'it is not possible to share with more than 100 recipients at once',
-      options
+      options,
     );
   }
 
-  if (options.shareWithUsers) {
-    for (const identity of options.shareWithUsers) {
+  if (options['shareWithUsers']) {
+    for (const identity of options['shareWithUsers']) {
       assertNotEmptyString(identity, 'options.shareWithUsers');
     }
   }
 
-  if (options.shareWithGroups) {
-    for (const groupId of options.shareWithGroups) {
+  if (options['shareWithGroups']) {
+    for (const groupId of options['shareWithGroups']) {
       assertB64StringWithSize(groupId, 'options.shareWithGroups', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
     }
   }
@@ -67,13 +68,12 @@ export const extractSharingOptions = (options: Record<string, any>, error: any =
 export const extractEncryptionOptions = (options: Record<string, any>): EncryptionOptions => {
   const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool }', options);
 
-  // $FlowIgnore casting SharingOptions to EncryptionOptions is safe
   const encryptionOptions: EncryptionOptions = extractSharingOptions(options, error);
 
   if ('shareWithSelf' in options) {
-    if (typeof options.shareWithSelf !== 'boolean')
+    if (typeof options['shareWithSelf'] !== 'boolean')
       throw error;
-    encryptionOptions.shareWithSelf = options.shareWithSelf;
+    encryptionOptions.shareWithSelf = options['shareWithSelf'];
   } else {
     encryptionOptions.shareWithSelf = true;
   }
@@ -100,20 +100,20 @@ export const extractResourceMetadata = (options: Record<string, any>, input?: Da
 
   const resourceMetadata: Partial<ResourceMetadata> = {};
   if (globalThis.Blob && input instanceof globalThis.Blob) {
-    resourceMetadata.mime = input.type;
+    resourceMetadata.mime = (input as Blob).type;
   }
   if (globalThis.File && input instanceof globalThis.File) {
-    resourceMetadata.name = input.name;
-    resourceMetadata.lastModified = input.lastModified;
+    resourceMetadata.name = (input as File).name;
+    resourceMetadata.lastModified = (input as File).lastModified;
   }
-  if (typeof options.mime === 'string') {
-    resourceMetadata.mime = options.mime;
+  if (typeof options['mime'] === 'string') {
+    resourceMetadata.mime = options['mime'];
   }
-  if (typeof options.name === 'string') {
-    resourceMetadata.name = options.name;
+  if (typeof options['name'] === 'string') {
+    resourceMetadata.name = options['name'];
   }
-  if (typeof options.lastModified === 'number') {
-    resourceMetadata.lastModified = options.lastModified;
+  if (typeof options['lastModified'] === 'number') {
+    resourceMetadata.lastModified = options['lastModified'];
   }
 
   return resourceMetadata;
@@ -125,8 +125,8 @@ export const extractOutputOptions = <T extends Data>(options: Record<string, any
 
   let outputType;
 
-  if (options.type) {
-    outputType = options.type;
+  if (options['type']) {
+    outputType = options['type'];
   } else if (input) {
     outputType = getConstructor(input);
   } else {
@@ -142,13 +142,13 @@ export const extractOutputOptions = <T extends Data>(options: Record<string, any
 };
 
 export const extractProgressOptions = (options: Record<string, any>): ProgressOptions => {
-  const progressOptions = {};
+  const progressOptions: ProgressOptions = {};
 
   if ('onProgress' in options) {
-    if (typeof options.onProgress !== 'function')
+    if (typeof options['onProgress'] !== 'function')
       throw new InvalidArgument('options', '{ onProgress?: (progress: { currentBytes: number, totalBytes: ?number }) => void }', options);
 
-    progressOptions.onProgress = options.onProgress;
+    progressOptions.onProgress = options['onProgress'];
   }
 
   return progressOptions;

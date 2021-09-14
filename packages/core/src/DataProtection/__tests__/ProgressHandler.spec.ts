@@ -83,14 +83,14 @@ describe('ProgressHandler', () => {
       { onProgress: 'on' },
       { onProgress: { progress: () => {} },
       }].forEach((invalidOptions, i) => {
-      // $FlowExpectedError Giving invalid options
+      // @ts-expect-error Giving invalid options
       expect(() => new ProgressHandler(invalidOptions), `failed test #${i}`).to.throw(InvalidArgument);
     });
   });
 
   it('throws if start() not called with an integer >= 0', async () => {
     [null, '42', -1, 42.9].forEach((invalidTotal, i) => {
-      // $FlowExpectedError Giving invalid options
+      // @ts-expect-error Giving invalid total
       expect(() => new ProgressHandler({}).start(invalidTotal), `failed test #${i}`).to.throw(InvalidArgument);
     });
   });

@@ -47,8 +47,10 @@ describe('Resource', () => {
   ];
 
   it('should throw when an unsupported format version is detected', () => {
-    const zeroVersion = varint.encode(0);
-    const incorrectVersion = varint.encode(52);
+    const zeroVersion = new Uint8Array();
+    varint.encode(0, zeroVersion);
+    const incorrectVersion = new Uint8Array();
+    varint.encode(52, incorrectVersion);
     expect(() => extractEncryptionFormat(zeroVersion)).to.throw(InvalidArgument);
     expect(() => extractEncryptionFormat(incorrectVersion)).to.throw(InvalidArgument);
   });
