@@ -103,7 +103,7 @@ const tablesV10 = tablesV9.filter(def => !def.deleted).map<TableSchema>(def => {
   return deleted ? { ...def, deleted: true } : def;
 });
 
-export const GlobalSchema = [
+export const globalSchema = [
   { version: 1, tables: tablesV1 },
   { version: 2, tables: tablesV2 },
   { version: 3, tables: tablesV3 },
