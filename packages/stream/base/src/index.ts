@@ -5,4 +5,4 @@ export { default as ResizerStream } from './ResizerStream';
 export { default as SlicerStream } from './SlicerStream';
 export { default as Uint8Buffer } from './Uint8Buffer';
 
-export type { DoneCallback } from './types';
+export type { WriteCallback, TransformCallback, DestroyCallback } from './types';
