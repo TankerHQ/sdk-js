@@ -12,8 +12,8 @@ export type User = {
   devices: Array<Device>;
 };
 
-export function getLastUserPublicKey(user: User): ?Uint8Array {
+export function getLastUserPublicKey(user: User): Uint8Array | null {
   if (user.userPublicKeys.length === 0)
-    return;
-  return user.userPublicKeys.slice(-1)[0];
+    return null;
+  return user.userPublicKeys.slice(-1)[0]!;
 }

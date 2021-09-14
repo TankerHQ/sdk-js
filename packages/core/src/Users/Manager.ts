@@ -6,7 +6,7 @@ import { _serializeIdentity } from '../Identity';
 import type { PublicPermanentIdentity } from '../Identity';
 import type { Client, PullOptions } from '../Network/Client';
 import type { User } from './types';
-import LocalUser from '../LocalUser/LocalUser';
+import type { LocalUser } from '../LocalUser/LocalUser';
 import { usersFromBlocks } from './ManagerHelper';
 
 // ensure that the UserStore is always up-to-date before requesting it.
@@ -47,7 +47,7 @@ export default class UserManager {
     const invalidPublicIdentities = [];
     for (const publicIdentity of publicIdentities) {
       if (!userIdToUserMap.has(publicIdentity.value)) {
-        // $FlowIgnore serializedIdentity is a "hidden" property (non enumerable, not declared in types)
+        // @ts-expect-error serializedIdentity is a "hidden" property (non enumerable, not declared in types)
         invalidPublicIdentities.push(publicIdentity.serializedIdentity || _serializeIdentity(publicIdentity));
       }
     }

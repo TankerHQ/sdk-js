@@ -9,7 +9,7 @@ import type { DeviceCreationEntry, DeviceRevocationEntry } from './Serialize';
 
 import { NATURE } from '../Blocks/Nature';
 
-export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: ?User, trustchainId: Uint8Array, trustchainPublicKey: Uint8Array) {
+export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: User | null, trustchainId: Uint8Array, trustchainPublicKey: Uint8Array) {
   if (!utils.isNullArray(entry.last_reset))
     throw new InvalidBlockError('invalid_last_reset', 'last_reset is not null', { entry });
 

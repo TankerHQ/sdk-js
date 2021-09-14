@@ -6,8 +6,8 @@ import { NATURE } from '../Blocks/Nature';
 import type { DeviceCreationEntry, DeviceRevocationEntry } from './Serialize';
 import type { User, Device } from './types';
 
-export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, user: ?User): User {
-  let oldDevices = [];
+export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, user: User | null): User {
+  let oldDevices: Device[] = [];
   let userPublicKeys = [deviceCreation.user_key_pair.public_encryption_key];
 
   if (user) {
@@ -39,7 +39,7 @@ export function applyDeviceRevocationToUser(deviceRevocation: DeviceRevocationEn
   if (deviceIndex === -1)
     throw new InternalError('Device not found!');
   const updatedUser = { ...user };
-  updatedUser.devices[deviceIndex].revoked = true;
+  updatedUser.devices[deviceIndex]!.revoked = true;
 
   let userPublicKey;
   if (deviceRevocation.nature !== NATURE.device_revocation_v1) {
