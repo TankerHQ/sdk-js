@@ -10,15 +10,16 @@ import LocalUser from './LocalUser';
 import { formatVerificationRequest } from './requests';
 import type {
   VerificationMethod,
+  VerificationMethodResponse,
   VerificationWithToken,
   RemoteVerificationWithToken,
+  LegacyEmailVerification,
 } from './types';
 import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
 
 import type { Client, PullOptions } from '../Network/Client';
-import type { Status } from '../Session/status';
-import { statuses } from '../Session/status';
+import { Status } from '../Session/status';
 import type { Device } from '../Users/types';
 import { makeSessionCertificate } from './SessionCertificate';
 
@@ -50,26 +51,26 @@ export class LocalUserManager extends EventEmitter {
       const user = await this._client.getUser();
 
       if (user === null) {
-        return statuses.IDENTITY_REGISTRATION_NEEDED;
+        return Status.IDENTITY_REGISTRATION_NEEDED;
       }
 
-      return statuses.IDENTITY_VERIFICATION_NEEDED;
+      return Status.IDENTITY_VERIFICATION_NEEDED;
     }
 
     // Authenticate device in background (no await)
     this._client.authenticateDevice(this._localUser.deviceId, this._localUser.deviceSignatureKeyPair).catch(e => this.emit('error', e));
 
-    return statuses.READY;
+    return Status.READY;
   };
 
-  getVerificationMethods = async (): Promise<Array<VerificationMethod>> => {
-    const verificationMethods = await this._client.getVerificationMethods();
+  getVerificationMethods = async (): Promise<Array<VerificationMethod | LegacyEmailVerification>> => {
+    const verificationMethods: VerificationMethodResponse = await this._client.getVerificationMethods();
 
     if (verificationMethods.length === 0) {
       return [{ type: 'verificationKey' }];
     }
 
-    return verificationMethods.map(method => {
+    return verificationMethods.map((method) => {
       switch (method.type) {
         case 'email': {
           // Compat: encrypted_email value might be missing.
@@ -78,7 +79,7 @@ export class LocalUserManager extends EventEmitter {
             return { type: 'email' };
           }
 
-          const encryptedEmail = utils.fromBase64(method.encrypted_email);
+          const encryptedEmail = utils.fromBase64(method.encrypted_email!);
           const email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
           return { type: 'email', email };
         }
@@ -94,6 +95,7 @@ export class LocalUserManager extends EventEmitter {
           return { type: 'phoneNumber', phoneNumber };
         }
         default: {
+          // @ts-expect-error this code is only reachable in old SDK when new verification are introduced `method`'s type should be `never`
           throw new UpgradeRequired(`unsupported verification method type: ${method.type}`);
         }
       }
@@ -121,11 +123,11 @@ export class LocalUserManager extends EventEmitter {
   createUser = async (verification: VerificationWithToken): Promise<void> => {
     let ghostDeviceKeys;
 
-    if (verification.verificationKey) {
+    if ('verificationKey' in verification) {
       try {
         ghostDeviceKeys = ghostDeviceKeysFromVerificationKey(verification.verificationKey);
       } catch (e) {
-        throw new InvalidVerification(e);
+        throw new InvalidVerification(e as Error);
       }
     } else {
       ghostDeviceKeys = generateGhostDeviceKeys();
@@ -143,7 +145,7 @@ export class LocalUserManager extends EventEmitter {
       first_device_creation: firstDeviceBlock,
     };
 
-    if (verification.email || verification.passphrase || verification.oidcIdToken || verification.phoneNumber) {
+    if ('email' in verification || 'passphrase' in verification || 'oidcIdToken' in verification || 'phoneNumber' in verification) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = formatVerificationRequest(verification, this._localUser);
       request.verification.with_token = verification.withToken; // May be undefined
@@ -168,12 +170,13 @@ export class LocalUserManager extends EventEmitter {
       const deviceSignatureKeyPair = newDevice.signatureKeyPair;
       await this._client.createDevice(deviceId, deviceSignatureKeyPair, { device_creation: newDevice.block });
       await this.updateDeviceInfo(deviceId, newDevice.encryptionKeyPair, deviceSignatureKeyPair);
-    } catch (e) {
+    } catch (err) {
+      const e = err as Error;
       if (e instanceof TankerError) {
         throw e;
       }
 
-      if (verification.verificationKey) {
+      if ('verificationKey' in verification) {
         throw new InvalidVerification(e);
       }
 
@@ -207,12 +210,12 @@ export class LocalUserManager extends EventEmitter {
     return this._client.getSessionToken({ session_certificate: block, nonce: verification.withToken.nonce });
   };
 
-  findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair> => {
+  findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair | undefined> => {
     const userKey = this._localUser.findUserKey(publicKey);
     if (!userKey) {
       await this.updateLocalUser({ isLight: true });
     }
-    return this._localUser.findUserKey(publicKey);
+    return this._localUser.findUserKey(publicKey)!;
   };
 
   updateLocalUser = async (options: PullOptions = {}) => {
@@ -229,7 +232,7 @@ export class LocalUserManager extends EventEmitter {
     return this._localUser;
   }
 
-  findProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): PrivateProvisionalKeys | null | undefined => {
+  findProvisionalUserKey = (appPublicSignatureKey: Uint8Array, tankerPublicSignatureKey: Uint8Array): PrivateProvisionalKeys | null => {
     const id = utils.concatArrays(appPublicSignatureKey, tankerPublicSignatureKey);
     const result = this._provisionalUserKeys[utils.toBase64(id)];
     if (result) {
@@ -264,7 +267,7 @@ export class LocalUserManager extends EventEmitter {
   };
 
   getVerificationKey = async (verification: VerificationWithToken) => {
-    if (verification.verificationKey) {
+    if ('verificationKey' in verification) {
       return verification.verificationKey;
     }
     const remoteVerification: RemoteVerificationWithToken = (verification as any);

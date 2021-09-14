@@ -22,7 +22,7 @@ export function serializeTrustchainCreation(trustchainCreation: TrustchainCreati
 
 export function unserializeTrustchainCreation(src: Uint8Array): TrustchainCreationRecord {
   const { value } = getStaticArray(src, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, 0);
-  return { public_signature_key: value };
+  return { public_signature_key: value! };
 }
 
 export function trustchainCreationFromBlock(b64Block: string): TrustchainCreationEntry {

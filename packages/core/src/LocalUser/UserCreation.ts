@@ -141,7 +141,7 @@ const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKe
 };
 
 export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
-  const remainingDevices = [];
+  const remainingDevices: Device[] = [];
   let deviceToRevokeFound = false;
   let deviceAlreadyRevoked = false;
 

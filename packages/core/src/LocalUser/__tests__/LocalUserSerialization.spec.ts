@@ -2,7 +2,7 @@ import { ready as cryptoReady, tcrypto, random, generichash, utils } from '@tank
 import { expect } from '@tanker/test-utils';
 
 import { serializeTrustchainCreation, unserializeTrustchainCreation } from '../Serialize';
-import { serializeSessionCertificate, unserializeSessionCertificate, VERIFICATION_METHOD_TYPES } from '../SessionCertificate';
+import { serializeSessionCertificate, unserializeSessionCertificate, VerificationMethodTypes } from '../SessionCertificate';
 import type { SessionCertificateRecord } from '../SessionCertificate';
 
 // NOTE: If you ever have to change something here, change it in the Go code too!
@@ -54,7 +54,6 @@ describe('SessionCertificate', () => {
       verification_method_target: new Uint8Array(0),
       session_public_signature_key: new Uint8Array(0),
     };
-    // Flow noticed that our method type is invalid =)
     const sessionCertificate = ((badSessionCertificate as any) as SessionCertificateRecord);
     expect(() => serializeSessionCertificate(sessionCertificate)).to.throw();
   });
@@ -62,7 +61,7 @@ describe('SessionCertificate', () => {
   it('should serialize/unserialize a SessionCertificate', async () => {
     const sessionCertificate = {
       timestamp: Math.floor(Date.now() / 1000),
-      verification_method_type: VERIFICATION_METHOD_TYPES.email,
+      verification_method_type: VerificationMethodTypes.email,
       verification_method_target: generichash(utils.fromString('bob@tanker.io')),
       session_public_signature_key: tcrypto.makeSignKeyPair().publicKey,
     };

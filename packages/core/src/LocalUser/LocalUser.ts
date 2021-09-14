@@ -23,14 +23,14 @@ export class LocalUser extends EventEmitter {
   _userId: Uint8Array;
   _userSecret: Uint8Array;
 
-  _deviceSignatureKeyPair: ?tcrypto.SodiumKeyPair;
-  _deviceEncryptionKeyPair: ?tcrypto.SodiumKeyPair;
+  _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
+  _deviceEncryptionKeyPair: tcrypto.SodiumKeyPair | null;
   _userKeys: Record<string, tcrypto.SodiumKeyPair>;
-  _currentUserKey: ?tcrypto.SodiumKeyPair;
+  _currentUserKey: tcrypto.SodiumKeyPair | null;
   _devices: Array<Device>;
 
-  _deviceId: ?Uint8Array;
-  _trustchainPublicKey: ?Uint8Array;
+  _deviceId: Uint8Array | null;
+  _trustchainPublicKey: Uint8Array | null;
 
   constructor(trustchainId: Uint8Array, userId: Uint8Array, userSecret: Uint8Array, localData: LocalData) {
     super();
@@ -120,7 +120,7 @@ export class LocalUser extends EventEmitter {
     return this._devices;
   }
 
-  findUserKey = (userPublicKey: Uint8Array): tcrypto.SodiumKeyPair => this._userKeys[utils.toBase64(userPublicKey)];
+  findUserKey = (userPublicKey: Uint8Array): tcrypto.SodiumKeyPair | undefined => this._userKeys[utils.toBase64(userPublicKey)];
 
   get currentUserKey(): tcrypto.SodiumKeyPair {
     if (!this._currentUserKey) {
@@ -141,7 +141,7 @@ export class LocalUser extends EventEmitter {
     if (b64Blocks.length < 2) {
       throw new InternalError('Assertion error: not enough blocks to update local user');
     }
-    const trustchainCreationEntry = trustchainCreationFromBlock(b64Blocks[0]);
+    const trustchainCreationEntry = trustchainCreationFromBlock(b64Blocks[0]!);
     verifyTrustchainCreation(trustchainCreationEntry, this.trustchainId);
     this._trustchainPublicKey = trustchainCreationEntry.public_signature_key;
 
@@ -206,11 +206,11 @@ export class LocalUser extends EventEmitter {
     this._devices = user.devices;
   };
 
-  _localUserKeysFromPrivateKey = (encryptedPrivateKey: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, existingLocalUserKeys: ?LocalUserKeys): LocalUserKeys => {
+  _localUserKeysFromPrivateKey = (encryptedPrivateKey: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, existingLocalUserKeys: LocalUserKeys | null): LocalUserKeys => {
     const privateKey = tcrypto.sealDecrypt(encryptedPrivateKey, encryptionKeyPair);
     const keyPair = tcrypto.getEncryptionKeyPairFromPrivateKey(privateKey);
     const b64PublicKey = utils.toBase64(keyPair.publicKey);
-    const res = {};
+    const res: Record<string, tcrypto.SodiumKeyPair> = {};
     res[b64PublicKey] = keyPair;
 
     if (existingLocalUserKeys) {
@@ -227,27 +227,29 @@ export class LocalUser extends EventEmitter {
   };
 
   _decryptUserKeys = (encryptedUserKeys: Array<UserKeys | UserKeyPair>, deviceId: Uint8Array): LocalUserKeys => {
-    let localUserKeys;
+    let localUserKeys: LocalUserKeys | null = null;
 
     for (const encryptedUserKey of encryptedUserKeys) {
       // Key for local device
-      if (encryptedUserKey.encrypted_private_encryption_key) {
-        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_private_encryption_key, this.deviceEncryptionKeyPair, localUserKeys);
+      const asUserKeyPair = encryptedUserKey as UserKeyPair;
+      if (asUserKeyPair.encrypted_private_encryption_key) {
+        localUserKeys = this._localUserKeysFromPrivateKey(asUserKeyPair.encrypted_private_encryption_key, this.deviceEncryptionKeyPair, localUserKeys);
         continue;
       }
 
+      const asUserKeys = encryptedUserKey as UserKeys;
       // Upgrade from userV1 to userV3
-      if (utils.equalArray(new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE), encryptedUserKey.previous_public_encryption_key))
+      if (utils.equalArray(new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE), asUserKeys.previous_public_encryption_key))
         continue;
 
       // Key encrypted before our device creation
-      const existingUserKey = localUserKeys && localUserKeys.userKeys[utils.toBase64(encryptedUserKey.public_encryption_key)];
+      const existingUserKey = localUserKeys && localUserKeys.userKeys[utils.toBase64(asUserKeys.public_encryption_key)];
 
       if (existingUserKey) {
-        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_previous_encryption_key, existingUserKey, localUserKeys);
+        localUserKeys = this._localUserKeysFromPrivateKey(asUserKeys.encrypted_previous_encryption_key, existingUserKey, localUserKeys);
       // Key encrypted after our device creation
       } else {
-        const privKey = encryptedUserKey.private_keys.find(k => utils.equalArray(k.recipient, deviceId));
+        const privKey = asUserKeys.private_keys.find(k => utils.equalArray(k.recipient, deviceId));
         if (!privKey)
           throw new InternalError('Assertion error: Couldn\'t decrypt user keys from revocation');
 

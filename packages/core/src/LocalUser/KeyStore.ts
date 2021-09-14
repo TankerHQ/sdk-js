@@ -9,17 +9,17 @@ import type { Device } from '../Users/types';
 const TABLE = 'device';
 
 export type LocalData = {
-  currentUserKey: ?tcrypto.SodiumKeyPair;
-  deviceId: ?Uint8Array;
-  deviceEncryptionKeyPair: ?tcrypto.SodiumKeyPair;
-  deviceSignatureKeyPair: ?tcrypto.SodiumKeyPair;
+  currentUserKey: tcrypto.SodiumKeyPair | null;
+  deviceId: Uint8Array | null;
+  deviceEncryptionKeyPair: tcrypto.SodiumKeyPair | null;
+  deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
   devices: Array<Device>;
-  trustchainPublicKey: ?Uint8Array;
+  trustchainPublicKey: Uint8Array | null;
   userKeys: Record<string, tcrypto.SodiumKeyPair>;
 };
 
 export default class KeyStore {
-  declare _ds: DataStore<any>;
+  declare _ds: DataStore;
   declare _safe: KeySafe;
 
   static schemas = [
@@ -46,7 +46,7 @@ export default class KeyStore {
     // }
   ];
 
-  constructor(ds: DataStore<any>) {
+  constructor(ds: DataStore) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_ds', { value: ds, writable: true });
   }
@@ -95,7 +95,7 @@ export default class KeyStore {
 
   // remove everything except private device keys.
   clearCache(userSecret: Uint8Array): Promise<void> {
-    delete this._safe.trustchainPublicKey;
+    this._safe.trustchainPublicKey = null;
     this._safe.provisionalUserKeys = {};
     this._safe.localUserKeys = null;
     return this._saveSafe(userSecret);
@@ -109,23 +109,23 @@ export default class KeyStore {
         utils.memzero(keyPair.publicKey);
       }
     });
-    delete this._safe.deviceId;
-    delete this._safe.trustchainPublicKey;
+    this._safe.deviceId = null;
+    this._safe.trustchainPublicKey = null;
 
     // Then let GC do its job
-    // $FlowIgnore
+    // @ts-expect-error
     this._ds = null;
   }
 
-  static async open(ds: DataStore<any>, userSecret: Uint8Array): Promise<KeyStore> {
+  static async open(ds: DataStore, userSecret: Uint8Array): Promise<KeyStore> {
     const keystore = new KeyStore(ds);
     await keystore.initData(userSecret);
     return keystore;
   }
 
   async initData(userSecret: Uint8Array): Promise<void> {
-    let record: Record<string, any>;
-    let safe: ?KeySafe = null;
+    let record!: Record<string, any>;
+    let safe: KeySafe | null = null;
 
     // Try to get safe from the storage, might not exist yet
     try {
@@ -141,7 +141,7 @@ export default class KeyStore {
     // Try to deserialize the safe
     try {
       if (record) {
-        safe = await deserializeKeySafe(record.encryptedSafe, userSecret);
+        safe = await deserializeKeySafe(record['encryptedSafe'], userSecret);
       }
     } catch (e) {
       // Log unexpected error. That said, there's not much that can be done...

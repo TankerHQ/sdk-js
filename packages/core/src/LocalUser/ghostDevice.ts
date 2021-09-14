@@ -23,8 +23,8 @@ export const generateGhostDeviceKeys = (): GhostDeviceKeys => ({
 export const extractGhostDevice = (verificationKey: b64string): GhostDevice => {
   const decoded = utils.fromB64Json(verificationKey);
   return {
-    privateEncryptionKey: utils.fromBase64(decoded.privateEncryptionKey),
-    privateSignatureKey: utils.fromBase64(decoded.privateSignatureKey),
+    privateEncryptionKey: utils.fromBase64(decoded['privateEncryptionKey']),
+    privateSignatureKey: utils.fromBase64(decoded['privateSignatureKey']),
   };
 };
 

@@ -1,15 +1,16 @@
 import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
+import type { DataStore } from '@tanker/datastore-base';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
 
 import KeyStore from '../KeyStore';
 
 describe('KeyStore', () => {
-  let datastoresToClose;
-  let openKeystore;
-  let secret;
+  let datastoresToClose: Array<DataStore>;
+  let openKeystore: () => Promise<KeyStore>;
+  let secret: Uint8Array;
 
   const { schemas } = KeyStore;
 
