@@ -1,32 +1,33 @@
-import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
+import { b64string, ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
+import type { Key } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
 import { KeyDecryptor } from '../KeyDecryptor';
 
-import GroupManager from '../../Groups/Manager';
-import LocalUserManager from '../../LocalUser/Manager';
-import ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
-import type { Nature } from '../../Blocks/Nature';
+import type GroupManager from '../../Groups/Manager';
+import type LocalUserManager from '../../LocalUser/Manager';
+import type ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
 import { NATURE } from '../../Blocks/Nature';
+import type { Nature } from '../../Blocks/Nature';
 
 import type { KeyPublishEntry } from '../Serialize';
 
 const refDeviceId = new Uint8Array([0, 0, 7]);
 
 class LocalUserStub {
-  _keyPair;
-  deviceId;
-  privateEncryptionKey;
+  _keyPair: tcrypto.SodiumKeyPair;
+  deviceId: Uint8Array;
+  privateEncryptionKey: Key;
 
-  constructor(deviceId, keyPair) {
+  constructor(deviceId: Uint8Array, keyPair: tcrypto.SodiumKeyPair) {
     this._keyPair = keyPair;
     this.deviceId = deviceId;
     this.privateEncryptionKey = keyPair.privateKey;
   }
 
-  getDevicePublicEncryptionKey = () => this._keyPair.publicKey;
-  findUserKey = () => this._keyPair;
+  getDevicePublicEncryptionKey = (): Uint8Array | null => this._keyPair.publicKey;
+  findUserKey = (): tcrypto.SodiumKeyPair | null => this._keyPair;
 
   empty = () => {
     this.getDevicePublicEncryptionKey = () => null;
@@ -34,7 +35,7 @@ class LocalUserStub {
   };
 }
 
-function makeKeyPublish(nature: Nature, key): KeyPublishEntry {
+function makeKeyPublish(nature: Nature, key: Uint8Array): KeyPublishEntry {
   return {
     recipient: refDeviceId,
     resourceId: refDeviceId,
@@ -44,10 +45,10 @@ function makeKeyPublish(nature: Nature, key): KeyPublishEntry {
 }
 
 describe('KeyDecryptor', () => {
-  let keys;
+  let keys: tcrypto.SodiumKeyPair & { expect: b64string };
   let decryptor: KeyDecryptor;
   let localUser: LocalUserStub;
-  let groupManager;
+  let groupManager: { getGroupEncryptionKeyPair: () => typeof keys | null; };
   const provisionalIdentityManager = (({} as any) as ProvisionalIdentityManager);
 
   before(async () => {

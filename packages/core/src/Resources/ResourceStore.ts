@@ -7,7 +7,7 @@ import { InternalError } from '@tanker/errors';
 const TABLE = 'resource_keys';
 
 export default class ResourceStore {
-  declare _ds: DataStore<any>;
+  declare _ds: DataStore;
   declare _userSecret: Uint8Array;
 
   static schemas = [
@@ -33,7 +33,7 @@ export default class ResourceStore {
     // }
   ];
 
-  constructor(ds: DataStore<any>, userSecret: Uint8Array) {
+  constructor(ds: DataStore, userSecret: Uint8Array) {
     if (!userSecret)
       throw new InternalError('Invalid user secret');
 
@@ -64,7 +64,7 @@ export default class ResourceStore {
     try {
       const b64ResourceId = utils.toBase64(resourceId);
       const result = await this._ds.get(TABLE, b64ResourceId);
-      const encryptedKey = utils.fromBase64(result.b64EncryptedKey);
+      const encryptedKey = utils.fromBase64(result['b64EncryptedKey']!);
 
       return encryptionV1.compatDecrypt(this._userSecret, encryptedKey, resourceId);
     } catch (e) {
@@ -79,11 +79,11 @@ export default class ResourceStore {
     // Erase traces of critical data first
     utils.memzero(this._userSecret);
 
-    // $FlowIgnore
+    // @ts-expect-error
     this._ds = null;
   }
 
-  static async open(ds: DataStore<any>, userSecret: Uint8Array): Promise<any> {
+  static async open(ds: DataStore, userSecret: Uint8Array): Promise<ResourceStore> {
     return new ResourceStore(ds, userSecret);
   }
 }
