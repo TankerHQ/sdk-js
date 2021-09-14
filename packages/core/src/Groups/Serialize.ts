@@ -121,7 +121,7 @@ type UserGroupAdditionEntry = UserGroupAdditionRecord & VerificationFields;
 export type UserGroupEntry = UserGroupCreationEntry | UserGroupAdditionEntry;
 
 export function isGroupAddition(entry: UserGroupEntry) {
-  return !entry.public_encryption_key;
+  return !('public_encryption_key' in entry);
 }
 
 function serializeGroupEncryptedKeyV1(gek: GroupEncryptedKeyV1): Uint8Array {

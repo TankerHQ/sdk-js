@@ -9,8 +9,8 @@ import type { ExternalGroup } from '../types';
 
 import type { TestDeviceCreation, TestUserGroup } from '../../__tests__/TestGenerator';
 import TestGenerator from '../../__tests__/TestGenerator';
-import ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
-import LocalUser from '../../LocalUser/LocalUser';
+import type ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
+import type LocalUser from '../../LocalUser/LocalUser';
 
 function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): ExternalGroup {
   const userGroupCreation: UserGroupCreationRecord = (userGroupEntry as any);
@@ -35,8 +35,8 @@ function getExternalGroupFromUserGroupAddition(userGroupEntry: UserGroupEntry, p
 describe('GroupManagerHelper', () => {
   let testGenerator: TestGenerator;
   let userCreation: TestDeviceCreation;
-  let provisionalIdentityManager;
-  let localUser;
+  let provisionalIdentityManager: ProvisionalIdentityManager;
+  let localUser: LocalUser;
   let userGroup: TestUserGroup;
 
   before(() => cryptoReady);
@@ -62,12 +62,12 @@ describe('GroupManagerHelper', () => {
   });
 
   const describeGroupAdditionTests = (version: number) => {
-    let makeUserGroupAddition;
+    let makeUserGroupAddition: typeof testGenerator.makeUserGroupAdditionV2;
     beforeEach(() => {
       makeUserGroupAddition = {
         '2': testGenerator.makeUserGroupAdditionV2, // eslint-disable-line quote-props
         '3': testGenerator.makeUserGroupAdditionV3, // eslint-disable-line quote-props
-      }[version];
+      }[version]!;
 
       if (!makeUserGroupAddition) {
         throw Error('Assertion error: unknown version in test generation');
@@ -84,7 +84,6 @@ describe('GroupManagerHelper', () => {
 
           it('can create a group with a userGroupCreation action from a provisional user', () => {
             const provisionalResult = testGenerator.makeProvisionalUser();
-            // $FlowIgnore[cannot-write]
             provisionalIdentityManager.findPrivateProvisionalKeys = () => provisionalResult.provisionalUserKeys;
 
             userGroup = testGenerator.makeUserGroupCreation(userCreation, [], [provisionalResult.publicProvisionalUser]);
@@ -104,7 +103,6 @@ describe('GroupManagerHelper', () => {
           it('can update a group with a userGroupAddition from a provisional user', () => {
             let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
             const provisionalResult = testGenerator.makeProvisionalUser();
-            // $FlowIgnore[cannot-write]
             provisionalIdentityManager.findPrivateProvisionalKeys = () => provisionalResult.provisionalUserKeys;
 
             const userGroupAddition = makeUserGroupAddition(userCreation, userGroup.group, [], [provisionalResult.publicProvisionalUser]);

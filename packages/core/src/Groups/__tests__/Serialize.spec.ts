@@ -18,6 +18,7 @@ import {
   unserializeUserGroupAdditionV3,
   serializeUserGroupRemoval,
   unserializeUserGroupRemoval,
+  UserGroupCreationRecordV1,
 } from '../Serialize';
 
 describe('groups blocks', () => {
@@ -407,7 +408,7 @@ describe('groups blocks', () => {
   });
 
   describe('serializing invalid group creation block', () => {
-    let userGroupCreation;
+    let userGroupCreation: UserGroupCreationRecordV1;
 
     beforeEach(() => {
       userGroupCreation = {
@@ -428,7 +429,7 @@ describe('groups blocks', () => {
       expect(() => serializeUserGroupCreationV1(userGroupCreation)).not.to.throw();
     });
 
-    const fields = [
+    const fields: Array<keyof UserGroupCreationRecordV1> = [
       'public_signature_key',
       'public_encryption_key',
       'encrypted_group_private_signature_key',
@@ -436,18 +437,19 @@ describe('groups blocks', () => {
     ];
     fields.forEach(field => {
       it(`should throw when serializing a user group creation block with invalid ${field}`, async () => {
+        // @ts-expect-error fields only contains Uint8Array fields from UserGroupCreationRecordV1
         userGroupCreation[field] = new Uint8Array(0);
         expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
       });
     });
 
     it('should throw when serializing a user group creation block with invalid public_user_encryption_key', async () => {
-      userGroupCreation.encrypted_group_private_encryption_keys_for_users[0].public_user_encryption_key = new Uint8Array(0);
+      userGroupCreation.encrypted_group_private_encryption_keys_for_users[0]!.public_user_encryption_key = new Uint8Array(0);
       expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
     });
 
     it('should throw when serializing a user group creation block with invalid encrypted_group_private_encryption_key', async () => {
-      userGroupCreation.encrypted_group_private_encryption_keys_for_users[0].encrypted_group_private_encryption_key = new Uint8Array(0);
+      userGroupCreation.encrypted_group_private_encryption_keys_for_users[0]!.encrypted_group_private_encryption_key = new Uint8Array(0);
       expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
     });
   });
@@ -808,6 +810,7 @@ describe('groups blocks', () => {
         encrypted_group_private_encryption_keys_for_users: [],
       };
       expect(() => serializeUserGroupAdditionV1(userGroupAdd)).not.to.throw();
+      // @ts-expect-error fields only contains Uint8Array fields from userGroupAdd
       userGroupAdd[field] = new Uint8Array(0);
       expect(() => serializeUserGroupAdditionV1(userGroupAdd)).to.throw();
     });
