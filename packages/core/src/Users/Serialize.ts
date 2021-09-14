@@ -95,7 +95,6 @@ export function serializeUserDeviceV3(userDevice: DeviceCreationRecord): Uint8Ar
     userDevice.delegation_signature,
     userDevice.public_signature_key,
     userDevice.public_encryption_key,
-    // $FlowIssue user_key_pair is not null, I checked for that...
     serializeUserKeyPair(userDevice.user_key_pair),
     deviceFlags,
   );
@@ -126,15 +125,15 @@ function unserializeUserKeys(src: Uint8Array, offset: number) {
 
 export function unserializeUserDeviceV1(src: Uint8Array): DeviceCreationRecord {
   return unserializeGeneric(src, [
-    (d, o) => ({ last_reset: new Uint8Array(tcrypto.HASH_SIZE), newOffset: o }),
+    (_, o) => ({ last_reset: new Uint8Array(tcrypto.HASH_SIZE), newOffset: o }),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'ephemeral_public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'user_id'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'delegation_signature'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
-    (d, o) => ({ user_key_pair: null, newOffset: o }),
-    (d, o) => ({ is_ghost_device: false, newOffset: o }),
-    (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
+    (_, o) => ({ user_key_pair: null, newOffset: o }),
+    (_, o) => ({ is_ghost_device: false, newOffset: o }),
+    (_, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }
 
@@ -146,23 +145,23 @@ export function unserializeUserDeviceV2(src: Uint8Array): DeviceCreationRecord {
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'delegation_signature'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
-    (d, o) => ({ user_key_pair: null, newOffset: o }),
-    (d, o) => ({ is_ghost_device: false, newOffset: o }),
-    (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
+    (_, o) => ({ user_key_pair: null, newOffset: o }),
+    (_, o) => ({ is_ghost_device: false, newOffset: o }),
+    (_, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }
 
 export function unserializeUserDeviceV3(src: Uint8Array): DeviceCreationRecord {
   return unserializeGeneric(src, [
-    (d, o) => ({ last_reset: new Uint8Array(tcrypto.HASH_SIZE), newOffset: o }),
+    (_, o) => ({ last_reset: new Uint8Array(tcrypto.HASH_SIZE), newOffset: o }),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'ephemeral_public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'user_id'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_SIZE, o, 'delegation_signature'),
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
     (d, o) => unserializeUserKeyPair(d, o),
-    (d, o) => ({ is_ghost_device: !!(d[o] & 0x01), newOffset: o + 1 }), // eslint-disable-line no-bitwise
-    (d, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
+    (d, o) => ({ is_ghost_device: !!(d[o]! & 0x01), newOffset: o + 1 }), // eslint-disable-line no-bitwise
+    (_, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }
 
@@ -198,7 +197,7 @@ export function serializeDeviceRevocationV2(deviceRevocation: DeviceRevocationRe
 }
 
 export function unserializeDeviceRevocationV1(src: Uint8Array): DeviceRevocationRecord {
-  return { device_id: getStaticArray(src, tcrypto.HASH_SIZE, 0).valu };
+  return { device_id: getStaticArray(src, tcrypto.HASH_SIZE, 0)['value']! };
 }
 
 export function unserializeDeviceRevocationV2(src: Uint8Array): DeviceRevocationRecord {

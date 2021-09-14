@@ -11,6 +11,9 @@ import {
   unserializeDeviceRevocationV1,
   unserializeDeviceRevocationV2,
 } from '../Serialize';
+import type {
+  DeviceCreationRecord,
+} from '../Serialize';
 
 import makeUint8Array from '../../__tests__/makeUint8Array';
 
@@ -260,7 +263,7 @@ describe('user serialization: payloads', () => {
   });
 
   it('should throw when serializing invalid revocation blocks', async () => {
-    const initValidBlock = () => ({
+    const initValidBlock: any = () => ({
       device_id: new Uint8Array(tcrypto.HASH_SIZE),
       user_keys: {
         public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
@@ -326,7 +329,7 @@ describe('user serialization: payloads', () => {
   });
 
   describe('serialization of invalid user device', () => {
-    let userDevice;
+    let userDevice: DeviceCreationRecord;
 
     beforeEach(() => {
       userDevice = {
@@ -353,6 +356,7 @@ describe('user serialization: payloads', () => {
     ];
     fields.forEach(field => {
       it(`should throw if user device with invalid ${field}`, async () => {
+        // @ts-expect-error fields only contains Uint8Array fields from DeviceCreationRecord
         userDevice[field] = new Uint8Array(0);
         expect(() => serializeUserDeviceV3(userDevice)).to.throw();
       });

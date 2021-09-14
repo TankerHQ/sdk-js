@@ -17,7 +17,7 @@ export async function usersFromBlocks(userBlocks: Array<b64string>, trustchainId
     if (isDeviceCreation(userEntry.nature)) {
       const deviceCreationEntry = ((userEntry as any) as DeviceCreationEntry);
       const base64UserId = utils.toBase64(deviceCreationEntry.user_id);
-      let user = userIdToUserMap.get(base64UserId);
+      let user = userIdToUserMap.get(base64UserId) || null;
 
       verifyDeviceCreation(deviceCreationEntry, user, trustchainId, trustchainPublicKey);
       user = applyDeviceCreationToUser(deviceCreationEntry, user);
