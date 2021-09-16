@@ -8,6 +8,11 @@ import Promise from 'core-js-pure/features/promise'; // eslint-disable-line impo
 import MathImul from 'core-js-pure/features/math/imul'; // eslint-disable-line import/no-extraneous-dependencies
 import MAX_SAFE_INTEGER from 'core-js-pure/features/number/max-safe-integer'; // eslint-disable-line import/no-extraneous-dependencies
 
+// Babel was polyfilling this automatically but we don't use Babel everytime anymore
+// required by @tanker/datastore-dexie-memory
+import 'core-js/features/array/find-index'; // eslint-disable-line import/no-extraneous-dependencies
+import 'core-js/features/array/find'; // eslint-disable-line import/no-extraneous-dependencies
+
 // Promise polyfill required for Dexie 3 and libsodium.js in IE11
 if (!window.Promise) {
   window.Promise = Promise;
@@ -18,7 +23,8 @@ if (!window.Math.imul) {
   window.Math.imul = MathImul;
 }
 
-// Babel auto polyfilling
+// Babel was polyfilling this automatically but we don't use Babel everytime anymore
+// required by @tanker/crypto
 if (!Number.MAX_SAFE_INTEGER) {
   Number.MAX_SAFE_INTEGER = MAX_SAFE_INTEGER;
 }
