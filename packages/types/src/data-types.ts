@@ -121,7 +121,6 @@ export const getConstructorName = (constructor: Record<string, any>): Exclude<Da
 export const getDataLength = (value: Data): number => {
   for (const def of dataTypeDefs) {
     if (value instanceof def.type) {
-      // $FlowIgnore we checked for the proper type
       return def.lengthOf(value);
     }
   }

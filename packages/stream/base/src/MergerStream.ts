@@ -11,7 +11,6 @@ export default class MergerStream<T extends Data> extends ResizerStream {
     // Note: can't use Infinity as it will be forwarded to the writableHighWaterMark option
     super(Number.MAX_SAFE_INTEGER);
 
-    // $FlowIgnore Use of Object.prototype
     if (!options || typeof options !== 'object' || Object.getPrototypeOf(options) !== Object.prototype)
       throw new InvalidArgument('options', 'object', options);
 
