@@ -5,7 +5,7 @@ import { utils, generichash, random } from '@tanker/crypto';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
 import { AppHelper, makePrefix, appdUrl, managementSettings, oidcSettings, benchmarkSettings } from '@tanker/functional-tests';
 
-import { _serializeIdentity } from '../../core/src/Identity';
+import { _serializeIdentity } from '../../core/dist/es/Identity';
 import { before, after, benchmark } from './framework';
 
 if (!appdUrl || !managementSettings || !oidcSettings) {
