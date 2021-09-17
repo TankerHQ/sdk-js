@@ -122,8 +122,8 @@ function createDelegationToken(userId: Uint8Array, trustchainPrivateKey: Uint8Ar
 
 class TestGenerator {
   _trustchainIndex: number = 0;
-  _trustchainKeys: tcrypto.SodiumKeyPair;
-  _trustchainId: Uint8Array;
+  _trustchainKeys!: tcrypto.SodiumKeyPair;
+  _trustchainId!: Uint8Array;
   makeTrustchainCreation = (): TestTrustchainCreation => {
     this._trustchainKeys = tcrypto.makeSignKeyPair();
     this._trustchainIndex += 1;
@@ -217,10 +217,10 @@ class TestGenerator {
   };
 
   makeDeviceCreation = (parentDevice: TestDeviceCreation): TestDeviceCreation => {
-    const testUserKeys = parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1];
+    const testUserKeys = parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1]!;
     const userKeys = { publicKey: testUserKeys.publicKey, privateKey: testUserKeys.privateKey };
 
-    const newDevice = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0].id, userKeys);
+    const newDevice = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0]!.id, userKeys);
     const newDeviceBlock = newDevice.block;
 
     const unverifiedDeviceCreation = ((userEntryFromBlock(newDeviceBlock) as any) as DeviceCreationEntry);
@@ -246,7 +246,7 @@ class TestGenerator {
 
   makeDeviceRevocation = (parentDevice: TestDeviceCreation, deviceIdToRevoke: Uint8Array): TestDeviceRevocation => {
     const refreshedDevices = this._testUserToUser(parentDevice.testUser).devices;
-    const { payload, nature } = makeDeviceRevocation(refreshedDevices, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1], deviceIdToRevoke);
+    const { payload, nature } = makeDeviceRevocation(refreshedDevices, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1]!, deviceIdToRevoke);
 
     this._trustchainIndex += 1;
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
@@ -262,19 +262,16 @@ class TestGenerator {
       userKeys: [...parentDevice.testUser.userKeys],
     };
 
-    // $FlowIgnore unverifiedDeviceRevocation.user_keys is not null
-    const keyForParentDevice = unverifiedDeviceRevocation.user_keys.private_keys.find(key => utils.equalArray(key.recipient, parentDevice.testDevice.id));
+    const keyForParentDevice = unverifiedDeviceRevocation.user_keys!.private_keys.find(key => utils.equalArray(key.recipient, parentDevice.testDevice.id));
 
     if (keyForParentDevice) {
       testUser.userKeys.push({
-        // $FlowIgnore unverifiedDeviceRevocation.user_keys is not null
-        publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
+        publicKey: unverifiedDeviceRevocation.user_keys!.public_encryption_key,
         privateKey: tcrypto.sealDecrypt(keyForParentDevice.key, parentDevice.testDevice.encryptionKeys),
       });
     } else {
       testUser.userKeys.push({
-        // $FlowIgnore unverifiedDeviceRevocation.user_keys is not null
-        publicKey: unverifiedDeviceRevocation.user_keys.public_encryption_key,
+        publicKey: unverifiedDeviceRevocation.user_keys!.public_encryption_key,
         privateKey: random(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
       });
     }
@@ -381,8 +378,8 @@ class TestGenerator {
   };
 
   makeUserGroupAdditionV2 = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
-    const signatureKeyPair = previousGroup.signatureKeyPairs ? previousGroup.signatureKeyPairs[0] : null;
-    const encryptionKeyPair = previousGroup.encryptionKeyPairs ? previousGroup.encryptionKeyPairs[0] : null;
+    const signatureKeyPair = 'signatureKeyPairs' in previousGroup ? previousGroup.signatureKeyPairs[0] : null;
+    const encryptionKeyPair = 'encryptionKeyPairs' in previousGroup ? previousGroup.encryptionKeyPairs[0] : null;
     if (!signatureKeyPair || !encryptionKeyPair) {
       throw new Error('This group has no key pairs!');
     }
@@ -410,8 +407,8 @@ class TestGenerator {
   };
 
   makeUserGroupAdditionV3 = (parentDevice: TestDeviceCreation, previousGroup: Group, newMembers: Array<User>, provisionalUsers: Array<PublicProvisionalUser> = []): TestUserGroup => {
-    const signatureKeyPair = previousGroup.signatureKeyPairs ? previousGroup.signatureKeyPairs[0] : null;
-    const encryptionKeyPair = previousGroup.encryptionKeyPairs ? previousGroup.encryptionKeyPairs[0] : null;
+    const signatureKeyPair = 'signatureKeyPairs' in previousGroup ? previousGroup.signatureKeyPairs[0] : null;
+    const encryptionKeyPair = 'encryptionKeyPairs' in previousGroup ? previousGroup.encryptionKeyPairs[0] : null;
 
     if (!signatureKeyPair || !encryptionKeyPair) {
       throw new Error('This group has no key pairs!');

@@ -6,9 +6,9 @@ import { Lock } from '../lock';
 describe('Lock', () => {
   const caller = 'caller one';
   const caller2 = 'some other function';
-  let deadCallGenerator;
-  let resolvedCallGenerator;
-  let resolvers;
+  let deadCallGenerator: () => Promise<void>;
+  let resolvedCallGenerator: () => Promise<void>;
+  let resolvers: (() => void)[];
   let lock: Lock;
 
   beforeEach(() => {
@@ -37,7 +37,7 @@ describe('Lock', () => {
     });
 
     it('set the _caller attribute', async () => {
-      await expect(lock.lock(caller, () => new Promise(resolve => {
+      await expect(lock.lock(caller, () => new Promise<void>(resolve => {
         expect(lock.owner).to.eq(caller);
         resolve();
       }))).to.not.be.rejected;

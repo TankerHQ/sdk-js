@@ -11,17 +11,17 @@ describe('utils (core)', () => {
   //       so we just need to check that InvalidArgument is thrown when needed.
   describe('argument checking for utils from @tanker/crypto', () => {
     it('should throw when toBase64 is given an invalid type', () => {
-      // $FlowExpectedError
+      // @ts-expect-error
       notUint8ArrayTypes.forEach((v, i) => expect(() => toBase64(v), `#${i}`).to.throw(InvalidArgument));
     });
 
     it('should throw when fromBase64 is given an invalid type', () => {
-      // $FlowExpectedError
+      // @ts-expect-error
       notStringTypes.forEach((v, i) => expect(() => fromBase64(v), `#${i}`).to.throw(InvalidArgument));
     });
 
     it('should throw when prehashPassword is given an invalid type', async () => {
-      // $FlowExpectedError
+      // @ts-expect-error
       await Promise.all(notStringTypes.map((v, i) => expect(prehashPassword(v), `#${i}`).to.be.rejectedWith(InvalidArgument)));
     });
   });
