@@ -7,16 +7,15 @@ import { expect, silencer } from '@tanker/test-utils';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
-
 import type { TankerCoreOptions } from '../Tanker';
 import type { EmailVerification, RemoteVerification } from '../LocalUser/types';
 import type { SharingOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {
-  let trustchainKeyPair;
-  let appId;
-  let userId;
-  let statuses;
+  let trustchainKeyPair: tcrypto.SodiumKeyPair;
+  let appId: Uint8Array;
+  let userId: b64string;
+  let statuses: typeof Tanker.statuses;
 
   const makeTestTankerOptions = () => ({
     appId: utils.toBase64(appId),
@@ -86,9 +85,9 @@ describe('Tanker', () => {
     });
 
     it('should throw when using optionsWithDefaults with bad arguments', () => {
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => optionsWithDefaults('not an object', { a: 1 })).to.throw(InvalidArgument);
-      // $FlowExpectedError
+      // @ts-expect-error
       expect(() => optionsWithDefaults({ a: 1 }, 'not an object')).to.throw(InvalidArgument);
     });
   });
@@ -131,8 +130,8 @@ describe('Tanker', () => {
   });
 
   describe('without a session', () => {
-    let tanker;
-    let options;
+    let tanker: Tanker;
+    let options: TankerCoreOptions;
 
     beforeEach(async () => {
       options = makeTestTankerOptions();
@@ -207,7 +206,7 @@ describe('Tanker', () => {
   });
 
   describe('with a session', () => {
-    let tanker;
+    let tanker: Tanker;
 
     before(() => {
       tanker = new Tanker(makeTestTankerOptions());
@@ -221,8 +220,7 @@ describe('Tanker', () => {
     });
 
     describe('when identity registration is needed', () => {
-      // $FlowExpectedError
-      beforeEach(() => { tanker._session.status = statuses.IDENTITY_REGISTRATION_NEEDED; }); // eslint-disable-line no-underscore-dangle
+      beforeEach(() => { tanker._session!.status = statuses.IDENTITY_REGISTRATION_NEEDED; }); // eslint-disable-line no-underscore-dangle
 
       it('registering identity should throw if invalid argument given', async () => {
         for (let i = 0; i < badVerifications.length; i++) {
@@ -233,8 +231,7 @@ describe('Tanker', () => {
     });
 
     describe('when identity verification is needed', () => {
-      // $FlowExpectedError
-      beforeEach(() => { tanker._session.status = statuses.IDENTITY_VERIFICATION_NEEDED; }); // eslint-disable-line no-underscore-dangle
+      beforeEach(() => { tanker._session!.status = statuses.IDENTITY_VERIFICATION_NEEDED; }); // eslint-disable-line no-underscore-dangle
 
       it('verifying identity should throw if invalid argument given', async () => {
         for (let i = 0; i < badVerifications.length; i++) {
