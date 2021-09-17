@@ -21,7 +21,7 @@
     "build:filekit": "rollup --config packages/filekit/config/rollup.js",
     "build:global-this": "rm -rf packages/global-this/dist && tsc --build packages/global-this/config/tsconfig.json",
     "build:http-utils": "rm -rf packages/http-utils/dist && tsc --build packages/http-utils/config/tsconfig.json",
-    "build:streams": "rm -rf packages/stream/dist && tsc --build packages/stream/config/tsconfig.json",
+    "build:streams": "rm -rf packages/stream/*/dist && tsc --build packages/stream/config/tsconfig.json",
     "build:test-utils": "rm -rf packages/test-utils/dist && tsc --build packages/test-utils/config/tsconfig.json",
     "build:types": "rm -rf packages/types/dist && tsc --build packages/types/config/tsconfig.json",
     "build:verification-ui-base": "rollup --config packages/verification-ui/config/rollup.js",
