@@ -196,7 +196,7 @@ bridge/compat:
     project: TankerHQ/compatibility-tests
     strategy: depend
 
-.check/e2e:
+check/e2e:
   extends:
     - .rules/mr/manual/nightly/auto
   stage: check
