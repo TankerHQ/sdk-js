@@ -161,6 +161,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
       '@tanker/datastore-pouchdb-memory': path.resolve(__dirname, '../packages/datastore/pouchdb-memory/src/index.ts'),
       '@tanker/datastore-pouchdb-node': path.resolve(__dirname, '../packages/datastore/pouchdb-node/src/index.ts'),
       '@tanker/core': path.resolve(__dirname, '../packages/core/src/index.ts'),
+      '@tanker/client-browser': path.resolve(__dirname, '../packages/client-browser/src/index.ts'),
     },
     extensions: ['.ts', '.js'],
   };

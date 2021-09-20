@@ -13,6 +13,7 @@
     { "path": "./datastore/config/" },
     { "path": "./core/config/" },
     { "path": "./client-node/config/"},
+    { "path": "./client-browser/config/"},
   ],
   "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
 }
