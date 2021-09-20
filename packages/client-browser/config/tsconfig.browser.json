@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../dist/browser",
+    // Necessary target for IE11
+    "target": "ES5",
+    "module": "commonjs",
+    "importHelpers": true,
+    "downlevelIteration": true,
+  },
+  "include": [
+    "../src/**/*",
+  ],
+}
