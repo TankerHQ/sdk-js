@@ -22,8 +22,15 @@
     "client-side",
     "security"
   ],
-  "main": "src/index.js",
-  "module": "es.js",
+  "main": "dist/node/index.js",
+  "module": "dist/es/index.js",
+  "types": "dist/types/index.d.js",
+  "files": [
+    "dist/",
+    "README.md",
+    "package.json",
+    "LICENSE"
+  ],
   "dependencies": {
     "@tanker/core": "0.0.1",
     "@tanker/datastore-pouchdb-node": "0.0.1"

@@ -4,11 +4,11 @@
   "license": "Apache-2.0",
   "scripts": {
     "build:all": "yarn build:test-utils && yarn build:global-this && yarn build:crypto && yarn build:emails && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:types && yarn build:streams && yarn build:core && yarn build:datastores && yarn build:client-browser && yarn build:client-node && yarn build:verification-ui && yarn build:fake-authentication && yarn build:filekit",
-    "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:crypto && yarn build:types && yarn build:streams && yarn build:datastores && yarn build:core && yarn build:fake-authentication",
+    "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:crypto && yarn build:types && yarn build:streams && yarn build:datastores && yarn build:core && yarn build:client-node && yarn build:fake-authentication",
     "build:client-browser-base": "rollup --config packages/client-browser/config/rollup.js",
     "build:client-browser-umd": "webpack --config packages/client-browser/config/webpack.config.js",
     "build:client-browser": "yarn build:client-browser-base && yarn build:client-browser-umd",
-    "build:client-node": "rollup --config packages/client-node/config/rollup.js",
+    "build:client-node": "rm -rf packages/client-node/dist && tsc --build packages/client-node/config/tsconfig.json",
     "build:core": "rm -rf packages/core/dist && tsc --build packages/core/config/tsconfig.json",
     "build:crypto": "rm -rf packages/crypto/dist && tsc --build packages/crypto/config/tsconfig.json",
     "build:datastores": "rm -rf packages/datastore/*/dist && tsc --build packages/datastore/config/tsconfig.json",
