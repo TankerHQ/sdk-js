@@ -225,8 +225,8 @@ export class Tanker extends EventEmitter {
     return utils.toBase64(deviceId);
   }
 
-  _lockCall<T>(name: string, f: (...args: any[]) => Promise<T>): (...args: any[]) => Promise<T> {
-    return async (...args: any[]) => this._localDeviceLock.lock(name, () => f(...args));
+  _lockCall<T, F extends (...args: any[]) => Promise<T>>(name: string, f: F): (...args: Parameters<F>) => ReturnType<F> {
+    return (...args: Parameters<F>) => this._localDeviceLock.lock(name, () => f(...args)) as ReturnType<F>;
   }
 
   start = this._lockCall('start', async (identityB64: b64string) => {
