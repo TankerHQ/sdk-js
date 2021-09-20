@@ -22,7 +22,16 @@
     "client-side",
     "security"
   ],
-  "main": "src/index.js",
+  "main": "dist/browser/index.js",
+  "module": "dist/es/index.js",
+  "browser": "dist/browser/index.js",
+  "types": "dist/types/index.d.js",
+  "files": [
+    "dist/",
+    "README.md",
+    "package.json",
+    "LICENSE"
+  ],
   "dependencies": {
     "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/core": "0.0.1",
