@@ -1,4 +1,3 @@
-// @flow
 import type { TankerOptions } from '@tanker/core';
 import { Tanker as TankerCore, optionsWithDefaults } from '@tanker/core';
 import PouchDB from '@tanker/datastore-pouchdb-node';
