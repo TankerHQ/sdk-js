@@ -51,7 +51,7 @@ configs = [
             "@tanker/datastore-pouchdb-node",
         ],
     },
-    {"build": "core", "publish": ["@tanker/core"]},
+    {"build": "core", "typescript": True, "publish": ["@tanker/core"]},
     {"build": "client-browser", "publish": ["@tanker/client-browser"]},
     {"build": "client-node", "publish": ["@tanker/client-node"]},
     {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
