@@ -1,4 +1,3 @@
-//@flow
 import FileKit from './FileKit';
 
 export { FileKit };
