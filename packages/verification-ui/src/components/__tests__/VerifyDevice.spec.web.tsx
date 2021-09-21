@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import { shallow } from 'enzyme';
 import { expect, sinon } from '@tanker/test-utils';
@@ -13,7 +12,7 @@ const appId = '/+A=';
 const b64UrlUnpaddedAppId = '_-A';
 
 const defaultProps = {
-  fetch: (uri: string, options: { method: string, body: string }) => {}, // eslint-disable-line no-unused-vars
+  fetch: (uri: string, options: { method: string; body: string; }) => {}, // eslint-disable-line no-unused-vars
   appId,
   email: 'a@a.aa',
   url: 'https://thisisatest.test',
@@ -21,11 +20,11 @@ const defaultProps = {
   context: { state: contextHolder.state, actions: contextHolder.actions },
 };
 
-const makeFakeFetch = (status: number, body: Object) => {
+const makeFakeFetch = (status: number, body: Record<string, any>) => {
   let callCount = 0;
   let callArgs;
 
-  const fakeFetch = (uri: string, options: { method: string, body: string }): Object => {
+  const fakeFetch = (uri: string, options: { method: string; body: string; }): Record<string, any> => {
     callCount += 1;
     callArgs = { uri, options };
     return { status, json: () => body };

@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import styled from 'styled-components';
 
@@ -30,7 +29,7 @@ const Done = styled(Button)`
   width: 100px;
 `;
 
-const DeviceVerified = ({ exit }: { exit: () => void }) => (
+const DeviceVerified = ({ exit }: { exit: () => void; }) => (
   <>
     <BigCheck width={30} color={colors.green} />
     <Title>You’re all set.</Title>

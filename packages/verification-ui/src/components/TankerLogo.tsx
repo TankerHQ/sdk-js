@@ -1,7 +1,6 @@
-// @flow
 import React from 'react';
 
-type Props = { color: string, width: number };
+type Props = { color: string; width: number; };
 const TankerLogo = ({ color, width, ...props }: Props) => (
   <svg {...props} viewBox="0 0 236 245.27" width={width} height={1.039266949 * width} aria-hidden="true" tabIndex="0" role="img">
     <path

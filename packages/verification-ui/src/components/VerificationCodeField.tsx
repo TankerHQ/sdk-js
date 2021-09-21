@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import styled from 'styled-components';
 import { transparentize } from 'polished';
@@ -95,7 +94,7 @@ const makeOnKeyDown = (onChange, previousValue) => (
 const padMask = '        ';
 const pad = (string: string) => (string.length >= padMask.length ? string : string + padMask.slice(string.length));
 
-type Props = { id: string, value: string, onChange?: (nextValue: string, prevValue: string) => void };
+type Props = { id: string; value: string; onChange?: (nextValue: string, prevValue: string) => void; };
 const VerificationCodeField = ({ id, value, onChange, ...props }: Props) => (
   <Rectangles {...props}>
     <NumberField
