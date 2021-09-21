@@ -1,4 +1,3 @@
-// @flow
 import DumbContext from './DumbContext';
 
 /* eslint-disable no-console */

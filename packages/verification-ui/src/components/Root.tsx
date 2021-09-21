@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import { createGlobalStyle } from 'styled-components';
 import { Normalize } from 'styled-normalize';
@@ -19,8 +18,8 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-type Props = { appId: string, url: string, email: string, check: string => Promise<void>, exit: () => void };
-type State = { contextHolder: * };
+type Props = { appId: string; url: string; email: string; check: (arg0: string) => Promise<void>; exit: () => void; };
+type State = { contextHolder: any; };
 class Root extends React.Component<Props, State> {
   state = { contextHolder: null };
 

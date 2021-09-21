@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import ReactDOM from 'react-dom';
 import type { Tanker, b64string, EmailVerification } from '@tanker/client-browser';
@@ -20,27 +19,27 @@ export class VerificationUI {
     this._container = window.document.createElement('div');
     this._container.className = 'tanker-verification-ui';
     window.document.body.appendChild(this._container);
-  }
+  };
 
-  _mountAndWrap = (email: string, func: EmailVerification => Promise<any>): Promise<void> => (
+  _mountAndWrap = (email: string, func: (arg0: EmailVerification) => Promise<any>): Promise<void> => (
     new Promise(resolve => {
       this._mount(
         email,
         verificationCode => func({ email, verificationCode }),
-        resolve
+        resolve,
       );
     })
-  )
+  );
 
-  _mount = async (email: string, check: string => Promise<void>, exit: () => void) => {
+  _mount = async (email: string, check: (arg0: string) => Promise<void>, exit: () => void) => {
     await this._domReady;
 
     ReactDOM.render(<Root appId={this._tanker.appId} url={this._tanker.options.url || 'https://api.tanker.io'} email={email} check={check} exit={exit} />, this._container);
-  }
+  };
 
   _unmount = () => {
     ReactDOM.unmountComponentAtNode(this._container);
-  }
+  };
 
   start = async (email: string, identity: b64string, provisionalIdentity?: b64string) => {
     const { statuses } = this._tanker.constructor;
@@ -58,7 +57,7 @@ export class VerificationUI {
     }
 
     this._unmount();
-  }
+  };
 }
 
 export default VerificationUI;

@@ -1,7 +1,6 @@
-// @flow
 import React from 'react';
 
-const Check = ({ color, width, ...props }: { color: string, width: number }) => (
+const Check = ({ color, width, ...props }: { color: string; width: number; }) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width={width} height={width} viewBox="0 0 30 30" version="1.1" aria-hidden>
     <path
       fill={color}
