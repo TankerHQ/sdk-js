@@ -10,7 +10,7 @@ const webpackBaseConfig = makeBaseConfig({ mode: 'development', target: 'web', r
 module.exports = {
   ...webpackBaseConfig,
 
-  entry: [path.resolve(__dirname, '..', 'example', 'index.js')],
+  entry: [path.resolve(__dirname, '..', 'example', 'index.ts')],
 
   plugins: [
     ...webpackBaseConfig.plugins,
