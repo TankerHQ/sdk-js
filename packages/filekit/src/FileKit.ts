@@ -1,5 +1,5 @@
-// @flow
-import { Tanker, errors, type TankerOptions } from '@tanker/client-browser';
+import type { TankerOptions } from '@tanker/client-browser';
+import { Tanker, errors } from '@tanker/client-browser';
 import VerificationUI from '@tanker/verification-ui';
 import saveToDisk from 'file-saver';
 
@@ -12,13 +12,13 @@ export default class FileKit {
     this.verificationUI = new VerificationUI(this.tanker);
   }
 
-  async start(email: string, privateIdentity: { identity: string, provisionalIdentity?: string }) {
+  async start(email: string, privateIdentity: { identity: string; provisionalIdentity?: string; }) {
     const { identity, provisionalIdentity } = privateIdentity;
     return this.verificationUI.start(email, identity, provisionalIdentity);
   }
 
   /* one time only session, we register a verificationKey that we discard */
-  async startDisposableSession(privateIdentity: { identity: string }) {
+  async startDisposableSession(privateIdentity: { identity: string; }) {
     const { identity } = privateIdentity;
     const status = await this.tanker.start(identity);
 
