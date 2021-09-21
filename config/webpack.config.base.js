@@ -31,10 +31,20 @@ const getBabelLoaders = (env) => {
     declarationDir: undefined,
     importHelpers: true,
     downlevelIteration: true,
+    jsx: env.react ? 'react' : undefined,
     rootDir: path.resolve(__dirname, '..'),
   };
 
   return [
+    {
+      test: /\.tsx$/,
+      loader: 'ts-loader',
+      options: {
+        configFile: path.resolve(__dirname, env.tsconfig || 'tsconfig.tests.json'),
+        compilerOptions: tsLoaderCompilerOptions,
+      },
+      exclude: /node_modules/,
+    },
     {
       test: /\.ts$/,
       loader: 'ts-loader',
@@ -141,6 +151,11 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
     );
   }
 
+  const extensions = ['.ts', '.js'];
+  if (react) {
+    extensions.push('.tsx');
+  }
+
   base.resolve = {
     ...base.resolve,
     alias: {
@@ -164,8 +179,9 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
       '@tanker/datastore-pouchdb-node': path.resolve(__dirname, '../packages/datastore/pouchdb-node/src/index.ts'),
       '@tanker/core': path.resolve(__dirname, '../packages/core/src/index.ts'),
       '@tanker/client-browser': path.resolve(__dirname, '../packages/client-browser/src/index.ts'),
+      '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
     },
-    extensions: ['.ts', '.js'],
+    extensions
   };
 
   return base;
