@@ -1,7 +1,8 @@
 import type { TankerOptions } from '@tanker/client-browser';
 import { Tanker, errors } from '@tanker/client-browser';
 import VerificationUI from '@tanker/verification-ui';
-import saveToDisk from 'file-saver';
+import type { PropType } from '@tanker/types';
+import { saveAs as saveToDisk } from 'file-saver';
 
 export default class FileKit {
   tanker: Tanker;
@@ -46,20 +47,20 @@ export default class FileKit {
     return this.tanker.stop();
   }
 
-  async upload(...args: any) {
+  async upload(...args: Parameters<PropType<Tanker, 'upload'>>) {
     return this.tanker.upload(...args);
   }
 
-  async share(...args: any) {
+  async share(...args: Parameters<PropType<Tanker, 'share'>>) {
     return this.tanker.share(...args);
   }
 
-  async download(...args: any) {
+  async download(...args: Parameters<PropType<Tanker, 'download'>>) {
     return this.tanker.download(...args);
   }
 
-  async downloadToDisk(...args: any) {
+  async downloadToDisk(...args: Parameters<PropType<Tanker, 'download'>>) {
     const file = await this.download(...args);
-    saveToDisk(file);
+    saveToDisk(file as string | Blob);
   }
 }
