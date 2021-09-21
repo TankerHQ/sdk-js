@@ -1,4 +1,3 @@
-// @flow
 import * as React from 'react';
 import styled from 'styled-components';
 import { transparentize } from 'polished';
@@ -24,6 +23,6 @@ const Element = styled.div`
 
 const enforceTarget = cb => event => event.target.classList.contains(Element.styledComponentId) && cb && cb(event);
 
-const Overlay = ({ onClick, ...props }: { onClick?: Event => any }) => <Element {...props} onClick={enforceTarget(onClick)} />;
+const Overlay = ({ onClick, ...props }: { onClick?: (arg0: Event) => any; }) => <Element {...props} onClick={enforceTarget(onClick)} />;
 
 export default Overlay;

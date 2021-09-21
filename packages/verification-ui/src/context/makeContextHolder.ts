@@ -1,34 +1,33 @@
-// @flow
 import { prefixActions } from 'dumb-reducer';
 
 import DumbContext from './DumbContext';
 import registerLogger from './logger';
 
-declare var module: { hot: bool };
+declare let module: { hot: boolean; };
 
-export type State = $Exact<{
-  verificationCode: string,
-  sendAttempts: number,
-  sendIsFetching: bool,
-  sendError: ?Error,
-  sendSuccess: bool,
-  verifyIsFetching: bool,
-  verifyError: ?Error,
-  verifySuccess: bool,
-}>;
+export type State = {
+  verificationCode: string;
+  sendAttempts: number;
+  sendIsFetching: boolean;
+  sendError: Error | null | undefined;
+  sendSuccess: boolean;
+  verifyIsFetching: boolean;
+  verifyError: Error | null | undefined;
+  verifySuccess: boolean;
+};
 
-export type BoundActions = $Exact<{
-  setVerificationCode: string => void,
-  reset: () => void,
-  sendStart: number => void,
-  sendError: Error => void,
-  sendSuccess: () => void,
-  verifyStart: () => void,
-  verifyError: Error => void,
-  verifySuccess: () => void,
-}>;
+export type BoundActions = {
+  setVerificationCode: (arg0: string) => void;
+  reset: () => void;
+  sendStart: (arg0: number) => void;
+  sendError: (arg0: Error) => void;
+  sendSuccess: () => void;
+  verifyStart: () => void;
+  verifyError: (arg0: Error) => void;
+  verifySuccess: () => void;
+};
 
-export type Context = $Exact<{ state: State, actions: BoundActions }>;
+export type Context = { state: State; actions: BoundActions; };
 
 export type ContextHolder = DumbContext<State, BoundActions>;
 
@@ -59,7 +58,7 @@ const actions = prefixActions(
   },
 );
 
-function makeContextHolder(noLogs?: bool): ContextHolder {
+function makeContextHolder(noLogs?: boolean): ContextHolder {
   const contextHolder = new DumbContext<State, BoundActions>(prefix, initialState, actions);
   if (!noLogs && process.env.NODE_ENV === 'development' && module.hot)
     registerLogger(contextHolder);

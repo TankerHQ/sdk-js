@@ -1,5 +1,4 @@
-// @flow
-export default (): Promise<void> => new Promise(resolve => {
+export default ((): Promise<void> => new Promise(resolve => {
   // See: https://developer.mozilla.org/en-US/docs/Web/API/Document/readyState#Values
   if (document.readyState !== 'loading') {
     resolve();
@@ -18,4 +17,4 @@ export default (): Promise<void> => new Promise(resolve => {
 
   // The page is fully loaded. Works everywhere.
   window.addEventListener('load', completed);
-});
+}));

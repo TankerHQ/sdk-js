@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import styled from 'styled-components';
 import { Motion, spring } from 'react-motion';
@@ -43,7 +42,7 @@ const computeStyle = ({ opacity, scale, offset }) => ({
 
 const springOptions = { stiffness: 200, damping: 24 };
 
-export const Modal = ({ onClose, ...props }: { onClose?: Event => any }) => (
+export const Modal = ({ onClose, ...props }: { onClose?: (arg0: Event) => any; }) => (
   <>
     <Overlay onClick={onClose} aria-hidden />
     <Motion

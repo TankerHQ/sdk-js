@@ -1,11 +1,10 @@
-// @flow
 import React from 'react';
 import styled from 'styled-components';
 import { transparentize } from 'polished';
 import { ExpiredVerification, InvalidVerification, TooManyAttempts } from '@tanker/errors';
 
 import colors from './colors';
-import { type Context } from '../context/makeContextHolder';
+import type { Context } from '../context/makeContextHolder';
 import Button from './Button';
 import Spinner from './Spinner';
 
@@ -77,7 +76,7 @@ const findError = error => {
 };
 const getVerificationError = error => findError(error) || 'An unknown error occurred while checking the code.';
 
-type Props = { fetch: (...Array<any>) => any, appId: string, url: string, email: string, check: string => Promise<void>, context: Context };
+type Props = { fetch: (...args: Array<any>) => any; appId: string; url: string; email: string; check: (arg0: string) => Promise<void>; context: Context; };
 class VerifyDevice extends React.Component<Props> {
   componentDidMount() {
     this.sendVerificationEmail();
@@ -95,7 +94,7 @@ class VerifyDevice extends React.Component<Props> {
         method: 'POST',
         headers: {
           Accept: 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ to_email: email }),
       });
