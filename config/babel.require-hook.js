@@ -29,6 +29,7 @@ babelConfig.plugins.push([
       '@tanker/client-node': path.resolve(__dirname, '../packages/client-node/src/index.ts'),
       '@tanker/client-browser': path.resolve(__dirname, '../packages/client-browser/src/index.ts'),
       '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
+      '@tanker/filekit': path.resolve(__dirname, '../packages/filekit/src/index.ts'),
     }
   }
 ]);
