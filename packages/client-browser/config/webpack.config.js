@@ -3,7 +3,7 @@ const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const { makeBaseConfig } = require('../../../config/webpack.config.base');
 
-const webpackBaseConfig = makeBaseConfig({ mode: 'production', target: 'web' });
+const webpackBaseConfig = makeBaseConfig({ mode: 'production', target: 'web', tsconfig: path.resolve(__dirname, 'tsconfig.browser.json') });
 
 module.exports = {
   ...webpackBaseConfig,
