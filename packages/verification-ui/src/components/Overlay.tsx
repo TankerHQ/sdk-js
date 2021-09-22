@@ -21,8 +21,8 @@ const Element = styled.div`
   z-index: 1337;
 `;
 
-const enforceTarget = cb => event => event.target.classList.contains(Element.styledComponentId) && cb && cb(event);
+const enforceTarget = (cb?: React.MouseEventHandler<HTMLDivElement>) => (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => (event.target as HTMLDivElement).classList.contains(Element['styledComponentId'] as any) && cb && cb(event);
 
-const Overlay = ({ onClick, ...props }: { onClick?: (arg0: Event) => any; }) => <Element {...props} onClick={enforceTarget(onClick)} />;
+const Overlay = ({ onClick, ...props }: { onClick?: React.MouseEventHandler<HTMLDivElement>; }) => <Element {...props} onClick={enforceTarget(onClick)} />;
 
 export default Overlay;

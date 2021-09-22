@@ -17,13 +17,13 @@ export type State = {
 };
 
 export type BoundActions = {
-  setVerificationCode: (arg0: string) => void;
+  setVerificationCode: (verificationCode: string) => void;
   reset: () => void;
-  sendStart: (arg0: number) => void;
-  sendError: (arg0: Error) => void;
+  sendStart: (sendAttempts: number) => void;
+  sendError: (sendError: Error) => void;
   sendSuccess: () => void;
   verifyStart: () => void;
-  verifyError: (arg0: Error) => void;
+  verifyError: (verifyError: Error) => void;
   verifySuccess: () => void;
 };
 
@@ -60,7 +60,7 @@ const actions = prefixActions(
 
 function makeContextHolder(noLogs?: boolean): ContextHolder {
   const contextHolder = new DumbContext<State, BoundActions>(prefix, initialState, actions);
-  if (!noLogs && process.env.NODE_ENV === 'development' && module.hot)
+  if (!noLogs && process.env['NODE_ENV'] === 'development' && module.hot)
     registerLogger(contextHolder);
 
   return contextHolder;

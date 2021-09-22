@@ -3,7 +3,9 @@ import { createGlobalStyle } from 'styled-components';
 import { Normalize } from 'styled-normalize';
 
 import makeContextHolder from '../context/makeContextHolder';
+import type { ContextHolder, Context } from '../context/makeContextHolder';
 import Tanker from './Tanker';
+import type { TankerProps } from './Tanker';
 
 const GlobalStyle = createGlobalStyle`
   .tanker-verification-ui *,
@@ -18,18 +20,22 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-type Props = { appId: string; url: string; email: string; check: (arg0: string) => Promise<void>; exit: () => void; };
-type State = { contextHolder: any; };
-class Root extends React.Component<Props, State> {
-  state = { contextHolder: null };
+type RootProps = Omit<TankerProps, 'context'>;
+type State = { contextHolder: ContextHolder | null; };
+class Root extends React.Component<RootProps, State> {
+  constructor(props: RootProps | Readonly<RootProps>) {
+    super(props);
 
-  componentDidMount() {
+    this.state = { contextHolder: null };
+  }
+
+  override componentDidMount() {
     const contextHolder = makeContextHolder();
     contextHolder.on('update', () => this.forceUpdate());
     this.setState({ contextHolder });
   }
 
-  render() {
+  override render() {
     const contextHolder = this.state.contextHolder;
 
     if (!contextHolder)
@@ -41,7 +47,7 @@ class Root extends React.Component<Props, State> {
       <Provider value={{ state: contextHolder.state, actions: contextHolder.actions }}>
         <Normalize />
         <GlobalStyle />
-        <Consumer>{value => <Tanker {...this.props} context={value} />}</Consumer>
+        <Consumer>{(value: Context) => <Tanker {...this.props} context={value} />}</Consumer>
       </Provider>
     );
   }

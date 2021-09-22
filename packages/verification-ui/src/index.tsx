@@ -7,7 +7,7 @@ import domReady from './domReady';
 
 export class VerificationUI {
   _tanker: Tanker;
-  _container: Element;
+  _container!: HTMLDivElement;
   _domReady: Promise<void>;
 
   constructor(tanker: Tanker) {
@@ -21,7 +21,7 @@ export class VerificationUI {
     window.document.body.appendChild(this._container);
   };
 
-  _mountAndWrap = (email: string, func: (arg0: EmailVerification) => Promise<any>): Promise<void> => (
+  _mountAndWrap = (email: string, func: (verification: EmailVerification) => Promise<any>): Promise<void> => (
     new Promise(resolve => {
       this._mount(
         email,
@@ -31,7 +31,7 @@ export class VerificationUI {
     })
   );
 
-  _mount = async (email: string, check: (arg0: string) => Promise<void>, exit: () => void) => {
+  _mount = async (email: string, check: (verificationCode: string) => Promise<void>, exit: () => void) => {
     await this._domReady;
 
     ReactDOM.render(<Root appId={this._tanker.appId} url={this._tanker.options.url || 'https://api.tanker.io'} email={email} check={check} exit={exit} />, this._container);
@@ -42,6 +42,7 @@ export class VerificationUI {
   };
 
   start = async (email: string, identity: b64string, provisionalIdentity?: b64string) => {
+    // @ts-expect-error we use the static statuses from the Tanker object passed to `VerificationUI.constructor()`
     const { statuses } = this._tanker.constructor;
     const status = await this._tanker.start(identity);
 
