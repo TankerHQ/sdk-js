@@ -88,8 +88,8 @@ const Panel = styled.div`
   & > * { max-width: 100%; }
 `;
 
-type StaticStyle = { opacity: number; x: number; }
-type TransitionStyle = { opacity: OpaqueConfig; x: OpaqueConfig; }
+type StaticStyle = { opacity: number; x: number; };
+type TransitionStyle = { opacity: OpaqueConfig; x: OpaqueConfig; };
 const willEnter = (): StaticStyle => ({ opacity: 0, x: 300 });
 const willLeave = (): TransitionStyle => ({ opacity: spring(0, { stiffness: 300, damping: 25 }), x: spring(-300) });
 const computeStyles = (values: StaticStyle) => ({ opacity: values.opacity, transform: `translate3d(${values.x}px, 0, 0)` });

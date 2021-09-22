@@ -3,6 +3,7 @@ import { darken } from 'polished';
 
 import colors from './colors';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const Button = styled.button<{ blue?: boolean; round?: boolean; }>`
   display: flex;
   align-items: center;

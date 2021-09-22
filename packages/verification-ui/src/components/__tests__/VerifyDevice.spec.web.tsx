@@ -110,7 +110,7 @@ describe('<VerifyDevice />', () => {
   context('(re)sending the verification email', () => {
     let assert: () => void = () => {};
     const makeFakeFetch = (status: number, body: Record<string, any>) => {
-      const fakeFetch = sinon.fake(() => ({status, json: () => body}));
+      const fakeFetch = sinon.fake(() => ({ status, json: () => body }));
 
       assert = () => {
         expect(fakeFetch.callCount).to.equal(1);
