@@ -155,6 +155,7 @@ def run_linters() -> None:
 
 
 def run_tests_in_node() -> None:
+    tankerci.js.run_yarn("exec", "--", "node", "--version")
     tankerci.js.run_yarn("coverage")
 
 
