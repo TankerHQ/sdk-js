@@ -1,5 +1,6 @@
 {
   "name": "@tanker/datastore-dexie-memory",
+  "private": true,
   "version": "0.0.1",
   "description": "Tanker SDK (datastore dexie memory)",
   "author": "Tanker Team",
