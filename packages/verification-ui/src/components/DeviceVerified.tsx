@@ -29,7 +29,8 @@ const Done = styled(Button)`
   width: 100px;
 `;
 
-const DeviceVerified = ({ exit }: { exit: () => void; }) => (
+export type DeviceVerifiedProps = { exit: () => void; };
+const DeviceVerified = ({ exit }: DeviceVerifiedProps) => (
   <>
     <BigCheck width={30} color={colors.green} />
     <Title>You’re all set.</Title>
