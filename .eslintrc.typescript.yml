@@ -6,14 +6,15 @@ env:
   webextensions: true
 
 extends:
-  - "airbnb-typescript/base"
+  - "airbnb-typescript"
 
 parser: "@typescript-eslint/parser"
 parserOptions:
   ecmaVersion: 2018
   project: # "@typescript-eslint/parser" does not understand project referencies
     - ./config/tsconfig.tests.json
-    - ./packages/*/**/tsconfig.browser.json
+    - ./packages/*/**/tsconfig.es.json
+    - ./packages/verification-ui/config/tsconfig.development.json
 
 plugins:
   - "@typescript-eslint"
@@ -89,6 +90,49 @@ rules:
 overrides:
   - files:
     - "*.test.ts"
-    - "*.spec.*.tsx?"
+    - "*.spec?(.*).ts"
     rules:
       '@typescript-eslint/no-unused-expressions': off
+  - files:
+    - "*.tsx"
+    rules:
+      react/jsx-props-no-spreading: off
+      react/require-default-props: off
+      "@typescript-eslint/naming-convention": # allow PascalCase for variable like (Container)
+        - error
+        - selector: variable
+          format:
+            - camelCase
+            - UPPER_CASE
+            - snake_case
+            - PascalCase
+        - selector: function
+          format:
+            - camelCase
+            - PascalCase
+          leadingUnderscore: allow
+        - selector: typeLike
+          format:
+            - PascalCase
+  - files:
+    - "*.spec.*.tsx"
+    rules:
+      react/jsx-props-no-spreading: off
+      react/require-default-props: off
+      '@typescript-eslint/no-unused-expressions': off
+      "@typescript-eslint/naming-convention": # allow PascalCase for variable like (Container)
+        - error
+        - selector: variable
+          format:
+            - camelCase
+            - UPPER_CASE
+            - snake_case
+            - PascalCase
+        - selector: function
+          format:
+            - camelCase
+            - PascalCase
+          leadingUnderscore: allow
+        - selector: typeLike
+          format:
+            - PascalCase

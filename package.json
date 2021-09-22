@@ -30,7 +30,7 @@
     "start:verification-ui": "webpack serve --hot --config packages/verification-ui/config/webpack.config.development.js",
     "lint:js": "eslint \"packages/**/*.js\"",
     "lint:ts": "eslint --no-eslintrc --config \".eslintrc.typescript.yml\"",
-    "lint:ts:all": "yarn lint:ts \"packages/**/*.ts\"",
+    "lint:ts:all": "yarn lint:ts \"packages/**/*.ts?(x)\"",
     "lint:compat": "yarn eslint --no-ignore --no-eslintrc --config .eslintrc.compat.yml",
     "lint:compat:all": "yarn lint:compat \"packages/**/dist/**/*.js\"",
     "lint:flow": "flow check",

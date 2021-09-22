@@ -12,6 +12,7 @@ parserOptions:
 plugins:
   - import
   - "@typescript-eslint"
+  - react
 
 settings:
   polyfills:
