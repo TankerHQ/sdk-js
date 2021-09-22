@@ -74,7 +74,7 @@ const NumberField = styled.input<{ position: number; hidden: boolean; }>`
   }
 `;
 
-type OnChange = (nextValue: string, prevValue: string) => void
+type OnChange = (nextValue: string, prevValue: string) => void;
 const makeOnChange = (onChange: OnChange | undefined, previousValue: string): React.ChangeEventHandler<HTMLInputElement> | undefined => (
   onChange && ((event: React.ChangeEvent<HTMLInputElement>) => {
     const cleanValue = event.target.value.replace(/\D/g, '');

@@ -36,7 +36,7 @@ class Root extends React.Component<RootProps, State> {
   }
 
   override render() {
-    const contextHolder = this.state.contextHolder;
+    const { contextHolder } = this.state;
 
     if (!contextHolder)
       return null;

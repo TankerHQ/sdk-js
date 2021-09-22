@@ -16,7 +16,7 @@ const bindActionCreators = <T extends Actions>(actionCreators: T, dispatch: (pay
   Object.keys(actionCreators).reduce((acc: BoundActions, key: string) => { acc[key] = bindActionCreator(actionCreators[key]!, dispatch); return acc; }, {})
 );
 
-class DumbContext<T extends Record<string, any>, U extends BoundActions> extends EventEmitter {
+export class DumbContext<T extends Record<string, any>, U extends BoundActions> extends EventEmitter {
   actions: U;
   context: React.Context<{ state: T; actions: U }>; // eslint-disable-line react/static-property-placement
   reducer: Reducer;

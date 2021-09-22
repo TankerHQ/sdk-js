@@ -3,6 +3,7 @@ import { transparentize } from 'polished';
 
 import colors from './colors';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const Error = styled.p`
   margin: 0 0 23px;
   color: ${transparentize(0.4, colors.red)};
