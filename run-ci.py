@@ -54,7 +54,7 @@ configs = [
     {"build": "core", "typescript": True, "publish": ["@tanker/core"]},
     {"build": "client-browser", "typescript": True, "publish": ["@tanker/client-browser"]},
     {"build": "client-node", "typescript": True, "publish": ["@tanker/client-node"]},
-    {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
+    {"build": "verification-ui", "typescript": True, "publish": ["@tanker/verification-ui"]},
     {"build": "fake-authentication", "typescript": True, "publish": ["@tanker/fake-authentication"]},
     {"build": "filekit", "publish": ["@tanker/filekit"]},
 ]
