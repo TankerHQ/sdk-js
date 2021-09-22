@@ -3,6 +3,7 @@ import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import type { Transform } from '@tanker/stream-base';
 
 import { random } from '../random';
+import { paddedFromClearSize, minimalPadding, Padding } from '../padding';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 import * as encryptorV1 from '../EncryptionFormats/v1';
@@ -10,6 +11,7 @@ import * as encryptorV2 from '../EncryptionFormats/v2';
 import * as encryptorV3 from '../EncryptionFormats/v3';
 import * as encryptorV4 from '../EncryptionFormats/v4';
 import * as encryptorV5 from '../EncryptionFormats/v5';
+import * as encryptorV6 from '../EncryptionFormats/v6';
 import type { Encryptor } from '../EncryptionFormats/types';
 import { EncryptionStream } from '../EncryptionFormats/EncryptionStream';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
@@ -186,6 +188,25 @@ describe('Simple Encryption', () => {
     ]),
   }];
 
+  const testVectorsV6 = [{
+    key: new Uint8Array([
+      0x56, 0x95, 0xa2, 0x36, 0x2b, 0x8b, 0x11, 0x92, 0xf9, 0x56, 0x0b, 0xcb,
+      0xf2, 0x07, 0x6a, 0x21, 0x03, 0x2c, 0x82, 0x3b, 0xbe, 0x21, 0x60, 0x2f,
+      0x64, 0xf9, 0xc2, 0x9f, 0xe5, 0xe5, 0x6d, 0x7f,
+    ]),
+    clearData: utils.fromString('this is very secret'),
+    encryptedData: new Uint8Array([
+      0x06, 0x46, 0xfd, 0x4a, 0xab, 0x34, 0x24, 0x3b, 0x97, 0x0e, 0x13, 0x90,
+      0x32, 0x88, 0x5c, 0xba, 0xc7, 0x82, 0x4d, 0xeb, 0xb0, 0x5b, 0xd2, 0x26,
+      0x6e, 0xc6, 0x7c, 0x05, 0xf0, 0xfc, 0x77, 0x95, 0x34, 0xa2, 0xfa, 0x7e,
+      0x6e, 0x36,
+    ]),
+    resourceId: new Uint8Array([
+      0xd2, 0x26, 0x6e, 0xc6, 0x7c, 0x05, 0xf0, 0xfc, 0x77, 0x95, 0x34, 0xa2,
+      0xfa, 0x7e, 0x6e, 0x36,
+    ]),
+  }];
+
   const tamperWith = (data: Uint8Array, position?: number): Uint8Array => {
     if (position === undefined)
       position = Math.floor(Math.random() * data.length); // eslint-disable-line no-param-reassign
@@ -242,7 +263,9 @@ describe('Simple Encryption', () => {
         }
       }
     });
+  };
 
+  const generateUnpaddedTests = (encryptor: Encryptor, testVectors: Array<TestVector>) => {
     it('should compute clear and encrypted sizes', () => {
       const { overhead, getClearSize, getEncryptedSize } = encryptor;
       const clearSize = getClearSize(testVectors[0]!.encryptedData.length);
@@ -250,6 +273,79 @@ describe('Simple Encryption', () => {
       expect(clearSize).to.equal(testVectors[0]!.clearData.length);
       expect(encryptedSize).to.equal(testVectors[0]!.encryptedData.length);
       expect(encryptedSize - clearSize).to.equal(overhead);
+    });
+  };
+
+  type PaddedEncryptorOperations = {
+    encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => Uint8Array | Promise<Uint8Array>,
+    decrypt: (k: Uint8Array, d: Uint8Array) => Uint8Array | Promise<Uint8Array>,
+  };
+
+  const generatePaddedTests = (encryptor: Encryptor, testVectors: Array<TestVector>, { encrypt, decrypt }: PaddedEncryptorOperations) => {
+    for (const padding of [1, 2, 5, 13])
+      describe(`common tests with a padding of ${padding}`, () => {
+        generateCommonTests(encryptor, testVectors, {
+          encrypt: (k: Uint8Array, d: Uint8Array) => encrypt(k, d, padding),
+          decrypt,
+        });
+      });
+
+    it('computes clear and encrypted sizes', () => {
+      const { overhead, getClearSize, getEncryptedSize } = encryptor;
+      const clearSize = getClearSize(testVectors[0]!.encryptedData.length);
+      const encryptedSize = getEncryptedSize(testVectors[0]!.clearData.length);
+      // add one to include the padding byte
+      expect(clearSize + 1).to.equal(paddedFromClearSize(testVectors[0]!.clearData.length));
+      expect(encryptedSize).to.equal(testVectors[0]!.encryptedData.length);
+      // encryptorv6.overhead does not include the padding byte
+      expect(encryptedSize - clearSize).to.equal(overhead);
+    });
+
+    it('encryptedSize should have a minimal value', async () => {
+      for (const clearSize of [0, 1, 8, 9]) {
+        // @ts-expect-error I don't know what you're saying, this function takes a Padding
+        expect(encryptor.getEncryptedSize(clearSize, Padding.AUTO)).to.equal(minimalPadding + encryptor.overhead);
+
+        const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
+        expect((await encrypt(key, new Uint8Array(clearSize), Padding.AUTO)).length).to.equal(minimalPadding + encryptor.overhead);
+      }
+    });
+
+    it('encryptedSize should use the padme algorithm in auto padding', async () => {
+      const paddedWithAuto: Array<[number, number]> = [
+        [10, 10],
+        [11, 12],
+        [42, 44],
+        [250, 256],
+      ];
+      for (const [clearSize, paddedSize] of paddedWithAuto) {
+        // @ts-expect-error we know encryptor is not encryption v4
+        expect(encryptor.getEncryptedSize(clearSize, Padding.AUTO)).to.equal(paddedSize + encryptor.overhead);
+
+        const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
+        expect((await encrypt(key, new Uint8Array(clearSize), Padding.AUTO)).length).to.equal(paddedSize + encryptor.overhead);
+      }
+    });
+
+    it('encryptedSize should use the paddingStep parameter correctly', async () => {
+      const paddedToStepFive: Array<[number, number]> = [
+        [0, 5],
+        [2, 5],
+        [4, 5],
+        [5, 5],
+        [9, 10],
+        [10, 10],
+        [14, 15],
+        [40, 40],
+        [42, 45],
+        [45, 45],
+      ];
+      for (const [clearSize, paddedSize] of paddedToStepFive) {
+        expect(encryptor.getEncryptedSize(clearSize, 5)).to.equal(paddedSize + encryptor.overhead);
+
+        const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
+        expect((await encrypt(key, new Uint8Array(clearSize), 5)).length).to.equal(paddedSize + encryptor.overhead);
+      }
     });
   };
 
@@ -279,6 +375,7 @@ describe('Simple Encryption', () => {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV1.serialize(encryptorV1.encrypt(k, d)),
       decrypt: (k: Uint8Array, d: Uint8Array) => encryptorV1.decrypt(k, encryptorV1.unserialize(d)),
     });
+    generateUnpaddedTests(encryptorV1, testVectorsV1);
     generateSimpleTests(encryptorV1, testVectorsV1, {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV1.encrypt(k, d),
     });
@@ -288,6 +385,7 @@ describe('Simple Encryption', () => {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV2.serialize(encryptorV2.encrypt(k, d)),
       decrypt: (k: Uint8Array, d: Uint8Array) => encryptorV2.decrypt(k, encryptorV2.unserialize(d)),
     });
+    generateUnpaddedTests(encryptorV2, testVectorsV2);
     generateSimpleTests(encryptorV2, testVectorsV2, {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV2.encrypt(k, d),
     });
@@ -297,6 +395,7 @@ describe('Simple Encryption', () => {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV3.serialize(encryptorV3.encrypt(k, d)),
       decrypt: (k: Uint8Array, d: Uint8Array) => encryptorV3.decrypt(k, encryptorV3.unserialize(d)),
     });
+    generateUnpaddedTests(encryptorV3, testVectorsV3);
     generateSimpleTests(encryptorV3, testVectorsV3, {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV3.encrypt(k, d),
     });
@@ -306,6 +405,7 @@ describe('Simple Encryption', () => {
       encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStream(random(tcrypto.MAC_SIZE), k), d),
       decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream({ findKey: async () => k }), d),
     });
+    generateUnpaddedTests(encryptorV4, testVectorsV4);
 
     const chunk1 = new Uint8Array([
       0x4, 0x46, 0x0, 0x0, 0x0, 0x40, 0xec, 0x8d, 0x84, 0xad, 0xbe, 0x2b, 0x27,
@@ -341,8 +441,22 @@ describe('Simple Encryption', () => {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV5.serialize(encryptorV5.encrypt(k, d, random(tcrypto.MAC_SIZE))),
       decrypt: (k: Uint8Array, d: Uint8Array) => encryptorV5.decrypt(k, encryptorV5.unserialize(d)),
     });
+    generateUnpaddedTests(encryptorV5, testVectorsV5);
     generateSimpleTests(encryptorV5, testVectorsV5, {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV5.encrypt(k, d, random(tcrypto.MAC_SIZE)),
+    });
+  });
+  describe('EncryptionFormatV6', () => {
+    generateCommonTests(encryptorV6, testVectorsV6, {
+      encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV6.serialize(encryptorV6.encrypt(k, d)),
+      decrypt: (k: Uint8Array, d: Uint8Array) => encryptorV6.decrypt(k, encryptorV6.unserialize(d)),
+    });
+    generatePaddedTests(encryptorV6, testVectorsV6, {
+      encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => encryptorV6.serialize(encryptorV6.encrypt(k, d, padding)),
+      decrypt: (k: Uint8Array, d: Uint8Array) => encryptorV6.decrypt(k, encryptorV6.unserialize(d)),
+    });
+    generateSimpleTests(encryptorV6, testVectorsV6, {
+      encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV6.encrypt(k, d),
     });
   });
 });
