@@ -10,7 +10,7 @@ export const getURIParameter = (name: string): string | null => {
   const paramSource = window.location.search || window.location.hash;
   const paramRegExp = new RegExp(`[?|&|#]${name}=([^&;]+?)(&|#|;|$)`);
   const extracted = (paramRegExp.exec(paramSource) || [undefined, ''])[1];
-  return decodeURIComponent(extracted) || null;
+  return decodeURIComponent(extracted!) || null;
 };
 
 const appId = getURIParameter('appId');

@@ -1,5 +1,4 @@
-import type DumbContext from './DumbContext';
-import type { Payload } from './DumbContext';
+import type { DumbContext, Payload } from './DumbContext';
 
 /* eslint-disable no-console */
 const openGroup = (action: Payload) => console.groupCollapsed(`%caction %c${action.type}`, 'color: gray; font-weight: 400', 'color: inherit; font-weight: 700');
