@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { transparentize } from 'polished';
 import { ExpiredVerification, InvalidVerification, TooManyAttempts } from '@tanker/errors';
+import type { Class } from '@tanker/types';
 
 import colors from './colors';
 import type { Context } from '../context/makeContextHolder';
@@ -65,20 +66,27 @@ const LinkButton = styled(Button)`
   }
 `;
 
-const errorTuples = [
+const errorTuples: [Class<Error>, string][] = [
   [ExpiredVerification, 'Expired verification code.'],
   [InvalidVerification, 'Invalid verification code.'],
   [TooManyAttempts, 'Too many attempts, please retry later.'],
 ];
-const findError = error => {
+const findError = (error: Error) => {
   const res = errorTuples.find(([e]) => error instanceof e);
   return res ? res[1] : null;
 };
-const getVerificationError = error => findError(error) || 'An unknown error occurred while checking the code.';
+const getVerificationError = (error: Error) => findError(error) || 'An unknown error occurred while checking the code.';
 
-type Props = { fetch: (...args: Array<any>) => any; appId: string; url: string; email: string; check: (arg0: string) => Promise<void>; context: Context; };
-class VerifyDevice extends React.Component<Props> {
-  componentDidMount() {
+export type VerifyDeviceProps = {
+  fetch: (...args: Array<any>) => any;
+  appId: string;
+  url: string;
+  email: string;
+  check: (verificationCode: string) => Promise<void>;
+  context: Context;
+};
+class VerifyDevice extends React.Component<VerifyDeviceProps> {
+  override componentDidMount() {
     this.sendVerificationEmail();
   }
 
@@ -110,7 +118,7 @@ class VerifyDevice extends React.Component<Props> {
       }
     } catch (e) {
       console.error(e);
-      actions.sendError(e);
+      actions.sendError(e as Error);
     }
   };
 
@@ -129,14 +137,15 @@ class VerifyDevice extends React.Component<Props> {
       actions.verifySuccess();
     } catch (e) {
       console.error(e);
-      actions.verifyError(e);
+      actions.verifyError(e as Error);
     }
   };
 
-  render() {
+  override render() {
     const { context, email } = this.props;
     const { verificationCode, verifyIsFetching, verifyError, sendAttempts, sendIsFetching, sendSuccess, sendError } = context.state;
 
+    /* eslint-disable react/jsx-one-expression-per-line */
     return (
       <>
         <Label htmlFor="tanker-verification-ui-field">
@@ -159,6 +168,7 @@ class VerifyDevice extends React.Component<Props> {
         </LinkButton>
       </>
     );
+    /* eslint-enable react/jsx-one-expression-per-line */
   }
 }
 

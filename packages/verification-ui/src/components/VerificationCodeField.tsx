@@ -46,7 +46,7 @@ const Rectangle = styled.div`
   }
 `;
 
-const NumberField = styled.input`
+const NumberField = styled.input<{ position: number; hidden: boolean; }>`
   position: absolute;
   display: ${props => (props.hidden ? 'none' : 'flex')};
   height: 100%;
@@ -74,16 +74,17 @@ const NumberField = styled.input`
   }
 `;
 
-const makeOnChange = (onChange, previousValue) => (
-  onChange && (event => {
+type OnChange = (nextValue: string, prevValue: string) => void
+const makeOnChange = (onChange: OnChange | undefined, previousValue: string): React.ChangeEventHandler<HTMLInputElement> | undefined => (
+  onChange && ((event: React.ChangeEvent<HTMLInputElement>) => {
     const cleanValue = event.target.value.replace(/\D/g, '');
     const nextValue = (previousValue + cleanValue).substring(0, 8);
     onChange(nextValue, previousValue);
   })
 );
 
-const makeOnKeyDown = (onChange, previousValue) => (
-  onChange && (event => {
+const makeOnKeyDown = (onChange: OnChange | undefined, previousValue: string): React.KeyboardEventHandler<HTMLInputElement> | undefined => (
+  onChange && ((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Backspace') {
       const nextValue = previousValue.substring(0, previousValue.length - 1);
       onChange(nextValue, previousValue);
@@ -94,7 +95,7 @@ const makeOnKeyDown = (onChange, previousValue) => (
 const padMask = '        ';
 const pad = (string: string) => (string.length >= padMask.length ? string : string + padMask.slice(string.length));
 
-type Props = { id: string; value: string; onChange?: (nextValue: string, prevValue: string) => void; };
+type Props = { id: string; value: string; onChange?: OnChange; };
 const VerificationCodeField = ({ id, value, onChange, ...props }: Props) => (
   <Rectangles {...props}>
     <NumberField

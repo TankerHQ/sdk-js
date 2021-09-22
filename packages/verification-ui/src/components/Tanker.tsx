@@ -1,6 +1,7 @@
 import React from 'react';
 import { hot } from 'react-hot-loader';
 import { TransitionMotion, spring } from 'react-motion';
+import type { OpaqueConfig } from 'react-motion';
 import styled from 'styled-components';
 import { fetch } from '@tanker/http-utils';
 
@@ -10,9 +11,11 @@ import Modal from './Modal';
 import TankerLogo from './TankerLogo';
 
 import VerifyDevice from './VerifyDevice';
+import type { VerifyDeviceProps } from './VerifyDevice';
 import DeviceVerified from './DeviceVerified';
+import type { DeviceVerifiedProps } from './DeviceVerified';
 
-const Container = styled(Modal)`
+const Container = styled(Modal)<{ children: any[]; }>`
   display: flex;
   flex-flow: column;
   align-items: center;
@@ -51,7 +54,7 @@ const TitlePart = styled.span`
   text-transform: uppercase;
 `;
 
-const AlignedTitlePart = styled(TitlePart)`
+const AlignedTitlePart = styled(TitlePart)<{ align: string; }>`
   text-align: ${props => props.align};
 `;
 
@@ -85,39 +88,44 @@ const Panel = styled.div`
   & > * { max-width: 100%; }
 `;
 
-const willEnter = () => ({ opacity: 0, x: 300 });
-const willLeave = () => ({ opacity: spring(0, { stiffness: 300, damping: 25 }), x: spring(-300) });
-const computeStyles = values => ({ opacity: values.opacity, transform: `translate3d(${values.x}px, 0, 0)` });
+type StaticStyle = { opacity: number; x: number; }
+type TransitionStyle = { opacity: OpaqueConfig; x: OpaqueConfig; }
+const willEnter = (): StaticStyle => ({ opacity: 0, x: 300 });
+const willLeave = (): TransitionStyle => ({ opacity: spring(0, { stiffness: 300, damping: 25 }), x: spring(-300) });
+const computeStyles = (values: StaticStyle) => ({ opacity: values.opacity, transform: `translate3d(${values.x}px, 0, 0)` });
 
-type Props = { context: Context; appId: string; url: string; email: string; check: (arg0: string) => Promise<void>; exit: () => void; };
-export const Tanker = ({ context, appId, url, email, check, exit }: Props) => (
-  <Container onClose={context.state.verifySuccess ? exit : null}>
-    <Header>
-      <AlignedTitlePart align="right">Data Privacy</AlignedTitlePart>
-      <Logo color={colors.blue} width={12} />
-      <AlignedTitlePart align="left">by Tanker</AlignedTitlePart>
-    </Header>
-    <TransitionMotion
-      willEnter={willEnter}
-      willLeave={() => willLeave()}
-      styles={[
-        {
-          key: context.state.verifySuccess ? 'DeviceVerified' : 'VerifyDevice',
-          style: { opacity: spring(1), x: spring(0) },
-        },
-      ]}
-    >
-      {interpolatedStyles => (
-        <Panels>
-          {interpolatedStyles.map(({ key, style }) => (
-            <Panel key={key} style={computeStyles(style)}>
-              {key === 'DeviceVerified' ? <DeviceVerified exit={exit} /> : <VerifyDevice context={context} fetch={fetch} appId={appId} url={url} email={email} check={check} />}
-            </Panel>
-          ))}
-        </Panels>
-      )}
-    </TransitionMotion>
-  </Container>
-);
+export type TankerProps = { context: Context; } & DeviceVerifiedProps & Omit<VerifyDeviceProps, 'fetch'>;
+export const Tanker = ({ context, appId, url, email, check, exit }: TankerProps) => {
+  const { state } = context;
+  return (
+    <Container onClose={state.verifySuccess ? exit : undefined}>
+      <Header>
+        <AlignedTitlePart align="right">Data Privacy</AlignedTitlePart>
+        <Logo color={colors.blue} width={12} />
+        <AlignedTitlePart align="left">by Tanker</AlignedTitlePart>
+      </Header>
+      <TransitionMotion
+        willEnter={willEnter}
+        willLeave={() => willLeave()}
+        styles={[
+          {
+            key: state.verifySuccess ? 'DeviceVerified' : 'VerifyDevice',
+            style: { opacity: spring(1), x: spring(0) },
+          },
+        ]}
+      >
+        {interpolatedStyles => (
+          <Panels>
+            {interpolatedStyles.map(({ key, style }) => (
+              <Panel key={key} style={computeStyles(style as StaticStyle)}>
+                {key === 'DeviceVerified' ? <DeviceVerified exit={exit} /> : <VerifyDevice context={context} fetch={fetch} appId={appId} url={url} email={email} check={check} />}
+              </Panel>
+            ))}
+          </Panels>
+        )}
+      </TransitionMotion>
+    </Container>
+  );
+};
 
 export default hot(module)(Tanker);

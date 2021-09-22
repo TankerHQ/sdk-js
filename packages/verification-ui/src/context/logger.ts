@@ -1,11 +1,12 @@
-import DumbContext from './DumbContext';
+import type DumbContext from './DumbContext';
+import type { Payload } from './DumbContext';
 
 /* eslint-disable no-console */
-const openGroup = action => console.groupCollapsed(`%caction %c${action.type}`, 'color: gray; font-weight: 400', 'color: inherit; font-weight: 700');
-const logPrev = prev => console.log('%cprev state', 'color: #9E9E9E; font-weight: 700', prev);
-const logAction = action => console.log('%caction    ', 'color: #03A9F4; font-weight: 700', action);
+const openGroup = (action: Payload) => console.groupCollapsed(`%caction %c${action.type}`, 'color: gray; font-weight: 400', 'color: inherit; font-weight: 700');
+const logPrev = (prev: Payload) => console.log('%cprev state', 'color: #9E9E9E; font-weight: 700', prev);
+const logAction = (action: Payload) => console.log('%caction    ', 'color: #03A9F4; font-weight: 700', action);
 
-function logUpdate(prev, action, next) {
+function logUpdate(prev: Payload, action: Payload, next: Payload) {
   openGroup(action);
   logPrev(prev);
   logAction(action);
@@ -13,7 +14,7 @@ function logUpdate(prev, action, next) {
   console.groupEnd();
 }
 
-function logError(prev, action, error) {
+function logError(prev: Payload, action: Payload, error: Payload) {
   openGroup(action);
   logPrev(prev);
   logAction(action);

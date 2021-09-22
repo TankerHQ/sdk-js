@@ -3,7 +3,7 @@ import { darken } from 'polished';
 
 import colors from './colors';
 
-const Button = styled.button`
+const Button = styled.button<{ blue?: boolean; round?: boolean; }>`
   display: flex;
   align-items: center;
   justify-content: center;
