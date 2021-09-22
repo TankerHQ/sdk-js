@@ -7,6 +7,11 @@
     "module": "commonjs",
     "importHelpers": true,
     "downlevelIteration": true,
+    "lib": [
+      "DOM",
+      // needed by the umd (@tanker/global-this)
+      "WebWorker",
+    ]
   },
   "include": [
     "../src/**/*",
