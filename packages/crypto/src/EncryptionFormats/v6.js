@@ -64,7 +64,7 @@ export const unserialize = (buffer: Uint8Array): EncryptionData => {
 
 export const padClearData = (plainText: Uint8Array): Uint8Array => {
   const paddedSize = getPaddedSize(plainText.length);
-  const paddingArray = new Uint8Array(paddedSize - plainText.length).fill(0x00, 1);
+  const paddingArray = new Uint8Array(paddedSize - plainText.length);
   paddingArray[0] = 0x80;
   return new Uint8Array([...plainText, ...paddingArray]);
 };
@@ -79,9 +79,17 @@ export const encrypt = (key: Uint8Array, plaintext: Uint8Array, additionalData?:
 
 export const removePadding = (paddedData: Uint8Array): Uint8Array => {
   const index = paddedData.lastIndexOf(0x80);
-  if (index === -1 || !paddedData.slice(index + 1).every((val) => val === 0x00)) {
+
+  if (index === -1) {
     throw new DecryptionFailed({ message: 'could not remove padding' });
   }
+
+  for (let i = index + 1; i < paddedData.length; i++) {
+    if (paddedData[i] !== 0x00) {
+      throw new DecryptionFailed({ message: 'could not remove padding' });
+    }
+  }
+
   return paddedData.slice(0, index);
 };
 

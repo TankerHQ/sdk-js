@@ -305,7 +305,7 @@ describe('Simple Encryption', () => {
 
   describe('EncryptionFormatV6', () => {
     describe('padme', () => {
-      it('should return a number, including for values under 1', () => {
+      it('returns a number, including for values under 1', () => {
         expect(() => encryptorV6.padme(0)).to.not.throw;
         expect(Number.isNaN(encryptorV6.padme(0))).to.be.false;
         expect(() => encryptorV6.padme(1)).to.not.throw;
@@ -314,7 +314,7 @@ describe('Simple Encryption', () => {
         expect(Number.isNaN(encryptorV6.padme(-42))).to.be.false;
       });
 
-      it('should return the right values', () => {
+      it('returns the right values', () => {
         expect(encryptorV6.padme(2)).to.equal(2);
         expect(encryptorV6.padme(9)).to.equal(10);
         expect(encryptorV6.padme(42)).to.equal(44);
@@ -324,21 +324,21 @@ describe('Simple Encryption', () => {
     });
 
     describe('padClearData', () => {
-      it('should pad the data with a minimum padding', () => {
+      it('pads the data with a minimum padding', () => {
         const trueAsBytes = new Uint8Array([0x74, 0x72, 0x75, 0x65]);
         const actual = encryptorV6.padClearData(trueAsBytes);
         expect(actual.length).to.equal(encryptorV6.minimalPadding);
         expect(actual).to.deep.equal(new Uint8Array([0x74, 0x72, 0x75, 0x65, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00]));
       });
 
-      it('should not fail on an empty array', () => {
+      it('does not fail on an empty array', () => {
         const empty = new Uint8Array(0);
         const actual = encryptorV6.padClearData(empty);
         expect(actual.length).to.equal(encryptorV6.minimalPadding);
         expect(actual).to.deep.equal(new Uint8Array([0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]));
       });
 
-      it('should use the padme algorithm', () => {
+      it('uses the padme algorithm', () => {
         const clear = new Uint8Array([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]);
         const expected = new Uint8Array([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x80, 0x00]);
         expect(encryptorV6.padClearData(clear)).to.deep.equal(expected);
@@ -346,18 +346,14 @@ describe('Simple Encryption', () => {
     });
 
     describe('removePadding', () => {
-      it('should throw if 0x80 is not found or the following bytes are not 0x00', () => {
+      it('throws if 0x80 is not found or the following bytes are not 0x00', () => {
         expect(() => encryptorV6.removePadding(new Uint8Array(0))).to.throw();
         expect(() => encryptorV6.removePadding(new Uint8Array([0x74, 0x72, 0x75, 0x65]))).to.throw();
         expect(() => encryptorV6.removePadding(new Uint8Array([0x74, 0x72, 0x75, 0x65, 0x80, 0x42]))).to.throw();
         expect(() => encryptorV6.removePadding(new Uint8Array([0x74, 0x72, 0x75, 0x65, 0x80, 0x00, 0x42, 0x00]))).to.throw();
-
-        expect(() => encryptorV6.removePadding(new Uint8Array([0x80]))).to.not.throw();
-        expect(() => encryptorV6.removePadding(new Uint8Array([0x80, 0x00, 0x00]))).to.not.throw();
-        expect(() => encryptorV6.removePadding(new Uint8Array([0x74, 0x72, 0x75, 0x65, 0x80, 0x00, 0x00, 0x80]))).to.not.throw();
       });
 
-      it('should return a trimed array', () => {
+      it('returns a trimed array', () => {
         expect(encryptorV6.removePadding(new Uint8Array([0x80]))).to.deep.equal(new Uint8Array(0));
         expect(encryptorV6.removePadding(new Uint8Array([0x80, 0x80]))).to.deep.equal(new Uint8Array([0x80]));
         expect(encryptorV6.removePadding(new Uint8Array([0x80, 0x00, 0x00]))).to.deep.equal(new Uint8Array(0));
@@ -368,45 +364,45 @@ describe('Simple Encryption', () => {
       });
     });
 
-    it('should unserialize a test vector', () => {
+    it('unserializes a test vector', () => {
       const unserializedData = encryptorV6.unserialize(testVectorV6);
       expect(unserializedData.encryptedData).to.deep.equal(new Uint8Array([0x37, 0xb5, 0x3d, 0x55, 0x34, 0xb5, 0xc1, 0x3f, 0xe3, 0x72, 0x81, 0x47, 0xf0, 0xca, 0xda, 0x29, 0x99, 0x6e, 0x4, 0x3e, 0x1a, 0x2f, 0x93, 0x26, 0x65, 0x26, 0xa3, 0x17, 0xf1, 0x5c, 0xa3, 0xc8, 0x7b, 0xb5, 0x4b, 0x81]));
       expect(unserializedData.resourceId).to.deep.equal(new Uint8Array([0x1a, 0x2f, 0x93, 0x26, 0x65, 0x26, 0xa3, 0x17, 0xf1, 0x5c, 0xa3, 0xc8, 0x7b, 0xb5, 0x4b, 0x81]));
       expect(unserializedData.iv).to.deep.equal(new Uint8Array(24)); // zeros
     });
 
-    it('should unserialize/serialize a test vector', () => {
+    it('unserializes/serializes a test vector', () => {
       const reserializedData = encryptorV6.serialize(encryptorV6.unserialize(testVectorV6));
       expect(reserializedData).to.deep.equal(testVectorV6);
     });
 
-    it('should throw if trying to decrypt a corrupted buffer v6', () => {
+    it('throws if trying to decrypt a corrupted buffer v6', () => {
       expect(() => encryptorV6.decrypt(key, encryptorV6.unserialize(tamperWith(testVectorV6)))).to.throw();
     });
 
-    it('should encrypt / decrypt a buffer', () => {
+    it('encrypts / decrypts a buffer', () => {
       const encryptedData = encryptorV6.encrypt(key, clearData);
       const decryptedData = encryptorV6.decrypt(key, encryptedData);
       expect(decryptedData).to.deep.equal(clearData);
     });
 
-    it('should decrypt a buffer v6', () => {
+    it('decrypts a buffer v6', () => {
       const decryptedData = encryptorV6.decrypt(key, encryptorV6.unserialize(testVectorV6));
       expect(decryptedData).to.deep.equal(clearData);
     });
 
-    it('should extract the resource id', () => {
+    it('extracts the resource id', () => {
       const resourceId = encryptorV6.extractResourceId(testVectorV6);
       expect(resourceId).to.deep.equal(new Uint8Array([0x1a, 0x2f, 0x93, 0x26, 0x65, 0x26, 0xa3, 0x17, 0xf1, 0x5c, 0xa3, 0xc8, 0x7b, 0xb5, 0x4b, 0x81]));
     });
 
-    it('should output the right resourceId', () => {
+    it('outputs the right resourceId', () => {
       const encryptedData = encryptorV6.encrypt(key, clearData);
       const buff = encryptorV6.serialize(encryptedData);
       expect(encryptorV6.extractResourceId(buff)).to.deep.equal(encryptedData.resourceId);
     });
 
-    it('should compute clear and encrypted sizes', () => {
+    it('computes clear and encrypted sizes', () => {
       const { overhead, getClearSize, getEncryptedSize } = encryptorV6;
       const clearSize = getClearSize(testVectorV6.length);
       const encryptedSize = getEncryptedSize(clearData.length);
