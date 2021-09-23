@@ -1,6 +1,8 @@
 // @flow
-import { errors, statuses, type Tanker, type Verification, type VerificationMethod } from '@tanker/core';
-import { utils, type b64string } from '@tanker/crypto';
+import { errors, statuses } from '@tanker/core';
+import type { Tanker, Verification, VerificationMethod } from '@tanker/core';
+import { utils } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
 import { expect, uuid } from '@tanker/test-utils';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';

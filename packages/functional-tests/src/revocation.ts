@@ -1,4 +1,3 @@
-// @flow
 import { utils, random, tcrypto } from '@tanker/crypto';
 import { errors, statuses } from '@tanker/core';
 import { expect, sinon } from '@tanker/test-utils';
@@ -34,7 +33,7 @@ export const generateRevocationTests = (args: TestArgs) => {
       const badDeviceIds = [undefined, null, '', 'john@tanker.io', 42];
 
       for (let i = 0; i < badDeviceIds.length; i++) {
-        const arg = ((badDeviceIds[i]: any): string);
+        const arg = ((badDeviceIds[i] as any) as string);
         await expect(bobLaptop.revokeDevice(arg), `bad deviced id #${i}`).to.be.rejectedWith(errors.InvalidArgument);
       }
     });

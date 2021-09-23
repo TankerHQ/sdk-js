@@ -1,6 +1,5 @@
-// @flow
-import Tanker from '@tanker/client-browser';
-import FilePonyfill from '@tanker/file-ponyfill';
+import Tanker from '@tanker/client-node';
+import PouchDBMemory from '@tanker/datastore-pouchdb-memory';
 
 import type { b64string } from '@tanker/core';
 
@@ -11,9 +10,8 @@ import { generateFunctionalTests } from '..';
 const makeTanker = (appId: b64string): Tanker => {
   const tanker = new Tanker({
     appId,
-    // $FlowIgnore adapter key is passed as a default option by @tanker/client-browser
-    dataStore: { prefix: makePrefix() },
-    sdkType: 'js-functional-tests-web',
+    dataStore: { adapter: PouchDBMemory, prefix: makePrefix() },
+    sdkType: 'js-functional-tests-node',
     url: appdUrl,
   });
 
@@ -28,37 +26,28 @@ const generateTestResources = (): TestResources => {
   const medium = makeRandomUint8Array(sizes[2]); // 1MB -> this will use v4 format with 2 chunks
   const big = makeRandomUint8Array(sizes[3]); // 6MB -> this will use v4 format with 7 chunks
 
-  const result: TestResources = {
+  return {
     empty: [
       { size: sizes[0], type: ArrayBuffer, resource: empty.buffer },
-      { size: sizes[0], type: Blob, resource: new Blob([empty], { type: 'application/octet-stream' }) },
-      { size: sizes[0], type: File, resource: new FilePonyfill([empty], 'empty.txt', { type: 'text/plain' }) },
+      { size: sizes[0], type: Buffer, resource: Buffer.from(empty.buffer) },
       { size: sizes[0], type: Uint8Array, resource: empty },
     ],
     small: [
       { size: sizes[1], type: ArrayBuffer, resource: small.buffer },
-      { size: sizes[1], type: Blob, resource: new Blob([small], { type: 'application/octet-stream' }) },
-      { size: sizes[1], type: File, resource: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }) },
+      { size: sizes[1], type: Buffer, resource: Buffer.from(small.buffer) },
       { size: sizes[1], type: Uint8Array, resource: small },
     ],
     medium: [
       { size: sizes[2], type: ArrayBuffer, resource: medium.buffer },
-      { size: sizes[2], type: Blob, resource: new Blob([medium], { type: 'application/octet-stream' }) },
-      { size: sizes[2], type: File, resource: new FilePonyfill([medium], 'picture.jpeg', { type: 'image/jpeg' }) },
+      { size: sizes[2], type: Buffer, resource: Buffer.from(medium.buffer) },
       { size: sizes[2], type: Uint8Array, resource: medium },
     ],
     big: [
       { size: sizes[3], type: ArrayBuffer, resource: big.buffer },
-      { size: sizes[3], type: Blob, resource: new Blob([big], { type: 'application/octet-stream' }) },
-      { size: sizes[3], type: File, resource: new FilePonyfill([big], 'holidays.mp4', { type: 'video/mp4' }) },
+      { size: sizes[3], type: Buffer, resource: Buffer.from(big.buffer) },
       { size: sizes[3], type: Uint8Array, resource: big },
     ],
   };
-
-  if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent))
-    delete result.big;
-
-  return result;
 };
 
-generateFunctionalTests('client-browser', makeTanker, generateTestResources);
+generateFunctionalTests('client-node', makeTanker, generateTestResources);
