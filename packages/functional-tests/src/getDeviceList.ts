@@ -1,4 +1,3 @@
-// @flow
 import { errors } from '@tanker/core';
 import { expect, uuid } from '@tanker/test-utils';
 

@@ -1,4 +1,3 @@
-// @flow
 // Flow trickery, webpack will actually throw for undefined value
 //  https://github.com/webpack/webpack/blob/0740909b901afa69fcc1657a03215d1e011bb5c3/lib/EnvironmentPlugin.js#L41
 const appdUrl = process.env.TANKER_APPD_URL || '';

@@ -1,4 +1,3 @@
-// @flow
 import { utils } from '@tanker/crypto';
 import FakeAuthentication from '@tanker/fake-authentication';
 import { getPublicIdentity, _deserializePublicIdentity } from '@tanker/identity';

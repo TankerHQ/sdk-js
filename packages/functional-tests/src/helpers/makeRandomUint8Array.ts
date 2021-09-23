@@ -1,4 +1,3 @@
-// @flow
 import { random } from '@tanker/crypto';
 
 // Overcome random()'s max size by generating bigger Uint8Arrays

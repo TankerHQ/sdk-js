@@ -1,4 +1,3 @@
-// @flow
 import type { Tanker } from '@tanker/core';
 import { errors, statuses } from '@tanker/core';
 import { createIdentity } from '@tanker/identity';
@@ -236,7 +235,7 @@ export const generateSessionTests = (args: TestArgs) => {
       // $FlowExpectedError Replace internal delay generator to retry to authenticate right away
       tanker._session._client._retryDelayGenerator = zeroDelayGenerator;
     };
-    /* eslint-enable */
+    /* eslint-enable no-param-reassign, no-underscore-dangle */
 
     beforeEach(async () => {
       bobIdentity = await args.appHelper.generateIdentity();

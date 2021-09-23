@@ -1,5 +1,5 @@
-// @flow
-import { errors, type Tanker } from '@tanker/core';
+import type { Tanker } from '@tanker/core';
+import { errors } from '@tanker/core';
 import { expect } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';

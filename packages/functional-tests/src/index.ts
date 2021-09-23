@@ -1,4 +1,3 @@
-// @flow
 import { ready as cryptoReady, utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';

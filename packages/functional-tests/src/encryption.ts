@@ -1,4 +1,3 @@
-// @flow
 import { errors, statuses } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
 import { getConstructorName, getDataLength } from '@tanker/types';
@@ -131,7 +130,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(encrypted);
 
-        const encrypted2 = await bobLaptop.encrypt(clearText, (({ resourceId }): any));
+        const encrypted2 = await bobLaptop.encrypt(clearText, ({ resourceId } as any));
         const resourceId2 = await bobLaptop.getResourceId(encrypted2);
         expect(resourceId2).to.not.equal(resourceId);
       });
