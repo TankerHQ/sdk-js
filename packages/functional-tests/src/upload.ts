@@ -1,4 +1,3 @@
-// @flow
 import { errors } from '@tanker/core';
 import { encryptionV4, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
@@ -49,7 +48,7 @@ export const generateUploadTests = (args: TestArgs) => {
       ]);
     });
 
-    ['gcs', 's3'].forEach((storage) => {
+    ['gcs', 's3'].forEach(storage => {
       describe(storage, () => {
         if (storage === 's3') {
           before(() => appHelper.setS3());
@@ -72,6 +71,7 @@ export const generateUploadTests = (args: TestArgs) => {
         const expectUploadProgressReport = (onProgress: sinon.proxyApi, clearSize: number) => {
           const encryptedSize = encryptionV4.getEncryptedSize(clearSize, encryptionV4.defaultMaxEncryptedChunkSize);
           let chunkSize;
+
           if (storage === 's3') {
             chunkSize = 5 * 1024 * 1024;
           } else if (isEdge()) {
@@ -79,6 +79,7 @@ export const generateUploadTests = (args: TestArgs) => {
           } else {
             chunkSize = encryptionV4.defaultMaxEncryptedChunkSize;
           }
+
           expectProgressReport(onProgress, encryptedSize, chunkSize);
           onProgress.resetHistory();
         };
@@ -247,16 +248,17 @@ export const generateUploadTests = (args: TestArgs) => {
               const timeout = makeTimeoutPromise(50);
               let prevCount = 0;
               const uploadStream = await aliceLaptop.createUploadStream(inputSize, {
-                onProgress: (progressReport) => {
+                onProgress: progressReport => {
                   const newBytes = progressReport.currentBytes - prevCount;
                   prevCount = progressReport.currentBytes;
                   bufferCounter.incrementOutputAndSnapshot(newBytes);
-                }
+                },
               });
 
               // hijack tail write to lock upload until stream is flooded
               // eslint-disable-next-line no-underscore-dangle
               const write = uploadStream._tailStream._write.bind(uploadStream._tailStream);
+
               // eslint-disable-next-line no-underscore-dangle
               uploadStream._tailStream._write = async (...vals) => {
                 await timeout.promise;
@@ -281,8 +283,7 @@ export const generateUploadTests = (args: TestArgs) => {
                 uploadStream.on('finish', resolve);
                 continueWriting();
               });
-
-              bufferCounter.snapshots.forEach((bufferedLength) => {
+              bufferCounter.snapshots.forEach(bufferedLength => {
                 expect(bufferedLength).to.be.at.most(maxBufferedLength + encryptionV4.defaultMaxEncryptedChunkSize, `buffered data exceeds threshold max buffered size: got ${bufferedLength}, max ${maxBufferedLength})`);
               });
             });
@@ -299,14 +300,16 @@ export const generateUploadTests = (args: TestArgs) => {
               const bufferCounter = new BufferingObserver();
               const resourceId = await aliceLaptop.upload(new Uint8Array(inputSize));
               const timeout = makeTimeoutPromise(700);
-
               const downloadStream = await aliceLaptop.createDownloadStream(resourceId);
+
               // hijack push to control size of output buffer
               // eslint-disable-next-line no-underscore-dangle
               const push = downloadStream._headStream.push.bind(downloadStream._headStream);
+
               // eslint-disable-next-line no-underscore-dangle
-              downloadStream._headStream.push = (data) => {
+              downloadStream._headStream.push = data => {
                 timeout.reset();
+
                 if (data) {
                   bufferCounter.incrementInput(data.length);
                 }
@@ -322,16 +325,14 @@ export const generateUploadTests = (args: TestArgs) => {
                   await timeout.promise;
                   bufferCounter.incrementOutputAndSnapshot(buffer.length);
                   done();
-                }
+                },
               });
-
               await new Promise((resolve, reject) => {
                 downloadStream.on('error', reject);
                 downloadStream.on('end', resolve);
                 downloadStream.pipe(slowWritable);
               });
-
-              bufferCounter.snapshots.forEach((bufferedLength) => {
+              bufferCounter.snapshots.forEach(bufferedLength => {
                 expect(bufferedLength).to.be.at.most(maxBufferedLength, `buffered data exceeds threshold max buffered size: got ${bufferedLength}, max buffered size ${maxBufferedLength}`);
               });
             });

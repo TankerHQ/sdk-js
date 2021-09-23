@@ -1,11 +1,11 @@
-// @flow
 import { errors } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { MergerStream } from '@tanker/stream-base';
 
-import { type TestArgs, pipeStreams } from './helpers';
+import type { TestArgs } from './helpers';
+import { pipeStreams } from './helpers';
 
 export const generateEncryptionStreamTests = (args: TestArgs) => {
   describe('stream encryption', () => {
@@ -17,7 +17,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
     let smallClearData;
     let largeClearData;
 
-    const watchStream = (stream) => new Promise((resolve, reject) => {
+    const watchStream = stream => new Promise((resolve, reject) => {
       const result = [];
       stream.on('data', data => result.push(data));
       stream.on('end', () => resolve(result));
@@ -126,6 +126,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
       it('can postpone share', async () => {
         const encryptor = await aliceLaptop.createEncryptionStream();
         const decryptor = await bobLaptop.createDecryptionStream();
+
         const watchPromise = watchStream(decryptor);
 
         encryptor.write(smallClearData);
@@ -171,6 +172,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
     describe('EncryptionStream compatibility', () => {
       const createAliceStreamEncryptedData = async (data: Uint8Array) => {
         const encryptor = await aliceLaptop.createEncryptionStream();
+
         encryptor.write(data);
         encryptor.end();
 

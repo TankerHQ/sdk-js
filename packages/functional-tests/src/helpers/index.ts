@@ -1,4 +1,3 @@
-// @flow
 export { appdUrl, fakeAuthUrl, trustchaindUrl, managementSettings, oidcSettings, benchmarkSettings } from './config';
 export { expectProgressReport, expectType, expectSameType, expectDeepEqual, expectDecrypt } from './expectations';
 export { makePrefix } from './makePrefix';

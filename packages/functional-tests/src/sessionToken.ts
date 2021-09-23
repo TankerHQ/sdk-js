@@ -1,4 +1,3 @@
-// @flow
 import { errors } from '@tanker/core';
 import { expect, uuid } from '@tanker/test-utils';
 
@@ -8,7 +7,7 @@ import { fetch } from '@tanker/http-utils';
 import type { TestArgs } from './helpers';
 import { trustchaindUrl } from './helpers';
 
-async function checkSessionToken(appHelper, publicIdentity, token, allowedMethods: Array<Object>) {
+async function checkSessionToken(appHelper, publicIdentity, token, allowedMethods: Array<Record<string, any>>) {
   const url = `${trustchaindUrl}/verification/session-token`;
   const body = {
     app_id: utils.toBase64(appHelper.appId),
@@ -19,7 +18,7 @@ async function checkSessionToken(appHelper, publicIdentity, token, allowedMethod
   };
   return fetch(url, {
     method: 'POST',
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
 }
 
@@ -136,14 +135,13 @@ export const generateSessionTokenTests = (args: TestArgs) => {
     it('fails to check a session token if the token is invalid', async () => {
       const email = 'john.smith@tanker.io';
       const verificationCode = await appHelper.getEmailVerificationCode(email);
-      // $FlowIgnore we assert that the token is a string with expect()
       const token = await bobLaptop.registerIdentity({ email, verificationCode }, { withSessionToken: true });
       expect(token).to.be.a('string');
       const badToken = `a${token}`;
 
       const response = await checkSessionToken(args.appHelper, bobPublicIdentity, badToken, [{
         type: 'email',
-        email
+        email,
       }]);
       expect(response.status).to.eq(400);
     });
