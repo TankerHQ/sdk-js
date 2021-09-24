@@ -19,33 +19,34 @@ const makeTanker = (appId: b64string): Tanker => {
 };
 
 const generateTestResources = (): TestResources => {
-  const sizes = [0, 1024, 1024 * 1024, 6 * 1024 * 1024];
+  const kB = 1024;
+  const MB = kB * kB;
 
-  const empty = makeRandomUint8Array(sizes[0]); // 0B -> this will use v3 format
-  const small = makeRandomUint8Array(sizes[1]); // 1kB -> this will use v3 format
-  const medium = makeRandomUint8Array(sizes[2]); // 1MB -> this will use v4 format with 2 chunks
-  const big = makeRandomUint8Array(sizes[3]); // 6MB -> this will use v4 format with 7 chunks
+  const empty = makeRandomUint8Array(0); // 0B -> this will use v3 format
+  const small = makeRandomUint8Array(1 * kB); // 1kB -> this will use v3 format
+  const medium = makeRandomUint8Array(1 * MB); // 1MB -> this will use v4 format with 2 chunks
+  const big = makeRandomUint8Array(6 * MB); // 6MB -> this will use v4 format with 7 chunks
 
   return {
     empty: [
-      { size: sizes[0], type: ArrayBuffer, resource: empty.buffer },
-      { size: sizes[0], type: Buffer, resource: Buffer.from(empty.buffer) },
-      { size: sizes[0], type: Uint8Array, resource: empty },
+      { size: empty.length, type: ArrayBuffer, resource: empty.buffer },
+      { size: empty.length, type: Buffer, resource: Buffer.from(empty.buffer) },
+      { size: empty.length, type: Uint8Array, resource: empty },
     ],
     small: [
-      { size: sizes[1], type: ArrayBuffer, resource: small.buffer },
-      { size: sizes[1], type: Buffer, resource: Buffer.from(small.buffer) },
-      { size: sizes[1], type: Uint8Array, resource: small },
+      { size: small.length, type: ArrayBuffer, resource: small.buffer },
+      { size: small.length, type: Buffer, resource: Buffer.from(small.buffer) },
+      { size: small.length, type: Uint8Array, resource: small },
     ],
     medium: [
-      { size: sizes[2], type: ArrayBuffer, resource: medium.buffer },
-      { size: sizes[2], type: Buffer, resource: Buffer.from(medium.buffer) },
-      { size: sizes[2], type: Uint8Array, resource: medium },
+      { size: medium.length, type: ArrayBuffer, resource: medium.buffer },
+      { size: medium.length, type: Buffer, resource: Buffer.from(medium.buffer) },
+      { size: medium.length, type: Uint8Array, resource: medium },
     ],
     big: [
-      { size: sizes[3], type: ArrayBuffer, resource: big.buffer },
-      { size: sizes[3], type: Buffer, resource: Buffer.from(big.buffer) },
-      { size: sizes[3], type: Uint8Array, resource: big },
+      { size: big.length, type: ArrayBuffer, resource: big.buffer },
+      { size: big.length, type: Buffer, resource: Buffer.from(big.buffer) },
+      { size: big.length, type: Uint8Array, resource: big },
     ],
   };
 };

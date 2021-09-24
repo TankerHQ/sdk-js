@@ -3,6 +3,7 @@ import { encryptionV4 } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { getConstructor } from '@tanker/types';
+import type { Data, Class } from '@tanker/types';
 
 type spyObj = {
   callCount: number;
@@ -34,9 +35,9 @@ const fileProps = (obj: Record<string, any>) => {
   return { name, size, type, lastModified };
 };
 
-export const expectType = (obj: Record<string, any>, type: Record<string, any>) => expect(getConstructor(obj)).to.equal(type);
+export const expectType = (obj: Data, type: Class<Data>) => expect(getConstructor(obj)).to.equal(type);
 
-export const expectSameType = (a: Record<string, any>, b: Record<string, any>) => expect(getConstructor(a)).to.equal(getConstructor(b));
+export const expectSameType = (a: Data, b: Data) => expect(getConstructor(a)).to.equal(getConstructor(b));
 
 export const expectDeepEqual = (a: Record<string, any>, b: Record<string, any>) => {
   if (global.File && a instanceof File) {

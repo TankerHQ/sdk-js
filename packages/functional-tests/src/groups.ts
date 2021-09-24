@@ -1,20 +1,21 @@
 import { errors } from '@tanker/core';
+import type { Tanker, b64string } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import type { TestArgs } from './helpers';
+import type { AppHelper, AppProvisionalUser, TestArgs } from './helpers';
 import { expectDecrypt } from './helpers';
 
 export const generateGroupsTests = (args: TestArgs) => {
   describe('groups', () => {
-    let aliceLaptop;
-    let alicePublicIdentity;
-    let bobLaptop;
-    let bobPublicIdentity;
-    let charlieLaptop;
-    let charliePublicIdentity;
-    let unknownPublicIdentity;
-    let appHelper;
+    let aliceLaptop: Tanker;
+    let alicePublicIdentity: b64string;
+    let bobLaptop: Tanker;
+    let bobPublicIdentity: b64string;
+    let charlieLaptop: Tanker;
+    let charliePublicIdentity: b64string;
+    let unknownPublicIdentity: b64string;
+    let appHelper: AppHelper;
     const clearText = "Two's company, three's a crowd";
 
     before(async () => {
@@ -290,8 +291,8 @@ export const generateGroupsTests = (args: TestArgs) => {
     });
 
     describe('with email (+second phone) provisionals', () => {
-      let provisional;
-      let provisional2;
+      let provisional: AppProvisionalUser;
+      let provisional2: AppProvisionalUser;
 
       beforeEach(async () => {
         provisional = await appHelper.generateEmailProvisionalIdentity();
@@ -470,7 +471,7 @@ export const generateGroupsTests = (args: TestArgs) => {
     });
 
     describe('with phone number provisionals', () => {
-      let provisional;
+      let provisional: AppProvisionalUser;
 
       beforeEach(async () => {
         provisional = await appHelper.generatePhoneNumberProvisionalIdentity();

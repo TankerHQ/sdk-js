@@ -1,4 +1,4 @@
-import type { Tanker } from '@tanker/core';
+import type { Tanker, b64string } from '@tanker/core';
 import { errors } from '@tanker/core';
 import { expect } from '@tanker/test-utils';
 
@@ -13,12 +13,12 @@ const networkIssues = {
   // curl: (7) Couldn't connect to server
 };
 
-const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
+const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof networkIssues) => {
   const clearText: string = 'Rivest Shamir Adleman';
 
   describe(`with ${issueType.replace(/_/g, ' ')}`, () => {
-    let alicePhone;
-    let aliceIdentity;
+    let alicePhone: Tanker;
+    let aliceIdentity: b64string;
 
     const { url } = networkIssues[issueType];
 
@@ -75,6 +75,6 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: string) => {
 
 export const generateNetworkTests = (args: TestArgs) => {
   describe('network issues', () => {
-    Object.keys(networkIssues).forEach(type => generateNetworkIssueTests(args, type));
+    Object.keys(networkIssues).forEach(type => generateNetworkIssueTests(args, type as keyof typeof networkIssues));
   });
 };

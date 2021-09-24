@@ -10,7 +10,6 @@ import { generateFunctionalTests } from '..';
 const makeTanker = (appId: b64string): Tanker => {
   const tanker = new Tanker({
     appId,
-    // $FlowIgnore adapter key is passed as a default option by @tanker/client-browser
     dataStore: { prefix: makePrefix() },
     sdkType: 'js-functional-tests-web',
     url: appdUrl,
@@ -20,42 +19,45 @@ const makeTanker = (appId: b64string): Tanker => {
 };
 
 const generateTestResources = (): TestResources => {
-  const sizes = [0, 1024, 1024 * 1024, 6 * 1024 * 1024];
+  const kB = 1024;
+  const MB = kB * kB;
 
-  const empty = makeRandomUint8Array(sizes[0]); // 0B -> this will use v3 format
-  const small = makeRandomUint8Array(sizes[1]); // 1kB -> this will use v3 format
-  const medium = makeRandomUint8Array(sizes[2]); // 1MB -> this will use v4 format with 2 chunks
-  const big = makeRandomUint8Array(sizes[3]); // 6MB -> this will use v4 format with 7 chunks
+  const empty = makeRandomUint8Array(0); // 0B -> this will use v3 format
+  const small = makeRandomUint8Array(1 * kB); // 1kB -> this will use v3 format
+  const medium = makeRandomUint8Array(1 * MB); // 1MB -> this will use v4 format with 2 chunks
+  const big = makeRandomUint8Array(6 * MB); // 6MB -> this will use v4 format with 7 chunks
 
   const result: TestResources = {
     empty: [
-      { size: sizes[0], type: ArrayBuffer, resource: empty.buffer },
-      { size: sizes[0], type: Blob, resource: new Blob([empty], { type: 'application/octet-stream' }) },
-      { size: sizes[0], type: File, resource: new FilePonyfill([empty], 'empty.txt', { type: 'text/plain' }) },
-      { size: sizes[0], type: Uint8Array, resource: empty },
+      { size: empty.length, type: ArrayBuffer, resource: empty.buffer },
+      { size: empty.length, type: Blob, resource: new Blob([empty], { type: 'application/octet-stream' }) },
+      { size: empty.length, type: File, resource: new FilePonyfill([empty], 'empty.txt', { type: 'text/plain' }) },
+      { size: empty.length, type: Uint8Array, resource: empty },
     ],
     small: [
-      { size: sizes[1], type: ArrayBuffer, resource: small.buffer },
-      { size: sizes[1], type: Blob, resource: new Blob([small], { type: 'application/octet-stream' }) },
-      { size: sizes[1], type: File, resource: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }) },
-      { size: sizes[1], type: Uint8Array, resource: small },
+      { size: small.length, type: ArrayBuffer, resource: small.buffer },
+      { size: small.length, type: Blob, resource: new Blob([small], { type: 'application/octet-stream' }) },
+      { size: small.length, type: File, resource: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }) },
+      { size: small.length, type: Uint8Array, resource: small },
     ],
     medium: [
-      { size: sizes[2], type: ArrayBuffer, resource: medium.buffer },
-      { size: sizes[2], type: Blob, resource: new Blob([medium], { type: 'application/octet-stream' }) },
-      { size: sizes[2], type: File, resource: new FilePonyfill([medium], 'picture.jpeg', { type: 'image/jpeg' }) },
-      { size: sizes[2], type: Uint8Array, resource: medium },
+      { size: medium.length, type: ArrayBuffer, resource: medium.buffer },
+      { size: medium.length, type: Blob, resource: new Blob([medium], { type: 'application/octet-stream' }) },
+      { size: medium.length, type: File, resource: new FilePonyfill([medium], 'picture.jpeg', { type: 'image/jpeg' }) },
+      { size: medium.length, type: Uint8Array, resource: medium },
     ],
     big: [
-      { size: sizes[3], type: ArrayBuffer, resource: big.buffer },
-      { size: sizes[3], type: Blob, resource: new Blob([big], { type: 'application/octet-stream' }) },
-      { size: sizes[3], type: File, resource: new FilePonyfill([big], 'holidays.mp4', { type: 'video/mp4' }) },
-      { size: sizes[3], type: Uint8Array, resource: big },
+      { size: big.length, type: ArrayBuffer, resource: big.buffer },
+      { size: big.length, type: Blob, resource: new Blob([big], { type: 'application/octet-stream' }) },
+      { size: big.length, type: File, resource: new FilePonyfill([big], 'holidays.mp4', { type: 'video/mp4' }) },
+      { size: big.length, type: Uint8Array, resource: big },
     ],
   };
 
-  if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent))
+  if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+    // @ts-expect-error 'big' is never acceced without a check
     delete result.big;
+  }
 
   return result;
 };
