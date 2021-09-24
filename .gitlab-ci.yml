@@ -20,6 +20,16 @@ default:
     - poetry install
     - poetry run python --version
 
+check/lint:
+  extends:
+    - .python-yarn-cache
+    - .rules/mr/auto
+  stage: check
+  script:
+    - poetry run python run-ci.py lint
+  tags:
+    - linux
+
 check/linux/chrome:
   extends:
     - .python-yarn-cache

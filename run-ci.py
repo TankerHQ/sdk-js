@@ -149,14 +149,15 @@ def publish_npm_package(package_name: str, version: str) -> None:
     )
 
 
-def run_linters() -> None:
-    tankerci.js.run_yarn("flow")
-    tankerci.js.run_yarn("lint:js")
-
-
 def run_tests_in_node() -> None:
     tankerci.js.run_yarn("exec", "--", "node", "--version")
     tankerci.js.run_yarn("coverage")
+
+
+def lint() -> None:
+    tankerci.js.yarn_install_deps()
+    tankerci.js.run_yarn("flow")
+    tankerci.js.run_yarn("lint:js")
 
 
 def check(*, runner: str, nightly: bool) -> None:
@@ -164,7 +165,6 @@ def check(*, runner: str, nightly: bool) -> None:
     if nightly:
         run_tests_in_browser_ten_times(runner=runner)
     elif runner == "node":
-        run_linters()
         run_tests_in_node()
     else:
         run_tests_in_browser(runner=runner)
@@ -424,6 +424,7 @@ def compare_benchmark_results(
 def _main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
+    subparsers.add_parser("lint")
 
     check_parser = subparsers.add_parser("check")
     check_parser.add_argument("--nightly", action="store_true")
@@ -450,6 +451,8 @@ def _main() -> None:
         runner = args.runner
         nightly = args.nightly
         check(runner=runner, nightly=nightly)
+    elif args.command == "lint":
+        lint()
     elif args.command == "deploy":
         deploy_sdk(git_tag=args.git_tag)
     elif args.command == "e2e":
