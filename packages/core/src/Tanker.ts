@@ -56,13 +56,7 @@ export type TankerCoreOptions = {
   sdkType: string;
 };
 
-export type TankerOptions = {
-  appId?: b64string;
-  trustchainId?: b64string;
-  url?: string;
-  dataStore?: DataStoreOptions;
-  sdkType?: string;
-};
+export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
@@ -71,11 +65,15 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerCore
   if (!defaults || typeof defaults !== 'object' || defaults instanceof Array)
     throw new InvalidArgument('defaults', 'object', defaults);
 
-  const result = { ...defaults, ...options };
-
   // Deep merge dataStore option
-  if ('dataStore' in defaults)
-    result.dataStore = { ...defaults.dataStore, ...options.dataStore };
+  const result = {
+    ...defaults,
+    ...options,
+    dataStore: {
+      ...defaults.dataStore,
+      ...options.dataStore,
+    },
+  };
 
   return result;
 }
