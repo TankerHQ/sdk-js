@@ -1,0 +1,13 @@
+{ // used by lint, tests and coverage
+  "extends": "./tsconfig.tests.json",
+  "include": [
+    "../**/__tests__/*",
+  ],
+  "exclude": [
+    "../**/*.spec.node.ts"
+  ],
+  "references": [
+    { "path": "../packages/tsconfig.browser.json" },
+    { "path": "../packages/test-utils/config/tsconfig.browser.json" },
+  ],
+}
