@@ -37,13 +37,13 @@ export class AppHelper {
       environment_name: managementSettings.defaultEnvironmentName,
     };
     const createResponse = await requestManagement({ method: 'POST', path: '/v1/apps', body });
-    const authToken = createResponse.app.auth_token;
-    const appId = utils.fromBase64(createResponse.app.id);
-    const appSecret = utils.fromBase64(createResponse.app.private_signature_key);
+    const authToken = createResponse['app']['auth_token'];
+    const appId = utils.fromBase64(createResponse['app']['id']);
+    const appSecret = utils.fromBase64(createResponse['app']['private_signature_key']);
     return new AppHelper(appId, appSecret, authToken);
   }
 
-  async _update(body: Record<string, any>): Promise<Record<string, any>> {
+  async _update(body: Record<string, any>): Promise<void> {
     await requestManagement({
       method: 'PATCH',
       path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`,
@@ -165,7 +165,7 @@ export class AppHelper {
   async corruptVerificationCode(code: string): Promise<string> {
     const digits: Array<string> = code.split('');
     const wrongDigitIndex = Math.floor(Math.random() * digits.length);
-    const wrongDigit = (parseInt(code[wrongDigitIndex], 10) + 1) % 10;
+    const wrongDigit = (parseInt(code[wrongDigitIndex]!, 10) + 1) % 10;
     digits[wrongDigitIndex] = `${wrongDigit}`;
     return digits.join();
   }

@@ -1,10 +1,11 @@
 import type { Tanker } from '@tanker/core';
-import type { Class } from '@tanker/types';
+import type { Class, Data } from '@tanker/types';
 
 import type { AppHelper } from './AppHelper';
 
 export type TestResource<T> = { size: number; type: Class<T>; resource: T; };
-export type TestResources = Record<string, Array<TestResource<any>>>;
+export type TestResourceSize = 'empty' | 'small' | 'medium' | 'big';
+export type TestResources<T extends Data = Data> = Record<TestResourceSize, Array<TestResource<T>>>;
 
 export type TestArgs = {
   appHelper: AppHelper;
