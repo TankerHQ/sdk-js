@@ -30,13 +30,12 @@ check/linux/chrome:
   tags:
     - linux
 
-check/linux/node:
+.check/linux/node-base:
   extends:
     - .python-yarn-cache
-    - .rules/mr/auto
   stage: check
   script:
-    - poetry run python run-ci.py check --runner node
+    - /usr/local/nvm/nvm-exec poetry run python run-ci.py check --runner node
     - mv coverage/lcov-report lcov-report
   artifacts:
     paths:
@@ -44,6 +43,34 @@ check/linux/node:
     expire_in: 7 days
   tags:
     - linux
+
+check/linux/node:
+  extends:
+    - .check/linux/node-base
+  rules:
+    - !reference [.rules/mr/auto, rules]
+  variables:
+    NODE_VERSION: 14
+
+check/linux/node-lts:
+  extends:
+    - .check/linux/node-base
+    - .rules/mr/manual/nightly/auto
+  rules:
+    - !reference [.rules/master/nightly, rules]
+    - !reference [.rules/mr/manual, rules]
+  variables:
+    NODE_VERSION: 12
+
+check/linux/node-next:
+  extends:
+    - .check/linux/node-base
+    - .rules/mr/manual/nightly/auto
+  rules:
+    - !reference [.rules/master/nightly, rules]
+    - !reference [.rules/mr/manual, rules]
+  variables:
+    NODE_VERSION: 16
 
 check/macos:
   extends:
