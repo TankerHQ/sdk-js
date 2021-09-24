@@ -1,14 +1,15 @@
 import { errors } from '@tanker/core';
+import type { Tanker, b64string } from '@tanker/core';
 import { expect, uuid } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 
 export const generateGetDeviceListTests = (args: TestArgs) => {
   describe('getDeviceList', () => {
-    let bobId;
-    let bobIdentity;
-    let bobLaptop;
-    let bobPhone;
+    let bobId: b64string;
+    let bobIdentity: b64string;
+    let bobLaptop: Tanker;
+    let bobPhone: Tanker;
 
     beforeEach(async () => {
       bobId = uuid.v4();

@@ -26,7 +26,7 @@ export function generateFunctionalTests(
   if (!appdUrl || !managementSettings || !oidcSettings || !trustchaindUrl) {
     // Those functional tests create an app automatically and require TANKER_* env variables
     // to be set (see the ci repository and env variables set on the Tanker Group on GitLab)
-    if (process.env.CI) {
+    if (process.env['CI']) {
       throw new Error('Functional tests should be running, check the configuration');
     }
     console.log('skipping functional tests'); // eslint-disable-line no-console
@@ -36,6 +36,7 @@ export function generateFunctionalTests(
   describe(`functional-tests (${name})`, function () { // eslint-disable-line func-names
     this.timeout(30000);
 
+    // @ts-expect-error args will be fully defined before its usage
     const args: TestArgs = {};
 
     // We need these resources right now to dynamically generate tests,

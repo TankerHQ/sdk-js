@@ -1,20 +1,21 @@
 import { errors } from '@tanker/core';
+import type { b64string, Tanker, EncryptionSession, EncryptionStream } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import type { TestArgs } from './helpers';
+import type { TestArgs, AppHelper } from './helpers';
 
 export const generateEncryptionSessionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
 
   describe('encrypt resources with encryption sessions', () => {
-    let appHelper;
-    let aliceLaptop;
-    let aliceIdentity;
-    let bobLaptop;
-    let bobPhone;
-    let bobIdentity;
-    let bobPublicIdentity;
+    let appHelper: AppHelper;
+    let aliceLaptop: Tanker;
+    let aliceIdentity: b64string;
+    let bobLaptop: Tanker;
+    let bobPhone: Tanker;
+    let bobIdentity: b64string;
+    let bobPublicIdentity: b64string;
 
     before(async () => {
       ({ appHelper } = args);
@@ -87,15 +88,15 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
     it('getResourceId returns the same resource id as the encryption session', async () => {
       const encryptionSession = await aliceLaptop.createEncryptionSession();
-      const encrypted = await encryptionSession.encrypt(clearText);
+      const encrypted = await encryptionSession.encrypt<Uint8Array>(clearText);
       const resourceId = await aliceLaptop.getResourceId(encrypted);
       expect(resourceId).to.equal(encryptionSession.resourceId);
     });
 
     it('uses a single resource id for multiple resources', async () => {
       const encryptionSession = await aliceLaptop.createEncryptionSession();
-      const encrypted1 = await encryptionSession.encrypt(clearText);
-      const encrypted2 = await encryptionSession.encrypt(clearText);
+      const encrypted1 = await encryptionSession.encrypt<Uint8Array>(clearText);
+      const encrypted2 = await encryptionSession.encrypt<Uint8Array>(clearText);
       const resourceId1 = await aliceLaptop.getResourceId(encrypted1);
       const resourceId2 = await aliceLaptop.getResourceId(encrypted2);
       expect(resourceId1).to.equal(resourceId2);
@@ -108,10 +109,10 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
     });
 
     describe('using streams', () => {
-      let clearData;
-      let encryptedData;
-      let encryptionSession;
-      let encryptionStream;
+      let clearData: Uint8Array;
+      let encryptedData: Uint8Array;
+      let encryptionSession: EncryptionSession;
+      let encryptionStream: EncryptionStream;
 
       before(async () => {
         clearData = new Uint8Array([104, 101, 108, 108, 111]);
@@ -119,8 +120,8 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         encryptionSession = await aliceLaptop.createEncryptionSession({ shareWithUsers: [bobPublicIdentity] });
         encryptionStream = await encryptionSession.createEncryptionStream();
 
-        const encryptionPromise = new Promise((resolve, reject) => {
-          const result = [];
+        const encryptionPromise = new Promise<Uint8Array[]>((resolve, reject) => {
+          const result: Uint8Array[] = [];
           encryptionStream.on('data', data => result.push(data));
           encryptionStream.on('end', () => resolve(result));
           encryptionStream.on('error', reject);
@@ -131,7 +132,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
         const encryptedParts = await encryptionPromise;
         expect(encryptedParts).to.have.lengthOf(1); // a single 'data' event is expected
-        encryptedData = encryptedParts[0];
+        encryptedData = encryptedParts[0]!;
       });
 
       it('uses the resource id of the session', async () => {
