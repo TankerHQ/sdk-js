@@ -2284,9 +2284,10 @@ chai-as-promised@^7.1.1:
   dependencies:
     check-error "^1.0.2"
 
-chai-exclude@TankerHQ/chai-exclude:
-  version "2.0.3"
-  resolved "https://codeload.github.com/TankerHQ/chai-exclude/tar.gz/f47fcc9908c7a9a1227abeaa29b49336ce510c16"
+chai-exclude@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/chai-exclude/-/chai-exclude-2.1.0.tgz#653d1218144eafb49b563684ad90b76d12bbc3f9"
+  integrity sha512-IBnm50Mvl3O1YhPpTgbU8MK0Gw7NHcb18WT2TxGdPKOMtdtZVKLHmQwdvOF7mTlHVQStbXuZKFwkevFtbHjpVg==
   dependencies:
     fclone "^1.0.11"
 
