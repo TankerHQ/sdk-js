@@ -155,7 +155,7 @@ const file = await fileKit.download(fileId);
 The Tanker JavaScript SDKs support the following platforms:
 
 * Chrome, Firefox, Safari, Microsoft Edge, and Internet Explorer 11
-* Node.js 10+
+* Node.js 12+
 
 The Tanker JavaScript SDKs are constantly tested with all of the supported browsers via unit and functional tests.
 
