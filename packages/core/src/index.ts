@@ -28,6 +28,11 @@ export type { ResourceMetadata } from '@tanker/types';
 export type { OutputOptions, FormatOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
 export type { EmailVerification, PassphraseVerification, KeyVerification, Verification, VerificationMethod } from './LocalUser/types';
 export type { TankerOptions } from './Tanker';
+export type { EncryptionStream } from './DataProtection/EncryptionStream';
+export type { DecryptionStream } from './DataProtection/DecryptionStream';
+export type { EncryptionSession } from './DataProtection/EncryptionSession';
+export type { UploadStream } from './CloudStorage/UploadStream';
+export type { DownloadStream } from './CloudStorage/DownloadStream';
 
 const errors = {
   DecryptionFailed,
