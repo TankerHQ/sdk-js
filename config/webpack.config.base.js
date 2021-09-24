@@ -40,7 +40,7 @@ const getBabelLoaders = (env) => {
       test: /\.tsx$/,
       loader: 'ts-loader',
       options: {
-        configFile: path.resolve(__dirname, env.tsconfig || 'tsconfig.tests.json'),
+        configFile: env.tsconfig || path.resolve(__dirname, 'tsconfig.tests.json'),
         compilerOptions: tsLoaderCompilerOptions,
       },
       exclude: /node_modules/,
@@ -49,7 +49,7 @@ const getBabelLoaders = (env) => {
       test: /\.ts$/,
       loader: 'ts-loader',
       options: {
-        configFile: path.resolve(__dirname, env.tsconfig || 'tsconfig.tests.json'),
+        configFile: env.tsconfig || path.resolve(__dirname, 'tsconfig.tests.json'),
         compilerOptions: tsLoaderCompilerOptions,
       },
       exclude: /node_modules/,
