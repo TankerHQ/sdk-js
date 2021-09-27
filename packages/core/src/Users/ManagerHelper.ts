@@ -2,7 +2,6 @@ import type { b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import type { DeviceCreationEntry, DeviceRevocationEntry } from './Serialize';
 import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from './Serialize';
 import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
 import { verifyDeviceCreation, verifyDeviceRevocation } from './Verify';
@@ -14,20 +13,18 @@ export async function usersFromBlocks(userBlocks: Array<b64string>, trustchainId
   for (const b64Block of userBlocks) {
     const userEntry = userEntryFromBlock(b64Block);
 
-    if (isDeviceCreation(userEntry.nature)) {
-      const deviceCreationEntry = ((userEntry as any) as DeviceCreationEntry);
-      const base64UserId = utils.toBase64(deviceCreationEntry.user_id);
+    if (isDeviceCreation(userEntry)) {
+      const base64UserId = utils.toBase64(userEntry.user_id);
       let user = userIdToUserMap.get(base64UserId) || null;
 
-      verifyDeviceCreation(deviceCreationEntry, user, trustchainId, trustchainPublicKey);
-      user = applyDeviceCreationToUser(deviceCreationEntry, user);
+      verifyDeviceCreation(userEntry, user, trustchainId, trustchainPublicKey);
+      user = applyDeviceCreationToUser(userEntry, user);
 
       userIdToUserMap.set(base64UserId, user);
-      deviceIdToUserIdMap.set(utils.toBase64(deviceCreationEntry.hash), base64UserId);
+      deviceIdToUserIdMap.set(utils.toBase64(userEntry.hash), base64UserId);
     }
 
-    if (isDeviceRevocation(userEntry.nature)) {
-      const deviceRevocationEntry = ((userEntry as any) as DeviceRevocationEntry);
+    if (isDeviceRevocation(userEntry)) {
       const authorUserId = deviceIdToUserIdMap.get(utils.toBase64(userEntry.author));
       if (!authorUserId) {
         throw new InternalError('no such author user id');
@@ -36,8 +33,8 @@ export async function usersFromBlocks(userBlocks: Array<b64string>, trustchainId
       if (!user) {
         throw new InternalError('No such user');
       }
-      verifyDeviceRevocation(deviceRevocationEntry, user);
-      user = applyDeviceRevocationToUser(deviceRevocationEntry, user);
+      verifyDeviceRevocation(userEntry, user);
+      user = applyDeviceRevocationToUser(userEntry, user);
 
       userIdToUserMap.set(authorUserId, user);
     }
