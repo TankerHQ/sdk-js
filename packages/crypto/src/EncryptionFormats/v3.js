@@ -45,9 +45,9 @@ export const unserialize = (buffer: Uint8Array): EncryptionData => {
   return { encryptedData, resourceId, iv };
 };
 
-export const encrypt = (key: Uint8Array, plaintext: Uint8Array, additionalData?: Uint8Array): EncryptionData => {
+export const encrypt = (key: Uint8Array, plaintext: Uint8Array): EncryptionData => {
   const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
-  const encryptedData = aead.encryptAEAD(key, iv, plaintext, additionalData);
+  const encryptedData = aead.encryptAEAD(key, iv, plaintext);
   const resourceId = aead.extractMac(encryptedData);
   return { encryptedData, iv, resourceId };
 };

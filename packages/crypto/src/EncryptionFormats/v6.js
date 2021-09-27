@@ -69,14 +69,11 @@ export const padClearData = (plainText: Uint8Array): Uint8Array => {
   return new Uint8Array([...plainText, ...paddingArray]);
 };
 
-export const encrypt = (key: Uint8Array, plaintext: Uint8Array, additionalData?: Uint8Array): EncryptionData => {
+export const encrypt = (key: Uint8Array, plaintext: Uint8Array): EncryptionData => {
   const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
   const paddedData = padClearData(plaintext);
-
-  const option = additionalData || [];
-  const associatedDataWithVersion = new Uint8Array([...option, ...[version]]);
-
-  const encryptedData = aead.encryptAEAD(key, iv, paddedData, associatedDataWithVersion);
+  const associatedData = new Uint8Array([version]);
+  const encryptedData = aead.encryptAEAD(key, iv, paddedData, associatedData);
   const resourceId = aead.extractMac(encryptedData);
   return { encryptedData, iv, resourceId };
 };
