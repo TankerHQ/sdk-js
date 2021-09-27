@@ -106,9 +106,11 @@ function dumpOrderedJson(o: Record<string, any>): string {
 
   for (const k of keys) {
     let val;
-    if (o[k] !== null && typeof o[k] === 'object')
+    if (o[k] !== null && typeof o[k] === 'object') {
       val = dumpOrderedJson(o[k]);
-    else val = JSON.stringify(o[k]);
+    } else {
+      val = JSON.stringify(o[k]);
+    }
     json.push(`"${k}":${val}`);
   }
 

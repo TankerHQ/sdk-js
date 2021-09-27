@@ -1,7 +1,7 @@
 import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-const isObject = (val: unknown) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
+const isObject = (val: unknown): val is Record<string, any> => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
 export function b64RequestObject(requestObject: any): any {
   if (requestObject instanceof Uint8Array) {

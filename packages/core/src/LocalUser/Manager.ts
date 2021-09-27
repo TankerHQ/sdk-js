@@ -13,7 +13,7 @@ import type {
   VerificationMethodResponse,
   VerificationWithToken,
   RemoteVerificationWithToken,
-  LegacyEmailVerification,
+  LegacyEmailVerificationMethod,
 } from './types';
 import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
@@ -63,7 +63,7 @@ export class LocalUserManager extends EventEmitter {
     return Status.READY;
   };
 
-  getVerificationMethods = async (): Promise<Array<VerificationMethod | LegacyEmailVerification>> => {
+  getVerificationMethods = async (): Promise<Array<VerificationMethod | LegacyEmailVerificationMethod>> => {
     const verificationMethods: VerificationMethodResponse = await this._client.getVerificationMethods();
 
     if (verificationMethods.length === 0) {
@@ -95,7 +95,7 @@ export class LocalUserManager extends EventEmitter {
           return { type: 'phoneNumber', phoneNumber };
         }
         default: {
-          // @ts-expect-error this code is only reachable in old SDK when new verification are introduced `method`'s type should be `never`
+          // @ts-expect-error this verification method's type is introduced in a later version of the sdk
           throw new UpgradeRequired(`unsupported verification method type: ${method.type}`);
         }
       }

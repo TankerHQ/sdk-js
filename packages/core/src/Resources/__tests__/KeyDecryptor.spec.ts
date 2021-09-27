@@ -1,5 +1,5 @@
-import { b64string, ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
-import type { Key } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
+import type { b64string, Key } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
