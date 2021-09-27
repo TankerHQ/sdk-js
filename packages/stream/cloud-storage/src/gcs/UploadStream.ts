@@ -1,7 +1,7 @@
 import { InternalError, InvalidArgument, NetworkError } from '@tanker/errors';
 import { fetch, retry } from '@tanker/http-utils';
 import { Writable } from '@tanker/stream-base';
-import type { DoneCallback } from '@tanker/stream-base';
+import type { WriteCallback } from '@tanker/stream-base';
 
 const gcsUploadSizeIncrement = 256 * 1024; // 256KiB
 
@@ -55,7 +55,7 @@ export class UploadStream extends Writable {
     this.log(`using upload URL ${this._uploadUrl}`);
   }
 
-  override async _write(chunk: Uint8Array, _: string, done: DoneCallback) {
+  override async _write(chunk: Uint8Array, _: string, done: WriteCallback) {
     try {
       await this._initializing;
 
@@ -100,9 +100,6 @@ export class UploadStream extends Writable {
       return done(e as Error);
     }
 
-    // @types/readable-stream is ill-typed. The done callback accepts null as argument
-    // see https://nodejs.org/docs/latest-v16.x/api/stream.html#stream_writable_write_chunk_encoding_callback_1
-    // @ts-expect-error
     done(null); // success
   }
 }
