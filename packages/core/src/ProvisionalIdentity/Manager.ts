@@ -282,8 +282,6 @@ export default class ProvisionalIdentityManager {
   }
 
   async _decryptPrivateProvisionalKeys(recipientUserPublicKey: Uint8Array, encryptedPrivateProvisionalKeys: Uint8Array): Promise<PrivateProvisionalKeys> {
-    // not sure if this '!' should instead result in an error
-    // The execution pass is to convoluted to deduce it at first glance
     const userKeyPair = (await this._localUserManager.findUserKey(recipientUserPublicKey))!;
 
     const provisionalUserPrivateKeys = tcrypto.sealDecrypt(encryptedPrivateProvisionalKeys, userKeyPair);

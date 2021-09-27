@@ -1,7 +1,7 @@
 import { InvalidArgument } from '@tanker/errors';
 import { assertNotEmptyString } from '@tanker/types';
 
-export type LegacyEmailVerification = { type: 'email' };
+export type LegacyEmailVerificationMethod = { type: 'email' };
 export type EmailVerificationMethod = { type: 'email'; email: string; };
 export type PassphraseVerificationMethod = { type: 'passphrase'; };
 export type KeyVerificationMethod = { type: 'verificationKey'; };

@@ -60,8 +60,7 @@ describe('TaskQueue', () => {
           const pw = new PromiseWrapper();
           const taskId = nextTaskId;
           scheduledTaskIds.push(taskId);
-          scheduled.push({ resolve: () => { pw.resolve(taskId); },
-          });
+          scheduled.push({ resolve: () => { pw.resolve(taskId); } });
 
           // When max concurrency reached, resolve scheduled tasks at once, but only
           // after a few milliseconds to ensure no additional task has been scheduled

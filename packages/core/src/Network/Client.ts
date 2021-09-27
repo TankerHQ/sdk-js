@@ -83,7 +83,7 @@ export class Client {
   }
 
   _cancelable = <R>(fun: (...args: Array<any>) => Promise<R>) => (...args: Array<any>) => {
-    // cancelationHandle.promise always rejects. It's returned type doesn't matter
+    // cancelationHandle.promise always rejects. Its returned type doesn't matter
     if (this._cancelationHandle.settled) {
       return this._cancelationHandle.promise as any as Promise<R>;
     }
@@ -106,7 +106,7 @@ export class Client {
         throw new InvalidArgument('"path" should be non empty and start with "/"');
       }
 
-      const headers: Record<string, string> = init && init.headers as Record<string, string> | undefined || {};
+      const headers = (init?.headers ? init.headers : {}) as Record<string, string>;
       headers['X-Tanker-Instanceid'] = this._instanceId;
       headers['X-Tanker-Sdktype'] = this._sdkType;
       headers['X-Tanker-Sdkversion'] = this._sdkVersion;
