@@ -70,7 +70,7 @@ export default class ProvisionalIdentityManager {
     }
 
     if (!isProvisionalIdentity(provisionalIdentity)) {
-      // Target is already checked when deserializing the provisional identity
+      // @ts-expect-error Target is already checked when deserializing the provisional identity
       throw new InternalError(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
     }
 
