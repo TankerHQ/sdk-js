@@ -1,15 +1,20 @@
-// @flow
 /* eslint-disable no-underscore-dangle */
 
 // Number of times to loop over the same benchmark
 let sampleCount = 5;
 
-const benchmarks = [];
-let beforeAll = null;
-let afterAll = null;
+type IterationFunc = (state: State) => void | Promise<void>;
+type BeforeFunc = () => void | Promise<void>;
+type AfterFunc = BeforeFunc;
 
-global.__karma__.start = async () => {
-  const config = global.__karma__.config;
+const benchmarks: Array<(result: (obj: any) => Promise<void>)=> Promise<void>> = [];
+let beforeAll: BeforeFunc;
+let afterAll: AfterFunc;
+
+// @ts-expect-error accessing global variables from karma
+const karma = global.__karma__;
+karma.start = async () => {
+  const config = karma.config;
   if (config.sampleCount)
     sampleCount = config.sampleCount;
 
@@ -18,14 +23,14 @@ global.__karma__.start = async () => {
       await beforeAll();
   } catch (e) {
     console.error('`before` failed:', e);
-    global.__karma__.result({ id: 'before', success: false });
-    global.__karma__.complete({});
+    karma.result({ id: 'before', success: false });
+    karma.complete({});
     return;
   }
 
   try {
     for (const bench of benchmarks) {
-      await bench(global.__karma__.result);
+      await bench(karma.result);
     }
   } catch (e) {
     console.error('FATAL ERROR: there was an error with the benchmark framework itself');
@@ -37,10 +42,10 @@ global.__karma__.start = async () => {
       await afterAll();
   } catch (e) {
     console.error('`after` failed:', e);
-    global.__karma__.result({ id: 'after', success: false });
+    karma.result({ id: 'after', success: false });
   }
 
-  global.__karma__.complete({});
+  karma.complete({});
 };
 
 function getTime(): number {
@@ -48,14 +53,14 @@ function getTime(): number {
 }
 
 export class State {
-  startTime: number;
-  pauseTime: ?number;
+  startTime?: number;
+  pauseTime?: number;
   durations: Array<number>;
   pauseDuration: number;
 
   constructor() {
-    this.pauseTime = null;
     this.durations = [];
+    this.pauseDuration = 0.0;
   }
 
   pause = () => {
@@ -64,15 +69,16 @@ export class State {
     if (this.pauseTime)
       throw new Error('pausing while already paused');
     this.pauseTime = getTime();
-  }
+  };
+
   unpause = () => {
     const pauseTime = this.pauseTime;
     if (!pauseTime)
       throw new Error('unpausing while already unpaused');
     const now = getTime();
     this.pauseDuration += now - pauseTime;
-    this.pauseTime = null;
-  }
+    delete this.pauseTime;
+  };
 
   iter = () => {
     if (this.startTime) {
@@ -88,11 +94,11 @@ export class State {
   };
 }
 
-export function before(fn: Function) {
+export function before(fn: BeforeFunc) {
   beforeAll = fn;
 }
 
-export function after(fn: Function) {
+export function after(fn: AfterFunc) {
   afterAll = fn;
 }
 
@@ -106,10 +112,10 @@ function computeMedian(numbers: Array<number>) {
   const middle = Math.floor(sorted.length / 2);
 
   if (sorted.length % 2 === 0) {
-    return (sorted[middle - 1] + sorted[middle]) / 2;
+    return (sorted[middle - 1]! + sorted[middle]!) / 2;
   }
 
-  return sorted[middle];
+  return sorted[middle]!;
 }
 
 function computeStddev(numbers: Array<number>) {
@@ -118,7 +124,7 @@ function computeStddev(numbers: Array<number>) {
   return Math.sqrt(variance);
 }
 
-export function benchmark(name: string, fn: Function) {
+export function benchmark(name: string, fn: IterationFunc) {
   benchmarks.push(async (result) => {
     try {
       const state = new State();
