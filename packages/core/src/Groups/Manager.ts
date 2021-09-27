@@ -176,10 +176,9 @@ export default class GroupManager {
       const internalGroupRecords = [];
       for (const group of groups) {
         if (isInternalGroup(group)) {
-          const internalGroup = group as InternalGroup;
-          for (const encryptionKeyPair of internalGroup.encryptionKeyPairs) {
+          for (const encryptionKeyPair of group.encryptionKeyPairs) {
             internalGroupRecords.push({
-              groupId: internalGroup.groupId,
+              groupId: group.groupId,
               publicEncryptionKey: encryptionKeyPair.publicKey,
               privateEncryptionKey: encryptionKeyPair.privateKey,
             });
@@ -215,10 +214,9 @@ export default class GroupManager {
     const internalGroupRecords = [];
     for (const group of groups) {
       if (isInternalGroup(group)) {
-        const internalGroup = group as InternalGroup;
-        for (const encryptionKeyPair of internalGroup.encryptionKeyPairs) {
+        for (const encryptionKeyPair of group.encryptionKeyPairs) {
           internalGroupRecords.push({
-            groupId: internalGroup.groupId,
+            groupId: group.groupId,
             publicEncryptionKey: encryptionKeyPair.publicKey,
             privateEncryptionKey: encryptionKeyPair.privateKey,
           });
@@ -249,7 +247,7 @@ export default class GroupManager {
       throw new InvalidArgument('Current user is not a group member');
     }
 
-    return group as InternalGroup;
+    return group;
   }
 
   async _groupsFromBlocks(blocks: Array<b64string>): Promise<Array<Group>> {
