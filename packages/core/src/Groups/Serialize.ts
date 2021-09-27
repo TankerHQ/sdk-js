@@ -120,7 +120,7 @@ type UserGroupAdditionEntry = UserGroupAdditionRecord & VerificationFields;
 
 export type UserGroupEntry = UserGroupCreationEntry | UserGroupAdditionEntry;
 
-export function isGroupAddition(entry: UserGroupEntry) {
+export function isGroupAddition(entry: UserGroupEntry): entry is UserGroupAdditionEntry {
   return !('public_encryption_key' in entry);
 }
 

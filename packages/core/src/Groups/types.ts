@@ -18,6 +18,6 @@ export type InternalGroup = GroupBase & {
 
 export type Group = InternalGroup | ExternalGroup;
 
-export function isInternalGroup(group: Group): boolean {
+export function isInternalGroup(group: Group): group is InternalGroup {
   return 'encryptionKeyPairs' in group && group.encryptionKeyPairs.length !== 0;
 }
