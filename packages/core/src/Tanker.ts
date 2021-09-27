@@ -244,7 +244,7 @@ export class Tanker extends EventEmitter {
     assertVerification(verification);
     assertVerificationOptions(options);
 
-    const verifWithToken = (verification as VerificationWithToken);
+    const verifWithToken: VerificationWithToken = verification;
     const withSessionToken = options && options.withSessionToken;
     if (withSessionToken) {
       if ('verificationKey' in verification)
@@ -265,7 +265,7 @@ export class Tanker extends EventEmitter {
     assertVerification(verification);
     assertVerificationOptions(options);
 
-    const verifWithToken = (verification as VerificationWithToken);
+    const verifWithToken: VerificationWithToken = verification;
     const withSessionToken = options && options.withSessionToken;
     if (withSessionToken) {
       assertStatus(this.status, [statuses.IDENTITY_VERIFICATION_NEEDED, statuses.READY], 'verify an identity with proof');
@@ -297,7 +297,7 @@ export class Tanker extends EventEmitter {
     if ('verificationKey' in verification)
       throw new InvalidArgument('verification', 'cannot update a verification key', verification);
 
-    const verifWithToken = (verification as VerificationWithToken);
+    const verifWithToken: VerificationWithToken = verification;
     const withSessionToken = options && options.withSessionToken;
 
     if (withSessionToken) {

@@ -71,7 +71,7 @@ export const assertVerification = (verification: Verification) => {
   }
 };
 
-export const assertVerificationOptions = (options: any) => {
+export function assertVerificationOptions(options: any): asserts options is VerificationOptions | null | undefined {
   if (!options)
     return;
 
@@ -84,4 +84,4 @@ export const assertVerificationOptions = (options: any) => {
 
   if ('withSessionToken' in options! && typeof options!.withSessionToken !== 'boolean')
     throw new InvalidArgument('options', 'withSessionToken must be a boolean', options);
-};
+}
