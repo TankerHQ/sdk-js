@@ -1,10 +1,10 @@
 include:
   - project: TankerHQ/gitlab-ci-files
     file: /cache.yml
-    ref: 2021-09-01-1
+    ref: 2021-09-27-1
   - project: TankerHQ/gitlab-ci-files
     file: /common.yml
-    ref: 2021-09-01-1
+    ref: 2021-09-27-1
 
 stages:
   - check
