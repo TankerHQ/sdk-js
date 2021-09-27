@@ -145,14 +145,6 @@ export class Tanker extends EventEmitter {
       datastoreOptions.url = options.dataStore.url;
     }
     this._dataStoreOptions = datastoreOptions;
-
-    /* eslint-disable no-underscore-dangle */
-    // @ts-expect-error hook to a custom global `__TANKER_DEVTOOLS_GLOBAL_HOOK__`
-    if (typeof window !== 'undefined' && window.__TANKER_DEVTOOLS_GLOBAL_HOOK__) {
-      // @ts-expect-error hook to a custom global `__TANKER_DEVTOOLS_GLOBAL_HOOK__`
-      window.__TANKER_DEVTOOLS_GLOBAL_HOOK__.registerTanker(this);
-    }
-    /* eslint-enable no-underscore-dangle */
   }
 
   get appId(): b64string {

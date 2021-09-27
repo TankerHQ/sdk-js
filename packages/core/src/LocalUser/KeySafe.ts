@@ -3,7 +3,6 @@ import { tcrypto, utils, encryptionV1 } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type { Device } from '../Users/types';
-import '../Users/types';
 
 export type ProvisionalUserKeyPairs = {
   id: string;
@@ -20,8 +19,8 @@ export type KeySafe = {
   encryptionPair: tcrypto.SodiumKeyPair | null;
   provisionalUserKeys: IndexedProvisionalUserKeyPairs;
   devices: Array<Device>;
-  deviceId?: b64string | null;
-  trustchainPublicKey?: b64string | null;
+  deviceId: b64string | null;
+  trustchainPublicKey: b64string | null;
   localUserKeys: LocalUserKeys | null;
 };
 

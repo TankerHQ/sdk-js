@@ -21,7 +21,7 @@ export type EncryptionOptions = { shareWithUsers?: Array<b64string>; shareWithGr
 
 export type SharingOptions = { shareWithUsers?: Array<b64string>; shareWithGroups?: Array<string>; };
 
-export const isObject = (val: Record<string, any>) => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
+export const isObject = (val: any): val is Record<string, any> => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
 export const extractSharingOptions = (options: Record<string, any>, error: any = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<b64string> }', options)): SharingOptions => {
   if (!isObject(options))

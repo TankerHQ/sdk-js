@@ -203,7 +203,7 @@ export async function groupsFromEntries(entries: Array<UserGroupEntry>, devicePu
     }
 
     const previousData: GroupDataWithDevices = groupsMap.get(b64groupId) || [];
-    const previousGroup = previousData?.[previousData.length - 1]?.group || null;
+    const previousGroup = previousData.length ? previousData[previousData.length - 1]!.group : null;
 
     const group = groupFromUserGroupEntry(entry, previousGroup, localUser, provisionalIdentityManager);
     const devicePublicSignatureKey = devicePublicSignatureKeyMap.get(utils.toBase64(entry.author));

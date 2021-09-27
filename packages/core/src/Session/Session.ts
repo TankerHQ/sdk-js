@@ -192,7 +192,7 @@ export class Session extends EventEmitter {
     await this._wipeDeviceAndStop(e instanceof DeviceRevoked);
   };
 
-  _forward = async <R>(manager: any, func: string, ...args: any): Promise<R> => {
+  _forward = async <R>(manager: any, func: string, ...args: any) => {
     try {
       return await (manager[func] as unknown as (...arg: any[]) => Promise<R>).call(manager, ...args);
     } catch (e) {
