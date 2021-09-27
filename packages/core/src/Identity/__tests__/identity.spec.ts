@@ -59,7 +59,7 @@ describe('Identity', () => {
     });
 
     it('can parse a valid provisional identity', () => {
-      const identity = _deserializeProvisionalIdentity(goodProvisionalIdentity);
+      const identity = _deserializeProvisionalIdentity(goodProvisionalIdentity) as SecretProvisionalIdentity;
 
       expect(identity.trustchain_id).to.be.equal(trustchain.id);
       expect(identity.target).to.be.equal('email');
@@ -129,7 +129,7 @@ describe('Identity', () => {
       b64PublicIdentity = await getPublicIdentity(b64Identity);
       publicIdentity = _deserializePublicIdentity(b64PublicIdentity);
       b64ProvisionalIdentity = await createProvisionalIdentity(trustchain.id, 'email', userEmail);
-      provisionalIdentity = _deserializeProvisionalIdentity(b64ProvisionalIdentity);
+      provisionalIdentity = _deserializeProvisionalIdentity(b64ProvisionalIdentity) as SecretProvisionalIdentity;
       b64PublicProvisionalIdentity = await getPublicIdentity(b64ProvisionalIdentity);
       publicProvisionalIdentity = _deserializePublicIdentity(b64PublicProvisionalIdentity);
     });

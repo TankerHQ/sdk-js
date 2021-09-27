@@ -56,15 +56,15 @@ export type ProvisionalUserKeys = {
 export type SecretIdentity = SecretPermanentIdentity | SecretProvisionalIdentity;
 export type PublicIdentity = PublicPermanentIdentity | PublicProvisionalIdentity;
 
-function isPermanentIdentity(identity: SecretIdentity | PublicIdentity): boolean {
+function isPermanentIdentity(identity: SecretIdentity | PublicIdentity): identity is SecretPermanentIdentity | PublicPermanentIdentity {
   return identity.target === 'user';
 }
 
-function isPublicPermanentIdentity(identity: SecretPermanentIdentity | PublicPermanentIdentity): boolean {
+function isPublicPermanentIdentity(identity: SecretPermanentIdentity | PublicPermanentIdentity): identity is PublicPermanentIdentity {
   return !('user_secret' in identity);
 }
 
-export function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): boolean {
+export function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity): identity is SecretProvisionalIdentity | PublicProvisionalIdentity {
   return !isPermanentIdentity(identity);
 }
 
@@ -121,7 +121,7 @@ export function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b
   return utils.toBase64(utils.fromString(dumpOrderedJson(identity)));
 }
 
-function _deserializeAndFreeze(identity: b64string): Record<string, any> { // eslint-disable-line no-underscore-dangle
+function _deserializeAndFreeze(identity: b64string): any { // eslint-disable-line no-underscore-dangle
   const result = utils.fromB64Json(identity);
   // Hidden property that carries the original serialized version of the
   // identity for debugging purposes (e.g. error messages)
@@ -136,41 +136,44 @@ function _deserializeAndFreeze(identity: b64string): Record<string, any> { // es
 }
 
 export function _deserializePermanentIdentity(identity: b64string): SecretPermanentIdentity { // eslint-disable-line no-underscore-dangle
-  let result: SecretPermanentIdentity;
+  let result: SecretIdentity | PublicIdentity;
 
   try {
-    result = _deserializeAndFreeze(identity) as any;
+    result = _deserializeAndFreeze(identity);
   } catch (e) {
     throw new InvalidArgument(`Invalid secret permanent identity provided: ${identity}`);
   }
 
-  if (!isPermanentIdentity(result))
+  if (!isPermanentIdentity(result)) {
     throw new InvalidArgument(`Expected a secret permanent identity, but got provisional identity with target: "${result.target}"`);
+  }
 
-  if (isPublicPermanentIdentity(result))
+  if (isPublicPermanentIdentity(result)) {
     throw new InvalidArgument(`Expected a secret permanent identity, but got a public permanent identity: ${identity}"`);
+  }
 
   return result;
 }
 
-export function _deserializeProvisionalIdentity(identity: b64string): SecretProvisionalIdentity { // eslint-disable-line no-underscore-dangle
-  let result: SecretProvisionalIdentity;
+export function _deserializeProvisionalIdentity(identity: b64string): SecretProvisionalIdentity | PublicProvisionalIdentity { // eslint-disable-line no-underscore-dangle
+  let result: SecretIdentity | PublicIdentity;
 
   try {
-    result = _deserializeAndFreeze(identity) as any;
+    result = _deserializeAndFreeze(identity);
   } catch (e) {
     throw new InvalidArgument(`Invalid provisional identity provided: ${identity}`);
   }
 
-  if (!isProvisionalIdentity(result))
+  if (!isProvisionalIdentity(result)) {
     throw new InvalidArgument(`Expected a provisional identity, but contained target "${result.target}"`);
+  }
 
   return result;
 }
 
 export function _deserializePublicIdentity(identity: b64string): PublicIdentity { // eslint-disable-line no-underscore-dangle
   try {
-    return _deserializeAndFreeze(identity) as any;
+    return _deserializeAndFreeze(identity);
   } catch (e) {
     throw new InvalidArgument(`Invalid public identity provided: ${identity}`);
   }
@@ -187,14 +190,14 @@ export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<
         throw new InvalidArgument('unexpected secret identity, only public identities are allowed');
       }
 
-      permanentIdentities.push(identity as PublicPermanentIdentity);
+      permanentIdentities.push(identity);
     } else {
       // Check that the provisional identities are not secret provisional identities
       if ('private_encryption_key' in identity) {
         throw new InvalidArgument('unexpected secret identity, only public identities are allowed');
       }
 
-      provisionalIdentities.push(identity as PublicProvisionalIdentity);
+      provisionalIdentities.push(identity);
     }
   }
 
