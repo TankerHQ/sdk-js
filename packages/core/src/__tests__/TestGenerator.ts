@@ -181,7 +181,7 @@ class TestGenerator {
     const ghostDeviceKeys = generateGhostDeviceKeys();
 
     const { userCreationBlock, ghostDevice } = generateUserCreation(this._trustchainId, userId, ghostDeviceKeys, delegationToken);
-    const unverifiedDeviceCreation = ((userEntryFromBlock(userCreationBlock) as any) as DeviceCreationEntry);
+    const unverifiedDeviceCreation = userEntryFromBlock(userCreationBlock) as DeviceCreationEntry;
 
     const privateUserKey = tcrypto.sealDecrypt(unverifiedDeviceCreation.user_key_pair.encrypted_private_encryption_key, ghostDeviceKeys.encryptionKeyPair);
 
@@ -223,7 +223,7 @@ class TestGenerator {
     const newDevice = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0]!.id, userKeys);
     const newDeviceBlock = newDevice.block;
 
-    const unverifiedDeviceCreation = ((userEntryFromBlock(newDeviceBlock) as any) as DeviceCreationEntry);
+    const unverifiedDeviceCreation = userEntryFromBlock(newDeviceBlock) as DeviceCreationEntry;
 
     const testDevice: TestDevice = {
       id: unverifiedDeviceCreation.hash,
@@ -250,7 +250,7 @@ class TestGenerator {
 
     this._trustchainIndex += 1;
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    const unverifiedDeviceRevocation = ((userEntryFromBlock(block) as any) as DeviceRevocationEntry);
+    const unverifiedDeviceRevocation = userEntryFromBlock(block) as DeviceRevocationEntry;
 
     const testUser = { ...parentDevice.testUser,
       devices: parentDevice.testUser.devices.map(d => {

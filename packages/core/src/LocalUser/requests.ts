@@ -1,9 +1,8 @@
 import { encryptionV2, generichash, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
-import type { EmailVerification, PassphraseVerification } from '..';
 
 import type LocalUser from './LocalUser';
-import type { OIDCVerification, PhoneNumberVerification, RemoteVerification, RemoteVerificationWithToken } from './types';
+import type { RemoteVerification, RemoteVerificationWithToken } from './types';
 import type { SecretProvisionalIdentity } from '../Identity';
 
 export type VerificationRequest = {
@@ -41,37 +40,33 @@ export const formatVerificationRequest = (
   localUser: LocalUser,
   provIdentity?: SecretProvisionalIdentity,
 ): VerificationRequest => {
-  const asEmail = verification as EmailVerification;
-  if (asEmail.email) {
+  if ('email' in verification) {
     return {
-      hashed_email: generichash(utils.fromString(asEmail.email)),
-      v2_encrypted_email: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(asEmail.email))),
-      verification_code: asEmail.verificationCode,
+      hashed_email: generichash(utils.fromString(verification.email)),
+      v2_encrypted_email: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.email))),
+      verification_code: verification.verificationCode,
     };
   }
 
-  const asPassphrase = verification as PassphraseVerification;
-  if (asPassphrase.passphrase) {
+  if ('passphrase' in verification) {
     return {
-      hashed_passphrase: generichash(utils.fromString(asPassphrase.passphrase)),
+      hashed_passphrase: generichash(utils.fromString(verification.passphrase)),
     };
   }
 
-  const asPhoneNumber = verification as PhoneNumberVerification;
-  if (asPhoneNumber.phoneNumber) {
+  if ('phoneNumber' in verification) {
     return {
-      phone_number: asPhoneNumber.phoneNumber,
-      encrypted_phone_number: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(asPhoneNumber.phoneNumber))),
+      phone_number: verification.phoneNumber,
+      encrypted_phone_number: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.phoneNumber))),
       user_salt: generichash(localUser.userSecret),
       provisional_salt: provIdentity ? generichash(utils.fromBase64(provIdentity.private_signature_key)) : undefined,
-      verification_code: asPhoneNumber.verificationCode,
+      verification_code: verification.verificationCode,
     };
   }
 
-  const asOIDC = verification as OIDCVerification;
-  if (asOIDC.oidcIdToken) {
+  if ('oidcIdToken' in verification) {
     return {
-      oidc_id_token: asOIDC.oidcIdToken,
+      oidc_id_token: verification.oidcIdToken,
     };
   }
 
