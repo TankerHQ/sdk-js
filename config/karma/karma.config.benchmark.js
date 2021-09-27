@@ -95,16 +95,16 @@ module.exports = (config) => {
 
     plugins: [
       'karma-*',
-      {'reporter:benchmarkReporter': ['type', BenchmarkReporter]},
+      { 'reporter:benchmarkReporter': ['type', BenchmarkReporter] },
     ],
     reporters: ['benchmarkReporter'],
 
     files: [
-      { pattern: 'benchmarks/src/index.js', watched: true, included: true, served: true, nocache: false },
+      { pattern: 'benchmarks/src/index.ts', watched: true, included: true, served: true, nocache: false },
     ],
 
     preprocessors: {
-      'benchmarks/src/index.js': ['webpack', 'sourcemap'],
+      'benchmarks/src/index.ts': ['webpack', 'sourcemap'],
     },
 
     webpack: makeBaseConfig({
@@ -127,7 +127,7 @@ module.exports = (config) => {
     singleRun: true,
 
     // Nightly benchmarks are slow (safari can timeout)
-    browserNoActivityTimeout: 31*60*1000,
-    browserDisconnectTimeout: 30*60*1000,
+    browserNoActivityTimeout: 31 * 60 * 1000,
+    browserDisconnectTimeout: 30 * 60 * 1000,
   });
 };
