@@ -3,7 +3,7 @@ import type { b64string } from '@tanker/crypto';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError, DeviceRevoked } from '@tanker/errors';
 
-import type { DeviceCreationEntry, DeviceRevocationEntry, UserKeys, UserKeyPair } from '../Users/Serialize';
+import type { UserKeys, UserKeyPair } from '../Users/Serialize';
 import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from '../Users/Serialize';
 import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../Users/User';
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../Users/Verify';
@@ -156,33 +156,31 @@ export class LocalUser extends EventEmitter {
     for (const b64Block of userBlocks) {
       const userEntry = userEntryFromBlock(b64Block);
 
-      if (isDeviceCreation(userEntry.nature)) {
-        const deviceCreationEntry = ((userEntry as any) as DeviceCreationEntry);
-        verifyDeviceCreation(deviceCreationEntry, user, this.trustchainId, this.trustchainPublicKey);
-        user = applyDeviceCreationToUser(deviceCreationEntry, user);
+      if (isDeviceCreation(userEntry)) {
+        verifyDeviceCreation(userEntry, user, this.trustchainId, this.trustchainPublicKey);
+        user = applyDeviceCreationToUser(userEntry, user);
 
-        if (utils.equalArray(this.deviceId, deviceCreationEntry.hash)) {
+        if (utils.equalArray(this.deviceId, userEntry.hash)) {
           deviceFound = true;
 
-          if (deviceCreationEntry.user_key_pair) {
-            encryptedUserKeys.unshift(deviceCreationEntry.user_key_pair);
+          if (userEntry.user_key_pair) {
+            encryptedUserKeys.unshift(userEntry.user_key_pair);
           }
         }
-      } else if (isDeviceRevocation(userEntry.nature)) {
+      } else if (isDeviceRevocation(userEntry)) {
         if (!user) {
           throw new InternalError('Assertion error: Cannot revoke device of non existing user');
         }
 
-        const deviceRevocationEntry = ((userEntry as any) as DeviceRevocationEntry);
-        verifyDeviceRevocation(deviceRevocationEntry, user);
-        user = applyDeviceRevocationToUser(deviceRevocationEntry, user);
+        verifyDeviceRevocation(userEntry, user);
+        user = applyDeviceRevocationToUser(userEntry, user);
 
-        if (this._deviceId && utils.equalArray(deviceRevocationEntry.device_id, this._deviceId)) {
+        if (this._deviceId && utils.equalArray(userEntry.device_id, this._deviceId)) {
           throw new DeviceRevoked();
         }
 
-        if (deviceRevocationEntry.user_keys) {
-          encryptedUserKeys.unshift(deviceRevocationEntry.user_keys);
+        if (userEntry.user_keys) {
+          encryptedUserKeys.unshift(userEntry.user_keys);
         }
       }
     }
@@ -231,25 +229,23 @@ export class LocalUser extends EventEmitter {
 
     for (const encryptedUserKey of encryptedUserKeys) {
       // Key for local device
-      const asUserKeyPair = encryptedUserKey as UserKeyPair;
-      if (asUserKeyPair.encrypted_private_encryption_key) {
-        localUserKeys = this._localUserKeysFromPrivateKey(asUserKeyPair.encrypted_private_encryption_key, this.deviceEncryptionKeyPair, localUserKeys);
+      if ('encrypted_private_encryption_key' in encryptedUserKey) {
+        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_private_encryption_key, this.deviceEncryptionKeyPair, localUserKeys);
         continue;
       }
 
-      const asUserKeys = encryptedUserKey as UserKeys;
       // Upgrade from userV1 to userV3
-      if (utils.equalArray(new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE), asUserKeys.previous_public_encryption_key))
+      if (utils.equalArray(new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE), encryptedUserKey.previous_public_encryption_key))
         continue;
 
       // Key encrypted before our device creation
-      const existingUserKey = localUserKeys && localUserKeys.userKeys[utils.toBase64(asUserKeys.public_encryption_key)];
+      const existingUserKey = localUserKeys && localUserKeys.userKeys[utils.toBase64(encryptedUserKey.public_encryption_key)];
 
       if (existingUserKey) {
-        localUserKeys = this._localUserKeysFromPrivateKey(asUserKeys.encrypted_previous_encryption_key, existingUserKey, localUserKeys);
+        localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_previous_encryption_key, existingUserKey, localUserKeys);
       // Key encrypted after our device creation
       } else {
-        const privKey = asUserKeys.private_keys.find(k => utils.equalArray(k.recipient, deviceId));
+        const privKey = encryptedUserKey.private_keys.find(k => utils.equalArray(k.recipient, deviceId));
         if (!privKey)
           throw new InternalError('Assertion error: Couldn\'t decrypt user keys from revocation');
 

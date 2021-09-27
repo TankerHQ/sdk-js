@@ -1,7 +1,7 @@
 import { utils } from '@tanker/crypto';
 
 import { InvalidBlockError } from '../errors.internal';
-import type { Nature } from '../Blocks/Nature';
+import type { VerificationFields } from '../Blocks/Block';
 
 import { natureKind, NATURE_KIND } from '../Blocks/Nature';
 
@@ -9,12 +9,12 @@ import type { TrustchainCreationEntry } from './Serialize';
 
 export const rootBlockAuthor = new Uint8Array(32);
 
-function isTrustchainCreation(nature: Nature): boolean {
-  return natureKind(nature) === NATURE_KIND.trustchain_creation;
+function isTrustchainCreation(entry: VerificationFields): entry is TrustchainCreationEntry {
+  return natureKind(entry.nature) === NATURE_KIND.trustchain_creation;
 }
 
 export function verifyTrustchainCreation(trustchainCreation: TrustchainCreationEntry, trustchainId: Uint8Array) {
-  if (!isTrustchainCreation(trustchainCreation.nature))
+  if (!isTrustchainCreation(trustchainCreation))
     throw new InvalidBlockError('invalid_nature', 'invalid nature for trustchain creation', { trustchainCreation });
 
   if (!utils.equalArray(trustchainCreation.author, rootBlockAuthor))

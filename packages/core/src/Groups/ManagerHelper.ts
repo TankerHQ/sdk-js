@@ -108,9 +108,8 @@ function externalToInternal(externalGroup: ExternalGroup, previousGroup: Group |
   const encryptionKeyPairs = [];
 
   if (previousGroup && isInternalGroup(previousGroup)) {
-    const internalGroup = previousGroup as InternalGroup;
-    signatureKeyPairs.push(...internalGroup.signatureKeyPairs);
-    encryptionKeyPairs.push(...internalGroup.encryptionKeyPairs);
+    signatureKeyPairs.push(...previousGroup.signatureKeyPairs);
+    encryptionKeyPairs.push(...previousGroup.encryptionKeyPairs);
   }
 
   signatureKeyPairs.push({
@@ -139,8 +138,8 @@ export function groupFromUserGroupEntry(
   // Previous group already has every field we need
   if (previousGroup && isInternalGroup(previousGroup) && (
     isGroupAddition(entry)
-    || ('public_encryption_key' in entry && utils.equalArray(previousGroup.lastPublicEncryptionKey, entry.public_encryption_key))
-  )) {
+    || utils.equalArray(previousGroup.lastPublicEncryptionKey, entry.public_encryption_key))
+  ) {
     return {
       ...previousGroup,
       lastGroupBlock: entry.hash,
@@ -148,14 +147,26 @@ export function groupFromUserGroupEntry(
   }
 
   // Extract info from external group or UserGroupCreationEntry
-  const groupId = previousGroup && previousGroup.groupId
-          || 'public_signature_key' in entry && entry.public_signature_key;
-  const lastPublicSignatureKey = 'public_signature_key' in entry && entry.public_signature_key
-          || previousGroup && previousGroup.lastPublicSignatureKey;
-  const lastPublicEncryptionKey = 'public_encryption_key' in entry && entry.public_encryption_key
-          || previousGroup && previousGroup.lastPublicEncryptionKey;
-  const encryptedPrivateSignatureKey = 'encrypted_group_private_signature_key' in entry && entry.encrypted_group_private_signature_key
-          || previousGroup && 'encryptedPrivateSignatureKey' in previousGroup && previousGroup.encryptedPrivateSignatureKey;
+  let groupId: Uint8Array | undefined;
+  let lastPublicSignatureKey: Uint8Array | undefined;
+  let lastPublicEncryptionKey: Uint8Array | undefined;
+  let encryptedPrivateSignatureKey: Uint8Array | undefined;
+
+  if (previousGroup) {
+    groupId = previousGroup.groupId;
+    lastPublicSignatureKey = previousGroup.lastPublicSignatureKey;
+    lastPublicEncryptionKey = previousGroup.lastPublicEncryptionKey;
+    if (!isInternalGroup(previousGroup)) {
+      encryptedPrivateSignatureKey = previousGroup.encryptedPrivateSignatureKey;
+    }
+  }
+
+  if (!isGroupAddition(entry)) {
+    groupId = groupId || entry.public_signature_key;
+    lastPublicSignatureKey = entry.public_signature_key;
+    lastPublicEncryptionKey = entry.public_encryption_key;
+    encryptedPrivateSignatureKey = entry.encrypted_group_private_signature_key;
+  }
 
   if (!groupId || !lastPublicSignatureKey || !lastPublicEncryptionKey || !encryptedPrivateSignatureKey) {
     throw new InternalError('Assertion error: invalid group/entry combination');
