@@ -49,7 +49,7 @@ describe('KeyDecryptor', () => {
   let decryptor: KeyDecryptor;
   let localUser: LocalUserStub;
   let groupManager: { getGroupEncryptionKeyPair: () => typeof keys | null; };
-  const provisionalIdentityManager = (({} as any) as ProvisionalIdentityManager);
+  const provisionalIdentityManager = {} as any as ProvisionalIdentityManager;
 
   before(async () => {
     await cryptoReady;
@@ -63,10 +63,10 @@ describe('KeyDecryptor', () => {
 
   beforeEach(() => {
     localUser = new LocalUserStub(refDeviceId, keys);
-    const castedLocalUser = ((localUser as any) as LocalUserManager);
+    const castedLocalUser = localUser as any as LocalUserManager;
 
     groupManager = { getGroupEncryptionKeyPair: () => null };
-    const castedGroupManager = ((groupManager as any) as GroupManager);
+    const castedGroupManager = groupManager as any as GroupManager;
 
     decryptor = new KeyDecryptor(castedLocalUser, castedGroupManager, provisionalIdentityManager);
   });
@@ -96,7 +96,7 @@ describe('KeyDecryptor', () => {
   });
 
   it('throws when not called with a key publish', async () => {
-    const badKeyPublish = (({ nature: 42 } as any) as KeyPublishEntry);
+    const badKeyPublish = { nature: 42 } as KeyPublishEntry;
 
     await expect(decryptor.keyFromKeyPublish(badKeyPublish)).to.be.rejectedWith(InternalError);
   });

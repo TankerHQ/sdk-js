@@ -46,12 +46,12 @@ describe('GroupManagerHelper', () => {
     testGenerator.makeTrustchainCreation();
     const userId = random(tcrypto.HASH_SIZE);
     userCreation = await testGenerator.makeUserCreation(userId);
-    localUser = (({ findUserKey: () => userCreation.testUser.userKeys[0] } as any) as LocalUser);
+    localUser = { findUserKey: () => userCreation.testUser.userKeys[0] } as any as LocalUser;
     userGroup = testGenerator.makeUserGroupCreation(userCreation, [userCreation.user], []);
-    provisionalIdentityManager = (({
+    provisionalIdentityManager = {
       findPrivateProvisionalKeys: () => null,
       refreshProvisionalPrivateKeys: () => null,
-    } as any) as ProvisionalIdentityManager);
+    } as any as ProvisionalIdentityManager;
   });
 
   describe('assertPublicIdentities()', () => {
@@ -115,10 +115,10 @@ describe('GroupManagerHelper', () => {
             const userCreation2 = await testGenerator.makeUserCreation(random(tcrypto.HASH_SIZE));
             const userGroupAddition = makeUserGroupAddition(userCreation, userGroup.group, [userCreation2.user]);
 
-            localUser = (({ findUserKey: () => null } as any) as LocalUser);
+            localUser = { findUserKey: () => null } as any as LocalUser;
             let group = groupFromUserGroupEntry(userGroup.userGroupEntry, null, localUser, provisionalIdentityManager);
 
-            localUser = (({ findUserKey: () => userCreation2.testUser.userKeys[0] } as any) as LocalUser);
+            localUser = { findUserKey: () => userCreation2.testUser.userKeys[0] } as any as LocalUser;
             group = groupFromUserGroupEntry(userGroupAddition.userGroupEntry, group, localUser, provisionalIdentityManager);
             expect(group).to.deep.equal(userGroupAddition.group);
           });
@@ -126,7 +126,7 @@ describe('GroupManagerHelper', () => {
 
         describe('with external groups', () => {
           beforeEach(() => {
-            localUser = (({ findUserKey: () => null } as any) as LocalUser);
+            localUser = { findUserKey: () => null } as any as LocalUser;
           });
 
           it('can create an external group from a userGroupCreation action', () => {
