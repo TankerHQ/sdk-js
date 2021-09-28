@@ -98,7 +98,7 @@ export const extractResourceMetadata = (options: Record<string, any>, input?: Da
   if (!isObject(options))
     throw new InvalidArgument('options', '{ mime?: string, name?: string, lastModified?: number }', options);
 
-  const resourceMetadata: Partial<ResourceMetadata> = {};
+  const resourceMetadata: ResourceMetadata = {};
   if (globalThis.Blob && input instanceof globalThis.Blob) {
     resourceMetadata.mime = (input as Blob).type;
   }
