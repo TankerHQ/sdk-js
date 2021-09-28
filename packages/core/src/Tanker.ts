@@ -497,7 +497,7 @@ export class Tanker extends EventEmitter {
     return this.session.decryptData(encryptedData, outputOptions, progressOptions);
   }
 
-  async decrypt(cipher: Data, options: Partial<ProgressOptions> = {}): Promise<string> {
+  async decrypt(cipher: Data, options: ProgressOptions = {}): Promise<string> {
     assertStatus(this.status, statuses.READY, 'decrypt');
     const progressOptions = extractProgressOptions(options);
     return utils.toString(await this.decryptData(cipher, {
@@ -506,7 +506,7 @@ export class Tanker extends EventEmitter {
     }));
   }
 
-  async upload(clearData: Data, options: Partial<EncryptionOptions & ResourceMetadata & ProgressOptions> = {}): Promise<string> {
+  async upload(clearData: Data, options: EncryptionOptions & ResourceMetadata & ProgressOptions = {}): Promise<string> {
     assertStatus(this.status, statuses.READY, 'upload a file');
     assertDataType(clearData, 'clearData');
 
@@ -530,7 +530,7 @@ export class Tanker extends EventEmitter {
     return this.session.download(resourceId, outputOptions, progressOptions);
   }
 
-  async createUploadStream(clearSize: number, options: Partial<EncryptionOptions & ResourceMetadata & ProgressOptions> = {}): Promise<UploadStream> {
+  async createUploadStream(clearSize: number, options: EncryptionOptions & ResourceMetadata & ProgressOptions = {}): Promise<UploadStream> {
     assertStatus(this.status, statuses.READY, 'upload a file using stream');
     assertInteger(clearSize, 'clearSize', true);
 
@@ -541,7 +541,7 @@ export class Tanker extends EventEmitter {
     return this.session.createUploadStream(clearSize, encryptionOptions, resourceMetadata, progressOptions);
   }
 
-  async createDownloadStream(resourceId: b64string, options: Partial<ProgressOptions> = {}): Promise<DownloadStream> {
+  async createDownloadStream(resourceId: b64string, options: ProgressOptions = {}): Promise<DownloadStream> {
     assertStatus(this.status, statuses.READY, 'download a file using stream');
     assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 
