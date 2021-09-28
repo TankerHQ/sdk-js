@@ -4,7 +4,7 @@ import { encryptionV2, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidVerification, UpgradeRequired, TankerError } from '@tanker/errors';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationKey, ghostDeviceKeysFromVerificationKey, decryptVerificationKey, ghostDeviceToEncryptedVerificationKey, decryptUserKeyForGhostDevice } from './ghostDevice';
-import type { ProvisionalUserKeyPairs, IndexedProvisionalUserKeyPairs } from './KeySafe';
+import type { IndexedProvisionalUserKeyPairs } from './KeySafe';
 import type KeyStore from './KeyStore';
 import LocalUser from './LocalUser';
 import { formatVerificationRequest } from './requests';
@@ -253,7 +253,7 @@ export class LocalUserManager extends EventEmitter {
   };
 
   hasProvisionalUserKey = (appPublicEncryptionKey: Uint8Array): boolean => {
-    const puks: Array<ProvisionalUserKeyPairs> = (Object.values(this._provisionalUserKeys) as any);
+    const puks = Object.values(this._provisionalUserKeys);
     return puks.some(puk => utils.equalArray(puk.appEncryptionKeyPair.publicKey, appPublicEncryptionKey));
   };
 
