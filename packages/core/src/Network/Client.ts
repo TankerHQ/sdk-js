@@ -10,7 +10,9 @@ import { signChallenge } from './Authenticator';
 import { genericErrorHandler } from './ErrorHandler';
 import { b64RequestObject, urlize } from './utils';
 import type { ProvisionalKeysRequest, VerificationRequest } from '../LocalUser/requests';
+import type { VerificationMethodResponse } from '../LocalUser/types';
 import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
+import type { FileUploadURLResponse, FileDownloadURLResponse, TankerProvisionalIdentityResponse } from './types';
 
 export const defaultApiEndpoint = 'https://api.tanker.io';
 
@@ -250,7 +252,7 @@ export class Client {
     });
   };
 
-  getUser = async () => {
+  getUser = async (): Promise<unknown | null> => {
     const path = `/users/${urlize(this._userId)}`;
 
     try {
@@ -392,7 +394,7 @@ export class Client {
     return result;
   };
 
-  getVerificationMethods = async () => {
+  getVerificationMethods = async (): Promise<VerificationMethodResponse> => {
     const path = `/users/${urlize(this._userId)}/verification-methods`;
     const { verification_methods: verificationMethods } = await this._apiCall(path);
     return verificationMethods;
@@ -486,12 +488,12 @@ export class Client {
     return this.getGroupHistories(query);
   };
 
-  getFileUploadURL = (resourceId: Uint8Array, metadata: b64string, uploadContentLength: number) => {
+  getFileUploadURL = (resourceId: Uint8Array, metadata: b64string, uploadContentLength: number): Promise<FileUploadURLResponse> => {
     const query = `metadata=${urlize(metadata)}&upload_content_length=${uploadContentLength}`;
     return this._apiCall(`/resources/${urlize(resourceId)}/upload-url?${query}`);
   };
 
-  getFileDownloadURL = (resourceId: Uint8Array) => this._apiCall(`/resources/${urlize(resourceId)}/download-url`);
+  getFileDownloadURL = (resourceId: Uint8Array): Promise<FileDownloadURLResponse> => this._apiCall(`/resources/${urlize(resourceId)}/download-url`);
 
   getPublicProvisionalIdentities = async (hashedEmails: Array<Uint8Array>, hashedPhoneNumbers: Array<Uint8Array>): Promise<PublicProvisionalIdentityResults> => {
     const MAX_QUERY_ITEMS = 100; // This is probably route-specific, so doesn't need to be global
@@ -536,13 +538,13 @@ export class Client {
     return result;
   };
 
-  getProvisionalIdentityClaims = async () => {
+  getProvisionalIdentityClaims = async (): Promise<string[]> => {
     const path = `/users/${urlize(this._userId)}/provisional-identity-claims`;
     const { provisional_identity_claims: claims } = await this._apiCall(path);
     return claims;
   };
 
-  getTankerProvisionalKeysFromSession = async (body: ProvisionalKeysRequest) => {
+  getTankerProvisionalKeysFromSession = async (body: ProvisionalKeysRequest): Promise<TankerProvisionalIdentityResponse> => {
     const path = `/users/${urlize(this._userId)}/tanker-provisional-keys`;
     const options = {
       method: 'POST',
@@ -554,7 +556,7 @@ export class Client {
     return provisionalKeys;
   };
 
-  getTankerProvisionalKeysWithVerif = async (body: { verification: VerificationRequest }) => {
+  getTankerProvisionalKeysWithVerif = async (body: { verification: VerificationRequest }): Promise<TankerProvisionalIdentityResponse> => {
     const options = {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),
