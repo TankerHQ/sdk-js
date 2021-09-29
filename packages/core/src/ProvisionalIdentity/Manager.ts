@@ -4,6 +4,7 @@ import { InternalError, InvalidArgument, PreconditionFailed } from '@tanker/erro
 import type { SecretProvisionalIdentity, PublicProvisionalIdentity, PublicProvisionalUser } from '../Identity';
 
 import type { Client } from '../Network/Client';
+import type { TankerProvisionalIdentityResponse } from '../Network/types';
 import type { PrivateProvisionalKeys, LocalUserManager } from '../LocalUser/Manager';
 
 import type KeyStore from '../LocalUser/KeyStore';
@@ -25,9 +26,8 @@ import {
 } from '../Identity';
 
 type TankerProvisionalKeys = { tankerSignatureKeyPair: tcrypto.SodiumKeyPair; tankerEncryptionKeyPair: tcrypto.SodiumKeyPair; };
-type TankerProvisionalIdentityResp = { private_signature_key: string, public_signature_key: string; private_encryption_key: string; public_encryption_key: string; };
 
-const toTankerProvisionalKeys = (serverResult: TankerProvisionalIdentityResp) => ({
+const toTankerProvisionalKeys = (serverResult: TankerProvisionalIdentityResponse) => ({
   tankerSignatureKeyPair: {
     privateKey: utils.fromBase64(serverResult.private_signature_key),
     publicKey: utils.fromBase64(serverResult.public_signature_key),
@@ -240,7 +240,7 @@ export default class ProvisionalIdentityManager {
   }
 
   async _getProvisionalIdentityKeys(provIdentity: SecretProvisionalIdentity, verification?: ProvisionalVerification | OIDCVerification): Promise<TankerProvisionalKeys> {
-    let tankerProvisionalKeysReply;
+    let tankerProvisionalKeysReply: TankerProvisionalIdentityResponse;
 
     const localUser = this._localUserManager.localUser;
     if (verification) {
