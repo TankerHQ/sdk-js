@@ -1,5 +1,5 @@
 import varint from 'varint';
-import type { Key } from '@tanker/crypto';
+import type { Key, EncryptionFormatReporter } from '@tanker/crypto';
 import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, random, tcrypto } from '@tanker/crypto';
 
 import { InvalidArgument } from '@tanker/errors';
@@ -39,10 +39,10 @@ export const getStreamEncryptionFormatDescription = (): EncryptionFormatDescript
   encryptedChunkSize: encryptionV4.defaultMaxEncryptedChunkSize,
 });
 
-const encryptionFormats = [null, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5];
+const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5];
 
 export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescription, encryptedSize: number): number => {
-  const encryption: { getClearSize(encryptedSize: number, chunkSize?: number | undefined): number; } | null | undefined = encryptionFormats[encryptionFormatDescription.version];
+  const encryption: EncryptionFormatReporter | undefined = encryptionFormats[encryptionFormatDescription.version];
   if (!encryption)
     throw new InvalidArgument(`Unhandled format version ${encryptionFormatDescription.version} used in encryptedData`);
 
