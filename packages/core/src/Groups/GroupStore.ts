@@ -167,7 +167,7 @@ export default class GroupStore {
     await this._ds.bulkPut(GROUPS_ENCRYPTION_KEYS_TABLE, toInsert);
   };
 
-  async findGroupEncryptionKeyPair(publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair | null | undefined> {
+  async findGroupEncryptionKeyPair(publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair | null> {
     const b64PublicKey = utils.toBase64(publicKey);
 
     const existingKey = await this._ds.first(GROUPS_ENCRYPTION_KEYS_TABLE, {
@@ -200,7 +200,7 @@ export default class GroupStore {
       selector: {
         groupId: { $in: groupIds },
       },
-    }) as unknown as Array<GroupEntry>;
+    }) as any as Array<GroupEntry>;
   }
 
   async _findGroupsByPublicKey(Ids: Array<b64string>): Promise<Array<GroupEntry>> {
@@ -208,6 +208,6 @@ export default class GroupStore {
       selector: {
         _id: { $in: Ids },
       },
-    }) as unknown as Array<GroupEntry>;
+    }) as any as Array<GroupEntry>;
   }
 }

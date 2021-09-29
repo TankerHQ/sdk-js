@@ -94,14 +94,10 @@ export class DataProtector {
     recipientProvisionalUsers: Array<PublicProvisionalUser>,
     recipientGroupsEncryptionKeys: Array<Uint8Array>,
   ): Promise<void> {
-    const body: {
-      key_publishes_to_user: b64string[];
-      key_publishes_to_user_group: b64string[];
-      key_publishes_to_provisional_user: b64string[];
-    } = {
-      key_publishes_to_user: [],
-      key_publishes_to_user_group: [],
-      key_publishes_to_provisional_user: [],
+    const body = {
+      key_publishes_to_user: [] as b64string[],
+      key_publishes_to_user_group: [] as b64string[],
+      key_publishes_to_provisional_user: [] as b64string[],
     };
 
     if (recipientGroupsEncryptionKeys.length > 0) {

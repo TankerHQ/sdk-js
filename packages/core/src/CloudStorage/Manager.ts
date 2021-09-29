@@ -106,16 +106,15 @@ export class CloudStorageManager {
     if (!streamCloudStorage[service as CloudStorageServices])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
 
-    const streamService = streamCloudStorage[service as CloudStorageServices];
     // CloudUploadStream is a Class
-    const { UploadStream: CloudUploadStream } = streamService; // eslint-disable-line @typescript-eslint/naming-convention
+    const { UploadStream: CloudUploadStream } = streamCloudStorage[service as CloudStorageServices]; // eslint-disable-line @typescript-eslint/naming-convention
 
     const uploader = new CloudUploadStream(urls, headers, totalEncryptedSize, recommendedChunkSize);
 
     const progressHandler = new ProgressHandler(progressOptions).start(totalEncryptedSize);
     uploader.on('uploaded', (chunk: Uint8Array) => progressHandler.report(chunk.byteLength));
 
-    const streams: (Transform | Writable)[] = [encryptor];
+    const streams: Array<Transform | Writable> = [encryptor];
 
     // Some version of Edge (e.g. version 18) fail to handle the 308 HTTP status used by
     // GCS in a non-standard way (no redirection expected) when uploading in chunks. So we
