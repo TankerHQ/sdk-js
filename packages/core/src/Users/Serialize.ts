@@ -1,7 +1,7 @@
 import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import { getStaticArray, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from '../Blocks/Serialize';
+import { getStaticArray, getStaticBool, encodeListLength, unserializeGenericSub, unserializeGeneric, unserializeList } from '../Blocks/Serialize';
 import type { VerificationFields } from '../Blocks/Block';
 import { hashBlock } from '../Blocks/Block';
 import { unserializeBlock } from '../Blocks/payloads';
@@ -160,7 +160,7 @@ export function unserializeUserDeviceV3(src: Uint8Array): DeviceCreationRecord {
     (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'public_signature_key'),
     (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'public_encryption_key'),
     (d, o) => unserializeUserKeyPair(d, o),
-    (d, o) => ({ is_ghost_device: !!(d[o]! & 0x01), newOffset: o + 1 }), // eslint-disable-line no-bitwise
+    (d, o) => getStaticBool(d, o, 'is_ghost_device'),
     (_, o) => ({ revoked: Number.MAX_SAFE_INTEGER, newOffset: o }),
   ]);
 }

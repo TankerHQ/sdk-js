@@ -23,16 +23,22 @@ export function setStaticArray(src: Uint8Array, dest: Uint8Array, offset: number
   return offset + src.length;
 }
 
+type StaticBool = { [name: string]: boolean; } & { newOffset: number; };
+export function getStaticBool(buf: Uint8Array, offset: number = 0, name: string = 'value'): StaticBool {
+  if (offset + 1 > buf.length)
+    throw new InternalError('Out of bounds read in getStaticBool');
+  return { [name]: !!(buf[offset]! & 0x01), newOffset: offset + 1 } as StaticBool; // eslint-disable-line no-bitwise
+}
+
 type StaticArray = { [name: string]: Uint8Array; } & { newOffset: number; };
-export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: Exclude<string, 'newOffset'> = 'value'): StaticArray {
+export function getStaticArray(buf: Uint8Array, size: number, offset: number = 0, name: string = 'value'): StaticArray {
   if (offset + size > buf.length)
     throw new InternalError('Out of bounds read in getStaticArray');
   const arr = new Uint8Array(buf.buffer, buf.byteOffset + offset, size);
   return { [name]: arr, newOffset: offset + size } as StaticArray;
 }
 
-// @ts-expect-error precondition: 'newOffset' is never used as a name, thus, [name] can never be a number
-type UnserializedSub = { newOffset: number, [name: string]: Record<string, Uint8Array> };
+type UnserializedSub = { [name: string]: Record<string, Uint8Array>; } & { newOffset: number; };
 export function unserializeGenericSub(data: Uint8Array, functions: Array<Unserializer>, offset: number, name: string = 'value'): UnserializedSub {
   let newOffset = offset;
   const resultList = [];
@@ -45,8 +51,7 @@ export function unserializeGenericSub(data: Uint8Array, functions: Array<Unseria
   const result: Record<string, Uint8Array> = Object.assign({}, ...resultList);
   delete result['newOffset'];
 
-  // @ts-expect-error precondition: 'newOffset' is never used as a name, thus, [name] can never be a number
-  return { [name]: result, newOffset };
+  return { [name]: result, newOffset } as UnserializedSub;
 }
 
 export function unserializeGeneric<T>(data: Uint8Array, functions: Array<Unserializer>): T {
