@@ -32,7 +32,6 @@ const pipeStreams = <T>(
 const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
 type Metadata = { encryptionFormat: EncryptionFormatDescription; } & ResourceMetadata;
-type CloudStorageServices = keyof typeof streamCloudStorage;
 
 export class CloudStorageManager {
   _client: Client;
@@ -103,11 +102,11 @@ export class CloudStorageManager {
       recommended_chunk_size: recommendedChunkSize,
     } = await this._client.getFileUploadURL(resourceId, encryptedMetadata, totalEncryptedSize);
 
-    if (!streamCloudStorage[service as CloudStorageServices])
+    if (!streamCloudStorage[service])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
 
     // CloudUploadStream is a Class
-    const { UploadStream: CloudUploadStream } = streamCloudStorage[service as CloudStorageServices]; // eslint-disable-line @typescript-eslint/naming-convention
+    const { UploadStream: CloudUploadStream } = streamCloudStorage[service]; // eslint-disable-line @typescript-eslint/naming-convention
 
     const uploader = new CloudUploadStream(urls, headers, totalEncryptedSize, recommendedChunkSize);
 
@@ -138,11 +137,11 @@ export class CloudStorageManager {
 
     const { head_url: headUrl, get_url: getUrl, service } = await this._client.getFileDownloadURL(resourceId);
 
-    if (!streamCloudStorage[service as CloudStorageServices]!)
+    if (!streamCloudStorage[service])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
 
     // CloudDownloadStream is a Class
-    const { DownloadStream: CloudDownloadStream } = streamCloudStorage[service as CloudStorageServices]; // eslint-disable-line @typescript-eslint/naming-convention
+    const { DownloadStream: CloudDownloadStream } = streamCloudStorage[service]; // eslint-disable-line @typescript-eslint/naming-convention
 
     const downloadChunkSize = 1024 * 1024;
     const downloader = new CloudDownloadStream(b64ResourceId, headUrl, getUrl, downloadChunkSize);

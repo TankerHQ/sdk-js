@@ -10,7 +10,6 @@ import LocalUser from './LocalUser';
 import { formatVerificationRequest } from './requests';
 import type {
   VerificationMethod,
-  VerificationMethodResponse,
   VerificationWithToken,
   RemoteVerificationWithToken,
   LegacyEmailVerificationMethod,
@@ -64,7 +63,7 @@ export class LocalUserManager extends EventEmitter {
   };
 
   getVerificationMethods = async (): Promise<Array<VerificationMethod | LegacyEmailVerificationMethod>> => {
-    const verificationMethods: VerificationMethodResponse = await this._client.getVerificationMethods();
+    const verificationMethods = await this._client.getVerificationMethods();
 
     if (verificationMethods.length === 0) {
       return [{ type: 'verificationKey' }];
