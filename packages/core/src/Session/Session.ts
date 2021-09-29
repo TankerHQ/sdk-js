@@ -194,7 +194,7 @@ export class Session extends EventEmitter {
 
   _forward = async <R>(manager: any, func: string, ...args: any) => {
     try {
-      return await (manager[func] as unknown as (...arg: any[]) => Promise<R>).call(manager, ...args);
+      return await (manager[func] as any as (...arg: any[]) => Promise<R>).call(manager, ...args);
     } catch (e) {
       await this._handleUnrecoverableError(e as TankerError);
       throw e as Error;

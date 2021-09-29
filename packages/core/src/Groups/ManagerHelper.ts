@@ -100,7 +100,7 @@ function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUs
   return null;
 }
 
-function externalToInternal(externalGroup: ExternalGroup, previousGroup: Group | null | undefined, groupPrivateEncryptionKey: Uint8Array): InternalGroup {
+function externalToInternal(externalGroup: ExternalGroup, previousGroup: Group | null, groupPrivateEncryptionKey: Uint8Array): InternalGroup {
   const { encryptedPrivateSignatureKey, ...groupBase } = externalGroup;
   const groupPrivateSignatureKey = tcrypto.sealDecrypt(encryptedPrivateSignatureKey, { publicKey: groupBase.lastPublicEncryptionKey, privateKey: groupPrivateEncryptionKey });
 

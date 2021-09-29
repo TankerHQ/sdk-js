@@ -215,7 +215,7 @@ export class LocalUserManager extends EventEmitter {
     if (!userKey) {
       await this.updateLocalUser({ isLight: true });
     }
-    return this._localUser.findUserKey(publicKey)!;
+    return this._localUser.findUserKey(publicKey);
   };
 
   updateLocalUser = async (options: PullOptions = {}) => {
