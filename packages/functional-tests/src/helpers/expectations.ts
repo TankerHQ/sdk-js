@@ -5,13 +5,13 @@ import { expect } from '@tanker/test-utils';
 import { getConstructor } from '@tanker/types';
 import type { Data, Class } from '@tanker/types';
 
-type spyObj = {
+type SpyObj = {
   callCount: number;
   getCall: (step: number) => { args: Array<unknown>; };
 };
 
 export const expectProgressReport = (
-  spy: spyObj,
+  spy: SpyObj,
   totalBytes: number,
   maxBytesPerStep: number = encryptionV4.defaultMaxEncryptedChunkSize,
 ) => {

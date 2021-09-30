@@ -60,6 +60,13 @@ configs = [
 ]
 
 
+private_modules = [
+    "@tanker/datastore-dexie-memory",
+    "@tanker/benchmarks",
+    "@tanker/functional-tests",
+]
+
+
 def find_procs_by_name(name: str) -> psutil.Process:
     "Return a list of processes matching 'name'."
     ls = []
@@ -197,16 +204,32 @@ def run_tests_in_node() -> None:
 
 
 def get_config(package_name: str) -> List[str]:
+    res = ["./config/tsconfig.tests.json"]
+
+    if package_name == "@tanker/benchmarks":
+        return res
+
     path = get_package_path(package_name=package_name, is_typescript=True)
-    res = [
-        "./config/tsconfig.tests.json",
-        str(path.joinpath("config", "tsconfig.es.json")),
-    ]
+    res.append(str(path.joinpath("config", "tsconfig.es.json")))
+
     if package_name == "@tanker/verification-ui":
         # lint `verification-ui/example` too
         res.append(str(path.joinpath("config", "tsconfig.development.json")))
  
     return res
+
+
+def lint_typescript(package_name: str):
+    path = get_package_path(package_name=package_name, is_typescript=True)
+    # override parser-options from './eslintrc.typescript.yml' to the tsconfig
+    # for the current package
+    options = {
+        "project": get_config(package_name),
+    }
+    tankerci.js.run_yarn("lint:ts", path.joinpath("**", "*.ts?(x)"), "--parser-options", f"{options}")
+    if package_name == "@tanker/benchmarks":
+        return
+    tankerci.js.run_yarn("lint:compat", path.joinpath("**", "dist", "**", "*.js"))
 
 
 def lint() -> None:
@@ -219,14 +242,10 @@ def lint() -> None:
         if not config.get("typescript", False):
             continue
         for package_name in config["publish"]:
-            path = get_package_path(package_name=package_name, is_typescript=True)
-            # override parser-options from './eslintrc.typescript.yml' to the tsconfig
-            # for the current package
-            options = {
-                "project": get_config(package_name),
-            }
-            tankerci.js.run_yarn("lint:ts", path.joinpath("**", "*.ts?(x)"), "--parser-options", f"{options}")
-            tankerci.js.run_yarn("lint:compat", path.joinpath("**", "dist", "**", "*.js"))
+            lint_typescript(package_name)
+
+    for package_name in private_modules:
+        lint_typescript(package_name)
 
 
 def check(*, runner: str, nightly: bool) -> None:
