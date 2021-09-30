@@ -357,7 +357,7 @@ export class Client {
   getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions) => {
     const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
-    const result = { root: '' as b64string, histories: [] as b64string[] };
+    const result = { root: '' as b64string, histories: [] as Array<b64string> };
     for (let i = 0; i < urlizedUserIds.length; i += MAX_QUERY_STRING_ITEMS) {
       const query = `is_light=${options.isLight ? 'true' : 'false'}&user_ids[]=${urlizedUserIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&user_ids[]=')}`;
       const response = await this.getUserHistories(query);
@@ -473,7 +473,7 @@ export class Client {
   getGroupHistories = (query: string): Promise<{ histories: Array<b64string>; }> => this._apiCall(`/user-group-histories?${query}&is_light=true`);
 
   getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<{ histories: Array<b64string>; }> => {
-    const result = { histories: [] as b64string[] };
+    const result = { histories: [] as Array<b64string> };
 
     for (let i = 0; i < groupIds.length; i += MAX_QUERY_STRING_ITEMS) {
       const query = `user_group_ids[]=${groupIds.slice(i, i + MAX_QUERY_STRING_ITEMS).map(id => urlize(id)).join('&user_group_ids[]=')}`;
@@ -505,7 +505,7 @@ export class Client {
     let done = 0;
     while (done < hashedEmails.length + hashedPhoneNumbers.length) {
       // First, get as many emails as we have left that can fit in one request
-      let hashedEmailsSlice: Uint8Array[] = [];
+      let hashedEmailsSlice: Array<Uint8Array> = [];
       if (done < hashedEmails.length) {
         const numEmailsToGet = Math.min(hashedEmails.length - done, MAX_QUERY_ITEMS);
         hashedEmailsSlice = hashedEmails.slice(done, done + numEmailsToGet);
@@ -513,7 +513,7 @@ export class Client {
       }
 
       // If we had less than MAX_QUERY_ITEMS emails left, then there's room to start requesting phone numbers
-      let hashedPhoneNumbersSlice: Uint8Array[] = [];
+      let hashedPhoneNumbersSlice: Array<Uint8Array> = [];
       if (hashedEmailsSlice.length < MAX_QUERY_ITEMS) {
         const phonesDone = done - hashedEmails.length;
         const numPhoneNumbersToGet = Math.min(hashedPhoneNumbers.length - phonesDone, MAX_QUERY_ITEMS - hashedEmailsSlice.length);
@@ -538,7 +538,7 @@ export class Client {
     return result;
   };
 
-  getProvisionalIdentityClaims = async (): Promise<string[]> => {
+  getProvisionalIdentityClaims = async (): Promise<Array<string>> => {
     const path = `/users/${urlize(this._userId)}/provisional-identity-claims`;
     const { provisional_identity_claims: claims } = await this._apiCall(path);
     return claims;

@@ -189,7 +189,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     } catch (error) {
       const e = error as Error;
       if (e.name === 'BulkError') {
-        if ((e as (Error & { failures: Error[] })).failures.every(err => err.name === 'ConstraintError')) {
+        if ((e as (Error & { failures: Array<Error> })).failures.every(err => err.name === 'ConstraintError')) {
           return; // ignore duplicate adds
         }
       }

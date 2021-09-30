@@ -5,7 +5,7 @@ function scalarArrayEqual<T>(a1: Array<T>, a2: Array<T>): boolean {
   return a1.length === a2.length && a1.every((value, index) => value === a2[index]);
 }
 
-function assertSchemasVersions(allSchemas: Schema[][]): void {
+function assertSchemasVersions(allSchemas: Array<Array<Schema>>): void {
   if (allSchemas.length === 0)
     return;
 
@@ -20,13 +20,13 @@ function assertSchemasVersions(allSchemas: Schema[][]): void {
   }
 }
 
-export const mergeSchemas = (schemas: Schema[], ...otherSchemas: Schema[][]) => {
+export const mergeSchemas = (schemas: Array<Schema>, ...otherSchemas: Array<Array<Schema>>) => {
   const nestedList = [schemas, ...otherSchemas];
 
   assertSchemasVersions(nestedList);
 
   const flatList = nestedList.reduce((acc, val) => acc.concat(val), []);
-  const result: Schema[] = [];
+  const result: Array<Schema> = [];
 
   for (const schema of flatList) {
     const { version, tables } = schema;
