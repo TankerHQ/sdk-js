@@ -1,4 +1,4 @@
-// @flow
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, Verification, VerificationMethod } from '@tanker/core';
 import { utils } from '@tanker/crypto';
@@ -147,8 +147,8 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         await bobLaptop.setVerificationMethod({ passphrase: 'passphrase' });
 
-        const SMSVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
-        await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode: SMSVerificationCode });
+        const smsVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode: smsVerificationCode });
 
         expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([
           { type: 'email', email },

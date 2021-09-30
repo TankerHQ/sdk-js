@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { utils, random, tcrypto } from '@tanker/crypto';
 import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string } from '@tanker/core';
