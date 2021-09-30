@@ -1,7 +1,7 @@
 export type CloudStorageServices = 'GCS' | 'S3';
 
 export type FileUploadURLResponse = {
-  urls: string[];
+  urls: Array<string>;
   headers: Record<string, any>;
   service: CloudStorageServices;
   recommended_chunk_size: number;

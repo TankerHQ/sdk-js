@@ -20,7 +20,7 @@ try {
 
   // Create a File ponyfill with a working constructor and an ancestry
   // that will look like this: FilePonyfill < File < Blob
-  FilePonyfill = function (chunks: BlobPart[], name: string, opts?: FilePropertyBag) {
+  FilePonyfill = function (chunks: Array<BlobPart>, name: string, opts?: FilePropertyBag) {
     const blob = new Blob(chunks, opts || {}) as BlobFile;
 
     blob.name = name;

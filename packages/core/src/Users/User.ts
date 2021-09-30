@@ -7,7 +7,7 @@ import type { DeviceCreationEntry, DeviceRevocationEntry } from './Serialize';
 import type { User, Device } from './types';
 
 export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, user: User | null): User {
-  let oldDevices: Device[] = [];
+  let oldDevices: Array<Device> = [];
   let userPublicKeys = [deviceCreation.user_key_pair.public_encryption_key];
 
   if (user) {
