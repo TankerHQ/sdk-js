@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { utils } from '@tanker/crypto';
 import type { b64string } from '@tanker/crypto';
 import FakeAuthentication from '@tanker/fake-authentication';

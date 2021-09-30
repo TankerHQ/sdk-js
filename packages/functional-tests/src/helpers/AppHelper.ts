@@ -37,9 +37,9 @@ export class AppHelper {
       environment_name: managementSettings.defaultEnvironmentName,
     };
     const createResponse = await requestManagement({ method: 'POST', path: '/v1/apps', body });
-    const authToken = createResponse['app']['auth_token'];
-    const appId = utils.fromBase64(createResponse['app']['id']);
-    const appSecret = utils.fromBase64(createResponse['app']['private_signature_key']);
+    const authToken = createResponse['app'].auth_token;
+    const appId = utils.fromBase64(createResponse['app'].id);
+    const appSecret = utils.fromBase64(createResponse['app'].private_signature_key);
     return new AppHelper(appId, appSecret, authToken);
   }
 
