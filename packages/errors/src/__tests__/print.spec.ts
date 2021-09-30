@@ -3,8 +3,8 @@ import { safePrintType, safePrintValue } from '../print';
 
 describe('print', () => {
   let values: any[];
-  let expectedTypes: string[];
-  let expectedValues: string[];
+  let expectedTypes: Array<string>;
+  let expectedValues: Array<string>;
 
   before(() => {
     values = [

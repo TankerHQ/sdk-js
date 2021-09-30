@@ -24,7 +24,7 @@ export default class Storage {
   _keyStore!: KeyStore;
   _resourceStore!: ResourceStore;
   _groupStore!: GroupStore;
-  _schemas!: Schema[];
+  _schemas!: Array<Schema>;
 
   constructor(options: DataStoreOptions) {
     this._options = options;

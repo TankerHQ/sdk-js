@@ -257,7 +257,7 @@ export default class ProvisionalIdentityManager {
   }
 
   async refreshProvisionalPrivateKeys() {
-    const claimBlocks: string[] = await this._client.getProvisionalIdentityClaims();
+    const claimBlocks: Array<string> = await this._client.getProvisionalIdentityClaims();
 
     const claimEntries = claimBlocks.map(block => provisionalIdentityClaimFromBlock(block));
     const authorDevices = claimEntries.map(entry => entry.author);

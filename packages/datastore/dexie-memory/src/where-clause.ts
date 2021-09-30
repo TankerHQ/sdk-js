@@ -4,7 +4,7 @@ export class WhereClause implements IWhereClause {
   declare _collection: ICollection;
   declare _key: string;
 
-  constructor(collection: ICollection, key: string | string[]) {
+  constructor(collection: ICollection, key: string | Array<string>) {
     this._collection = collection;
     if (typeof (key) === 'object') {
       throw new Error('not implemented: WhereClause only handles "string"');
