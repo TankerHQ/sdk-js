@@ -25,8 +25,8 @@ class TestFailed(Exception):
 # Publish packages in order so that dependencies don't break during deploy
 configs = [
     {"build": "global-this", "typescript": True, "publish": ["@tanker/global-this"]},
-    {"build": "crypto", "typescript": True, "publish": ["@tanker/crypto"]},
     {"build": "errors", "typescript": True, "publish": ["@tanker/errors"]},
+    {"build": "crypto", "typescript": True, "publish": ["@tanker/crypto"]},
     {"build": "file-ponyfill", "typescript": True, "publish": ["@tanker/file-ponyfill"]},
     {"build": "file-reader", "typescript": True, "publish": ["@tanker/file-reader"]},
     {"build": "http-utils", "typescript": True, "publish": ["@tanker/http-utils"]},
