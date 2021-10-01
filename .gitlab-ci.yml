@@ -4,7 +4,7 @@ include:
     ref: 2021-09-27-1
   - project: TankerHQ/gitlab-ci-files
     file: /common.yml
-    ref: 2021-09-27-1
+    ref: 2021-10-05-181
 
 stages:
   - check
@@ -65,20 +65,20 @@ check/linux/node:
 check/linux/node-lts:
   extends:
     - .check/linux/node-base
-    - .rules/mr/manual/nightly/auto
   rules:
-    - !reference [.rules/master/nightly, rules]
+    - !reference [.rules/push-master, rules]
     - !reference [.rules/mr/manual, rules]
+    - !reference [.rules/nightly, rules]
   variables:
     NODE_VERSION: 12
 
 check/linux/node-next:
   extends:
     - .check/linux/node-base
-    - .rules/mr/manual/nightly/auto
   rules:
-    - !reference [.rules/master/nightly, rules]
+    - !reference [.rules/push-master, rules]
     - !reference [.rules/mr/manual, rules]
+    - !reference [.rules/nightly, rules]
   variables:
     NODE_VERSION: 16
 
@@ -234,9 +234,10 @@ bridge/compat:
     strategy: depend
 
 check/e2e:
-  extends:
-    - .rules/mr/manual/nightly/auto
   stage: check
+  rules:
+    - !reference [.rules/mr/manual, rules]
+    - !reference [.rules/nightly, rules]
   script:
     - poetry run python run-ci.py e2e
   tags:
