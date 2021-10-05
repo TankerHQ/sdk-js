@@ -1,4 +1,3 @@
-// @flow
 import type { TankerOptions } from '@tanker/core';
 import { Tanker as TankerCore, optionsWithDefaults } from '@tanker/core';
 import Dexie from '@tanker/datastore-dexie-browser';

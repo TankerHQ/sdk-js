@@ -28,8 +28,10 @@ const getBabelLoaders = (env) => {
   const tsLoaderCompilerOptions = {
     target: 'es5',
     declaration: false,
+    declarationDir: undefined,
     importHelpers: true,
     downlevelIteration: true,
+    rootDir: path.resolve(__dirname, '..'),
   };
 
   return [
@@ -37,7 +39,7 @@ const getBabelLoaders = (env) => {
       test: /\.ts$/,
       loader: 'ts-loader',
       options: {
-        configFile: path.resolve(__dirname, 'tsconfig.tests.json'),
+        configFile: path.resolve(__dirname, env.tsconfig || 'tsconfig.tests.json'),
         compilerOptions: tsLoaderCompilerOptions,
       },
       exclude: /node_modules/,
@@ -87,7 +89,7 @@ const getBabelLoaders = (env) => {
   ];
 };
 
-const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
+const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig }) => {
   const base = {
     target,
     mode,
@@ -102,7 +104,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
 
     module: {
       rules: [
-        ...getBabelLoaders({ target, react, hmre }),
+        ...getBabelLoaders({ target, react, hmre, tsconfig }),
         {
           test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
           type: 'asset',
@@ -161,6 +163,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
       '@tanker/datastore-pouchdb-memory': path.resolve(__dirname, '../packages/datastore/pouchdb-memory/src/index.ts'),
       '@tanker/datastore-pouchdb-node': path.resolve(__dirname, '../packages/datastore/pouchdb-node/src/index.ts'),
       '@tanker/core': path.resolve(__dirname, '../packages/core/src/index.ts'),
+      '@tanker/client-browser': path.resolve(__dirname, '../packages/client-browser/src/index.ts'),
     },
     extensions: ['.ts', '.js'],
   };
