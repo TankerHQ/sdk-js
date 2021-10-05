@@ -1,6 +1,4 @@
 /* eslint-disable no-bitwise */
-
-// @flow
 import { InvalidArgument, DecryptionFailed } from '@tanker/errors';
 
 import varint from 'varint';

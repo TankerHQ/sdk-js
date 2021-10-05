@@ -1,6 +1,6 @@
 import varint from 'varint';
 import type { Key, EncryptionFormatReporter } from '@tanker/crypto';
-import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, random, tcrypto } from '@tanker/crypto';
+import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, random, tcrypto } from '@tanker/crypto';
 
 import { InvalidArgument } from '@tanker/errors';
 
@@ -39,7 +39,7 @@ export const getStreamEncryptionFormatDescription = (): EncryptionFormatDescript
   encryptedChunkSize: encryptionV4.defaultMaxEncryptedChunkSize,
 });
 
-const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5];
+const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6];
 
 export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescription, encryptedSize: number): number => {
   const encryption: EncryptionFormatReporter | undefined = encryptionFormats[encryptionFormatDescription.version];
