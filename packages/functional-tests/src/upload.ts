@@ -1,11 +1,11 @@
-// @flow
 import { errors } from '@tanker/core';
+import type { Tanker, b64string } from '@tanker/core';
 import { encryptionV4, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise, isIE } from '@tanker/test-utils';
 import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
 
-import type { TestArgs } from './helpers';
+import type { AppHelper, TestArgs, TestResourceSize } from './helpers';
 import { expectProgressReport, expectType, expectDeepEqual, pipeStreams } from './helpers';
 
 export const generateUploadTests = (args: TestArgs) => {
@@ -13,18 +13,18 @@ export const generateUploadTests = (args: TestArgs) => {
   const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
 
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
-  const forEachSize = (sizes: Array<string>, fun: (size: string) => void) => {
+  const forEachSize = (sizes: Array<TestResourceSize>, fun: (size: TestResourceSize) => void) => {
     const availableSizes = Object.keys(args.resources);
     return sizes.filter(size => availableSizes.includes(size)).forEach(fun);
   };
 
   describe('binary file upload and download', () => {
-    let appHelper;
-    let aliceIdentity;
-    let aliceLaptop;
-    let bobIdentity;
-    let bobLaptop;
-    let bobPublicIdentity;
+    let appHelper: AppHelper;
+    let aliceIdentity: b64string;
+    let aliceLaptop: Tanker;
+    let bobIdentity: b64string;
+    let bobLaptop: Tanker;
+    let bobPublicIdentity: b64string;
 
     before(async () => {
       ({ appHelper } = args);
@@ -49,7 +49,7 @@ export const generateUploadTests = (args: TestArgs) => {
       ]);
     });
 
-    ['gcs', 's3'].forEach((storage) => {
+    ['gcs', 's3'].forEach(storage => {
       describe(storage, () => {
         if (storage === 's3') {
           before(() => appHelper.setS3());
@@ -58,7 +58,7 @@ export const generateUploadTests = (args: TestArgs) => {
 
         forEachSize(['empty', 'small', 'medium'], size => {
           it(`can upload and download a ${size} file`, async () => {
-            const { type: originalType, resource: clear } = args.resources[size][2];
+            const { type: originalType, resource: clear } = args.resources[size][2]!;
 
             const fileId = await aliceLaptop.upload(clear);
 
@@ -69,9 +69,10 @@ export const generateUploadTests = (args: TestArgs) => {
           });
         });
 
-        const expectUploadProgressReport = (onProgress: sinon.proxyApi, clearSize: number) => {
+        const expectUploadProgressReport = (onProgress: sinon.SinonSpy, clearSize: number) => {
           const encryptedSize = encryptionV4.getEncryptedSize(clearSize, encryptionV4.defaultMaxEncryptedChunkSize);
           let chunkSize;
+
           if (storage === 's3') {
             chunkSize = 5 * 1024 * 1024;
           } else if (isEdge()) {
@@ -79,13 +80,14 @@ export const generateUploadTests = (args: TestArgs) => {
           } else {
             chunkSize = encryptionV4.defaultMaxEncryptedChunkSize;
           }
+
           expectProgressReport(onProgress, encryptedSize, chunkSize);
           onProgress.resetHistory();
         };
 
         it('can report progress at simple upload and download', async () => {
           const onProgress = sinon.fake();
-          const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2];
+          const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2]!;
 
           const fileId = await aliceLaptop.upload(clear, { onProgress });
           expectUploadProgressReport(onProgress, clearSize);
@@ -98,7 +100,7 @@ export const generateUploadTests = (args: TestArgs) => {
 
         it('can report progress at stream upload and download', async () => {
           const onProgress = sinon.fake();
-          const { type, resource: clear, size: clearSize } = args.resources.medium[0];
+          const { type, resource: clear, size: clearSize } = args.resources.medium[0]!;
 
           const uploadStream = await aliceLaptop.createUploadStream(clearSize, { onProgress });
           const fileId = uploadStream.resourceId;
@@ -109,7 +111,7 @@ export const generateUploadTests = (args: TestArgs) => {
 
           const downloadStream = await aliceLaptop.createDownloadStream(fileId, { onProgress });
           const merger = new MergerStream({ type, ...downloadStream.metadata });
-          const decrypted = await pipeStreams({ streams: [downloadStream, merger], resolveEvent: 'data' });
+          const decrypted = await pipeStreams<Uint8Array>({ streams: [downloadStream, merger], resolveEvent: 'data' });
 
           expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
@@ -117,7 +119,7 @@ export const generateUploadTests = (args: TestArgs) => {
         });
 
         it('can download a file shared at upload', async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2];
+          const { type: originalType, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity] });
 
@@ -128,7 +130,7 @@ export const generateUploadTests = (args: TestArgs) => {
         });
 
         it('can download a file shared via upload with streams', async () => {
-          const { type, resource: clear, size: clearSize } = args.resources.medium[0];
+          const { type, resource: clear, size: clearSize } = args.resources.medium[0]!;
 
           const uploadStream = await aliceLaptop.createUploadStream(clearSize, { shareWithUsers: [bobPublicIdentity] });
           const fileId = uploadStream.resourceId;
@@ -141,20 +143,20 @@ export const generateUploadTests = (args: TestArgs) => {
         });
 
         it('can download with streams a file shared via upload', async () => {
-          const { type, resource: clear } = args.resources.medium[0];
+          const { type, resource: clear } = args.resources.medium[0]!;
 
           const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity] });
 
           const downloadStream = await bobLaptop.createDownloadStream(fileId);
           const merger = new MergerStream({ type, ...downloadStream.metadata });
-          const decrypted = await pipeStreams({ streams: [downloadStream, merger], resolveEvent: 'data' });
+          const decrypted = await pipeStreams<Uint8Array>({ streams: [downloadStream, merger], resolveEvent: 'data' });
 
           expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
         });
 
         it('can upload a file and not share with self', async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2];
+          const { type: originalType, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear, { shareWithUsers: [bobPublicIdentity], shareWithSelf: false });
 
@@ -167,7 +169,7 @@ export const generateUploadTests = (args: TestArgs) => {
         });
 
         it('can upload a file and share with a group', async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2];
+          const { type: originalType, resource: clear } = args.resources.small[2]!;
           const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
           const fileId = await aliceLaptop.upload(clear, { shareWithGroups: [groupId] });
           const decrypted = await bobLaptop.download(fileId);
@@ -177,7 +179,7 @@ export const generateUploadTests = (args: TestArgs) => {
         });
 
         it('can share a file after upload', async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2];
+          const { type: originalType, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear);
           await aliceLaptop.share([fileId], { shareWithUsers: [bobPublicIdentity] });
@@ -195,7 +197,7 @@ export const generateUploadTests = (args: TestArgs) => {
 
         it('throws InvalidArgument if giving an obviously wrong fileId', async () => {
           const promises = [undefined, null, 'not a resourceId', [], {}].map(async (invalidFileId, i) => {
-            // $FlowExpectedError Giving invalid options
+            // @ts-expect-error Giving invalid options
             await expect(aliceLaptop.download(invalidFileId), `failed test #${i}`).to.be.rejectedWith(errors.InvalidArgument);
           });
 
@@ -204,7 +206,7 @@ export const generateUploadTests = (args: TestArgs) => {
 
         it('throws InvalidArgument if given an invalid clearSize', async () => {
           const promises = [undefined, null, 'not a clearSize', [], {}, -1].map(async (invalidClearSize, i) => {
-            // $FlowExpectedError Giving invalid clearSize
+            // @ts-expect-error Giving invalid clearSize
             await expect(aliceLaptop.createUploadStream(invalidClearSize), `failed test #${i}`).to.be.rejectedWith(errors.InvalidArgument);
           });
 
@@ -247,16 +249,17 @@ export const generateUploadTests = (args: TestArgs) => {
               const timeout = makeTimeoutPromise(50);
               let prevCount = 0;
               const uploadStream = await aliceLaptop.createUploadStream(inputSize, {
-                onProgress: (progressReport) => {
+                onProgress: progressReport => {
                   const newBytes = progressReport.currentBytes - prevCount;
                   prevCount = progressReport.currentBytes;
                   bufferCounter.incrementOutputAndSnapshot(newBytes);
-                }
+                },
               });
 
               // hijack tail write to lock upload until stream is flooded
               // eslint-disable-next-line no-underscore-dangle
               const write = uploadStream._tailStream._write.bind(uploadStream._tailStream);
+
               // eslint-disable-next-line no-underscore-dangle
               uploadStream._tailStream._write = async (...vals) => {
                 await timeout.promise;
@@ -281,8 +284,7 @@ export const generateUploadTests = (args: TestArgs) => {
                 uploadStream.on('finish', resolve);
                 continueWriting();
               });
-
-              bufferCounter.snapshots.forEach((bufferedLength) => {
+              bufferCounter.snapshots.forEach(bufferedLength => {
                 expect(bufferedLength).to.be.at.most(maxBufferedLength + encryptionV4.defaultMaxEncryptedChunkSize, `buffered data exceeds threshold max buffered size: got ${bufferedLength}, max ${maxBufferedLength})`);
               });
             });
@@ -299,14 +301,16 @@ export const generateUploadTests = (args: TestArgs) => {
               const bufferCounter = new BufferingObserver();
               const resourceId = await aliceLaptop.upload(new Uint8Array(inputSize));
               const timeout = makeTimeoutPromise(700);
-
               const downloadStream = await aliceLaptop.createDownloadStream(resourceId);
+
               // hijack push to control size of output buffer
               // eslint-disable-next-line no-underscore-dangle
               const push = downloadStream._headStream.push.bind(downloadStream._headStream);
+
               // eslint-disable-next-line no-underscore-dangle
-              downloadStream._headStream.push = (data) => {
+              downloadStream._headStream.push = data => {
                 timeout.reset();
+
                 if (data) {
                   bufferCounter.incrementInput(data.length);
                 }
@@ -317,21 +321,19 @@ export const generateUploadTests = (args: TestArgs) => {
               const slowWritable = new Writable({
                 objectMode: true,
                 highWaterMark: 1,
-                write: async (buffer, encoding, done) => {
+                write: async (buffer, _, done) => {
                   // flood every stream before unlocking writing end
                   await timeout.promise;
                   bufferCounter.incrementOutputAndSnapshot(buffer.length);
                   done();
-                }
+                },
               });
-
               await new Promise((resolve, reject) => {
                 downloadStream.on('error', reject);
                 downloadStream.on('end', resolve);
                 downloadStream.pipe(slowWritable);
               });
-
-              bufferCounter.snapshots.forEach((bufferedLength) => {
+              bufferCounter.snapshots.forEach(bufferedLength => {
                 expect(bufferedLength).to.be.at.most(maxBufferedLength, `buffered data exceeds threshold max buffered size: got ${bufferedLength}, max buffered size ${maxBufferedLength}`);
               });
             });

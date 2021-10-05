@@ -40,7 +40,7 @@ const getBabelLoaders = (env) => {
       test: /\.tsx$/,
       loader: 'ts-loader',
       options: {
-        configFile: path.resolve(__dirname, env.tsconfig || 'tsconfig.tests.json'),
+        configFile: env.tsconfig || path.resolve(__dirname, 'tsconfig.tests.json'),
         compilerOptions: tsLoaderCompilerOptions,
       },
       exclude: /node_modules/,
@@ -49,7 +49,7 @@ const getBabelLoaders = (env) => {
       test: /\.ts$/,
       loader: 'ts-loader',
       options: {
-        configFile: path.resolve(__dirname, env.tsconfig || 'tsconfig.tests.json'),
+        configFile: env.tsconfig || path.resolve(__dirname, 'tsconfig.tests.json'),
         compilerOptions: tsLoaderCompilerOptions,
       },
       exclude: /node_modules/,
@@ -181,6 +181,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
       '@tanker/client-browser': path.resolve(__dirname, '../packages/client-browser/src/index.ts'),
       '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
       '@tanker/filekit': path.resolve(__dirname, '../packages/filekit/src/index.ts'),
+      '@tanker/functional-tests': path.resolve(__dirname, '../packages/functional-tests/src/index.ts'),
     },
     extensions
   };

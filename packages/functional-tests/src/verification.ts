@@ -1,11 +1,12 @@
 // @flow
-import { errors, statuses, type Tanker, type Verification, type VerificationMethod } from '@tanker/core';
-import { utils, type b64string } from '@tanker/crypto';
+import { errors, statuses } from '@tanker/core';
+import type { Tanker, b64string, Verification, VerificationMethod } from '@tanker/core';
+import { utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
 import { expect, uuid } from '@tanker/test-utils';
 import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
 
-import type { TestArgs } from './helpers';
+import type { AppHelper, TestArgs } from './helpers';
 import { oidcSettings, trustchaindUrl } from './helpers';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
@@ -30,21 +31,21 @@ async function getGoogleIdToken(refreshToken: string): Promise<string> {
 }
 
 const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod) => {
-  // $FlowExpectedError email might not be defined
+  // @ts-expect-error email might not be defined
   const { type, email, phoneNumber } = method;
   expect(type in verification).to.be.true;
 
   if (type === 'email') {
-    // $FlowIgnore I tested the 'email' type already
+    // @ts-expect-error I tested the 'email' type already
     expect(email).to.equal(verification.email);
     expect(phoneNumber).to.be.undefined;
-    // $FlowIgnore I tested the 'email' type
+    // @ts-expect-error I tested the 'email' type
     expect(verification.phoneNumber).to.be.undefined;
   } else if (type === 'phoneNumber') {
-    // $FlowIgnore I tested the 'phoneNumber' type already
+    // @ts-expect-error I tested the 'phoneNumber' type already
     expect(phoneNumber).to.equal(verification.phoneNumber);
     expect(email).to.be.undefined;
-    // $FlowIgnore I tested the 'phoneNumber' type already
+    // @ts-expect-error I tested the 'phoneNumber' type already
     expect(verification.email).to.be.undefined;
   }
 };
@@ -61,15 +62,15 @@ const expectVerification = async (tanker: Tanker, identity: string, verification
 
   // Test after verifyIdentity() to allow tests on unregistered verification types
   expect(otherMethods).to.be.an('array').that.is.empty;
-  expectVerificationToMatchMethod(verification, method);
+  expectVerificationToMatchMethod(verification, method!);
 };
 
 export const generateVerificationTests = (args: TestArgs) => {
   describe('verification', () => {
-    let bobLaptop;
-    let bobPhone;
-    let bobIdentity;
-    let appHelper;
+    let bobLaptop: Tanker;
+    let bobPhone: Tanker;
+    let bobIdentity: b64string;
+    let appHelper: AppHelper;
 
     before(() => {
       ({ appHelper } = args);
@@ -98,7 +99,7 @@ export const generateVerificationTests = (args: TestArgs) => {
       it('can test that passphrase verification method has been registered', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'passphrase' }]);
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'passphrase' }]);
       });
 
       it('can test that email verification method has been registered', async () => {
@@ -106,7 +107,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'email', email }]);
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'email', email }]);
       });
 
       it('can test that phone number verification method has been registered', async () => {
@@ -114,7 +115,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
         await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
 
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'phoneNumber', phoneNumber }]);
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'phoneNumber', phoneNumber }]);
       });
 
       it('should fail to register an email verification method if the verification code is wrong', async () => {
@@ -149,7 +150,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         const SMSVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
         await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode: SMSVerificationCode });
 
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([
           { type: 'email', email },
           { type: 'passphrase' },
           { type: 'phoneNumber', phoneNumber },
@@ -167,7 +168,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await bobLaptop.setVerificationMethod({ email, verificationCode });
 
         // check email is updated in cache
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'email', email }]);
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'email', email }]);
 
         // check email can be used on new device
         await bobPhone.start(bobIdentity);
@@ -175,7 +176,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await bobPhone.verifyIdentity({ email, verificationCode });
 
         // check received email is the updated one on new device
-        expect(await bobPhone.getVerificationMethods()).to.deep.have.members([{ type: 'email', email }]);
+        expect(await bobPhone.getVerificationMethods()).to.have.deep.members([{ type: 'email', email }]);
       });
 
       it('can test that phone number verification method has been updated and use it', async () => {
@@ -189,7 +190,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode });
 
         // check phone number is updated in cache
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'phoneNumber', phoneNumber }]);
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'phoneNumber', phoneNumber }]);
 
         // check phone number can be used on new device
         await bobPhone.start(bobIdentity);
@@ -197,7 +198,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await bobPhone.verifyIdentity({ phoneNumber, verificationCode });
 
         // check received phone number is the updated one on new device
-        expect(await bobPhone.getVerificationMethods()).to.deep.have.members([{ type: 'phoneNumber', phoneNumber }]);
+        expect(await bobPhone.getVerificationMethods()).to.have.deep.members([{ type: 'phoneNumber', phoneNumber }]);
       });
 
       it('should fail to update the email verification method if the verification code is wrong', async () => {
@@ -442,7 +443,7 @@ export const generateVerificationTests = (args: TestArgs) => {
       it('fails to verify a token with incorrect signature', async () => {
         await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
         const jwtBinParts = martineIdToken.split('.').map(part => utils.fromSafeBase64(part));
-        jwtBinParts[2][5] += 1; // break signature
+        jwtBinParts[2]![5] += 1; // break signature
         const forgedIdToken = jwtBinParts.map(part => utils.toSafeBase64(part)).join('.').replace(/=/g, '');
         await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: forgedIdToken })).to.be.rejectedWith(errors.InvalidVerification);
 
@@ -523,8 +524,8 @@ export const generateVerificationTests = (args: TestArgs) => {
         return utils.toB64Json(unwrappedKey);
       };
 
-      let verificationKey;
-      let verificationKeyNotUsed;
+      let verificationKey: string;
+      let verificationKeyNotUsed: string;
 
       beforeEach(async () => {
         verificationKeyNotUsed = await bobLaptop.generateVerificationKey();
@@ -538,7 +539,7 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('does list the verification key as the unique verification method', async () => {
         await bobLaptop.registerIdentity({ verificationKey });
-        expect(await bobLaptop.getVerificationMethods()).to.deep.have.members([{ type: 'verificationKey' }]);
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'verificationKey' }]);
       });
 
       it('can verify with a verification key', async () => {
@@ -571,7 +572,7 @@ export const generateVerificationTests = (args: TestArgs) => {
           ];
 
           for (let i = 0; i < badKeys.length; i++) {
-            const badKey = badKeys[i];
+            const badKey = badKeys[i]!;
             await expect(bobPhone.registerIdentity({ verificationKey: badKey }), `bad verification key #${i}`).to.be.rejectedWith(errors.InvalidVerification);
             // The status must not change so that retry is possible
             expect(bobPhone.status).to.equal(IDENTITY_REGISTRATION_NEEDED);
@@ -607,7 +608,7 @@ export const generateVerificationTests = (args: TestArgs) => {
           ];
 
           for (let i = 0; i < badKeys.length; i++) {
-            const badKey = badKeys[i];
+            const badKey = badKeys[i]!;
             await expect(bobPhone.verifyIdentity({ verificationKey: badKey }), `bad verification key #${i}`).to.be.rejectedWith(errors.InvalidVerification);
             // The status must not change so that retry is possible
             expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
@@ -632,7 +633,7 @@ export const generateVerificationTests = (args: TestArgs) => {
           expect(verificationCode).to.not.be.undefined;
           await bobLaptop.registerIdentity({ email, verificationCode });
           const actualMethods = await bobLaptop.getVerificationMethods();
-          expect(actualMethods).to.deep.have.members([{ type: 'email', email }]);
+          expect(actualMethods).to.have.deep.members([{ type: 'email', email }]);
         });
       });
 
@@ -653,7 +654,7 @@ export const generateVerificationTests = (args: TestArgs) => {
           expect(verificationCode).to.not.be.undefined;
           await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
           const actualMethods = await bobLaptop.getVerificationMethods();
-          expect(actualMethods).to.deep.have.members([{ type: 'phoneNumber', phoneNumber }]);
+          expect(actualMethods).to.have.deep.members([{ type: 'phoneNumber', phoneNumber }]);
         });
       });
     });

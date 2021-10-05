@@ -1,15 +1,14 @@
-// @flow
 import { fetch } from '@tanker/http-utils';
 
 import { trustchaindUrl, managementSettings } from './config';
 
-type stringToAnyMap = { [string]: any, ...};
+type stringToAnyMap = Record<string, any>;
 
 export type Method = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
-export type Request = {| method: Method, path: string, query?: stringToAnyMap, headers?: stringToAnyMap, body?: stringToAnyMap |};
+export type Request = { method: Method; path: string; query?: stringToAnyMap; headers?: stringToAnyMap; body?: stringToAnyMap; };
 
 const stringify = (param: stringToAnyMap | string) => (
-  typeof (param) === 'object'
+  typeof param === 'object'
     ? JSON.stringify(param)
     : param
 );
@@ -27,7 +26,7 @@ const request = async (url: string, { method, path, query, headers = {}, body }:
       method,
       headers: { 'Content-Type': 'application/json', ...headers },
       ...(body ? { body: JSON.stringify(body) } : {}),
-    }
+    },
   );
 
   const parsed = await response.json();

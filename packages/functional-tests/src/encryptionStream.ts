@@ -1,25 +1,27 @@
-// @flow
 import { errors } from '@tanker/core';
+import type { Tanker, EncryptionStream, DecryptionStream } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { utils } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { MergerStream } from '@tanker/stream-base';
 
-import { type TestArgs, pipeStreams } from './helpers';
+import type { TestArgs } from './helpers';
+import { pipeStreams } from './helpers';
 
 export const generateEncryptionStreamTests = (args: TestArgs) => {
   describe('stream encryption', () => {
-    let aliceIdentity;
-    let aliceLaptop;
-    let bobIdentity;
-    let bobPublicIdentity;
-    let bobLaptop;
-    let smallClearData;
-    let largeClearData;
+    let aliceIdentity: b64string;
+    let aliceLaptop: Tanker;
+    let bobIdentity: b64string;
+    let bobPublicIdentity: b64string;
+    let bobLaptop: Tanker;
+    let smallClearData: Uint8Array;
+    let largeClearData: Uint8Array;
 
-    const watchStream = (stream) => new Promise((resolve, reject) => {
-      const result = [];
-      stream.on('data', data => result.push(data));
+    const watchStream = (stream: EncryptionStream | DecryptionStream) => new Promise<Array<Uint8Array>>((resolve, reject) => {
+      const result: Array<Uint8Array> = [];
+      stream.on('data', (data: Uint8Array) => result.push(data));
       stream.on('end', () => resolve(result));
       stream.on('error', reject);
     });
@@ -126,6 +128,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
       it('can postpone share', async () => {
         const encryptor = await aliceLaptop.createEncryptionStream();
         const decryptor = await bobLaptop.createDecryptionStream();
+
         const watchPromise = watchStream(decryptor);
 
         encryptor.write(smallClearData);
@@ -169,13 +172,14 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
     });
 
     describe('EncryptionStream compatibility', () => {
-      const createAliceStreamEncryptedData = async (data: Uint8Array) => {
+      const createAliceStreamEncryptedData = async (data: Uint8Array): Promise<Uint8Array> => {
         const encryptor = await aliceLaptop.createEncryptionStream();
+
         encryptor.write(data);
         encryptor.end();
 
         const merger = new MergerStream({ type: Uint8Array });
-        return pipeStreams({ resolveEvent: 'data', streams: [encryptor, merger] });
+        return pipeStreams<Uint8Array>({ resolveEvent: 'data', streams: [encryptor, merger] });
       };
 
       it('can encrypt for the decryptData function', async () => {

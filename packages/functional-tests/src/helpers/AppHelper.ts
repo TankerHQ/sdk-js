@@ -1,5 +1,5 @@
-// @flow
-import { Tanker, type b64string } from '@tanker/core';
+import type { b64string } from '@tanker/core';
+import { Tanker } from '@tanker/core';
 import { ready as cryptoReady, utils } from '@tanker/crypto';
 import { getPublicIdentity, createProvisionalIdentity, createIdentity } from '@tanker/identity';
 import { expect, uuid } from '@tanker/test-utils';
@@ -13,10 +13,10 @@ function toUnpaddedSafeBase64(str: Uint8Array): string {
 }
 
 export type AppProvisionalUser = {
-  target: string,
-  value: string,
-  identity: string,
-  publicIdentity: string,
+  target: string;
+  value: string;
+  identity: string;
+  publicIdentity: string;
 };
 
 export class AppHelper {
@@ -37,13 +37,13 @@ export class AppHelper {
       environment_name: managementSettings.defaultEnvironmentName,
     };
     const createResponse = await requestManagement({ method: 'POST', path: '/v1/apps', body });
-    const authToken = createResponse.app.auth_token;
-    const appId = utils.fromBase64(createResponse.app.id);
-    const appSecret = utils.fromBase64(createResponse.app.private_signature_key);
+    const authToken = createResponse['app']['auth_token'];
+    const appId = utils.fromBase64(createResponse['app']['id']);
+    const appSecret = utils.fromBase64(createResponse['app']['private_signature_key']);
     return new AppHelper(appId, appSecret, authToken);
   }
 
-  async _update(body: Object): Promise<Object> {
+  async _update(body: Record<string, any>): Promise<void> {
     await requestManagement({
       method: 'PATCH',
       path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`,
@@ -128,9 +128,11 @@ export class AppHelper {
       email,
     };
     const { verification_code: verificationCode } = await requestTrustchaind({ method: 'POST', path, body });
+
     if (!verificationCode) {
       throw new Error('Invalid response');
     }
+
     return verificationCode;
   }
 
@@ -139,12 +141,14 @@ export class AppHelper {
     const body = {
       app_id: utils.toBase64(this.appId),
       auth_token: this.authToken,
-      phone_number: phoneNumber
+      phone_number: phoneNumber,
     };
     const { verification_code: verificationCode } = await requestTrustchaind({ method: 'POST', path, body });
+
     if (!verificationCode) {
       throw new Error('Invalid response');
     }
+
     return verificationCode;
   }
 
@@ -161,7 +165,7 @@ export class AppHelper {
   async corruptVerificationCode(code: string): Promise<string> {
     const digits: Array<string> = code.split('');
     const wrongDigitIndex = Math.floor(Math.random() * digits.length);
-    const wrongDigit = (parseInt(code[wrongDigitIndex], 10) + 1) % 10;
+    const wrongDigit = (parseInt(code[wrongDigitIndex]!, 10) + 1) % 10;
     digits[wrongDigitIndex] = `${wrongDigit}`;
     return digits.join();
   }
@@ -169,7 +173,7 @@ export class AppHelper {
   async cleanup(): Promise<void> {
     await requestManagement({
       method: 'DELETE',
-      path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`
+      path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`,
     });
   }
 }

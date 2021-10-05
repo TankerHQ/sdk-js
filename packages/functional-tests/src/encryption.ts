@@ -1,11 +1,11 @@
-// @flow
 import { errors, statuses } from '@tanker/core';
+import type { Tanker, b64string, OutputOptions } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
-import { getConstructorName, getDataLength } from '@tanker/types';
+import { Data, getConstructorName, getDataLength } from '@tanker/types';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 
-import type { TestArgs } from './helpers';
+import type { TestArgs, AppHelper, AppProvisionalUser, TestResourceSize } from './helpers';
 import { expectProgressReport, expectType, expectSameType, expectDeepEqual, expectDecrypt } from './helpers';
 
 const { READY } = statuses;
@@ -14,7 +14,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
 
   describe('text resource encryption and sharing - no session', () => {
-    let bobLaptop;
+    let bobLaptop: Tanker;
 
     before(() => { bobLaptop = args.makeTanker(); });
 
@@ -28,16 +28,16 @@ export const generateEncryptionTests = (args: TestArgs) => {
   });
 
   describe('text resource encryption and sharing', () => {
-    let aliceLaptop;
-    let aliceIdentity;
-    let alicePublicIdentity;
-    let bobLaptop;
-    let bobIdentity;
-    let bobPublicIdentity;
-    let charlieLaptop;
-    let charlieIdentity;
-    let charliePublicIdentity;
-    let appHelper;
+    let aliceLaptop: Tanker;
+    let aliceIdentity: b64string;
+    let alicePublicIdentity: b64string;
+    let bobLaptop: Tanker;
+    let bobIdentity: b64string;
+    let bobPublicIdentity: b64string;
+    let charlieLaptop: Tanker;
+    let charlieIdentity: b64string;
+    let charliePublicIdentity: b64string;
+    let appHelper: AppHelper;
 
     before(async () => {
       ({ appHelper } = args);
@@ -68,14 +68,14 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
     describe('encrypt and decrypt a text resource', () => {
       it('throws when calling encrypt of undefined', async () => {
-        // $FlowExpectedError Testing invalid argument
+        // @ts-expect-error Testing invalid argument
         await expect(bobLaptop.encrypt()).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when decrypting an invalid type', async () => {
         const notUint8ArrayTypes = [undefined, null, 0, {}, [], 'str'];
         for (let i = 0; i < notUint8ArrayTypes.length; i++) {
-          // $FlowExpectedError Testing invalid types
+          // @ts-expect-error Testing invalid types
           await expect(bobLaptop.decrypt(notUint8ArrayTypes[i]), `bad decryption #${i}`).to.be.rejectedWith(errors.InvalidArgument);
         }
       });
@@ -100,14 +100,14 @@ export const generateEncryptionTests = (args: TestArgs) => {
       it('throws when calling decrypt with a corrupted buffer (resource id)', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const corruptPos = encrypted.length - 4;
-        encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
+        encrypted[corruptPos] = (encrypted[corruptPos]! + 1) % 256;
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when calling decrypt with a corrupted buffer (data)', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const corruptPos = 4;
-        encrypted[corruptPos] = (encrypted[corruptPos] + 1) % 256;
+        encrypted[corruptPos] = (encrypted[corruptPos]! + 1) % 256;
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
@@ -131,7 +131,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(encrypted);
 
-        const encrypted2 = await bobLaptop.encrypt(clearText, (({ resourceId }): any));
+        const encrypted2 = await bobLaptop.encrypt(clearText, ({ resourceId } as any));
         const resourceId2 = await bobLaptop.getResourceId(encrypted2);
         expect(resourceId2).to.not.equal(resourceId);
       });
@@ -200,14 +200,14 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
     describe('share after encryption (reshare)', () => {
       it('throws when sharing an invalid resource id', async () => {
-        // $FlowExpectedError
+        // @ts-expect-error
         await expect(bobLaptop.share(null, { shareWithUsers: [alicePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument);
       });
 
       it('throws when sharing with an invalid recipient list', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         const resourceId = await bobLaptop.getResourceId(encrypted);
-        // $FlowExpectedError
+        // @ts-expect-error
         await expect(bobLaptop.share([resourceId])).to.be.rejectedWith(errors.InvalidArgument);
       });
 
@@ -267,8 +267,8 @@ export const generateEncryptionTests = (args: TestArgs) => {
     });
 
     describe('decrypt resources shared with email (+phone) provisional identities', () => {
-      let provisional;
-      let provisional2;
+      let provisional: AppProvisionalUser;
+      let provisional2: AppProvisionalUser;
 
       beforeEach(async () => {
         provisional = await appHelper.generateEmailProvisionalIdentity();
@@ -426,7 +426,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
     });
 
     describe('decrypt resources shared with phone_number provisional identities', () => {
-      let provisional;
+      let provisional: AppProvisionalUser;
 
       beforeEach(async () => {
         provisional = await appHelper.generatePhoneNumberProvisionalIdentity();
@@ -515,12 +515,12 @@ export const generateEncryptionTests = (args: TestArgs) => {
   });
 
   describe('text resource encryption and sharing with multiple devices', () => {
-    let appHelper;
-    let aliceLaptop;
-    let aliceIdentity;
-    let bobLaptop;
-    let bobPhone;
-    let bobIdentity;
+    let appHelper: AppHelper;
+    let aliceLaptop: Tanker;
+    let aliceIdentity: b64string;
+    let bobLaptop: Tanker;
+    let bobPhone: Tanker;
+    let bobIdentity: b64string;
 
     before(() => {
       ({ appHelper } = args);
@@ -565,14 +565,14 @@ export const generateEncryptionTests = (args: TestArgs) => {
   });
 
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
-  const forEachSize = (sizes: Array<string>, fun: (size: string) => void) => {
+  const forEachSize = (sizes: Array<TestResourceSize>, fun: (size: TestResourceSize) => void) => {
     const availableSizes = Object.keys(args.resources);
     return sizes.filter(size => availableSizes.includes(size)).forEach(fun);
   };
 
   describe('binary resource encryption', () => {
-    let aliceLaptop;
-    let aliceIdentity;
+    let aliceLaptop: Tanker;
+    let aliceIdentity: b64string;
 
     before(async () => {
       aliceIdentity = await args.appHelper.generateIdentity();
@@ -586,7 +586,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
     });
 
     forEachSize(['empty', 'small', 'medium', 'big'], size => {
-      args.resources[size].forEach(({ type, resource: clear }) => {
+      args.resources[size]!.forEach(({ type, resource: clear }) => {
         it(`can encrypt and decrypt a ${size} ${getConstructorName(type)}`, async () => {
           const onProgress = sinon.fake();
 
@@ -605,22 +605,23 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
     // Medium and big resources use the same encryption format, so no need to test on big resources
     forEachSize(['small', 'medium'], size => {
-      args.resources[size].forEach(({ type: originalType, resource: clear }) => {
-        args.resources[size].forEach(({ type: transientType }) => {
+      args.resources[size]!.forEach(({ type: originalType, resource: clear }) => {
+        args.resources[size]!.forEach(({ type: transientType }) => {
           it(`can encrypt a ${size} ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
-            const encrypted = await aliceLaptop.encryptData(clear, { type: transientType });
+            const encrypted = await aliceLaptop.encryptData<Data>(clear, { type: transientType });
             expectType(encrypted, transientType);
 
-            const outputOptions = {};
+            const outputOptions: Partial<OutputOptions<Data>> = {};
             outputOptions.type = originalType;
 
             if (global.Blob && outputOptions.type === Blob) {
-              outputOptions.mime = clear.type;
+              outputOptions.mime = (clear as Blob).type;
             }
             if (global.File && outputOptions.type === File) {
-              outputOptions.mime = clear.type;
-              outputOptions.name = clear.name;
-              outputOptions.lastModified = clear.lastModified;
+              const file = clear as File;
+              outputOptions.mime = file.type;
+              outputOptions.name = file.name;
+              outputOptions.lastModified = file.lastModified;
             }
 
             const decrypted = await aliceLaptop.decryptData(encrypted, outputOptions);

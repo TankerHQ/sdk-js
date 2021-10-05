@@ -1,5 +1,4 @@
-// @flow
-import type { Tanker } from '@tanker/core';
+import type { Tanker, b64string } from '@tanker/core';
 import { errors, statuses } from '@tanker/core';
 import { createIdentity } from '@tanker/identity';
 import { expect, silencer } from '@tanker/test-utils';
@@ -12,8 +11,8 @@ const { STOPPED, READY, IDENTITY_REGISTRATION_NEEDED, IDENTITY_VERIFICATION_NEED
 
 export const generateSessionTests = (args: TestArgs) => {
   describe('start', () => {
-    let bobIdentity;
-    let bobLaptop;
+    let bobIdentity: b64string;
+    let bobLaptop: Tanker;
 
     beforeEach(async () => {
       bobIdentity = await args.appHelper.generateIdentity();
@@ -70,8 +69,8 @@ export const generateSessionTests = (args: TestArgs) => {
   });
 
   describe('stop', () => {
-    let bobIdentity;
-    let bobLaptop;
+    let bobIdentity: b64string;
+    let bobLaptop: Tanker;
 
     beforeEach(async () => {
       bobIdentity = await args.appHelper.generateIdentity();
@@ -106,8 +105,8 @@ export const generateSessionTests = (args: TestArgs) => {
   });
 
   describe('registerIdentity', () => {
-    let bobIdentity;
-    let bobLaptop;
+    let bobIdentity: b64string;
+    let bobLaptop: Tanker;
 
     beforeEach(async () => {
       bobIdentity = await args.appHelper.generateIdentity();
@@ -140,8 +139,8 @@ export const generateSessionTests = (args: TestArgs) => {
   });
 
   describe('recovery after interrupted session opening', () => {
-    let bobIdentity;
-    let bobLaptop;
+    let bobIdentity: b64string;
+    let bobLaptop: Tanker;
 
     beforeEach(async () => {
       bobIdentity = await args.appHelper.generateIdentity();
@@ -189,7 +188,7 @@ export const generateSessionTests = (args: TestArgs) => {
     });
 
     describe('during verification', () => {
-      let bobDesktop;
+      let bobDesktop: Tanker;
 
       beforeEach(async () => {
         bobDesktop = args.makeTanker();
@@ -226,17 +225,15 @@ export const generateSessionTests = (args: TestArgs) => {
   });
 
   describe('session expiration', () => {
-    let bobIdentity;
-    let bobLaptop;
+    let bobIdentity: b64string;
+    let bobLaptop: Tanker;
 
     /* eslint-disable no-param-reassign, no-underscore-dangle */
     const mockExpireAccessToken = (tanker: Tanker) => {
-      // $FlowExpectedError Erase internal access token to simulate token expiration
-      tanker._session._client._accessToken = utils.toSafeBase64(random(32));
-      // $FlowExpectedError Replace internal delay generator to retry to authenticate right away
-      tanker._session._client._retryDelayGenerator = zeroDelayGenerator;
+      tanker._session!._client._accessToken = utils.toSafeBase64(random(32));
+      tanker._session!._client._retryDelayGenerator = zeroDelayGenerator;
     };
-    /* eslint-enable */
+    /* eslint-enable no-param-reassign, no-underscore-dangle */
 
     beforeEach(async () => {
       bobIdentity = await args.appHelper.generateIdentity();

@@ -1,15 +1,15 @@
-// @flow
 import { utils, random, tcrypto } from '@tanker/crypto';
 import { errors, statuses } from '@tanker/core';
+import type { Tanker, b64string } from '@tanker/core';
 import { expect, sinon } from '@tanker/test-utils';
 
 import type { TestArgs } from './helpers';
 
 export const generateRevocationTests = (args: TestArgs) => {
   describe('revocation', () => {
-    let bobIdentity;
-    let bobLaptop;
-    let bobPhone;
+    let bobIdentity: b64string;
+    let bobLaptop: Tanker;
+    let bobPhone: Tanker;
 
     beforeEach(async () => {
       bobIdentity = await args.appHelper.generateIdentity();
@@ -34,7 +34,7 @@ export const generateRevocationTests = (args: TestArgs) => {
       const badDeviceIds = [undefined, null, '', 'john@tanker.io', 42];
 
       for (let i = 0; i < badDeviceIds.length; i++) {
-        const arg = ((badDeviceIds[i]: any): string);
+        const arg = ((badDeviceIds[i] as any) as string);
         await expect(bobLaptop.revokeDevice(arg), `bad deviced id #${i}`).to.be.rejectedWith(errors.InvalidArgument);
       }
     });
@@ -99,11 +99,11 @@ export const generateRevocationTests = (args: TestArgs) => {
       expect(devices.length).to.equal(2);
 
       // order: laptop first, phone second
-      if (devices[0].id === phoneId)
-        devices = [devices[1], devices[0]];
+      if (devices[0]!.id === phoneId)
+        devices = [devices[1]!, devices[0]!];
 
-      const laptopCandidate = devices[0];
-      const phoneCandidate = devices[1];
+      const laptopCandidate = devices[0]!;
+      const phoneCandidate = devices[1]!;
 
       expect(laptopCandidate.id).to.equal(laptopId);
       expect(laptopCandidate.isRevoked).to.be.false;

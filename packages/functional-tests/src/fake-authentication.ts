@@ -1,6 +1,7 @@
-// @flow
 import { utils } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
 import FakeAuthentication from '@tanker/fake-authentication';
+import type { SecretProvisionalIdentity } from '@tanker/identity';
 import { getPublicIdentity, _deserializePublicIdentity } from '@tanker/identity';
 import { expect, uuid } from '@tanker/test-utils';
 
@@ -17,8 +18,8 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
   );
 
   describe('fake authentication', () => {
-    let fa;
-    let appId;
+    let fa: FakeAuthentication;
+    let appId: b64string;
 
     before(async () => {
       appId = utils.toBase64(args.appHelper.appId);
@@ -26,7 +27,7 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
     });
 
     it('handles invalid app id type', async () => {
-      // $FlowIgnore the point of the test is to check the error when the type is wrong
+      // @ts-expect-error the point of the test is to check the error when the type is wrong
       expect(() => new FakeAuthentication({ appId: 42, url: fakeAuthUrl })).to.throw();
       expect(() => new FakeAuthentication({ url: fakeAuthUrl })).to.throw();
     });
@@ -60,7 +61,7 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
       const [pub1, pub2] = await fa.getPublicIdentities([email1, email2]);
       const priv2 = await fa.getIdentity(email2);
 
-      const priv2Identity = utils.fromB64Json(priv2.provisionalIdentity);
+      const priv2Identity = utils.fromB64Json(priv2.provisionalIdentity!) as SecretProvisionalIdentity;
       const expectedProvisionalPub = utils.toB64Json({
         public_encryption_key: priv2Identity.public_encryption_key,
         public_signature_key: priv2Identity.public_signature_key,
@@ -69,8 +70,8 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
         value: priv2Identity.value,
       });
 
-      expectMatchingPublicIdentities(pub1, await getPublicIdentity(priv1.identity));
-      expectMatchingPublicIdentities(pub2, expectedProvisionalPub);
+      expectMatchingPublicIdentities(pub1!, await getPublicIdentity(priv1.identity));
+      expectMatchingPublicIdentities(pub2!, expectedProvisionalPub);
     });
 
     it('returns the proper public identity before and after the private identity has been used', async () => {
@@ -82,7 +83,7 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
       await fa.setIdentityRegistered(email);
       const [publicPermIdentity] = await fa.getPublicIdentities([email]);
 
-      const provisionalIdentityJson = utils.fromB64Json(provisionalIdentity);
+      const provisionalIdentityJson = utils.fromB64Json(provisionalIdentity!) as SecretProvisionalIdentity;
       const expectedProvisionalPub = utils.toB64Json({
         public_encryption_key: provisionalIdentityJson.public_encryption_key,
         public_signature_key: provisionalIdentityJson.public_signature_key,
@@ -91,9 +92,9 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
         value: provisionalIdentityJson.value,
       });
 
-      expectMatchingPublicIdentities(publicProvIdentity1, await expectedProvisionalPub);
-      expectMatchingPublicIdentities(publicProvIdentity2, await expectedProvisionalPub);
-      expectMatchingPublicIdentities(publicPermIdentity, await getPublicIdentity(identity));
+      expectMatchingPublicIdentities(publicProvIdentity1!, await expectedProvisionalPub);
+      expectMatchingPublicIdentities(publicProvIdentity2!, await expectedProvisionalPub);
+      expectMatchingPublicIdentities(publicPermIdentity!, await getPublicIdentity(identity));
     });
 
     it('can be used to share resources across users', async () => {
@@ -113,7 +114,7 @@ export const generateFakeAuthenticationTests = (args: TestArgs) => {
       await bobTanker.start(bobPrivateIdentity);
       await bobTanker.registerIdentity({ passphrase: 'passphrase' });
 
-      const message = await aliceTanker.encrypt('I love you', { shareWithUsers: [bobPublicIdentity] });
+      const message = await aliceTanker.encrypt('I love you', { shareWithUsers: [bobPublicIdentity!] });
       await bobTanker.decrypt(message);
 
       await Promise.all([
