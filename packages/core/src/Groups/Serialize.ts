@@ -87,23 +87,10 @@ export type UserGroupAdditionRecordV3 = {
 
 export type GroupEncryptedKey = GroupEncryptedKeyV1 | GroupEncryptedKeyV2;
 
-// Note: We can't define all those generic types as unions, because unions + spreads *badly* confuse flow. So just manually tell it what the fields are...
-export type UserGroupCreationRecord = {
-  public_encryption_key: Uint8Array;
-  public_signature_key: Uint8Array;
-  encrypted_group_private_signature_key: Uint8Array;
-  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKey>;
-  encrypted_group_private_encryption_keys_for_provisional_users?: ReadonlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>;
-  self_signature: Uint8Array;
-};
+export type UserGroupCreationRecord = UserGroupCreationRecordV1 | UserGroupCreationRecordV2 | UserGroupCreationRecordV3;
 
-export type UserGroupAdditionRecord = {
-  group_id: Uint8Array;
-  previous_group_block: Uint8Array;
-  encrypted_group_private_encryption_keys_for_users: ReadonlyArray<GroupEncryptedKey>;
-  encrypted_group_private_encryption_keys_for_provisional_users?: ReadonlyArray<ProvisionalGroupEncryptedKeyV2 | ProvisionalGroupEncryptedKeyV3>;
-  self_signature_with_current_key: Uint8Array;
-};
+export type UserGroupAdditionRecord = UserGroupAdditionRecordV1 | UserGroupAdditionRecordV2 | UserGroupAdditionRecordV3;
+
 type ProvisionalUserId = {
   app_signature_public_key: Uint8Array;
   tanker_signature_public_key: Uint8Array;

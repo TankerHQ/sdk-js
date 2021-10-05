@@ -89,8 +89,8 @@ function findGroupPrivateEncryptionKey(entry: UserGroupEntry, localUser: LocalUs
     return tcrypto.sealDecrypt(userKeys.groupEncryptedKey, userKeys.userKeyPair);
   }
 
-  if (entry.encrypted_group_private_encryption_keys_for_provisional_users) {
-    const provisionalKeys = findMyProvisionalKeys(entry.encrypted_group_private_encryption_keys_for_provisional_users, provisionalIdentityManager);
+  if ('encrypted_group_private_encryption_keys_for_provisional_users' in entry) {
+    const provisionalKeys = findMyProvisionalKeys(entry.encrypted_group_private_encryption_keys_for_provisional_users!, provisionalIdentityManager);
 
     if (provisionalKeys) {
       return provisionalUnseal(provisionalKeys.groupEncryptedKey, provisionalKeys.provisionalKeyPair);

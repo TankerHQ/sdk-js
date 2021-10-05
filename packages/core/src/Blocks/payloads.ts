@@ -54,7 +54,7 @@ export function unserializeBlock(src: Uint8Array): Block {
   /*const index = */varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   ({ value, newOffset } = getStaticArray(src, trustchainIdSize, newOffset));
-  const trustchain_id = value!; // eslint-disable-line camelcase
+  const trustchain_id = value!;
   value = varint.decode(src, newOffset);
   newOffset += varint.decode.bytes;
   const nature = value;
