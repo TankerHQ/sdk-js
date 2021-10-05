@@ -1136,6 +1136,11 @@
   version "1.20.4"
   resolved "https://registry.yarnpkg.com/@types/expect/-/expect-1.20.4.tgz#8288e51737bf7e3ab5d7c77bfa695883745264e5"
 
+"@types/file-saver@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@types/file-saver/-/file-saver-2.0.3.tgz#b734c4f5a04d20615eaed3dc106e2ab321082009"
+  integrity sha512-MBIou8pd/41jkff7s97B47bc9+p0BszqqDJsO51yDm49uUxeKzrfuNl5fSLC6BpLEWKA8zlwyqALVmXrFwoBHQ==
+
 "@types/glob@^7.1.1":
   version "7.1.4"
   resolved "https://registry.yarnpkg.com/@types/glob/-/glob-7.1.4.tgz#ea59e21d2ee5c517914cb4bc8e4153b99e566672"
