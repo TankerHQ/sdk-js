@@ -1,4 +1,3 @@
-// @noflow
 const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin'); // eslint-disable-line @typescript-eslint/naming-convention
 const HtmlWebpackPlugin = require('html-webpack-plugin'); // eslint-disable-line @typescript-eslint/naming-convention

@@ -1,4 +1,3 @@
-// @noflow
 const getBabelConfig = require('./babel.config');
 
 const coverage = !['false', '0'].includes(process.env.COVERAGE);

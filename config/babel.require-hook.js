@@ -1,4 +1,3 @@
-// @noflow
 const path = require('path');
 const getBabelConfig = require('./babel.config');
 

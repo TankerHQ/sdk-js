@@ -1,5 +1,3 @@
-// @flow
-
 // Note: we rely on core-js-pure ponyfills, and use them as polyfills
 //       manually. This allows to reuse core-js-pure dependency from
 //       @babel/transform-corejs3 without requiring core-js polyfills

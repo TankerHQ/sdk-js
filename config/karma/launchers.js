@@ -1,4 +1,3 @@
-// @noflow
 const customLaunchers = {
   Safari: {
     base: 'SafariNative',

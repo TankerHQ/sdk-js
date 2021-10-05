@@ -1,4 +1,3 @@
-// @flow
 const webpack = require('webpack');
 
 const plugin = new webpack.EnvironmentPlugin({

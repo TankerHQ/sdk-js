@@ -98,7 +98,6 @@ export const generateGroupsTests = (args: TestArgs) => {
     it('should not keep the key if we are not part of the group', async () => {
       const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
 
-      // This assertion is needed to satisfy flow because _session is optional
       // eslint-disable-next-line no-underscore-dangle
       if (!aliceLaptop._session)
         throw new Error('_session cannot be null');

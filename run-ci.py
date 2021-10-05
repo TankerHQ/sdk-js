@@ -206,7 +206,6 @@ def run_tests_in_node() -> None:
 def lint() -> None:
     tankerci.js.yarn_install_deps()
     tankerci.js.run_yarn("build:ts")
-    tankerci.js.run_yarn("flow")
     tankerci.js.run_yarn("lint:js")
     tankerci.js.run_yarn("lint:ts:all")
     tankerci.js.run_yarn("lint:compat:all")

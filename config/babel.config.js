@@ -1,4 +1,3 @@
-// @noflow
 const getBabelConfig = ({ target, coverage, react, hmre, modules }) => {
   // Presets and plugins will be applied in the following order:
   //   1. plugins from first to last
@@ -7,7 +6,6 @@ const getBabelConfig = ({ target, coverage, react, hmre, modules }) => {
   const config = {
     presets: [],
     plugins: [
-      ['@babel/plugin-transform-flow-strip-types', { allowDeclareFields: true }],
       '@babel/plugin-proposal-class-properties',
     ],
   };
