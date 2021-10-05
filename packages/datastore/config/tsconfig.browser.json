@@ -1,5 +1,4 @@
 {
-  "extends": "../../../tsconfig.json",
   "references": [
     { "path": "../base/config/tsconfig.browser.json" },
     { "path": "../dexie-base/config/tsconfig.browser.json" },

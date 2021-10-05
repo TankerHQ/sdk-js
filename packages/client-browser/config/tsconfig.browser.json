@@ -1,17 +1,9 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../../config/tsconfig.browser.json",
   "compilerOptions": {
     "outDir": "../dist/browser",
-    // Necessary target for IE11
-    "target": "ES5",
-    "module": "commonjs",
-    "importHelpers": true,
-    "downlevelIteration": true,
-    "lib": [
-      "DOM",
-      // needed by the umd (@tanker/global-this)
-      "WebWorker",
-    ]
+    "rootDir": "../src",
+    "declarationDir": "../dist/types",
   },
   "include": [
     "../src/**/*",
