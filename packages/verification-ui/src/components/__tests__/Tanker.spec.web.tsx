@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import { shallow } from 'enzyme';
 import { expect } from '@tanker/test-utils';
@@ -11,7 +10,7 @@ const defaultProps = {
   appId: '1234',
   email: 'a@tanker.io',
   url: 'https://thisisatest.test',
-  check: () => new Promise(resolve => resolve()),
+  check: () => new Promise<void>(resolve => resolve()),
   exit: () => {},
   context: { state: contextHolder.state, actions: contextHolder.actions },
 };
@@ -24,7 +23,7 @@ describe('<Tanker />', () => {
   it('doesn\'t allow the user to close the modal before the verification occurs', () => {
     const verifySuccess = false;
     const wrapper = shallow(<Tanker {...defaultProps} context={{ ...defaultProps.context, state: { ...defaultProps.context.state, verifySuccess } }} />);
-    expect(wrapper.props().onClose).to.be.null;
+    expect(wrapper.props().onClose).to.be.undefined;
   });
 
   it('allows the user to close the modal after the verification occurs', () => {

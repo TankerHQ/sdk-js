@@ -1,48 +1,35 @@
-// @flow
 import React from 'react';
 import { shallow } from 'enzyme';
 import { expect, sinon } from '@tanker/test-utils';
 
 import makeContextHolder from '../../context/makeContextHolder';
+import type { Context } from '../../context/makeContextHolder';
 import VerifyDevice from '../VerifyDevice';
 
-const shallowNoMount = elt => shallow(elt, { disableLifecycleMethods: true });
+const shallowNoMount = (elt: React.ReactElement) => shallow(elt, { disableLifecycleMethods: true });
 const contextHolder = makeContextHolder();
 
 const appId = '/+A=';
 const b64UrlUnpaddedAppId = '_-A';
 
-const defaultProps = {
-  fetch: (uri: string, options: { method: string, body: string }) => {}, // eslint-disable-line no-unused-vars
+const defaultProps: {
+  fetch: (uri: string, options: { method: string; body: string; }) => any;
+  appId: string;
+  email: string;
+  url: string;
+  check: (verificationCode: string) => Promise<void>;
+  context: Context;
+} = {
+  fetch: () => {},
   appId,
   email: 'a@a.aa',
   url: 'https://thisisatest.test',
-  check: () => new Promise(resolve => resolve()),
+  check: () => new Promise<void>(resolve => resolve()),
   context: { state: contextHolder.state, actions: contextHolder.actions },
 };
 
-const makeFakeFetch = (status: number, body: Object) => {
-  let callCount = 0;
-  let callArgs;
-
-  const fakeFetch = (uri: string, options: { method: string, body: string }): Object => {
-    callCount += 1;
-    callArgs = { uri, options };
-    return { status, json: () => body };
-  };
-
-  fakeFetch.assert = () => {
-    expect(callCount).to.equal(1);
-    expect(callArgs.uri).to.equal(`${defaultProps.url}/v2/apps/${b64UrlUnpaddedAppId}/verification/default-email`);
-    expect(callArgs.options.method).to.equal('POST');
-    expect(callArgs.options.body).to.equal(JSON.stringify({ to_email: defaultProps.email }));
-  };
-
-  return fakeFetch;
-};
-
 describe('<VerifyDevice />', () => {
-  let stub;
+  let stub: sinon.SinonStub<Parameters<typeof console.error>, void>;
   before(() => { stub = sinon.stub(console, 'error'); });
   after(() => stub.restore());
 
@@ -121,7 +108,22 @@ describe('<VerifyDevice />', () => {
   });
 
   context('(re)sending the verification email', () => {
-    afterEach(() => { defaultProps.fetch.assert(); });
+    let assert: () => void = () => {};
+    const makeFakeFetch = (status: number, body: Record<string, any>) => {
+      const fakeFetch = sinon.fake(() => ({ status, json: () => body }));
+
+      assert = () => {
+        expect(fakeFetch.callCount).to.equal(1);
+        expect(fakeFetch.firstCall.args[0]).to.equal(`${defaultProps.url}/v2/apps/${b64UrlUnpaddedAppId}/verification/default-email`);
+        expect(fakeFetch.firstCall.args[1].method).to.equal('POST');
+        expect(fakeFetch.firstCall.args[1].body).to.equal(JSON.stringify({ to_email: defaultProps.email }));
+      };
+
+      return fakeFetch;
+    };
+
+    beforeEach(() => { assert = () => {}; });
+    afterEach(() => { assert(); });
 
     it('sends a verification email when mounting', async () => {
       defaultProps.fetch = makeFakeFetch(200, {});
@@ -156,7 +158,7 @@ describe('<VerifyDevice />', () => {
       const wrapper = shallowNoMount(<VerifyDevice {...defaultProps} context={{ ...defaultProps.context, actions: { ...defaultProps.context.actions, sendSuccess, sendError } }} />);
       await wrapper.childAt(2).props().onClick();
       expect(sendSuccess.calledOnce).to.be.false;
-      expect(sendError.calledWithMatch(error => error.message === code)).to.be.true;
+      expect(sendError.calledWithMatch((error: Error) => error.message === code)).to.be.true;
     });
 
     it('calls the error callback when sending the verification email fails with a non-standard error', async () => {

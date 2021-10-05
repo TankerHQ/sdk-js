@@ -1,5 +1,3 @@
-// @flow
-
 /* eslint-disable import/no-extraneous-dependencies */
 import { Tanker } from '@tanker/client-browser';
 import { createIdentity, createProvisionalIdentity } from '@tanker/identity';
@@ -8,11 +6,11 @@ import { uuid } from '@tanker/test-utils';
 
 import VerificationUI from '../src';
 
-export const getURIParameter = (name: string): ?string => {
+export const getURIParameter = (name: string): string | null => {
   const paramSource = window.location.search || window.location.hash;
   const paramRegExp = new RegExp(`[?|&|#]${name}=([^&;]+?)(&|#|;|$)`);
   const extracted = (paramRegExp.exec(paramSource) || [undefined, ''])[1];
-  return decodeURIComponent(extracted) || null;
+  return decodeURIComponent(extracted!) || null;
 };
 
 const appId = getURIParameter('appId');

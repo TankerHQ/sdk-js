@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
 
@@ -55,8 +54,8 @@ const Circle = styled.circle`
   animation: ${dash} 1.5s linear infinite;
 `;
 
-const Spinner = ({ color, width, ...props }: { color: string, width: number }) => (
-  <Svg {...props} viewBox="0 0 10 10" width={width} height={width} aria-label="Loading..." tabIndex="0" role="progressbar">
+const Spinner = ({ color, width, ...props }: { color: string; width: number; }) => (
+  <Svg {...props} viewBox="0 0 10 10" width={width} height={width} aria-label="Loading..." tabIndex={0} role="progressbar">
     <Wrapper>
       <Circle fill="transparent" stroke={color} cx="5" cy="5" r="4.4" />
     </Wrapper>

@@ -1,4 +1,3 @@
-// @flow
 import React from 'react';
 import styled from 'styled-components';
 import { Motion, spring } from 'react-motion';
@@ -35,7 +34,8 @@ const Dialog = styled.dialog`
   }
 `;
 
-const computeStyle = ({ opacity, scale, offset }) => ({
+type Style = { opacity: number; scale: number; offset: number };
+const computeStyle = ({ opacity, scale, offset }: Style) => ({
   '--scale': scale > 1 ? 1 : scale,
   '--offset': `${offset}px`,
   opacity,
@@ -43,14 +43,14 @@ const computeStyle = ({ opacity, scale, offset }) => ({
 
 const springOptions = { stiffness: 200, damping: 24 };
 
-export const Modal = ({ onClose, ...props }: { onClose?: Event => any }) => (
+export const Modal = ({ onClose, ...props }: { onClose?: React.MouseEventHandler<HTMLDivElement>; }) => (
   <>
     <Overlay onClick={onClose} aria-hidden />
     <Motion
       defaultStyle={{ opacity: 0, offset: -50, scale: 0.5 }}
       style={{ opacity: spring(1, springOptions), offset: spring(0, springOptions), scale: spring(1, springOptions) }}
     >
-      {interpolatingStyle => <Dialog {...props} open style={computeStyle(interpolatingStyle)} />}
+      {interpolatingStyle => <Dialog {...props} open style={computeStyle(interpolatingStyle as Style)} />}
     </Motion>
   </>
 );

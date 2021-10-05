@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Dict, cast
+from typing import Any, Callable, Optional, Dict, List, cast
 import argparse
 import os
 from pathlib import Path
@@ -54,7 +54,7 @@ configs = [
     {"build": "core", "typescript": True, "publish": ["@tanker/core"]},
     {"build": "client-browser", "typescript": True, "publish": ["@tanker/client-browser"]},
     {"build": "client-node", "typescript": True, "publish": ["@tanker/client-node"]},
-    {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
+    {"build": "verification-ui", "typescript": True, "publish": ["@tanker/verification-ui"]},
     {"build": "fake-authentication", "typescript": True, "publish": ["@tanker/fake-authentication"]},
     {"build": "filekit", "publish": ["@tanker/filekit"]},
 ]
@@ -196,6 +196,19 @@ def run_tests_in_node() -> None:
     tankerci.js.run_yarn("coverage")
 
 
+def get_config(package_name: str) -> List[str]:
+    path = get_package_path(package_name=package_name, is_typescript=True)
+    res = [
+        "./config/tsconfig.tests.json",
+        str(path.joinpath("config", "tsconfig.es.json")),
+    ]
+    if package_name == "@tanker/verification-ui":
+        # lint `verification-ui/example` too
+        res.append(str(path.joinpath("config", "tsconfig.development.json")))
+ 
+    return res
+
+
 def lint() -> None:
     tankerci.js.yarn_install_deps()
     tankerci.js.run_yarn("build:ts")
@@ -210,12 +223,9 @@ def lint() -> None:
             # override parser-options from './eslintrc.typescript.yml' to the tsconfig
             # for the current package
             options = {
-                "project": [
-                    "./config/tsconfig.tests.json",
-                    str(path.joinpath("config", "tsconfig.es.json")),
-                ]
+                "project": get_config(package_name),
             }
-            tankerci.js.run_yarn("lint:ts", path.joinpath("**", "*.ts"), "--parser-options", f"{options}")
+            tankerci.js.run_yarn("lint:ts", path.joinpath("**", "*.ts?(x)"), "--parser-options", f"{options}")
             tankerci.js.run_yarn("lint:compat", path.joinpath("**", "dist", "**", "*.js"))
 
 

@@ -5,12 +5,12 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const { makeBaseConfig } = require('../../../config/webpack.config.base');
 
-const webpackBaseConfig = makeBaseConfig({ mode: 'development', target: 'web', react: true, hmre: true });
+const webpackBaseConfig = makeBaseConfig({ mode: 'development', target: 'web', react: true, hmre: true, tsconfig: path.resolve(__dirname, 'tsconfig.development.json') });
 
 module.exports = {
   ...webpackBaseConfig,
 
-  entry: [path.resolve(__dirname, '..', 'example', 'index.js')],
+  entry: [path.resolve(__dirname, '..', 'example', 'index.ts')],
 
   plugins: [
     ...webpackBaseConfig.plugins,
