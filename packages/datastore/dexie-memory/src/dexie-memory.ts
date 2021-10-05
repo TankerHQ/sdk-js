@@ -1,4 +1,4 @@
-import type { IDexie } from '@tanker/datastore-dexie-base'
+import type { IDexie } from '@tanker/datastore-dexie-base';
 import { errors } from '@tanker/datastore-base';
 
 import { Collection } from './collection';
@@ -36,7 +36,7 @@ export class DexieMemory implements IDexie {
   version = (version: number) => {
     this._version = version;
     return {
-      stores: (schema: Record<string, string | null>) => {
+      stores: (schema: Record<string, string | null>) => {
         for (const name of Object.keys(schema)) {
           const definition = schema[name]!;
 

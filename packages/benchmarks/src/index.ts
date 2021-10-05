@@ -1,11 +1,11 @@
-// @flow
-
 import { Tanker } from '@tanker/client-browser';
+import type { b64string } from '@tanker/client-browser';
 import { utils, generichash, random } from '@tanker/crypto';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
 import { AppHelper, makePrefix, appdUrl, managementSettings, oidcSettings, benchmarkSettings } from '@tanker/functional-tests';
 
-import { _serializeIdentity } from '../../core/dist/es/Identity';
+import { _serializeIdentity } from '../../core/src/Identity';
+import type { PublicPermanentIdentity } from '../../core/src/Identity';
 import { before, after, benchmark } from './framework';
 
 if (!appdUrl || !managementSettings || !oidcSettings) {
@@ -14,8 +14,8 @@ if (!appdUrl || !managementSettings || !oidcSettings) {
 
 const { appId: benchmarkAppId, appSecret: benchmarkAppSecret } = benchmarkSettings;
 
-let appHelper;
-let appId;
+let appHelper: AppHelper;
+let appId: b64string;
 
 before(async () => {
   appHelper = await AppHelper.newApp();
@@ -27,10 +27,9 @@ after(async () => {
   await appHelper.cleanup();
 });
 
-const makeTanker = (appIdOverride: ?string): Tanker => {
+const makeTanker = (appIdOverride?: string): Tanker => {
   const tanker = new Tanker({
     appId: appIdOverride || appId,
-    // $FlowIgnore adapter key is passed as a default option by @tanker/client-browser
     dataStore: { prefix: makePrefix() },
     sdkType: 'js-benchmarks-tests-web',
     url: appdUrl,
@@ -223,7 +222,7 @@ function obfuscateUserId(appIdArg: Uint8Array, userId: number): Uint8Array {
 }
 
 function makePublicIdentity(appIdArg: string, n: number): string {
-  const publicIdentity = {
+  const publicIdentity: PublicPermanentIdentity = {
     trustchain_id: appIdArg,
     target: 'user',
     value: utils.toBase64(obfuscateUserId(utils.fromBase64(appIdArg), n)),

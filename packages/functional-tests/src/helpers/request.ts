@@ -2,24 +2,24 @@ import { fetch } from '@tanker/http-utils';
 
 import { trustchaindUrl, managementSettings } from './config';
 
-type stringToAnyMap = Record<string, any>;
+type StringToAnyMap = Record<string, any>;
 
 export type Method = 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
-export type Request = { method: Method; path: string; query?: stringToAnyMap; headers?: stringToAnyMap; body?: stringToAnyMap; };
+export type Request = { method: Method; path: string; query?: StringToAnyMap; headers?: StringToAnyMap; body?: StringToAnyMap; };
 
-const stringify = (param: stringToAnyMap | string) => (
+const stringify = (param: StringToAnyMap | string) => (
   typeof param === 'object'
     ? JSON.stringify(param)
     : param
 );
 
-const buildQuery = (params: stringToAnyMap = {}) => (
+const buildQuery = (params: StringToAnyMap = {}) => (
   Object.keys(params)
     .map(key => `${key}=${encodeURIComponent(stringify(params[key]))}`)
     .join('&')
 );
 
-const request = async (url: string, { method, path, query, headers = {}, body }: Request): Promise<stringToAnyMap> => {
+const request = async (url: string, { method, path, query, headers = {}, body }: Request): Promise<StringToAnyMap> => {
   const response = await fetch(
     url + path + (query ? `?${buildQuery(query)}` : ''),
     {
@@ -39,8 +39,8 @@ const request = async (url: string, { method, path, query, headers = {}, body }:
   return parsed;
 };
 
-export const requestTrustchaind = async (req: Request): Promise<stringToAnyMap> => request(trustchaindUrl, req);
-export const requestManagement = async (req: Request): Promise<stringToAnyMap> => request(managementSettings.url, {
+export const requestTrustchaind = async (req: Request): Promise<StringToAnyMap> => request(trustchaindUrl, req);
+export const requestManagement = async (req: Request): Promise<StringToAnyMap> => request(managementSettings.url, {
   ...req,
   headers: { ...req.headers, Authorization: `Bearer ${managementSettings.accessToken}` },
 });

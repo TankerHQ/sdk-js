@@ -70,6 +70,8 @@ jobs:
           node-version: ${{ matrix.node_version }}
       - name: install packages
         run: yarn install
+      - name: build TypeScript
+        run: yarn build:ts
       - name: Tests on ${{ matrix.os }} with Node ${{ matrix.node_version }}
         run: yarn test
         env:
