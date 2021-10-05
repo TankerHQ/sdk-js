@@ -19,3 +19,10 @@ export type TankerProvisionalIdentityResponse = {
   private_encryption_key: string;
   public_encryption_key: string;
 };
+
+export type VerificationMethodResponse = Array<(
+  { type: 'email'; encrypted_email?: string; }
+  | { type: 'phone_number'; encrypted_phone_number: string; }
+  | { type: 'passphrase'; }
+  | { type: 'oidc_id_token'; }
+)>;

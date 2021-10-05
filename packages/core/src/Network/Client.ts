@@ -10,9 +10,11 @@ import { signChallenge } from './Authenticator';
 import { genericErrorHandler } from './ErrorHandler';
 import { b64RequestObject, urlize } from './utils';
 import type { ProvisionalKeysRequest, VerificationRequest } from '../LocalUser/requests';
-import type { VerificationMethodResponse } from '../LocalUser/types';
 import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
-import type { FileUploadURLResponse, FileDownloadURLResponse, TankerProvisionalIdentityResponse } from './types';
+import type {
+  FileUploadURLResponse, FileDownloadURLResponse,
+  TankerProvisionalIdentityResponse, VerificationMethodResponse,
+} from './types';
 
 export const defaultApiEndpoint = 'https://api.tanker.io';
 
@@ -538,7 +540,7 @@ export class Client {
     return result;
   };
 
-  getProvisionalIdentityClaims = async (): Promise<Array<string>> => {
+  getProvisionalIdentityClaims = async (): Promise<Array<b64string>> => {
     const path = `/users/${urlize(this._userId)}/provisional-identity-claims`;
     const { provisional_identity_claims: claims } = await this._apiCall(path);
     return claims;

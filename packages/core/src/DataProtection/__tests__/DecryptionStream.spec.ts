@@ -7,6 +7,7 @@ import { Writable } from '@tanker/stream-base';
 import { DecryptionStream } from '../DecryptionStream';
 import { PromiseWrapper } from '../../PromiseWrapper';
 
+// Needed to run in IE without polyfilling `String.prototype.repeat()`
 // extract from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/repeat#polyfill
 // without error checking
 function repeat(string: string, c: number) {

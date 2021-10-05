@@ -10,12 +10,6 @@ export type PhoneNumberVerificationMethod = { type: 'phoneNumber'; phoneNumber: 
 
 export type ProvisionalVerificationMethod = EmailVerificationMethod | PhoneNumberVerificationMethod;
 export type VerificationMethod = PassphraseVerificationMethod | KeyVerificationMethod | OIDCVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod;
-export type VerificationMethodResponse = Array<(
-  { type: 'email'; encrypted_email?: string; }
-  | { type: 'phone_number'; encrypted_phone_number: string; }
-  | { type: 'passphrase'; }
-  | { type: 'oidc_id_token'; }
-)>;
 
 export type EmailVerification = { email: string; verificationCode: string; };
 export type PassphraseVerification = { passphrase: string; };
