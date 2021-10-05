@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.node.dom.json",
+  "compilerOptions": {
+    "lib": ["es2018", "DOM", "WebWorker"],
+  },
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}

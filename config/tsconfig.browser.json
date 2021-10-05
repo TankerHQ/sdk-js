@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // Necessary target for IE11
+    "target": "ES5",
+    "module": "commonjs",
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "lib": ["DOM", "WebWorker"],
+  },
+  "exclude": [
+    "../**/__tests__/*",
+  ],
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}

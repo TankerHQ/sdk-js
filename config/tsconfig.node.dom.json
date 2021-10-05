@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "lib": ["ES2018", "DOM"],
+  },
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}
