@@ -1,5 +1,4 @@
 // @noflow
-const webpack = require('webpack');
 const os = require('os');
 const fs = require('fs');
 
@@ -46,6 +45,8 @@ class BenchmarkResultSet {
   }
 }
 
+/* eslint-disable func-names */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const BenchmarkReporter = function (baseReporterDecorator) {
   baseReporterDecorator(this);
 
@@ -74,11 +75,12 @@ const BenchmarkReporter = function (baseReporterDecorator) {
   this.specSkipped = specComplete;
   this.onSpecComplete = specComplete;
 
-  this.onRunComplete = function (browsers, resultInfo) {
+  this.onRunComplete = function () {
     this.write('Benchmark run complete\n');
     fs.writeFileSync(outputFile, JSON.stringify(resultSet));
   };
 };
+/* eslint-enable func-names */
 
 BenchmarkReporter.$inject = ['baseReporterDecorator'];
 

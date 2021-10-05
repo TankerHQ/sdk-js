@@ -46,5 +46,5 @@ const copyFile = async ({ src, dest, edit, mode }) => {
 
 module.exports = (configs) => ({
   name,
-  generateBundle: () => Promise.all(configs.map(copyFile))
+  generateBundle: () => Promise.all(configs.map(copyFile)),
 });

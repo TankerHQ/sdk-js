@@ -1,6 +1,7 @@
 // @noflow
 const path = require('path');
 
+// eslint-disable-next-line import/extensions
 const { customLaunchers } = require('./launchers.js');
 
 module.exports = {

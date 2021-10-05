@@ -1,0 +1,10 @@
+{ // used by lint, tests and coverage
+  "extends": "./tsconfig.tests.json",
+  "include": [
+    "../packages/**/*.ts",
+    "../packages/**/*.tsx",
+    "../packages/emails/**/*.js",
+    "../packages/**/config/*.js",
+    "./**/*.js",
+  ],
+}

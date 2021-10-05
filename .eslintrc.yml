@@ -6,19 +6,19 @@ env:
   webextensions: true
 
 extends:
-  - airbnb
+  - "airbnb-typescript"
 
-parser: "@babel/eslint-parser"
+parser: "@typescript-eslint/parser"
 parserOptions:
   ecmaVersion: 2018
-  babelOptions:
-    configFile: ./config/babel.config-eslint.js
+  project:
+    - ./config/tsconfig.lint.json
 
 plugins:
+  - "@typescript-eslint"
   - chai-expect
   - chai-friendly
   - mocha-no-only
-  - flowtype
 
 rules:
   arrow-parens: 0
@@ -56,53 +56,81 @@ rules:
 
   chai-friendly/no-unused-expressions: 2
 
-  flowtype/boolean-style:
-    - error
-    - bool
-  flowtype/define-flow-type: 1
-  flowtype/delimiter-dangle: 0
-  flowtype/generic-spacing:
-    - error
-    - never
-  flowtype/no-mixed: 0
-  flowtype/no-primitive-constructor-types: 2
-  flowtype/no-types-missing-file-annotation: 2
-  flowtype/no-weak-types: 0
-  flowtype/require-parameter-type: 0
-  flowtype/require-readonly-react-props: 0
-  flowtype/require-return-type: 0
-  flowtype/require-valid-file-annotation:
-    - error
-    - always
-  flowtype/semi: 2
-  flowtype/space-after-type-colon:
-    - error
-    - always
-  flowtype/space-before-generic-bracket:
-    - error
-    - never
-  flowtype/space-before-type-colon:
-    - error
-    - never
-  flowtype/type-id-match: 0
-  flowtype/union-intersection-spacing:
-    - error
-    - always
-
   import/no-named-as-default: 0
   import/prefer-default-export: 0
 
   mocha-no-only/mocha-no-only:
     - error
 
-  react/no-multi-comp:
+  "@typescript-eslint/lines-between-class-members":
     - error
-    - ignoreStateless: true
-  react/destructuring-assignment: 0
-  react/require-default-props: 0
-  react/sort-comp: 0
-  react/jsx-filename-extension: 0
-  react/jsx-one-expression-per-line: 0
-  react/jsx-props-no-spreading: 0
-  react/state-in-constructor: 0
-  react/static-property-placement: 0
+    - always
+    - exceptAfterSingleLine: true
+  "@typescript-eslint/naming-convention":
+    - error
+    - selector: variable
+      format:
+        - camelCase
+        - UPPER_CASE
+        - snake_case
+    - selector: function
+      format:
+        - camelCase
+        - PascalCase
+      leadingUnderscore: allow
+    - selector: typeLike
+      format:
+        - PascalCase
+  "@typescript-eslint/no-unused-vars":
+    - error
+    - argsIgnorePattern: "^_$"
+
+overrides:
+  - files:
+    - "*.test.ts"
+    - "*.spec?(.*).ts"
+    rules:
+      '@typescript-eslint/no-unused-expressions': off
+  - files:
+    - "*.tsx"
+    rules:
+      react/jsx-props-no-spreading: off
+      react/require-default-props: off
+      "@typescript-eslint/naming-convention": # allow PascalCase for variable like (Container)
+        - error
+        - selector: variable
+          format:
+            - camelCase
+            - UPPER_CASE
+            - snake_case
+            - PascalCase
+        - selector: function
+          format:
+            - camelCase
+            - PascalCase
+          leadingUnderscore: allow
+        - selector: typeLike
+          format:
+            - PascalCase
+  - files:
+    - "*.spec.*.tsx"
+    rules:
+      react/jsx-props-no-spreading: off
+      react/require-default-props: off
+      '@typescript-eslint/no-unused-expressions': off
+      "@typescript-eslint/naming-convention": # allow PascalCase for variable like (Container)
+        - error
+        - selector: variable
+          format:
+            - camelCase
+            - UPPER_CASE
+            - snake_case
+            - PascalCase
+        - selector: function
+          format:
+            - camelCase
+            - PascalCase
+          leadingUnderscore: allow
+        - selector: typeLike
+          format:
+            - PascalCase

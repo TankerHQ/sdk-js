@@ -28,7 +28,7 @@ const makeConfig = ({ input, output, target, copies }) => ({
       babelHelpers: target === 'browser' ? 'runtime' : 'bundled',
       ...getBabelConfig({ target: targetMap[target], react: true }),
     }),
-    copy(copies)
+    copy(copies),
   ],
 });
 
@@ -39,7 +39,7 @@ module.exports = ({ input, outputs, copies }) => (
       output: path,
       target,
       // Steps below only need to be run once:
-      copies: index === 0 ? copies : []
+      copies: index === 0 ? copies : [],
     })
   ))
 );

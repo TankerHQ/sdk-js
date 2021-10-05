@@ -203,49 +203,13 @@ def run_tests_in_node() -> None:
     tankerci.js.run_yarn("coverage")
 
 
-def get_config(package_name: str) -> List[str]:
-    res = ["./config/tsconfig.tests.json"]
-
-    if package_name == "@tanker/benchmarks":
-        return res
-
-    path = get_package_path(package_name=package_name, is_typescript=True)
-    res.append(str(path.joinpath("config", "tsconfig.es.json")))
-
-    if package_name == "@tanker/verification-ui":
-        # lint `verification-ui/example` too
-        res.append(str(path.joinpath("config", "tsconfig.development.json")))
- 
-    return res
-
-
-def lint_typescript(package_name: str):
-    path = get_package_path(package_name=package_name, is_typescript=True)
-    # override parser-options from './eslintrc.typescript.yml' to the tsconfig
-    # for the current package
-    options = {
-        "project": get_config(package_name),
-    }
-    tankerci.js.run_yarn("lint:ts", path.joinpath("**", "*.ts?(x)"), "--parser-options", f"{options}")
-    if package_name == "@tanker/benchmarks":
-        return
-    tankerci.js.run_yarn("lint:compat", path.joinpath("**", "dist", "**", "*.js"))
-
-
 def lint() -> None:
     tankerci.js.yarn_install_deps()
     tankerci.js.run_yarn("build:ts")
     tankerci.js.run_yarn("flow")
     tankerci.js.run_yarn("lint:js")
-
-    for config in configs:
-        if not config.get("typescript", False):
-            continue
-        for package_name in config["publish"]:
-            lint_typescript(package_name)
-
-    for package_name in private_modules:
-        lint_typescript(package_name)
+    tankerci.js.run_yarn("lint:ts:all")
+    tankerci.js.run_yarn("lint:compat:all")
 
 
 def check(*, runner: str, nightly: bool) -> None:
