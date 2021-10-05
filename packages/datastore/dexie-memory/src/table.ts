@@ -48,8 +48,8 @@ export class Table implements ITable {
     }
   };
 
-  bulkAdd = async (records: readonly Record<string, any>[]) => {
-    const failures: Error[] = [];
+  bulkAdd = async (records: ReadonlyArray<Record<string, any>>) => {
+    const failures: Array<Error> = [];
     let res!: string;
 
     for (const record of records) {
@@ -66,7 +66,7 @@ export class Table implements ITable {
     return res;
   };
 
-  bulkPut = async (records: readonly Record<string, any>[]) => {
+  bulkPut = async (records: ReadonlyArray<Record<string, any>>) => {
     let res!: string;
     for (const record of records) {
       await this.put(record);

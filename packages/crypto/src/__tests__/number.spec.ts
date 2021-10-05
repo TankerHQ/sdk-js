@@ -2,7 +2,7 @@ import { expect } from '@tanker/test-utils';
 import { fromUint32le, fromUint64le, toUint32le, toUint64le } from '../number';
 
 describe('number', () => {
-  let testValues: { number: number, bytes: number[] }[];
+  let testValues: { number: number, bytes: Array<number> }[];
   const toFuncs = { toUint32le, toUint64le };
   const fromFuncs = { fromUint32le, fromUint64le };
 

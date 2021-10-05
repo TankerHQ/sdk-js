@@ -1,0 +1,16 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../src",
+    "declarationDir": "../dist/types",
+  },
+  "exclude": [
+    "../**/__tests__/*",
+  ],
+  "references": [
+    { "path": "./tsconfig.browser.json" },
+    { "path": "./tsconfig.es.json" },
+    { "path": "./tsconfig.node.json" },
+  ],
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}

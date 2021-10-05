@@ -14,7 +14,7 @@ import 'core-js/features/array/find-index'; // eslint-disable-line import/no-ext
 import 'core-js/features/array/find'; // eslint-disable-line import/no-extraneous-dependencies
 
 // Promise polyfill required for Dexie 3 and libsodium.js in IE11
-if (!window.Promise) {
+if (!window.Promise || !window.Promise.prototype.finally) {
   window.Promise = Promise;
 }
 

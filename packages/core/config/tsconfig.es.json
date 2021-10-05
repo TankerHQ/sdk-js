@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../dist/es",
+    // Recommended values + es like module imports: https://github.com/tsconfig/bases/blob/main/bases/recommended.json
+    "target": "ES2015",
+    "module": "ES2015",
+  },
+  "include": [
+    "../src/**/*",
+  ],
+}
