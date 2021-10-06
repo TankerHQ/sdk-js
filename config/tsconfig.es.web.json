@@ -1,7 +1,7 @@
 {
-  "references": [
-    { "path": "./tsconfig.browser.json" },
-    { "path": "./tsconfig.es.json" },
-  ],
+  "extends": "./tsconfig.es.dom.json",
+  "compilerOptions": {
+    "lib": ["DOM", "WebWorker"],
+  },
   "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
 }

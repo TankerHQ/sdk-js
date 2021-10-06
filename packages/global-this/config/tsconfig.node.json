@@ -1,11 +1,9 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../../config/tsconfig.node.web.json",
   "compilerOptions": {
     "outDir": "../dist/node",
-    // Recommended values for Node 10: https://github.com/tsconfig/bases/blob/main/bases/node10.json
-    "target": "ES2018",
-    "module": "commonjs",
-    "lib": ["ES2018", "DOM", "WebWorker"],
+    "rootDir": "../src",
+    "declarationDir": "../dist/types",
   },
   "include": [
     "../src/**/*",

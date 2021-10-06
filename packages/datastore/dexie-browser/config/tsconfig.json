@@ -1,12 +1,4 @@
 {
-  "extends": "../../config/tsconfig.json",
-  "compilerOptions": {
-    "rootDir": "../src",
-    "declarationDir": "../dist/types",
-  },
-  "exclude": [
-    "../**/__tests__/*",
-  ],
   "references": [
     { "path": "./tsconfig.browser.json" },
     { "path": "./tsconfig.es.json" },
