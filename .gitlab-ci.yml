@@ -4,7 +4,7 @@ include:
     ref: 2021-09-27-1
   - project: TankerHQ/gitlab-ci-files
     file: /common.yml
-    ref: 2021-10-05-181
+    ref: 2021-10-07-192
 
 stages:
   - check
@@ -209,7 +209,7 @@ deploy/sdk:
     - linux
 
 pages:
-  extends: .rules/pages
+  extends: .rules/push-master-or-feat
   stage: deploy
   dependencies:
     - check/linux/node
