@@ -1,4 +1,3 @@
-// @noflow
 const getBabelConfig = require('./babel.config');
 
 const coverage = !['false', '0'].includes(process.env.COVERAGE);
@@ -14,5 +13,5 @@ require('@babel/register')({
   // Babelify everything except node_modules that are not our own stuff
   ignore: [file => file.includes('node_modules') && !file.includes('@tanker')],
   extensions: ['.cjs', '.es', '.es6', '.js', '.jsx', '.mjs', '.ts', '.tsx'],
-  ...getBabelConfig({ target: 'node', coverage })
+  ...getBabelConfig({ target: 'node', coverage }),
 });

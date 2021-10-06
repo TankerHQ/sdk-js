@@ -196,7 +196,7 @@ cd sdk-js && yarn
 
 ### Test and lint
 
-Our codebase uses the following ES6 features: `async` / `await`, `import` / `export`, and classes with flow for type-checking and with eslint for linting.
+Our codebase uses the following ES6 features: `async` / `await`, `import` / `export`, and classes with typescript for type-checking and with eslint for linting.
 
 To check that the code is correct and to launch the tests in Node.js, use:
 

@@ -1,4 +1,3 @@
-// @noflow
 const path = require('path');
 const getBabelConfig = require('./babel.config');
 
@@ -31,8 +30,8 @@ babelConfig.plugins.push([
       '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
       '@tanker/filekit': path.resolve(__dirname, '../packages/filekit/src/index.ts'),
       '@tanker/functional-tests': path.resolve(__dirname, '../packages/functional-tests/src/index.ts'),
-    }
-  }
+    },
+  },
 ]);
 
 // Babelify everything except node_modules that are not our own stuff

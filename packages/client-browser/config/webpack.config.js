@@ -1,6 +1,5 @@
-// @noflow
 const path = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin'); // eslint-disable-line @typescript-eslint/naming-convention
 const { makeBaseConfig } = require('../../../config/webpack.config.base');
 
 const webpackBaseConfig = makeBaseConfig({ mode: 'production', target: 'web', tsconfig: path.resolve(__dirname, 'tsconfig.browser.json') });

@@ -1,4 +1,3 @@
-// @noflow
 const path = require('path');
 const webpack = require('webpack');
 
@@ -120,7 +119,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
           type: 'asset',
           parser: {
             dataUrlCondition: {
-              maxSize: 25000
+              maxSize: 25000,
             },
           },
         },
@@ -183,7 +182,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
       '@tanker/filekit': path.resolve(__dirname, '../packages/filekit/src/index.ts'),
       '@tanker/functional-tests': path.resolve(__dirname, '../packages/functional-tests/src/index.ts'),
     },
-    extensions
+    extensions,
   };
 
   return base;

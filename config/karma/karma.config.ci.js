@@ -1,6 +1,3 @@
-// @noflow
-const webpack = require('webpack');
-
 const karmaConfig = require('./karma.config.base');
 const { makeBaseConfig } = require('./karma.webpack.config');
 const { plugin } = require('./tanker.test.config');
