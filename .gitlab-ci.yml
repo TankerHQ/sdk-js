@@ -4,7 +4,7 @@ include:
     ref: 2021-09-27-1
   - project: TankerHQ/gitlab-ci-files
     file: /common.yml
-    ref: 2021-10-07-192
+    ref: 2021-10-07-194
 
 stages:
   - check
@@ -225,8 +225,10 @@ pages:
 bridge/compat:
   stage: bridge-check
   extends:
-    - .rules/bridge-ci/auto
     - .variables/bridge-common
+  rules:
+    - !reference [.rules/mr/auto, rules]
+    - !reference [.rules/web/auto, rules]
   needs:
     - check/linux/node
   trigger:
