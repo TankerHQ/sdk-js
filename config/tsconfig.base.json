@@ -50,8 +50,7 @@
     "baseUrl": "../",                               /* Base directory to resolve non-absolute module names. */
     "paths": {
       "@tanker/*": [
-        "./src/typescript/*",
-        "./node_module/@tanker/*",
+        "./node_modules/@tanker/*",
       ],
       "dumb-reducer": [
         "./src/typescript/dumb-reducer",
