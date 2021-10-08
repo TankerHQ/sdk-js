@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@tanker/client-browser": "0.0.1",
+    "@tanker/core": "0.0.1",
     "@tanker/identity": "^3.0.0",
     "@tanker/test-utils": "0.0.1",
     "clean-webpack-plugin": "^3.0.0",

@@ -1,4 +1,4 @@
-import type { TankerOptions } from '@tanker/client-browser';
+import type { TankerOptions } from '@tanker/core';
 import { Tanker, errors } from '@tanker/client-browser';
 import VerificationUI from '@tanker/verification-ui';
 import type { PropType } from '@tanker/types';

@@ -13,7 +13,6 @@ class Tanker extends TankerCore {
   }
 }
 
-export type { b64string, EmailVerification, PassphraseVerification, KeyVerification, Verification, TankerOptions } from '@tanker/core';
 export { errors, fromBase64, toBase64, prehashPassword } from '@tanker/core';
 export { Tanker };
 export default Tanker;
