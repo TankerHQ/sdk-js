@@ -24,10 +24,11 @@ import { fromBase64, toBase64, prehashPassword } from './utils';
 export default Tanker;
 
 export type { b64string } from '@tanker/crypto';
-export type { ResourceMetadata } from '@tanker/types';
-export type { OutputOptions, FormatOptions, ProgressOptions, SharingOptions } from './DataProtection/options';
-export type { EmailVerification, PassphraseVerification, KeyVerification, Verification, VerificationMethod } from './LocalUser/types';
-export type { TankerOptions } from './Tanker';
+export type { ResourceMetadata, Data } from '@tanker/types';
+export type { OutputOptions, FormatOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './DataProtection/options';
+export type { EmailVerification, PhoneNumberVerification, PassphraseVerification, KeyVerification, Verification, VerificationMethod, VerificationOptions, ProvisionalVerificationMethod } from './LocalUser/types';
+export type { AttachResult } from './ProvisionalIdentity/types';
+export type { TankerOptions, Device, ProvisionalVerification } from './Tanker';
 export type { EncryptionStream } from './DataProtection/EncryptionStream';
 export type { DecryptionStream } from './DataProtection/DecryptionStream';
 export type { EncryptionSession } from './DataProtection/EncryptionSession';

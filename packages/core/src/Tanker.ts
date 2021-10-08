@@ -44,6 +44,7 @@ import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtectio
 import type { EncryptionSession } from './DataProtection/EncryptionSession';
 import type { UploadStream } from './CloudStorage/UploadStream';
 import type { DownloadStream } from './CloudStorage/DownloadStream';
+import type { AttachResult } from './ProvisionalIdentity/types';
 import { Lock } from './lock';
 
 import { TANKER_SDK_VERSION } from './version';
@@ -57,6 +58,9 @@ export type TankerCoreOptions = {
 };
 
 export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
+
+export type Device = { id: string; isRevoked: boolean; };
+export type ProvisionalVerification = EmailVerification | OIDCVerification | PhoneNumberVerification;
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
@@ -323,7 +327,7 @@ export class Tanker extends EventEmitter {
     return this.session.generateVerificationKey();
   }
 
-  async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<any> {
+  async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<AttachResult> {
     assertStatus(this.status, statuses.READY, 'attach a provisional identity');
 
     const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
@@ -331,7 +335,7 @@ export class Tanker extends EventEmitter {
     return this.session.attachProvisionalIdentity(provisionalIdentityObj);
   }
 
-  async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification | PhoneNumberVerification): Promise<void> {
+  async verifyProvisionalIdentity(verification: ProvisionalVerification): Promise<void> {
     assertStatus(this.status, statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
     return this.session.verifyProvisionalIdentity(verification);
@@ -362,7 +366,7 @@ export class Tanker extends EventEmitter {
     this.emit('deviceRevoked');
   };
 
-  async getDeviceList(): Promise<Array<{ id: string; isRevoked: boolean; }>> {
+  async getDeviceList(): Promise<Array<Device>> {
     assertStatus(this.status, statuses.READY, 'get the device list');
 
     const devices = await this.session.listDevices();
