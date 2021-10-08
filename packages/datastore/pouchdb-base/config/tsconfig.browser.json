@@ -1,0 +1,11 @@
+{
+  "extends": "../../../../config/tsconfig.browser.json",
+  "compilerOptions": {
+    "outDir": "../dist/browser",
+    "rootDir": "../src",
+    "declarationDir": "../dist/types",
+  },
+  "include": [
+    "../src/**/*",
+  ],
+}

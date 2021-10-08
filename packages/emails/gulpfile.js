@@ -1,10 +1,8 @@
-// @flow
 const gulp = require('gulp');
 const plugins = require('gulp-load-plugins');
 const browser = require('browser-sync');
 const rimraf = require('rimraf');
 const panini = require('panini');
-// $FlowIgnore[cannot-resolve-module]
 const yargs = require('yargs/yargs');
 const lazypipe = require('lazypipe');
 const inky = require('inky');

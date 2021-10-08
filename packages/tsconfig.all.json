@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "references": [
+    { "path": "./errors/config/" },
+    { "path": "./crypto/config/" },
+    { "path": "./global-this/config/" },
+    { "path": "./file-ponyfill/config/" },
+    { "path": "./file-reader/config/" },
+    { "path": "./types/config/" },
+    { "path": "./http-utils/config/" },
+    { "path": "./fake-authentication/config/" },
+    { "path": "./stream/config/" },
+    { "path": "./datastore/config/" },
+    { "path": "./core/config/" },
+    { "path": "./client-node/config/"},
+    { "path": "./client-browser/config/"},
+    { "path": "./filekit/config/"},
+  ],
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}

@@ -1,5 +1,3 @@
-// @noflow
-const webpack = require('webpack');
 const os = require('os');
 const fs = require('fs');
 
@@ -46,6 +44,8 @@ class BenchmarkResultSet {
   }
 }
 
+/* eslint-disable func-names */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const BenchmarkReporter = function (baseReporterDecorator) {
   baseReporterDecorator(this);
 
@@ -74,11 +74,12 @@ const BenchmarkReporter = function (baseReporterDecorator) {
   this.specSkipped = specComplete;
   this.onSpecComplete = specComplete;
 
-  this.onRunComplete = function (browsers, resultInfo) {
+  this.onRunComplete = function () {
     this.write('Benchmark run complete\n');
     fs.writeFileSync(outputFile, JSON.stringify(resultSet));
   };
 };
+/* eslint-enable func-names */
 
 BenchmarkReporter.$inject = ['baseReporterDecorator'];
 
@@ -95,16 +96,16 @@ module.exports = (config) => {
 
     plugins: [
       'karma-*',
-      {'reporter:benchmarkReporter': ['type', BenchmarkReporter]},
+      { 'reporter:benchmarkReporter': ['type', BenchmarkReporter] },
     ],
     reporters: ['benchmarkReporter'],
 
     files: [
-      { pattern: 'benchmarks/src/index.js', watched: true, included: true, served: true, nocache: false },
+      { pattern: 'benchmarks/src/index.ts', watched: true, included: true, served: true, nocache: false },
     ],
 
     preprocessors: {
-      'benchmarks/src/index.js': ['webpack', 'sourcemap'],
+      'benchmarks/src/index.ts': ['webpack', 'sourcemap'],
     },
 
     webpack: makeBaseConfig({
@@ -127,7 +128,7 @@ module.exports = (config) => {
     singleRun: true,
 
     // Nightly benchmarks are slow (safari can timeout)
-    browserNoActivityTimeout: 31*60*1000,
-    browserDisconnectTimeout: 30*60*1000,
+    browserNoActivityTimeout: 31 * 60 * 1000,
+    browserDisconnectTimeout: 30 * 60 * 1000,
   });
 };

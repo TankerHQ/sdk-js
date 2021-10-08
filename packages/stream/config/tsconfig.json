@@ -1,0 +1,7 @@
+{
+  "references": [
+    { "path": "../base/config" },
+    { "path": "../cloud-storage/config" },
+  ],
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}

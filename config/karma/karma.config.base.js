@@ -1,6 +1,6 @@
-// @noflow
 const path = require('path');
 
+// eslint-disable-next-line import/extensions
 const { customLaunchers } = require('./launchers.js');
 
 module.exports = {
@@ -22,7 +22,7 @@ module.exports = {
   files: [
     // Promise polyfill required for Dexie 3 in IE11
     { pattern: '../config/compat/ie11.js', included: true, served: true },
-    { pattern: '**/__tests__/index.js', watched: true, included: true, served: true, nocache: false },
+    { pattern: '**/__tests__/index.ts', watched: true, included: true, served: true, nocache: false },
   ],
 
   // list of files to exclude
@@ -32,7 +32,7 @@ module.exports = {
   // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
   preprocessors: {
     '../config/compat/ie11.js': ['webpack'],
-    '**/__tests__/index.js': ['webpack', 'sourcemap'],
+    '**/__tests__/index.ts': ['webpack', 'sourcemap'],
   },
 
   // test results reporter to use

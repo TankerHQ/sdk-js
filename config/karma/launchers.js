@@ -1,8 +1,6 @@
-
-// @noflow
 const customLaunchers = {
   Safari: {
-    base: 'SafariNative'
+    base: 'SafariNative',
   },
 
   // Sandbox does not work in un-privileged dockers, so

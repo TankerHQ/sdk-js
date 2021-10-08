@@ -1,0 +1,18 @@
+{ // used by lint, tests and coverage
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "../packages/benchmarks/**/*.ts",
+    "../**/__tests__/*",
+  ],
+  "compilerOptions": {
+    "isolatedModules": false,
+    "lib": [
+      "DOM",
+      "WebWorker"
+    ],
+  },
+  "references": [
+    { "path": "../packages/tsconfig.browser.json" },
+    { "path": "../packages/test-utils/config/tsconfig.browser.json" },
+  ],
+}

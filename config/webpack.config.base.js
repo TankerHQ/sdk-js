@@ -1,4 +1,3 @@
-// @noflow
 const path = require('path');
 const webpack = require('webpack');
 
@@ -25,13 +24,44 @@ const webResolve = {
 const getBabelLoaders = (env) => {
   const babelConfig = getBabelConfig(env);
   const babelConfigForceUMD = getBabelConfig({ ...env, modules: 'umd' });
+  const tsLoaderCompilerOptions = {
+    target: 'es5',
+    declaration: false,
+    declarationDir: undefined,
+    importHelpers: true,
+    downlevelIteration: true,
+    jsx: env.react ? 'react' : undefined,
+    rootDir: path.resolve(__dirname, '..'),
+  };
 
   return [
+    {
+      test: /\.tsx$/,
+      loader: 'ts-loader',
+      options: {
+        configFile: env.tsconfig || path.resolve(__dirname, 'tsconfig.tests.json'),
+        compilerOptions: tsLoaderCompilerOptions,
+      },
+      exclude: /node_modules/,
+    },
+    {
+      test: /\.ts$/,
+      loader: 'ts-loader',
+      options: {
+        configFile: env.tsconfig || path.resolve(__dirname, 'tsconfig.tests.json'),
+        compilerOptions: tsLoaderCompilerOptions,
+      },
+      exclude: /node_modules/,
+    },
     {
       test: /\.js$/,
       loader: 'babel-loader',
       options: babelConfig,
-      exclude: /node_modules/,
+      exclude: [
+        /node_modules/,
+        // don't consider babel polyfills when doing feature detection
+        /compat(\\|\/)ie11.js/,
+      ],
     },
     {
       test: /\.js$/,
@@ -68,7 +98,7 @@ const getBabelLoaders = (env) => {
   ];
 };
 
-const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
+const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig }) => {
   const base = {
     target,
     mode,
@@ -83,13 +113,13 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
 
     module: {
       rules: [
-        ...getBabelLoaders({ target, react, hmre }),
+        ...getBabelLoaders({ target, react, hmre, tsconfig }),
         {
           test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
           type: 'asset',
           parser: {
             dataUrlCondition: {
-              maxSize: 25000
+              maxSize: 25000,
             },
           },
         },
@@ -119,6 +149,41 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins }) => {
       }),
     );
   }
+
+  const extensions = ['.ts', '.js'];
+  if (react) {
+    extensions.push('.tsx');
+  }
+
+  base.resolve = {
+    ...base.resolve,
+    alias: {
+      '@tanker/errors': path.resolve(__dirname, '../packages/errors/src/index.ts'),
+      '@tanker/crypto': path.resolve(__dirname, '../packages/crypto/src/index.ts'),
+      '@tanker/test-utils': path.resolve(__dirname, '../packages/test-utils/src/index.ts'),
+      '@tanker/global-this': path.resolve(__dirname, '../packages/global-this/src/index.ts'),
+      '@tanker/file-ponyfill': path.resolve(__dirname, '../packages/file-ponyfill/src/index.ts'),
+      '@tanker/file-reader': path.resolve(__dirname, '../packages/file-reader/src/index.ts'),
+      '@tanker/types': path.resolve(__dirname, '../packages/types/src/index.ts'),
+      '@tanker/http-utils': path.resolve(__dirname, '../packages/http-utils/src/index.ts'),
+      '@tanker/fake-authentication': path.resolve(__dirname, '../packages/fake-authentication/src/index.ts'),
+      '@tanker/stream-base': path.resolve(__dirname, '../packages/stream/base/src/index.ts'),
+      '@tanker/stream-cloud-storage': path.resolve(__dirname, '../packages/stream/cloud-storage/src/index.ts'),
+      '@tanker/datastore-base': path.resolve(__dirname, '../packages/datastore/base/src/index.ts'),
+      '@tanker/datastore-dexie-base': path.resolve(__dirname, '../packages/datastore/dexie-base/src/index.ts'),
+      '@tanker/datastore-dexie-browser': path.resolve(__dirname, '../packages/datastore/dexie-browser/src/index.ts'),
+      '@tanker/datastore-dexie-memory': path.resolve(__dirname, '../packages/datastore/dexie-memory/src/index.ts'),
+      '@tanker/datastore-pouchdb-base': path.resolve(__dirname, '../packages/datastore/pouchdb-base/src/index.ts'),
+      '@tanker/datastore-pouchdb-memory': path.resolve(__dirname, '../packages/datastore/pouchdb-memory/src/index.ts'),
+      '@tanker/datastore-pouchdb-node': path.resolve(__dirname, '../packages/datastore/pouchdb-node/src/index.ts'),
+      '@tanker/core': path.resolve(__dirname, '../packages/core/src/index.ts'),
+      '@tanker/client-browser': path.resolve(__dirname, '../packages/client-browser/src/index.ts'),
+      '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
+      '@tanker/filekit': path.resolve(__dirname, '../packages/filekit/src/index.ts'),
+      '@tanker/functional-tests': path.resolve(__dirname, '../packages/functional-tests/src/index.ts'),
+    },
+    extensions,
+  };
 
   return base;
 };

@@ -1,0 +1,12 @@
+{
+  "extends": "../../../config/tsconfig.es.json",
+  "compilerOptions": {
+    "outDir": "../dist/es",
+    "rootDir": "../src",
+    "declarationDir": "../dist/types",
+    "jsx": "react",
+  },
+  "include": [
+    "../src/**/*",
+  ],
+}

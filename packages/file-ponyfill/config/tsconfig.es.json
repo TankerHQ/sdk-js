@@ -1,0 +1,11 @@
+{
+  "extends": "../../../config/tsconfig.es.json",
+  "compilerOptions": {
+    "outDir": "../dist/es",
+    "rootDir": "../src",
+    "declarationDir": "../dist/types",
+  },
+  "include": [
+    "../src/**/*",
+  ],
+}

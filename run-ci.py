@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Dict, cast
+from typing import Any, Callable, Optional, Dict, List, cast
 import argparse
 import os
 from pathlib import Path
@@ -20,6 +20,51 @@ import tankerci.benchmark
 
 class TestFailed(Exception):
     pass
+
+
+# Publish packages in order so that dependencies don't break during deploy
+configs = [
+    {"build": "global-this", "typescript": True, "publish": ["@tanker/global-this"]},
+    {"build": "errors", "typescript": True, "publish": ["@tanker/errors"]},
+    {"build": "crypto", "typescript": True, "publish": ["@tanker/crypto"]},
+    {"build": "file-ponyfill", "typescript": True, "publish": ["@tanker/file-ponyfill"]},
+    {"build": "file-reader", "typescript": True, "publish": ["@tanker/file-reader"]},
+    {"build": "http-utils", "typescript": True, "publish": ["@tanker/http-utils"]},
+    {"build": "types", "typescript": True, "publish": ["@tanker/types"]},
+    {
+        "build": "streams",
+        "typescript": True,
+        "publish": [
+            "@tanker/stream-base",
+            "@tanker/stream-cloud-storage",
+        ],
+    },
+    {
+        "build": "datastores",
+        "typescript": True,
+        "publish": [
+            "@tanker/datastore-base",
+            "@tanker/datastore-dexie-base",
+            "@tanker/datastore-dexie-browser",
+            "@tanker/datastore-pouchdb-base",
+            "@tanker/datastore-pouchdb-memory",
+            "@tanker/datastore-pouchdb-node",
+        ],
+    },
+    {"build": "core", "typescript": True, "publish": ["@tanker/core"]},
+    {"build": "client-browser", "typescript": True, "publish": ["@tanker/client-browser"]},
+    {"build": "client-node", "typescript": True, "publish": ["@tanker/client-node"]},
+    {"build": "verification-ui", "typescript": True, "publish": ["@tanker/verification-ui"]},
+    {"build": "fake-authentication", "typescript": True, "publish": ["@tanker/fake-authentication"]},
+    {"build": "filekit", "typescript": True, "publish": ["@tanker/filekit"]},
+]
+
+
+private_modules = [
+    "@tanker/datastore-dexie-memory",
+    "@tanker/benchmarks",
+    "@tanker/functional-tests",
+]
 
 
 def find_procs_by_name(name: str) -> psutil.Process:
@@ -124,13 +169,16 @@ def run_tests_in_browser(*, runner: str) -> None:
         tankerci.js.run_yarn("karma", "--browsers", "IE")
 
 
-def get_package_path(package_name: str) -> Path:
+def get_package_path(package_name: str, *, is_typescript: bool) -> Path:
     m = re.match(r"^@tanker/(?:(datastore|stream)-)?(.*)$", package_name)
     p = Path("packages")
     assert m
     if m[1]:
         p = p.joinpath(m[1])
-    return p.joinpath(m[2]).joinpath("dist")
+    p = p.joinpath(m[2])
+    if not is_typescript:
+        p = p.joinpath("dist")
+    return p
 
 
 def version_to_npm_tag(version: str) -> str:
@@ -141,8 +189,8 @@ def version_to_npm_tag(version: str) -> str:
     return "latest"
 
 
-def publish_npm_package(package_name: str, version: str) -> None:
-    package_path = get_package_path(package_name)
+def publish_npm_package(package_name: str, version: str, is_typescript: bool) -> None:
+    package_path = get_package_path(package_name, is_typescript=is_typescript)
     npm_tag = version_to_npm_tag(version)
     tankerci.run(
         "npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path
@@ -151,13 +199,16 @@ def publish_npm_package(package_name: str, version: str) -> None:
 
 def run_tests_in_node() -> None:
     tankerci.js.run_yarn("exec", "--", "node", "--version")
+    tankerci.js.run_yarn("build:ts")
     tankerci.js.run_yarn("coverage")
 
 
 def lint() -> None:
     tankerci.js.yarn_install_deps()
-    tankerci.js.run_yarn("flow")
+    tankerci.js.run_yarn("build:ts")
     tankerci.js.run_yarn("lint:js")
+    tankerci.js.run_yarn("lint:ts:all")
+    tankerci.js.run_yarn("lint:compat:all")
 
 
 def check(*, runner: str, nightly: bool) -> None:
@@ -191,6 +242,7 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.run("poetry", "install")
     with tankerci.working_directory(base_path / "sdk-js"):
         tankerci.js.yarn_install()
+        tankerci.js.run_yarn('build:ts')
     with tankerci.working_directory(base_path / "qa-python-js"):
         tankerci.run("poetry", "install")
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
@@ -201,45 +253,11 @@ def deploy_sdk(*, git_tag: str) -> None:
     version = tankerci.bump.version_from_git_tag(git_tag)
     tankerci.bump.bump_files(version)
 
-    # Publish packages in order so that dependencies don't break during deploy
-    configs = [
-        {"build": "global-this", "publish": ["@tanker/global-this"]},
-        {"build": "crypto", "publish": ["@tanker/crypto"]},
-        {"build": "errors", "publish": ["@tanker/errors"]},
-        {"build": "file-ponyfill", "publish": ["@tanker/file-ponyfill"]},
-        {"build": "file-reader", "publish": ["@tanker/file-reader"]},
-        {"build": "http-utils", "publish": ["@tanker/http-utils"]},
-        {"build": "types", "publish": ["@tanker/types"]},
-        {
-            "build": "streams",
-            "publish": [
-                "@tanker/stream-base",
-                "@tanker/stream-cloud-storage",
-            ],
-        },
-        {
-            "build": "datastores",
-            "publish": [
-                "@tanker/datastore-base",
-                "@tanker/datastore-dexie-base",
-                "@tanker/datastore-dexie-browser",
-                "@tanker/datastore-pouchdb-base",
-                "@tanker/datastore-pouchdb-memory",
-                "@tanker/datastore-pouchdb-node",
-            ],
-        },
-        {"build": "core", "publish": ["@tanker/core"]},
-        {"build": "client-browser", "publish": ["@tanker/client-browser"]},
-        {"build": "client-node", "publish": ["@tanker/client-node"]},
-        {"build": "verification-ui", "publish": ["@tanker/verification-ui"]},
-        {"build": "fake-authentication", "publish": ["@tanker/fake-authentication"]},
-        {"build": "filekit", "publish": ["@tanker/filekit"]},
-    ]
 
     for config in configs:
         tankerci.js.yarn_build(delivery=config["build"], env="prod")  # type: ignore
         for package_name in config["publish"]:
-            publish_npm_package(package_name, version)
+            publish_npm_package(package_name, version, config.get("typescript", False))
 
 
 def get_branch_name() -> str:
@@ -446,6 +464,8 @@ def _main() -> None:
     )
     benchmark_parser.add_argument("--iterations", default=None, type=int)
 
+    subparsers.add_parser("lint")
+
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
@@ -471,6 +491,8 @@ def _main() -> None:
 
         if args.compare_results:
             compare_benchmark_results(args.runner, bench_results, size)
+    elif args.command == "lint":
+        run_linters()
     else:
         parser.print_help()
         sys.exit(1)

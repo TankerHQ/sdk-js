@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "references": [
+    { "path": "./errors/config/tsconfig.browser.json" },
+    { "path": "./crypto/config/tsconfig.browser.json" },
+    { "path": "./global-this/config/tsconfig.browser.json" },
+    { "path": "./file-ponyfill/config/tsconfig.browser.json" },
+    { "path": "./file-reader/config/tsconfig.browser.json" },
+    { "path": "./types/config/tsconfig.browser.json" },
+    { "path": "./http-utils/config/tsconfig.browser.json" },
+    { "path": "./fake-authentication/config/tsconfig.browser.json" },
+    { "path": "./stream/config/tsconfig.browser.json" },
+    { "path": "./datastore/config/tsconfig.browser.json" },
+    { "path": "./core/config/tsconfig.browser.json" },
+    { "path": "./client-browser/config/tsconfig.browser.json" },
+    { "path": "./filekit/config/tsconfig.browser.json" },
+  ],
+  "files": [], // "files" MUST be kept empty. This is a _meta_ tsconfig and should not generate anything by itself.
+}

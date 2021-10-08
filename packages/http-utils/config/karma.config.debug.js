@@ -1,4 +1,3 @@
-// @noflow
 const path = require('path');
 const base = require('../../../config/karma/karma.config.debug');
 

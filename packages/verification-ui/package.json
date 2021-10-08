@@ -21,7 +21,16 @@
     "client-side",
     "security"
   ],
-  "main": "src/index.js",
+  "main": "dist/browser/index.js",
+  "module": "dist/es/index.js",
+  "browser": "dist/browser/index.js",
+  "types": "dist/types/index.d.js",
+  "files": [
+    "dist/",
+    "README.md",
+    "package.json",
+    "LICENSE"
+  ],
   "peerDependencies": {
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
