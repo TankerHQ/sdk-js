@@ -467,18 +467,15 @@ describe('Tanker', () => {
             const encryptedArray = await tanker.encrypt(' ');
 
             // Use the compiler to check that assignation is possible (type deducted correctly)
-            /* eslint-disable @typescript-eslint/no-unused-vars */
             array = encryptedArray;
-          /* eslint-enable @typescript-eslint/no-unused-vars */
           });
 
           it('is overriden by FormatOptions', async () => {
             const encryptedBuffer = await tanker.encrypt(' ', { type: File });
 
             // Use the compiler to check that assignation is possible (type deducted correctly)
-            /* eslint-disable @typescript-eslint/no-unused-vars */
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             file = encryptedBuffer;
-          /* eslint-enable @typescript-eslint/no-unused-vars */
           });
         } else {
           // @ts-expect-error only used as destination
@@ -493,18 +490,16 @@ describe('Tanker', () => {
             const encryptedArray = await tanker.encrypt(' ');
 
             // Use the compiler to check that assignation is possible (type deducted correctly)
-            /* eslint-disable @typescript-eslint/no-unused-vars */
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             array = encryptedArray;
-          /* eslint-enable @typescript-eslint/no-unused-vars */
           });
 
           it('is overriden by FormatOptions', async () => {
             const encryptedBuffer = await tanker.encrypt(' ', { type: Buffer });
 
             // Use the compiler to check that assignation is possible (type deducted correctly)
-            /* eslint-disable @typescript-eslint/no-unused-vars */
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             buffer = encryptedBuffer;
-          /* eslint-enable @typescript-eslint/no-unused-vars */
           });
         }
       });
@@ -520,16 +515,14 @@ describe('Tanker', () => {
 
           it('is File | Uint8Array by default', async () => {
             const downloadedResource = await tanker.download(resourceID);
-            /* eslint-disable @typescript-eslint/no-unused-vars */
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             fileOrArray = downloadedResource;
-          /* eslint-enable @typescript-eslint/no-unused-vars */
           });
 
           it('is overriden by FormatOptions', async () => {
             const downloadedBlob = await tanker.download(resourceID, { type: Blob });
-            /* eslint-disable @typescript-eslint/no-unused-vars */
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             blob = downloadedBlob;
-          /* eslint-enable @typescript-eslint/no-unused-vars */
           });
         } else {
           // @ts-expect-error only used as destination
@@ -539,16 +532,14 @@ describe('Tanker', () => {
 
           it('is File | Uint8Array by default', async () => {
             const downloadedResource = await tanker.download(resourceID);
-            /* eslint-disable @typescript-eslint/no-unused-vars */
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             fileOrArray = downloadedResource;
-          /* eslint-enable @typescript-eslint/no-unused-vars */
           });
 
           it('is overriden by FormatOptions', async () => {
             const downloadedBuffer = await tanker.download(resourceID, { type: Buffer });
-            /* eslint-disable @typescript-eslint/no-unused-vars */
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             buffer = downloadedBuffer;
-          /* eslint-enable @typescript-eslint/no-unused-vars */
           });
         }
       });
