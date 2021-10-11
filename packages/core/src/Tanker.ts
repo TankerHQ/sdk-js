@@ -399,7 +399,7 @@ export class Tanker extends EventEmitter {
     return this.session.share(resourceIds, sharingOptions);
   }
 
-  async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
+  async getResourceId<T extends Data>(encryptedData: T): Promise<b64string> {
     assertDataType(encryptedData, 'encryptedData');
 
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
