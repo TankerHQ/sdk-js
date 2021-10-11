@@ -507,6 +507,50 @@ describe('Tanker', () => {
           });
         }
       });
+
+      describe('download\'s return type', () => {
+        const resourceID = 'AAAAAAAAAAAAAAAAAAAAAA==';
+
+        if (isBrowser()) {
+          // @ts-expect-error only used as destination
+          let fileOrArray: globalThis.File | Uint8Array;
+          // @ts-expect-error only used as destination
+          let blob: Blob;
+
+          it('is File | Uint8Array by default', async () => {
+            const downloadedResource = await tanker.download(resourceID);
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            fileOrArray = downloadedResource;
+          /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
+
+          it('is overriden by FormatOptions', async () => {
+            const downloadedBlob = await tanker.download(resourceID, { type: Blob });
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            blob = downloadedBlob;
+          /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
+        } else {
+          // @ts-expect-error only used as destination
+          let fileOrArray: globalThis.File | Uint8Array;
+          // @ts-expect-error only used as destination
+          let buffer: Buffer;
+
+          it('is File | Uint8Array by default', async () => {
+            const downloadedResource = await tanker.download(resourceID);
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            fileOrArray = downloadedResource;
+          /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
+
+          it('is overriden by FormatOptions', async () => {
+            const downloadedBuffer = await tanker.download(resourceID, { type: Buffer });
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            buffer = downloadedBuffer;
+          /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
+        }
+      });
     });
   });
 });

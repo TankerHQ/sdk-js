@@ -527,7 +527,9 @@ export class Tanker extends EventEmitter {
     return this.session.upload(clearData, encryptionOptions, resourceMetadata, progressOptions);
   }
 
-  async download<T extends Data>(resourceId: b64string, options: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async download(resourceId: b64string, options?: Partial<ResourceMetadata & ProgressOptions>): Promise<globalThis.File | Uint8Array>;
+  async download<T extends Data>(resourceId: b64string, options?: Partial<OutputOptions<T> & ProgressOptions>): Promise<T>;
+  async download(resourceId: any, options: any = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'download a file');
     assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 
