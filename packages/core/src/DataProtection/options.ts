@@ -13,7 +13,7 @@ export const defaultDownloadType = globalThis.File ? globalThis.File : Uint8Arra
 
 export type FormatOptions<T extends Data> = { type: Class<T>; };
 
-export type OutputOptions<T extends Data = Uint8Array> = FormatOptions<T> & ResourceMetadata;
+export type OutputOptions<T extends Data> = FormatOptions<T> & ResourceMetadata;
 
 export type ProgressOptions = { onProgress?: OnProgress; };
 

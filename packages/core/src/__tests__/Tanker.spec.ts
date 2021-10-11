@@ -2,7 +2,8 @@ import type { b64string } from '@tanker/crypto';
 import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
-import { expect, silencer } from '@tanker/test-utils';
+import { expect, silencer, isBrowser } from '@tanker/test-utils';
+import { castData } from '@tanker/types';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
@@ -364,6 +365,146 @@ describe('Tanker', () => {
         for (let i = 0; i < badVerifications.length; i++) {
           const arg = badVerifications[i] as EmailVerification;
           await expect(tanker.verifyProvisionalIdentity(arg), `verify provisional identity test #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
+      });
+    });
+
+    describe('API typing', () => {
+      // All the following tests are checking that TypeScript correctly deduces types returned by Tanker APIs
+      // The runtime does not matter. If a test successfully compiles, it is considered valid.
+      beforeEach(() => {
+        // mock a session
+        tanker._session = ({ // eslint-disable-line no-underscore-dangle
+          status: statuses.READY,
+          encryptData: (arg: any) => arg,
+          decryptData: (arg: any) => arg,
+          download: () => '',
+        } as any);
+      });
+
+      describe('encryptData/decryptData\'s return type', () => {
+        let array: Uint8Array;
+
+        before(async () => {
+          array = utils.fromString(' ');
+        });
+
+        if (isBrowser()) {
+          let blob: Blob;
+          let file: File;
+
+          before(async () => {
+            blob = await castData(array, { type: Blob });
+            file = await castData(array, { type: File });
+          });
+
+          it('is deduced from input data type', async () => {
+            const encryptedBlob = await tanker.encryptData(file);
+            const encryptedFile = await tanker.encryptData(blob);
+
+            const decryptedBlob = await tanker.decryptData(blob);
+            const decryptedFile = await tanker.decryptData(file);
+
+            blob = encryptedFile;
+            file = encryptedBlob;
+
+            blob = decryptedBlob;
+            file = decryptedFile;
+          });
+
+          it('is overriden by FormatOptions', async () => {
+            const encryptedFromArray = await tanker.encryptData(array, { type: File });
+            const decryptedFromArray = await tanker.decryptData(array, { type: File });
+
+            file = encryptedFromArray;
+            file = decryptedFromArray;
+          });
+        } else {
+          let buffer: Buffer;
+
+          before(async () => {
+            buffer = await castData(array, { type: Buffer });
+          });
+
+          it('is deduced from input data type', async () => {
+            const encryptedBuffer = await tanker.encryptData(buffer);
+            const encryptedArray = await tanker.encryptData(array);
+
+            const decryptedBuffer = await tanker.decryptData(buffer);
+            const decryptedArray = await tanker.decryptData(array);
+
+            buffer = encryptedBuffer;
+            array = encryptedArray;
+            buffer = decryptedBuffer;
+            array = decryptedArray;
+          });
+
+          it('is overriden by FormatOptions', async () => {
+            const encryptedArray = await tanker.encryptData(buffer, { type: Buffer });
+            const decryptedArray = await tanker.decryptData(buffer, { type: Buffer });
+
+            buffer = encryptedArray;
+            buffer = decryptedArray;
+          });
+        }
+      });
+
+      describe('encrypt\'s return type', () => {
+      // @ts-expect-error only used as destination
+        let array: Uint8Array;
+
+        if (isBrowser()) {
+          // @ts-expect-error only used as destination
+          let file: File;
+
+          before(async () => {
+            file = await castData(utils.fromString(' '), { type: File });
+            array = utils.fromString(' ');
+          });
+
+          it('is Uint8Array by default', async () => {
+            const encryptedArray = await tanker.encrypt(' ');
+
+            // Use the compiler to check that assignation is possible (type deducted correctly)
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            array = encryptedArray;
+          /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
+
+          it('is overriden by FormatOptions', async () => {
+            const encryptedBuffer = await tanker.encrypt(' ', { type: File });
+
+            // Use the compiler to check that assignation is possible (type deducted correctly)
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            file = encryptedBuffer;
+          /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
+        } else {
+          // @ts-expect-error only used as destination
+          let buffer: Buffer;
+
+          before(async () => {
+            buffer = await castData(utils.fromString(' '), { type: Buffer });
+            array = utils.fromString(' ');
+          });
+
+          it('is Uint8Array by default', async () => {
+            const encryptedArray = await tanker.encrypt(' ');
+
+            // Use the compiler to check that assignation is possible (type deducted correctly)
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            array = encryptedArray;
+          /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
+
+          it('is overriden by FormatOptions', async () => {
+            const encryptedBuffer = await tanker.encrypt(' ', { type: Buffer });
+
+            // Use the compiler to check that assignation is possible (type deducted correctly)
+            /* eslint-disable @typescript-eslint/no-unused-vars */
+            buffer = encryptedBuffer;
+          /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
         }
       });
     });

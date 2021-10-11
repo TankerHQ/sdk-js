@@ -474,7 +474,9 @@ export class Tanker extends EventEmitter {
     return this.session.createDecryptionStream();
   }
 
-  async encryptData<T extends Data = Uint8Array>(clearData: Data, options: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encryptData<I extends Data>(clearData: I, options?: Partial<EncryptionOptions & ResourceMetadata & ProgressOptions>): Promise<I>;
+  async encryptData<I extends Data, T extends Data>(clearData: I, options?: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T>;
+  async encryptData(clearData: any, options: any = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
@@ -485,13 +487,17 @@ export class Tanker extends EventEmitter {
     return this.session.encryptData(clearData, encryptionOptions, outputOptions, progressOptions);
   }
 
-  async encrypt<T extends Data = Uint8Array>(plain: string, options?: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
+  async encrypt(plain: string, options?: Partial<EncryptionOptions & ResourceMetadata & ProgressOptions>): Promise<Uint8Array>;
+  async encrypt<T extends Data = Uint8Array>(plain: string, options?: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T>;
+  async encrypt(plain: any, options?: any): Promise<any> {
     assertStatus(this.status, statuses.READY, 'encrypt');
     assertNotEmptyString(plain, 'plain');
     return this.encryptData(utils.fromString(plain), options);
   }
 
-  async decryptData<T extends Data = Uint8Array>(encryptedData: Data, options: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async decryptData<I extends Data>(encryptedData: I, options?: Partial<ResourceMetadata & ProgressOptions>): Promise<I>;
+  async decryptData<I extends Data, T extends Data>(encryptedData: I, options?: Partial<OutputOptions<T> & ProgressOptions>): Promise<T>;
+  async decryptData(encryptedData: any, options: any = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 

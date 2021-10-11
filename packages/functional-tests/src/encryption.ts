@@ -608,7 +608,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       args.resources[size]!.forEach(({ type: originalType, resource: clear }) => {
         args.resources[size]!.forEach(({ type: transientType }) => {
           it(`can encrypt a ${size} ${getConstructorName(originalType)} into a ${getConstructorName(transientType)} and decrypt back a ${getConstructorName(originalType)}`, async () => {
-            const encrypted = await aliceLaptop.encryptData<Data>(clear, { type: transientType });
+            const encrypted = await aliceLaptop.encryptData(clear, { type: transientType });
             expectType(encrypted, transientType);
 
             const outputOptions: Partial<OutputOptions<Data>> = {};
