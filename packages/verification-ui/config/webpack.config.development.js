@@ -22,9 +22,10 @@ module.exports = {
     historyApiFallback: true,
     host: '127.0.0.1',
     // host: '0.0.0.0',
-    hot: true,
-    overlay: true,
-    watchOptions: { ignored: /node_modules/ },
     port: 3008,
+    hot: true,
+    static: {
+      watch: { ignored: /node_modules/ },
+    },
   },
 };
