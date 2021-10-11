@@ -119,7 +119,7 @@
     "karma-sourcemap-loader": "0.3.8",
     "karma-webpack": "5.0.0",
     "make-error": "^1.3.6",
-    "mocha": "8.3.0",
+    "mocha": "^9.1.2",
     "nyc": "15.1.0",
     "process": "^0.11.10",
     "ts-loader": "^8.3.0",
