@@ -8,6 +8,7 @@ import { castData } from '@tanker/types';
 import dataStoreConfig, { makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
+import { EncryptionSession } from '../DataProtection/EncryptionSession';
 import type { TankerCoreOptions } from '../Tanker';
 import type { EmailVerification, RemoteVerification } from '../LocalUser/types';
 import type { SharingOptions } from '../DataProtection/options';
@@ -548,6 +549,102 @@ describe('Tanker', () => {
             /* eslint-disable @typescript-eslint/no-unused-vars */
             buffer = downloadedBuffer;
           /* eslint-enable @typescript-eslint/no-unused-vars */
+          });
+        }
+      });
+
+      describe('encryptionSession', () => {
+        let array: Uint8Array;
+        let session: EncryptionSession;
+
+        before(async () => {
+          array = utils.fromString(' ');
+          // @ts-expect-error we hijack the calls anyway
+          session = new EncryptionSession(undefined, undefined);
+          session.encryptData = (arg: any) => arg;
+        });
+
+        if (isBrowser()) {
+          let blob: Blob;
+          let file: File;
+
+          before(async () => {
+            blob = await castData(array, { type: Blob });
+            file = await castData(array, { type: File });
+          });
+
+          describe('encryptData\'s return type', () => {
+            it('is deduced from input data type', async () => {
+              const encryptedBlob = await session.encryptData(file);
+              const encryptedFile = await session.encryptData(blob);
+              const encryptedArray = await session.encryptData(array);
+
+              blob = encryptedFile;
+              file = encryptedBlob;
+              array = encryptedArray;
+            });
+
+            it('is overriden by FormatOptions', async () => {
+              const encryptedArray = await session.encryptData(blob, { type: Blob });
+              const encryptedFromArray = await session.encryptData(array, { type: File });
+
+              blob = encryptedArray;
+              file = encryptedFromArray;
+            });
+          });
+
+          describe('encryptionSession.encrypt\'s return type', () => {
+            it('is Uint8Array by default', async () => {
+              const encryptedArray = await session.encrypt(' ');
+
+              // Use the compiler to check that assignation is possible (type deducted correctly)
+              array = encryptedArray;
+            });
+
+            it('is overriden by FormatOptions', async () => {
+              const encryptedBlob = await session.encrypt(' ', { type: Blob });
+
+              // Use the compiler to check that assignation is possible (type deducted correctly)
+              blob = encryptedBlob;
+            });
+          });
+        } else {
+          let buffer: Buffer;
+
+          before(async () => {
+            buffer = await castData(array, { type: Buffer });
+          });
+
+          describe('encryptData\'s return type', () => {
+            it('is deduced from input data type', async () => {
+              const encryptedBuffer = await session.encryptData(buffer);
+              const encryptedArray = await session.encryptData(array);
+
+              buffer = encryptedBuffer;
+              array = encryptedArray;
+            });
+
+            it('is overriden by FormatOptions', async () => {
+              const encryptedBuffer = await session.encryptData(buffer, { type: Buffer });
+
+              buffer = encryptedBuffer;
+            });
+          });
+
+          describe('encryptionSession.encrypt\'s return type', () => {
+            it('is Uint8Array by default', async () => {
+              const encryptedArray = await session.encrypt(' ');
+
+              // Use the compiler to check that assignation is possible (type deducted correctly)
+              array = encryptedArray;
+            });
+
+            it('is overriden by FormatOptions', async () => {
+              const encryptedBuffer = await session.encrypt(' ', { type: Buffer });
+
+              // Use the compiler to check that assignation is possible (type deducted correctly)
+              buffer = encryptedBuffer;
+            });
           });
         }
       });

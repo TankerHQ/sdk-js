@@ -1,6 +1,6 @@
 import type { b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
-import type { Data } from '@tanker/types';
+import type { Data, ResourceMetadata } from '@tanker/types';
 import { assertDataType, assertNotEmptyString } from '@tanker/types';
 
 import { Status, assertStatus } from '../Session/status';
@@ -29,19 +29,23 @@ export class EncryptionSession {
     return utils.toBase64(this._resource.resourceId);
   }
 
-  async encrypt<T extends Data>(clearText: string, options: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encrypt(clearText: string, options?: Partial<ResourceMetadata & ProgressOptions>): Promise<Uint8Array>;
+  async encrypt<T extends Data = Uint8Array>(clearText: string, options?: Partial<OutputOptions<T> & ProgressOptions>): Promise<T>;
+  async encrypt(clearText: any, options: any): Promise<any> {
     assertNotEmptyString(clearText, 'clearText');
     return this.encryptData(utils.fromString(clearText), options);
   }
 
-  async encryptData<T extends Data>(clearData: Data, options: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encryptData<I extends Data>(clearData: I, options?: Partial<ResourceMetadata & ProgressOptions>): Promise<I>;
+  async encryptData<I extends Data, T extends Data>(clearData: I, options?: Partial<OutputOptions<T> & ProgressOptions>): Promise<T>;
+  async encryptData(clearData: any, options: any = {}): Promise<any> {
     assertStatus(this._status, Status.READY, 'encrypt with an encryption session');
     assertDataType(clearData, 'clearData');
 
-    const outputOptions = extractOutputOptions<T>(options, clearData);
+    const outputOptions = extractOutputOptions(options, clearData);
     const progressOptions = extractProgressOptions(options);
 
-    return this._dataProtector.encryptData<T>(clearData, {}, outputOptions, progressOptions, this._resource);
+    return this._dataProtector.encryptData(clearData, {}, outputOptions, progressOptions, this._resource);
   }
 
   async createEncryptionStream(): Promise<EncryptionStream> {
