@@ -121,13 +121,7 @@ check/windows/ie:
   rules:
     - !reference [.rules/push-master, rules]
     - !reference [.rules/nightly, rules]
-  script:
-    - poetry run python run-ci.py check --runner windows-ie
-
-check/windows/ie/manual:
-  extends:
-    - .check/windows
-    - .rules/mr/manual
+    - !reference [.rules/mr/manual, rules]
   script:
     - poetry run python run-ci.py check --runner windows-ie
 
