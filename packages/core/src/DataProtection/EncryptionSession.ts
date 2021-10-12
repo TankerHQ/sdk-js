@@ -29,16 +29,16 @@ export class EncryptionSession {
     return utils.toBase64(this._resource.resourceId);
   }
 
-  async encrypt(clearText: string, options?: Partial<ResourceMetadata & ProgressOptions>): Promise<Uint8Array>;
-  async encrypt<T extends Data = Uint8Array>(clearText: string, options?: Partial<OutputOptions<T> & ProgressOptions>): Promise<T>;
-  async encrypt(clearText: any, options: any): Promise<any> {
+  async encrypt(clearText: string, options?: ResourceMetadata & ProgressOptions): Promise<Uint8Array>;
+  async encrypt<T extends Data>(clearText: string, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
+  async encrypt(clearText: string, options?: Partial<OutputOptions<Data> & ProgressOptions>): Promise<any> {
     assertNotEmptyString(clearText, 'clearText');
     return this.encryptData(utils.fromString(clearText), options);
   }
 
-  async encryptData<I extends Data>(clearData: I, options?: Partial<ResourceMetadata & ProgressOptions>): Promise<I>;
-  async encryptData<I extends Data, T extends Data>(clearData: I, options?: Partial<OutputOptions<T> & ProgressOptions>): Promise<T>;
-  async encryptData(clearData: any, options: any = {}): Promise<any> {
+  async encryptData<I extends Data>(clearData: I, options?: ResourceMetadata & ProgressOptions): Promise<I>;
+  async encryptData<T extends Data>(clearData: Data, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
+  async encryptData(clearData: Data, options: Partial<OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this._status, Status.READY, 'encrypt with an encryption session');
     assertDataType(clearData, 'clearData');
 

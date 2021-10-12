@@ -474,9 +474,9 @@ export class Tanker extends EventEmitter {
     return this.session.createDecryptionStream();
   }
 
-  async encryptData<I extends Data>(clearData: I, options?: Partial<EncryptionOptions & ResourceMetadata & ProgressOptions>): Promise<I>;
-  async encryptData<I extends Data, T extends Data>(clearData: I, options?: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T>;
-  async encryptData(clearData: any, options: any = {}): Promise<any> {
+  async encryptData<I extends Data>(clearData: I, options?: EncryptionOptions & ResourceMetadata & ProgressOptions): Promise<I>;
+  async encryptData<T extends Data>(clearData: Data, options?: EncryptionOptions & OutputOptions<T> & ProgressOptions): Promise<T>;
+  async encryptData(clearData: Data, options: Partial<EncryptionOptions & OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
@@ -487,17 +487,17 @@ export class Tanker extends EventEmitter {
     return this.session.encryptData(clearData, encryptionOptions, outputOptions, progressOptions);
   }
 
-  async encrypt(plain: string, options?: Partial<EncryptionOptions & ResourceMetadata & ProgressOptions>): Promise<Uint8Array>;
-  async encrypt<T extends Data = Uint8Array>(plain: string, options?: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T>;
-  async encrypt(plain: any, options?: any): Promise<any> {
+  async encrypt(plain: string, options?: EncryptionOptions & ResourceMetadata & ProgressOptions): Promise<Uint8Array>;
+  async encrypt<T extends Data>(plain: string, options?: EncryptionOptions & OutputOptions<T> & ProgressOptions): Promise<T>;
+  async encrypt(plain: string, options?: Partial<EncryptionOptions & OutputOptions<Data> & ProgressOptions>): Promise<any> {
     assertStatus(this.status, statuses.READY, 'encrypt');
     assertNotEmptyString(plain, 'plain');
     return this.encryptData(utils.fromString(plain), options);
   }
 
-  async decryptData<I extends Data>(encryptedData: I, options?: Partial<ResourceMetadata & ProgressOptions>): Promise<I>;
-  async decryptData<I extends Data, T extends Data>(encryptedData: I, options?: Partial<OutputOptions<T> & ProgressOptions>): Promise<T>;
-  async decryptData(encryptedData: any, options: any = {}): Promise<any> {
+  async decryptData<I extends Data>(encryptedData: I, options?: ResourceMetadata & ProgressOptions): Promise<I>;
+  async decryptData<T extends Data>(encryptedData: Data, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
+  async decryptData(encryptedData: Data, options: Partial<OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
@@ -527,9 +527,9 @@ export class Tanker extends EventEmitter {
     return this.session.upload(clearData, encryptionOptions, resourceMetadata, progressOptions);
   }
 
-  async download(resourceId: b64string, options?: Partial<ResourceMetadata & ProgressOptions>): Promise<globalThis.File | Uint8Array>;
-  async download<T extends Data>(resourceId: b64string, options?: Partial<OutputOptions<T> & ProgressOptions>): Promise<T>;
-  async download(resourceId: any, options: any = {}): Promise<any> {
+  async download(resourceId: b64string, options?: ResourceMetadata & ProgressOptions): Promise<globalThis.File | Uint8Array>;
+  async download<T extends Data>(resourceId: b64string, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
+  async download(resourceId: b64string, options: Partial<OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'download a file');
     assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 

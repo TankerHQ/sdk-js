@@ -69,7 +69,7 @@ export class CloudStorageManager {
     return uploadStream.resourceId;
   }
 
-  async download<T extends Data>(b64ResourceId: string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
+  async download<T extends Data>(b64ResourceId: b64string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const downloadStream = await this.createDownloadStream(b64ResourceId, progressOptions);
     const merger = new MergerStream({
       ...outputOptions,

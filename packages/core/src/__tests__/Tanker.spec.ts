@@ -441,8 +441,8 @@ describe('Tanker', () => {
           });
 
           it('is overriden by FormatOptions', async () => {
-            const encryptedArray = await tanker.encryptData(buffer, { type: Buffer });
-            const decryptedArray = await tanker.decryptData(buffer, { type: Buffer });
+            const encryptedArray = await tanker.encryptData(array, { type: Buffer });
+            const decryptedArray = await tanker.decryptData(array, { type: Buffer });
 
             buffer = encryptedArray;
             buffer = decryptedArray;
