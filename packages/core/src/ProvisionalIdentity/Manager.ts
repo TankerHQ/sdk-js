@@ -20,6 +20,7 @@ import type UserManager from '../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';
+import type { AttachResult } from './types';
 import {
   identityTargetToVerificationMethodType,
   isProvisionalIdentity,
@@ -57,7 +58,7 @@ export default class ProvisionalIdentityManager {
     this._keyStore = keyStore;
   }
 
-  async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<{ status: Status, verificationMethod?: ProvisionalVerificationMethod }> {
+  async attachProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity): Promise<AttachResult> {
     let hasClaimed = this._localUserManager.hasProvisionalUserKey(utils.fromBase64(provisionalIdentity.public_encryption_key));
 
     if (!hasClaimed) {

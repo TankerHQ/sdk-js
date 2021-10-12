@@ -44,6 +44,7 @@ import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtectio
 import type { EncryptionSession } from './DataProtection/EncryptionSession';
 import type { UploadStream } from './CloudStorage/UploadStream';
 import type { DownloadStream } from './CloudStorage/DownloadStream';
+import type { AttachResult } from './ProvisionalIdentity/types';
 import { Lock } from './lock';
 
 import { TANKER_SDK_VERSION } from './version';
@@ -57,6 +58,9 @@ export type TankerCoreOptions = {
 };
 
 export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
+
+export type Device = { id: string; isRevoked: boolean; };
+export type ProvisionalVerification = EmailVerification | OIDCVerification | PhoneNumberVerification;
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
@@ -323,7 +327,7 @@ export class Tanker extends EventEmitter {
     return this.session.generateVerificationKey();
   }
 
-  async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<any> {
+  async attachProvisionalIdentity(provisionalIdentity: b64string): Promise<AttachResult> {
     assertStatus(this.status, statuses.READY, 'attach a provisional identity');
 
     const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
@@ -331,7 +335,7 @@ export class Tanker extends EventEmitter {
     return this.session.attachProvisionalIdentity(provisionalIdentityObj);
   }
 
-  async verifyProvisionalIdentity(verification: EmailVerification | OIDCVerification | PhoneNumberVerification): Promise<void> {
+  async verifyProvisionalIdentity(verification: ProvisionalVerification): Promise<void> {
     assertStatus(this.status, statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
     return this.session.verifyProvisionalIdentity(verification);
@@ -362,7 +366,7 @@ export class Tanker extends EventEmitter {
     this.emit('deviceRevoked');
   };
 
-  async getDeviceList(): Promise<Array<{ id: string; isRevoked: boolean; }>> {
+  async getDeviceList(): Promise<Array<Device>> {
     assertStatus(this.status, statuses.READY, 'get the device list');
 
     const devices = await this.session.listDevices();
@@ -395,7 +399,7 @@ export class Tanker extends EventEmitter {
     return this.session.share(resourceIds, sharingOptions);
   }
 
-  async getResourceId(encryptedData: Uint8Array): Promise<b64string> {
+  async getResourceId(encryptedData: Data): Promise<b64string> {
     assertDataType(encryptedData, 'encryptedData');
 
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
@@ -470,7 +474,9 @@ export class Tanker extends EventEmitter {
     return this.session.createDecryptionStream();
   }
 
-  async encryptData<T extends Data = Uint8Array>(clearData: Data, options: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async encryptData<I extends Data>(clearData: I, options?: EncryptionOptions & ResourceMetadata & ProgressOptions): Promise<I>;
+  async encryptData<T extends Data>(clearData: Data, options?: EncryptionOptions & OutputOptions<T> & ProgressOptions): Promise<T>;
+  async encryptData(clearData: Data, options: Partial<EncryptionOptions & OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'encrypt data');
     assertDataType(clearData, 'clearData');
 
@@ -481,13 +487,17 @@ export class Tanker extends EventEmitter {
     return this.session.encryptData(clearData, encryptionOptions, outputOptions, progressOptions);
   }
 
-  async encrypt<T extends Data = Uint8Array>(plain: string, options?: Partial<EncryptionOptions & OutputOptions<T> & ProgressOptions>): Promise<T> {
+  async encrypt(plain: string, options?: EncryptionOptions & ResourceMetadata & ProgressOptions): Promise<Uint8Array>;
+  async encrypt<T extends Data>(plain: string, options?: EncryptionOptions & OutputOptions<T> & ProgressOptions): Promise<T>;
+  async encrypt(plain: string, options?: Partial<EncryptionOptions & OutputOptions<Data> & ProgressOptions>): Promise<any> {
     assertStatus(this.status, statuses.READY, 'encrypt');
     assertNotEmptyString(plain, 'plain');
     return this.encryptData(utils.fromString(plain), options);
   }
 
-  async decryptData<T extends Data = Uint8Array>(encryptedData: Data, options: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async decryptData<I extends Data>(encryptedData: I, options?: ResourceMetadata & ProgressOptions): Promise<I>;
+  async decryptData<T extends Data>(encryptedData: Data, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
+  async decryptData(encryptedData: Data, options: Partial<OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'decrypt data');
     assertDataType(encryptedData, 'encryptedData');
 
@@ -517,7 +527,9 @@ export class Tanker extends EventEmitter {
     return this.session.upload(clearData, encryptionOptions, resourceMetadata, progressOptions);
   }
 
-  async download<T extends Data>(resourceId: b64string, options: Partial<OutputOptions<T> & ProgressOptions> = {}): Promise<T> {
+  async download(resourceId: b64string, options?: ResourceMetadata & ProgressOptions): Promise<globalThis.File | Uint8Array>;
+  async download<T extends Data>(resourceId: b64string, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
+  async download(resourceId: b64string, options: Partial<OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'download a file');
     assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 

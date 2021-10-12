@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import type { Tanker, b64string, EmailVerification } from '@tanker/client-browser';
+import type { Tanker, b64string, EmailVerification } from '@tanker/core';
 
 import Root from './components/Root';
 import domReady from './domReady';

@@ -12,7 +12,6 @@ import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProte
 import type { EncryptionFormatDescription, Resource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
-import { defaultDownloadType } from '../DataProtection/options';
 import type { OutputOptions, ProgressOptions, EncryptionOptions } from '../DataProtection/options';
 import { UploadStream } from './UploadStream';
 import { DownloadStream } from './DownloadStream';
@@ -70,10 +69,9 @@ export class CloudStorageManager {
     return uploadStream.resourceId;
   }
 
-  async download<T extends Data>(b64ResourceId: string, outputOptions: Partial<OutputOptions<T>>, progressOptions: ProgressOptions): Promise<T> {
+  async download<T extends Data>(b64ResourceId: b64string, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const downloadStream = await this.createDownloadStream(b64ResourceId, progressOptions);
     const merger = new MergerStream({
-      type: defaultDownloadType,
       ...outputOptions,
       ...downloadStream.metadata,
     });

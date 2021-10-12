@@ -88,15 +88,15 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
     it('getResourceId returns the same resource id as the encryption session', async () => {
       const encryptionSession = await aliceLaptop.createEncryptionSession();
-      const encrypted = await encryptionSession.encrypt<Uint8Array>(clearText);
+      const encrypted = await encryptionSession.encrypt(clearText);
       const resourceId = await aliceLaptop.getResourceId(encrypted);
       expect(resourceId).to.equal(encryptionSession.resourceId);
     });
 
     it('uses a single resource id for multiple resources', async () => {
       const encryptionSession = await aliceLaptop.createEncryptionSession();
-      const encrypted1 = await encryptionSession.encrypt<Uint8Array>(clearText);
-      const encrypted2 = await encryptionSession.encrypt<Uint8Array>(clearText);
+      const encrypted1 = await encryptionSession.encrypt(clearText);
+      const encrypted2 = await encryptionSession.encrypt(clearText);
       const resourceId1 = await aliceLaptop.getResourceId(encrypted1);
       const resourceId2 = await aliceLaptop.getResourceId(encrypted2);
       expect(resourceId1).to.equal(resourceId2);

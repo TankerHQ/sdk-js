@@ -21,6 +21,7 @@ import DataProtector from '../DataProtection/DataProtector';
 
 import type { Device } from '../Users/types';
 import type { VerificationMethod } from '../LocalUser/types';
+import type { AttachResult } from '../ProvisionalIdentity/types';
 import type { EncryptionStream } from '../DataProtection/EncryptionStream';
 import type { DecryptionStream } from '../DataProtection/DecryptionStream';
 import type { UploadStream } from '../CloudStorage/UploadStream';
@@ -151,7 +152,7 @@ export class Session extends EventEmitter {
   createDecryptionStream = (...args: any) => this._forward<DecryptionStream>(this._dataProtector, 'createDecryptionStream', ...args);
   createEncryptionStream = (...args: any) => this._forward<EncryptionStream>(this._dataProtector, 'createEncryptionStream', ...args);
 
-  attachProvisionalIdentity = (...args: any) => this._forward(this._provisionalIdentityManager, 'attachProvisionalIdentity', ...args);
+  attachProvisionalIdentity = (...args: any) => this._forward<AttachResult>(this._provisionalIdentityManager, 'attachProvisionalIdentity', ...args);
   verifyProvisionalIdentity = (...args: any) => this._forward<void>(this._provisionalIdentityManager, 'verifyProvisionalIdentity', ...args);
 
   createGroup = (...args: any) => this._forward<b64string>(this._groupManager, 'createGroup', ...args);
