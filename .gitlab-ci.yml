@@ -66,6 +66,7 @@ check/linux/node:
   extends:
     - .check/linux/node-base
   rules:
+    - !reference [.rules/push-master, rules]
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/nightly, rules]
   variables:
@@ -92,7 +93,6 @@ check/linux/node-next:
     NODE_VERSION: 16
 
 check/macos:
-    # NOTE: This job doesn't have .python-yarn-cache. Is this right?
   stage: check
   rules:
     - !reference [.rules/mr/auto, rules]
