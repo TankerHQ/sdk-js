@@ -92,7 +92,6 @@ check/linux/node-next:
     NODE_VERSION: 16
 
 check/macos:
-    # NOTE: This job doesn't have .python-yarn-cache. Is this right?
   stage: check
   rules:
     - !reference [.rules/mr/auto, rules]
