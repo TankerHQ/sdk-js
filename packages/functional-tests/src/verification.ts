@@ -552,6 +552,23 @@ export const generateVerificationTests = (args: TestArgs) => {
         await expect(bobLaptop.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
+      it('registers and verifies two users with the same verificationKey', async () => {
+        const aliceId = uuid.v4();
+        const aliceIdentity = await appHelper.generateIdentity(aliceId);
+        const aliceLaptop = args.makeTanker();
+        await aliceLaptop.start(aliceIdentity);
+        await aliceLaptop.registerIdentity({ verificationKey });
+
+        await bobLaptop.registerIdentity({ verificationKey });
+
+        await bobPhone.start(bobIdentity);
+        await expect(bobPhone.verifyIdentity({ verificationKey })).to.be.fulfilled;
+
+        const alicePhone = args.makeTanker();
+        await alicePhone.start(aliceIdentity);
+        await expect(alicePhone.verifyIdentity({ verificationKey })).to.be.fulfilled;
+      });
+
       describe('register identity with an invalid verification key', () => {
         beforeEach(async () => {
           await bobPhone.start(bobIdentity);
@@ -595,6 +612,20 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         it('throws InvalidVerification when using a verification key different from the one used at registration', async () => {
           await expect(bobPhone.verifyIdentity({ verificationKey: verificationKeyNotUsed })).to.be.rejectedWith(errors.InvalidVerification);
+
+          // The status must not change so that retry is possible
+          expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+        });
+
+        it('throws InvalidVerification when using a verification key fron a different user', async () => {
+          const aliceId = uuid.v4();
+          const aliceIdentity = await appHelper.generateIdentity(aliceId);
+          const aliceLaptop = args.makeTanker();
+          await aliceLaptop.start(aliceIdentity);
+          const aliceVerificationKey = await aliceLaptop.generateVerificationKey();
+          await aliceLaptop.registerIdentity({ verificationKey: aliceVerificationKey });
+
+          await expect(bobPhone.verifyIdentity({ verificationKey: aliceVerificationKey })).to.be.rejectedWith(errors.InvalidVerification);
 
           // The status must not change so that retry is possible
           expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
