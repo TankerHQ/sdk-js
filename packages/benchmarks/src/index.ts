@@ -1,5 +1,5 @@
 import { Tanker } from '@tanker/client-browser';
-import type { b64string } from '@tanker/client-browser';
+import type { b64string } from '@tanker/core';
 import { utils, generichash, random } from '@tanker/crypto';
 import { createIdentity, getPublicIdentity } from '@tanker/identity';
 import { AppHelper, makePrefix, appdUrl, managementSettings, oidcSettings, benchmarkSettings } from '@tanker/functional-tests';
