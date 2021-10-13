@@ -5,7 +5,7 @@ import type LocalUser from './LocalUser';
 import type { RemoteVerification, RemoteVerificationWithToken } from './types';
 import type { SecretProvisionalIdentity } from '../Identity';
 
-export type VerificationRequest = {
+export type VerificationRequestWithToken = {
   hashed_passphrase: Uint8Array;
   with_token?: { nonce: string; };
 } | {
@@ -25,6 +25,18 @@ export type VerificationRequest = {
   with_token?: { nonce: string; };
 };
 
+export type VerificationRequest = VerificationRequestWithToken | {
+  hashed_email: Uint8Array;
+  v2_encrypted_email: Uint8Array;
+  is_preverified: boolean;
+} | {
+  phone_number: string;
+  encrypted_phone_number: Uint8Array;
+  user_salt: Uint8Array;
+  provisional_salt?: Uint8Array,
+  is_preverified: boolean;
+};
+
 export type ProvisionalKeysRequest = {
   target: string;
   email: string;
@@ -34,6 +46,8 @@ export type ProvisionalKeysRequest = {
   user_secret_salt: Uint8Array;
   provisional_salt: Uint8Array;
 };
+
+export const isPreverifiedVerificationRequest = (request: VerificationRequest): request is Exclude<VerificationRequest, VerificationRequestWithToken> => ('is_preverified' in request && request.is_preverified);
 
 export const formatVerificationRequest = (
   verification: RemoteVerification | RemoteVerificationWithToken,
@@ -67,6 +81,24 @@ export const formatVerificationRequest = (
   if ('oidcIdToken' in verification) {
     return {
       oidc_id_token: verification.oidcIdToken,
+    };
+  }
+
+  if ('preverifiedEmail' in verification) {
+    return {
+      hashed_email: generichash(utils.fromString(verification.preverifiedEmail)),
+      v2_encrypted_email: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.preverifiedEmail))),
+      is_preverified: true,
+    };
+  }
+
+  if ('preverifiedPhoneNumber' in verification) {
+    return {
+      phone_number: verification.preverifiedPhoneNumber,
+      encrypted_phone_number: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.preverifiedPhoneNumber))),
+      user_salt: generichash(localUser.userSecret),
+      provisional_salt: provIdentity ? generichash(utils.fromBase64(provIdentity.private_signature_key)) : undefined,
+      is_preverified: true,
     };
   }
 

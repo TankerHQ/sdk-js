@@ -7,19 +7,23 @@ export type PassphraseVerificationMethod = { type: 'passphrase'; };
 export type KeyVerificationMethod = { type: 'verificationKey'; };
 export type OIDCVerificationMethod = { type: 'oidcIdToken'; };
 export type PhoneNumberVerificationMethod = { type: 'phoneNumber'; phoneNumber: string; };
+export type PreverifiedEmailVerificationMethod = { type: 'preverifiedEmail'; preverifiedEmail: string; };
+export type PreverifiedPhoneNumberVerificationMethod = { type: 'preverifiedPhoneNumber'; preverifiedPhoneNumber: string; };
 
 export type ProvisionalVerificationMethod = EmailVerificationMethod | PhoneNumberVerificationMethod;
-export type VerificationMethod = PassphraseVerificationMethod | KeyVerificationMethod | OIDCVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod;
+export type VerificationMethod = PassphraseVerificationMethod | KeyVerificationMethod | OIDCVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod | PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod;
 
 export type EmailVerification = { email: string; verificationCode: string; };
 export type PassphraseVerification = { passphrase: string; };
 export type KeyVerification = { verificationKey: string; };
 export type OIDCVerification = { oidcIdToken: string; };
 export type PhoneNumberVerification = { phoneNumber: string; verificationCode: string; };
+export type PreverifiedEmailVerification = { preverifiedEmail: string; };
+export type PreverifiedPhoneNumberVerification = { preverifiedPhoneNumber: string; };
 
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
-export type Verification = PassphraseVerification | KeyVerification | OIDCVerification | EmailVerification | PhoneNumberVerification;
-export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification | PhoneNumberVerification;
+export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification | PhoneNumberVerification | PreverifiedEmailVerification | PreverifiedPhoneNumberVerification;
+export type Verification = RemoteVerification | KeyVerification;
 
 export type WithTokenOptions = { withToken?: { nonce: string; }; };
 export type VerificationWithToken = Verification & WithTokenOptions;
@@ -27,10 +31,14 @@ export type RemoteVerificationWithToken = RemoteVerification & WithTokenOptions;
 
 export type VerificationOptions = { withSessionToken?: boolean; };
 
-const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber'];
+const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
 const validKeys = [...validMethods, 'verificationCode'];
 
 const validVerifOptionsKeys = ['withSessionToken'];
+
+export const isPreverifiedVerification = (verification: VerificationWithToken): verification is (PreverifiedEmailVerification | PreverifiedPhoneNumberVerification) => 'preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification;
+
+export const isPreverifiedVerificationMethod = (verificationMethod: VerificationMethod): verificationMethod is (PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod) => verificationMethod.type === 'preverifiedEmail' || verificationMethod.type === 'preverifiedPhoneNumber';
 
 export const assertVerification = (verification: Verification) => {
   if (!verification || typeof verification !== 'object' || verification instanceof Array)
@@ -62,6 +70,10 @@ export const assertVerification = (verification: Verification) => {
     assertNotEmptyString(verification.verificationKey, 'verification.verificationKey');
   } else if ('oidcIdToken' in verification) {
     assertNotEmptyString(verification.oidcIdToken, 'verification.oidcIdToken');
+  } else if ('preverifiedEmail' in verification) {
+    assertNotEmptyString(verification.preverifiedEmail, 'verification.preverifiedEmail');
+  } else if ('preverifiedPhoneNumber' in verification) {
+    assertNotEmptyString(verification.preverifiedPhoneNumber, 'verification.preverifiedPhoneNumber');
   }
 };
 

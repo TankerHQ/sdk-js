@@ -35,6 +35,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
     });
 
     beforeEach(async () => {
+      await appHelper.setPreverifiedMethodEnabled();
       const bobId = uuid.v4();
       bobIdentity = await appHelper.generateIdentity(bobId);
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
@@ -116,6 +117,20 @@ export const generateSessionTokenTests = (args: TestArgs) => {
           email,
         }]);
         expect(response.status).to.eq(400);
+      });
+
+      it('fails when using setVerificationMethod to get a session token with a preverified email', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'Space and time are not what you think' });
+
+        const preverifiedEmail = 'john.doe@tanker.io';
+        await expect(bobLaptop.setVerificationMethod({ preverifiedEmail }, { withSessionToken: true })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('fails when using setVerificationMethod to get a session token with a preverified phone number', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'Space and time are not what you think' });
+
+        const preverifiedPhoneNumber = '+33639986789';
+        await expect(bobLaptop.setVerificationMethod({ preverifiedPhoneNumber }, { withSessionToken: true })).to.be.rejectedWith(errors.InvalidArgument);
       });
     };
 
