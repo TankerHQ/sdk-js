@@ -22,7 +22,6 @@ const webResolve = {
 };
 
 const getBabelLoaders = (env) => {
-  const babelConfig = getBabelConfig(env);
   const babelConfigForceUMD = getBabelConfig({ ...env, modules: 'umd' });
   const tsLoaderCompilerOptions = {
     target: 'es5',
@@ -56,37 +55,10 @@ const getBabelLoaders = (env) => {
     {
       test: /\.js$/,
       loader: 'babel-loader',
-      options: babelConfig,
-      exclude: [
-        /node_modules/,
-        // don't consider babel polyfills when doing feature detection
-        /compat(\\|\/)ie11.js/,
-      ],
-    },
-    {
-      test: /\.js$/,
-      loader: 'babel-loader',
-      options: babelConfig,
-      // @tanker/identity is already transpiled when packaged to npm
-      exclude: /node_modules(\\|\/)@tanker(\\|\/)identity/,
-      include: [
-        // babelify our own stuff
-        /node_modules(\\|\/)@tanker/,
-        // babelify all es libs when included (except core-js-pure ponyfills)
-        /node_modules(\\|\/)((?!core-js-pure).).*(\\|\/)es(\\|\/)/,
-        // ws lib is es6 (it assumes the users will run it in nodejs directly)
-        /node_modules(\\|\/)ws/,
-        // supports-color is es6
-        /node_modules(\\|\/)supports-color/,
-        // they use arrow functions and probably more
-        /node_modules(\\|\/)query-string/,
-      ],
-    },
-    {
-      test: /\.js$/,
-      loader: 'babel-loader',
       options: babelConfigForceUMD,
       include: [
+        // they use esm imports
+        /node_modules(\\|\/)((?!core-js).).*(\\|\/)es(\\|\/)/,
         // they use arrow functions
         /node_modules(\\|\/)chai-as-promised/,
         // they use arrow functions
