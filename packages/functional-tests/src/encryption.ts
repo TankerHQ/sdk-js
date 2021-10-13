@@ -10,6 +10,8 @@ import { expectProgressReport, expectType, expectSameType, expectDeepEqual, expe
 
 const { READY } = statuses;
 
+const streamStepSize = encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead;
+
 export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
 
@@ -124,7 +126,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         onProgress.resetHistory();
 
         const decrypted = await bobLaptop.decrypt(encrypted, { onProgress });
-        expectProgressReport(onProgress, decrypted.length, encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
+        expectProgressReport(onProgress, decrypted.length, streamStepSize);
       });
 
       it('encrypt should ignore resource id argument', async () => {
@@ -614,7 +616,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
           const decrypted = await aliceLaptop.decryptData(encrypted, { onProgress });
           expectSameType(decrypted, clear);
           expectDeepEqual(decrypted, clear);
-          expectProgressReport(onProgress, getDataLength(decrypted), encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
+          expectProgressReport(onProgress, getDataLength(decrypted), streamStepSize);
         });
       });
     });
