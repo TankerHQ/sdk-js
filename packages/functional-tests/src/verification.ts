@@ -79,6 +79,7 @@ export const generateVerificationTests = (args: TestArgs) => {
     });
 
     beforeEach(async () => {
+      await appHelper.setPreverifiedMethodEnabled();
       const bobId = uuid.v4();
       bobIdentity = await appHelper.generateIdentity(bobId);
       bobLaptop = args.makeTanker();
@@ -458,6 +459,182 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         // status must not change so that retry is possible
         expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+    });
+
+    describe('verification with preverified email', () => {
+      const email = 'john.doe@tanker.io';
+      const preverifiedEmail = 'elton.doe@tanker.io';
+
+      it('fails when registering with a preverified email', async () => {
+        await expect(bobLaptop.registerIdentity({ preverifiedEmail })).to.be.rejectedWith(errors.InvalidArgument, 'cannot register identity with preverified methods');
+      });
+
+      it('fails when verifying identity with preverified email', async () => {
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobPhone.start(bobIdentity);
+        await expect(bobPhone.verifyIdentity({ preverifiedEmail: email })).to.be.rejectedWith(errors.InvalidArgument, 'cannot verify identity with preverified methods');
+      });
+
+      it('registers with an email, updates to preverified email when calling setVerificationMethod, and updates to normal email when verifying', async () => {
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedEmail });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'preverifiedEmail', preverifiedEmail }]);
+
+        await bobPhone.start(bobIdentity);
+        verificationCode = await appHelper.getEmailVerificationCode(preverifiedEmail);
+        await bobPhone.verifyIdentity({ email: preverifiedEmail, verificationCode });
+
+        expect(await bobPhone.getVerificationMethods()).to.have.deep.members([{ type: 'email', email: preverifiedEmail }]);
+      });
+
+      it('register with an email, updates to preverified email when calling setVerificationMethod with the same email', async () => {
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedEmail: email });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'preverifiedEmail', preverifiedEmail: email }]);
+      });
+
+      it('turns preverified email method into email method when calling setVerificationMethod', async () => {
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedEmail });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'preverifiedEmail', preverifiedEmail }]);
+
+        verificationCode = await appHelper.getEmailVerificationCode(preverifiedEmail);
+        await bobLaptop.setVerificationMethod({ email: preverifiedEmail, verificationCode });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'email', email: preverifiedEmail }]);
+      });
+
+      it('turns preverified email method into email method when calling verifyProvisionalIdentity', async () => {
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedEmail });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'preverifiedEmail', preverifiedEmail }]);
+
+        const provisionalIdentity = await appHelper.generateEmailProvisionalIdentity(preverifiedEmail);
+
+        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisionalIdentity);
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'email', email: preverifiedEmail }]);
+      });
+
+      it('adds preverified email as a new verification method', async () => {
+        const phoneNumber = '+33639986789';
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedEmail });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([
+          { type: 'phoneNumber', phoneNumber }, { type: 'preverifiedEmail', preverifiedEmail }]);
+
+        await bobPhone.start(bobIdentity);
+        verificationCode = await appHelper.getEmailVerificationCode(preverifiedEmail);
+        await bobPhone.verifyIdentity({ email: preverifiedEmail, verificationCode });
+
+        expect(await bobPhone.getVerificationMethods()).to.have.deep.members([
+          { type: 'phoneNumber', phoneNumber }, { type: 'email', email: preverifiedEmail }]);
+      });
+    });
+
+    describe('verification with preverified phone number', () => {
+      const phoneNumber = '+33601020304';
+      const preverifiedPhoneNumber = '+33605060708';
+
+      it('fails when registering with a preverified phone number', async () => {
+        await expect(bobLaptop.registerIdentity({ preverifiedPhoneNumber })).to.be.rejectedWith(errors.InvalidArgument, 'cannot register identity with preverified methods');
+      });
+
+      it('fails when verifying identity with preverified phone number', async () => {
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        await bobPhone.start(bobIdentity);
+        await expect(bobPhone.verifyIdentity({ preverifiedPhoneNumber: phoneNumber })).to.be.rejectedWith(errors.InvalidArgument, 'cannot verify identity with preverified methods');
+      });
+
+      it('registers with a phone number, updates to preverified phone number when calling setVerificationMethod, and updates to normal phone number when verifying', async () => {
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedPhoneNumber });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'preverifiedPhoneNumber', preverifiedPhoneNumber }]);
+
+        await bobPhone.start(bobIdentity);
+        verificationCode = await appHelper.getSMSVerificationCode(preverifiedPhoneNumber);
+        await bobPhone.verifyIdentity({ phoneNumber: preverifiedPhoneNumber, verificationCode });
+
+        expect(await bobPhone.getVerificationMethods()).to.have.deep.members([{ type: 'phoneNumber', phoneNumber: preverifiedPhoneNumber }]);
+      });
+
+      it('register with a phone number, updates to preverified phone number when calling setVerificationMethod with the same phone number', async () => {
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedPhoneNumber: phoneNumber });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'preverifiedPhoneNumber', preverifiedPhoneNumber: phoneNumber }]);
+      });
+
+      it('turns preverified phone number method into phone number method when calling setVerificationMethod', async () => {
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedPhoneNumber });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'preverifiedPhoneNumber', preverifiedPhoneNumber }]);
+
+        verificationCode = await appHelper.getSMSVerificationCode(preverifiedPhoneNumber);
+        await bobLaptop.setVerificationMethod({ phoneNumber: preverifiedPhoneNumber, verificationCode });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'phoneNumber', phoneNumber: preverifiedPhoneNumber }]);
+      });
+
+      it('turns preverified phone number method into phone number method when calling verifyProvisionalIdentity', async () => {
+        const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedPhoneNumber });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'preverifiedPhoneNumber', preverifiedPhoneNumber }]);
+
+        const provisionalIdentity = await appHelper.generatePhoneNumberProvisionalIdentity(preverifiedPhoneNumber);
+
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(bobLaptop, provisionalIdentity);
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'phoneNumber', phoneNumber: preverifiedPhoneNumber }]);
+      });
+
+      it('adds preverified phone number as a new verification method', async () => {
+        const email = 'john.doe@tanker.io';
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedPhoneNumber });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([
+          { type: 'email', email }, { type: 'preverifiedPhoneNumber', preverifiedPhoneNumber }]);
+
+        await bobPhone.start(bobIdentity);
+        verificationCode = await appHelper.getSMSVerificationCode(preverifiedPhoneNumber);
+        await bobPhone.verifyIdentity({ phoneNumber: preverifiedPhoneNumber, verificationCode });
+
+        expect(await bobPhone.getVerificationMethods()).to.have.deep.members([
+          { type: 'email', email }, { type: 'phoneNumber', phoneNumber: preverifiedPhoneNumber }]);
       });
     });
 

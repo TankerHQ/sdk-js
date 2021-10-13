@@ -7,7 +7,7 @@ import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationK
 import type { IndexedProvisionalUserKeyPairs } from './KeySafe';
 import type KeyStore from './KeyStore';
 import LocalUser from './LocalUser';
-import { formatVerificationRequest } from './requests';
+import { formatVerificationRequest, isPreverifiedVerificationRequest } from './requests';
 import type {
   VerificationMethod,
   VerificationWithToken,
@@ -80,6 +80,9 @@ export class LocalUserManager extends EventEmitter {
 
           const encryptedEmail = utils.fromBase64(method.encrypted_email!);
           const email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
+          if (method.is_preverified) {
+            return { type: 'preverifiedEmail', preverifiedEmail: email };
+          }
           return { type: 'email', email };
         }
         case 'passphrase': {
@@ -91,6 +94,9 @@ export class LocalUserManager extends EventEmitter {
         case 'phone_number': {
           const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
           const phoneNumber = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedPhoneNumber)));
+          if (method.is_preverified) {
+            return { type: 'preverifiedPhoneNumber', preverifiedPhoneNumber: phoneNumber };
+          }
           return { type: 'phoneNumber', phoneNumber };
         }
         default: {
@@ -103,7 +109,9 @@ export class LocalUserManager extends EventEmitter {
 
   setVerificationMethod = (verification: RemoteVerificationWithToken): Promise<void> => {
     const requestVerification = formatVerificationRequest(verification, this._localUser);
-    requestVerification.with_token = verification.withToken; // May be undefined
+    if (!isPreverifiedVerificationRequest(requestVerification)) {
+      requestVerification.with_token = verification.withToken; // May be undefined
+    }
 
     return this._client.setVerificationMethod({
       verification: requestVerification,
@@ -271,7 +279,9 @@ export class LocalUserManager extends EventEmitter {
     }
     const remoteVerification: RemoteVerificationWithToken = (verification as any);
     const request = { verification: formatVerificationRequest(remoteVerification, this._localUser) };
-    request.verification.with_token = verification.withToken; // May be undefined
+    if (!isPreverifiedVerificationRequest(request.verification)) {
+      request.verification.with_token = verification.withToken; // May be undefined
+    }
 
     const encryptedVerificationKey = await this._client.getVerificationKey(request);
     return decryptVerificationKey(encryptedVerificationKey, this._localUser.userSecret);
