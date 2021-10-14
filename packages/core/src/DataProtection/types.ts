@@ -30,7 +30,7 @@ export function makeResource(): Resource {
   return { key, resourceId };
 }
 
-export const getSimpleEncryption = () => encryptionV3;
+export const getSimpleEncryption = () => encryptionV6;
 
 export const getSimpleEncryptionWithFixedResourceId = () => encryptionV5;
 
