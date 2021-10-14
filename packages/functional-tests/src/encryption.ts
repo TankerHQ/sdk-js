@@ -1,6 +1,6 @@
-import { errors, statuses } from '@tanker/core';
+import { errors, statuses, STREAM_THRESHOLD } from '@tanker/core';
 import type { Tanker, b64string, OutputOptions } from '@tanker/core';
-import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
+import { encryptionV4, encryptionV6, tcrypto, utils } from '@tanker/crypto';
 import { Data, getConstructorName, getDataLength } from '@tanker/types';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
@@ -125,8 +125,9 @@ export const generateEncryptionTests = (args: TestArgs) => {
         expectProgressReport(onProgress, encrypted.length);
         onProgress.resetHistory();
 
-        const decrypted = await bobLaptop.decrypt(encrypted, { onProgress });
-        expectProgressReport(onProgress, decrypted.length, streamStepSize);
+        await bobLaptop.decrypt(encrypted, { onProgress });
+        const expectedProgressSize = encryptionV6.getClearSize(encrypted.length);
+        expectProgressReport(onProgress, expectedProgressSize, streamStepSize);
       });
 
       it('encrypt should ignore resource id argument', async () => {
@@ -609,14 +610,24 @@ export const generateEncryptionTests = (args: TestArgs) => {
           const onProgress = sinon.fake();
 
           const encrypted = await aliceLaptop.encryptData(clear, { onProgress });
+          const encryptedResultSize = getDataLength(encrypted);
           expectSameType(encrypted, clear);
-          expectProgressReport(onProgress, getDataLength(encrypted));
+          expectProgressReport(onProgress, encryptedResultSize);
           onProgress.resetHistory();
 
           const decrypted = await aliceLaptop.decryptData(encrypted, { onProgress });
           expectSameType(decrypted, clear);
           expectDeepEqual(decrypted, clear);
-          expectProgressReport(onProgress, getDataLength(decrypted), streamStepSize);
+
+          // Quickfix for a padding behavior. Needs be removed as soon as the option to disable padding is implemented.
+          let expectedProgressLength: number;
+          if (getDataLength(clear) < STREAM_THRESHOLD) {
+            expectedProgressLength = encryptionV6.getClearSize(encryptedResultSize);
+          } else {
+            expectedProgressLength = getDataLength(decrypted);
+          }
+
+          expectProgressReport(onProgress, expectedProgressLength, streamStepSize);
         });
       });
     });
