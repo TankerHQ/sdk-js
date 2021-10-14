@@ -23,5 +23,5 @@ export { EncryptionStreamV4 } from './EncryptionFormats/EncryptionStreamV4';
 export { EncryptionStreamV8 } from './EncryptionFormats/EncryptionStreamV8';
 export { DecryptionStream } from './EncryptionFormats/DecryptionStream';
 export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7, encryptionV8 };
-export { Padding, padme, paddedFromClearSize } from './padding';
+export { Padding, padme, paddedFromClearSize, isPaddingStep } from './padding';
 export type { b64string, safeb64string, Key };
