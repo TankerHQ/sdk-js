@@ -369,9 +369,9 @@ function benchmarkShareWithGroup(benchmarkName: string, groupId: string) {
   });
 }
 
-benchmarkShareWithGroup('share_withGroup_4000', '8EySxOOyXktHkSOOgGAKCBRvIalV2iFObPGHk1QU63Q=');
+benchmarkShareWithGroup('share_withGroup_4000', 'P3acrxU9OyIrRpxWVVnqT3y44vyBkAD9TOp+sO/lls4=');
 
-benchmarkShareWithGroup('share_withGroupMultiAuthor_4000', 'rD3EO/d4S8dI20aybJUZcGiACV5kD298K8szq6ZWm0w=');
+benchmarkShareWithGroup('share_withGroupMultiAuthor_4000', '+fsavkQBHO0SC8mWaKFTRgzVkY3bnrWK/Ksrssp4AH8=');
 
 function benchmarkShareNoCacheWithGroup(benchmarkName: string, groupId: string) {
   benchmark(benchmarkName, async (state) => {
@@ -395,4 +395,4 @@ function benchmarkShareNoCacheWithGroup(benchmarkName: string, groupId: string) 
   });
 }
 
-benchmarkShareNoCacheWithGroup('share_nocache_withGroup_4000', '8EySxOOyXktHkSOOgGAKCBRvIalV2iFObPGHk1QU63Q=');
+benchmarkShareNoCacheWithGroup('share_nocache_withGroup_4000', 'P3acrxU9OyIrRpxWVVnqT3y44vyBkAD9TOp+sO/lls4=');
