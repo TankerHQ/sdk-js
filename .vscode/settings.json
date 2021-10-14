@@ -4,6 +4,7 @@
     },
     "eslint.validate": [
         "javascript",
+        "typescript"
     ],
     "[javascript]": {
         "editor.defaultFormatter": "dbaeumer.vscode-eslint",
@@ -11,7 +12,4 @@
     "[javascriptreact]": {
         "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     },
-    "typescript.validate.enable": false,
-    "javascript.validate.enable": false,
-    "typescript.tsc.autoDetect": "off"
 }
