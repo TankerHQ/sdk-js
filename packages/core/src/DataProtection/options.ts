@@ -1,5 +1,5 @@
 import type { b64string } from '@tanker/crypto';
-import { tcrypto, utils } from '@tanker/crypto';
+import { tcrypto, utils, Padding, isPaddingStep } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import globalThis from '@tanker/global-this';
 import { getConstructor, assertNotEmptyString } from '@tanker/types';
@@ -17,7 +17,12 @@ export type OutputOptions<T extends Data> = FormatOptions<T> & ResourceMetadata;
 
 export type ProgressOptions = { onProgress?: OnProgress; };
 
-export type EncryptionOptions = { shareWithUsers?: Array<b64string>; shareWithGroups?: Array<string>; shareWithSelf?: boolean; };
+export type EncryptionOptions = {
+  shareWithUsers?: Array<b64string>;
+  shareWithGroups?: Array<string>;
+  shareWithSelf?: boolean;
+  paddingStep?: number | Padding;
+};
 
 export type SharingOptions = { shareWithUsers?: Array<b64string>; shareWithGroups?: Array<string>; };
 
@@ -66,7 +71,7 @@ export const extractSharingOptions = (options: Record<string, unknown>, error: u
 };
 
 export const extractEncryptionOptions = (options: Record<string, unknown>): EncryptionOptions => {
-  const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool }', options);
+  const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool, paddingStep?: number | Padding }', options);
 
   const encryptionOptions: EncryptionOptions = extractSharingOptions(options, error);
 
@@ -82,6 +87,16 @@ export const extractEncryptionOptions = (options: Record<string, unknown>): Encr
     && (!encryptionOptions.shareWithGroups || !encryptionOptions.shareWithGroups.length)
     && !encryptionOptions.shareWithSelf)
     throw new InvalidArgument('cannot encrypt and not share with anybody');
+
+  if ('paddingStep' in options) {
+    const ps = options['paddingStep'];
+
+    if (!isPaddingStep(ps)) {
+      throw error;
+    }
+
+    encryptionOptions.paddingStep = ps;
+  }
 
   return encryptionOptions;
 };

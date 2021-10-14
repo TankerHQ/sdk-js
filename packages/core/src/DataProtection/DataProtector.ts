@@ -215,15 +215,16 @@ export class DataProtector {
   }
 
   async _simpleEncryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
-    const encryption = getSimpleEncryption();
+    const paddingStep = encryptionOptions.paddingStep;
+    const encryption = getSimpleEncryption(paddingStep);
 
     const clearSize = getDataLength(clearData);
-    const encryptedSize = encryption.getEncryptedSize(clearSize);
+    const encryptedSize = encryption.getEncryptedSize(clearSize, paddingStep);
     const progressHandler = new ProgressHandler(progressOptions).start(encryptedSize);
 
     const castClearData = await castData(clearData, { type: Uint8Array });
     const { key } = makeResource();
-    const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData));
+    const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData, paddingStep));
     const resourceId = encryption.extractResourceId(encryptedData);
     await this._shareResources([{ resourceId, key }], encryptionOptions);
     const castEncryptedData = await castData(encryptedData, outputOptions);

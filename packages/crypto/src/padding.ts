@@ -61,3 +61,5 @@ export const removePadding = (paddedData: Uint8Array): Uint8Array => {
 
   return paddedData.slice(0, index);
 };
+
+export const isPaddingStep = (paddingStep: unknown): paddingStep is undefined | number | Padding => paddingStep === undefined || (typeof paddingStep === 'number' && paddingStep > 1) || (typeof paddingStep === 'string' && paddingStep in Padding);
