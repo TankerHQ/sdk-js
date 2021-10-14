@@ -32,7 +32,7 @@ import { ProgressHandler } from './ProgressHandler';
 import { EncryptionSession } from './EncryptionSession';
 
 // Stream encryption will be used starting from this clear data size:
-const STREAM_THRESHOLD = 1024 * 1024; // 1MB
+export const STREAM_THRESHOLD = 1024 * 1024; // 1MB
 
 export class DataProtector {
   _client: Client;
