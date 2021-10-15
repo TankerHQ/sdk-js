@@ -10,6 +10,14 @@ import type { AppProvisionalUser } from './helpers/AppHelper';
 const retry = (f: (...args: any[]) => Promise<any>, ...args: any[]) => f(...args).catch(() => f(...args));
 
 export const generateConcurrencyTests = (args: TestArgs) => {
+  const makeTanker = (b64AppId?: b64string) => {
+    const tanker = args.makeTanker(b64AppId);
+    // eslint-disable-next-line no-underscore-dangle
+    tanker._clientOptions.sdkInfo.type = `${tanker._clientOptions.sdkInfo.type}-concurrency`;
+
+    return tanker;
+  };
+
   describe('concurrent Identity usage on unique device', () => {
     let appHelper: AppHelper;
     let bobIdentity: b64string;
@@ -25,7 +33,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       ({ appHelper } = args);
       aliceIdentity = await appHelper.generateIdentity(uuid.v4());
       alicePublicIdentity = await getPublicIdentity(aliceIdentity);
-      aliceLaptop = args.makeTanker();
+      aliceLaptop = makeTanker();
       await aliceLaptop.start(aliceIdentity);
       aliceLaptop.registerIdentity({ passphrase: 'password' });
     });
@@ -34,8 +42,8 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       const bobId = uuid.v4();
       bobIdentity = await appHelper.generateIdentity(bobId);
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
-      firstTab = args.makeTanker();
-      secondTab = args.makeTanker();
+      firstTab = makeTanker();
+      secondTab = makeTanker();
       bobSessions.push(firstTab, secondTab);
     });
 
