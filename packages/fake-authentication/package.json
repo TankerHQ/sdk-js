@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@babel/runtime-corejs3": "^7.9.0",
-    "@tanker/http-utils": "0.0.1"
+    "@tanker/http-utils": "0.0.1",
+    "tslib": "^2.3.1"
   }
 }
