@@ -31,7 +31,8 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@tanker/global-this": "0.0.1"
+    "@tanker/global-this": "0.0.1",
+    "tslib": "^2.3.1"
   },
   "devDependencies": {
     "@tanker/test-utils": "0.0.1"

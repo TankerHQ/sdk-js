@@ -26,6 +26,7 @@
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
   "dependencies": {
-    "@tanker/http-utils": "0.0.1"
+    "@tanker/http-utils": "0.0.1",
+    "tslib": "^2.3.1"
   }
 }
