@@ -23,7 +23,6 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/crypto": "0.0.1"
   },
   "devDependencies": {

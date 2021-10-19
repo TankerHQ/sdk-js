@@ -23,7 +23,6 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/errors": "0.0.1",
     "@tanker/http-utils": "0.0.1",
     "@tanker/stream-base": "0.0.1"

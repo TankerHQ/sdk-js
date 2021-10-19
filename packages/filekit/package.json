@@ -41,7 +41,6 @@
     "cloud"
   ],
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/client-browser": "0.0.1",
     "@tanker/verification-ui": "0.0.1",
     "file-saver": "^2.0.2"

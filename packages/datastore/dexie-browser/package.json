@@ -23,7 +23,6 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/datastore-dexie-base": "0.0.1",
     "dexie": "^3.0.3"
   },

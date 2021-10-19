@@ -26,7 +26,6 @@
     "url": "https://github.com/TankerHQ/sdk-js/issues"
   },
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/http-utils": "0.0.1"
   }
 }

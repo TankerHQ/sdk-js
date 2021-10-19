@@ -33,7 +33,6 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/global-this": "0.0.1"
   },
   "devDependencies": {
