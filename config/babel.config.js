@@ -24,12 +24,6 @@ const getBabelConfig = ({ target, coverage, react, hmre, modules }) => {
       targets: { browsers: ['last 2 versions', 'Firefox ESR', 'not ie < 11', 'not dead'] },
       modules: modules || 'auto',
     }]);
-    // Injects "pure" ponyfills (but packages will depend on @babel/runtime-corejs3)
-    // See: https://babeljs.io/docs/en/babel-plugin-transform-runtime#technical-details
-    config.plugins.push(['@babel/plugin-transform-runtime', {
-      corejs: 3,
-      version: '^7.9.0', // Keep this in sync with @babel/runtime-corejs3 version
-    }]);
   }
 
   if (react) {
