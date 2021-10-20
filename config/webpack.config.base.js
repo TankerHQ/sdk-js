@@ -1,8 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
 
-const getBabelConfig = require('./babel.config');
-
 const webResolve = {
   fallback: {
     // libsodium does not use fs nor path in browsers.
@@ -21,8 +19,7 @@ const webResolve = {
   },
 };
 
-const getBabelLoaders = (env) => {
-  const babelConfigForceUMD = getBabelConfig({ ...env, modules: 'umd' });
+const getLoaders = (env) => {
   const tsLoaderCompilerOptions = {
     target: 'es5',
     declaration: false,
@@ -54,8 +51,14 @@ const getBabelLoaders = (env) => {
     },
     {
       test: /\.js$/,
-      loader: 'babel-loader',
-      options: babelConfigForceUMD,
+      loader: 'ts-loader',
+      options: {
+        configFile: path.resolve(__dirname, 'tsconfig.base.json'),
+        compilerOptions: {
+          ...tsLoaderCompilerOptions,
+          allowJs: true,
+        },
+      },
       include: [
         // they use esm imports
         /node_modules(\\|\/)((?!core-js).).*(\\|\/)es(\\|\/)/,
@@ -85,7 +88,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
 
     module: {
       rules: [
-        ...getBabelLoaders({ target, react, hmre, tsconfig }),
+        ...getLoaders({ target, react, hmre, tsconfig }),
         {
           test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
           type: 'asset',
