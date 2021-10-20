@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@tanker/file-ponyfill": "0.0.1",
-    "@tanker/test-utils": "0.0.1"
+    "@tanker/test-utils": "0.0.1",
+    "@types/readable-stream": "^2.3.11"
   }
 }

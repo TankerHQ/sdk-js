@@ -34,6 +34,8 @@
     "varint": "^6.0.0"
   },
   "devDependencies": {
-    "@tanker/test-utils": "0.0.1"
+    "@tanker/test-utils": "0.0.1",
+    "@types/libsodium-wrappers": "^0.7.9",
+    "@types/varint": "^6.0.0"
   }
 }

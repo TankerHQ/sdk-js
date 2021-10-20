@@ -29,6 +29,9 @@
   },
   "devDependencies": {
     "@tanker/datastore-tests": "0.0.1",
+    "@types/pouchdb-adapter-leveldb": "^6.1.3",
+    "@types/pouchdb-core": "^7.0.8",
+    "@types/tmp": "^0.2.1",
     "tmp": "^0.2.1"
   }
 }
