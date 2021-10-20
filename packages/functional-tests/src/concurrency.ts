@@ -7,7 +7,18 @@ import { expectDecrypt } from './helpers';
 import type { TestArgs, AppHelper } from './helpers';
 import type { AppProvisionalUser } from './helpers/AppHelper';
 
-const retry = (f: (...args: any[]) => Promise<any>, ...args: any[]) => f(...args).catch(() => f(...args));
+const retry = async <T>(operation: () => Promise<T>, nbTries: number, ...expectedErrors: string[]): Promise<T> => {
+  for (let index = 0; index < nbTries; index++) {
+    try {
+      return await operation();
+    } catch (e) {
+      if (expectedErrors.length > 0) {
+        expect((e as Error).toString()).to.contain.oneOf(expectedErrors);
+      }
+    }
+  }
+  throw new Error(`operation did not succeed within ${nbTries} tries`);
+};
 
 export const generateConcurrencyTests = (args: TestArgs) => {
   const makeTanker = (b64AppId?: b64string) => {
@@ -19,15 +30,16 @@ export const generateConcurrencyTests = (args: TestArgs) => {
   };
 
   describe('concurrent Identity usage on unique device', () => {
+    const tabCount = 3;
     let appHelper: AppHelper;
     let bobIdentity: b64string;
     let bobPublicIdentity: b64string;
     let aliceIdentity: b64string;
     let aliceLaptop: Tanker;
     let alicePublicIdentity: b64string;
-    let bobSessions: Array<Tanker> = [];
     let firstTab: Tanker;
-    let secondTab: Tanker;
+    let otherTabs: Array<Tanker> = [];
+    let bobSessions: Array<Tanker> = [];
 
     before(async () => {
       ({ appHelper } = args);
@@ -43,13 +55,17 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       bobIdentity = await appHelper.generateIdentity(bobId);
       bobPublicIdentity = await getPublicIdentity(bobIdentity);
       firstTab = makeTanker();
-      secondTab = makeTanker();
-      bobSessions.push(firstTab, secondTab);
+      for (let index = 1; index < tabCount; index++) {
+        otherTabs.push(makeTanker());
+      }
+
+      bobSessions.push(firstTab, ...otherTabs);
     });
 
     afterEach(async () => {
       await Promise.all(bobSessions.map((session) => session.stop()));
       bobSessions = [];
+      otherTabs = [];
     });
 
     after(async () => {
@@ -59,39 +75,56 @@ export const generateConcurrencyTests = (args: TestArgs) => {
     it('starts without error', async () => {
       await expect(Promise.all([
         firstTab.start(bobIdentity),
-        secondTab.start(bobIdentity),
+        ...otherTabs.map((tanker) => tanker.start(bobIdentity)),
       ]), 'failed to start both sessions').be.fulfilled;
     });
 
     it('registers only one of the sessions, others should restart', async () => {
       await firstTab.start(bobIdentity);
-      await secondTab.start(bobIdentity);
+      await Promise.all(otherTabs.map((tanker) => tanker.start(bobIdentity)));
+      let nbRegisteredSessions = 0;
 
       // every sessions will try to register but only one will succeed
       await expect(Promise.all(
-        bobSessions.map((session) => session.registerIdentity({ passphrase: 'password' })
-          .catch(async (error) => {
-            expect(error.message).to.contain('user_already_exists');
+        bobSessions.map(async (session) => {
+          try {
+            await session.registerIdentity({ passphrase: 'password' });
+            nbRegisteredSessions += 1;
+          } catch (error) {
+            expect((error as Error).message).to.contain('user_already_exists');
             expect(session.status).to.equal(statuses.STOPPED);
             // the dead session should restart.
             await expect(session.start(bobIdentity)).to.be.fulfilled;
-          })),
+          }
+        }),
       ), 'failed to register or restart sessions').be.fulfilled;
+
+      expect(nbRegisteredSessions, 'Only one session should be registered').to.equal(1);
     });
 
     it('reaches READY after verifying the restarted sessions', async () => {
       await firstTab.start(bobIdentity);
-      await secondTab.start(bobIdentity);
+      await Promise.all(otherTabs.map((tanker) => tanker.start(bobIdentity)));
 
       await firstTab.registerIdentity({ passphrase: 'password' });
-      await expect(secondTab.registerIdentity({ passphrase: 'password' })).to.be.rejectedWith('user_already_exists');
-      await secondTab.start(bobIdentity);
+      await Promise.all(
+        otherTabs.map(tanker => expect(
+          tanker.registerIdentity({ passphrase: 'password' }),
+        ).to.be.rejectedWith('user_already_exists')),
+      );
 
       await expect(Promise.all(
         bobSessions.map(async (session) => {
           if (session.status === statuses.READY)
             return '';
-          return session.verifyIdentity({ passphrase: 'password' });
+          return retry(
+            async () => {
+              await session.start(bobIdentity);
+              return session.verifyIdentity({ passphrase: 'password' });
+            },
+            otherTabs.length,
+            'conflict with a concurrent operation',
+          );
         }),
       ), 'failed to verify restarted sessions').to.be.fulfilled;
 
@@ -104,8 +137,11 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       beforeEach(async () => {
         await firstTab.start(bobIdentity);
         await firstTab.registerIdentity({ passphrase: 'password' });
-        await secondTab.start(bobIdentity);
-        await secondTab.verifyIdentity({ passphrase: 'password' });
+
+        for (const tanker of otherTabs) {
+          await tanker.start(bobIdentity);
+          await tanker.verifyIdentity({ passphrase: 'password' });
+        }
       });
 
       it('decrypt concurrently', async () => {
@@ -187,8 +223,10 @@ export const generateConcurrencyTests = (args: TestArgs) => {
 
           await expect(Promise.all(
             bobSessions.map(session => retry(
-              (tanker: Tanker) => tanker.updateGroupMembers(groupID, { usersToAdd: [alicePublicIdentity] }),
-              session,
+              () => session.updateGroupMembers(groupID, { usersToAdd: [alicePublicIdentity] }),
+              bobSessions.length,
+              'Invalid user group addition block', // verify failed: previous operation processed before verif
+              'There was a conflict with a concurrent operation', // DB upsert failed: previous operation not processed before verif
             )),
           ), 'failed to updateGroupMember from both sessions').to.be.fulfilled;
 
