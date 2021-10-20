@@ -3,8 +3,6 @@ const webpack = require('webpack');
 const plugin = new webpack.EnvironmentPlugin({
   CI: null,
 
-  TANKER_ID_TOKEN: null,
-  TANKER_ADMIND_URL: null,
   TANKER_APPD_URL: null,
   TANKER_FAKE_AUTH_URL: null,
   TANKER_TRUSTCHAIND_URL: null,
