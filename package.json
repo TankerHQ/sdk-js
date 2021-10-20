@@ -58,13 +58,6 @@
     "coverage": "nyc yarn test"
   },
   "dependencies": {
-    "@babel/core": "7.12.16",
-    "@babel/eslint-parser": "7.12.16",
-    "@babel/plugin-proposal-class-properties": "7.12.13",
-    "@babel/preset-env": "7.12.16",
-    "@babel/preset-react": "7.12.13",
-    "@babel/preset-typescript": "^7.15.0",
-    "@babel/register": "7.12.13",
     "@types/chai": "^4.2.21",
     "@types/chai-as-promised": "^7.1.4",
     "@types/enzyme": "^3.10.9",
@@ -88,8 +81,6 @@
     "@types/webpack-env": "^1.16.2",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
     "@typescript-eslint/parser": "^4.28.4",
-    "babel-plugin-istanbul": "6.0.0",
-    "babel-plugin-module-resolver": "^4.1.0",
     "buffer": "5.7.1",
     "codecov": "3.8.1",
     "colorette": "1.2.1",
