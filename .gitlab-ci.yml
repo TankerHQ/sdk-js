@@ -202,16 +202,6 @@ bench/windows/nightly:
   tags:
     - WindowsSlave-2
 
-deploy/sdk:
-  stage: deploy
-  extends:
-    - .rules/deploy/js
-  script:
-    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "${HOME}/.npmrc"
-    - poetry run python run-ci.py deploy --git-tag "${CI_COMMIT_TAG}"
-  tags:
-    - linux
-
 pages:
   extends: .rules/push-master-or-feat
   stage: deploy
@@ -262,3 +252,21 @@ audit:
     - yarn audit
   tags:
     - linux
+
+deploy/sdk:
+  stage: deploy
+  extends:
+    - .rules/deploy/js
+  script:
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "${HOME}/.npmrc"
+    - poetry run python run-ci.py deploy --git-tag "${CI_COMMIT_TAG}"
+  tags:
+    - linux
+
+test-deploy:
+  stage: deploy
+  needs:
+    - deploy/sdk
+  extends: .rules/deploy/js
+  script:
+    - poetry run python run-ci.py test-deploy --git-tag "${CI_COMMIT_TAG}"
