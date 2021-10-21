@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Dict, List, cast
+from typing import Any, Callable, Optional, Dict, cast
 import argparse
 import os
 from pathlib import Path
@@ -491,8 +491,6 @@ def _main() -> None:
 
         if args.compare_results:
             compare_benchmark_results(args.runner, bench_results, size)
-    elif args.command == "lint":
-        run_linters()
     else:
         parser.print_help()
         sys.exit(1)
