@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Dict, List, cast
+from typing import Any, Callable, Dict, List, Optional, TypedDict, cast
 import argparse
 import os
 from pathlib import Path
@@ -22,12 +22,22 @@ class TestFailed(Exception):
     pass
 
 
+class Config(TypedDict):
+    build: str
+    typescript: bool
+    publish: List[str]
+
+
 # Publish packages in order so that dependencies don't break during deploy
-configs = [
+configs: List[Config] = [
     {"build": "global-this", "typescript": True, "publish": ["@tanker/global-this"]},
     {"build": "errors", "typescript": True, "publish": ["@tanker/errors"]},
     {"build": "crypto", "typescript": True, "publish": ["@tanker/crypto"]},
-    {"build": "file-ponyfill", "typescript": True, "publish": ["@tanker/file-ponyfill"]},
+    {
+        "build": "file-ponyfill",
+        "typescript": True,
+        "publish": ["@tanker/file-ponyfill"],
+    },
     {"build": "file-reader", "typescript": True, "publish": ["@tanker/file-reader"]},
     {"build": "http-utils", "typescript": True, "publish": ["@tanker/http-utils"]},
     {"build": "types", "typescript": True, "publish": ["@tanker/types"]},
@@ -52,10 +62,22 @@ configs = [
         ],
     },
     {"build": "core", "typescript": True, "publish": ["@tanker/core"]},
-    {"build": "client-browser", "typescript": True, "publish": ["@tanker/client-browser"]},
+    {
+        "build": "client-browser",
+        "typescript": True,
+        "publish": ["@tanker/client-browser"],
+    },
     {"build": "client-node", "typescript": True, "publish": ["@tanker/client-node"]},
-    {"build": "verification-ui", "typescript": True, "publish": ["@tanker/verification-ui"]},
-    {"build": "fake-authentication", "typescript": True, "publish": ["@tanker/fake-authentication"]},
+    {
+        "build": "verification-ui",
+        "typescript": True,
+        "publish": ["@tanker/verification-ui"],
+    },
+    {
+        "build": "fake-authentication",
+        "typescript": True,
+        "publish": ["@tanker/fake-authentication"],
+    },
     {"build": "filekit", "typescript": True, "publish": ["@tanker/filekit"]},
 ]
 
@@ -242,7 +264,7 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.run("poetry", "install")
     with tankerci.working_directory(base_path / "sdk-js"):
         tankerci.js.yarn_install()
-        tankerci.js.run_yarn('build:ts')
+        tankerci.js.run_yarn("build:ts")
     with tankerci.working_directory(base_path / "qa-python-js"):
         tankerci.run("poetry", "install")
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
@@ -279,12 +301,12 @@ def report_size(upload_results: bool) -> int:
     branch = get_branch_name()
     _, commit_id = tankerci.git.run_captured(Path.cwd(), "rev-parse", "HEAD")
 
-    tankerci.run("yarn", "build:client-browser-umd")
+    tankerci.js.run_yarn("build:client-browser-umd")
     lib_path = Path("packages/client-browser/dist/umd/tanker-client-browser.min.js")
     size = lib_path.stat().st_size
     if upload_results:
         tankerci.reporting.send_metric(
-            f"benchmark",
+            "benchmark",
             tags={
                 "project": "sdk-js",
                 "branch": branch,
@@ -322,9 +344,7 @@ def benchmark(
     elif runner == "macos":
         tankerci.run("killall", "Safari", check=False)
         delete_safari_state()
-        tankerci.js.run_yarn(
-            "benchmark", "--browsers", "Safari", *karma_config_args
-        )
+        tankerci.js.run_yarn("benchmark", "--browsers", "Safari", *karma_config_args)
     elif runner == "windows-edge":
         kill_windows_processes()
         tankerci.js.run_yarn(
@@ -362,7 +382,7 @@ def benchmark(
         if upload_results:
             for benchmark in browser["benchmarks"]:
                 tankerci.reporting.send_metric(
-                    f"benchmark",
+                    "benchmark",
                     tags={
                         "project": "sdk-js",
                         "branch": branch,
@@ -405,15 +425,14 @@ def compare_benchmark_results(
     benchmark_aggregates: Dict[str, Dict[str, float]],
     current_size: Optional[int],
 ):
+    master_size: Optional[int] = None
     if runner == "linux":
         browser = "chrome-headless"
         master_size = fetch_lib_size_for_branch("master")
     elif runner == "macos":
         browser = "safari"
-        master_size = None
     elif runner == "windows-edge":
         browser = "edge"
-        master_size = None
     else:
         ui.fatal("Manual benchmarks not supported on this runner")
 
@@ -491,8 +510,6 @@ def _main() -> None:
 
         if args.compare_results:
             compare_benchmark_results(args.runner, bench_results, size)
-    elif args.command == "lint":
-        run_linters()
     else:
         parser.print_help()
         sys.exit(1)
