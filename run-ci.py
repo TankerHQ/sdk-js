@@ -275,11 +275,22 @@ def deploy_sdk(*, git_tag: str) -> None:
     version = tankerci.bump.version_from_git_tag(git_tag)
     tankerci.bump.bump_files(version)
 
-
     for config in configs:
         tankerci.js.yarn_build(delivery=config["build"], env="prod")  # type: ignore
         for package_name in config["publish"]:
             publish_npm_package(package_name, version, config.get("typescript", False))
+
+
+def test_deploy(*, git_tag: str) -> None:
+    version = tankerci.bump.version_from_git_tag(git_tag)
+    test_dir = Path("test")
+    index_file = test_dir / "index.js"
+    test_dir.mkdir()
+    with test_dir:
+        tankerci.js.run_yarn("init", "--yes")
+        tankerci.js.run_yarn("add", f"@tanker/client-browser@{version}")
+        index_file.write_text('require("@tanker/client-browser");')
+        tankerci.run("node", "index.js")
 
 
 def get_branch_name() -> str:
@@ -485,6 +496,9 @@ def _main() -> None:
 
     subparsers.add_parser("lint")
 
+    test_deploy_parser = subparsers.add_parser("test-deploy")
+    test_deploy_parser.add_argument("--git-tag", required=True)
+
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
@@ -510,6 +524,8 @@ def _main() -> None:
 
         if args.compare_results:
             compare_benchmark_results(args.runner, bench_results, size)
+    elif args.command == "deploy":
+        test_deploy(git_tag=args.git_tag)
     else:
         parser.print_help()
         sys.exit(1)
