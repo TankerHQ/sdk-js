@@ -25,6 +25,9 @@ check/lint:
     - !reference [.rules/push-master-or-feat, rules]
     - !reference [.rules/nightly, rules]
   script:
+    - poetry run black --check run-ci.py
+    - poetry run flake8 run-ci.py
+    - poetry run mypy
     - poetry run python run-ci.py lint
   tags:
     - linux
