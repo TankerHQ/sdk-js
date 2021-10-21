@@ -222,6 +222,8 @@ pages:
     expire_in: 7 days
   tags:
     - linux
+  variables:
+    GIT_STRATEGY: none
 
 bridge/compat:
   stage: bridge-check
