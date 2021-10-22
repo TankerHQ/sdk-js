@@ -20,7 +20,7 @@ let appId: b64string;
 before(async () => {
   appHelper = await AppHelper.newApp();
   appId = utils.toBase64(appHelper.appId);
-  await appHelper.set2FA();
+  await appHelper.set2FA(true);
 });
 
 after(async () => {
