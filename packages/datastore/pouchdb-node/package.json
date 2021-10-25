@@ -22,7 +22,6 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.9.0",
     "@tanker/datastore-pouchdb-base": "0.0.1",
     "pouchdb-adapter-leveldb": "^7.2.2",
     "pouchdb-core": "^7.2.2",
@@ -30,6 +29,9 @@
   },
   "devDependencies": {
     "@tanker/datastore-tests": "0.0.1",
+    "@types/pouchdb-adapter-leveldb": "^6.1.3",
+    "@types/pouchdb-core": "^7.0.8",
+    "@types/tmp": "^0.2.1",
     "tmp": "^0.2.1"
   }
 }

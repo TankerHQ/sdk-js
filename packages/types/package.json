@@ -26,12 +26,12 @@
     "test": "cd ../..; yarn test:types"
   },
   "dependencies": {
-    "@babel/runtime-corejs3": "^7.9.0",
+    "@tanker/crypto": "0.0.1",
     "@tanker/errors": "0.0.1",
     "@tanker/file-ponyfill": "0.0.1",
     "@tanker/file-reader": "0.0.1",
     "@tanker/global-this": "0.0.1",
-    "@tanker/crypto": "0.0.1"
+    "tslib": "^2.3.1"
   },
   "devDependencies": {
     "@tanker/test-utils": "0.0.1"
