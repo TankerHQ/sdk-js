@@ -9,12 +9,14 @@ python = "^3.7"
 tankerci = { version = ">= 2021.9.3584", source = "gitlab" }
 
 [tool.poetry.dev-dependencies]
-flake8 = "^3.7.9"
-mypy = "0.790"
+flake8 = "4.0.1"
+mypy = "0.910"
+black = "21.9b0"
 
 [[tool.poetry.source]]
 name = "gitlab"
 url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
+secondary = true
 
 [build-system]
 requires = ["poetry>=0.12"]

@@ -567,6 +567,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         const alicePhone = args.makeTanker();
         await alicePhone.start(aliceIdentity);
         await expect(alicePhone.verifyIdentity({ verificationKey })).to.be.fulfilled;
+        await aliceLaptop.stop();
       });
 
       describe('register identity with an invalid verification key', () => {

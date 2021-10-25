@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Dict, List, cast
+from typing import Any, Callable, Dict, List, Optional, TypedDict, cast
 import argparse
 import os
 from pathlib import Path
@@ -22,18 +22,25 @@ class TestFailed(Exception):
     pass
 
 
+class Config(TypedDict):
+    build: str
+    publish: List[str]
+
+
 # Publish packages in order so that dependencies don't break during deploy
-configs = [
-    {"build": "global-this", "typescript": True, "publish": ["@tanker/global-this"]},
-    {"build": "errors", "typescript": True, "publish": ["@tanker/errors"]},
-    {"build": "crypto", "typescript": True, "publish": ["@tanker/crypto"]},
-    {"build": "file-ponyfill", "typescript": True, "publish": ["@tanker/file-ponyfill"]},
-    {"build": "file-reader", "typescript": True, "publish": ["@tanker/file-reader"]},
-    {"build": "http-utils", "typescript": True, "publish": ["@tanker/http-utils"]},
-    {"build": "types", "typescript": True, "publish": ["@tanker/types"]},
+configs: List[Config] = [
+    {"build": "global-this", "publish": ["@tanker/global-this"]},
+    {"build": "errors", "publish": ["@tanker/errors"]},
+    {"build": "crypto", "publish": ["@tanker/crypto"]},
+    {
+        "build": "file-ponyfill",
+        "publish": ["@tanker/file-ponyfill"],
+    },
+    {"build": "file-reader", "publish": ["@tanker/file-reader"]},
+    {"build": "http-utils", "publish": ["@tanker/http-utils"]},
+    {"build": "types", "publish": ["@tanker/types"]},
     {
         "build": "streams",
-        "typescript": True,
         "publish": [
             "@tanker/stream-base",
             "@tanker/stream-cloud-storage",
@@ -41,7 +48,6 @@ configs = [
     },
     {
         "build": "datastores",
-        "typescript": True,
         "publish": [
             "@tanker/datastore-base",
             "@tanker/datastore-dexie-base",
@@ -51,12 +57,21 @@ configs = [
             "@tanker/datastore-pouchdb-node",
         ],
     },
-    {"build": "core", "typescript": True, "publish": ["@tanker/core"]},
-    {"build": "client-browser", "typescript": True, "publish": ["@tanker/client-browser"]},
-    {"build": "client-node", "typescript": True, "publish": ["@tanker/client-node"]},
-    {"build": "verification-ui", "typescript": True, "publish": ["@tanker/verification-ui"]},
-    {"build": "fake-authentication", "typescript": True, "publish": ["@tanker/fake-authentication"]},
-    {"build": "filekit", "typescript": True, "publish": ["@tanker/filekit"]},
+    {"build": "core", "publish": ["@tanker/core"]},
+    {
+        "build": "client-browser",
+        "publish": ["@tanker/client-browser"],
+    },
+    {"build": "client-node", "publish": ["@tanker/client-node"]},
+    {
+        "build": "verification-ui",
+        "publish": ["@tanker/verification-ui"],
+    },
+    {
+        "build": "fake-authentication",
+        "publish": ["@tanker/fake-authentication"],
+    },
+    {"build": "filekit", "publish": ["@tanker/filekit"]},
 ]
 
 
@@ -169,15 +184,13 @@ def run_tests_in_browser(*, runner: str) -> None:
         tankerci.js.run_yarn("karma", "--browsers", "IE")
 
 
-def get_package_path(package_name: str, *, is_typescript: bool) -> Path:
+def get_package_path(package_name: str) -> Path:
     m = re.match(r"^@tanker/(?:(datastore|stream)-)?(.*)$", package_name)
     p = Path("packages")
     assert m
     if m[1]:
         p = p.joinpath(m[1])
     p = p.joinpath(m[2])
-    if not is_typescript:
-        p = p.joinpath("dist")
     return p
 
 
@@ -189,8 +202,8 @@ def version_to_npm_tag(version: str) -> str:
     return "latest"
 
 
-def publish_npm_package(package_name: str, version: str, is_typescript: bool) -> None:
-    package_path = get_package_path(package_name, is_typescript=is_typescript)
+def publish_npm_package(package_name: str, version: str) -> None:
+    package_path = get_package_path(package_name)
     npm_tag = version_to_npm_tag(version)
     tankerci.run(
         "npm", "publish", "--access", "public", "--tag", npm_tag, cwd=package_path
@@ -242,7 +255,7 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.run("poetry", "install")
     with tankerci.working_directory(base_path / "sdk-js"):
         tankerci.js.yarn_install()
-        tankerci.js.run_yarn('build:ts')
+        tankerci.js.run_yarn("build:ts")
     with tankerci.working_directory(base_path / "qa-python-js"):
         tankerci.run("poetry", "install")
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
@@ -253,11 +266,21 @@ def deploy_sdk(*, git_tag: str) -> None:
     version = tankerci.bump.version_from_git_tag(git_tag)
     tankerci.bump.bump_files(version)
 
-
     for config in configs:
-        tankerci.js.yarn_build(delivery=config["build"], env="prod")  # type: ignore
+        tankerci.js.yarn_build(delivery=config["build"], env="prod")
         for package_name in config["publish"]:
-            publish_npm_package(package_name, version, config.get("typescript", False))
+            publish_npm_package(package_name, version)
+
+
+def test_deploy(*, git_tag: str) -> None:
+    version = tankerci.bump.version_from_git_tag(git_tag)
+    test_dir = Path("test")
+    index_file = test_dir / "index.js"
+    test_dir.mkdir()
+    tankerci.js.run_yarn("init", "--yes", cwd=test_dir)
+    tankerci.js.run_yarn("add", f"@tanker/client-browser@{version}", cwd=test_dir)
+    index_file.write_text('require("@tanker/client-browser");')
+    tankerci.run("node", "index.js", cwd=test_dir)
 
 
 def get_branch_name() -> str:
@@ -279,12 +302,12 @@ def report_size(upload_results: bool) -> int:
     branch = get_branch_name()
     _, commit_id = tankerci.git.run_captured(Path.cwd(), "rev-parse", "HEAD")
 
-    tankerci.run("yarn", "build:client-browser-umd")
+    tankerci.js.run_yarn("build:client-browser-umd")
     lib_path = Path("packages/client-browser/dist/umd/tanker-client-browser.min.js")
     size = lib_path.stat().st_size
     if upload_results:
         tankerci.reporting.send_metric(
-            f"benchmark",
+            "benchmark",
             tags={
                 "project": "sdk-js",
                 "branch": branch,
@@ -322,9 +345,7 @@ def benchmark(
     elif runner == "macos":
         tankerci.run("killall", "Safari", check=False)
         delete_safari_state()
-        tankerci.js.run_yarn(
-            "benchmark", "--browsers", "Safari", *karma_config_args
-        )
+        tankerci.js.run_yarn("benchmark", "--browsers", "Safari", *karma_config_args)
     elif runner == "windows-edge":
         kill_windows_processes()
         tankerci.js.run_yarn(
@@ -362,7 +383,7 @@ def benchmark(
         if upload_results:
             for benchmark in browser["benchmarks"]:
                 tankerci.reporting.send_metric(
-                    f"benchmark",
+                    "benchmark",
                     tags={
                         "project": "sdk-js",
                         "branch": branch,
@@ -396,7 +417,7 @@ def fetch_lib_size_for_branch(branch: str) -> int:
     )
     result_series = response["results"][0]["series"][0]
     size_column_idx = result_series["columns"].index("value")
-    size_data_point = result_series["values"][0][size_column_idx]
+    size_data_point: int = result_series["values"][0][size_column_idx]
     return size_data_point
 
 
@@ -404,16 +425,15 @@ def compare_benchmark_results(
     runner: str,
     benchmark_aggregates: Dict[str, Dict[str, float]],
     current_size: Optional[int],
-):
+) -> None:
+    master_size: Optional[int] = None
     if runner == "linux":
         browser = "chrome-headless"
         master_size = fetch_lib_size_for_branch("master")
     elif runner == "macos":
         browser = "safari"
-        master_size = None
     elif runner == "windows-edge":
         browser = "edge"
-        master_size = None
     else:
         ui.fatal("Manual benchmarks not supported on this runner")
 
@@ -466,6 +486,9 @@ def _main() -> None:
 
     subparsers.add_parser("lint")
 
+    test_deploy_parser = subparsers.add_parser("test-deploy")
+    test_deploy_parser.add_argument("--git-tag", required=True)
+
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
@@ -491,14 +514,14 @@ def _main() -> None:
 
         if args.compare_results:
             compare_benchmark_results(args.runner, bench_results, size)
-    elif args.command == "lint":
-        run_linters()
+    elif args.command == "test-deploy":
+        test_deploy(git_tag=args.git_tag)
     else:
         parser.print_help()
         sys.exit(1)
 
 
-def main():
+def main() -> None:
     # hide backtrace when tests fail
     try:
         _main()
