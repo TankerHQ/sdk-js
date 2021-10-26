@@ -406,9 +406,11 @@ describe('Simple Encryption', () => {
       const { overhead, getClearSize, getEncryptedSize } = encryptorV6;
       const clearSize = getClearSize(testVectorV6.length);
       const encryptedSize = getEncryptedSize(clearData.length);
-      expect(clearSize).to.equal(encryptorV6.getPaddedSize(clearData.length));
+      // add one to include the padding byte
+      expect(clearSize + 1).to.equal(encryptorV6.getPaddedSize(clearData.length));
       expect(encryptedSize).to.equal(testVectorV6.length);
-      expect(encryptedSize - clearSize).to.equal(overhead);
+      // encryptorv6.overhead does not include the padding byte
+      expect(encryptedSize - clearSize).to.equal(overhead + 1);
     });
   });
 });
