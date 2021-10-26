@@ -37,7 +37,8 @@ export const padme = (clearSize: number): number => {
 
 export const getPaddedSize = (clearsize: number) => Math.max(padme(clearsize + 1), minimalPadding);
 
-export const getClearSize = (encryptedSize: number) => encryptedSize - overhead;
+// -1 is the padding byte (0x80)
+export const getClearSize = (encryptedSize: number) => encryptedSize - overhead - 1;
 
 export const getEncryptedSize = (clearSize: number) => getPaddedSize(clearSize) + overhead;
 
