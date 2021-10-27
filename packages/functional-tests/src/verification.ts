@@ -11,6 +11,8 @@ import { oidcSettings, trustchaindUrl } from './helpers';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
+const verificationThrottlingAttempts = 3;
+
 async function getGoogleIdToken(refreshToken: string): Promise<string> {
   const formData = JSON.stringify({
     client_id: oidcSettings.googleAuth.clientId,
@@ -306,6 +308,18 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
       });
 
+      it(`gets throttled with a wrong passphrase over ${verificationThrottlingAttempts} times`, async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+        await bobPhone.start(bobIdentity);
+        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
+          await expect(bobPhone.verifyIdentity({ passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
+        }
+        await expect(bobPhone.verifyIdentity({ passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.TooManyAttempts);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+
       it('fails to verify without having registered a passphrase', async () => {
         const email = 'john.doe@tanker.io';
         const phoneNumber = '+33639989999';
@@ -361,6 +375,19 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
       });
 
+      it(`should get throttled if email verification code is wrong over ${verificationThrottlingAttempts} times`, async () => {
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        verificationCode = await appHelper.getWrongEmailVerificationCode(email);
+
+        await bobPhone.start(bobIdentity);
+        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
+          await expect(bobPhone.verifyIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+        }
+        await expect(bobPhone.verifyIdentity({ email, verificationCode })).to.be.rejectedWith(errors.TooManyAttempts);
+      });
+
       it('fails to verify without having registered an email address', async () => {
         const phoneNumber = '+33639989999';
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
@@ -403,6 +430,20 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         // The status must not change so that retry is possible
         expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+
+      it(`should get throttled if the verification code is wrong over ${verificationThrottlingAttempts} times`, async () => {
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
+
+        verificationCode = await appHelper.getWrongSMSVerificationCode(phoneNumber);
+
+        await bobPhone.start(bobIdentity);
+
+        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
+          await expect(bobPhone.verifyIdentity({ phoneNumber, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+        }
+        await expect(bobPhone.verifyIdentity({ phoneNumber, verificationCode })).to.be.rejectedWith(errors.TooManyAttempts);
       });
 
       it('fails to verify without having registered a phone number', async () => {
@@ -454,6 +495,16 @@ export const generateVerificationTests = (args: TestArgs) => {
       it('fails to verify a valid token for the wrong user', async () => {
         await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
         await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: kevinIdToken })).to.be.rejectedWith(errors.InvalidVerification);
+      });
+
+      it(`gets throttled if failing over ${verificationThrottlingAttempts} times`, async () => {
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
+        await bobPhone.start(bobIdentity);
+
+        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
+          await expect(bobPhone.verifyIdentity({ oidcIdToken: kevinIdToken })).to.be.rejectedWith(errors.InvalidVerification);
+        }
+        await expect(bobPhone.verifyIdentity({ oidcIdToken: kevinIdToken })).to.be.rejectedWith(errors.TooManyAttempts);
       });
 
       it('updates and verifies with an oidc id token', async () => {
