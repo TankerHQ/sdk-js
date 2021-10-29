@@ -1,6 +1,6 @@
 import type { b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
-import { DecryptionFailed, InternalError } from '@tanker/errors';
+import { DecryptionFailed, InternalError, InvalidArgument } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
 
@@ -274,8 +274,16 @@ export class DataProtector {
   }
 
   async encryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
-    if (getDataLength(clearData) >= STREAM_THRESHOLD)
-      return this._streamEncryptData(clearData, encryptionOptions, outputOptions, progressOptions, resource);
+    if (getDataLength(clearData) >= STREAM_THRESHOLD) {
+      // Avoid throwing a padding error in case of an automatic redirection to streams
+      return this._streamEncryptData(
+        clearData,
+        { ...encryptionOptions, paddingStep: undefined },
+        outputOptions,
+        progressOptions,
+        resource,
+      );
+    }
 
     if (resource) {
       // We can ignore the EncryptionOptions (aka SharingOptions) because this path is only accessed through
@@ -298,6 +306,12 @@ export class DataProtector {
   }
 
   async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStream> {
+    if (encryptionOptions.paddingStep !== undefined) {
+      const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool, paddingStep?: undefined }', encryptionOptions);
+      error.setMessage('paddingStep option is not available for stream encryption');
+      throw error;
+    }
+
     let encryptionStream;
 
     if (resource) {

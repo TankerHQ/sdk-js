@@ -92,6 +92,10 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
         }
         expect(offset).to.equal(largeClearData.length);
       });
+
+      it('throws when the paddingStep option is given', async () => {
+        await expect(aliceLaptop.createEncryptionStream({ paddingStep: 2 })).to.be.rejectedWith(errors.InvalidArgument, 'paddingStep option is not available');
+      });
     });
 
     describe('sharing', () => {
