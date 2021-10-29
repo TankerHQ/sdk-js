@@ -76,8 +76,8 @@ export class AppHelper {
     await this._update({ storage_provider: 'none' });
   }
 
-  async set2FA() {
-    await this._update({ session_certificates_enabled: true });
+  async set2FA(enabled: boolean) {
+    await this._update({ session_certificates_enabled: enabled });
   }
 
   generateIdentity(userId?: string): Promise<b64string> {
