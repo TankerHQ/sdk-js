@@ -167,7 +167,7 @@ export class AppHelper {
     const wrongDigitIndex = Math.floor(Math.random() * digits.length);
     const wrongDigit = (parseInt(code[wrongDigitIndex]!, 10) + 1) % 10;
     digits[wrongDigitIndex] = `${wrongDigit}`;
-    return digits.join();
+    return digits.join('');
   }
 
   async cleanup(): Promise<void> {
