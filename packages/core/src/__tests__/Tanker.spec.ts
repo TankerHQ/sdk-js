@@ -66,7 +66,8 @@ describe('Tanker', () => {
       const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter } };
       const mergedOptions = optionsWithDefaults(options, defaultOptions);
       expect(mergedOptions).to.deep.equal({
-        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter } });
+        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter },
+      });
     });
 
     it('should (deep) override default options', () => {
@@ -114,7 +115,7 @@ describe('Tanker', () => {
         { appId: valid32BytesB64, dataStore: {} },
         // wrong adapter type
         { appId: valid32BytesB64, dataStore: { adapter: 'not a function' } },
-        { appId: valid32BytesB64, dataStore: { adapter: () => {} }, sdkType: undefined },
+        { appId: valid32BytesB64, dataStore: { adapter: () => { } }, sdkType: undefined },
       ].forEach((invalidOptions: any, i: number) => {
         expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
       });
@@ -459,7 +460,7 @@ describe('Tanker', () => {
       });
 
       describe('encrypt\'s return type', () => {
-      // @ts-expect-error only used as destination
+        // @ts-expect-error only used as destination
         let array: Uint8Array;
 
         if (isBrowser()) {
