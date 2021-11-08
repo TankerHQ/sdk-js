@@ -14,8 +14,6 @@ import psutil
 import tankerci
 import tankerci.conan
 import tankerci.js
-import tankerci.reporting
-import tankerci.benchmark
 
 
 class TestFailed(Exception):
@@ -283,182 +281,6 @@ def test_deploy(*, git_tag: str) -> None:
     tankerci.run("node", "index.js", cwd=test_dir)
 
 
-def get_branch_name() -> str:
-    branch = os.environ.get("CI_COMMIT_BRANCH", None)
-    if not branch:
-        branch = os.environ.get("CI_COMMIT_REF_NAME", None)
-    if not branch:
-        branch = tankerci.git.get_current_branch(Path.cwd())
-    if not branch:
-        ui.fatal("Not on a branch, can't report size")
-    ui.info(f"Running on branch {branch}")
-    # branch is not Optional anymore
-    return cast(str, branch)
-
-
-def report_size(upload_results: bool) -> int:
-    tankerci.reporting.assert_can_send_metrics()
-
-    branch = get_branch_name()
-    _, commit_id = tankerci.git.run_captured(Path.cwd(), "rev-parse", "HEAD")
-
-    tankerci.js.run_yarn("build:client-browser-umd")
-    lib_path = Path("packages/client-browser/dist/umd/tanker-client-browser.min.js")
-    size = lib_path.stat().st_size
-    if upload_results:
-        tankerci.reporting.send_metric(
-            "benchmark",
-            tags={
-                "project": "sdk-js",
-                "branch": branch,
-                "object": "client-browser-umd",
-                "scenario": "size",
-            },
-            fields={"value": size, "commit_id": commit_id},
-        )
-
-    ui.info(f"Tanker library size: {size / 1024}KiB")
-    return size
-
-
-def benchmark(
-    *,
-    runner: str,
-    upload_results: bool,
-    iterations: Optional[int],
-) -> Dict[str, Dict[str, float]]:
-    tankerci.reporting.assert_can_send_metrics()
-
-    branch = get_branch_name()
-    _, commit_id = tankerci.git.run_captured(Path.cwd(), "rev-parse", "HEAD")
-
-    karma_config_args = []
-    if iterations:
-        karma_config_args.append(f"--sampleCount={iterations}")
-
-    if runner == "linux":
-        # The first -- is for yarn, otherwise if there is a second --, yarn will swallow the --browsers argument
-        # The second -- (in karma_config_args) is for karma. Hell's full, but there's always JS frameworks.
-        tankerci.js.run_yarn(
-            "benchmark", "--browsers", "ChromeInDocker", *karma_config_args
-        )
-    elif runner == "macos":
-        tankerci.run("killall", "Safari", check=False)
-        delete_safari_state()
-        tankerci.js.run_yarn("benchmark", "--browsers", "Safari", *karma_config_args)
-    elif runner == "windows-edge":
-        kill_windows_processes()
-        tankerci.js.run_yarn(
-            "benchmark", "--browsers", "EdgeHeadless", *karma_config_args
-        )
-    else:
-        raise RuntimeError(f"unsupported runner {runner}")
-    benchmark_output = Path("benchmarks.json")
-    benchmark_results = json.loads(benchmark_output.read_text())
-
-    hostname = os.environ.get("CI_RUNNER_DESCRIPTION", None)
-    if not hostname:
-        hostname = benchmark_results["context"]["host"]
-
-    bench_result_array = benchmark_results["browsers"][0]["benchmarks"]
-    benchmark_aggregates = {}
-    for bench in bench_result_array:
-        name = bench["name"].lower()
-        benchmark_aggregates[name] = {
-            "median": bench["real_time"],
-            "stddev": bench["stddev"],
-        }
-
-    for browser in benchmark_results["browsers"]:
-        # map the name to something more friendly
-        if browser["name"].startswith("Chrome Headless"):
-            browser_name = "chrome-headless"
-        elif browser["name"].startswith("Safari"):
-            browser_name = "safari"
-        elif browser["name"].startswith("Edge"):
-            browser_name = "edge"
-        else:
-            raise RuntimeError(f"unsupported browser {browser['name']}")
-
-        if upload_results:
-            for benchmark in browser["benchmarks"]:
-                tankerci.reporting.send_metric(
-                    "benchmark",
-                    tags={
-                        "project": "sdk-js",
-                        "branch": branch,
-                        "browser": browser_name,
-                        "scenario": benchmark["name"].lower(),
-                        "host": hostname,
-                    },
-                    fields={
-                        "real_time": benchmark["real_time"],
-                        "stddev": benchmark["stddev"],
-                        "commit_id": commit_id,
-                        "browser_full_name": browser["name"],
-                    },
-                )
-    return benchmark_aggregates
-
-
-def fetch_lib_size_for_branch(branch: str) -> int:
-    """Retrieves the size of the client-browser-umd build for a branch from InfluxDB"""
-    response = tankerci.reporting.query_last_metrics(
-        "benchmark",
-        group_by="scenario",
-        tags=["scenario"],
-        fields=["value"],
-        where={
-            "branch": branch,
-            "project": "sdk-js",
-            "scenario": "size",
-            "object": "client-browser-umd",
-        },
-    )
-    result_series = response["results"][0]["series"][0]
-    size_column_idx = result_series["columns"].index("value")
-    size_data_point: int = result_series["values"][0][size_column_idx]
-    return size_data_point
-
-
-def compare_benchmark_results(
-    runner: str,
-    benchmark_aggregates: Dict[str, Dict[str, float]],
-    current_size: Optional[int],
-) -> None:
-    master_size: Optional[int] = None
-    if runner == "linux":
-        browser = "chrome-headless"
-        master_size = fetch_lib_size_for_branch("master")
-    elif runner == "macos":
-        browser = "safari"
-    elif runner == "windows-edge":
-        browser = "edge"
-    else:
-        ui.fatal("Manual benchmarks not supported on this runner")
-
-    response = tankerci.reporting.query_last_metrics(
-        "benchmark",
-        group_by="scenario",
-        tags=["scenario"],
-        fields=["real_time", "stddev"],
-        where={"branch": "master", "project": "sdk-js", "browser": browser},
-    )
-    master_results = {}
-    for point in response["results"][0]["series"]:
-        result = tankerci.benchmark.data_point_to_bench_result(point)
-        if result["stddev"] is None:
-            result["stddev"] = 0  # Old benchmarks did not have a stddev
-        master_results[result["name"]] = result
-
-    result_message = f"Benchmark for `{runner}`.\n\n"
-    result_message += tankerci.benchmark.format_benchmark_table(
-        benchmark_aggregates, master_results, master_size, current_size
-    )
-
-    tankerci.benchmark.post_gitlab_mr_message("sdk-js", result_message)
-
-
 def _main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands", dest="command")
@@ -473,16 +295,6 @@ def _main() -> None:
 
     e2e_parser = subparsers.add_parser("e2e")
     e2e_parser.add_argument("--use-local-sources", action="store_true", default=False)
-
-    benchmark_parser = subparsers.add_parser("benchmark")
-    benchmark_parser.add_argument("--runner", required=True)
-    benchmark_parser.add_argument(
-        "--compare-results", dest="compare_results", action="store_true"
-    )
-    benchmark_parser.add_argument(
-        "--upload-results", dest="upload_results", action="store_true"
-    )
-    benchmark_parser.add_argument("--iterations", default=None, type=int)
 
     subparsers.add_parser("lint")
 
@@ -500,20 +312,6 @@ def _main() -> None:
         deploy_sdk(git_tag=args.git_tag)
     elif args.command == "e2e":
         e2e(use_local_sources=args.use_local_sources)
-    elif args.command == "benchmark":
-        tankerci.js.yarn_install()
-        size = None
-        if args.runner == "linux":
-            # size is the same on all platforms, when uploading we can track it only on linux
-            size = report_size(args.upload_results)
-        bench_results = benchmark(
-            runner=args.runner,
-            upload_results=args.upload_results,
-            iterations=args.iterations,
-        )
-
-        if args.compare_results:
-            compare_benchmark_results(args.runner, bench_results, size)
     elif args.command == "test-deploy":
         test_deploy(git_tag=args.git_tag)
     else:
