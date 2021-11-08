@@ -261,9 +261,8 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
 
 
-def deploy_sdk(*, git_tag: str) -> None:
+def deploy_sdk(*, version: str) -> None:
     tankerci.js.yarn_install_deps()
-    version = tankerci.bump.version_from_git_tag(git_tag)
     tankerci.bump.bump_files(version)
 
     for config in configs:
@@ -272,8 +271,7 @@ def deploy_sdk(*, git_tag: str) -> None:
             publish_npm_package(package_name, version)
 
 
-def test_deploy(*, git_tag: str) -> None:
-    version = tankerci.bump.version_from_git_tag(git_tag)
+def test_deploy(*, version: str) -> None:
     test_dir = Path("test")
     index_file = test_dir / "index.js"
     test_dir.mkdir()
@@ -469,7 +467,7 @@ def _main() -> None:
     check_parser.add_argument("--runner", required=True)
 
     deploy_parser = subparsers.add_parser("deploy")
-    deploy_parser.add_argument("--git-tag", required=True)
+    deploy_parser.add_argument("--version", required=True)
 
     e2e_parser = subparsers.add_parser("e2e")
     e2e_parser.add_argument("--use-local-sources", action="store_true", default=False)
@@ -487,7 +485,7 @@ def _main() -> None:
     subparsers.add_parser("lint")
 
     test_deploy_parser = subparsers.add_parser("test-deploy")
-    test_deploy_parser.add_argument("--git-tag", required=True)
+    test_deploy_parser.add_argument("--version", required=True)
 
     args = parser.parse_args()
     if args.command == "check":
@@ -497,7 +495,7 @@ def _main() -> None:
     elif args.command == "lint":
         lint()
     elif args.command == "deploy":
-        deploy_sdk(git_tag=args.git_tag)
+        deploy_sdk(version=args.version)
     elif args.command == "e2e":
         e2e(use_local_sources=args.use_local_sources)
     elif args.command == "benchmark":
@@ -515,7 +513,7 @@ def _main() -> None:
         if args.compare_results:
             compare_benchmark_results(args.runner, bench_results, size)
     elif args.command == "test-deploy":
-        test_deploy(git_tag=args.git_tag)
+        test_deploy(version=args.version)
     else:
         parser.print_help()
         sys.exit(1)
