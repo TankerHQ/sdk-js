@@ -81,19 +81,23 @@ export class DecryptionStream extends Transform {
 
       // transform will only be called once when every data has been received
       transform: async (encryptedChunk: Uint8Array, _: BufferEncoding, done: TransformCallback) => {
-        const encryption = extractEncryptionFormat(encryptedChunk);
-        const resourceId = encryption.extractResourceId(encryptedChunk);
-        const key = await this._mapper.findKey(resourceId);
-
-        let clearData;
-
         try {
+          const encryption = extractEncryptionFormat(encryptedChunk);
+          const resourceId = encryption.extractResourceId(encryptedChunk);
+
+          const key = await this._mapper.findKey(resourceId);
+
+          try {
           // @ts-expect-error Already checked we are using a simple encryption
-          clearData = encryption.decrypt(key, encryption.unserialize(encryptedChunk));
-          this._decryptionStream.push(clearData);
+            const clearData = encryption.decrypt(key, encryption.unserialize(encryptedChunk));
+            this._decryptionStream.push(clearData);
+          } catch (error) {
+            const b64ResourceId = utils.toBase64(resourceId);
+            done(new DecryptionFailed({ error: error as Error, b64ResourceId }));
+            return;
+          }
         } catch (error) {
-          const b64ResourceId = utils.toBase64(resourceId);
-          done(new DecryptionFailed({ error: error as Error, b64ResourceId }));
+          done(error as Error);
           return;
         }
 
