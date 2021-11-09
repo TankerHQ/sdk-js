@@ -1,5 +1,5 @@
 import type { SinonSpy } from 'sinon';
-import { utils, random, ready as cryptoReady, tcrypto, encryptionV4 } from '@tanker/crypto';
+import { utils, random, ready as cryptoReady, tcrypto, encryptionV4, encryptionV3 } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { Writable } from '@tanker/stream-base';
@@ -284,6 +284,25 @@ describe('DecryptionStream', () => {
     it('throws DecryptionFailed when data is written in wrong order', async () => {
       stream.write(chunks[1]!);
       await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
+    });
+
+    it('forwards the error when the key is not found for a small resource', async () => {
+      const unknownKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+      mapper.findKey = sinon.fake(() => {
+        throw new InvalidArgument('some error');
+      });
+      const chunk = encryptionV3.serialize(encryptionV3.encrypt(unknownKey, utils.fromString('some random data')));
+      stream.write(chunk);
+      stream.end();
+      await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
+    });
+
+    it('forwards the error when the key is not found for a large resource', async () => {
+      mapper.findKey = sinon.fake(() => {
+        throw new InvalidArgument('some error');
+      });
+      stream.write(chunks[0]);
+      await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
     });
   });
 
