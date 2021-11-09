@@ -10,7 +10,7 @@ stages:
   - deploy
 
 default:
-  image: registry.gitlab.com/tankerhq/docker/node:latest
+  image: registry.gitlab.com/tankerhq/docker/node:ab-nove-release-cli-to-base.639
   before_script:
     - poetry -V
     - node -v
