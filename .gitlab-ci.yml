@@ -148,59 +148,68 @@ check/linux/nightly:
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
-bench/linux:
-  extends: .rules/mr/manual
+.bench/common:
+  extends: .variables/bridge-common
   stage: bench
   needs: []
-  script:
-    - poetry run python run-ci.py benchmark --runner linux --compare-results --iterations 30
-  tags:
-    - LinuxSlave-3
+  variables:
+    UPSTREAM_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
+    UPSTREAM_COMMIT_SHA: $CI_COMMIT_SHA
+    UPSTREAM_COMMIT_REF_NAME: $CI_COMMIT_REF_NAME
+  trigger:
+    project: TankerHQ/benchmarks
+    strategy: depend
+
+.rules/bench:
+  rules:
+    - !reference [.rules/mr/manual, rules]
+    - !reference [.rules/web/auto, rules]
+
+.rules/bench/nightly:
+  rules:
+    - !reference [.rules/nightly, rules]
+
+bench/linux:
+  extends:
+    - .bench/common
+    - .rules/bench
+  variables:
+    UPSTREAM_JOB_TARGET: linux
 
 bench/linux/nightly:
-  stage: bench
-  needs: []
-  extends: .rules/nightly
-  script:
-    - poetry run python run-ci.py benchmark --runner linux --upload-results --iterations 100
-  tags:
-    - LinuxSlave-3
+  extends:
+    - .bench/common
+    - .rules/bench/nightly
+  variables:
+    UPSTREAM_JOB_TARGET: linux
 
 bench/macos:
-  extends: .rules/mr/manual
-  stage: bench
-  needs: []
-  script:
-    - poetry run python run-ci.py benchmark --runner macos --compare-results --iterations 25
-  tags:
-    - MacOSSlave-2
+  extends:
+    - .bench/common
+    - .rules/bench
+  variables:
+    UPSTREAM_JOB_TARGET: macos
 
 bench/macos/nightly:
-  stage: bench
-  needs: []
-  extends: .rules/nightly
-  script:
-    - poetry run python run-ci.py benchmark --runner macos --upload-results --iterations 100
-  tags:
-    - MacOSSlave-2
+  extends:
+    - .bench/common
+    - .rules/bench/nightly
+  variables:
+    UPSTREAM_JOB_TARGET: macos
 
 bench/windows:
-  extends: .rules/mr/manual
-  stage: bench
-  needs: []
-  script:
-    - poetry run python run-ci.py benchmark --runner windows-edge --compare-results --iterations 25
-  tags:
-    - WindowsSlave-2
+  extends:
+    - .bench/common
+    - .rules/bench
+  variables:
+    UPSTREAM_JOB_TARGET: windows
 
 bench/windows/nightly:
-  stage: bench
-  needs: []
-  extends: .rules/nightly
-  script:
-    - poetry run python run-ci.py benchmark --runner windows-edge --upload-results --iterations 100
-  tags:
-    - WindowsSlave-2
+  extends:
+    - .bench/common
+    - .rules/bench/nightly
+  variables:
+    UPSTREAM_JOB_TARGET: windows
 
 pages:
   extends: .rules/push-master-or-feat
