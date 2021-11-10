@@ -1,6 +1,6 @@
-import { errors, statuses, STREAM_THRESHOLD } from '@tanker/core';
+import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, OutputOptions } from '@tanker/core';
-import { encryptionV4, encryptionV6, tcrypto, utils } from '@tanker/crypto';
+import { encryptionV4, encryptionV6, tcrypto, utils, Padding } from '@tanker/crypto';
 import { Data, getConstructorName, getDataLength } from '@tanker/types';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
@@ -113,9 +113,33 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
+      it('throws when calling encrypt with a bad paddingStep', async () => {
+        await expect(bobLaptop.encrypt(clearText, { paddingStep: -1 })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.encrypt(clearText, { paddingStep: 0 })).to.be.rejectedWith(errors.InvalidArgument);
+        await expect(bobLaptop.encrypt(clearText, { paddingStep: 1 })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
       it('can encrypt and decrypt a text resource', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         await expectDecrypt([bobLaptop], clearText, encrypted);
+      });
+
+      describe('with padding', () => {
+        const stepAndFormat: Array<[number | Padding | undefined, number]> = [
+          [undefined, 6],
+          [Padding.AUTO, 6],
+          [Padding.OFF, 3],
+          [13, 6],
+        ];
+
+        stepAndFormat.forEach(tuple => {
+          const [step, format] = tuple;
+          it(`encrypts with format ${format} for paddingStep set to ${step}`, async () => {
+            const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: step });
+            expect(encrypted[0]).to.equal(format);
+            await expectDecrypt([bobLaptop], clearText, encrypted);
+          });
+        });
       });
 
       it('can report progress when encrypting and decrypting', async () => {
@@ -125,9 +149,8 @@ export const generateEncryptionTests = (args: TestArgs) => {
         expectProgressReport(onProgress, encrypted.length);
         onProgress.resetHistory();
 
-        await bobLaptop.decrypt(encrypted, { onProgress });
-        const expectedProgressSize = encryptionV6.getClearSize(encrypted.length);
-        expectProgressReport(onProgress, expectedProgressSize, streamStepSize);
+        const decrypted = await bobLaptop.decrypt(encrypted, { onProgress });
+        expectProgressReport(onProgress, decrypted.length, streamStepSize);
       });
 
       it('encrypt should ignore resource id argument', async () => {
@@ -198,6 +221,16 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
         await expectDecrypt([bobPhone], clearText, encrypted);
         await bobPhone.stop();
+      });
+
+      it('shares and manually pads the data at the same time', async () => {
+        const step = 13;
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity], paddingStep: step });
+
+        const paddedSize = encrypted.length - encryptionV6.overhead;
+        expect(paddedSize % step).to.equal(0);
+
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
     });
 
@@ -609,25 +642,15 @@ export const generateEncryptionTests = (args: TestArgs) => {
         it(`can encrypt and decrypt a ${size} ${getConstructorName(type)}`, async () => {
           const onProgress = sinon.fake();
 
-          const encrypted = await aliceLaptop.encryptData(clear, { onProgress });
-          const encryptedResultSize = getDataLength(encrypted);
+          const encrypted = await aliceLaptop.encryptData(clear, { paddingStep: Padding.OFF, onProgress });
           expectSameType(encrypted, clear);
-          expectProgressReport(onProgress, encryptedResultSize);
+          expectProgressReport(onProgress, getDataLength(encrypted));
           onProgress.resetHistory();
 
           const decrypted = await aliceLaptop.decryptData(encrypted, { onProgress });
           expectSameType(decrypted, clear);
           expectDeepEqual(decrypted, clear);
-
-          // Quickfix for a padding behavior. Needs be removed as soon as the option to disable padding is implemented.
-          let expectedProgressLength: number;
-          if (getDataLength(clear) < STREAM_THRESHOLD) {
-            expectedProgressLength = encryptionV6.getClearSize(encryptedResultSize);
-          } else {
-            expectedProgressLength = getDataLength(decrypted);
-          }
-
-          expectProgressReport(onProgress, expectedProgressLength, streamStepSize);
+          expectProgressReport(onProgress, getDataLength(decrypted), streamStepSize);
         });
       });
     });

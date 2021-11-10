@@ -9,7 +9,7 @@ import * as encryptorV3 from '../EncryptionFormats/v3';
 import * as encryptorV5 from '../EncryptionFormats/v5';
 import * as encryptorV6 from '../EncryptionFormats/v6';
 import * as encryptorV7 from '../EncryptionFormats/v7';
-import { getPaddedSize } from '../padding';
+import { Padding, getPaddedSize, minimalPadding } from '../padding';
 import { ready as cryptoReady } from '../ready';
 
 describe('Simple Encryption', () => {
@@ -325,6 +325,7 @@ describe('Simple Encryption', () => {
 
   describe('EncryptionFormatV6', () => {
     const v6ResourceId = new Uint8Array([0x6, 0x35, 0x7e, 0xb4, 0x72, 0x4f, 0x5b, 0x2d, 0x66, 0xfe, 0xa, 0x95, 0xba, 0x66, 0x4, 0x30]);
+    const overhead = encryptorV6.overhead;
 
     it('unserializes a test vector', () => {
       const unserializedData = encryptorV6.unserialize(testVectorV6);
@@ -342,12 +343,6 @@ describe('Simple Encryption', () => {
       expect(() => encryptorV6.decrypt(key, encryptorV6.unserialize(tamperWith(testVectorV6)))).to.throw();
     });
 
-    it('encrypts / decrypts a buffer', () => {
-      const encryptedData = encryptorV6.encrypt(key, clearData);
-      const decryptedData = encryptorV6.decrypt(key, encryptedData);
-      expect(decryptedData).to.deep.equal(clearData);
-    });
-
     it('decrypts a buffer v6', () => {
       const decryptedData = encryptorV6.decrypt(key, encryptorV6.unserialize(testVectorV6));
       expect(decryptedData).to.deep.equal(clearData);
@@ -358,21 +353,87 @@ describe('Simple Encryption', () => {
       expect(resourceId).to.deep.equal(v6ResourceId);
     });
 
-    it('outputs the right resourceId', () => {
-      const encryptedData = encryptorV6.encrypt(key, clearData);
-      const buff = encryptorV6.serialize(encryptedData);
-      expect(encryptorV6.extractResourceId(buff)).to.deep.equal(encryptedData.resourceId);
+    it('computes clear and encrypted sizes', () => {
+      const { getClearSize, getEncryptedSize } = encryptorV6;
+      const encryptedSize = getEncryptedSize(clearData.length);
+      const paddedClearSize = getPaddedSize(clearData.length);
+      const decrypedSize = getClearSize(testVectorV6.length);
+
+      expect(encryptedSize).to.equal(testVectorV6.length);
+      expect(paddedClearSize + overhead).to.equal(encryptedSize);
+      expect(decrypedSize).to.greaterThanOrEqual(clearData.length);
     });
 
-    it('computes clear and encrypted sizes', () => {
-      const { overhead, getClearSize, getEncryptedSize } = encryptorV6;
-      const clearSize = getClearSize(testVectorV6.length);
-      const encryptedSize = getEncryptedSize(clearData.length);
-      // add one to include the padding byte
-      expect(clearSize + 1).to.equal(getPaddedSize(clearData.length));
-      expect(encryptedSize).to.equal(testVectorV6.length);
-      // encryptorv6.overhead does not include the padding byte
-      expect(encryptedSize - clearSize).to.equal(overhead + 1);
+    [undefined, 2, 5, 13].forEach(paddingStep => {
+      it(`outputs the right resourceId for a paddingStep of ${paddingStep}`, () => {
+        const encryptedData = encryptorV6.encrypt(key, clearData, paddingStep);
+        const buff = encryptorV6.serialize(encryptedData);
+        expect(encryptorV6.extractResourceId(buff)).to.deep.equal(encryptedData.resourceId);
+      });
+    });
+
+    it('computes the exact encrypted size for multiple padding steps', () => {
+      const paddedToFive: Array<[number, number]> = [
+        [0, 5],
+        [2, 5],
+        [4, 5],
+        [5, 10],
+        [6, 10],
+        [9, 10],
+        [10, 15],
+        [14, 15],
+        [39, 40],
+        [40, 45],
+        [41, 45],
+      ];
+
+      paddedToFive.forEach(tuple => {
+        const [clearSize, paddedSize] = tuple;
+        expect(encryptorV6.getEncryptedSize(clearSize, 5)).to.equal(paddedSize + overhead);
+      });
+    });
+
+    it('throws if getEncryptedSize is called with an invalid paddingStep', () => {
+      const clearSize = clearData.length;
+      expect(() => encryptorV6.getEncryptedSize(clearSize, 0)).to.throw;
+      expect(() => encryptorV6.getEncryptedSize(clearSize, 1)).to.throw;
+    });
+
+    it('throws if encrypt is called with an invalid paddingStep', () => {
+      expect(() => encryptorV6.encrypt(key, clearData, 0)).to.throw;
+      expect(() => encryptorV6.encrypt(key, clearData, 1)).to.throw;
+    });
+
+    const emptyClearData = new Uint8Array(0);
+    const smallClearData = utils.fromString('small');
+    const mediumClearData = clearData;
+
+    [emptyClearData, smallClearData, mediumClearData].forEach(clear => {
+      const clearLength = clear.length;
+
+      [2, 3, 7, 13, 19].forEach(step => {
+        it(`can set a padding of ${step} for a ${clearLength} byte(s) buffer`, () => {
+          const encrypted = encryptorV6.serialize(encryptorV6.encrypt(key, clear, step));
+          const paddedLength = encrypted.length - overhead;
+          expect(paddedLength).to.greaterThanOrEqual(step);
+          expect(paddedLength % step).to.equal(0);
+
+          const decrypted = encryptorV6.decrypt(key, encryptorV6.unserialize(encrypted));
+          expect(decrypted).to.deep.equal(clear);
+        });
+      });
+
+      [undefined, Padding.AUTO].forEach(step => {
+        it(`supports auto padding as ${step} for a ${clearLength} byte(s) buffer`, () => {
+          const encrypted = encryptorV6.serialize(encryptorV6.encrypt(key, clear, step));
+          const paddedLength = encrypted.length - overhead;
+          expect(paddedLength).to.greaterThanOrEqual(minimalPadding);
+          expect(paddedLength).to.greaterThanOrEqual(clearLength + 1);
+
+          const decrypted = encryptorV6.decrypt(key, encryptorV6.unserialize(encrypted));
+          expect(decrypted).to.deep.equal(clear);
+        });
+      });
     });
   });
 

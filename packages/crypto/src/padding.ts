@@ -1,6 +1,11 @@
 /* eslint-disable no-bitwise */
-import { DecryptionFailed } from '@tanker/errors';
+import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { concatArrays } from './utils';
+
+export enum Padding {
+  AUTO = 'AUTO',
+  OFF = 'OFF',
+}
 
 export const minimalPadding = 10;
 
@@ -17,10 +22,23 @@ export const padme = (clearSize: number): number => {
   return (clearSize + bitMask) & ~bitMask;
 };
 
-export const getPaddedSize = (clearsize: number) => Math.max(padme(clearsize + 1), minimalPadding);
+const computeNextMultiple = (multipleOf: number, biggerThan: number) => multipleOf * Math.ceil(biggerThan / multipleOf);
 
-export const padClearData = (plainText: Uint8Array): Uint8Array => {
-  const paddedSize = getPaddedSize(plainText.length);
+export const getPaddedSize = (clearSize: number, paddingStep?: number | Padding): number => {
+  const minimalPaddedSize = clearSize + 1;
+  if (paddingStep === undefined || paddingStep === Padding.AUTO) {
+    return Math.max(padme(minimalPaddedSize), minimalPadding);
+  }
+
+  if (paddingStep <= 1 || paddingStep === Padding.OFF) {
+    throw new InternalError('paddingStep should be greater than 1');
+  }
+
+  return computeNextMultiple(paddingStep, minimalPaddedSize);
+};
+
+export const padClearData = (plainText: Uint8Array, paddingStep?: number | Padding): Uint8Array => {
+  const paddedSize = getPaddedSize(plainText.length, paddingStep);
   const paddingArray = new Uint8Array(paddedSize - plainText.length);
   paddingArray[0] = 0x80;
   return concatArrays(plainText, paddingArray);

@@ -17,5 +17,5 @@ import * as encryptionV7 from './EncryptionFormats/v7';
 
 export type { EncryptionFormatReporter } from './EncryptionFormats/types';
 export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7 };
-
+export { Padding } from './padding';
 export type { b64string, safeb64string, Key };

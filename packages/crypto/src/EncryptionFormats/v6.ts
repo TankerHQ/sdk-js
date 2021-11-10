@@ -1,6 +1,6 @@
 import { InvalidArgument, DecryptionFailed } from '@tanker/errors';
 import varint from 'varint';
-import { getPaddedSize, padClearData, removePadding } from '../padding';
+import { Padding, getPaddedSize, padClearData, removePadding } from '../padding';
 
 import * as aead from '../aead';
 import * as tcrypto from '../tcrypto';
@@ -24,7 +24,7 @@ export const overhead = 1 + tcrypto.MAC_SIZE;
 // -1 is the padding byte (0x80)
 export const getClearSize = (encryptedSize: number) => encryptedSize - overhead - 1;
 
-export const getEncryptedSize = (clearSize: number) => getPaddedSize(clearSize) + overhead;
+export const getEncryptedSize = (clearSize: number, paddingStep?: number | Padding) => getPaddedSize(clearSize, paddingStep) + overhead;
 
 export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array(varint.encode(version)), data.encryptedData);
 
@@ -45,9 +45,9 @@ export const unserialize = (buffer: Uint8Array): EncryptionData => {
   return { encryptedData, resourceId, iv };
 };
 
-export const encrypt = (key: Uint8Array, plaintext: Uint8Array): EncryptionData => {
+export const encrypt = (key: Uint8Array, plaintext: Uint8Array, paddingStep?: number | Padding): EncryptionData => {
   const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
-  const paddedData = padClearData(plaintext);
+  const paddedData = padClearData(plaintext, paddingStep);
   const associatedData = new Uint8Array([version]);
   const encryptedData = aead.encryptAEAD(key, iv, paddedData, associatedData);
   const resourceId = aead.extractMac(encryptedData);

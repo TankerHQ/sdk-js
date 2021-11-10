@@ -1,6 +1,6 @@
 import varint from 'varint';
 import type { Key, EncryptionFormatReporter } from '@tanker/crypto';
-import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7, random, tcrypto } from '@tanker/crypto';
+import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7, random, tcrypto, Padding } from '@tanker/crypto';
 
 import { InvalidArgument } from '@tanker/errors';
 
@@ -30,7 +30,7 @@ export function makeResource(): Resource {
   return { key, resourceId };
 }
 
-export const getSimpleEncryption = () => encryptionV6;
+export const getSimpleEncryption = (paddingStep?: number | Padding) => (paddingStep === Padding.OFF ? encryptionV3 : encryptionV6);
 
 export const getSimpleEncryptionWithFixedResourceId = () => encryptionV5;
 

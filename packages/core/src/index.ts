@@ -19,7 +19,6 @@ import {
 import { Tanker, optionsWithDefaults } from './Tanker';
 import { Status, statuses } from './Session/status';
 import { fromBase64, toBase64, prehashPassword } from './utils';
-import { STREAM_THRESHOLD } from './DataProtection/DataProtector';
 
 // export
 export default Tanker;
@@ -62,5 +61,4 @@ export {
   statuses,
   toBase64,
   prehashPassword,
-  STREAM_THRESHOLD,
 };
