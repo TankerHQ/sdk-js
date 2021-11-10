@@ -802,7 +802,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await expect(bobLaptop.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
-      it('registers and verifies two users with the same verificationKey', async () => {
+      it.skip('registers and verifies two users with the same verificationKey', async () => {
         const aliceId = uuid.v4();
         const aliceIdentity = await appHelper.generateIdentity(aliceId);
         const aliceLaptop = args.makeTanker();
