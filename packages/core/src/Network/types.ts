@@ -21,8 +21,8 @@ export type TankerProvisionalIdentityResponse = {
 };
 
 export type VerificationMethodResponse = Array<(
-  { type: 'email'; encrypted_email?: string; }
-  | { type: 'phone_number'; encrypted_phone_number: string; }
+  { type: 'email'; encrypted_email?: string; is_preverified: boolean; }
+  | { type: 'phone_number'; encrypted_phone_number: string; is_preverified: boolean; }
   | { type: 'passphrase'; }
   | { type: 'oidc_id_token'; }
 )>;

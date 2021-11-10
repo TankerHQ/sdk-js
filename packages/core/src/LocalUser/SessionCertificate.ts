@@ -2,6 +2,7 @@ import { InternalError, InvalidArgument } from '@tanker/errors';
 import { generichash, utils, tcrypto, number } from '@tanker/crypto';
 import varint from 'varint';
 import type { VerificationMethod, VerificationWithToken } from './types';
+import { isPreverifiedVerification, isPreverifiedVerificationMethod } from './types';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
 import { NATURE_KIND, preferredNature } from '../Blocks/Nature';
 
@@ -21,7 +22,7 @@ const verificationMethodsFromName = {
   phoneNumber: VerificationMethodTypes.phoneNumber,
 };
 
-const VERIFICATION_METHOD_TYPES_INT : Array<VerificationMethodTypes> = [
+const VERIFICATION_METHOD_TYPES_INT: Array<VerificationMethodTypes> = [
   VerificationMethodTypes.email,
   VerificationMethodTypes.passphrase,
   VerificationMethodTypes.verificationKey,
@@ -93,6 +94,9 @@ export const unserializeSessionCertificate = (payload: Uint8Array): SessionCerti
 ]);
 
 export const makeSessionCertificate = (verification: VerificationWithToken) => {
+  if (isPreverifiedVerification(verification)) {
+    throw new InvalidArgument('cannot make session certificate with preverified verification method type');
+  }
   const verifMethod = verificationToVerificationMethod(verification);
   let verifTarget;
 
@@ -101,6 +105,8 @@ export const makeSessionCertificate = (verification: VerificationWithToken) => {
     verifTarget = generichash(utils.fromString(verifMethod.email!));
   } else if (verifMethod.type === 'phoneNumber') {
     verifTarget = generichash(utils.fromString(verifMethod.phoneNumber));
+  } else if (isPreverifiedVerificationMethod(verifMethod)) {
+    throw new InvalidArgument('cannot make session certificate with preverified verification method type');
   } else {
     verifTarget = new Uint8Array(tcrypto.HASH_SIZE);
   }

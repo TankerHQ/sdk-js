@@ -20,7 +20,7 @@ import type {
   VerificationWithToken,
   PhoneNumberVerification,
 } from './LocalUser/types';
-import { assertVerification, assertVerificationOptions } from './LocalUser/types';
+import { assertVerification, assertVerificationOptions, isPreverifiedVerification } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
 
 import { statuses, assertStatus, statusDefs } from './Session/status';
@@ -256,6 +256,10 @@ export class Tanker extends EventEmitter {
       verifWithToken.withToken = { nonce: randomBase64Token() };
     }
 
+    if ('preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification) {
+      throw new InvalidArgument('verification', 'cannot register identity with preverified methods');
+    }
+
     await this.session.createUser(verifWithToken);
 
     if (withSessionToken) {
@@ -278,6 +282,10 @@ export class Tanker extends EventEmitter {
       verifWithToken.withToken = { nonce: randomBase64Token() };
     } else {
       assertStatus(this.status, statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
+    }
+
+    if ('preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification) {
+      throw new InvalidArgument('verification', 'cannot verify identity with preverified methods');
     }
 
     if (this.status === statuses.IDENTITY_VERIFICATION_NEEDED) {
@@ -305,6 +313,9 @@ export class Tanker extends EventEmitter {
     const withSessionToken = options && options.withSessionToken;
 
     if (withSessionToken) {
+      if (isPreverifiedVerification(verifWithToken)) {
+        throw new InvalidArgument('verification', 'cannot set verification method with both preverified methods and session token');
+      }
       verifWithToken.withToken = { nonce: randomBase64Token() };
     }
 

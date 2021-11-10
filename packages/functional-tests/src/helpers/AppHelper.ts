@@ -80,21 +80,25 @@ export class AppHelper {
     await this._update({ session_certificates_enabled: enabled });
   }
 
+  async setPreverifiedMethodEnabled() {
+    await this._update({ preverified_verification_enabled: true });
+  }
+
   generateIdentity(userId?: string): Promise<b64string> {
     const id = userId || uuid.v4();
     return createIdentity(utils.toBase64(this.appId), utils.toBase64(this.appSecret), id);
   }
 
-  async generateEmailProvisionalIdentity(): Promise<AppProvisionalUser> {
-    const email = `${uuid.v4()}@tanker.io`;
+  async generateEmailProvisionalIdentity(emailParam?: string): Promise<AppProvisionalUser> {
+    const email = emailParam || `${uuid.v4()}@tanker.io`;
     const identity = await createProvisionalIdentity(utils.toBase64(this.appId), 'email', email);
     const publicIdentity = await getPublicIdentity(identity);
     return { target: 'email', value: email, identity, publicIdentity };
   }
 
-  async generatePhoneNumberProvisionalIdentity(): Promise<AppProvisionalUser> {
+  async generatePhoneNumberProvisionalIdentity(phoneNumberParam?: string): Promise<AppProvisionalUser> {
     const reservedPhoneNumberPrefix = '+3319900'; // Reserved per https://www.arcep.fr/uploads/tx_gsavis/18-0881.pdf 2.5.12
-    const phoneNumber = reservedPhoneNumberPrefix + (Math.random() + 1).toString().substr(2, 6);
+    const phoneNumber = phoneNumberParam || reservedPhoneNumberPrefix + (Math.random() + 1).toString().substr(2, 6);
     const identity = await createProvisionalIdentity(utils.toBase64(this.appId), 'phone_number', phoneNumber);
     const publicIdentity = await getPublicIdentity(identity);
     return { target: 'phone_number', value: phoneNumber, identity, publicIdentity };
