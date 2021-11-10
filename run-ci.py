@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, TypedDict, cast
+from typing import Any, Callable, List, TypedDict
 import argparse
 import os
 from pathlib import Path
@@ -6,7 +6,6 @@ import re
 import shutil
 import sys
 import time
-import json
 
 import cli_ui as ui
 import psutil
