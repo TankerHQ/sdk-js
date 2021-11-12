@@ -350,14 +350,14 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         const email = 'john.doe@tanker.io';
 
-        await expect(bobLaptop.setVerificationMethod({ preverifiedEmail: email })).to.be.rejectedWith(errors.InternalError);
+        await expect(bobLaptop.setVerificationMethod({ preverifiedEmail: email })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
       it('fails to setVerificationMethod with preverified phone number if preverified verification flag is disabled', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const phoneNumber = '+33639989999';
 
-        await expect(bobLaptop.setVerificationMethod({ preverifiedPhoneNumber: phoneNumber })).to.be.rejectedWith(errors.InternalError);
+        await expect(bobLaptop.setVerificationMethod({ preverifiedPhoneNumber: phoneNumber })).to.be.rejectedWith(errors.PreconditionFailed);
       });
     });
 

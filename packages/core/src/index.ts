@@ -1,6 +1,7 @@
 // import
 import {
   DecryptionFailed,
+  DeviceRevoked,
   ExpiredVerification,
   GroupTooBig,
   IdentityAlreadyAttached,
@@ -12,7 +13,6 @@ import {
   PreconditionFailed,
   TankerError,
   TooManyAttempts,
-  DeviceRevoked,
   UpgradeRequired,
 } from '@tanker/errors';
 

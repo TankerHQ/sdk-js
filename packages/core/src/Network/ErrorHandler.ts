@@ -5,22 +5,23 @@ const apiCodeErrorMap: Record<string, Class<TankerError>> = {
   blocked: PreconditionFailed,
   conflict: Conflict,
   device_revoked: DeviceRevoked,
+  empty_user_group: InvalidArgument,
+  feature_not_enabled: PreconditionFailed,
   group_too_big: GroupTooBig,
   invalid_delegation_signature: InvalidVerification,
   invalid_oidc_id_token: InvalidVerification,
   invalid_passphrase: InvalidVerification,
   invalid_token: PreconditionFailed, // invalid or expired access token
   invalid_verification_code: InvalidVerification,
+  missing_user_group_members: InvalidArgument,
+  not_a_user_group_member: InvalidArgument,
   provisional_identity_already_attached: IdentityAlreadyAttached,
   too_many_attempts: TooManyAttempts,
+  upgrade_required: UpgradeRequired,
   verification_code_expired: ExpiredVerification,
   verification_code_not_found: InvalidVerification,
-  verification_method_not_set: PreconditionFailed,
   verification_key_not_found: PreconditionFailed,
-  upgrade_required: UpgradeRequired,
-  not_a_user_group_member: InvalidArgument,
-  empty_user_group: InvalidArgument,
-  missing_user_group_members: InvalidArgument,
+  verification_method_not_set: PreconditionFailed,
 };
 
 export const genericErrorHandler = (apiMethod: string, apiRoute: string, error: Record<string, any>) => {

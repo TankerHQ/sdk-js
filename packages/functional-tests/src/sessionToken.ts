@@ -183,7 +183,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
         const verificationCode = await appHelper.getEmailVerificationCode(email);
         await expect(
           bobLaptop.setVerificationMethod({ email, verificationCode }, { withSessionToken: true }),
-        ).to.be.rejectedWith(errors.InternalError, 'Session certificate is disabled');
+        ).to.be.rejectedWith(errors.PreconditionFailed, 'Session certificate');
       });
 
       it('cannot use verifyIdentity to get a session token when Ready', async () => {
@@ -191,7 +191,7 @@ export const generateSessionTokenTests = (args: TestArgs) => {
         await bobLaptop.registerIdentity({ passphrase });
         await expect(
           bobLaptop.verifyIdentity({ passphrase }, { withSessionToken: true }),
-        ).to.be.rejectedWith(errors.InternalError, 'Session certificate is disabled');
+        ).to.be.rejectedWith(errors.PreconditionFailed, 'Session certificate');
       });
 
       generateDefault2FATests();
