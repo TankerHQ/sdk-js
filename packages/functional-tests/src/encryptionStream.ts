@@ -169,6 +169,17 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
         const data = await pipeStreams({ resolveEvent: 'data', streams: [decryptor, merger] });
         expect(data).to.deep.equal(smallClearData);
       });
+
+      it('throws InvalidArgument when the resource is not shared', async () => {
+        const protectedData = await aliceLaptop.encryptData(smallClearData, { type: Uint8Array });
+        const decryptor = await bobLaptop.createDecryptionStream();
+        const merger = new MergerStream({ type: Uint8Array });
+
+        decryptor.write(protectedData);
+        decryptor.end();
+
+        await expect(pipeStreams({ resolveEvent: 'data', streams: [decryptor, merger] })).to.be.rejectedWith(errors.InvalidArgument);
+      });
     });
 
     describe('EncryptionStream compatibility', () => {
