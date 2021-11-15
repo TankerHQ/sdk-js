@@ -166,21 +166,10 @@ check/linux/nightly:
     - !reference [.rules/mr/manual, rules]
     - !reference [.rules/web/auto, rules]
 
-.rules/bench/nightly:
-  rules:
-    - !reference [.rules/nightly, rules]
-
 bench/linux:
   extends:
     - .bench/common
     - .rules/bench
-  variables:
-    UPSTREAM_JOB_TARGET: linux
-
-bench/linux/nightly:
-  extends:
-    - .bench/common
-    - .rules/bench/nightly
   variables:
     UPSTREAM_JOB_TARGET: linux
 
@@ -191,24 +180,10 @@ bench/macos:
   variables:
     UPSTREAM_JOB_TARGET: macos
 
-bench/macos/nightly:
-  extends:
-    - .bench/common
-    - .rules/bench/nightly
-  variables:
-    UPSTREAM_JOB_TARGET: macos
-
 bench/windows:
   extends:
     - .bench/common
     - .rules/bench
-  variables:
-    UPSTREAM_JOB_TARGET: windows
-
-bench/windows/nightly:
-  extends:
-    - .bench/common
-    - .rules/bench/nightly
   variables:
     UPSTREAM_JOB_TARGET: windows
 
