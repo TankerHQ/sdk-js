@@ -84,6 +84,8 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
     output: {
       filename: mode === 'development' ? 'bundle.js' : 'bundle-[chunkhash].js',
       publicPath: '/',
+      // the default function (md4) is not supported by OpenSSL by default starting in Node 17
+      hashFunction: 'xxhash64',
     },
 
     module: {
