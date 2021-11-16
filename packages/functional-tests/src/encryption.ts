@@ -2,7 +2,7 @@ import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, OutputOptions } from '@tanker/core';
 import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
 import { Data, getConstructorName, getDataLength } from '@tanker/types';
-import { getPublicIdentity } from '@tanker/identity';
+import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 
 import type { TestArgs, AppHelper, AppProvisionalUser, TestResourceSize } from './helpers';
@@ -223,6 +223,22 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
         await expect(bobLaptop.share([resourceId], { shareWithUsers: [evePublicIdentity] }))
           .to.be.rejectedWith(errors.InvalidArgument, evePublicIdentity);
+      });
+
+      it('throws when sharing with a provisional identity from another trustchain', async () => {
+        const otherTrustchain = {
+          id: 'gOhJDFYKK/GNScGOoaZ1vLAwxkuqZCY36IwEo4jcnDE=',
+          sk: 'D9jiQt7nB2IlRjilNwUVVTPsYkfbCX0PelMzx5AAXIaVokZ71iUduWCvJ9Akzojca6lvV8u1rnDVEdh7yO6JAQ==',
+        };
+
+        const invalidProvisionalIdentity = await createProvisionalIdentity(otherTrustchain.id, 'email', 'doe@john.com');
+        const invalidPublicIdentity = await getPublicIdentity(invalidProvisionalIdentity);
+
+        const edata = await bobLaptop.encrypt(clearText);
+        const resourceId = await bobLaptop.getResourceId(edata);
+
+        await expect(bobLaptop.share([resourceId], { shareWithUsers: [invalidPublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'Invalid appId for identities');
       });
 
       it('is a noop to share an empty resource array', async () => {

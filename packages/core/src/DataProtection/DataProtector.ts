@@ -6,7 +6,7 @@ import { castData, getDataLength } from '@tanker/types';
 
 import type { Data } from '@tanker/types';
 
-import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities } from '../Identity';
+import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, assertTrustchainId } from '../Identity';
 import type { PublicIdentity, PublicProvisionalUser } from '../Identity';
 import type { Client } from '../Network/Client';
 import type LocalUser from '../LocalUser/LocalUser';
@@ -141,6 +141,8 @@ export class DataProtector {
     const groupIds = (encryptionOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
     const groupsKeys = await this._groupManager.getGroupsPublicEncryptionKeys(groupIds);
     const deserializedIdentities = (encryptionOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
+    assertTrustchainId(deserializedIdentities, this._localUser.trustchainId);
+
     if (encryptionOptions.shareWithSelf === undefined)
       throw new InternalError('Assertion error: shareWithSelf must be defined here');
     const deserializedIdentitiesWithSelf = this._handleShareWithSelf(deserializedIdentities, encryptionOptions.shareWithSelf);
