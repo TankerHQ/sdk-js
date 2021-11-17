@@ -174,7 +174,6 @@ check/linux/nightly:
 .rules/bench:
   rules:
     - !reference [.rules/mr/manual, rules]
-    - !reference [.rules/web/auto, rules]
 
 bench/linux:
   extends:
