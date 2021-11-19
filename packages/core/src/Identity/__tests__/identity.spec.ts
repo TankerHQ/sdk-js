@@ -9,7 +9,7 @@ import {
 import {
   _deserializePermanentIdentity, _deserializeProvisionalIdentity,
   _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities,
-  _serializeIdentity,
+  _serializeIdentity, assertTrustchainId,
 } from '../identity';
 import type {
   SecretPermanentIdentity, PublicIdentity,
@@ -148,6 +148,62 @@ describe('Identity', () => {
     it('throws when given a secret provisional identity', async () => {
       // @ts-expect-error testing edge case with permanentIdentity
       expect(() => _splitProvisionalAndPermanentPublicIdentities([publicIdentity, provisionalIdentity])).to.throw(InvalidArgument);
+    });
+  });
+
+  describe('assertTrustchainId', () => {
+    const trustchain2 = {
+      id: 'gOhJDFYKK/GNScGOoaZ1vLAwxkuqZCY36IwEo4jcnDE=',
+      sk: 'D9jiQt7nB2IlRjilNwUVVTPsYkfbCX0PelMzx5AAXIaVokZ71iUduWCvJ9Akzojca6lvV8u1rnDVEdh7yO6JAQ==',
+    };
+
+    const trustchainIdUint8Array = utils.fromBase64(trustchain.id);
+
+    let validPublicIdentity: PublicIdentity;
+    let invalidPublicIdentity: PublicIdentity;
+    let validPublicProvisionalIdentity: PublicIdentity;
+    let invalidPublicProvidionalIdentity: PublicIdentity;
+
+    before(async () => {
+      let b64Identity = await createIdentity(trustchain.id, trustchain.sk, userId);
+      let b64PublicIdentity = await getPublicIdentity(b64Identity);
+      validPublicIdentity = _deserializePublicIdentity(b64PublicIdentity);
+
+      b64Identity = await createIdentity(trustchain2.id, trustchain2.sk, userId);
+      b64PublicIdentity = await getPublicIdentity(b64Identity);
+      invalidPublicIdentity = _deserializePublicIdentity(b64PublicIdentity);
+
+      b64Identity = await createProvisionalIdentity(trustchain.id, 'email', userEmail);
+      b64PublicIdentity = await getPublicIdentity(b64Identity);
+      validPublicProvisionalIdentity = _deserializePublicIdentity(b64PublicIdentity);
+
+      b64Identity = await createProvisionalIdentity(trustchain2.id, 'email', userEmail);
+      b64PublicIdentity = await getPublicIdentity(b64Identity);
+      invalidPublicProvidionalIdentity = _deserializePublicIdentity(b64PublicIdentity);
+    });
+
+    it('does not throw with an empty array', async () => {
+      expect(() => assertTrustchainId([], trustchainIdUint8Array)).not.to.throw;
+    });
+
+    it('does not throw with valid public identities', async () => {
+      expect(() => assertTrustchainId([validPublicIdentity], trustchainIdUint8Array)).not.to.throw;
+    });
+
+    it('does not throw with valid public provisional identities', async () => {
+      expect(() => assertTrustchainId([validPublicProvisionalIdentity], trustchainIdUint8Array)).not.to.throw;
+    });
+
+    it('throws with invalid identities', async () => {
+      expect(() => assertTrustchainId([invalidPublicIdentity], trustchainIdUint8Array)).to.throw(InvalidArgument);
+    });
+
+    it('throws with invalid provisional identities', async () => {
+      expect(() => assertTrustchainId([invalidPublicProvidionalIdentity], trustchainIdUint8Array)).to.throw(InvalidArgument);
+    });
+
+    it('throws with a mix of valid and invalid identities', async () => {
+      expect(() => assertTrustchainId([validPublicIdentity, validPublicProvisionalIdentity, invalidPublicIdentity, invalidPublicProvidionalIdentity], trustchainIdUint8Array)).to.throw(InvalidArgument);
     });
   });
 });

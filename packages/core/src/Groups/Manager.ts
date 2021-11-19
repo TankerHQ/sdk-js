@@ -2,7 +2,7 @@ import type { b64string } from '@tanker/crypto';
 import { tcrypto, utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 
-import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, _serializeIdentity } from '../Identity';
+import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, _serializeIdentity, assertTrustchainId } from '../Identity';
 import type { PublicPermanentIdentity, PublicProvisionalIdentity } from '../Identity';
 import type UserManager from '../Users/Manager';
 import type LocalUser from '../LocalUser/LocalUser';
@@ -70,6 +70,7 @@ export default class GroupManager {
     assertPublicIdentities(publicIdentities);
 
     const deserializedIdentities = publicIdentities.map(i => _deserializePublicIdentity(i));
+    assertTrustchainId(deserializedIdentities, this._localUser.trustchainId);
 
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
     const users = await this._UserManager.getUsers(permanentIdentities, { isLight: true });
@@ -116,8 +117,11 @@ export default class GroupManager {
     const { encryptionKeyPairs, lastGroupBlock, signatureKeyPairs } = existingGroup;
 
     const deserializedIdentitiesToAdd = publicIdentitiesToAdd.map(i => _deserializePublicIdentity(i));
+    assertTrustchainId(deserializedIdentitiesToAdd, this._localUser.trustchainId);
     const { permanentIdentities: permanentIdentitiesToAdd, provisionalIdentities: provisionalIdentitiesToAdd } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesToAdd);
+
     const deserializedIdentitiesToRemove = publicIdentitiesToRemove.map(i => _deserializePublicIdentity(i));
+    assertTrustchainId(deserializedIdentitiesToRemove, this._localUser.trustchainId);
     const { permanentIdentities: permanentIdentitiesToRemove, provisionalIdentities: provisionalIdentitiesToRemove } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentitiesToRemove);
 
     checkAddedAndRemoved(permanentIdentitiesToAdd, permanentIdentitiesToRemove, provisionalIdentitiesToAdd, provisionalIdentitiesToRemove);

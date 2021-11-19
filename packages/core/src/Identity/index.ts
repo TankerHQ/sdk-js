@@ -13,6 +13,7 @@ export {
   _deserializePublicIdentity,
   _splitProvisionalAndPermanentPublicIdentities,
   _serializeIdentity,
+  assertTrustchainId,
   isProvisionalIdentity,
   identityTargetToVerificationMethodType,
 } from './identity';

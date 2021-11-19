@@ -1,7 +1,7 @@
 import { errors } from '@tanker/core';
 import type { Tanker, b64string } from '@tanker/core';
-import { getPublicIdentity } from '@tanker/identity';
-import { expect } from '@tanker/test-utils';
+import { getPublicIdentity, createIdentity } from '@tanker/identity';
+import { expect, uuid } from '@tanker/test-utils';
 
 import type { AppHelper, AppProvisionalUser, TestArgs } from './helpers';
 import { expectDecrypt } from './helpers';
@@ -95,6 +95,19 @@ export const generateGroupsTests = (args: TestArgs) => {
         .to.be.rejectedWith(errors.InvalidArgument);
     });
 
+    it('throws on groupCreation with identities from another trustchain', async () => {
+      const userId = uuid.v4();
+      const otherTrustchain = {
+        id: 'gOhJDFYKK/GNScGOoaZ1vLAwxkuqZCY36IwEo4jcnDE=',
+        sk: 'D9jiQt7nB2IlRjilNwUVVTPsYkfbCX0PelMzx5AAXIaVokZ71iUduWCvJ9Akzojca6lvV8u1rnDVEdh7yO6JAQ==',
+      };
+
+      const wrongIdentity = await createIdentity(otherTrustchain.id, otherTrustchain.sk, userId);
+      const wrongPublicIdentity = await getPublicIdentity(wrongIdentity);
+      await expect(aliceLaptop.createGroup([wrongPublicIdentity]))
+        .to.be.rejectedWith(errors.InvalidArgument, 'Invalid appId for identities');
+    });
+
     it('should not keep the key if we are not part of the group', async () => {
       const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
 
@@ -128,6 +141,21 @@ export const generateGroupsTests = (args: TestArgs) => {
       await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, charliePublicIdentity] });
 
       await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
+    });
+
+    it('throws on updateGroupMembers with identities from another trustchain', async () => {
+      const userId = uuid.v4();
+      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
+      const otherTrustchain = {
+        id: 'gOhJDFYKK/GNScGOoaZ1vLAwxkuqZCY36IwEo4jcnDE=',
+        sk: 'D9jiQt7nB2IlRjilNwUVVTPsYkfbCX0PelMzx5AAXIaVokZ71iUduWCvJ9Akzojca6lvV8u1rnDVEdh7yO6JAQ==',
+      };
+
+      const wrongIdentity = await createIdentity(otherTrustchain.id, otherTrustchain.sk, userId);
+      const wrongPublicIdentity = await getPublicIdentity(wrongIdentity);
+
+      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [wrongPublicIdentity] }))
+        .to.be.rejectedWith(errors.InvalidArgument, 'Invalid appId for identities');
     });
 
     it('should remove a member from a group', async () => {

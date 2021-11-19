@@ -179,6 +179,15 @@ export function _deserializePublicIdentity(identity: b64string): PublicIdentity 
   }
 }
 
+export function assertTrustchainId(identities: Array<PublicIdentity>, trustchainId: Uint8Array) { // eslint-disable-line no-underscore-dangle
+  const trustchainIdBase64 = utils.toBase64(trustchainId);
+  const invalidIdentities = identities.filter(i => i.trustchain_id !== trustchainIdBase64);
+  if (invalidIdentities.length > 0) {
+    // @ts-expect-error this field is hidden
+    throw new InvalidArgument(`Invalid appId for identities "${invalidIdentities.map(i => i.serializedIdentity).join('", "')}"`);
+  }
+}
+
 export function _splitProvisionalAndPermanentPublicIdentities(identities: Array<PublicIdentity>) { // eslint-disable-line no-underscore-dangle
   const permanentIdentities: Array<PublicPermanentIdentity> = [];
   const provisionalIdentities: Array<PublicProvisionalIdentity> = [];
