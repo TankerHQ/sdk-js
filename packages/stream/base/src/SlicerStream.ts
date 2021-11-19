@@ -1,5 +1,4 @@
 import { Readable } from 'readable-stream';
-import type { Writable, Stream } from 'readable-stream';
 
 // WARNING: don't import the File ponyfill here! We want to test against the real
 //          File constructor, for both real and ponyfilled files to be accepted.
@@ -10,8 +9,7 @@ import { assertDataType } from '@tanker/types';
 type ExternalSource = ArrayBuffer | Buffer | Uint8Array | Blob | File;
 type InternalSource = Uint8Array | Blob | File;
 
-// pipe() is defined in Stream and not Readable according to @types/readable-stream
-export default class SlicerStream extends Readable implements Stream {
+export default class SlicerStream extends Readable {
   _mode!: 'binary' | 'file';
   _source!: InternalSource;
   _outputSize: number = 5 * 1024 * 1024; // 5MB
@@ -70,11 +68,6 @@ export default class SlicerStream extends Readable implements Stream {
       this._readingState.readInProgress = false;
     }
   };
-
-  // Readable.pipe() is not defined in @types/readable-stream. They use another interface
-  // which does not follow the spec from https://nodejs.org/docs/latest-v16.x/api/stream.html
-  // @ts-expect-error
-  public pipe = <T extends Writable>(destination: T, options?: { end: boolean }): T => super.pipe(destination, options);
 
   /**
    * Binary mode

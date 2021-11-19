@@ -1,9 +1,8 @@
 import type { DestroyCallback } from '@tanker/stream-base';
 import { Transform, Readable } from '@tanker/stream-base';
-import type { Stream } from 'readable-stream';
 import type { ResourceMetadata } from '@tanker/types';
 
-export class DownloadStream extends Readable implements Stream {
+export class DownloadStream extends Readable {
   _resourceMetadata: ResourceMetadata;
   _headStream: Readable;
   _tailStream: Transform;
@@ -47,9 +46,4 @@ export class DownloadStream extends Readable implements Stream {
   override _read() {
     this._tailStream.resume();
   }
-
-  // Readable.pipe() is not defined in @types/readable-stream. They use another interface
-  // which does not follow the spec from https://nodejs.org/docs/latest-v16.x/api/stream.html
-  // @ts-expect-error
-  public pipe = <T extends Writable>(destination: T, options?: { end: boolean }): T => super.pipe(destination, options);
 }
