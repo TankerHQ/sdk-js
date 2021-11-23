@@ -2,7 +2,7 @@ import type { b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 import { MergerStream, ResizerStream, SlicerStream } from '@tanker/stream-base';
-import type { Readable, Transform, Writable } from '@tanker/stream-base';
+import type { Readable, Transform, Writable, IWritable } from '@tanker/stream-base';
 import streamCloudStorage from '@tanker/stream-cloud-storage';
 import { getDataLength } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
@@ -17,14 +17,10 @@ import { UploadStream } from './UploadStream';
 import { DownloadStream } from './DownloadStream';
 
 const pipeStreams = <T>(
-  { streams, resolveEvent }: { streams: Array<Readable | Writable>; resolveEvent: string; },
+  { streams, resolveEvent }: { streams: Array<Readable | IWritable>; resolveEvent: string; },
 ) => new Promise((resolve: (value: T) => void, reject: (reason?: any) => void) => {
     streams.forEach(stream => stream.on('error', reject));
-    // @types/readable-stream is ill-typed. The `pipe()` is part of the interface of Readable
-    // see https://nodejs.org/docs/latest-v16.x/api/stream.html#stream_readable_pipe_destination_options
-    // We also know that the first stream is a Readable, the last a Writable and every stream in between a Transform
-    // @ts-expect-error
-    streams.reduce((leftStream, rightStream) => leftStream.pipe(rightStream)).on(resolveEvent, resolve);
+    streams.reduce((leftStream, rightStream) => (leftStream as Readable).pipe(rightStream as IWritable)).on(resolveEvent, resolve);
   });
 
 // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)

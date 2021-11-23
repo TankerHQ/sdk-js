@@ -26,12 +26,12 @@
     "@tanker/errors": "0.0.1",
     "@tanker/file-reader": "0.0.1",
     "@tanker/types": "0.0.1",
+    "@types/readable-stream": "2.3.12",
     "readable-stream": "^3.6.0",
     "tslib": "^2.3.1"
   },
   "devDependencies": {
     "@tanker/file-ponyfill": "0.0.1",
-    "@tanker/test-utils": "0.0.1",
-    "@types/readable-stream": "^2.3.11"
+    "@tanker/test-utils": "0.0.1"
   }
 }

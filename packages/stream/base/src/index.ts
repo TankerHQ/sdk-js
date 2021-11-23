@@ -1,4 +1,5 @@
 export { Duplex, Readable, Transform, Writable } from 'readable-stream';
+export type { _IWritable as IWritable } from 'readable-stream';
 
 export { default as MergerStream } from './MergerStream';
 export { default as ResizerStream } from './ResizerStream';

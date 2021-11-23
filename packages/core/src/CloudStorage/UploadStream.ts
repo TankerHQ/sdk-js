@@ -28,7 +28,7 @@ export class UploadStream extends Writable {
 
     this._tailStream = this._streams.reduce(
       (leftStream, rightStream) => leftStream.pipe(rightStream),
-    );
+    ) as Writable;
 
     this._tailStreamFinishPromise = new Promise(
       (resolve, reject) => {
