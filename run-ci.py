@@ -1,5 +1,6 @@
 from typing import Any, Callable, List, TypedDict
 import argparse
+import json
 import os
 from pathlib import Path
 import re
@@ -268,11 +269,22 @@ def deploy_sdk(*, version: str) -> None:
             publish_npm_package(package_name, version)
 
 
+def patch_dexie_resolution(*, test_dir: Path) -> None:
+    # Freeze dexie version until https://github.com/dfahlander/Dexie.js/issues/1439 is fixed
+    package = test_dir / "package.json"
+    with open(package) as package_file:
+        data = json.load(package_file)
+        data["resolutions"] = {"dexie": "3.0.3"}
+    with open(package, "w") as package_file:
+        json.dump(data, package_file)
+
+
 def test_deploy(*, version: str) -> None:
     test_dir = Path("test")
     index_file = test_dir / "index.js"
     test_dir.mkdir()
     tankerci.js.run_yarn("init", "--yes", cwd=test_dir)
+    patch_dexie_resolution(test_dir=test_dir)
     tankerci.js.run_yarn("add", f"@tanker/client-browser@{version}", cwd=test_dir)
     index_file.write_text('require("@tanker/client-browser");')
     tankerci.run("node", "index.js", cwd=test_dir)
