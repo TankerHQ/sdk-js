@@ -274,6 +274,8 @@ def test_deploy(*, version: str) -> None:
     test_dir.mkdir()
     tankerci.js.run_yarn("init", "--yes", cwd=test_dir)
     tankerci.js.run_yarn("add", f"@tanker/client-browser@{version}", cwd=test_dir)
+    # freeze dexie version until https://github.com/dfahlander/Dexie.js/issues/1439 is fixed
+    tankerci.js.run_yarn("add", "dexie@3.0.3", cwd=test_dir)
     index_file.write_text('require("@tanker/client-browser");')
     tankerci.run("node", "index.js", cwd=test_dir)
 
