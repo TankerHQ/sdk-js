@@ -60,9 +60,9 @@ check/linux/node:
   extends:
     - .check/linux/node-base
   rules:
-    - !reference [.rules/push-master, rules]
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
+    - !reference [.rules/push-master-or-feat, rules]
     - !reference [.rules/nightly, rules]
   variables:
     NODE_VERSION: 16
@@ -197,9 +197,10 @@ bench/windows:
     UPSTREAM_JOB_TARGET: windows
 
 pages:
-  extends: .rules/push-master-or-feat
+  extends: 
+    - .rules/push-master-or-feat
   stage: deploy
-  dependencies:
+  needs:
     - check/linux/node
   script:
     - mv lcov-report/ public/
