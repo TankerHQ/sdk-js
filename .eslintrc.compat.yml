@@ -22,3 +22,4 @@ settings:
     - "TextDecoder" # From libsodium: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
     - "document.currentScript" # Webpack boilerplate: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
     - "navigator.hardwareConcurrency" # From libsodium: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
+    - "navigator.userAgentData" # From dexie: feature check (seen: `umd/tanker-client-browser.min.js`)
