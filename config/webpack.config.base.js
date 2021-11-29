@@ -158,6 +158,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
       '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
       '@tanker/filekit': path.resolve(__dirname, '../packages/filekit/src/index.ts'),
       '@tanker/functional-tests': path.resolve(__dirname, '../packages/functional-tests/src/index.ts'),
+      dexie: path.resolve(__dirname, '../node_modules/dexie/dist/dexie.js'),
     },
     extensions,
   };
