@@ -11,7 +11,8 @@ tankerci = { version = ">= 2021.9.3584", source = "gitlab" }
 [tool.poetry.dev-dependencies]
 flake8 = "4.0.1"
 mypy = "0.910"
-black = "21.9b0"
+black = "21.11b1"
+isort = "5.10.1"
 
 [[tool.poetry.source]]
 name = "gitlab"

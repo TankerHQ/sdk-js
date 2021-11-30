@@ -28,6 +28,7 @@ check/lint:
     - poetry run black --check run-ci.py
     - poetry run flake8 run-ci.py
     - poetry run mypy
+    - poetry run isort --profile black --check --diff run-ci.py
     - poetry run python run-ci.py lint
   tags:
     - linux

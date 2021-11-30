@@ -12,14 +12,9 @@ dev = ["coverage", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.int
 docs = ["sphinx", "zope.interface"]
 tests = ["coverage", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "zope.interface"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "black"
-version = "21.9b0"
+version = "21.11b1"
 description = "The uncompromising code formatter."
 category = "dev"
 optional = false
@@ -30,9 +25,9 @@ click = ">=7.1.2"
 mypy-extensions = ">=0.4.3"
 pathspec = ">=0.9.0,<1"
 platformdirs = ">=2"
-regex = ">=2020.1.8"
+regex = ">=2021.4.4"
 tomli = ">=0.2.6,<2.0.0"
-typed-ast = {version = ">=1.4.2", markers = "python_version < \"3.8\""}
+typed-ast = {version = ">=1.4.2", markers = "python_version < \"3.8\" and implementation_name == \"cpython\""}
 typing-extensions = [
     {version = ">=3.10.0.0", markers = "python_version < \"3.10\""},
     {version = "!=3.10.0.1", markers = "python_version >= \"3.10\""},
@@ -40,15 +35,10 @@ typing-extensions = [
 
 [package.extras]
 colorama = ["colorama (>=0.4.3)"]
-d = ["aiohttp (>=3.6.0)", "aiohttp-cors (>=0.4.0)"]
+d = ["aiohttp (>=3.7.4)"]
 jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
-python2 = ["typed-ast (>=1.4.2)"]
+python2 = ["typed-ast (>=1.4.3)"]
 uvloop = ["uvloop (>=0.15.2)"]
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "bottle"
@@ -58,11 +48,6 @@ category = "main"
 optional = false
 python-versions = "*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "certifi"
 version = "2021.10.8"
@@ -71,14 +56,9 @@ category = "main"
 optional = false
 python-versions = "*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "charset-normalizer"
-version = "2.0.7"
+version = "2.0.8"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 category = "main"
 optional = false
@@ -86,11 +66,6 @@ python-versions = ">=3.5.0"
 
 [package.extras]
 unicode_backport = ["unicodedata2"]
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "cli-ui"
@@ -105,11 +80,6 @@ colorama = ">=0.4.1,<0.5.0"
 tabulate = ">=0.8.3,<0.9.0"
 unidecode = ">=1.0.23,<2.0.0"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "click"
 version = "8.0.3"
@@ -122,11 +92,6 @@ python-versions = ">=3.6"
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "colorama"
 version = "0.4.4"
@@ -134,11 +99,6 @@ description = "Cross-platform colored terminal text."
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "conan"
@@ -170,11 +130,6 @@ urllib3 = ">=1.26.6,<1.27"
 dev = ["pytest-xdist", "parameterized (>=0.6.3)", "mock (>=1.3.0,<1.4.0)", "WebTest (>=2.0.18,<2.1.0)", "bottle", "pytest (>=4.6.11)", "pytest (>=6.1.1,<7.0.0)"]
 test = ["pytest-xdist", "parameterized (>=0.6.3)", "mock (>=1.3.0,<1.4.0)", "WebTest (>=2.0.18,<2.1.0)", "bottle", "pytest (>=4.6.11)", "pytest (>=6.1.1,<7.0.0)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "contextlib2"
 version = "21.6.0"
@@ -182,11 +137,6 @@ description = "Backports and enhancements for the contextlib module"
 category = "main"
 optional = false
 python-versions = ">=3.6"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "distro"
@@ -196,11 +146,6 @@ category = "main"
 optional = false
 python-versions = "*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "docopt"
 version = "0.6.2"
@@ -208,11 +153,6 @@ description = "Pythonic argument parser, that will make you smile"
 category = "main"
 optional = false
 python-versions = "*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "fasteners"
@@ -224,11 +164,6 @@ python-versions = "*"
 
 [package.dependencies]
 six = "*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "flake8"
@@ -244,11 +179,6 @@ mccabe = ">=0.6.0,<0.7.0"
 pycodestyle = ">=2.8.0,<2.9.0"
 pyflakes = ">=2.4.0,<2.5.0"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "idna"
 version = "3.3"
@@ -256,11 +186,6 @@ description = "Internationalized Domain Names in Applications (IDNA)"
 category = "main"
 optional = false
 python-versions = ">=3.5"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "importlib-metadata"
@@ -278,10 +203,19 @@ zipp = ">=0.5"
 docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "packaging", "pep517", "pyfakefs", "flufl.flake8", "pytest-black (>=0.3.7)", "pytest-mypy", "importlib-resources (>=1.3)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
+[[package]]
+name = "isort"
+version = "5.10.1"
+description = "A Python utility / library to sort Python imports."
+category = "dev"
+optional = false
+python-versions = ">=3.6.1,<4.0"
+
+[package.extras]
+pipfile_deprecated_finder = ["pipreqs", "requirementslib"]
+requirements_deprecated_finder = ["pipreqs", "pip-api"]
+colors = ["colorama (>=0.4.3,<0.5.0)"]
+plugins = ["setuptools"]
 
 [[package]]
 name = "jinja2"
@@ -297,11 +231,6 @@ MarkupSafe = ">=0.23"
 [package.extras]
 i18n = ["Babel (>=0.8)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "markupsafe"
 version = "2.0.1"
@@ -310,11 +239,6 @@ category = "main"
 optional = false
 python-versions = ">=3.6"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "mccabe"
 version = "0.6.1"
@@ -322,11 +246,6 @@ description = "McCabe checker, plugin for flake8"
 category = "dev"
 optional = false
 python-versions = "*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "mypy"
@@ -346,11 +265,6 @@ typing-extensions = ">=3.7.4"
 dmypy = ["psutil (>=4.0)"]
 python2 = ["typed-ast (>=1.4.0,<1.5.0)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "mypy-extensions"
 version = "0.4.3"
@@ -358,11 +272,6 @@ description = "Experimental type system extensions for programs checked with the
 category = "dev"
 optional = false
 python-versions = "*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "node-semver"
@@ -375,11 +284,6 @@ python-versions = "*"
 [package.extras]
 testing = ["pytest"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "patch-ng"
 version = "1.17.4"
@@ -388,11 +292,6 @@ category = "main"
 optional = false
 python-versions = "*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "pathspec"
 version = "0.9.0"
@@ -400,11 +299,6 @@ description = "Utility library for gitignore style pattern matching of file path
 category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "platformdirs"
@@ -418,11 +312,6 @@ python-versions = ">=3.6"
 docs = ["Sphinx (>=4)", "furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx-autodoc-typehints (>=1.12)"]
 test = ["appdirs (==1.4.4)", "pytest (>=6)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "pluginbase"
 version = "1.0.1"
@@ -430,11 +319,6 @@ description = "PluginBase is a module for Python that enables the development of
 category = "main"
 optional = false
 python-versions = "*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "psutil"
@@ -447,11 +331,6 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 [package.extras]
 test = ["ipaddress", "mock", "unittest2", "enum34", "pywin32", "wmi"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "pycodestyle"
 version = "2.8.0"
@@ -459,11 +338,6 @@ description = "Python style guide checker"
 category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "pyflakes"
@@ -473,11 +347,6 @@ category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "pygments"
 version = "2.10.0"
@@ -485,11 +354,6 @@ description = "Pygments is a syntax highlighting package written in Python."
 category = "main"
 optional = false
 python-versions = ">=3.5"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "pyjwt"
@@ -504,11 +368,6 @@ crypto = ["cryptography (>=1.4)"]
 flake8 = ["flake8", "flake8-import-order", "pep8-naming"]
 test = ["pytest (>=4.0.1,<5.0.0)", "pytest-cov (>=2.6.0,<3.0.0)", "pytest-runner (>=4.2,<5.0.0)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "python-dateutil"
 version = "2.8.2"
@@ -520,11 +379,6 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 [package.dependencies]
 six = ">=1.5"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "python-dotenv"
 version = "0.13.0"
@@ -535,11 +389,6 @@ python-versions = "*"
 
 [package.extras]
 cli = ["click (>=5.0)"]
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "python-gitlab"
@@ -557,11 +406,6 @@ requests-toolbelt = ">=0.9.1"
 autocompletion = ["argcomplete (>=1.10.0,<2)"]
 yaml = ["PyYaml (>=5.2)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "pyyaml"
 version = "5.4.1"
@@ -570,23 +414,13 @@ category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "regex"
-version = "2021.10.21"
+version = "2021.11.10"
 description = "Alternative regular expression module, to replace re."
 category = "dev"
 optional = false
 python-versions = "*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "requests"
@@ -606,11 +440,6 @@ urllib3 = ">=1.21.1,<1.27"
 socks = ["PySocks (>=1.5.6,!=1.5.7)", "win-inet-pton"]
 use_chardet_on_py3 = ["chardet (>=3.0.2,<5)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "requests-toolbelt"
 version = "0.9.1"
@@ -621,11 +450,6 @@ python-versions = "*"
 
 [package.dependencies]
 requests = ">=2.0.1,<3.0.0"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "ruamel.yaml"
@@ -642,11 +466,6 @@ python-versions = "*"
 docs = ["ryd"]
 jinja2 = ["ruamel.yaml.jinja2 (>=0.2)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "ruamel.yaml.clib"
 version = "0.2.6"
@@ -654,11 +473,6 @@ description = "C version of reader, parser and emitter for ruamel.yaml derived f
 category = "main"
 optional = false
 python-versions = ">=3.5"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "schema"
@@ -671,11 +485,6 @@ python-versions = "*"
 [package.dependencies]
 contextlib2 = ">=0.5.5"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "selenium"
 version = "3.141.0"
@@ -687,11 +496,6 @@ python-versions = "*"
 [package.dependencies]
 urllib3 = "*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "six"
 version = "1.16.0"
@@ -699,11 +503,6 @@ description = "Python 2 and 3 compatibility utilities"
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "tabulate"
@@ -716,14 +515,9 @@ python-versions = "*"
 [package.extras]
 widechars = ["wcwidth"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "tankerci"
-version = "2021.10.3640"
+version = "2021.11.3810"
 description = "Tanker CI library"
 category = "main"
 optional = false
@@ -761,11 +555,6 @@ docopt = ">=0.6.2,<0.7.0"
 schema = ">=0.7.1,<0.8.0"
 tomlkit = ">=0.5.8,<0.6.0"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "toml"
 version = "0.10.2"
@@ -774,23 +563,13 @@ category = "dev"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "tomli"
-version = "1.2.1"
+version = "1.2.2"
 description = "A lil' TOML parser"
 category = "dev"
 optional = false
 python-versions = ">=3.6"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "tomlkit"
@@ -799,11 +578,6 @@ description = "Style preserving TOML library"
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "tqdm"
@@ -821,11 +595,6 @@ dev = ["py-make (>=0.1.0)", "twine", "wheel"]
 notebook = ["ipywidgets (>=6)"]
 telegram = ["requests"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "typed-ast"
 version = "1.4.3"
@@ -834,23 +603,13 @@ category = "dev"
 optional = false
 python-versions = "*"
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "typing-extensions"
-version = "3.10.0.2"
-description = "Backported and Experimental Type Hints for Python 3.5+"
+version = "4.0.0"
+description = "Backported and Experimental Type Hints for Python 3.6+"
 category = "dev"
 optional = false
-python-versions = "*"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
+python-versions = ">=3.6"
 
 [[package]]
 name = "unidecode"
@@ -859,11 +618,6 @@ description = "ASCII transliterations of Unicode text"
 category = "main"
 optional = false
 python-versions = ">=3.5"
-
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
 
 [[package]]
 name = "urllib3"
@@ -878,11 +632,6 @@ brotli = ["brotlipy (>=0.6.0)"]
 secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "ipaddress"]
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [[package]]
 name = "zipp"
 version = "3.6.0"
@@ -895,15 +644,10 @@ python-versions = ">=3.6"
 docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
-[package.source]
-type = "legacy"
-url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-reference = "gitlab"
-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "70401e33df098619fd63d4ff85418cb47fa5d7f84efc694c022ec555ca688cf7"
+content-hash = "a745b6e0df1ea48bbbabd4f9bd471b32831cd82e2c4b431d147cebc2a11ab050"
 
 [metadata.files]
 attrs = [
@@ -911,8 +655,8 @@ attrs = [
     {file = "attrs-19.3.0.tar.gz", hash = "sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"},
 ]
 black = [
-    {file = "black-21.9b0-py3-none-any.whl", hash = "sha256:380f1b5da05e5a1429225676655dddb96f5ae8c75bdf91e53d798871b902a115"},
-    {file = "black-21.9b0.tar.gz", hash = "sha256:7de4cfc7eb6b710de325712d40125689101d21d25283eed7e9998722cf10eb91"},
+    {file = "black-21.11b1-py3-none-any.whl", hash = "sha256:802c6c30b637b28645b7fde282ed2569c0cd777dbe493a41b6a03c1d903f99ac"},
+    {file = "black-21.11b1.tar.gz", hash = "sha256:a042adbb18b3262faad5aff4e834ff186bb893f95ba3a8013f09de1e5569def2"},
 ]
 bottle = [
     {file = "bottle-0.12.19-py3-none-any.whl", hash = "sha256:f6b8a34fe9aa406f9813c02990db72ca69ce6a158b5b156d2c41f345016a723d"},
@@ -923,8 +667,8 @@ certifi = [
     {file = "certifi-2021.10.8.tar.gz", hash = "sha256:78884e7c1d4b00ce3cea67b44566851c4343c120abd683433ce934a68ea58872"},
 ]
 charset-normalizer = [
-    {file = "charset-normalizer-2.0.7.tar.gz", hash = "sha256:e019de665e2bcf9c2b64e2e5aa025fa991da8720daa3c1138cadd2fd1856aed0"},
-    {file = "charset_normalizer-2.0.7-py3-none-any.whl", hash = "sha256:f7af805c321bfa1ce6714c51f254e0d5bb5e5834039bc17db7ebe3a4cec9492b"},
+    {file = "charset-normalizer-2.0.8.tar.gz", hash = "sha256:735e240d9a8506778cd7a453d97e817e536bb1fc29f4f6961ce297b9c7a917b0"},
+    {file = "charset_normalizer-2.0.8-py3-none-any.whl", hash = "sha256:83fcdeb225499d6344c8f7f34684c2981270beacc32ede2e669e94f7fa544405"},
 ]
 cli-ui = [
     {file = "cli-ui-0.10.3.tar.gz", hash = "sha256:be517ec1a5385eb22c06d578c08ca65be59a33f00a0c09aa111db44a2f9dd211"},
@@ -968,6 +712,10 @@ importlib-metadata = [
     {file = "importlib_metadata-4.2.0-py3-none-any.whl", hash = "sha256:057e92c15bc8d9e8109738a48db0ccb31b4d9d5cfbee5a8670879a30be66304b"},
     {file = "importlib_metadata-4.2.0.tar.gz", hash = "sha256:b7e52a1f8dec14a75ea73e0891f3060099ca1d8e6a462a4dff11c3e119ea1b31"},
 ]
+isort = [
+    {file = "isort-5.10.1-py3-none-any.whl", hash = "sha256:6f62d78e2f89b4500b080fe3a81690850cd254227f27f75c3a0c491a1f351ba7"},
+    {file = "isort-5.10.1.tar.gz", hash = "sha256:e8443a5e7a020e9d7f97f1d7d9cd17c88bcb3bc7e218bf9cf5095fe550be2951"},
+]
 jinja2 = [
     {file = "Jinja2-2.11.3-py2.py3-none-any.whl", hash = "sha256:03e47ad063331dd6a3f04a43eddca8a966a26ba0c5b7207a9a9e4e08f1b29419"},
     {file = "Jinja2-2.11.3.tar.gz", hash = "sha256:a6d58433de0ae800347cab1fa3043cebbabe8baa9d29e668f1c768cb87a333c6"},
@@ -978,6 +726,9 @@ markupsafe = [
     {file = "MarkupSafe-2.0.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2d7d807855b419fc2ed3e631034685db6079889a1f01d5d9dac950f764da3dad"},
     {file = "MarkupSafe-2.0.1-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:add36cb2dbb8b736611303cd3bfcee00afd96471b09cda130da3581cbdc56a6d"},
     {file = "MarkupSafe-2.0.1-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:168cd0a3642de83558a5153c8bd34f175a9a6e7f6dc6384b9655d2697312a646"},
+    {file = "MarkupSafe-2.0.1-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:4dc8f9fb58f7364b63fd9f85013b780ef83c11857ae79f2feda41e270468dd9b"},
+    {file = "MarkupSafe-2.0.1-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:20dca64a3ef2d6e4d5d615a3fd418ad3bde77a47ec8a23d984a12b5b4c74491a"},
+    {file = "MarkupSafe-2.0.1-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:cdfba22ea2f0029c9261a4bd07e830a8da012291fbe44dc794e488b6c9bb353a"},
     {file = "MarkupSafe-2.0.1-cp310-cp310-win32.whl", hash = "sha256:99df47edb6bda1249d3e80fdabb1dab8c08ef3975f69aed437cb69d0a5de1e28"},
     {file = "MarkupSafe-2.0.1-cp310-cp310-win_amd64.whl", hash = "sha256:e0f138900af21926a02425cf736db95be9f4af72ba1bb21453432a07f6082134"},
     {file = "MarkupSafe-2.0.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:f9081981fe268bd86831e5c75f7de206ef275defcb82bc70740ae6dc507aee51"},
@@ -989,6 +740,9 @@ markupsafe = [
     {file = "MarkupSafe-2.0.1-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bf5d821ffabf0ef3533c39c518f3357b171a1651c1ff6827325e4489b0e46c3c"},
     {file = "MarkupSafe-2.0.1-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:0d4b31cc67ab36e3392bbf3862cfbadac3db12bdd8b02a2731f509ed5b829724"},
     {file = "MarkupSafe-2.0.1-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:baa1a4e8f868845af802979fcdbf0bb11f94f1cb7ced4c4b8a351bb60d108145"},
+    {file = "MarkupSafe-2.0.1-cp36-cp36m-musllinux_1_1_aarch64.whl", hash = "sha256:deb993cacb280823246a026e3b2d81c493c53de6acfd5e6bfe31ab3402bb37dd"},
+    {file = "MarkupSafe-2.0.1-cp36-cp36m-musllinux_1_1_i686.whl", hash = "sha256:63f3268ba69ace99cab4e3e3b5840b03340efed0948ab8f78d2fd87ee5442a4f"},
+    {file = "MarkupSafe-2.0.1-cp36-cp36m-musllinux_1_1_x86_64.whl", hash = "sha256:8d206346619592c6200148b01a2142798c989edcb9c896f9ac9722a99d4e77e6"},
     {file = "MarkupSafe-2.0.1-cp36-cp36m-win32.whl", hash = "sha256:6c4ca60fa24e85fe25b912b01e62cb969d69a23a5d5867682dd3e80b5b02581d"},
     {file = "MarkupSafe-2.0.1-cp36-cp36m-win_amd64.whl", hash = "sha256:b2f4bf27480f5e5e8ce285a8c8fd176c0b03e93dcc6646477d4630e83440c6a9"},
     {file = "MarkupSafe-2.0.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:0717a7390a68be14b8c793ba258e075c6f4ca819f15edfc2a3a027c823718567"},
@@ -1000,6 +754,9 @@ markupsafe = [
     {file = "MarkupSafe-2.0.1-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e9936f0b261d4df76ad22f8fee3ae83b60d7c3e871292cd42f40b81b70afae85"},
     {file = "MarkupSafe-2.0.1-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:2a7d351cbd8cfeb19ca00de495e224dea7e7d919659c2841bbb7f420ad03e2d6"},
     {file = "MarkupSafe-2.0.1-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:60bf42e36abfaf9aff1f50f52644b336d4f0a3fd6d8a60ca0d054ac9f713a864"},
+    {file = "MarkupSafe-2.0.1-cp37-cp37m-musllinux_1_1_aarch64.whl", hash = "sha256:d6c7ebd4e944c85e2c3421e612a7057a2f48d478d79e61800d81468a8d842207"},
+    {file = "MarkupSafe-2.0.1-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:f0567c4dc99f264f49fe27da5f735f414c4e7e7dd850cfd8e69f0862d7c74ea9"},
+    {file = "MarkupSafe-2.0.1-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:89c687013cb1cd489a0f0ac24febe8c7a666e6e221b783e53ac50ebf68e45d86"},
     {file = "MarkupSafe-2.0.1-cp37-cp37m-win32.whl", hash = "sha256:a30e67a65b53ea0a5e62fe23682cfe22712e01f453b95233b25502f7c61cb415"},
     {file = "MarkupSafe-2.0.1-cp37-cp37m-win_amd64.whl", hash = "sha256:611d1ad9a4288cf3e3c16014564df047fe08410e628f89805e475368bd304914"},
     {file = "MarkupSafe-2.0.1-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:5bb28c636d87e840583ee3adeb78172efc47c8b26127267f54a9c0ec251d41a9"},
@@ -1012,6 +769,9 @@ markupsafe = [
     {file = "MarkupSafe-2.0.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6fcf051089389abe060c9cd7caa212c707e58153afa2c649f00346ce6d260f1b"},
     {file = "MarkupSafe-2.0.1-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:5855f8438a7d1d458206a2466bf82b0f104a3724bf96a1c781ab731e4201731a"},
     {file = "MarkupSafe-2.0.1-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:3dd007d54ee88b46be476e293f48c85048603f5f516008bee124ddd891398ed6"},
+    {file = "MarkupSafe-2.0.1-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:aca6377c0cb8a8253e493c6b451565ac77e98c2951c45f913e0b52facdcff83f"},
+    {file = "MarkupSafe-2.0.1-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:04635854b943835a6ea959e948d19dcd311762c5c0c6e1f0e16ee57022669194"},
+    {file = "MarkupSafe-2.0.1-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:6300b8454aa6930a24b9618fbb54b5a68135092bc666f7b06901f897fa5c2fee"},
     {file = "MarkupSafe-2.0.1-cp38-cp38-win32.whl", hash = "sha256:023cb26ec21ece8dc3907c0e8320058b2e0cb3c55cf9564da612bc325bed5e64"},
     {file = "MarkupSafe-2.0.1-cp38-cp38-win_amd64.whl", hash = "sha256:984d76483eb32f1bcb536dc27e4ad56bba4baa70be32fa87152832cdd9db0833"},
     {file = "MarkupSafe-2.0.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:2ef54abee730b502252bcdf31b10dacb0a416229b72c18b19e24a4509f273d26"},
@@ -1024,6 +784,9 @@ markupsafe = [
     {file = "MarkupSafe-2.0.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c47adbc92fc1bb2b3274c4b3a43ae0e4573d9fbff4f54cd484555edbf030baf1"},
     {file = "MarkupSafe-2.0.1-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:37205cac2a79194e3750b0af2a5720d95f786a55ce7df90c3af697bfa100eaac"},
     {file = "MarkupSafe-2.0.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:1f2ade76b9903f39aa442b4aadd2177decb66525062db244b35d71d0ee8599b6"},
+    {file = "MarkupSafe-2.0.1-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:4296f2b1ce8c86a6aea78613c34bb1a672ea0e3de9c6ba08a960efe0b0a09047"},
+    {file = "MarkupSafe-2.0.1-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:9f02365d4e99430a12647f09b6cc8bab61a6564363f313126f775eb4f6ef798e"},
+    {file = "MarkupSafe-2.0.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:5b6d930f030f8ed98e3e6c98ffa0652bdb82601e7a016ec2ab5d7ff23baa78d1"},
     {file = "MarkupSafe-2.0.1-cp39-cp39-win32.whl", hash = "sha256:10f82115e21dc0dfec9ab5c0223652f7197feb168c940f3ef61563fc2d6beb74"},
     {file = "MarkupSafe-2.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:693ce3f9e70a6cf7d2fb9e6c9d8b204b6b39897a2c4a1aa65728d5ac97dcc1d8"},
     {file = "MarkupSafe-2.0.1.tar.gz", hash = "sha256:594c67807fb16238b30c44bdf74f36c02cdf22d1c8cda91ef8a0ed8dabf5620a"},
@@ -1169,42 +932,55 @@ pyyaml = [
     {file = "PyYAML-5.4.1.tar.gz", hash = "sha256:607774cbba28732bfa802b54baa7484215f530991055bb562efbed5b2f20a45e"},
 ]
 regex = [
-    {file = "regex-2021.10.21-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:edff4e31d159672a7b9d70164b21289e4b53b239ce1dc945bf9643d266537573"},
-    {file = "regex-2021.10.21-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d6432daf42f2c487b357e1aa0bdc43193f050ff53a3188bfab20b88202b53027"},
-    {file = "regex-2021.10.21-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:468de52dd3f20187ab5ca4fd265c1bea61a5346baef01ad0333a5e89fa9fad29"},
-    {file = "regex-2021.10.21-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c5a2ac760f2fc13a1c58131ec217779911890899ce1a0a63c9409bd23fecde6f"},
-    {file = "regex-2021.10.21-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:ad1fedca001fefc3030d1e9022b038af429e58dc06a7e9c55e40bd1f834582ec"},
-    {file = "regex-2021.10.21-cp310-cp310-win32.whl", hash = "sha256:9c613d797a3790f6b12e78a61e1cd29df7fc88135218467cf8b0891353292b9c"},
-    {file = "regex-2021.10.21-cp310-cp310-win_amd64.whl", hash = "sha256:678d9a4ce79e1eaa4ebe88bc9769df52919eb30c597576a0deba1f3cf2360e65"},
-    {file = "regex-2021.10.21-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:2044174af237bb9c56ecc07294cf38623ee379e8dca14b01e970f8b015c71917"},
-    {file = "regex-2021.10.21-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:98743a2d827a135bf3390452be18d95839b947a099734d53c17e09a64fc09480"},
-    {file = "regex-2021.10.21-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:f1b23304855303bd97b5954edab63b8ddd56c91c41c6d4eba408228c0bae95f3"},
-    {file = "regex-2021.10.21-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:19c4fd59747236423016ccd89b9a6485d958bf1aa7a8a902a6ba28029107a87f"},
-    {file = "regex-2021.10.21-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:130a002fa386c976615a2f6d6dff0fcc25da24858994a36b14d2e3129dce7de2"},
-    {file = "regex-2021.10.21-cp36-cp36m-win32.whl", hash = "sha256:8bd83d9b8ee125350cd666b55294f4bc9993c4f0d9b1be9344a318d0762e94cc"},
-    {file = "regex-2021.10.21-cp36-cp36m-win_amd64.whl", hash = "sha256:98fe0e1b07a314f0a86dc58af4e717c379d48a403eddd8d966ab9b8bf91ce164"},
-    {file = "regex-2021.10.21-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:ded4748c7be6f31fb207387ee83a3a0f625e700defe32f268cb1d350ed6e4a66"},
-    {file = "regex-2021.10.21-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f3da121de36a9ead0f32b44ea720ee8c87edbb59dca6bb980d18377d84ad58a3"},
-    {file = "regex-2021.10.21-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:b9dfba513eae785e3d868803f5a7e21a032cb2b038fa4a1ea7ec691037426ad3"},
-    {file = "regex-2021.10.21-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2ff91696888755e96230138355cbe8ce2965d930d967d6cff7c636082d038c78"},
-    {file = "regex-2021.10.21-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:0f82de529d7595011a40573cc0f27422e59cafa94943b64a4d17d966d75f2c01"},
-    {file = "regex-2021.10.21-cp37-cp37m-win32.whl", hash = "sha256:164e51ace4d00f07c519f85ec2209e8faaeab18bc77be6b35685c18d4ac1c22a"},
-    {file = "regex-2021.10.21-cp37-cp37m-win_amd64.whl", hash = "sha256:e39eafa854e469d7225066c806c76b9a0acba5ff5ce36c82c0224b75e24888f2"},
-    {file = "regex-2021.10.21-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:740a28580520b099b804776db1e919360fcbf30a734a14c5985d5e39a39e7237"},
-    {file = "regex-2021.10.21-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:de7dbf72ae80f06e79444ff9614fb5e3a7956645d513b0e12d1bbe6f3ccebd11"},
-    {file = "regex-2021.10.21-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:dc1a9bedf389bf3d3627a4d2b21cbdc5fe5e0f029d1f465972f4437833dcc946"},
-    {file = "regex-2021.10.21-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9cd14f22425beecf727f6dbdf5c893e46ecbc5ff16197c16a6f38a9066f2d4d5"},
-    {file = "regex-2021.10.21-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:5b75a3db3aab0bfa51b6af3f820760779d360eb79f59e32c88c7fba648990b4f"},
-    {file = "regex-2021.10.21-cp38-cp38-win32.whl", hash = "sha256:f68c71aabb10b1352a06515e25a425a703ba85660ae04cf074da5eb91c0af5e5"},
-    {file = "regex-2021.10.21-cp38-cp38-win_amd64.whl", hash = "sha256:c0f49f1f03be3e4a5faaadc35db7afa2b83a871943b889f9f7bba56e0e2e8bd5"},
-    {file = "regex-2021.10.21-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:201890fdc8a65396cfb6aa4493201353b2a6378e27d2de65234446f8329233cb"},
-    {file = "regex-2021.10.21-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fd1bfc6b7347de9f0ae1fb6f9080426bed6a9ca55b5766fa4fdf7b3a29ccae9c"},
-    {file = "regex-2021.10.21-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:72a0b98d41c4508ed23a96eef41090f78630b44ba746e28cd621ecbe961e0a16"},
-    {file = "regex-2021.10.21-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3b5a0660a63b0703380758a7141b96cc1c1a13dee2b8e9c280a2522962fd12af"},
-    {file = "regex-2021.10.21-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:f82d3adde46ac9188db3aa7e6e1690865ebb6448d245df5a3ea22284f70d9e46"},
-    {file = "regex-2021.10.21-cp39-cp39-win32.whl", hash = "sha256:bc4637390235f1e3e2fcdd3e904ca0b42aa655ae28a78072248b2992b4ad4c08"},
-    {file = "regex-2021.10.21-cp39-cp39-win_amd64.whl", hash = "sha256:74d03c256cf0aed81997e87be8e24297b5792c9718f3a735f5055ddfad392f06"},
-    {file = "regex-2021.10.21.tar.gz", hash = "sha256:4832736b3f24617e63dc919ce8c4215680ba94250a5d9e710fcc0c5f457b5028"},
+    {file = "regex-2021.11.10-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9345b6f7ee578bad8e475129ed40123d265464c4cfead6c261fd60fc9de00bcf"},
+    {file = "regex-2021.11.10-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:416c5f1a188c91e3eb41e9c8787288e707f7d2ebe66e0a6563af280d9b68478f"},
+    {file = "regex-2021.11.10-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e0538c43565ee6e703d3a7c3bdfe4037a5209250e8502c98f20fea6f5fdf2965"},
+    {file = "regex-2021.11.10-cp310-cp310-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:7ee1227cf08b6716c85504aebc49ac827eb88fcc6e51564f010f11a406c0a667"},
+    {file = "regex-2021.11.10-cp310-cp310-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:6650f16365f1924d6014d2ea770bde8555b4a39dc9576abb95e3cd1ff0263b36"},
+    {file = "regex-2021.11.10-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:30ab804ea73972049b7a2a5c62d97687d69b5a60a67adca07eb73a0ddbc9e29f"},
+    {file = "regex-2021.11.10-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:68a067c11463de2a37157930d8b153005085e42bcb7ad9ca562d77ba7d1404e0"},
+    {file = "regex-2021.11.10-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:162abfd74e88001d20cb73ceaffbfe601469923e875caf9118333b1a4aaafdc4"},
+    {file = "regex-2021.11.10-cp310-cp310-win32.whl", hash = "sha256:98ba568e8ae26beb726aeea2273053c717641933836568c2a0278a84987b2a1a"},
+    {file = "regex-2021.11.10-cp310-cp310-win_amd64.whl", hash = "sha256:780b48456a0f0ba4d390e8b5f7c661fdd218934388cde1a974010a965e200e12"},
+    {file = "regex-2021.11.10-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:dba70f30fd81f8ce6d32ddeef37d91c8948e5d5a4c63242d16a2b2df8143aafc"},
+    {file = "regex-2021.11.10-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e1f54b9b4b6c53369f40028d2dd07a8c374583417ee6ec0ea304e710a20f80a0"},
+    {file = "regex-2021.11.10-cp36-cp36m-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:fbb9dc00e39f3e6c0ef48edee202f9520dafb233e8b51b06b8428cfcb92abd30"},
+    {file = "regex-2021.11.10-cp36-cp36m-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:666abff54e474d28ff42756d94544cdfd42e2ee97065857413b72e8a2d6a6345"},
+    {file = "regex-2021.11.10-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5537f71b6d646f7f5f340562ec4c77b6e1c915f8baae822ea0b7e46c1f09b733"},
+    {file = "regex-2021.11.10-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ed2e07c6a26ed4bea91b897ee2b0835c21716d9a469a96c3e878dc5f8c55bb23"},
+    {file = "regex-2021.11.10-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:ca5f18a75e1256ce07494e245cdb146f5a9267d3c702ebf9b65c7f8bd843431e"},
+    {file = "regex-2021.11.10-cp36-cp36m-win32.whl", hash = "sha256:93a5051fcf5fad72de73b96f07d30bc29665697fb8ecdfbc474f3452c78adcf4"},
+    {file = "regex-2021.11.10-cp36-cp36m-win_amd64.whl", hash = "sha256:b483c9d00a565633c87abd0aaf27eb5016de23fed952e054ecc19ce32f6a9e7e"},
+    {file = "regex-2021.11.10-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:fff55f3ce50a3ff63ec8e2a8d3dd924f1941b250b0aac3d3d42b687eeff07a8e"},
+    {file = "regex-2021.11.10-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e32d2a2b02ccbef10145df9135751abea1f9f076e67a4e261b05f24b94219e36"},
+    {file = "regex-2021.11.10-cp37-cp37m-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:53db2c6be8a2710b359bfd3d3aa17ba38f8aa72a82309a12ae99d3c0c3dcd74d"},
+    {file = "regex-2021.11.10-cp37-cp37m-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:2207ae4f64ad3af399e2d30dde66f0b36ae5c3129b52885f1bffc2f05ec505c8"},
+    {file = "regex-2021.11.10-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d5ca078bb666c4a9d1287a379fe617a6dccd18c3e8a7e6c7e1eb8974330c626a"},
+    {file = "regex-2021.11.10-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:dd33eb9bdcfbabab3459c9ee651d94c842bc8a05fabc95edf4ee0c15a072495e"},
+    {file = "regex-2021.11.10-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:05b7d6d7e64efe309972adab77fc2af8907bb93217ec60aa9fe12a0dad35874f"},
+    {file = "regex-2021.11.10-cp37-cp37m-win32.whl", hash = "sha256:e71255ba42567d34a13c03968736c5d39bb4a97ce98188fafb27ce981115beec"},
+    {file = "regex-2021.11.10-cp37-cp37m-win_amd64.whl", hash = "sha256:07856afef5ffcc052e7eccf3213317fbb94e4a5cd8177a2caa69c980657b3cb4"},
+    {file = "regex-2021.11.10-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:ba05430e819e58544e840a68b03b28b6d328aff2e41579037e8bab7653b37d83"},
+    {file = "regex-2021.11.10-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:7f301b11b9d214f83ddaf689181051e7f48905568b0c7017c04c06dfd065e244"},
+    {file = "regex-2021.11.10-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4aaa4e0705ef2b73dd8e36eeb4c868f80f8393f5f4d855e94025ce7ad8525f50"},
+    {file = "regex-2021.11.10-cp38-cp38-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:788aef3549f1924d5c38263104dae7395bf020a42776d5ec5ea2b0d3d85d6646"},
+    {file = "regex-2021.11.10-cp38-cp38-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:f8af619e3be812a2059b212064ea7a640aff0568d972cd1b9e920837469eb3cb"},
+    {file = "regex-2021.11.10-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:85bfa6a5413be0ee6c5c4a663668a2cad2cbecdee367630d097d7823041bdeec"},
+    {file = "regex-2021.11.10-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f23222527b307970e383433daec128d769ff778d9b29343fb3496472dc20dabe"},
+    {file = "regex-2021.11.10-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:da1a90c1ddb7531b1d5ff1e171b4ee61f6345119be7351104b67ff413843fe94"},
+    {file = "regex-2021.11.10-cp38-cp38-win32.whl", hash = "sha256:0617383e2fe465732af4509e61648b77cbe3aee68b6ac8c0b6fe934db90be5cc"},
+    {file = "regex-2021.11.10-cp38-cp38-win_amd64.whl", hash = "sha256:a3feefd5e95871872673b08636f96b61ebef62971eab044f5124fb4dea39919d"},
+    {file = "regex-2021.11.10-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:f7f325be2804246a75a4f45c72d4ce80d2443ab815063cdf70ee8fb2ca59ee1b"},
+    {file = "regex-2021.11.10-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:537ca6a3586931b16a85ac38c08cc48f10fc870a5b25e51794c74df843e9966d"},
+    {file = "regex-2021.11.10-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:eef2afb0fd1747f33f1ee3e209bce1ed582d1896b240ccc5e2697e3275f037c7"},
+    {file = "regex-2021.11.10-cp39-cp39-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:432bd15d40ed835a51617521d60d0125867f7b88acf653e4ed994a1f8e4995dc"},
+    {file = "regex-2021.11.10-cp39-cp39-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:b43c2b8a330a490daaef5a47ab114935002b13b3f9dc5da56d5322ff218eeadb"},
+    {file = "regex-2021.11.10-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:962b9a917dd7ceacbe5cd424556914cb0d636001e393b43dc886ba31d2a1e449"},
+    {file = "regex-2021.11.10-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fa8c626d6441e2d04b6ee703ef2d1e17608ad44c7cb75258c09dd42bacdfc64b"},
+    {file = "regex-2021.11.10-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:3c5fb32cc6077abad3bbf0323067636d93307c9fa93e072771cf9a64d1c0f3ef"},
+    {file = "regex-2021.11.10-cp39-cp39-win32.whl", hash = "sha256:3b5df18db1fccd66de15aa59c41e4f853b5df7550723d26aa6cb7f40e5d9da5a"},
+    {file = "regex-2021.11.10-cp39-cp39-win_amd64.whl", hash = "sha256:83ee89483672b11f8952b158640d0c0ff02dc43d9cb1b70c1564b49abe92ce29"},
+    {file = "regex-2021.11.10.tar.gz", hash = "sha256:f341ee2df0999bfdf7a95e448075effe0db212a59387de1a70690e4acb03d4c6"},
 ]
 requests = [
     {file = "requests-2.26.0-py2.py3-none-any.whl", hash = "sha256:6c1246513ecd5ecd4528a0906f910e8f0f9c6b8ec72030dc9fd154dc1a6efd24"},
@@ -1258,8 +1034,8 @@ tabulate = [
     {file = "tabulate-0.8.9.tar.gz", hash = "sha256:eb1d13f25760052e8931f2ef80aaf6045a6cceb47514db8beab24cded16f13a7"},
 ]
 tankerci = [
-    {file = "tankerci-2021.10.3640-py3-none-any.whl", hash = "sha256:5a67314ed5a65df936db0ebabfc6acc6a2e41bba749cd030a6a6a221c17f5d31"},
-    {file = "tankerci-2021.10.3640.tar.gz", hash = "sha256:4da54194de8bf7e111d92f55ec042e6b86c7a32c7c61287d06c6c1cb3fbca4f1"},
+    {file = "tankerci-2021.11.3810-py3-none-any.whl", hash = "sha256:83ab07a71ad8c9b476a319ce6a67f532c1d23878527a088ce4b046f11bad43c4"},
+    {file = "tankerci-2021.11.3810.tar.gz", hash = "sha256:cfc1c48096b2cb2b10e8f4795594c503d5bdbeaadefbc8525eda5a0d64588e40"},
 ]
 tbump = [
     {file = "tbump-6.3.1-py3-none-any.whl", hash = "sha256:60a8b0e36654c705a359b0a1af289eff2397d4482a348219e150ee1169d63c7f"},
@@ -1270,8 +1046,8 @@ toml = [
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
 ]
 tomli = [
-    {file = "tomli-1.2.1-py3-none-any.whl", hash = "sha256:8dd0e9524d6f386271a36b41dbf6c57d8e32fd96fd22b6584679dc569d20899f"},
-    {file = "tomli-1.2.1.tar.gz", hash = "sha256:a5b75cb6f3968abb47af1b40c1819dc519ea82bcc065776a866e8d74c5ca9442"},
+    {file = "tomli-1.2.2-py3-none-any.whl", hash = "sha256:f04066f68f5554911363063a30b108d2b5a5b1a010aa8b6132af78489fe3aade"},
+    {file = "tomli-1.2.2.tar.gz", hash = "sha256:c6ce0015eb38820eaf32b5db832dbc26deb3dd427bd5f6556cf0acac2c214fee"},
 ]
 tomlkit = [
     {file = "tomlkit-0.5.11-py2.py3-none-any.whl", hash = "sha256:4e1bd6c9197d984528f9ff0cc9db667c317d8881288db50db20eeeb0f6b0380b"},
@@ -1314,9 +1090,8 @@ typed-ast = [
     {file = "typed_ast-1.4.3.tar.gz", hash = "sha256:fb1bbeac803adea29cedd70781399c99138358c26d05fcbd23c13016b7f5ec65"},
 ]
 typing-extensions = [
-    {file = "typing_extensions-3.10.0.2-py2-none-any.whl", hash = "sha256:d8226d10bc02a29bcc81df19a26e56a9647f8b0a6d4a83924139f4a8b01f17b7"},
-    {file = "typing_extensions-3.10.0.2-py3-none-any.whl", hash = "sha256:f1d25edafde516b146ecd0613dabcc61409817af4766fbbcfb8d1ad4ec441a34"},
-    {file = "typing_extensions-3.10.0.2.tar.gz", hash = "sha256:49f75d16ff11f1cd258e1b988ccff82a3ca5570217d7ad8c5f48205dd99a677e"},
+    {file = "typing_extensions-4.0.0-py3-none-any.whl", hash = "sha256:829704698b22e13ec9eaf959122315eabb370b0884400e9818334d8b677023d9"},
+    {file = "typing_extensions-4.0.0.tar.gz", hash = "sha256:2cdf80e4e04866a9b3689a51869016d36db0814d84b8d8a568d22781d45d27ed"},
 ]
 unidecode = [
     {file = "Unidecode-1.3.2-py3-none-any.whl", hash = "sha256:215fe33c9d1c889fa823ccb66df91b02524eb8cc8c9c80f9c5b8129754d27829"},

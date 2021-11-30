@@ -1,16 +1,15 @@
-from typing import Any, Callable, List, TypedDict
 import argparse
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import sys
 import time
+from pathlib import Path
+from typing import Any, Callable, List, TypedDict
 
 import cli_ui as ui
 import psutil
-
 import tankerci
 import tankerci.conan
 import tankerci.js
