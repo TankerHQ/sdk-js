@@ -130,6 +130,19 @@ export class Session extends EventEmitter {
     this.status = Status.READY;
   };
 
+  _newForward = async <
+    Obj extends { [k in Key]: (...args: any) => Promise<any> },
+    Key extends string,
+    R extends Awaited<ReturnType<Obj[Key]>>,
+  >(manager: Obj, func: Key, ...args: Parameters<Obj[Key]>): Promise<R> => {
+    try {
+      return await manager[func].call(manager, ...args);
+    } catch (e) {
+      await this._handleUnrecoverableError(e as TankerError);
+      throw e as Error;
+    }
+  };
+
   getVerificationKey = async (...args: any) => this._forward(this._localUserManager, 'getVerificationKey', ...args);
   revokeDevice = (...args: any) => this._forward<void>(this._localUserManager, 'revokeDevice', ...args);
   listDevices = (...args: any) => this._forward<Array<Device>>(this._localUserManager, 'listDevices', ...args);
@@ -155,10 +168,10 @@ export class Session extends EventEmitter {
   attachProvisionalIdentity = (...args: any) => this._forward<AttachResult>(this._provisionalIdentityManager, 'attachProvisionalIdentity', ...args);
   verifyProvisionalIdentity = (...args: any) => this._forward<void>(this._provisionalIdentityManager, 'verifyProvisionalIdentity', ...args);
 
-  createGroup = (...args: any) => this._forward<b64string>(this._groupManager, 'createGroup', ...args);
+  createGroup = (...args: Parameters<GroupManager['createGroup']>) => this._newForward(this._groupManager, 'createGroup', ...args);
   updateGroupMembers = (...args: any) => this._forward<void>(this._groupManager, 'updateGroupMembers', ...args);
 
-  findUser = (...args: any) => this._forward(this._userManager, 'findUser', ...args);
+  findUser = (...args: Parameters<UserManager['findUser']>) => this._newForward(this._userManager, 'findUser', ...args);
 
   createEncryptionSession = (...args: any) => this._forward<EncryptionSession>(this._dataProtector, 'createEncryptionSession', (listener: (status: Status) => void) => {
     this.on('status_change', listener);
