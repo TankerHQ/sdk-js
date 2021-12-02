@@ -132,8 +132,8 @@ export class Session extends EventEmitter {
     try {
       return await manager[func].call(manager, ...args);
     } catch (e) {
-      await this._handleUnrecoverableError(e as TankerError);
-      throw e as Error;
+      await this._handleUnrecoverableError(e);
+      throw e;
     }
   };
 
@@ -213,14 +213,14 @@ export class Session extends EventEmitter {
     }
   };
 
-  _assertUnrecoverableError = async (e: TankerError) => {
+  _assertUnrecoverableError = async (e: unknown) => {
     const unrecoverableApiCodes = ['invalid_challenge_signature', 'invalid_challenge_public_key', 'device_not_found'];
     if (!(e instanceof InternalError) || !unrecoverableApiCodes.includes(e.apiCode!)) {
       throw e;
     }
   };
 
-  _handleUnrecoverableError = async (e: TankerError) => {
+  _handleUnrecoverableError = async (e: unknown) => {
     if (e instanceof DeviceRevoked) {
       await this._assertRevocation();
     } else {
