@@ -130,11 +130,15 @@ export class Session extends EventEmitter {
     this.status = Status.READY;
   };
 
-  _newForward = async <
+  _newForward = <
     Obj extends { [k in Key]: (...args: any) => Promise<any> },
     Key extends string,
     R extends Awaited<ReturnType<Obj[Key]>>,
-  >(manager: Obj, func: Key, ...args: Parameters<Obj[Key]>): Promise<R> => {
+  >(
+    managerGetter: () => Obj,
+    func: Key,
+  ) => async (...args: Parameters<Obj[Key]>): Promise<R> => {
+    const manager = managerGetter();
     try {
       return await manager[func].call(manager, ...args);
     } catch (e) {
@@ -142,6 +146,10 @@ export class Session extends EventEmitter {
       throw e as Error;
     }
   };
+
+  // Getter are used to only access managers after they have been initialized
+  _getGroupManager = () => this._groupManager;
+  _getUserManager = () => this._userManager;
 
   getVerificationKey = async (...args: any) => this._forward(this._localUserManager, 'getVerificationKey', ...args);
   revokeDevice = (...args: any) => this._forward<void>(this._localUserManager, 'revokeDevice', ...args);
@@ -168,10 +176,10 @@ export class Session extends EventEmitter {
   attachProvisionalIdentity = (...args: any) => this._forward<AttachResult>(this._provisionalIdentityManager, 'attachProvisionalIdentity', ...args);
   verifyProvisionalIdentity = (...args: any) => this._forward<void>(this._provisionalIdentityManager, 'verifyProvisionalIdentity', ...args);
 
-  createGroup = (...args: Parameters<GroupManager['createGroup']>) => this._newForward(this._groupManager, 'createGroup', ...args);
+  createGroup = this._newForward(this._getGroupManager, 'createGroup');
   updateGroupMembers = (...args: any) => this._forward<void>(this._groupManager, 'updateGroupMembers', ...args);
 
-  findUser = (...args: Parameters<UserManager['findUser']>) => this._newForward(this._userManager, 'findUser', ...args);
+  findUser = this._newForward(this._getUserManager, 'findUser');
 
   createEncryptionSession = (...args: any) => this._forward<EncryptionSession>(this._dataProtector, 'createEncryptionSession', (listener: (status: Status) => void) => {
     this.on('status_change', listener);
