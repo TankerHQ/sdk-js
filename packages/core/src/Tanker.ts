@@ -5,7 +5,7 @@ import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertInteger, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
 
-import { _deserializeProvisionalIdentity } from './Identity';
+import { _deserializeProvisionalIdentity, isSecretProvisionalIdentity } from './Identity';
 import type { ClientOptions } from './Network/Client';
 import { defaultApiEndpoint } from './Network/Client';
 import type { DataStoreOptions } from './Session/Storage';
@@ -19,6 +19,7 @@ import type {
   VerificationOptions,
   VerificationWithToken,
   PhoneNumberVerification,
+  LegacyEmailVerificationMethod,
 } from './LocalUser/types';
 import { assertVerification, assertVerificationOptions, isPreverifiedVerification } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
@@ -328,7 +329,7 @@ export class Tanker extends EventEmitter {
     return null;
   }
 
-  async getVerificationMethods(): Promise<Array<VerificationMethod>> {
+  async getVerificationMethods(): Promise<Array<VerificationMethod | LegacyEmailVerificationMethod>> {
     assertStatus(this.status, [statuses.READY, statuses.IDENTITY_VERIFICATION_NEEDED], 'get verification methods');
     return this.session.getVerificationMethods();
   }
@@ -342,6 +343,9 @@ export class Tanker extends EventEmitter {
     assertStatus(this.status, statuses.READY, 'attach a provisional identity');
 
     const provisionalIdentityObj = _deserializeProvisionalIdentity(provisionalIdentity);
+    if (!isSecretProvisionalIdentity(provisionalIdentityObj)) {
+      throw new InvalidArgument('provisionalIdentity', 'identity should be a private provisional identity');
+    }
 
     return this.session.attachProvisionalIdentity(provisionalIdentityObj);
   }

@@ -16,6 +16,7 @@ export {
   assertTrustchainId,
   isProvisionalIdentity,
   identityTargetToVerificationMethodType,
+  isSecretProvisionalIdentity,
 } from './identity';
 
 export { assertUserSecret } from './userSecret';

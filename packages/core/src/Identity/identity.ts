@@ -68,6 +68,10 @@ export function isProvisionalIdentity(identity: SecretIdentity | PublicIdentity)
   return !isPermanentIdentity(identity);
 }
 
+export function isSecretProvisionalIdentity(identity: SecretIdentity | PublicIdentity): identity is SecretProvisionalIdentity {
+  return 'private_signature_key' in identity;
+}
+
 export function identityTargetToVerificationMethodType(target: SecretProvisionalIdentityTarget): string {
   switch (target) {
     case 'email': return 'email';

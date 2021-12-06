@@ -1,7 +1,7 @@
 import type { b64string } from '@tanker/crypto';
 import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
-import { createIdentity, getPublicIdentity } from '@tanker/identity';
+import { createIdentity, getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, silencer, isBrowser } from '@tanker/test-utils';
 import { castData } from '@tanker/types';
 
@@ -208,9 +208,11 @@ describe('Tanker', () => {
 
   describe('with a session', () => {
     let tanker: Tanker;
+    let options: TankerCoreOptions;
 
     before(() => {
-      tanker = new Tanker(makeTestTankerOptions());
+      options = makeTestTankerOptions();
+      tanker = new Tanker(options);
     });
 
     beforeEach(() => {
@@ -360,6 +362,12 @@ describe('Tanker', () => {
 
       it('sharing should throw if invalid resourceId argument given', async () => {
         await expect(tanker.share(['resourceId'], { shareWithUsers: ['userId'] })).to.be.rejectedWith(InvalidArgument, 'resourceId');
+      });
+
+      it('attaching a public provisional identity throws', async () => {
+        const privProvIdentity = await createProvisionalIdentity(options.appId!, 'email', 'valid@tanker.io');
+        const pubProvIdentity = await getPublicIdentity(privProvIdentity);
+        await expect(tanker.attachProvisionalIdentity(pubProvIdentity)).to.be.rejectedWith(InvalidArgument, 'private provisional identity');
       });
 
       it('verifying a provisional identity should throw if invalid argument given', async () => {
