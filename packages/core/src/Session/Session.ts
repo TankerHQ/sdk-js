@@ -120,16 +120,6 @@ export class Session extends EventEmitter {
     this.removeAllListeners();
   };
 
-  createUser = async (...args: any) => {
-    await this._forwardAndStopOnFail(this._localUserManager, 'createUser', ...args);
-    this.status = Status.READY;
-  };
-
-  createNewDevice = async (...args: any) => {
-    await this._forwardAndStopOnFail(this._localUserManager, 'createNewDevice', ...args);
-    this.status = Status.READY;
-  };
-
   _newForward = <
     Obj extends { [k in Key]: (...args: any) => Promise<any> },
     Key extends string,
@@ -147,9 +137,35 @@ export class Session extends EventEmitter {
     }
   };
 
+  _stopIfNotRetryable = async (e: Error) => {
+    try {
+      const retryableErrors = [ExpiredVerification, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed, TooManyAttempts];
+      if (!retryableErrors.some(errClass => e instanceof errClass)) {
+        await this.stop();
+      }
+    } catch (stopError) {
+      console.error('Unexpected error while stopping the current session', stopError);
+    }
+
+    throw e;
+  };
+
+  _promiseChain = <
+    F extends (...args: any[]) => Promise<any>,
+  >(
+    f: F,
+    success: () => Awaited<ReturnType<F>>,
+    failure: (e: Error) => Promise<never> | never,
+  ) => (...args: Parameters<F>) => f(...args).then(success).catch(failure);
+
   // Getter are used to only access managers after they have been initialized
+  _getLocalUserManager = () => this._localUserManager;
   _getGroupManager = () => this._groupManager;
   _getUserManager = () => this._userManager;
+  _setReady = <T>(arg?: T) => { this.status = Status.READY; return arg; };
+
+  createUser = this._promiseChain(this._newForward(this._getLocalUserManager, 'createUser'), this._setReady, this._stopIfNotRetryable);
+  createNewDevice = this._promiseChain(this._newForward(this._getLocalUserManager, 'createNewDevice'), this._setReady, this._stopIfNotRetryable);
 
   getVerificationKey = async (...args: any) => this._forward(this._localUserManager, 'getVerificationKey', ...args);
   revokeDevice = (...args: any) => this._forward<void>(this._localUserManager, 'revokeDevice', ...args);
