@@ -1,8 +1,6 @@
 import EventEmitter from 'events';
 
 import { TankerError, DeviceRevoked, ExpiredVerification, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
-import type { Data } from '@tanker/types';
-import type { b64string } from '@tanker/crypto';
 
 import type { DataStoreOptions } from './Storage';
 import Storage from './Storage';
@@ -18,15 +16,6 @@ import CloudStorageManager from '../CloudStorage/Manager';
 import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import ResourceManager from '../Resources/Manager';
 import DataProtector from '../DataProtection/DataProtector';
-
-import type { Device } from '../Users/types';
-import type { VerificationMethod } from '../LocalUser/types';
-import type { AttachResult } from '../ProvisionalIdentity/types';
-import type { EncryptionStream } from '../DataProtection/EncryptionStream';
-import type { DecryptionStream } from '../DataProtection/DecryptionStream';
-import type { UploadStream } from '../CloudStorage/UploadStream';
-import type { DownloadStream } from '../CloudStorage/DownloadStream';
-import type { EncryptionSession } from '../DataProtection/EncryptionSession';
 
 export class Session extends EventEmitter {
   _storage: Storage;
@@ -120,49 +109,91 @@ export class Session extends EventEmitter {
     this.removeAllListeners();
   };
 
-  createUser = async (...args: any) => {
-    await this._forwardAndStopOnFail(this._localUserManager, 'createUser', ...args);
-    this.status = Status.READY;
+  _forward = <
+    Obj extends { [k in Key]: (...args: any) => Promise<any> },
+    Key extends string,
+    R extends Awaited<ReturnType<Obj[Key]>>,
+  >(
+    managerGetter: () => Obj,
+    func: Key,
+  ) => async (...args: Parameters<Obj[Key]>): Promise<R> => {
+    const manager = managerGetter();
+    try {
+      return await manager[func].call(manager, ...args);
+    } catch (e) {
+      await this._handleUnrecoverableError(e);
+      throw e;
+    }
   };
 
-  createNewDevice = async (...args: any) => {
-    await this._forwardAndStopOnFail(this._localUserManager, 'createNewDevice', ...args);
-    this.status = Status.READY;
+  _stopIfNotRetryable = async (e: Error) => {
+    try {
+      const retryableErrors = [ExpiredVerification, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed, TooManyAttempts];
+      if (!retryableErrors.some(errClass => e instanceof errClass)) {
+        await this.stop();
+      }
+    } catch (stopError) {
+      console.error('Unexpected error while stopping the current session', stopError);
+    }
+
+    throw e;
   };
 
-  getVerificationKey = async (...args: any) => this._forward(this._localUserManager, 'getVerificationKey', ...args);
-  revokeDevice = (...args: any) => this._forward<void>(this._localUserManager, 'revokeDevice', ...args);
-  listDevices = (...args: any) => this._forward<Array<Device>>(this._localUserManager, 'listDevices', ...args);
+  _promiseChain = <
+    F extends (...args: any[]) => Promise<any>,
+  >(
+    f: F,
+    success: () => Awaited<ReturnType<F>>,
+    failure: (e: Error) => Promise<never> | never,
+  ) => (...args: Parameters<F>) => f(...args).then(success).catch(failure);
+
+  // Getter are used to only access managers after they have been initialized
+  _getLocalUserManager = () => this._localUserManager;
+  _getCloudStorageManager = () => this._cloudStorageManager;
+  _getDataProtector = () => this._dataProtector;
+  _getProvisionalIdentityManager = () => this._provisionalIdentityManager;
+  _getGroupManager = () => this._groupManager;
+  _getUserManager = () => this._userManager;
+  _setReady = <T>(arg?: T) => { this.status = Status.READY; return arg; };
+
+  createUser = this._promiseChain(this._forward(this._getLocalUserManager, 'createUser'), this._setReady, this._stopIfNotRetryable);
+  createNewDevice = this._promiseChain(this._forward(this._getLocalUserManager, 'createNewDevice'), this._setReady, this._stopIfNotRetryable);
+
+  getVerificationKey = this._forward(this._getLocalUserManager, 'getVerificationKey');
+  revokeDevice = this._forward(this._getLocalUserManager, 'revokeDevice');
+  listDevices = this._forward(this._getLocalUserManager, 'listDevices');
   deviceId = () => this._localUserManager.localUser.deviceId;
 
-  setVerificationMethod = (...args: any) => this._forward(this._localUserManager, 'setVerificationMethod', ...args);
-  getVerificationMethods = (...args: any) => this._forward<Array<VerificationMethod>>(this._localUserManager, 'getVerificationMethods', ...args);
-  generateVerificationKey = (...args: any) => this._forward<b64string>(this._localUserManager, 'generateVerificationKey', ...args);
+  setVerificationMethod = this._forward(this._getLocalUserManager, 'setVerificationMethod');
+  getVerificationMethods = this._forward(this._getLocalUserManager, 'getVerificationMethods');
+  generateVerificationKey = this._forward(this._getLocalUserManager, 'generateVerificationKey');
 
-  getSessionToken = async (...args: any) => this._forward<b64string>(this._localUserManager, 'getSessionToken', ...args);
+  getSessionToken = this._forward(this._getLocalUserManager, 'getSessionToken');
 
-  upload = (...args: any) => this._forward<b64string>(this._cloudStorageManager, 'upload', ...args);
-  download = <T extends Data>(...args: any) => this._forward<T>(this._cloudStorageManager, 'download', ...args);
-  createUploadStream = (...args: any) => this._forward<UploadStream>(this._cloudStorageManager, 'createUploadStream', ...args);
-  createDownloadStream = (...args: any) => this._forward<DownloadStream>(this._cloudStorageManager, 'createDownloadStream', ...args);
+  upload = this._forward(this._getCloudStorageManager, 'upload');
+  download = this._forward(this._getCloudStorageManager, 'download') as CloudStorageManager['download'];
+  createUploadStream = this._forward(this._getCloudStorageManager, 'createUploadStream');
+  createDownloadStream = this._forward(this._getCloudStorageManager, 'createDownloadStream');
 
-  encryptData = <T extends Data>(...args: any) => this._forward<T>(this._dataProtector, 'encryptData', ...args);
-  decryptData = <T extends Data>(...args: any) => this._forward<T>(this._dataProtector, 'decryptData', ...args);
-  share = (...args: any) => this._forward<void>(this._dataProtector, 'share', ...args);
-  createDecryptionStream = (...args: any) => this._forward<DecryptionStream>(this._dataProtector, 'createDecryptionStream', ...args);
-  createEncryptionStream = (...args: any) => this._forward<EncryptionStream>(this._dataProtector, 'createEncryptionStream', ...args);
+  encryptData = this._forward(this._getDataProtector, 'encryptData') as DataProtector['encryptData'];
+  decryptData = this._forward(this._getDataProtector, 'decryptData') as DataProtector['decryptData'];
+  share = this._forward(this._getDataProtector, 'share');
+  createDecryptionStream = this._forward(this._getDataProtector, 'createDecryptionStream');
+  createEncryptionStream = this._forward(this._getDataProtector, 'createEncryptionStream');
 
-  attachProvisionalIdentity = (...args: any) => this._forward<AttachResult>(this._provisionalIdentityManager, 'attachProvisionalIdentity', ...args);
-  verifyProvisionalIdentity = (...args: any) => this._forward<void>(this._provisionalIdentityManager, 'verifyProvisionalIdentity', ...args);
+  attachProvisionalIdentity = this._forward(this._getProvisionalIdentityManager, 'attachProvisionalIdentity');
+  verifyProvisionalIdentity = this._forward(this._getProvisionalIdentityManager, 'verifyProvisionalIdentity');
 
-  createGroup = (...args: any) => this._forward<b64string>(this._groupManager, 'createGroup', ...args);
-  updateGroupMembers = (...args: any) => this._forward<void>(this._groupManager, 'updateGroupMembers', ...args);
+  createGroup = this._forward(this._getGroupManager, 'createGroup');
+  updateGroupMembers = this._forward(this._getGroupManager, 'updateGroupMembers');
 
-  findUser = (...args: any) => this._forward(this._userManager, 'findUser', ...args);
+  findUser = this._forward(this._getUserManager, 'findUser');
 
-  createEncryptionSession = (...args: any) => this._forward<EncryptionSession>(this._dataProtector, 'createEncryptionSession', (listener: (status: Status) => void) => {
+  // The `this` in `bind()` is ignored because `_forward()` returns an arrow function
+  // `createEncryptionSession()` is always bound to the object instance
+  createEncryptionSession = this._forward(this._getDataProtector, 'createEncryptionSession').bind(this, (listener: (status: Status) => void) => {
     this.on('status_change', listener);
-  }, ...args);
+  });
 
   _assertRevocation = async () => {
     try {
@@ -176,14 +207,14 @@ export class Session extends EventEmitter {
     }
   };
 
-  _assertUnrecoverableError = async (e: TankerError) => {
+  _assertUnrecoverableError = async (e: unknown) => {
     const unrecoverableApiCodes = ['invalid_challenge_signature', 'invalid_challenge_public_key', 'device_not_found'];
     if (!(e instanceof InternalError) || !unrecoverableApiCodes.includes(e.apiCode!)) {
       throw e;
     }
   };
 
-  _handleUnrecoverableError = async (e: TankerError) => {
+  _handleUnrecoverableError = async (e: unknown) => {
     if (e instanceof DeviceRevoked) {
       await this._assertRevocation();
     } else {
@@ -191,31 +222,5 @@ export class Session extends EventEmitter {
     }
 
     await this._wipeDeviceAndStop(e instanceof DeviceRevoked);
-  };
-
-  _forward = async <R>(manager: any, func: string, ...args: any) => {
-    try {
-      return await (manager[func] as any as (...arg: any[]) => Promise<R>).call(manager, ...args);
-    } catch (e) {
-      await this._handleUnrecoverableError(e as TankerError);
-      throw e as Error;
-    }
-  };
-
-  _forwardAndStopOnFail = async <R>(manager: any, func: string, ...args: any) => {
-    try {
-      return await this._forward<R>(manager, func, ...args);
-    } catch (e) {
-      try {
-        const retryableErrors = [ExpiredVerification, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed, TooManyAttempts];
-        if (!retryableErrors.some(errClass => e instanceof errClass)) {
-          await this.stop();
-        }
-      } catch (stopError) {
-        console.error('Unexpected error while stopping the current session', stopError as Error);
-      }
-
-      throw e as Error;
-    }
   };
 }

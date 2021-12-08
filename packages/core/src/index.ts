@@ -26,7 +26,7 @@ export default Tanker;
 export type { b64string } from '@tanker/crypto';
 export type { ResourceMetadata, Data } from '@tanker/types';
 export type { OutputOptions, FormatOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './DataProtection/options';
-export type { EmailVerification, PhoneNumberVerification, PassphraseVerification, KeyVerification, Verification, VerificationMethod, VerificationOptions, ProvisionalVerificationMethod } from './LocalUser/types';
+export type { EmailVerification, PhoneNumberVerification, PassphraseVerification, KeyVerification, Verification, VerificationMethod, VerificationOptions, ProvisionalVerificationMethod, LegacyEmailVerificationMethod } from './LocalUser/types';
 export type { AttachResult } from './ProvisionalIdentity/types';
 export type { TankerOptions, Device, ProvisionalVerification } from './Tanker';
 export type { EncryptionStream } from './DataProtection/EncryptionStream';

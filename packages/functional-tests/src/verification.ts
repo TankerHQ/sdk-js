@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { errors, statuses } from '@tanker/core';
-import type { Tanker, b64string, Verification, VerificationMethod } from '@tanker/core';
+import type { Tanker, b64string, Verification, VerificationMethod, LegacyEmailVerificationMethod } from '@tanker/core';
 import { utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
 import { expect, uuid } from '@tanker/test-utils';
@@ -32,7 +32,7 @@ async function getGoogleIdToken(refreshToken: string): Promise<string> {
   return data.id_token;
 }
 
-const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod) => {
+const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod | LegacyEmailVerificationMethod) => {
   // @ts-expect-error email might not be defined
   const { type, email, phoneNumber } = method;
   expect(type in verification).to.be.true;
