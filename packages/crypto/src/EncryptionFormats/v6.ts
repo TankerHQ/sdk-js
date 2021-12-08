@@ -24,12 +24,14 @@ export const features = {
 
 export const overhead = 1 + tcrypto.MAC_SIZE;
 
+const myLog2 = (n: number): number => Math.log(n) / Math.log(2);
+
 export const padme = (clearSize: number): number => {
   if (clearSize <= 1)
     return 0;
 
-  const e = Math.floor(Math.log2(clearSize));
-  const s = Math.floor(Math.log2(e)) + 1;
+  const e = Math.floor(myLog2(clearSize));
+  const s = Math.floor(myLog2(e)) + 1;
   const lastBits = e - s;
   const bitMask = (1 << lastBits) - 1;
   return (clearSize + bitMask) & ~bitMask;
