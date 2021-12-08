@@ -1,4 +1,4 @@
-import type { b64string, EncryptionFormatDescription, SimpleEncryptor } from '@tanker/crypto';
+import type { b64string, EncryptionFormatDescription, Padding, SimpleEncryptor } from '@tanker/crypto';
 import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, EncryptionStreamV4, DecryptionStream } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
@@ -234,17 +234,17 @@ export class DataProtector {
     return castEncryptedData;
   }
 
-  async _simpleEncryptDataWithResource<T extends Data>(clearData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource: Resource): Promise<T> {
-    const encryption = getSimpleEncryptionWithFixedResourceId();
+  async _simpleEncryptDataWithResource<T extends Data>(clearData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource: Resource, paddingStep?: number | Padding): Promise<T> {
+    const encryption = getSimpleEncryptionWithFixedResourceId(paddingStep);
 
     const clearSize = getDataLength(clearData);
-    const encryptedSize = encryption.getEncryptedSize(clearSize);
+    const encryptedSize = encryption.getEncryptedSize(clearSize, paddingStep);
     const progressHandler = new ProgressHandler(progressOptions).start(encryptedSize);
 
     const castClearData = await castData(clearData, { type: Uint8Array });
     if (!resource)
       throw new InternalError('Assertion error: called _simpleEncryptDataWithResource without a resource');
-    const encryptedData = encryption.serialize(encryption.encrypt(resource.key, castClearData, resource.resourceId));
+    const encryptedData = encryption.serialize(encryption.encrypt(resource.key, castClearData, resource.resourceId, paddingStep));
     const castEncryptedData = await castData(encryptedData, outputOptions);
 
     progressHandler.report(encryptedSize);
@@ -274,9 +274,9 @@ export class DataProtector {
       return this._streamEncryptData(clearData, encryptionOptions, outputOptions, progressOptions, resource);
 
     if (resource) {
-      // We can ignore the EncryptionOptions (aka SharingOptions) because this path is only accessed through
-      // UploadStream and Encryption session which both manage the share operation on their own
-      return this._simpleEncryptDataWithResource(clearData, outputOptions, progressOptions, resource);
+      // We can ignore the EncryptionOptions (aka SharingOptions) other than paddingStep because this path is only
+      // accessed through UploadStream and Encryption session which both manage the share operation on their own
+      return this._simpleEncryptDataWithResource(clearData, outputOptions, progressOptions, resource, encryptionOptions.paddingStep);
     }
 
     return this._simpleEncryptData(clearData, encryptionOptions, outputOptions, progressOptions);
@@ -318,7 +318,7 @@ export class DataProtector {
     const resource = makeResource();
     await this._shareResources([resource], encryptionOptions);
 
-    return new EncryptionSession(this, getStatus, resource);
+    return new EncryptionSession(this, getStatus, resource, encryptionOptions.paddingStep);
   }
 }
 
