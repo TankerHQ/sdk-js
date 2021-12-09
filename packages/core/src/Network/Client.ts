@@ -142,7 +142,7 @@ export class Client {
       let error;
       try {
         ({ error } = JSON.parse(responseText));
-      } catch (_) {} // eslint-disable-line no-empty
+      } catch (_) { } // eslint-disable-line no-empty
 
       if (!error) {
         const details = responseText ? `response body: "${responseText}"` : 'empty response body';
@@ -183,9 +183,9 @@ export class Client {
           // 1. Another API call is already trying to re-authenticate
           if (this._authenticating) {
             await this._authenticating;
-          // 2. This is the first API call to attempt a re-authentication. This
-          //    is also the recovery process when this API call occurs after a
-          //    previous re-authentication failure (i.e. access token is '')
+            // 2. This is the first API call to attempt a re-authentication. This
+            //    is also the recovery process when this API call occurs after a
+            //    previous re-authentication failure (i.e. access token is '')
           } else if (this._accessToken === accessToken) {
             await this._authenticate();
           }
@@ -301,6 +301,18 @@ export class Client {
 
       throw e;
     }
+  };
+
+  enrollUser = async (body: any): Promise<void> => {
+    const path = `/users/${urlize(this._userId)}/enroll`;
+
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(b64RequestObject(body)),
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    await this._apiCall(path, options);
   };
 
   createUser = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: any): Promise<void> => {
