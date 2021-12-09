@@ -1,5 +1,5 @@
 import { InvalidArgument } from '@tanker/errors';
-import { assertNotEmptyString } from '@tanker/types';
+import { assertNotEmptyString, assertNever } from '@tanker/types';
 
 export type LegacyEmailVerificationMethod = { type: 'email' };
 export type EmailVerificationMethod = { type: 'email'; email: string; };
@@ -78,6 +78,14 @@ export const assertVerification = (verification: Verification) => {
   }
 };
 
+export function assertVerifications(verifications: Array<Verification>) {
+  if (!verifications || typeof verifications !== 'object' || !(verifications instanceof Array)) {
+    throw new InvalidArgument('verifications', 'array', verifications);
+  }
+
+  verifications.forEach(assertVerification);
+}
+
 export function assertVerificationOptions(options: any): asserts options is VerificationOptions | null | undefined {
   if (!options)
     return;
@@ -92,3 +100,20 @@ export function assertVerificationOptions(options: any): asserts options is Veri
   if ('withSessionToken' in options! && typeof options!.withSessionToken !== 'boolean')
     throw new InvalidArgument('options', 'withSessionToken must be a boolean', options);
 }
+
+export const countPreverifiedVerifications = (verifications: Array<PreverifiedVerification>) => {
+  const counts = {
+    preverifiedEmail: 0,
+    preverifiedPhoneNumber: 0,
+  };
+  verifications.forEach((verification) => {
+    if ('preverifiedEmail' in verification) {
+      counts.preverifiedEmail += 1;
+    } else if ('preverifiedPhoneNumber' in verification) {
+      counts.preverifiedPhoneNumber += 1;
+    } else {
+      assertNever(verification, 'verification');
+    }
+  });
+  return counts;
+};

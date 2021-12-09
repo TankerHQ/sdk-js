@@ -7,10 +7,11 @@ import type { Data, ResourceMetadata } from '@tanker/types';
 
 import { _deserializeProvisionalIdentity, isSecretProvisionalIdentity } from './Identity';
 import type { ClientOptions } from './Network/Client';
-import { defaultApiEndpoint } from './Network/Client';
+import { Client, defaultApiEndpoint } from './Network/Client';
+import { LocalUserManager } from './LocalUser/Manager';
 import type { DataStoreOptions } from './Session/Storage';
 
-import type {
+import {
   Verification,
   EmailVerification,
   OIDCVerification,
@@ -20,8 +21,13 @@ import type {
   VerificationWithToken,
   PhoneNumberVerification,
   LegacyEmailVerificationMethod,
+  PreverifiedVerification,
+  assertVerifications,
+  assertVerification,
+  assertVerificationOptions,
+  isPreverifiedVerification,
+  countPreverifiedVerifications,
 } from './LocalUser/types';
-import { assertVerification, assertVerificationOptions, isPreverifiedVerification } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
 
 import { statuses, assertStatus, statusDefs } from './Session/status';
@@ -223,6 +229,33 @@ export class Tanker extends EventEmitter {
   _lockCall<T, F extends (...args: any[]) => Promise<T>>(name: string, f: F): (...args: Parameters<F>) => ReturnType<F> {
     return (...args: Parameters<F>) => this._localDeviceLock.lock(name, () => f(...args)) as ReturnType<F>;
   }
+
+  enrollUser = this._lockCall('enrollUser', async (identityB64: b64string, verifications: Array<PreverifiedVerification>): Promise<void> => {
+    assertStatus(this.status, statuses.STOPPED, 'enroll a user');
+
+    // Prepare the session
+    await cryptoReady;
+
+    const userData = this._parseIdentity(identityB64);
+
+    assertVerifications(verifications);
+    if (verifications.length === 0) {
+      throw new InvalidArgument('verifications', 'should contain at least one preverified verification method');
+    }
+
+    if (!verifications.every(isPreverifiedVerification)) {
+      throw new InvalidArgument('verifications', 'can only enroll user with preverified verification methods', verifications);
+    }
+
+    const counts = countPreverifiedVerifications(verifications);
+    if (counts.preverifiedEmail > 1 || counts.preverifiedPhoneNumber > 1) {
+      throw new InvalidArgument('verications', `contains at most one of each preverified verification method, found: ${counts}`);
+    }
+
+    const client = new Client(userData.trustchainId, userData.userId, this._clientOptions);
+    await LocalUserManager.enrollUser(userData, client, verifications);
+    await client.close();
+  });
 
   start = this._lockCall('start', async (identityB64: b64string) => {
     assertStatus(this.status, statuses.STOPPED, 'start a session');
