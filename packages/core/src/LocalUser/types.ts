@@ -20,6 +20,7 @@ export type OIDCVerification = { oidcIdToken: string; };
 export type PhoneNumberVerification = { phoneNumber: string; verificationCode: string; };
 export type PreverifiedEmailVerification = { preverifiedEmail: string; };
 export type PreverifiedPhoneNumberVerification = { preverifiedPhoneNumber: string; };
+export type PreverifiedVerification = PreverifiedEmailVerification | PreverifiedPhoneNumberVerification;
 
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
 export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification | PhoneNumberVerification | PreverifiedEmailVerification | PreverifiedPhoneNumberVerification;
@@ -36,7 +37,7 @@ const validKeys = [...validMethods, 'verificationCode'];
 
 const validVerifOptionsKeys = ['withSessionToken'];
 
-export const isPreverifiedVerification = (verification: VerificationWithToken): verification is (PreverifiedEmailVerification | PreverifiedPhoneNumberVerification) => 'preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification;
+export const isPreverifiedVerification = (verification: VerificationWithToken): verification is PreverifiedVerification => 'preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification;
 
 export const isPreverifiedVerificationMethod = (verificationMethod: VerificationMethod): verificationMethod is (PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod) => verificationMethod.type === 'preverifiedEmail' || verificationMethod.type === 'preverifiedPhoneNumber';
 
