@@ -38,6 +38,10 @@ const dataTypeDefs = (() => {
   return defs;
 })();
 
+export const assertNever = (_: never, argName: string): never => {
+  throw new InternalError(`assertion error: type error: name: ${argName} [never]`);
+};
+
 export const assertDataType = (value: any, argName: string): void => {
   if (!dataTypeDefs.some(def => value instanceof def.type))
     throw new InvalidArgument(argName, 'ArrayBuffer | Blob | Buffer | File | Uint8Array', value);
