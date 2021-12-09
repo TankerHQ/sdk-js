@@ -7,14 +7,15 @@ import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationK
 import type { IndexedProvisionalUserKeyPairs } from './KeySafe';
 import type KeyStore from './KeyStore';
 import LocalUser from './LocalUser';
-import { formatVerificationRequest, isPreverifiedVerificationRequest } from './requests';
+import { formatVerificationRequest, isPreverifiedVerificationRequest, formatVerificationsRequest } from './requests';
 import type {
   VerificationMethod,
   VerificationWithToken,
+  PreverifiedVerification,
   RemoteVerificationWithToken,
   LegacyEmailVerificationMethod,
 } from './types';
-import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from './UserCreation';
+import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation, generateGhostDevice } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
 
 import type { Client, PullOptions } from '../Network/Client';
@@ -126,6 +127,25 @@ export class LocalUserManager extends EventEmitter {
       isLight: true,
     });
   };
+
+  static async enrollUser(userData: UserData, client: Client, verifications: Array<PreverifiedVerification>): Promise<void> {
+    const ghostDeviceKeys = generateGhostDeviceKeys();
+
+    const { trustchainId, userId, userSecret, delegationToken } = userData;
+    if (!delegationToken) {
+      throw new InternalError('Assertion error, no delegation token for user enrollment');
+    }
+
+    const { block, ghostDevice } = generateGhostDevice(trustchainId, userId, ghostDeviceKeys, delegationToken);
+
+    const request: any = {
+      ghost_device_creation: block,
+      encrypted_verification_key: ghostDeviceToEncryptedVerificationKey(ghostDevice, userSecret),
+      verifications: formatVerificationsRequest(verifications, userData),
+    };
+
+    await client.enrollUser(request);
+  }
 
   createUser = async (verification: VerificationWithToken): Promise<void> => {
     let ghostDeviceKeys;
