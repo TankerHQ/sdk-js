@@ -39,7 +39,6 @@ check/linux/chrome:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
     - !reference [.rules/push-master-or-feat, rules]
-    - !reference [.rules/nightly, rules]
   script:
     - poetry run python run-ci.py check --runner linux
   tags:
@@ -104,7 +103,6 @@ check/macos:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
     - !reference [.rules/push-master-or-feat, rules]
-    - !reference [.rules/nightly, rules]
   script:
     - poetry run python run-ci.py check --runner macos
   tags:
@@ -119,6 +117,7 @@ check/macos/nightly:
   tags:
     - macos
     - MacOSSlave-2
+  timeout: 2h
 
 .check/windows:
   stage: check
@@ -155,8 +154,6 @@ check/linux/nightly:
     - poetry run python run-ci.py check --runner linux --nightly
   tags:
     - linux
-  # This job can run on a shared runner, which can be slow.
-  timeout: 1 hours 30 minutes
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
