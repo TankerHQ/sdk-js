@@ -39,7 +39,6 @@ check/linux/chrome:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
     - !reference [.rules/push-master-or-feat, rules]
-    - !reference [.rules/nightly, rules]
   script:
     - poetry run python run-ci.py check --runner linux
   tags:
@@ -104,7 +103,6 @@ check/macos:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
     - !reference [.rules/push-master-or-feat, rules]
-    - !reference [.rules/nightly, rules]
   script:
     - poetry run python run-ci.py check --runner macos
   tags:
