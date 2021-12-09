@@ -117,6 +117,7 @@ check/macos/nightly:
   tags:
     - macos
     - MacOSSlave-2
+  timeout: 2h
 
 .check/windows:
   stage: check
