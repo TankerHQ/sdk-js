@@ -55,7 +55,7 @@ export const generateDeviceFromGhostDevice = (
   };
 };
 
-export const generateUserCreation = (
+export const generateGhostDevice = (
   trustchainId: Uint8Array,
   userId: Uint8Array,
   ghostDeviceKeys: GhostDeviceKeys,
@@ -95,6 +95,21 @@ export const generateUserCreation = (
     privateEncryptionKey: ghostDeviceKeys.encryptionKeyPair.privateKey,
   };
 
+  return {
+    userKeys,
+    block,
+    hash,
+    ghostDevice,
+  };
+};
+
+export const generateUserCreation = (
+  trustchainId: Uint8Array,
+  userId: Uint8Array,
+  ghostDeviceKeys: GhostDeviceKeys,
+  delegationToken: DelegationToken,
+) => {
+  const { block, hash, ghostDevice, userKeys } = generateGhostDevice(trustchainId, userId, ghostDeviceKeys, delegationToken);
   const firstDevice = generateDeviceFromGhostDevice(
     trustchainId,
     userId,

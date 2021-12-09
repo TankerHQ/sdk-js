@@ -1,8 +1,7 @@
 import { encryptionV2, generichash, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import type LocalUser from './LocalUser';
-import type { RemoteVerification, RemoteVerificationWithToken } from './types';
+import type { RemoteVerification, RemoteVerificationWithToken, PreverifiedVerification } from './types';
 import type { SecretProvisionalIdentity } from '../Identity';
 
 type WithToken<T> = T & { with_token?: { nonce: string; } };
@@ -48,7 +47,7 @@ export const isPreverifiedVerificationRequest = (request: VerificationRequest): 
 
 export const formatVerificationRequest = (
   verification: RemoteVerification | RemoteVerificationWithToken,
-  localUser: LocalUser,
+  localUser: { userSecret: Uint8Array },
   provIdentity?: SecretProvisionalIdentity,
 ): VerificationRequest => {
   if ('email' in verification) {
@@ -102,7 +101,11 @@ export const formatVerificationRequest = (
   throw new InternalError('Assertion error: invalid remote verification in formatVerificationRequest');
 };
 
-export const formatProvisionalKeysRequest = (provIdentity: SecretProvisionalIdentity, localUser: LocalUser): ProvisionalKeysRequest => {
+export const formatVerificationsRequest = (verifications: Array<PreverifiedVerification>, localUser: { userSecret: Uint8Array }): Array<PreverifiedVerificationRequest> => verifications.map(
+  (verification) => formatVerificationRequest(verification, localUser) as PreverifiedVerificationRequest,
+);
+
+export const formatProvisionalKeysRequest = (provIdentity: SecretProvisionalIdentity, localUser: { userSecret: Uint8Array }): ProvisionalKeysRequest => {
   if (provIdentity.target === 'email') {
     return {
       target: provIdentity.target,
