@@ -32,7 +32,7 @@ export function makeResource(): Resource {
 
 export const getSimpleEncryption = (paddingStep?: number | Padding) => (paddingStep === Padding.OFF ? encryptionV3 : encryptionV6);
 
-export const getSimpleEncryptionWithFixedResourceId = () => encryptionV7;
+export const getSimpleEncryptionWithFixedResourceId = (paddingStep?: number | Padding) => (paddingStep === Padding.OFF ? encryptionV5 : encryptionV7);
 
 export const getStreamEncryptionFormatDescription = (): EncryptionFormatDescription => ({
   version: 4,

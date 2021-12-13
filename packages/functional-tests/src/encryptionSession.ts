@@ -1,4 +1,4 @@
-import { errors } from '@tanker/core';
+import { errors, Padding } from '@tanker/core';
 import type { b64string, Tanker, EncryptionSession, EncryptionStream } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
@@ -106,6 +106,47 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
       const encryptionSession1 = await aliceLaptop.createEncryptionSession();
       const encryptionSession2 = await aliceLaptop.createEncryptionSession();
       expect(encryptionSession1.resourceId).not.to.equal(encryptionSession2.resourceId);
+    });
+
+    describe('with the padding option', async () => {
+      const encryptSessionOverhead = 57;
+      it('encrypts with auto padding', async () => {
+        const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: Padding.AUTO });
+        const encrypted = await encryptionSession.encrypt(clearText);
+
+        expect(encrypted.length).to.greaterThan(clearText.length + encryptSessionOverhead);
+
+        const decrypted = await aliceLaptop.decrypt(encrypted);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('encrypts without padding', async () => {
+        const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: Padding.OFF });
+        const encrypted = await encryptionSession.encrypt(clearText);
+
+        expect(encrypted.length).to.equal(clearText.length + encryptSessionOverhead);
+
+        const decrypted = await aliceLaptop.decrypt(encrypted);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      it('encrypts with a paddingStep of 13', async () => {
+        const step = 13;
+        const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: step });
+        const encrypted = await encryptionSession.encrypt(clearText);
+
+        expect((encrypted.length - encryptSessionOverhead) % step).to.equal(0);
+
+        const decrypted = await aliceLaptop.decrypt(encrypted);
+        expect(decrypted).to.equal(clearText);
+      });
+
+      [null, 'invalid string', -42, 0, 1].forEach(step => {
+        it(`throws when given ${step} as paddingStep`, async () => {
+          // @ts-expect-error
+          await expect(aliceLaptop.createEncryptionSession({ paddingStep: step })).to.be.rejectedWith(errors.InvalidArgument);
+        });
+      });
     });
 
     describe('using streams', () => {

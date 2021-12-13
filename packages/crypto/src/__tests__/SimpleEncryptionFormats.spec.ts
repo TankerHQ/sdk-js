@@ -439,6 +439,7 @@ describe('Simple Encryption', () => {
 
   describe('EncryptionFormatV7', () => {
     const resourceId = random(tcrypto.MAC_SIZE);
+    const overhead = encryptorV7.overhead;
 
     it('should unserialize a test vector', () => {
       const unserializedData = encryptorV7.unserialize(testVectorV7);
@@ -489,14 +490,65 @@ describe('Simple Encryption', () => {
     });
 
     it('should compute clear and encrypted sizes', () => {
-      const { overhead, getClearSize, getEncryptedSize } = encryptorV7;
-      const clearSize = getClearSize(testVectorV7.length);
+      const { getClearSize, getEncryptedSize } = encryptorV7;
       const encryptedSize = getEncryptedSize(clearData.length);
-      // add one to include the padding byte
-      expect(clearSize + 1).to.equal(getPaddedSize(clearData.length));
+      const paddedClearSize = getPaddedSize(clearData.length);
+      const decrypedSize = getClearSize(testVectorV7.length);
+
       expect(encryptedSize).to.equal(testVectorV7.length);
-      // encryptorv7.overhead does not include the padding byte
-      expect(encryptedSize - clearSize).to.equal(overhead + 1);
+      expect(paddedClearSize + overhead).to.equal(encryptedSize);
+      expect(decrypedSize).to.greaterThanOrEqual(clearData.length);
+    });
+
+    [undefined, 2, 5, 13].forEach(paddingStep => {
+      it(`outputs the right resourceId for a paddingStep of ${paddingStep}`, () => {
+        const encryptedData = encryptorV7.encrypt(key, clearData, resourceId, paddingStep);
+        const buff = encryptorV7.serialize(encryptedData);
+        expect(encryptorV7.extractResourceId(buff)).to.deep.equal(encryptedData.resourceId);
+      });
+    });
+
+    it('throws if getEncryptedSize is called with an invalid paddingStep', () => {
+      const clearSize = clearData.length;
+      expect(() => encryptorV7.getEncryptedSize(clearSize, 0)).to.throw;
+      expect(() => encryptorV7.getEncryptedSize(clearSize, 1)).to.throw;
+    });
+
+    it('throws if encrypt is called with an invalid paddingStep', () => {
+      expect(() => encryptorV7.encrypt(key, clearData, resourceId, 0)).to.throw;
+      expect(() => encryptorV7.encrypt(key, clearData, resourceId, 1)).to.throw;
+    });
+
+    const emptyClearData = new Uint8Array(0);
+    const smallClearData = utils.fromString('small');
+    const mediumClearData = clearData;
+
+    [emptyClearData, smallClearData, mediumClearData].forEach(clear => {
+      const clearLength = clear.length;
+
+      [2, 3, 7, 13, 19].forEach(step => {
+        it(`can set a padding of ${step} for a ${clearLength} byte(s) buffer`, () => {
+          const encrypted = encryptorV7.serialize(encryptorV7.encrypt(key, clear, resourceId, step));
+          const paddedLength = encrypted.length - overhead;
+          expect(paddedLength).to.greaterThanOrEqual(step);
+          expect(paddedLength % step).to.equal(0);
+
+          const decrypted = encryptorV7.decrypt(key, encryptorV7.unserialize(encrypted));
+          expect(decrypted).to.deep.equal(clear);
+        });
+      });
+
+      [undefined, Padding.AUTO].forEach(step => {
+        it(`supports auto padding as ${step} for a ${clearLength} byte(s) buffer`, () => {
+          const encrypted = encryptorV7.serialize(encryptorV7.encrypt(key, clear, resourceId, step));
+          const paddedLength = encrypted.length - overhead;
+          expect(paddedLength).to.greaterThanOrEqual(minimalPadding);
+          expect(paddedLength).to.greaterThanOrEqual(clearLength + 1);
+
+          const decrypted = encryptorV7.decrypt(key, encryptorV7.unserialize(encrypted));
+          expect(decrypted).to.deep.equal(clear);
+        });
+      });
     });
   });
 });
