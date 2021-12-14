@@ -12,6 +12,7 @@ import * as encryptorV3 from '../EncryptionFormats/v3';
 import * as encryptorV4 from '../EncryptionFormats/v4';
 import * as encryptorV5 from '../EncryptionFormats/v5';
 import * as encryptorV6 from '../EncryptionFormats/v6';
+import * as encryptorV7 from '../EncryptionFormats/v7';
 import type { Encryptor } from '../EncryptionFormats/types';
 import { EncryptionStream } from '../EncryptionFormats/EncryptionStream';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
@@ -204,6 +205,28 @@ describe('Simple Encryption', () => {
     resourceId: new Uint8Array([
       0xd2, 0x26, 0x6e, 0xc6, 0x7c, 0x05, 0xf0, 0xfc, 0x77, 0x95, 0x34, 0xa2,
       0xfa, 0x7e, 0x6e, 0x36,
+    ]),
+  }];
+
+  const testVectorsV7 = [{
+    key: new Uint8Array([
+      0x5c, 0x07, 0xdf, 0xd0, 0x6f, 0x79, 0x08, 0x50, 0xef, 0x66, 0xca, 0x78,
+      0x93, 0x53, 0xc0, 0x5b, 0x4f, 0xd0, 0xa7, 0xb8, 0x9c, 0xc8, 0x0d, 0x17,
+      0xb7, 0x61, 0xd0, 0x4d, 0x98, 0x31, 0x7e, 0x28,
+    ]),
+    clearData: utils.fromString('this is very secret'),
+    encryptedData: new Uint8Array([
+      0x07, 0x30, 0x5f, 0x9c, 0xdd, 0x65, 0x42, 0xfe, 0x61, 0x23, 0xa6, 0x22,
+      0xf8, 0x4f, 0x16, 0xcd, 0x22, 0x4a, 0x73, 0xa8, 0x99, 0x95, 0x4f, 0xe6,
+      0x7c, 0x90, 0x12, 0xb2, 0x61, 0xd9, 0xf3, 0x3e, 0xa9, 0xb2, 0x56, 0x65,
+      0x5e, 0xde, 0xcf, 0xf2, 0xb4, 0x21, 0x23, 0x45, 0xdc, 0x34, 0xd7, 0xe8,
+      0x69, 0x5d, 0x0a, 0x7a, 0xeb, 0xa6, 0x32, 0x3a, 0x33, 0x28, 0x2f, 0x52,
+      0xfe, 0x2d, 0x84, 0x51, 0xd8, 0x50, 0x8b, 0xf8, 0x22, 0x78, 0x22, 0x09,
+      0x3c, 0xf1, 0x88, 0xc8, 0xf6, 0x75,
+    ]),
+    resourceId: new Uint8Array([
+      0x30, 0x5f, 0x9c, 0xdd, 0x65, 0x42, 0xfe, 0x61, 0x23, 0xa6, 0x22, 0xf8,
+      0x4f, 0x16, 0xcd, 0x22,
     ]),
   }];
 
@@ -457,6 +480,19 @@ describe('Simple Encryption', () => {
     });
     generateSimpleTests(encryptorV6, testVectorsV6, {
       encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV6.encrypt(k, d),
+    });
+  });
+  describe('EncryptionFormatV7', () => {
+    generateCommonTests(encryptorV7, testVectorsV7, {
+      encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV7.serialize(encryptorV7.encrypt(k, d, random(tcrypto.MAC_SIZE))),
+      decrypt: (k: Uint8Array, d: Uint8Array) => encryptorV7.decrypt(k, encryptorV7.unserialize(d)),
+    });
+    generatePaddedTests(encryptorV7, testVectorsV7, {
+      encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => encryptorV7.serialize(encryptorV7.encrypt(k, d, random(tcrypto.MAC_SIZE), padding)),
+      decrypt: (k: Uint8Array, d: Uint8Array) => encryptorV7.decrypt(k, encryptorV7.unserialize(d)),
+    });
+    generateSimpleTests(encryptorV7, testVectorsV7, {
+      encrypt: (k: Uint8Array, d: Uint8Array) => encryptorV7.encrypt(k, d, random(tcrypto.MAC_SIZE)),
     });
   });
 });
