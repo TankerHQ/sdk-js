@@ -8,6 +8,7 @@ import * as encryptorV2 from '../EncryptionFormats/v2';
 import * as encryptorV3 from '../EncryptionFormats/v3';
 import * as encryptorV5 from '../EncryptionFormats/v5';
 import * as encryptorV6 from '../EncryptionFormats/v6';
+import * as encryptorV7 from '../EncryptionFormats/v7';
 import { getPaddedSize } from '../padding';
 import { ready as cryptoReady } from '../ready';
 
@@ -85,6 +86,23 @@ describe('Simple Encryption', () => {
     // mac
     0x06, 0x35, 0x7e, 0xb4, 0x72, 0x4f, 0x5b, 0x2d, 0x66, 0xfe, 0x0a, 0x95,
     0xba, 0x66, 0x04, 0x30,
+  ]);
+
+  const testVectorV7 = new Uint8Array([
+    // version
+    0x07,
+    // resourceId
+    0xc1, 0x74, 0x53, 0x1e, 0xdd, 0x77, 0x77, 0x87, 0x2c, 0x02, 0x6e, 0xf2,
+    0x36, 0xdf, 0x28, 0x7e,
+    // iv
+    0xfe, 0x6f, 0xae, 0x05, 0xd7, 0xc1, 0x7c, 0xf2, 0x4c, 0x20, 0x91, 0xc1,
+    0xb7, 0xe7, 0xbc, 0x95, 0x15, 0xf0, 0x61, 0xe7, 0x03, 0x0b, 0x52, 0xe0,
+    // encrypted data
+    0x05, 0x7c, 0x40, 0x68, 0x8f, 0x22, 0x89, 0xcf, 0x24, 0xe5, 0xa6, 0x88,
+    0x6d, 0xdf, 0xbf, 0xe4, 0xab, 0x24, 0x92, 0xf9,
+    // mac
+    0x8f, 0x02, 0xbe, 0xa0, 0x80, 0xa4, 0x49, 0x5a, 0x9a, 0x03, 0xaa, 0x5b,
+    0x6a, 0x47, 0x6f, 0x05,
   ]);
 
   const tamperWith = (data: Uint8Array): Uint8Array => {
@@ -354,6 +372,69 @@ describe('Simple Encryption', () => {
       expect(clearSize + 1).to.equal(getPaddedSize(clearData.length));
       expect(encryptedSize).to.equal(testVectorV6.length);
       // encryptorv6.overhead does not include the padding byte
+      expect(encryptedSize - clearSize).to.equal(overhead + 1);
+    });
+  });
+
+  describe('EncryptionFormatV7', () => {
+    const resourceId = random(tcrypto.MAC_SIZE);
+
+    it('should unserialize a test vector', () => {
+      const unserializedData = encryptorV7.unserialize(testVectorV7);
+      expect(unserializedData.encryptedData).to.deep.equal(new Uint8Array([
+        0x05, 0x7c, 0x40, 0x68, 0x8f, 0x22, 0x89, 0xcf, 0x24, 0xe5, 0xa6, 0x88,
+        0x6d, 0xdf, 0xbf, 0xe4, 0xab, 0x24, 0x92, 0xf9, 0x8f, 0x02, 0xbe, 0xa0,
+        0x80, 0xa4, 0x49, 0x5a, 0x9a, 0x03, 0xaa, 0x5b, 0x6a, 0x47, 0x6f, 0x05,
+      ]));
+      expect(unserializedData.resourceId).to.deep.equal(new Uint8Array([
+        0xc1, 0x74, 0x53, 0x1e, 0xdd, 0x77, 0x77, 0x87, 0x2c, 0x02, 0x6e, 0xf2,
+        0x36, 0xdf, 0x28, 0x7e,
+      ]));
+      expect(unserializedData.iv).to.deep.equal(new Uint8Array([
+        0xfe, 0x6f, 0xae, 0x05, 0xd7, 0xc1, 0x7c, 0xf2, 0x4c, 0x20, 0x91, 0xc1,
+        0xb7, 0xe7, 0xbc, 0x95, 0x15, 0xf0, 0x61, 0xe7, 0x03, 0x0b, 0x52, 0xe0,
+      ]));
+    });
+
+    it('should decrypt a test vector v7', () => {
+      const decryptedData = encryptorV7.decrypt(key, encryptorV7.unserialize(testVectorV7));
+      expect(decryptedData).to.deep.equal(clearData);
+    });
+
+    it('should encrypt / decrypt a buffer', () => {
+      const encryptedData = encryptorV7.encrypt(key, clearData, resourceId);
+      const decryptedData = encryptorV7.decrypt(key, encryptedData);
+      expect(decryptedData).to.deep.equal(clearData);
+    });
+
+    it('should serialize/unserialize a buffer', () => {
+      const data = encryptorV7.encrypt(key, clearData, resourceId);
+      const buffer = encryptorV7.serialize(data);
+      const unserializedData = encryptorV7.unserialize(buffer);
+
+      expect(unserializedData.resourceId).to.deep.equal(resourceId);
+      expect(unserializedData.encryptedData).to.deep.equal(data.encryptedData);
+      expect(unserializedData.iv).to.deep.equal(data.iv);
+    });
+
+    it('should throw if trying to decrypt a corrupted buffer', () => {
+      const buffer = encryptorV7.serialize(encryptorV7.encrypt(key, clearData, resourceId));
+      expect(() => encryptorV7.decrypt(key, encryptorV7.unserialize(tamperWith(buffer)))).to.throw();
+    });
+
+    it('should extract the resource id', () => {
+      const extractedResourceId = encryptorV7.extractResourceId(testVectorV7);
+      expect(extractedResourceId).to.deep.equal(new Uint8Array([0xc1, 0x74, 0x53, 0x1e, 0xdd, 0x77, 0x77, 0x87, 0x2c, 0x02, 0x6e, 0xf2, 0x36, 0xdf, 0x28, 0x7e]));
+    });
+
+    it('should compute clear and encrypted sizes', () => {
+      const { overhead, getClearSize, getEncryptedSize } = encryptorV7;
+      const clearSize = getClearSize(testVectorV7.length);
+      const encryptedSize = getEncryptedSize(clearData.length);
+      // add one to include the padding byte
+      expect(clearSize + 1).to.equal(getPaddedSize(clearData.length));
+      expect(encryptedSize).to.equal(testVectorV7.length);
+      // encryptorv7.overhead does not include the padding byte
       expect(encryptedSize - clearSize).to.equal(overhead + 1);
     });
   });
