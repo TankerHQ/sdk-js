@@ -13,8 +13,9 @@ import * as encryptionV3 from './EncryptionFormats/v3';
 import * as encryptionV4 from './EncryptionFormats/v4';
 import * as encryptionV5 from './EncryptionFormats/v5';
 import * as encryptionV6 from './EncryptionFormats/v6';
+import * as encryptionV7 from './EncryptionFormats/v7';
 
 export type { EncryptionFormatReporter } from './EncryptionFormats/types';
-export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6 };
+export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7 };
 
 export type { b64string, safeb64string, Key };
