@@ -18,5 +18,5 @@ export { getClearSize, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from '.
 export { EncryptionStream } from './EncryptionFormats/EncryptionStream';
 export { DecryptionStream } from './EncryptionFormats/DecryptionStream';
 export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5 };
-
+export { Padding, padme, paddedFromClearSize } from './padding';
 export type { b64string, safeb64string, Key };
