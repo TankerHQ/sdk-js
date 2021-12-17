@@ -1,7 +1,7 @@
 include:
   - project: TankerHQ/gitlab-ci-files
     file: /common.yml
-    ref: 2021-11-10-229
+    ref: 2021-12-16-236
 
 stages:
   - check
@@ -30,8 +30,7 @@ check/lint:
     - poetry run mypy
     - poetry run isort --profile black --check --diff run-ci.py
     - poetry run python run-ci.py lint
-  tags:
-    - linux
+  tags: !reference [.tags/linux, tags]
 
 check/linux/chrome:
   stage: check
@@ -41,8 +40,7 @@ check/linux/chrome:
     - !reference [.rules/push-master-or-feat, rules]
   script:
     - poetry run python run-ci.py check --runner linux
-  tags:
-    - linux
+  tags: !reference [.tags/linux, tags]
 
 .check/linux/node-base:
   stage: check
@@ -53,8 +51,7 @@ check/linux/chrome:
     paths:
       - lcov-report/
     expire_in: 7 days
-  tags:
-    - linux
+  tags: !reference [.tags/linux, tags]
 
 check/linux/node:
   extends:
@@ -121,9 +118,7 @@ check/macos/nightly:
 
 .check/windows:
   stage: check
-  tags:
-    - windows
-    - tanker
+  tags: !reference [.tags/windows, tags]
 
 check/windows/edge:
   extends:
@@ -152,8 +147,7 @@ check/linux/nightly:
   stage: check
   script:
     - poetry run python run-ci.py check --runner linux --nightly
-  tags:
-    - linux
+  tags: !reference [.tags/linux, tags]
 
 # Benchmark jobs are pinned on a machine to have more consistent results.
 
@@ -195,7 +189,7 @@ bench/windows:
     UPSTREAM_JOB_TARGET: windows
 
 pages:
-  extends: 
+  extends:
     - .rules/push-master-or-feat
   stage: deploy
   needs:
@@ -206,8 +200,7 @@ pages:
     paths:
       - public
     expire_in: 7 days
-  tags:
-    - linux
+  tags: !reference [.tags/linux, tags]
   variables:
     GIT_STRATEGY: none
 
@@ -231,9 +224,7 @@ check/e2e:
     - !reference [.rules/nightly, rules]
   script:
     - poetry run python run-ci.py e2e
-  tags:
-    - linux
-    - tanker
+  tags: !reference [.tags/compilation-linux, tags]
   image: registry.gitlab.com/tankerhq/docker/e2e:latest
 
 audit:
@@ -243,20 +234,19 @@ audit:
   script:
     - yarn
     - yarn audit
-  tags:
-    - linux
+  tags: !reference [.tags/linux, tags]
 
 deploy:
   stage: deploy
   extends:
     - .rules/deploy/js
-    - .tags/linux
   script:
     - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > "${HOME}/.npmrc"
     - poetry run python run-ci.py deploy --version "${SDK_JS_RELEASE_VERSION}"
   release:
     description: sdk-js v${SDK_JS_RELEASE_VERSION}
     tag_name: v${SDK_JS_RELEASE_VERSION}
+  tags: !reference [.tags/linux, tags]
 
 test/deployed:
   stage: deploy
@@ -264,6 +254,6 @@ test/deployed:
     - deploy
   extends:
     - .rules/deploy/js
-    - .tags/linux
   script:
     - poetry run python run-ci.py test-deploy --version "${SDK_JS_RELEASE_VERSION}"
+  tags: !reference [.tags/linux, tags]
