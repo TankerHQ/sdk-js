@@ -411,7 +411,7 @@ describe('Simple Encryption', () => {
     [emptyClearData, smallClearData, mediumClearData].forEach(clear => {
       const clearLength = clear.length;
 
-      [2, 3, 7, 13, 19].forEach(step => {
+      [2, 5, 13].forEach(step => {
         it(`can set a padding of ${step} for a ${clearLength} byte(s) buffer`, () => {
           const encrypted = encryptorV6.serialize(encryptorV6.encrypt(key, clear, step));
           const paddedLength = encrypted.length - overhead;
@@ -460,12 +460,6 @@ describe('Simple Encryption', () => {
 
     it('should decrypt a test vector v7', () => {
       const decryptedData = encryptorV7.decrypt(key, encryptorV7.unserialize(testVectorV7));
-      expect(decryptedData).to.deep.equal(clearData);
-    });
-
-    it('should encrypt / decrypt a buffer', () => {
-      const encryptedData = encryptorV7.encrypt(key, clearData, resourceId);
-      const decryptedData = encryptorV7.decrypt(key, encryptedData);
       expect(decryptedData).to.deep.equal(clearData);
     });
 
@@ -519,6 +513,27 @@ describe('Simple Encryption', () => {
       expect(() => encryptorV7.encrypt(key, clearData, resourceId, 1)).to.throw;
     });
 
+    it('computes the exact encrypted size for multiple padding steps', () => {
+      const paddedToFive: Array<[number, number]> = [
+        [0, 5],
+        [2, 5],
+        [4, 5],
+        [5, 10],
+        [6, 10],
+        [9, 10],
+        [10, 15],
+        [14, 15],
+        [39, 40],
+        [40, 45],
+        [41, 45],
+      ];
+
+      paddedToFive.forEach(tuple => {
+        const [clearSize, paddedSize] = tuple;
+        expect(encryptorV7.getEncryptedSize(clearSize, 5)).to.equal(paddedSize + overhead);
+      });
+    });
+
     const emptyClearData = new Uint8Array(0);
     const smallClearData = utils.fromString('small');
     const mediumClearData = clearData;
@@ -526,7 +541,7 @@ describe('Simple Encryption', () => {
     [emptyClearData, smallClearData, mediumClearData].forEach(clear => {
       const clearLength = clear.length;
 
-      [2, 3, 7, 13, 19].forEach(step => {
+      [2, 5, 13].forEach(step => {
         it(`can set a padding of ${step} for a ${clearLength} byte(s) buffer`, () => {
           const encrypted = encryptorV7.serialize(encryptorV7.encrypt(key, clear, resourceId, step));
           const paddedLength = encrypted.length - overhead;
