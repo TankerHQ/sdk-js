@@ -4,6 +4,7 @@ import { getPublicIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
 import type { TestArgs, AppHelper } from './helpers';
+import { expectDecrypt } from './helpers';
 
 export const generateEncryptionSessionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
@@ -110,24 +111,33 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
     describe('with the padding option', async () => {
       const encryptSessionOverhead = 57;
-      it('encrypts with auto padding', async () => {
-        const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: Padding.AUTO });
-        const encrypted = await encryptionSession.encrypt(clearText);
+      describe('auto', async () => {
+        const clearTextAutoPadding = 'my clear data is clear';
+        const lengthWithPadme = 24;
 
-        expect(encrypted.length).to.greaterThan(clearText.length + encryptSessionOverhead);
+        it('encrypts with auto padding by default', async () => {
+          const encryptionSession = await aliceLaptop.createEncryptionSession();
+          const encrypted = await encryptionSession.encrypt(clearTextAutoPadding);
 
-        const decrypted = await aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+          expect(encrypted.length - encryptSessionOverhead).to.equal(lengthWithPadme);
+          await expectDecrypt([aliceLaptop], clearTextAutoPadding, encrypted);
+        });
+
+        it('encrypts and decrypts with auto padding by default', async () => {
+          const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: Padding.AUTO });
+          const encrypted = await encryptionSession.encrypt(clearTextAutoPadding);
+
+          expect(encrypted.length - encryptSessionOverhead).to.equal(lengthWithPadme);
+          await expectDecrypt([aliceLaptop], clearTextAutoPadding, encrypted);
+        });
       });
 
-      it('encrypts without padding', async () => {
+      it('encrypts and decrypts with no padding', async () => {
         const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: Padding.OFF });
         const encrypted = await encryptionSession.encrypt(clearText);
 
-        expect(encrypted.length).to.equal(clearText.length + encryptSessionOverhead);
-
-        const decrypted = await aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        expect(encrypted.length - encryptSessionOverhead).to.equal(clearText.length);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       it('encrypts with a paddingStep of 13', async () => {
@@ -136,9 +146,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         const encrypted = await encryptionSession.encrypt(clearText);
 
         expect((encrypted.length - encryptSessionOverhead) % step).to.equal(0);
-
-        const decrypted = await aliceLaptop.decrypt(encrypted);
-        expect(decrypted).to.equal(clearText);
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
       [null, 'invalid string', -42, 0, 1].forEach(step => {

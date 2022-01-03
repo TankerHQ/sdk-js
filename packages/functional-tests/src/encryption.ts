@@ -113,31 +113,47 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
 
-      it('throws when calling encrypt with a bad paddingStep', async () => {
-        await expect(bobLaptop.encrypt(clearText, { paddingStep: -1 })).to.be.rejectedWith(errors.InvalidArgument);
-        await expect(bobLaptop.encrypt(clearText, { paddingStep: 0 })).to.be.rejectedWith(errors.InvalidArgument);
-        await expect(bobLaptop.encrypt(clearText, { paddingStep: 1 })).to.be.rejectedWith(errors.InvalidArgument);
-      });
-
       it('can encrypt and decrypt a text resource', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         await expectDecrypt([bobLaptop], clearText, encrypted);
       });
 
       describe('with padding', () => {
-        const stepAndFormat: Array<[number | Padding | undefined, number]> = [
-          [undefined, 6],
-          [Padding.AUTO, 6],
-          [Padding.OFF, 3],
-          [13, 6],
-        ];
+        const simpleEncryptionOverhead = 17;
+        describe('auto', () => {
+          const clearTextAutoPadding = 'my clear data is clear';
+          const lengthWithPadme = 24;
 
-        stepAndFormat.forEach(tuple => {
-          const [step, format] = tuple;
-          it(`encrypts with format ${format} for paddingStep set to ${step}`, async () => {
-            const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: step });
-            expect(encrypted[0]).to.equal(format);
-            await expectDecrypt([bobLaptop], clearText, encrypted);
+          it('encrypts with auto padding by default', async () => {
+            const encrypted = await bobLaptop.encrypt(clearTextAutoPadding);
+            expect(encrypted.length - simpleEncryptionOverhead).to.equal(lengthWithPadme);
+            await expectDecrypt([bobLaptop], clearTextAutoPadding, encrypted);
+          });
+
+          it('encrypts and decrypts with auto padding', async () => {
+            const encrypted = await bobLaptop.encrypt(clearTextAutoPadding, { paddingStep: Padding.AUTO });
+            expect(encrypted.length - simpleEncryptionOverhead).to.equal(lengthWithPadme);
+            await expectDecrypt([bobLaptop], clearTextAutoPadding, encrypted);
+          });
+        });
+
+        it('encrypts and decrypts with no padding', async () => {
+          const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: Padding.OFF });
+          expect(encrypted.length - simpleEncryptionOverhead).to.equal(clearText.length);
+          await expectDecrypt([bobLaptop], clearText, encrypted);
+        });
+
+        it('encrypts and decrypts with a padding step', async () => {
+          const step = 13;
+          const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: step });
+          expect((encrypted.length - simpleEncryptionOverhead) % step).to.equal(0);
+          await expectDecrypt([bobLaptop], clearText, encrypted);
+        });
+
+        [null, 'invalid string', -42, 0, 1].forEach(step => {
+          it(`throws when given a paddingStep set to ${step}`, async () => {
+            // @ts-expect-error
+            await expect(bobLaptop.encrypt(clearText, { paddingStep: step })).to.be.rejectedWith(errors.InvalidArgument);
           });
         });
       });

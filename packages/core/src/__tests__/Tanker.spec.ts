@@ -377,13 +377,6 @@ describe('Tanker', () => {
           await expect(tanker.verifyProvisionalIdentity(arg), `verify provisional identity test #${i}`).to.be.rejectedWith(InvalidArgument);
         }
       });
-
-      [null, 'invalid string', -42, 0, 1].forEach(step => {
-        it(`throws when given a paddingStep set to ${step}`, async () => {
-          // @ts-expect-error
-          await expect(tanker.encrypt('clear', { paddingStep: step })).to.be.rejectedWith(InvalidArgument);
-        });
-      });
     });
 
     describe('API typing', () => {
