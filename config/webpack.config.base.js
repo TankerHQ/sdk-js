@@ -158,6 +158,8 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
       '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
       '@tanker/filekit': path.resolve(__dirname, '../packages/filekit/src/index.ts'),
       '@tanker/functional-tests': path.resolve(__dirname, '../packages/functional-tests/src/index.ts'),
+      // dexie resolves to 'dist/modern/dexie.mjs' by default, which is not IE11 compatible
+      // 'dist/dexie.js' is compatible
       dexie: path.resolve(__dirname, '../node_modules/dexie/dist/dexie.js'),
     },
     extensions,
