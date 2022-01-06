@@ -6,5 +6,6 @@ export { AppHelper } from './AppHelper';
 export { User } from './User';
 export { Device } from './Device';
 export type { AppProvisionalUser } from './AppHelper';
+export { UserSession, ProvisionalUserSession, generateUserSession, generateProvisionalUserSession, getPublicIdentities, attachProvisionalIdentities } from './session';
 export { pipeStreams } from './stream';
 export type { TestResource, TestResources, TestArgs, TestResourceSize } from './TestArgs';
