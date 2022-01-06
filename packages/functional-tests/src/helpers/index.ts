@@ -3,6 +3,8 @@ export { expectProgressReport, expectType, expectSameType, expectDeepEqual, expe
 export { makePrefix } from './makePrefix';
 export { makeRandomUint8Array } from './makeRandomUint8Array';
 export { AppHelper } from './AppHelper';
+export { User } from './User';
+export { Device } from './Device';
 export type { AppProvisionalUser } from './AppHelper';
 export { pipeStreams } from './stream';
 export type { TestResource, TestResources, TestArgs, TestResourceSize } from './TestArgs';
