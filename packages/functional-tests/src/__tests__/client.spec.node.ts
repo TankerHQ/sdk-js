@@ -4,13 +4,13 @@ import PouchDBMemory from '@tanker/datastore-pouchdb-memory';
 import type { b64string } from '@tanker/core';
 
 import type { TestResources } from '../helpers';
-import { appdUrl, makePrefix, makeRandomUint8Array } from '../helpers';
+import { appdUrl, makeRandomUint8Array } from '../helpers';
 import { generateFunctionalTests } from '..';
 
-const makeTanker = (appId: b64string): Tanker => {
+const makeTanker = (appId: b64string, storagePrefix: string): Tanker => {
   const tanker = new Tanker({
     appId,
-    dataStore: { adapter: PouchDBMemory, prefix: makePrefix() },
+    dataStore: { adapter: PouchDBMemory, prefix: storagePrefix },
     sdkType: 'js-functional-tests-node',
     url: appdUrl,
   });
