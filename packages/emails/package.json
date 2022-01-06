@@ -21,7 +21,6 @@
     "siphon-media-query": "^1.0.0"
   },
   "devDependencies": {
-    "@mr-hope/gulp-sass": "^2.0.0",
     "browser-sync": "^2.26.14",
     "gulp": "^4.0.2",
     "gulp-cli": "^2.3.0",
@@ -33,11 +32,13 @@
     "gulp-load-plugins": "^2.0.6",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
+    "gulp-sass": "5.1.0",
     "gulp-sourcemaps": "^3.0.0",
     "inky": "^1.4.2",
     "lazypipe": "^1.0.2",
     "panini": "^1.7.1",
     "rimraf": "^3.0.2",
+    "sass": "1.45.2",
     "yargs": "^16.2.0"
   }
 }
