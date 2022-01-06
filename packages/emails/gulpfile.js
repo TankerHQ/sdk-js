@@ -8,9 +8,12 @@ const lazypipe = require('lazypipe');
 const inky = require('inky');
 const fs = require('fs');
 const siphon = require('siphon-media-query');
-const { sass } = require('@mr-hope/gulp-sass');
+const dartSass = require('sass');
+const gulpSass = require('gulp-sass');
 
 const $ = plugins();
+
+const sass = gulpSass(dartSass);
 
 // Look for the --production flag
 const PRODUCTION = !!yargs(process.argv).argv.production;
