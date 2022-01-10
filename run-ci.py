@@ -68,7 +68,6 @@ configs: List[Config] = [
         "build": "fake-authentication",
         "publish": ["@tanker/fake-authentication"],
     },
-    {"build": "filekit", "publish": ["@tanker/filekit"]},
 ]
 
 

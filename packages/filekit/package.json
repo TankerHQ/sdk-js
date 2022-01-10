@@ -1,5 +1,6 @@
 {
   "name": "@tanker/filekit",
+  "private": true,
   "version": "0.0.1",
   "description": "Tanker FileKit SDK",
   "author": "Tanker Team",
