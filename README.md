@@ -110,6 +110,9 @@ Tanker **Fake Authentication** reduces the friction when starting new projects, 
 
 ## Tanker FileKit
 
+!!! warning
+    FileKit in now deprecated
+
 Tanker **FileKit** is an end-to-end encrypted file storage service for apps.
 
 Tanker **FileKit** transfers and stores files in the cloud. The files are encrypted in the browser before being uploaded, and can only be downloaded by the owner and recipients, completely transparently.

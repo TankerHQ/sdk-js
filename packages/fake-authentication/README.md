@@ -20,7 +20,7 @@ const fakeAuth = new FakeAuthentication({ appId });
 
 `getPrivateIdentity()` returns the private identity associated with the provided email. If the email does not exist, a new private identity is created and stored for reuse. It is guaranteed that this function will always return the same private identity given an email.
 
-If `getPublicIdentities()` was called before `getPrivateIdentity()` for a given email, the private identity returned by `getPrivateIdentity()` also contains a provisional identity. This provisional identity may have been used to share with that email before it was registered with Tanker. Note that the provisional identity must be associated with the private identity (either automatically with FileKit, VerificationUI or using `attachProvisionalIdentity()`) to enable access to the resources shared with the provisional identity.
+If `getPublicIdentities()` was called before `getPrivateIdentity()` for a given email, the private identity returned by `getPrivateIdentity()` also contains a provisional identity. This provisional identity may have been used to share with that email before it was registered with Tanker. Note that the provisional identity must be associated with the private identity (either automatically with VerificationUI or using `attachProvisionalIdentity()`) to enable access to the resources shared with the provisional identity.
 
 ```javascript
 const email = 'alice@example.com';
@@ -35,32 +35,11 @@ const privateIdentity = await fakeAuth.getPrivateIdentity(email);
 const emails = ['alice@example.com', 'bob@company.com'];
 const publicIdentities = await fakeAuth.getPublicIdentities(emails);
 
-// then use it with Tanker or FileKit
+// then use with Tanker
 await tanker.encrypt(someData, { shareWithUsers: publicIdentities });
-await fileKit.upload(someFile, { shareWithUsers: publicIdentities });
 ```
 
 ## How to use Tanker Fake Authentication
-
-### Fake Authentication with FileKit
-
-```javascript
-const email = 'alice@example.com';
-
-const privateIdentity = await fakeAuth.getPrivateIdentity(email);
-
-await fileKit.start(email, privateIdentity);
-```
-
-### Fake Authentication with FileKit (Anonymous disposable session)
-
-In that case FileKit will start a disposable Tanker session. The session will work only once and on a single device.
-
-```javascript
-const disposablePrivateIdentity = await fakeAuth.getPrivateIdentity(/* no email */);
-
-await fileKit.startDisposableSession(disposablePrivateIdentity);
-```
 
 ### Fake Authentication with Tanker
 
