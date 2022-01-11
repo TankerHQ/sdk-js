@@ -1,6 +1,8 @@
-import { statuses, errors } from '@tanker/core';
 import type { Tanker, b64string, PreverifiedPhoneNumberVerification, PreverifiedEmailVerification } from '@tanker/core';
 import { expect } from '@tanker/test-utils';
+import { getPublicIdentity } from '@tanker/identity';
+import { statuses, errors } from '@tanker/core';
+import { expectDecrypt } from './helpers';
 
 import type { TestArgs, AppHelper } from './helpers';
 
@@ -86,16 +88,31 @@ export const generateEnrollTests = (args: TestArgs) => {
     describe('enrolled user', () => {
       let bobLaptop: Tanker;
       let bobPhone: Tanker;
+      let bobPubIdentity: b64string;
+      const clearText = 'new enrollment feature';
 
       before(async () => {
         await appHelper.setEnrollUsersEnabled();
       });
 
-      it('must only verify new devices', async () => {
+      beforeEach(async () => {
         bobLaptop = args.makeTanker();
+        bobPubIdentity = await getPublicIdentity(bobIdentity);
+        await server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification]);
+
+        const disposableIdentity = await appHelper.generateIdentity();
+        await server.start(disposableIdentity);
+        const verificationKey = await server.generateVerificationKey();
+        await server.registerIdentity({ verificationKey });
+      });
+
+      afterEach(async () => {
+        await server.stop();
+      });
+
+      it('must verify new devices', async () => {
         bobPhone = args.makeTanker();
 
-        await server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification]);
         await bobLaptop.start(bobIdentity);
         await bobPhone.start(bobIdentity);
         const emailCode = await appHelper.getEmailVerificationCode(email);
@@ -106,6 +123,54 @@ export const generateEnrollTests = (args: TestArgs) => {
 
         await expect(bobLaptop.verifyIdentity({ email, verificationCode: emailCode })).to.be.fulfilled;
         await expect(bobPhone.verifyIdentity({ phoneNumber, verificationCode: phoneNumberCode })).to.be.fulfilled;
+      });
+
+      it('can attache a provisional identity', async () => {
+        const provisionalIdentity = await appHelper.generateEmailProvisionalIdentity(email);
+        const encryptedTest = await server.encrypt(clearText, { shareWithUsers: [provisionalIdentity.publicIdentity], shareWithSelf: false });
+
+        await bobLaptop.start(bobIdentity);
+        const emailCode = await appHelper.getEmailVerificationCode(email);
+        await expect(bobLaptop.verifyIdentity({ email, verificationCode: emailCode })).to.be.fulfilled;
+        await expect(bobLaptop.attachProvisionalIdentity(provisionalIdentity.identity)).to.be.fulfilled;
+
+        await expectDecrypt([bobLaptop], clearText, encryptedTest);
+      });
+
+      it('access data shared before first verification', async () => {
+        const encryptedTest = await server.encrypt(clearText, { shareWithUsers: [bobPubIdentity], shareWithSelf: false });
+
+        await bobLaptop.start(bobIdentity);
+        const emailCode = await appHelper.getEmailVerificationCode(email);
+        await expect(bobLaptop.verifyIdentity({ email, verificationCode: emailCode })).to.be.fulfilled;
+
+        await expectDecrypt([bobLaptop], clearText, encryptedTest);
+      });
+
+      it('can be added to group before first verification', async () => {
+        const groupId = await server.createGroup([bobPubIdentity]);
+
+        const encryptedTest = await server.encrypt(clearText, { shareWithGroups: [groupId], shareWithSelf: false });
+
+        await bobLaptop.start(bobIdentity);
+        const emailCode = await appHelper.getEmailVerificationCode(email);
+        await expect(bobLaptop.verifyIdentity({ email, verificationCode: emailCode })).to.be.fulfilled;
+
+        await expectDecrypt([bobLaptop], clearText, encryptedTest);
+      });
+
+      it('decrypts data shared with a provisional identity through a group before first verification', async () => {
+        const provisionalIdentity = await appHelper.generateEmailProvisionalIdentity(email);
+
+        const groupId = await server.createGroup([provisionalIdentity.publicIdentity]);
+        const encryptedTest = await server.encrypt(clearText, { shareWithGroups: [groupId], shareWithSelf: false });
+
+        await bobLaptop.start(bobIdentity);
+        const emailCode = await appHelper.getEmailVerificationCode(email);
+        await expect(bobLaptop.verifyIdentity({ email, verificationCode: emailCode })).to.be.fulfilled;
+        await expect(bobLaptop.attachProvisionalIdentity(provisionalIdentity.identity)).to.be.fulfilled;
+
+        await expectDecrypt([bobLaptop], clearText, encryptedTest);
       });
     });
   });
