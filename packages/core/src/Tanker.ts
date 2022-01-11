@@ -249,7 +249,7 @@ export class Tanker extends EventEmitter {
 
     const counts = countPreverifiedVerifications(verifications);
     if (counts.preverifiedEmail > 1 || counts.preverifiedPhoneNumber > 1) {
-      throw new InvalidArgument('verications', `contains at most one of each preverified verification method, found: ${counts}`);
+      throw new InvalidArgument('verications', 'contains at most one of each preverified verification method', counts);
     }
 
     const client = new Client(userData.trustchainId, userData.userId, this._clientOptions);
