@@ -91,7 +91,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
             await session.registerIdentity({ passphrase: 'password' });
             nbRegisteredSessions += 1;
           } catch (error) {
-            expect((error as Error).message).to.contain('user_already_exists');
+            expect((error as Error).message).to.contain('this ID already exists');
             expect(session.status).to.equal(statuses.STOPPED);
             // the dead session should restart.
             await expect(session.start(bobIdentity)).to.be.fulfilled;
@@ -110,7 +110,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       await Promise.all(
         otherTabs.map(tanker => expect(
           tanker.registerIdentity({ passphrase: 'password' }),
-        ).to.be.rejectedWith('user_already_exists')),
+        ).to.be.rejectedWith('this ID already exists')),
       );
 
       await expect(Promise.all(
