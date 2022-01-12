@@ -1,8 +1,8 @@
 import FilePonyfill from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
-import { InvalidArgument } from '@tanker/errors';
+import { InvalidArgument, InternalError } from '@tanker/errors';
 
-import { castData, getConstructor, getConstructorName, getDataLength, assertInteger, assertString, assertNotEmptyString } from '../data-types';
+import { castData, getConstructor, getConstructorName, getDataLength, assertInteger, assertString, assertNotEmptyString, assertNever } from '../data-types';
 import type { Data } from '../data-types';
 import type { Class } from '../utils';
 
@@ -120,6 +120,13 @@ describe('types', () => {
       [undefined, null, [], {}, 0, 1, ''].forEach((str, i) => {
         expect(() => assertNotEmptyString(str, 'str'), `failed test #${i}`).to.throw(InvalidArgument);
       });
+    });
+  });
+
+  describe('assertNever', () => {
+    it('throws an InternalError when called', () => {
+      // @ts-expect-error
+      expect(() => assertNever({}, 'never')).to.throw(InternalError);
     });
   });
 });

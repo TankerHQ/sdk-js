@@ -1,57 +1,53 @@
 import { encryptionV2, generichash, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
-import type LocalUser from './LocalUser';
-import type { RemoteVerification, RemoteVerificationWithToken } from './types';
+import type { RemoteVerification, RemoteVerificationWithToken, PreverifiedVerification } from './types';
 import type { SecretProvisionalIdentity } from '../Identity';
 
-export type VerificationRequestWithToken = {
+type WithToken<T> = T & { with_token?: { nonce: string; } };
+type WithVerificationCode<T> = WithToken<T> & { verification_code: string; };
+type Preverified<T> = T & { is_preverified: true };
+
+type PassphraseRequest = {
   hashed_passphrase: Uint8Array;
-  with_token?: { nonce: string; };
-} | {
+};
+type EmailRequest = {
   hashed_email: Uint8Array;
   v2_encrypted_email: Uint8Array;
-  verification_code: string;
-  with_token?: { nonce: string; };
-} | {
+};
+type OIDCRequest = {
   oidc_id_token: string;
-  with_token?: { nonce: string; };
-} | {
+};
+type PhoneNumberRequest = {
   phone_number: string;
   encrypted_phone_number: Uint8Array;
   user_salt: Uint8Array;
-  provisional_salt?: Uint8Array,
-  verification_code: string;
-  with_token?: { nonce: string; };
+  provisional_salt?: Uint8Array;
 };
 
-export type VerificationRequest = VerificationRequestWithToken | {
-  hashed_email: Uint8Array;
-  v2_encrypted_email: Uint8Array;
-  is_preverified: boolean;
-} | {
-  phone_number: string;
-  encrypted_phone_number: Uint8Array;
-  user_salt: Uint8Array;
-  provisional_salt?: Uint8Array,
-  is_preverified: boolean;
-};
+export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preverified<PhoneNumberRequest>;
+
+export type VerificationRequestWithToken = WithToken<PassphraseRequest>
+| WithVerificationCode<EmailRequest>
+| WithToken<OIDCRequest>
+| WithVerificationCode<PhoneNumberRequest>;
+export type VerificationRequest = VerificationRequestWithToken | PreverifiedVerificationRequest;
 
 export type ProvisionalKeysRequest = {
-  target: string;
+  target: 'email';
   email: string;
 } | {
-  target: string;
+  target: 'phone_number';
   phone_number: string;
   user_secret_salt: Uint8Array;
   provisional_salt: Uint8Array;
 };
 
-export const isPreverifiedVerificationRequest = (request: VerificationRequest): request is Exclude<VerificationRequest, VerificationRequestWithToken> => ('is_preverified' in request && request.is_preverified);
+export const isPreverifiedVerificationRequest = (request: VerificationRequest): request is PreverifiedVerificationRequest => ('is_preverified' in request && request.is_preverified);
 
 export const formatVerificationRequest = (
   verification: RemoteVerification | RemoteVerificationWithToken,
-  localUser: LocalUser,
+  localUser: { userSecret: Uint8Array },
   provIdentity?: SecretProvisionalIdentity,
 ): VerificationRequest => {
   if ('email' in verification) {
@@ -105,7 +101,11 @@ export const formatVerificationRequest = (
   throw new InternalError('Assertion error: invalid remote verification in formatVerificationRequest');
 };
 
-export const formatProvisionalKeysRequest = (provIdentity: SecretProvisionalIdentity, localUser: LocalUser): ProvisionalKeysRequest => {
+export const formatVerificationsRequest = (verifications: Array<PreverifiedVerification>, localUser: { userSecret: Uint8Array }): Array<PreverifiedVerificationRequest> => verifications.map(
+  (verification) => formatVerificationRequest(verification, localUser) as PreverifiedVerificationRequest,
+);
+
+export const formatProvisionalKeysRequest = (provIdentity: SecretProvisionalIdentity, localUser: { userSecret: Uint8Array }): ProvisionalKeysRequest => {
   if (provIdentity.target === 'email') {
     return {
       target: provIdentity.target,

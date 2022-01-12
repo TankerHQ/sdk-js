@@ -10,7 +10,7 @@ import dataStoreConfig, { makePrefix } from './TestDataStore';
 import { Tanker, optionsWithDefaults } from '..';
 import { EncryptionSession } from '../DataProtection/EncryptionSession';
 import type { TankerCoreOptions } from '../Tanker';
-import type { EmailVerification, RemoteVerification } from '../LocalUser/types';
+import type { EmailVerification, RemoteVerification, PreverifiedVerification } from '../LocalUser/types';
 import type { SharingOptions } from '../DataProtection/options';
 
 describe('Tanker', () => {
@@ -26,7 +26,7 @@ describe('Tanker', () => {
   });
 
   const valid32BytesB64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-  const badVerifications: any[] = [
+  const badVerifications: Array<any> = [
     undefined,
     null,
     'valid@tanker.io',
@@ -41,6 +41,28 @@ describe('Tanker', () => {
     { passphrase: new Uint8Array(12) },
     { passphrase: '' },
     { email: 'valid@tanker.io', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
+  ];
+
+  const validPreverifiedVerifications = [
+    { preverifiedEmail: 'valid@tanker.io' },
+    { preverifiedPhoneNumber: '+33639986789' },
+  ];
+  const badPreverifiedVerifications: Array<any> = [
+    undefined,
+    null,
+    'valid@tanker.io',
+    [],
+    {},
+    { preverifiedEmail: 'valid@tanker.io' },
+    { preverifiedPhoneNumber: '+33639986789' },
+    [{ preverifiedEmail: 'valid@tanker.io', passphrase: 'valid_passphrase' }],
+    [{ preverifiedEmail: 'valid@tanker.io' }, { passphrase: 'valid_passphrase' }],
+    [{ preverifiedEmail: 'valid@tanker.io' }, { preverifiedEmail: 'valid@tanker.io' }],
+    [{ preverifiedEmail: 'valid@tanker.io' }, { preverifiedEmail: 'valid2@tanker.io' }],
+    [{ preverifiedPhoneNumber: '+33639986789', passphrase: 'valid_passphrase' }],
+    [{ preverifiedPhoneNumber: '+33639986789' }, { passphrase: 'valid_passphrase' }],
+    [{ preverifiedPhoneNumber: '+33639986789' }, { preverifiedPhoneNumber: '+33639986789' }],
+    [{ preverifiedPhoneNumber: '+33639986789' }, { preverifiedPhoneNumber: '+33639986780' }],
   ];
 
   before(async () => {
@@ -131,8 +153,26 @@ describe('Tanker', () => {
   });
 
   describe('without a session', () => {
+    const badIdentities = [
+      undefined,
+      null,
+      {},
+      [],
+      '',
+      'not base 64',
+    ];
+
     let tanker: Tanker;
     let options: TankerCoreOptions;
+    let identity: b64string;
+
+    beforeEach(async () => {
+      identity = await createIdentity(
+        utils.toBase64(appId),
+        utils.toBase64(trustchainKeyPair.privateKey),
+        userId,
+      );
+    });
 
     beforeEach(async () => {
       options = makeTestTankerOptions();
@@ -158,15 +198,6 @@ describe('Tanker', () => {
 
     describe('start', () => {
       it('should throw when identity is invalid', async () => {
-        const badIdentities = [
-          undefined,
-          null,
-          {},
-          [],
-          '',
-          'not base 64',
-        ];
-
         for (let i = 0; i < badIdentities.length; i++) {
           const arg = badIdentities[i] as string;
           await expect(tanker.start(arg)).to.be.rejectedWith(InvalidArgument);
@@ -176,32 +207,81 @@ describe('Tanker', () => {
       it('should throw when identity\'s trustchain does not match tanker\'s', async () => {
         const otherAppKeyPair = tcrypto.makeSignKeyPair();
         const otherAppId = utils.generateAppID(otherAppKeyPair.publicKey);
-        const identity = await createIdentity(
+        const wrongIdentity = await createIdentity(
           utils.toBase64(otherAppId),
           utils.toBase64(otherAppKeyPair.privateKey),
           userId,
         );
-        await expect(tanker.start(identity)).to.be.rejectedWith(InvalidArgument);
+        await expect(tanker.start(wrongIdentity)).to.be.rejectedWith(InvalidArgument);
       });
 
       it('should throw when identity is valid but truncated', async () => {
-        const identity = await createIdentity(
-          utils.toBase64(appId),
-          utils.toBase64(trustchainKeyPair.privateKey),
-          userId,
-        );
         const truncatedIdentity = identity.slice(0, identity.length - 10);
         await expect(tanker.start(truncatedIdentity)).to.be.rejectedWith(InvalidArgument);
       });
 
       it('should throw when identity is public instead of secret', async () => {
-        const identity = await createIdentity(
-          utils.toBase64(appId),
-          utils.toBase64(trustchainKeyPair.privateKey),
-          userId,
-        );
         const publicIdentity = await getPublicIdentity(identity);
         await expect(tanker.start(publicIdentity)).to.be.rejectedWith(InvalidArgument, 'Expected a secret permanent identity, but got a public permanent identity');
+      });
+    });
+
+    describe('enrollUser', () => {
+      it('throws when tanker is not STOPPED', async () => {
+        const illegalStatuses = [
+          statuses.READY,
+          statuses.IDENTITY_REGISTRATION_NEEDED,
+          statuses.IDENTITY_VERIFICATION_NEEDED,
+        ];
+
+        for (const status of illegalStatuses) {
+          // mock active session
+          tanker._session = { // eslint-disable-line no-underscore-dangle
+            status,
+          } as any;
+          await expect(tanker.enrollUser(identity, validPreverifiedVerifications)).to.be.rejectedWith(PreconditionFailed);
+        }
+      });
+
+      it('throws when identity is invalid', async () => {
+        for (let i = 0; i < badIdentities.length; i++) {
+          const arg = badIdentities[i] as string;
+          await expect(tanker.enrollUser(arg, validPreverifiedVerifications)).to.be.rejectedWith(InvalidArgument);
+        }
+      });
+
+      it('throws when identity\'s trustchain does not match tanker\'s', async () => {
+        const otherAppKeyPair = tcrypto.makeSignKeyPair();
+        const otherAppId = utils.generateAppID(otherAppKeyPair.publicKey);
+        const wrongIdentity = await createIdentity(
+          utils.toBase64(otherAppId),
+          utils.toBase64(otherAppKeyPair.privateKey),
+          userId,
+        );
+
+        await expect(tanker.enrollUser(wrongIdentity, validPreverifiedVerifications)).to.be.rejectedWith(InvalidArgument);
+      });
+
+      it('throws when identity is valid but truncated', async () => {
+        const truncatedIdentity = identity.slice(0, identity.length - 10);
+        await expect(tanker.enrollUser(truncatedIdentity, validPreverifiedVerifications)).to.be.rejectedWith(InvalidArgument);
+      });
+
+      it('throws when identity is public instead of secret', async () => {
+        const publicIdentity = await getPublicIdentity(identity);
+        await expect(tanker.enrollUser(publicIdentity, validPreverifiedVerifications)).to.be.rejectedWith(InvalidArgument, 'Expected a secret permanent identity');
+      });
+
+      it('throws when identity is provisional instead of secret', async () => {
+        const provIdentity = await createProvisionalIdentity(options.appId!, 'email', 'valid@tanker.io');
+        await expect(tanker.enrollUser(provIdentity, validPreverifiedVerifications)).to.be.rejectedWith(InvalidArgument, 'Expected a secret permanent identity');
+      });
+
+      it('throws when verifications are invalid', async () => {
+        for (let i = 0; i < badPreverifiedVerifications.length; i++) {
+          const arg = badPreverifiedVerifications[i] as Array<PreverifiedVerification>;
+          await expect(tanker.enrollUser(identity, arg), `enroll User test #${i}`).to.be.rejectedWith(InvalidArgument);
+        }
       });
     });
   });
