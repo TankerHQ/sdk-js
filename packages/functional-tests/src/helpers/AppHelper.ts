@@ -21,6 +21,13 @@ export type AppProvisionalUser = {
   publicIdentity: string;
 };
 
+export const provisionalUserTypes = {
+  email: 1,
+  phoneNumber: 2,
+};
+
+export type ProvisionalUserType = number;
+
 export class AppHelper {
   makeTanker: TankerFactory;
   appId: Uint8Array;
@@ -95,6 +102,14 @@ export class AppHelper {
 
   async makeUser(): Promise<User> {
     return User.create(this.makeTanker, utils.toBase64(this.appId), utils.toBase64(this.appSecret));
+  }
+
+  async generateProvisionalUser(type: ProvisionalUserType): Promise<AppProvisionalUser> {
+    switch (type) {
+      case provisionalUserTypes.email: return this.generateEmailProvisionalIdentity();
+      case provisionalUserTypes.phoneNumber: return this.generatePhoneNumberProvisionalIdentity();
+      default: throw new Error(`unknown provisional user type: ${type}`);
+    }
   }
 
   async generateEmailProvisionalIdentity(emailParam?: string): Promise<AppProvisionalUser> {
