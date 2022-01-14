@@ -1,5 +1,8 @@
 # FileKit
 
+!!! warning
+    FileKit is now deprecated
+
 **[FileKit](https://tanker.io/)** is an end-to-end encrypted file storage service for apps.
 
 **FileKit** stores and transfers files in the cloud. The files are encrypted in the browser before being uploaded, and
