@@ -145,6 +145,7 @@
     "ansi-regex": "^5.0.1",
     "browserslist": "^4.16.6",
     "eslint-import-resolver-node": "0.3.4",
+    "follow-redirects": "^1.14.7",
     "glob-parent": "^5.1.2",
     "hosted-git-info": "^2.8.9",
     "lodash": "^4.17.21",
