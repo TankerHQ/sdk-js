@@ -802,22 +802,14 @@ export const generateVerificationTests = (args: TestArgs) => {
         await expect(bobLaptop.setVerificationMethod({ passphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
       });
 
-      it.skip('registers and verifies two users with the same verificationKey', async () => {
+      it('refuses to register two users with the same verificationKey', async () => {
         const aliceId = uuid.v4();
         const aliceIdentity = await appHelper.generateIdentity(aliceId);
         const aliceLaptop = args.makeTanker();
         await aliceLaptop.start(aliceIdentity);
         await aliceLaptop.registerIdentity({ verificationKey });
 
-        await bobLaptop.registerIdentity({ verificationKey });
-
-        await bobPhone.start(bobIdentity);
-        await expect(bobPhone.verifyIdentity({ verificationKey })).to.be.fulfilled;
-
-        const alicePhone = args.makeTanker();
-        await alicePhone.start(aliceIdentity);
-        await expect(alicePhone.verifyIdentity({ verificationKey })).to.be.fulfilled;
-        await aliceLaptop.stop();
+        await expect(bobLaptop.registerIdentity({ verificationKey })).to.be.rejectedWith(errors.Conflict);
       });
 
       describe('register identity with an invalid verification key', () => {
