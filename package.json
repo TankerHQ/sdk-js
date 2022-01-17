@@ -82,7 +82,7 @@
     "eslint-plugin-mocha-no-only": "1.1.1",
     "eslint-plugin-react": "7.22.0",
     "fs-extra": "9.1.0",
-    "karma": "6.1.1",
+    "karma": "6.3.11",
     "karma-browserstack-launcher": "1.4.0",
     "karma-chrome-launcher": "3.1.0",
     "karma-edgium-launcher": "https://github.com/matracey/karma-edgium-launcher.git#704328a9c0589c342121b3db8838f6d3ca412702",
