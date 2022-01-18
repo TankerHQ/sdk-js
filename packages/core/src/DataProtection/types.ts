@@ -1,4 +1,3 @@
-import varint from 'varint';
 import type { Key, EncryptionFormatReporter } from '@tanker/crypto';
 import { encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, random, tcrypto } from '@tanker/crypto';
 
@@ -11,7 +10,7 @@ export type Resource = {
 
 // The maximum byte size of a resource encrypted with the "simple" algorithms
 // (different from v4) is obtained by summing the sizes of:
-//  - the version: 1 byte (varint < 128)
+//  - the version: 1 byte
 //  - the MAC: 16 bytes
 //  - the IV: 24 bytes
 //  - the data: 5 megabytes (libsodium's hard limit)
@@ -50,13 +49,9 @@ export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescri
 };
 
 export const extractEncryptionFormat = (encryptedData: Uint8Array) => {
-  let version;
-
-  try {
-    version = varint.decode(encryptedData);
-  } catch (e) {
+  if (encryptedData.length < 1)
     throw new InvalidArgument('Could not decode encryption version from encryptedData');
-  }
+  const version = encryptedData[0]!;
 
   const encryption = encryptionFormats[version];
 

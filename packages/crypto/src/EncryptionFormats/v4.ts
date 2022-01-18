@@ -1,7 +1,5 @@
 import { InvalidArgument } from '@tanker/errors';
 
-import varint from 'varint';
-
 import * as aead from '../aead';
 import { random } from '../random';
 import * as tcrypto from '../tcrypto';
@@ -42,7 +40,7 @@ export const getEncryptedSize = (clearSize: number, maxEncryptedChunkSize: numbe
 };
 
 export const serialize = (data: EncryptionData): Uint8Array => utils.concatArrays(
-  new Uint8Array(varint.encode(version)),
+  new Uint8Array([version]),
   number.toUint32le(data.encryptedChunkSize),
   data.resourceId,
   data.ivSeed,
@@ -50,7 +48,7 @@ export const serialize = (data: EncryptionData): Uint8Array => utils.concatArray
 );
 
 export const unserialize = (buffer: Uint8Array): EncryptionData => {
-  const bufferVersion = varint.decode(buffer);
+  const bufferVersion = buffer[0];
 
   if (bufferVersion !== version) {
     throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
