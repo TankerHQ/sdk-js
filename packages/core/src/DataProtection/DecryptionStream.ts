@@ -10,6 +10,21 @@ export type ResourceIdKeyMapper = {
   findKey: (resourceID: Uint8Array) => Promise<Key>;
 };
 
+type ChunkHeader = Pick<encryptionV4.EncryptionData, 'resourceId' | 'encryptedChunkSize'>;
+
+const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader) => {
+  if (!utils.equalArray(oldHeader.resourceId, currentHeader.resourceId)) {
+    throw new DecryptionFailed(
+      { message: `resourceId mismatch in headers: expected ${oldHeader.resourceId}, got ${currentHeader.resourceId}` },
+    );
+  }
+  if (oldHeader.encryptedChunkSize !== currentHeader.encryptedChunkSize) {
+    throw new DecryptionFailed(
+      { message: `encryptedChunkSize mismatch in headers: expected ${oldHeader.encryptedChunkSize}, got ${currentHeader.encryptedChunkSize}` },
+    );
+  }
+};
+
 export class DecryptionStream extends Transform {
   _mapper: ResourceIdKeyMapper;
 
@@ -88,7 +103,7 @@ export class DecryptionStream extends Transform {
           const key = await this._mapper.findKey(resourceId);
 
           try {
-          // @ts-expect-error Already checked we are using a simple encryption
+            // @ts-expect-error Already checked we are using a simple encryption
             const clearData = encryption.decrypt(key, encryption.unserialize(encryptedChunk));
             this._decryptionStream.push(clearData);
           } catch (error) {
@@ -107,8 +122,8 @@ export class DecryptionStream extends Transform {
   }
 
   async _initializeStreamDecryption(headOfEncryptedData: Uint8Array) {
-    let encryptedChunkSize;
-    let resourceId;
+    let encryptedChunkSize: number;
+    let resourceId: Uint8Array;
 
     try {
       ({ encryptedChunkSize, resourceId } = encryptionV4.unserialize(headOfEncryptedData));
@@ -133,7 +148,9 @@ export class DecryptionStream extends Transform {
 
       transform: (encryptedChunk: Uint8Array, _: BufferEncoding, done: TransformCallback) => {
         try {
-          const clearData = encryptionV4.decrypt(key, this._state.index, encryptionV4.unserialize(encryptedChunk));
+          const currentChunk = encryptionV4.unserialize(encryptedChunk);
+          checkHeaderIntegrity({ encryptedChunkSize, resourceId }, currentChunk);
+          const clearData = encryptionV4.decrypt(key, this._state.index, currentChunk);
           this._decryptionStream.push(clearData);
         } catch (error) {
           done(new DecryptionFailed({ error: error as Error, b64ResourceId }));

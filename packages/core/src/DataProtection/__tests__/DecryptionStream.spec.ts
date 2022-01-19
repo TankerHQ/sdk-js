@@ -43,9 +43,9 @@ describe('DecryptionStream', () => {
     return pw;
   };
 
-  const encryptMsg = (index: number, str: string) => {
+  const encryptMsg = (index: number, clearChunkSize: number, str: string) => {
     const clear = utils.fromString(str);
-    const encryptedChunkSize = encryptionV4.overhead + clear.length;
+    const encryptedChunkSize = encryptionV4.overhead + clearChunkSize;
     const encrypted = encryptionV4.serialize(encryptionV4.encrypt(key, index, resourceId, encryptedChunkSize, clear));
     return { clear, encrypted };
   };
@@ -63,8 +63,8 @@ describe('DecryptionStream', () => {
   });
 
   it('can extract header v4, resource id and message', async () => {
-    const msg = encryptMsg(0, '1st message');
-    const emptyMsg = encryptMsg(1, '');
+    const msg = encryptMsg(0, 11, '1st message');
+    const emptyMsg = encryptMsg(1, 11, '');
 
     stream.write(utils.concatArrays(msg.encrypted, emptyMsg.encrypted));
     stream.end();
@@ -78,9 +78,9 @@ describe('DecryptionStream', () => {
   });
 
   it('can decrypt chunks of fixed size', async () => {
-    const msg1 = encryptMsg(0, '1st message');
-    const msg2 = encryptMsg(1, '2nd message');
-    const emptyMsg = encryptMsg(2, '');
+    const msg1 = encryptMsg(0, 11, '1st message');
+    const msg2 = encryptMsg(1, 11, '2nd message');
+    const emptyMsg = encryptMsg(2, 11, '');
 
     stream.write(msg1.encrypted);
     stream.write(msg2.encrypted);
@@ -95,8 +95,8 @@ describe('DecryptionStream', () => {
   });
 
   it('can decrypt chunks of fixed size except last one', async () => {
-    const msg1 = encryptMsg(0, '1st message');
-    const msg2 = encryptMsg(1, '2nd');
+    const msg1 = encryptMsg(0, 11, '1st message');
+    const msg2 = encryptMsg(1, 11, '2nd');
 
     stream.write(msg1.encrypted);
     stream.write(msg2.encrypted);
@@ -247,9 +247,18 @@ describe('DecryptionStream', () => {
     let chunks: Array<Uint8Array>;
 
     beforeEach(async () => {
-      const msg1 = encryptMsg(0, '1st message');
-      const msg2 = encryptMsg(1, '2nd message');
-      chunks = [msg1.encrypted, msg2.encrypted];
+      const msg1 = encryptMsg(0, 11, '1st message');
+      const msg2 = encryptMsg(1, 11, '2nd message');
+      const emptyMsg = encryptMsg(2, 11, '');
+      chunks = [msg1.encrypted, msg2.encrypted, emptyMsg.encrypted];
+    });
+
+    // This test is here to make sure the setup is correct before we start asserting on errors
+    it('decrypts all the chunks', async () => {
+      for (const chunk of chunks)
+        stream.write(chunk);
+      stream.end();
+      await expect(sync.promise).to.be.fulfilled;
     });
 
     it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
@@ -283,6 +292,20 @@ describe('DecryptionStream', () => {
 
     it('throws DecryptionFailed when data is written in wrong order', async () => {
       stream.write(chunks[1]!);
+      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
+    });
+
+    it('throws DecryptionFailed when encryptedChunkSize does not match between headers', async () => {
+      chunks[1]![1] -= 1;
+      for (const chunk of chunks)
+        stream.write(chunk);
+      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
+    });
+
+    it('throws DecryptionFailed when resource ID does not match between headers', async () => {
+      chunks[1]![5] -= 1;
+      for (const chunk of chunks)
+        stream.write(chunk);
       await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
@@ -331,13 +354,13 @@ describe('DecryptionStream', () => {
         const continueWriting = () => {
           do {
             idx += 1;
-            msg = encryptMsg(idx, chunk);
+            msg = encryptMsg(idx, chunkSize, chunk);
             bufferCounter.incrementInput(msg.encrypted.length);
             timeout.reset();
           } while (bufferCounter.inputWritten < inputSize && stream.write(msg.encrypted));
 
           if (bufferCounter.inputWritten === inputSize) {
-            const emptyMsg = encryptMsg(idx, '');
+            const emptyMsg = encryptMsg(idx, chunkSize, '');
             stream.write(emptyMsg.encrypted);
             stream.end();
           }
