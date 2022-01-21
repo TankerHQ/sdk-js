@@ -15,7 +15,7 @@ import type {
   RemoteVerificationWithToken,
   LegacyEmailVerificationMethod,
 } from './types';
-import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation, generateGhostDevice } from './UserCreation';
+import { generateUserCreation, generateDeviceFromGhostDevice, generateGhostDevice } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
 
 import type { Client, PullOptions } from '../Network/Client';
@@ -209,14 +209,6 @@ export class LocalUserManager extends EventEmitter {
 
       throw new InternalError(e.toString());
     }
-  };
-
-  revokeDevice = async (deviceToRevokeId: Uint8Array): Promise<void> => {
-    await this.updateLocalUser({ isLight: false });
-
-    const { payload, nature } = makeDeviceRevocation(this._localUser.devices, this._localUser.currentUserKey, deviceToRevokeId);
-    const block = this._localUser.makeBlock(payload, nature);
-    await this._client.revokeDevice({ device_revocation: block });
   };
 
   listDevices = async (): Promise<Array<Device>> => {

@@ -414,20 +414,6 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional)).to.be.rejectedWith(errors.IdentityAlreadyAttached, 'one or more provisional identities are already attached');
       });
 
-      it('can attach a provisional identity after a revocation', async () => {
-        await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
-
-        const bobPhone = args.makeTanker();
-        await bobPhone.start(bobIdentity);
-        await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
-
-        const deviceID = bobPhone.deviceId;
-        await bobPhone.revokeDevice(deviceID);
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await bobPhone.stop();
-      });
-
       it('decrypt resource on a new device', async () => {
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
 
@@ -532,8 +518,6 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
   describe('text resource encryption and sharing with multiple devices', () => {
     let appHelper: AppHelper;
-    let aliceLaptop: Tanker;
-    let aliceIdentity: b64string;
     let bobLaptop: Tanker;
     let bobPhone: Tanker;
     let bobIdentity: b64string;
@@ -543,13 +527,9 @@ export const generateEncryptionTests = (args: TestArgs) => {
     });
 
     beforeEach(async () => {
-      aliceIdentity = await appHelper.generateIdentity();
       bobIdentity = await appHelper.generateIdentity();
-      aliceLaptop = args.makeTanker();
       bobLaptop = args.makeTanker();
       bobPhone = args.makeTanker();
-      await aliceLaptop.start(aliceIdentity);
-      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
 
       await bobLaptop.start(bobIdentity);
       await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
@@ -561,21 +541,11 @@ export const generateEncryptionTests = (args: TestArgs) => {
       await Promise.all([
         bobPhone.stop(),
         bobLaptop.stop(),
-        aliceLaptop.stop(),
       ]);
     });
 
     it('can decrypt a resource encrypted from another device', async () => {
       const encrypted = await bobLaptop.encrypt(clearText);
-      await expectDecrypt([bobPhone], clearText, encrypted);
-    });
-
-    it('can access a resource encrypted and shared from a device that was then revoked', async () => {
-      const encrypted = await bobLaptop.encrypt(clearText);
-
-      // revoke bobLaptop
-      await bobPhone.revokeDevice(bobLaptop.deviceId);
-
       await expectDecrypt([bobPhone], clearText, encrypted);
     });
   });

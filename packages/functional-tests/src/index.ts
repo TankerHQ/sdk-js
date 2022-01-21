@@ -13,7 +13,6 @@ import { generateFakeAuthenticationTests } from './fake-authentication';
 import { generateNetworkTests } from './network';
 import { generateGetDeviceListTests } from './getDeviceList';
 import { generateGroupsTests } from './groups';
-import { generateRevocationTests } from './revocation';
 import { generateSessionTests } from './session';
 import { generateUploadTests } from './upload';
 import { generateVerificationTests } from './verification';
@@ -73,7 +72,6 @@ export function generateFunctionalTests(
     generateEnrollTests(args);
     generateGroupsTests(args);
     generateUploadTests(args);
-    generateRevocationTests(args);
     generateNetworkTests(args);
     generateFakeAuthenticationTests(args);
     generateSessionTokenTests(args);

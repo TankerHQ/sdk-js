@@ -347,23 +347,6 @@ describe('Tanker', () => {
         }
       });
 
-      it('revoking a device should throw if invalid argument given', silencer.wrapper('warn', /deprecated/)(async () => {
-        const badArgs = [
-          undefined,
-          null,
-          [],
-          {},
-          '',
-          'not base 64',
-          'AAAA=',
-        ];
-
-        for (let i = 0; i < badArgs.length; i++) {
-          const arg = badArgs[i] as b64string;
-          await expect(tanker.revokeDevice(arg), `revoke test #${i}`).to.be.rejectedWith(InvalidArgument);
-        }
-      }));
-
       it('creating a group should throw if invalid argument given', async () => {
         const badArgs = [
           undefined,
