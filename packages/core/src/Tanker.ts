@@ -187,6 +187,9 @@ export class Tanker extends EventEmitter {
   }
 
   override on(eventName: string, listener: any): any {
+    if (eventName === 'statusChanged') {
+      console.warn('The "statusChanged" event is deprecated, it will be removed in the future');
+    }
     if (eventName === 'deviceRevoked') {
       console.warn('The "deviceRevoked" event is deprecated, it will be removed in the future');
     }
@@ -195,6 +198,9 @@ export class Tanker extends EventEmitter {
   }
 
   override once(eventName: string, listener: any): any {
+    if (eventName === 'statusChanged') {
+      console.warn('The "statusChanged" event is deprecated, it will be removed in the future');
+    }
     if (eventName === 'deviceRevoked') {
       console.warn('The "deviceRevoked" event is deprecated, it will be removed in the future');
     }
@@ -217,6 +223,8 @@ export class Tanker extends EventEmitter {
   }
 
   get deviceId(): b64string {
+    console.warn('The "deviceId" property is deprecated, it will be removed in the future');
+
     assertStatus(this.status, statuses.READY, 'get the device id');
 
     const deviceId = this.session.deviceId();
@@ -415,6 +423,8 @@ export class Tanker extends EventEmitter {
   };
 
   async getDeviceList(): Promise<Array<Device>> {
+    console.warn('The "getDeviceList" method is deprecated, it will be removed in the future');
+
     assertStatus(this.status, statuses.READY, 'get the device list');
 
     const devices = await this.session.listDevices();
