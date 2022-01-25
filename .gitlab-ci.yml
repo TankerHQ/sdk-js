@@ -118,9 +118,7 @@ check/macos/nightly:
 
 .check/windows:
   stage: check
-  tags:
-    - windows
-    - tanker
+  tags: !reference [.tags/windows, tags]
 
 check/windows/edge:
   extends:
