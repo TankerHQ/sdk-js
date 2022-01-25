@@ -4,7 +4,6 @@ import os
 import re
 import shutil
 import sys
-import time
 from pathlib import Path
 from typing import Any, Callable, List, TypedDict
 
@@ -118,30 +117,6 @@ def onerror(navigator: str) -> Callable[..., None]:
     return fcn
 
 
-def delete_ie_state() -> None:
-    kill_windows_processes()
-    localappdata = os.environ.get("LOCALAPPDATA")
-    ie_db_path = Path(r"%s\Microsoft\Internet Explorer\Indexed DB" % localappdata)
-    shutil.rmtree(ie_db_path, onerror=onerror("IE"))
-
-    """
-    This magic value is the combination of the following bitflags:
-    #define CLEAR_HISTORY         0x0001 // Clears history
-    #define CLEAR_COOKIES         0x0002 // Clears cookies
-    #define CLEAR_CACHE           0x0004 // Clears Temporary Internet Files folder
-    #define CLEAR_CACHE_ALL       0x0008 // Clears offline favorites and download history
-    #define CLEAR_FORM_DATA       0x0010 // Clears saved form data for form auto-fill-in
-    #define CLEAR_PASSWORDS       0x0020 // Clears passwords saved for websites
-    #define CLEAR_PHISHING_FILTER 0x0040 // Clears phishing filter data
-    #define CLEAR_RECOVERY_DATA   0x0080 // Clears webpage recovery data
-    #define CLEAR_SHOW_NO_GUI     0x0100 // Do not show a GUI when running the cache clearing
-
-    Total: 511
-    """
-    tankerci.run("RunDll32.exe", "InetCpl.cpl,ClearMyTracksByProcess", "511")
-    time.sleep(5)
-
-
 def delete_safari_state() -> None:
     safari_user_path = Path(r"~/Library/Safari").expanduser()
     if safari_user_path.exists():
@@ -176,8 +151,7 @@ def run_tests_in_browser(*, runner: str) -> None:
         kill_windows_processes()
         tankerci.js.run_yarn("karma", "--browsers", "EdgeHeadless")
     elif runner == "windows-ie":
-        delete_ie_state()
-        tankerci.js.run_yarn("karma", "--browsers", "IE")
+        tankerci.js.run_yarn("karma", "--browsers", "IeWindows10")
 
 
 def get_package_path(package_name: str) -> Path:

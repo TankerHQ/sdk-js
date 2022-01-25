@@ -51,6 +51,13 @@ const customLaunchers = {
     os: 'Windows',
     os_version: '7',
   },
+  IeWindows10: {
+    base: 'BrowserStack',
+    browser: 'IE',
+    browser_version: '11.0',
+    os: 'Windows',
+    os_version: '10',
+  },
   FirefoxWindows10: {
     base: 'BrowserStack',
     browser: 'Firefox',

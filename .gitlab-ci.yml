@@ -116,13 +116,8 @@ check/macos/nightly:
     - MacOSSlave-2
   timeout: 2h
 
-.check/windows:
-  stage: check
-  tags: !reference [.tags/windows, tags]
-
 check/windows/edge:
-  extends:
-    - .check/windows
+  stage: check
   rules:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
@@ -130,16 +125,17 @@ check/windows/edge:
     - !reference [.rules/nightly, rules]
   script:
     - poetry run python run-ci.py check --runner windows-edge
+  tags: !reference [.tags/windows, tags]
 
 check/windows/ie:
-  extends:
-    - .check/windows
+  stage: check
   rules:
     - !reference [.rules/push-master, rules]
     - !reference [.rules/nightly, rules]
     - !reference [.rules/mr/manual, rules]
   script:
     - poetry run python run-ci.py check --runner windows-ie
+  tags: !reference [.tags/linux, tags]
 
 check/linux/nightly:
   extends:
