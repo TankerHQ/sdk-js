@@ -2,7 +2,7 @@ import type { b64string } from '@tanker/crypto';
 import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 import { createIdentity, getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
-import { expect, silencer, isBrowser } from '@tanker/test-utils';
+import { expect, isBrowser } from '@tanker/test-utils';
 import { castData } from '@tanker/types';
 
 import dataStoreConfig, { makePrefix } from './TestDataStore';
@@ -88,7 +88,8 @@ describe('Tanker', () => {
       const defaultOptions = { url: 'http://default.io', sdkType: 'default', dataStore: { adapter } };
       const mergedOptions = optionsWithDefaults(options, defaultOptions);
       expect(mergedOptions).to.deep.equal({
-        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter } });
+        appId: 'id', url: 'http://default.io', sdkType: 'default', dataStore: { adapter },
+      });
     });
 
     it('should (deep) override default options', () => {
@@ -136,7 +137,7 @@ describe('Tanker', () => {
         { appId: valid32BytesB64, dataStore: {} },
         // wrong adapter type
         { appId: valid32BytesB64, dataStore: { adapter: 'not a function' } },
-        { appId: valid32BytesB64, dataStore: { adapter: () => {} }, sdkType: undefined },
+        { appId: valid32BytesB64, dataStore: { adapter: () => { } }, sdkType: undefined },
       ].forEach((invalidOptions: any, i: number) => {
         expect(() => { new Tanker(invalidOptions); }, `bad options #${i}`).to.throw(/options/); // eslint-disable-line no-new
       });
@@ -145,11 +146,6 @@ describe('Tanker', () => {
     it('constructs a Tanker instance with default options', () => {
       expect(() => new Tanker(makeTestTankerOptions())).not.to.throw();
     });
-
-    it('accepts the deprecated trustchainId option', silencer.wrapper('warn', /deprecated/)(() => {
-      const { appId: trustchainId, ...defaultOptions } = makeTestTankerOptions();
-      expect(() => new Tanker({ trustchainId, ...defaultOptions })).not.to.throw();
-    }));
   });
 
   describe('without a session', () => {
@@ -522,7 +518,7 @@ describe('Tanker', () => {
       });
 
       describe('encrypt\'s return type', () => {
-      // @ts-expect-error only used as destination
+        // @ts-expect-error only used as destination
         let array: Uint8Array;
 
         if (isBrowser()) {

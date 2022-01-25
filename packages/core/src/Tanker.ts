@@ -58,7 +58,6 @@ import { TANKER_SDK_VERSION } from './version';
 
 export type TankerCoreOptions = {
   appId?: b64string;
-  trustchainId?: b64string;
   url?: string;
   dataStore: DataStoreOptions;
   sdkType: string;
@@ -110,10 +109,6 @@ export class Tanker extends EventEmitter {
     if ('appId' in options) {
       assertB64StringWithSize(options.appId, 'options.appId', tcrypto.HASH_SIZE);
       this._trustchainId = options.appId as string;
-    } else if ('trustchainId' in options) {
-      console.warn('The "trustchainId" option is deprecated in favor of "appId", it will be removed in the future');
-      assertB64StringWithSize(options.trustchainId, 'options.trustchainId', tcrypto.HASH_SIZE);
-      this._trustchainId = options.trustchainId as string;
     } else {
       throw new InvalidArgument('options.appId', 'string', options.appId);
     }
