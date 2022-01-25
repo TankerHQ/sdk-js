@@ -151,7 +151,7 @@
     "lodash": "^4.17.21",
     "log4js": "^6.4.0",
     "multicast-dns": "^7.2.3",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "node-forge": "^1.0.0",
     "url-parse": "^1.5.3",
     "ws": "^7.4.6"
