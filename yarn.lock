@@ -2334,25 +2334,10 @@ cheerio@~0.13.1:
     htmlparser2 "~3.4.0"
     underscore "~1.5"
 
-chokidar@3.5.3:
+chokidar@3.5.3, "chokidar@>=3.0.0 <4.0.0", chokidar@^3.5.1:
   version "3.5.3"
   resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.5.3.tgz#1cf37c8707b932bd1af1ae22c0432e2acd1903bd"
   integrity sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==
-  dependencies:
-    anymatch "~3.1.2"
-    braces "~3.0.2"
-    glob-parent "~5.1.2"
-    is-binary-path "~2.1.0"
-    is-glob "~4.0.1"
-    normalize-path "~3.0.0"
-    readdirp "~3.6.0"
-  optionalDependencies:
-    fsevents "~2.3.2"
-
-"chokidar@>=3.0.0 <4.0.0", chokidar@^3.5.1:
-  version "3.5.2"
-  resolved "https://registry.yarnpkg.com/chokidar/-/chokidar-3.5.2.tgz#dba3976fcadb016f66fd365021d91600d01c1e75"
-  integrity sha512-ekGhOnNVPgT77r4K/U3GDhu+FQ2S8TnK/s2KbIGXi0SZWuwkZ2QNyfWdZW+TVfn84DpEP7rLeCt2UI6bJ8GwbQ==
   dependencies:
     anymatch "~3.1.2"
     braces "~3.0.2"
@@ -6973,10 +6958,10 @@ karma-webpack@5.0.0:
     minimatch "^3.0.4"
     webpack-merge "^4.1.5"
 
-karma@6.3.12:
-  version "6.3.12"
-  resolved "https://registry.yarnpkg.com/karma/-/karma-6.3.12.tgz#fe6347f027385fc16da1a9bb87d766e2d25981c6"
-  integrity sha512-qwIG+oB2YmHx4hjvYSRMNzL3YWAJ9baHaLAxiP7biFNkfpwYTUTtPck0joFpucalNLzMr+7z/FX1uY/kl8DV9A==
+karma@6.3.14:
+  version "6.3.14"
+  resolved "https://registry.yarnpkg.com/karma/-/karma-6.3.14.tgz#1ed57a489249b9260bc604325ae333766d4cddc9"
+  integrity sha512-SDFoU5F4LdosEiUVWUDRPCV/C1zQRNtIakx7rWkigf7R4sxGADlSEeOma4S1f/js7YAzvqLW92ByoiQptg+8oQ==
   dependencies:
     body-parser "^1.19.0"
     braces "^3.0.2"
@@ -6990,7 +6975,7 @@ karma@6.3.12:
     http-proxy "^1.18.1"
     isbinaryfile "^4.0.8"
     lodash "^4.17.21"
-    log4js "^6.3.0"
+    log4js "^6.4.1"
     mime "^2.5.2"
     minimatch "^3.0.4"
     qjobs "^1.2.0"
@@ -7426,7 +7411,7 @@ log-symbols@^2.1.0:
   dependencies:
     chalk "^2.0.1"
 
-log4js@^6.3.0, log4js@^6.4.0:
+log4js@^6.4.0, log4js@^6.4.1:
   version "6.4.1"
   resolved "https://registry.yarnpkg.com/log4js/-/log4js-6.4.1.tgz#9d3a8bf2c31c1e213fe3fc398a6053f7a2bc53e8"
   integrity sha512-iUiYnXqAmNKiIZ1XSAitQ4TmNs8CdZYTAWINARF3LjnsLN8tY5m0vRwd6uuWj/yNY0YHxeZodnbmxKFUOM2rMg==
@@ -7737,12 +7722,7 @@ mime@1.6.0:
   resolved "https://registry.yarnpkg.com/mime/-/mime-1.6.0.tgz#32cd9e5c64553bd58d19a568af452acff04981b1"
   integrity sha512-x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg==
 
-mime@^2.4.6:
-  version "2.5.2"
-  resolved "https://registry.yarnpkg.com/mime/-/mime-2.5.2.tgz#6e3dc6cc2b9510643830e5f19d5cb753da5eeabe"
-  integrity sha512-tqkh47FzKeCPD2PUiPB6pkbMzsCasjxAfC62/Wap5qrUWcb+sFasXUC5I3gYM5iBM8v/Qpn4UK0x+j0iHyFPDg==
-
-mime@^2.5.2:
+mime@^2.4.6, mime@^2.5.2:
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/mime/-/mime-2.6.0.tgz#a2a682a95cd4d0cb1d6257e28f83da7e35800367"
   integrity sha512-USPkMeET31rOMiarsBNIHZKLGgvKc/LrjofAnBlOttf5ajRvqiRA8QsenbcooctK6d6Ts6aqZXBA+XbkKthiQg==
@@ -11368,12 +11348,7 @@ typescript@^4.5.2:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.5.2.tgz#8ac1fba9f52256fdb06fb89e4122fa6a346c2998"
   integrity sha512-5BlMof9H1yGt0P8/WF+wPNw6GfctgGjXp5hkblpyT+8rkASSmkUKMXrxR0Xg8ThVCi/JnHQiKXeBaEwCeQwMFw==
 
-ua-parser-js@^0.7.28:
-  version "0.7.28"
-  resolved "https://registry.yarnpkg.com/ua-parser-js/-/ua-parser-js-0.7.28.tgz#8ba04e653f35ce210239c64661685bf9121dec31"
-  integrity sha512-6Gurc1n//gjp9eQNXjD9O3M/sMwVtN5S8Lv9bvOYBfKfDNiIIhqiyi01vMBO45u4zkDE420w/e0se7Vs+sIg+g==
-
-ua-parser-js@^0.7.30:
+ua-parser-js@^0.7.28, ua-parser-js@^0.7.30:
   version "0.7.31"
   resolved "https://registry.yarnpkg.com/ua-parser-js/-/ua-parser-js-0.7.31.tgz#649a656b191dffab4f21d5e053e27ca17cbff5c6"
   integrity sha512-qLK/Xe9E2uzmYI3qLeOmI0tEOt+TBBQyUIAh4aAgU05FVYzeZrKUdkAZfBNVGRaHVgV0TDkdEngJSw/SyQchkQ==
