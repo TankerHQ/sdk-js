@@ -32,6 +32,7 @@ import { extractUserData } from './LocalUser/UserData';
 import { statuses, assertStatus, statusDefs } from './Session/status';
 import type { Status } from './Session/status';
 import { Session } from './Session/Session';
+import { UnauthSession } from './UnauthSession/UnauthSession';
 
 import type { OutputOptions, ProgressOptions, EncryptionOptions, SharingOptions } from './DataProtection/options';
 import {
@@ -87,6 +88,7 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerCore
 export class Tanker extends EventEmitter {
   _trustchainId: b64string;
   _session?: Session;
+  _unauthSession?: UnauthSession;
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
@@ -249,6 +251,17 @@ export class Tanker extends EventEmitter {
     await LocalUserManager.enrollUser(userData, client, verifications);
     await client.close();
   });
+
+  _initUnauthSession = async () => {
+    if (!this._unauthSession) {
+      this._unauthSession = await UnauthSession.start(this._trustchainId, this._dataStoreOptions);
+    }
+  };
+
+  createOidcNonce = async () => {
+    await this._initUnauthSession();
+    return this._unauthSession!.createOidcNonce();
+  };
 
   start = this._lockCall('start', async (identityB64: b64string) => {
     assertStatus(this.status, statuses.STOPPED, 'start a session');
