@@ -12,7 +12,7 @@ import { formatProvisionalKeysRequest, formatVerificationRequest } from '../Loca
 import type {
   EmailVerification,
   EmailVerificationMethod,
-  OIDCVerification, PhoneNumberVerification, PhoneNumberVerificationMethod, ProvisionalVerification,
+  OidcVerification, PhoneNumberVerification, PhoneNumberVerificationMethod, ProvisionalVerification,
   ProvisionalVerificationMethod,
 } from '../LocalUser/types';
 import { Status } from '../Session/status';
@@ -134,7 +134,7 @@ export default class ProvisionalIdentityManager {
     throw new InternalError(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
   }
 
-  async verifyProvisionalIdentity(verification: ProvisionalVerification | OIDCVerification) {
+  async verifyProvisionalIdentity(verification: ProvisionalVerification | OidcVerification) {
     if (!('email' in verification) && !('phoneNumber' in verification) && !('oidcIdToken' in verification))
       throw new InternalError(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
 
@@ -240,7 +240,7 @@ export default class ProvisionalIdentityManager {
     });
   }
 
-  async _getProvisionalIdentityKeys(provIdentity: SecretProvisionalIdentity, verification?: ProvisionalVerification | OIDCVerification): Promise<TankerProvisionalKeys> {
+  async _getProvisionalIdentityKeys(provIdentity: SecretProvisionalIdentity, verification?: ProvisionalVerification | OidcVerification): Promise<TankerProvisionalKeys> {
     let tankerProvisionalKeysReply: TankerProvisionalIdentityResponse;
 
     const localUser = this._localUserManager.localUser;
