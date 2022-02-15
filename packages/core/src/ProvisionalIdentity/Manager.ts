@@ -237,7 +237,7 @@ export default class ProvisionalIdentityManager {
     const localUser = this._localUserManager.localUser;
     if (verification) {
       tankerProvisionalKeysReply = await this._client.getTankerProvisionalKeysWithVerif({
-        verification: formatVerificationRequest(verification, localUser, provIdentity),
+        verification: await formatVerificationRequest(verification, this._localUserManager, provIdentity),
       });
     } else {
       tankerProvisionalKeysReply = await this._client.getTankerProvisionalKeysFromSession(

@@ -1,16 +1,36 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, Verification, VerificationMethod, LegacyEmailVerificationMethod } from '@tanker/core';
-import { utils } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
 import { expect, uuid } from '@tanker/test-utils';
+import { createProvisionalIdentity } from '@tanker/identity';
 
 import type { AppHelper, TestArgs } from './helpers';
-import { trustchaindUrl } from './helpers';
+import { oidcSettings, trustchaindUrl } from './helpers';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
 const verificationThrottlingAttempts = 3;
+
+async function getGoogleIdToken(refreshToken: string): Promise<string> {
+  const formData = JSON.stringify({
+    client_id: oidcSettings.googleAuth.clientId,
+    client_secret: oidcSettings.googleAuth.clientSecret,
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+  });
+
+  const response = await fetch('https://www.googleapis.com/oauth2/v4/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: formData,
+  });
+  const data = await response.json();
+  return data.id_token;
+}
 
 const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod | LegacyEmailVerificationMethod) => {
   // @ts-expect-error email might not be defined
@@ -700,6 +720,114 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         expect(await bobPhone.getVerificationMethods()).to.have.deep.members([
           { type: 'email', email }, { type: 'phoneNumber', phoneNumber: preverifiedPhoneNumber }]);
+      });
+    });
+
+    describe('verification by oidc id token', () => {
+      const martineRefreshToken = oidcSettings.googleAuth.users.martine.refreshToken;
+      const kevinRefreshToken = oidcSettings.googleAuth.users.kevin.refreshToken;
+
+      let martineIdToken: string;
+      let kevinIdToken: string;
+
+      before(async () => {
+        await appHelper.setOidc();
+        martineIdToken = await getGoogleIdToken(martineRefreshToken);
+        kevinIdToken = await getGoogleIdToken(kevinRefreshToken);
+      });
+
+      after(() => appHelper.unsetOidc());
+
+      it('registers and verifies with an oidc id token', async () => {
+        let nonce = await bobLaptop.createOidcNonce();
+        await bobLaptop.setOidcTestNonce(nonce);
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
+        nonce = await bobPhone.createOidcNonce();
+        await bobPhone.setOidcTestNonce(nonce);
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: martineIdToken })).to.be.fulfilled;
+      });
+
+      it('fails to verify with the same nonce twice', async () => {
+        const nonce = await bobLaptop.createOidcNonce();
+        await bobLaptop.setOidcTestNonce(nonce);
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
+        await bobPhone.setOidcTestNonce(nonce);
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+
+      it('fails to verify a token with incorrect signature', async () => {
+        let nonce = await bobLaptop.createOidcNonce();
+        await bobLaptop.setOidcTestNonce(nonce);
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
+        const jwtBinParts = martineIdToken.split('.').map(part => utils.fromSafeBase64(part));
+        jwtBinParts[2]![5] += 1; // break signature
+        const forgedIdToken = jwtBinParts.map(part => utils.toSafeBase64(part)).join('.').replace(/=/g, '');
+        nonce = await bobPhone.createOidcNonce();
+        await bobPhone.setOidcTestNonce(nonce);
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: forgedIdToken })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+
+      it('fails to verify a valid token for the wrong user', async () => {
+        let nonce = await bobLaptop.createOidcNonce();
+        await bobLaptop.setOidcTestNonce(nonce);
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
+        nonce = await bobPhone.createOidcNonce();
+        await bobPhone.setOidcTestNonce(nonce);
+        await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: kevinIdToken })).to.be.rejectedWith(errors.InvalidVerification);
+      });
+
+      it('updates and verifies with an oidc id token', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+        let nonce = await bobLaptop.createOidcNonce();
+        await bobLaptop.setOidcTestNonce(nonce);
+        await expect(bobLaptop.setVerificationMethod({ oidcIdToken: martineIdToken })).to.be.fulfilled;
+
+        await bobPhone.start(bobIdentity);
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+        nonce = await bobPhone.createOidcNonce();
+        await bobPhone.setOidcTestNonce(nonce);
+        await expect(bobPhone.verifyIdentity({ oidcIdToken: martineIdToken })).to.be.fulfilled;
+        expect(bobPhone.status).to.equal(READY);
+      });
+
+      it('fails to register when nonce was not generated by tanker', async () => {
+        const nonce = utils.toBase64(new Uint8Array(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE));
+        await bobLaptop.setOidcTestNonce(nonce);
+        await expect(bobLaptop.registerIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument);
+        await bobLaptop.setOidcTestNonce('');
+        await expect(bobLaptop.registerIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument);
+        await bobLaptop.setOidcTestNonce('a');
+        await expect(bobLaptop.registerIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('fails to verify a provisional identity using oidc', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+        const aliceIdentity = await args.appHelper.generateIdentity();
+        const aliceLaptop = args.makeTanker();
+        await aliceLaptop.start(aliceIdentity);
+        await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+
+        const email = oidcSettings.googleAuth.users.martine.email;
+        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), 'email', email);
+
+        const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
+        expect(attachResult).to.deep.equal({
+          status: IDENTITY_VERIFICATION_NEEDED,
+          verificationMethod: { type: 'email', email },
+        });
+
+        const nonce = await bobLaptop.createOidcNonce();
+        await bobLaptop.setOidcTestNonce(nonce);
+        // @ts-expect-error oidc is not supported for provisional verification
+        await expect(bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument, 'Unsupported verification method for provisional identity');
+        await aliceLaptop.stop();
       });
     });
 
