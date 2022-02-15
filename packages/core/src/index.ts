@@ -29,7 +29,28 @@ export type { EncryptionStream } from '@tanker/crypto';
 export type { DecryptionStream } from '@tanker/crypto';
 export type { ResourceMetadata, Data } from '@tanker/types';
 export type { OutputOptions, FormatOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './DataProtection/options';
-export type { EmailVerification, PhoneNumberVerification, PassphraseVerification, KeyVerification, PreverifiedEmailVerification, PreverifiedPhoneNumberVerification, PreverifiedVerification, Verification, VerificationMethod, VerificationOptions, ProvisionalVerificationMethod, LegacyEmailVerificationMethod } from './LocalUser/types';
+export type {
+  EmailVerification,
+  PhoneNumberVerification,
+  PassphraseVerification,
+  OidcVerification,
+  KeyVerification,
+  PreverifiedEmailVerification,
+  PreverifiedPhoneNumberVerification,
+  PreverifiedVerification,
+  Verification,
+  VerificationMethod,
+  EmailVerificationMethod,
+  PhoneNumberVerificationMethod,
+  PassphraseVerificationMethod,
+  OidcVerificationMethod,
+  KeyVerificationMethod,
+  PreverifiedEmailVerificationMethod,
+  PreverifiedPhoneNumberVerificationMethod,
+  VerificationOptions,
+  ProvisionalVerificationMethod,
+  LegacyEmailVerificationMethod,
+} from './LocalUser/types';
 export type { AttachResult } from './ProvisionalIdentity/types';
 export type { TankerOptions, Device, ProvisionalVerification } from './Tanker';
 export type { EncryptionSession } from './DataProtection/EncryptionSession';
