@@ -424,6 +424,17 @@ export class Client {
     });
   };
 
+  getOidcChallenge = async (nonce: b64string): Promise<b64string> => {
+    const { challenge } = await this._apiCall(`/users/${urlize(this._userId)}/oidc/challenges`, {
+      method: 'POST',
+      body: JSON.stringify({ nonce }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return challenge;
+  };
+
   getResourceKey = async (resourceId: Uint8Array): Promise<b64string> => {
     const query = `resource_ids[]=${urlize(resourceId)}`;
     const { resource_keys: resourceKeys } = await this._apiCall(`/resource-keys?${query}`);
