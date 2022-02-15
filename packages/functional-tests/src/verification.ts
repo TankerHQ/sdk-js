@@ -731,12 +731,12 @@ export const generateVerificationTests = (args: TestArgs) => {
       let kevinIdToken: string;
 
       before(async () => {
-        await appHelper.setOIDC();
+        await appHelper.setOidc();
         martineIdToken = await getGoogleIdToken(martineRefreshToken);
         kevinIdToken = await getGoogleIdToken(kevinRefreshToken);
       });
 
-      after(() => appHelper.unsetOIDC());
+      after(() => appHelper.unsetOidc());
 
       it('registers and verifies with an oidc id token', async () => {
         await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });

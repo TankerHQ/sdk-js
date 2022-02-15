@@ -5,25 +5,30 @@ export type LegacyEmailVerificationMethod = { type: 'email' };
 export type EmailVerificationMethod = { type: 'email'; email: string; };
 export type PassphraseVerificationMethod = { type: 'passphrase'; };
 export type KeyVerificationMethod = { type: 'verificationKey'; };
-export type OIDCVerificationMethod = { type: 'oidcIdToken'; };
+export type OidcVerificationMethod = { type: 'oidcIdToken'; };
 export type PhoneNumberVerificationMethod = { type: 'phoneNumber'; phoneNumber: string; };
 export type PreverifiedEmailVerificationMethod = { type: 'preverifiedEmail'; preverifiedEmail: string; };
 export type PreverifiedPhoneNumberVerificationMethod = { type: 'preverifiedPhoneNumber'; preverifiedPhoneNumber: string; };
 
 export type ProvisionalVerificationMethod = EmailVerificationMethod | PhoneNumberVerificationMethod;
-export type VerificationMethod = PassphraseVerificationMethod | KeyVerificationMethod | OIDCVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod | PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod;
+export type VerificationMethod = PassphraseVerificationMethod | KeyVerificationMethod | OidcVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod | PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod;
 
 export type EmailVerification = { email: string; verificationCode: string; };
 export type PassphraseVerification = { passphrase: string; };
 export type KeyVerification = { verificationKey: string; };
-export type OIDCVerification = { oidcIdToken: string; };
+export type OidcVerification = { oidcIdToken: string; };
 export type PhoneNumberVerification = { phoneNumber: string; verificationCode: string; };
 export type PreverifiedEmailVerification = { preverifiedEmail: string; };
 export type PreverifiedPhoneNumberVerification = { preverifiedPhoneNumber: string; };
 export type PreverifiedVerification = PreverifiedEmailVerification | PreverifiedPhoneNumberVerification;
 
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
-export type RemoteVerification = EmailVerification | PassphraseVerification | OIDCVerification | PhoneNumberVerification | PreverifiedEmailVerification | PreverifiedPhoneNumberVerification;
+export type RemoteVerification = EmailVerification
+| PassphraseVerification
+| OidcVerification
+| PhoneNumberVerification
+| PreverifiedEmailVerification
+| PreverifiedPhoneNumberVerification;
 export type Verification = RemoteVerification | KeyVerification;
 
 export type WithTokenOptions = { withToken?: { nonce: string; }; };

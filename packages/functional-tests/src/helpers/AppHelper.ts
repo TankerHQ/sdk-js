@@ -51,14 +51,14 @@ export class AppHelper {
     });
   }
 
-  async setOIDC() {
+  async setOidc() {
     await this._update({
       oidc_provider: 'google',
       oidc_client_id: oidcSettings.googleAuth.clientId,
     });
   }
 
-  async unsetOIDC() {
+  async unsetOidc() {
     await this._update({ oidc_provider: 'none' });
   }
 

@@ -15,7 +15,7 @@ type EmailRequest = {
   hashed_email: Uint8Array;
   v2_encrypted_email: Uint8Array;
 };
-type OIDCRequest = {
+type OidcRequest = {
   oidc_id_token: string;
 };
 type PhoneNumberRequest = {
@@ -29,7 +29,7 @@ export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preveri
 
 export type VerificationRequestWithToken = WithToken<PassphraseRequest>
 | WithVerificationCode<EmailRequest>
-| WithToken<OIDCRequest>
+| WithToken<OidcRequest>
 | WithVerificationCode<PhoneNumberRequest>;
 export type VerificationRequest = VerificationRequestWithToken | PreverifiedVerificationRequest;
 
