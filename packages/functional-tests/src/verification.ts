@@ -4,7 +4,7 @@ import type { Tanker, b64string, Verification, VerificationMethod, LegacyEmailVe
 import { utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
 import { expect, uuid } from '@tanker/test-utils';
-import { createProvisionalIdentity, getPublicIdentity } from '@tanker/identity';
+import { createProvisionalIdentity } from '@tanker/identity';
 
 import type { AppHelper, TestArgs } from './helpers';
 import { oidcSettings, trustchaindUrl } from './helpers';
@@ -770,27 +770,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(bobPhone.status).to.equal(READY);
       });
 
-      it('fails to verify a provisional identity if the oidc id token contains an email different from the provisional email', async () => {
-        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-        const aliceIdentity = await args.appHelper.generateIdentity();
-        const aliceLaptop = args.makeTanker();
-        await aliceLaptop.start(aliceIdentity);
-        await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
-
-        const email = await appHelper.generateRandomEmail();
-        const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), 'email', email);
-
-        const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
-        expect(attachResult).to.deep.equal({
-          status: IDENTITY_VERIFICATION_NEEDED,
-          verificationMethod: { type: 'email', email },
-        });
-
-        await expect(bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument, 'does not match provisional identity');
-        await aliceLaptop.stop();
-      });
-
-      it('decrypt data shared with an attached provisional identity', async () => {
+      it('fails to verify a provisional identity using oidc', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         const aliceIdentity = await args.appHelper.generateIdentity();
         const aliceLaptop = args.makeTanker();
@@ -799,10 +779,6 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         const email = oidcSettings.googleAuth.users.martine.email;
         const provisionalIdentity = await createProvisionalIdentity(utils.toBase64(args.appHelper.appId), 'email', email);
-        const publicProvisionalIdentity = await getPublicIdentity(provisionalIdentity);
-
-        const clearText = 'Rivest Shamir Adleman';
-        const cipherText = await aliceLaptop.encrypt(clearText, { shareWithUsers: [publicProvisionalIdentity] });
 
         const attachResult = await bobLaptop.attachProvisionalIdentity(provisionalIdentity);
         expect(attachResult).to.deep.equal({
@@ -810,10 +786,8 @@ export const generateVerificationTests = (args: TestArgs) => {
           verificationMethod: { type: 'email', email },
         });
 
-        await bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken });
-
-        const decrypted = await bobLaptop.decrypt(cipherText);
-        expect(decrypted).to.equal(clearText);
+        // @ts-expect-error oidc is not supported for provisional verification
+        await expect(bobLaptop.verifyProvisionalIdentity({ oidcIdToken: martineIdToken })).to.be.rejectedWith(errors.InvalidArgument, 'unsupported verification method for provisional identity');
         await aliceLaptop.stop();
       });
     });
