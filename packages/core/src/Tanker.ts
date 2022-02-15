@@ -271,7 +271,8 @@ export class Tanker extends EventEmitter {
 
     const userData = this._parseIdentity(identityB64);
 
-    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
+    await this._initUnauthSession();
+    const session = await Session.init(userData, this._unauthSession!.getOidcNonceManager(), this._dataStoreOptions, this._clientOptions);
     // Watch and start the session
     session.on('device_revoked', () => this._deviceRevoked());
     session.on('status_change', s => this.emit('statusChange', s));
@@ -407,16 +408,29 @@ export class Tanker extends EventEmitter {
   }
 
   async stop(): Promise<void> {
-    if (this._session) {
-      const session = this._session;
-      this.session = null;
+    // unplug every instance variable before doing async
+    const session = this._session;
+    const unauthSession = this._unauthSession;
+    this.session = null;
+    delete this._unauthSession;
+
+    if (session) {
       this._localDeviceLock = new Lock();
       await session.stop();
+    }
+
+    if (unauthSession) {
+      await unauthSession.stop();
     }
   }
 
   _deviceRevoked = async (): Promise<void> => {
     this.session = null; // the session has already closed itself
+    const unauthSession = this._unauthSession;
+    delete this._unauthSession;
+    if (unauthSession) {
+      await unauthSession.stop();
+    }
   };
 
   async getDeviceList(): Promise<Array<Device>> {

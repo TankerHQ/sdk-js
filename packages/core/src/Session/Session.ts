@@ -16,6 +16,7 @@ import CloudStorageManager from '../CloudStorage/Manager';
 import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import ResourceManager from '../Resources/Manager';
 import DataProtector from '../DataProtection/DataProtector';
+import type OidcNonceManager from '../OidcNonce/Manager';
 
 export class Session extends EventEmitter {
   _storage: Storage;
@@ -31,14 +32,14 @@ export class Session extends EventEmitter {
 
   _status: Status;
 
-  constructor(userData: UserData, storage: Storage, client: Client) {
+  constructor(userData: UserData, storage: Storage, oidcNonceManager: OidcNonceManager, client: Client) {
     super();
 
     this._storage = storage;
     this._client = client;
     this._status = Status.STOPPED;
 
-    this._localUserManager = new LocalUserManager(userData, client, storage.keyStore);
+    this._localUserManager = new LocalUserManager(userData, oidcNonceManager, client, storage.keyStore);
     this._localUserManager.on('error', async (e: Error) => {
       // These are expected errors respectively when no network access and
       // when stopping the session while another API call is in progress.
@@ -76,13 +77,13 @@ export class Session extends EventEmitter {
     }
   }
 
-  static init = async (userData: UserData, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
+  static init = async (userData: UserData, oidcNonceManager: OidcNonceManager, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
     const client = new Client(userData.trustchainId, userData.userId, clientOptions);
 
     const storage = new Storage(storeOptions);
     await storage.open(userData.userId, userData.userSecret);
 
-    return new Session(userData, storage, client);
+    return new Session(userData, storage, oidcNonceManager, client);
   };
 
   start = async (): Promise<void> => {

@@ -19,6 +19,7 @@ import { generateUserCreation, generateDeviceFromGhostDevice, generateGhostDevic
 import type { UserData, DelegationToken } from './UserData';
 
 import type { Client, PullOptions } from '../Network/Client';
+import { OidcNonceManager } from '../OidcNonce/Manager';
 import { Status } from '../Session/status';
 import type { Device } from '../Users/types';
 import { makeSessionCertificate } from './SessionCertificate';
@@ -35,8 +36,9 @@ export class LocalUserManager extends EventEmitter {
 
   _keyStore: KeyStore;
   _client: Client;
+  _oidcNonceManager: OidcNonceManager;
 
-  constructor(userData: UserData, client: Client, keyStore: KeyStore) {
+  constructor(userData: UserData, oidcNonceManager: OidcNonceManager, client: Client, keyStore: KeyStore) {
     super();
     this._client = client;
     this._keyStore = keyStore;
@@ -44,6 +46,7 @@ export class LocalUserManager extends EventEmitter {
     this._localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
     this._delegationToken = userData.delegationToken;
     this._provisionalUserKeys = provisionalUserKeys;
+    this._oidcNonceManager = oidcNonceManager;
   }
 
   init = async (): Promise<Status> => {
