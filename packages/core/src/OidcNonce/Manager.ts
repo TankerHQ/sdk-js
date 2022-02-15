@@ -43,6 +43,17 @@ export class OidcNonceManager {
   async removeOidcNonce(nonce: b64string): Promise<void> {
     this._oidcStore.removeOidcNonce(nonce);
   }
+
+  static extractNonce = (idToken: string): b64string => {
+    const parts = idToken.split('.');
+    if (parts.length !== 3) {
+      throw new InvalidArgument('ID token could not be decoded');
+    }
+    const payload = JSON.parse(utils.toString(utils.fromSafeBase64(parts[1]!)));
+
+    utils.assertB64StringWithSize(payload.nonce, 'oidcIdToken.nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    return payload.nonce;
+  };
 }
 
 export default OidcNonceManager;
