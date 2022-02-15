@@ -14,7 +14,6 @@ import type { DataStoreOptions } from './Session/Storage';
 import {
   Verification,
   EmailVerification,
-  OidcVerification,
   RemoteVerification,
   VerificationMethod,
   VerificationOptions,
@@ -63,7 +62,7 @@ export type TankerCoreOptions = {
 export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
 
 export type Device = { id: string; isRevoked: boolean; };
-export type ProvisionalVerification = EmailVerification | OidcVerification | PhoneNumberVerification;
+export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
