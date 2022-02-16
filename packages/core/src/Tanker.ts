@@ -58,7 +58,6 @@ import { TANKER_SDK_VERSION } from './version';
 
 export type TankerCoreOptions = {
   appId?: b64string;
-  trustchainId?: b64string;
   url?: string;
   dataStore: DataStoreOptions;
   sdkType: string;
@@ -110,10 +109,6 @@ export class Tanker extends EventEmitter {
     if ('appId' in options) {
       assertB64StringWithSize(options.appId, 'options.appId', tcrypto.HASH_SIZE);
       this._trustchainId = options.appId as string;
-    } else if ('trustchainId' in options) {
-      console.warn('The "trustchainId" option is deprecated in favor of "appId", it will be removed in the future');
-      assertB64StringWithSize(options.trustchainId, 'options.trustchainId', tcrypto.HASH_SIZE);
-      this._trustchainId = options.trustchainId as string;
     } else {
       throw new InvalidArgument('options.appId', 'string', options.appId);
     }
@@ -187,16 +182,16 @@ export class Tanker extends EventEmitter {
   }
 
   override on(eventName: string, listener: any): any {
-    if (eventName === 'deviceRevoked') {
-      console.warn('The "deviceRevoked" event is deprecated, it will be removed in the future');
+    if (eventName === 'statusChanged') {
+      console.warn('The "statusChanged" event is deprecated, it will be removed in the future');
     }
 
     return super.on(eventName, listener);
   }
 
   override once(eventName: string, listener: any): any {
-    if (eventName === 'deviceRevoked') {
-      console.warn('The "deviceRevoked" event is deprecated, it will be removed in the future');
+    if (eventName === 'statusChanged') {
+      console.warn('The "statusChanged" event is deprecated, it will be removed in the future');
     }
 
     return super.once(eventName, listener);
@@ -217,6 +212,8 @@ export class Tanker extends EventEmitter {
   }
 
   get deviceId(): b64string {
+    console.warn('The "deviceId" property is deprecated, it will be removed in the future');
+
     assertStatus(this.status, statuses.READY, 'get the device id');
 
     const deviceId = this.session.deviceId();
@@ -411,10 +408,11 @@ export class Tanker extends EventEmitter {
 
   _deviceRevoked = async (): Promise<void> => {
     this.session = null; // the session has already closed itself
-    this.emit('deviceRevoked');
   };
 
   async getDeviceList(): Promise<Array<Device>> {
+    console.warn('The "getDeviceList" method is deprecated, it will be removed in the future');
+
     assertStatus(this.status, statuses.READY, 'get the device list');
 
     const devices = await this.session.listDevices();
@@ -455,14 +453,6 @@ export class Tanker extends EventEmitter {
     const encryption = extractEncryptionFormat(castEncryptedData);
 
     return utils.toBase64(encryption.extractResourceId(castEncryptedData));
-  }
-
-  async revokeDevice(b64DeviceId: b64string): Promise<void> {
-    console.warn('The "revokeDevice" method is deprecated, it will be removed in the future');
-    assertStatus(this.status, statuses.READY, 'revoke a device');
-    assertB64StringWithSize(b64DeviceId, 'deviceId', tcrypto.HASH_SIZE);
-    const deviceId = utils.fromBase64(b64DeviceId);
-    return this.session.revokeDevice(deviceId);
   }
 
   async createGroup(users: Array<b64string>): Promise<b64string> {

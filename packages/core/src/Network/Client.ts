@@ -441,14 +441,6 @@ export class Client {
     });
   };
 
-  revokeDevice = async (body: any): Promise<void> => {
-    await this._apiCall('/device-revocations', {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
-    });
-  };
-
   createGroup = async (body: any): Promise<void> => {
     await this._apiCall('/user-groups', {
       method: 'POST',
