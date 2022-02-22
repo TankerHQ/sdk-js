@@ -25,9 +25,6 @@
 [fakeauth_npm-badge]: https://img.shields.io/npm/v/@tanker/fake-authentication.svg
 [fakeauth_npm-link]: https://npmjs.com/package/@tanker/fake-authentication
 
-[filekit_npm-badge]: https://img.shields.io/npm/v/@tanker/filekit.svg
-[filekit_npm-link]: https://npmjs.com/package/@tanker/filekit
-
 [verificationui_npm-badge]: https://img.shields.io/npm/v/@tanker/verification-ui.svg
 [verificationui_npm-link]: https://npmjs.com/package/@tanker/verification-ui
 
@@ -41,7 +38,7 @@
 
 # Encryption SDKs for JavaScript
 
-[Overview](#overview) · [Core](#tanker-core) · [Identity](#identity-management) · [FileKit](#tanker-filekit) · [Browser support](#browser-support) · [Other platforms](#other-platforms) · [Contributing](#contributing) · [License](#license)
+[Overview](#overview) · [Core](#tanker-core) · [Identity](#identity-management) · [Browser support](#browser-support) · [Other platforms](#other-platforms) · [Contributing](#contributing) · [License](#license)
 
 ## Overview
 
@@ -107,51 +104,6 @@ Tanker **Fake Authentication** reduces the friction when starting new projects, 
 | [@tanker/identity][identity_npm-link]    | [![identity_npm-badge]][identity_npm-link]   |
 | [@tanker/verification-ui][verificationui_npm-link]    | [![verificationui_npm-badge]][verificationui_npm-link]   |
 | [@tanker/fake-authentication][fakeauth_npm-link]    | [![fakeauth_npm-badge]][fakeauth_npm-link]   |
-
-## Tanker FileKit
-
-!!! warning
-    FileKit in now deprecated
-
-Tanker **FileKit** is an end-to-end encrypted file storage service for apps.
-
-Tanker **FileKit** transfers and stores files in the cloud. The files are encrypted in the browser before being uploaded, and can only be downloaded by the owner and recipients, completely transparently.
-
-It wraps Tanker **Core** and Tanker **VerificationUI** in a single easy-to-use to use package.
-
-<details><summary>Tanker FileKit usage example</summary>
-
-This is a simple example using FileKit:
-
-```javascript
-import FileKit from '@tanker/filekit';
-
-const fileKit = new FileKit({ appId });
-
-// Retrieve the tanker identities from your server (or use FakeAuthentication, see below)
-const email = 'alice@example.com';
-const tankerIdentity = await yourServer.authenticate(email);
-
-// Start a FileKit session:
-//   * a verification UI will be automatically displayed if needed
-//   * when start() resolves, the FileKit session is ready
-await fileKit.start(email, { identity: tankerIdentity });
-
-// Encrypt the clear file locally and upload it to the cloud:
-const fileId = await fileKit.upload(file, { shareWithUsers, shareWithGroups });
-
-// Download, decrypt, and save a file to disk
-await fileKit.downloadToDisk(fileId);
-
-// Download, decrypt, and get a File object
-const file = await fileKit.download(fileId);
-```
-
-</details>
-
-| Package | Version |
-|:--------|:--------|
-| [@tanker/filekit][filekit_npm-link]    | [![filekit_npm-badge]][filekit_npm-link]   |
 
 ## Browser support
 

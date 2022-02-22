@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "build:all": "yarn build:ts && yarn build:emails",
-    "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:crypto && yarn build:types && yarn build:streams && yarn build:datastores && yarn build:core && yarn build:client-browser && yarn build:client-node && yarn build:fake-authentication && yarn build:verification-ui && yarn build:filekit && yarn build:functional-tests",
+    "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:crypto && yarn build:types && yarn build:streams && yarn build:datastores && yarn build:core && yarn build:client-browser && yarn build:client-node && yarn build:fake-authentication && yarn build:verification-ui && yarn build:functional-tests",
     "build:client-browser-base": "rimraf packages/client-browser/dist && tsc --build packages/client-browser/config",
     "build:client-browser-umd": "webpack --config packages/client-browser/config/webpack.config.js",
     "build:client-browser": "yarn build:client-browser-base && yarn build:client-browser-umd",
@@ -18,7 +18,6 @@
     "build:fake-authentication": "rimraf packages/fake-authentication/dist && tsc --build packages/fake-authentication/config",
     "build:file-ponyfill": "rimraf packages/file-ponyfill/dist && tsc --build packages/file-ponyfill/config",
     "build:file-reader": "rimraf packages/file-reader/dist && tsc --build packages/file-reader/config",
-    "build:filekit": "rimraf packages/filekit/dist && tsc --build packages/filekit/config",
     "build:global-this": "rimraf packages/global-this/dist && tsc --build packages/global-this/config",
     "build:http-utils": "rimraf packages/http-utils/dist && tsc --build packages/http-utils/config",
     "build:streams": "rimraf packages/stream/*/dist && tsc --build packages/stream/config",
