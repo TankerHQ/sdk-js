@@ -3,7 +3,7 @@ import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, Verification, VerificationMethod, LegacyEmailVerificationMethod } from '@tanker/core';
 import { tcrypto, utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
-import { expect, uuid } from '@tanker/test-utils';
+import { expect, silencer, uuid } from '@tanker/test-utils';
 import { createProvisionalIdentity } from '@tanker/identity';
 
 import type { AppHelper, TestArgs } from './helpers';
@@ -734,9 +734,16 @@ export const generateVerificationTests = (args: TestArgs) => {
         await appHelper.setOidc();
         martineIdToken = await getGoogleIdToken(martineRefreshToken);
         kevinIdToken = await getGoogleIdToken(kevinRefreshToken);
+
+        // warn was already silenced (to remove deprecation waring) and I can't silence it 2 times
+        silencer.restore();
+        silencer.silence('warn', /'testNonce' field/);
       });
 
-      after(() => appHelper.unsetOidc());
+      after(async () => {
+        silencer.restore();
+        await appHelper.unsetOidc();
+      });
 
       it('registers and verifies with an oidc id token', async () => {
         let nonce = await bobLaptop.createOidcNonce();
