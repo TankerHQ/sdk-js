@@ -76,6 +76,9 @@ export const assertVerification = (verification: Verification) => {
     assertNotEmptyString(verification.verificationKey, 'verification.verificationKey');
   } else if ('oidcIdToken' in verification) {
     assertNotEmptyString(verification.oidcIdToken, 'verification.oidcIdToken');
+    if ('testNonce' in verification) {
+      console.warn("'testNonce' field should be used for tests purposes only. It will be rejected for non-test Tanker application");
+    }
   } else if ('preverifiedEmail' in verification) {
     assertNotEmptyString(verification.preverifiedEmail, 'verification.preverifiedEmail');
   } else if ('preverifiedPhoneNumber' in verification) {
