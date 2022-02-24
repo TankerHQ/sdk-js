@@ -1,6 +1,6 @@
 import type { b64string } from '@tanker/core';
 import { Tanker } from '@tanker/core';
-import { ready as cryptoReady, utils } from '@tanker/crypto';
+import { ready as cryptoReady, utils, randomBase64Token } from '@tanker/crypto';
 import { getPublicIdentity, createProvisionalIdentity, createIdentity } from '@tanker/identity';
 import { expect, uuid } from '@tanker/test-utils';
 
@@ -183,5 +183,13 @@ export class AppHelper {
       method: 'DELETE',
       path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`,
     });
+  }
+
+  async generateRandomEmail(): Promise<string> {
+    return `${randomBase64Token()}@doctolib.com`;
+  }
+
+  async generateRandomPhoneNumber(): Promise<string> {
+    return `+3363998${Math.floor(1000 + Math.random() * 9000)}`;
   }
 }
