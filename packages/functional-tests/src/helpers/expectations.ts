@@ -27,21 +27,13 @@ export const expectProgressReport = (
   expect(spy.getCall(stepCount - 1).args).to.deep.equal([{ currentBytes: totalBytes, totalBytes }]);
 };
 
-// In Edge and IE11, accessing the webkitRelativePath property on File instances triggers
-// a "TypeError: Invalid calling object", although the property exists. We avoid this error
-// by comparing only a subset of useful File properties:
-const fileProps = (obj: Record<string, any>) => {
-  const { name, size, type, lastModified } = obj;
-  return { name, size, type, lastModified };
-};
-
 export const expectType = (obj: Data, type: Class<Data>) => expect(getConstructor(obj)).to.equal(type);
 
 export const expectSameType = (a: Data, b: Data) => expect(getConstructor(a)).to.equal(getConstructor(b));
 
 export const expectDeepEqual = (a: Record<string, any>, b: Record<string, any>) => {
   if (global.File && a instanceof File) {
-    expect(fileProps(a)).to.deep.equal(fileProps(b));
+    expect(a).to.deep.equal(b);
     return;
   }
   expect(a).to.deep.equal(b);

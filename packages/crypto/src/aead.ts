@@ -13,5 +13,5 @@ export function extractMac(edata: Uint8Array): Uint8Array {
   if (edata.length < MAC_SIZE)
     throw new Error(`Assertion error: at least ${MAC_SIZE} bytes needed to extract a MAC`);
 
-  return new Uint8Array(edata.subarray(edata.length - MAC_SIZE)); // don't use slice, doesn't work on IE11
+  return edata.slice(edata.length - MAC_SIZE);
 }
