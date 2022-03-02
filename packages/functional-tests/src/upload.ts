@@ -2,7 +2,7 @@ import { errors } from '@tanker/core';
 import type { Tanker, b64string } from '@tanker/core';
 import { encryptionV4, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
-import { expect, sinon, BufferingObserver, makeTimeoutPromise, isIE } from '@tanker/test-utils';
+import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
 
 import type { AppHelper, TestArgs, TestResourceSize } from './helpers';
@@ -228,7 +228,7 @@ export const generateUploadTests = (args: TestArgs) => {
         // no need to check for edge with gcs (the upload ends in one request anyway)
         // we chose to disable back pressure tests on s3 because they were hanging unexpectidly
         // we will investigate the issue and enable them again.
-        const canTestBackPressure = !(isEdge() && storage === 'gcs') && !isIE() && storage !== 's3';
+        const canTestBackPressure = !(isEdge() && storage === 'gcs') && storage !== 's3';
 
         if (canTestBackPressure) {
           const KB = 1024;
