@@ -21,7 +21,7 @@ const webResolve = {
 
 const getLoaders = (env) => {
   const tsLoaderCompilerOptions = {
-    target: 'es5',
+    target: 'es2019',
     declaration: false,
     declarationDir: undefined,
     importHelpers: true,
@@ -116,8 +116,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
   };
 
   if (target === 'web') {
-    // 'es5' is necessary to support IE
-    base.target = ['web', 'es5'];
+    base.target = ['web', 'es2019'];
     base.resolve = webResolve;
     base.plugins.push(
       // Node.js Polyfills were removed in Webpack 5

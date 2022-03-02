@@ -1,9 +1,8 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    // Recommended values + es like module imports: https://github.com/tsconfig/bases/blob/main/bases/recommended.json
-    "target": "ES2015",
-    "module": "ES2015",
+    "target": "es2019",
+    "module": "commonjs",
   },
   "exclude": [
     "../**/__tests__/*",
