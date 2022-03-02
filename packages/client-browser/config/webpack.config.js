@@ -7,7 +7,7 @@ const webpackBaseConfig = makeBaseConfig({ mode: 'production', target: 'web', ts
 module.exports = {
   ...webpackBaseConfig,
 
-  entry: [path.resolve(__dirname, '..', '..', '..', 'config', 'compat', 'ie11.js'), path.resolve(__dirname, '..', 'src', 'index.ts')],
+  entry: [path.resolve(__dirname, '..', 'src', 'index.ts')],
 
   output: {
     filename: 'tanker-client-browser.min.js',

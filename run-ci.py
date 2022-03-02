@@ -149,8 +149,6 @@ def run_tests_in_browser(*, runner: str) -> None:
     elif runner == "windows-edge":
         kill_windows_processes()
         tankerci.js.run_yarn("karma", "--browsers", "EdgeHeadless")
-    elif runner == "windows-ie":
-        tankerci.js.run_yarn("karma", "--browsers", "IeWindows10")
 
 
 def get_package_path(package_name: str) -> Path:
