@@ -429,7 +429,7 @@ export const generateVerificationTests = (args: TestArgs) => {
     });
 
     describe('verification by sms', () => {
-      let phoneNumber : string;
+      let phoneNumber: string;
       beforeEach(async () => {
         phoneNumber = await appHelper.generateRandomPhoneNumber();
       });
@@ -711,16 +711,6 @@ export const generateVerificationTests = (args: TestArgs) => {
       it('fails to verify a valid token for the wrong user', async () => {
         await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
         await expect(expectVerification(bobPhone, bobIdentity, { oidcIdToken: kevinIdToken })).to.be.rejectedWith(errors.InvalidVerification);
-      });
-
-      it(`gets throttled if failing over ${verificationThrottlingAttempts} times`, async () => {
-        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
-        await bobPhone.start(bobIdentity);
-
-        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
-          await expect(bobPhone.verifyIdentity({ oidcIdToken: kevinIdToken })).to.be.rejectedWith(errors.InvalidVerification);
-        }
-        await expect(bobPhone.verifyIdentity({ oidcIdToken: kevinIdToken })).to.be.rejectedWith(errors.TooManyAttempts);
       });
 
       it('updates and verifies with an oidc id token', async () => {
