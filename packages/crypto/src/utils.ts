@@ -69,20 +69,6 @@ export function toBase64(bytes: Uint8Array): b64string {
   return result.substr(0, result.length - 2 + mod3) + ['==', '=', ''][mod3];
 }
 
-function b64ToUint6(charCode: number) {
-  if (charCode > 64 && charCode < 91)
-    return charCode - 65;
-  if (charCode > 96 && charCode < 123)
-    return charCode - 71;
-  if (charCode > 47 && charCode < 58)
-    return charCode + 4;
-  if (charCode === 43)
-    return 62;
-  if (charCode === 47)
-    return 63;
-  return 0;
-}
-
 const rfc4648Base64RegExp = /^[A-Za-z0-9+/]*={0,2}$/;
 const ignoredCharRegExp = /[^A-Za-z0-9+/]+/g;
 
@@ -99,9 +85,27 @@ export function fromBase64(str: b64string): Uint8Array {
   const outLen = inLen * 3 + 1 >> 2;
   const output = new Uint8Array(outLen);
 
-  for (let mod3, mod4, uint24 = 0, outIndex = 0, inIndex = 0; inIndex < inLen; inIndex++) {
+  for (let charCode, mod3, mod4, uint6, uint24 = 0, outIndex = 0, inIndex = 0; inIndex < inLen; inIndex++) {
     mod4 = inIndex & 3;
-    uint24 |= b64ToUint6(strNoPadding.charCodeAt(inIndex)) << 18 - 6 * mod4;
+    charCode = strNoPadding.charCodeAt(inIndex);
+
+    // After switching to ES2019, we noticed a drop in performance on Safari.
+    // Inlining this code (previously in a separate function) improves the performance, even in ES5.
+    if (charCode > 64 && charCode < 91) {
+      uint6 = charCode - 65;
+    } else if (charCode > 96 && charCode < 123) {
+      uint6 = charCode - 71;
+    } else if (charCode > 47 && charCode < 58) {
+      uint6 = charCode + 4;
+    } else if (charCode === 43) {
+      uint6 = 62;
+    } else if (charCode === 47) {
+      uint6 = 63;
+    } else {
+      uint6 = 0;
+    }
+
+    uint24 |= uint6 << 18 - 6 * mod4;
 
     if (mod4 === 3 || inLen - inIndex === 1) {
       for (mod3 = 0; mod3 < 3 && outIndex < outLen; mod3 += 1, outIndex += 1) {
