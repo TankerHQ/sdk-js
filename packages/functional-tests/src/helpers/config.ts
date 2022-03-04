@@ -33,9 +33,5 @@ const storageSettings = {
     clientSecret: process.env['TANKER_FILEKIT_CLIENT_SECRET'] || '',
   },
 };
-const benchmarkSettings = {
-  appId: process.env['TANKER_BENCHMARK_APP_ID'] || '',
-  appSecret: process.env['TANKER_BENCHMARK_APP_SECRET'] || '',
-};
 
-export { appdUrl, fakeAuthUrl, trustchaindUrl, managementSettings, oidcSettings, storageSettings, benchmarkSettings };
+export { appdUrl, fakeAuthUrl, trustchaindUrl, managementSettings, oidcSettings, storageSettings };

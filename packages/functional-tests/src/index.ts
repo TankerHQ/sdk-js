@@ -2,7 +2,7 @@ import { ready as cryptoReady, utils } from '@tanker/crypto';
 import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
-import { makePrefix, AppHelper, appdUrl, managementSettings, oidcSettings, trustchaindUrl, benchmarkSettings } from './helpers';
+import { makePrefix, AppHelper, appdUrl, managementSettings, oidcSettings, trustchaindUrl } from './helpers';
 import type { TestArgs, TestResources } from './helpers';
 
 import { generateEncryptionStreamTests } from './encryptionStream';
@@ -79,4 +79,4 @@ export function generateFunctionalTests(
   });
 }
 
-export { makePrefix, AppHelper, appdUrl, managementSettings, benchmarkSettings, oidcSettings, trustchaindUrl };
+export { makePrefix, AppHelper, appdUrl, managementSettings, oidcSettings, trustchaindUrl };

@@ -1,7 +1,6 @@
 { // used by lint, tests and coverage
   "extends": "./tsconfig.base.json",
   "include": [
-    "../packages/benchmarks/**/*.ts",
     "../**/__tests__/*",
   ],
   "compilerOptions": {
