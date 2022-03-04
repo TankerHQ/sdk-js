@@ -52,7 +52,6 @@
     "debug:errors": "karma start packages/errors/config/karma.config.debug.js",
     "debug:streams": "karma start packages/stream/config/karma.config.debug.js",
     "debug:verification-ui": "karma start packages/verification-ui/config/karma.config.debug.js",
-    "benchmark": "karma start config/karma/karma.config.benchmark.js",
     "proof": "poetry install && poetry run python run-ci.py lint && yarn test",
     "coverage": "nyc yarn test"
   },
