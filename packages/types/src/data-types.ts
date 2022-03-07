@@ -71,9 +71,7 @@ export const assertInteger = (arg: any, argName: string, isUnsigned: boolean) =>
     throw new InvalidArgument(argName, `${argName} should be an integer`, arg);
   }
 
-  // Number.isFinite is not supported by IE
-  // eslint-disable-next-line no-restricted-globals
-  if (!isFinite(arg) || Math.floor(arg) !== arg) {
+  if (!Number.isFinite(arg) || Math.floor(arg) !== arg) {
     throw new InvalidArgument(argName, `${argName} should be an integer`, arg);
   }
 

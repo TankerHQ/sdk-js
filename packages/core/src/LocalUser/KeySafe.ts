@@ -24,14 +24,6 @@ export type KeySafe = {
   localUserKeys: LocalUserKeys | null;
 };
 
-function startsWith(haystack: string, needle: string) {
-  // @ts-expect-error `String`.prototype.startsWith()` is not defined in IE
-  if (String.prototype.startsWith)
-    return haystack.startsWith(needle);
-
-  return haystack.substr(0, needle.length) === needle;
-}
-
 const base64Prefix = '__BASE64__';
 
 async function encryptObject(key: Uint8Array, plainObject: Record<string, any>): Promise<Uint8Array> {
@@ -47,7 +39,7 @@ async function encryptObject(key: Uint8Array, plainObject: Record<string, any>):
 async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<any> {
   const jsonBytes = encryptionV1.compatDecrypt(key, ciphertext);
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
-    if (typeof v === 'string' && startsWith(v, base64Prefix))
+    if (typeof v === 'string' && v.startsWith(base64Prefix))
       return utils.fromBase64(v.substring(base64Prefix.length));
     return v;
   });

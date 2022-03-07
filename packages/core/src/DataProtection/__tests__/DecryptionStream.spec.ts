@@ -7,25 +7,6 @@ import { Writable } from '@tanker/stream-base';
 import { DecryptionStream } from '../DecryptionStream';
 import { PromiseWrapper } from '../../PromiseWrapper';
 
-// Needed to run in IE without polyfilling `String.prototype.repeat()`
-// extract from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/repeat#polyfill
-// without error checking
-function repeat(string: string, c: number) {
-  let str = string;
-  let count = c;
-  if (str.length === 0 || count === 0)
-    return '';
-
-  const maxCount = str.length * count;
-  count = Math.floor(Math.log(count) / Math.log(2));
-  while (count) {
-    str += str;
-    count -= 1;
-  }
-  str += str.substring(0, maxCount - str.length);
-  return str;
-}
-
 describe('DecryptionStream', () => {
   let buffer: Array<Uint8Array>;
   let key: Uint8Array;
@@ -334,7 +315,7 @@ describe('DecryptionStream', () => {
     [10, 50, 100, 1000].forEach(chunkSize => {
       it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks`, async () => {
         const timeout = makeTimeoutPromise(50);
-        const chunk = repeat('0', chunkSize);
+        const chunk = '0'.repeat(chunkSize);
         const inputSize = 10 * (chunkSize + encryptionV4.overhead);
         const bufferCounter = new BufferingObserver();
         const slowWritable = new Writable({

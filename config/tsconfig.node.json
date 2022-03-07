@@ -2,7 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     // Recommended values for Node 12: https://github.com/tsconfig/bases/blob/main/bases/node12.json
-    "target": "ES2019",
+    "target": "es2019",
     "module": "commonjs",
     "lib": ["es2019", "es2020.promise", "es2020.bigint", "es2020.string"],
   },

@@ -64,7 +64,7 @@
     "@types/webpack-env": "^1.16.2",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
-    "buffer": "5.7.1",
+    "buffer": "6.0.3",
     "codecov": "3.8.1",
     "colorette": "1.2.1",
     "core-js": "^3.18.3",
@@ -113,9 +113,9 @@
   "browserslist": [
     "last 2 versions",
     "Firefox ESR",
-    "not ie < 11",
-    "not dead",
-    "not node < 10"
+    "node >= 12",
+    "not IE 11",
+    "not dead"
   ],
   "nyc": {
     "exclude": [
@@ -141,7 +141,7 @@
   },
   "resolutions": {
     "ansi-regex": "^5.0.1",
-    "browserslist": "^4.16.6",
+    "browserslist": "^4.19.3",
     "eslint-import-resolver-node": "0.3.4",
     "follow-redirects": "^1.14.8",
     "glob-parent": "^5.1.2",

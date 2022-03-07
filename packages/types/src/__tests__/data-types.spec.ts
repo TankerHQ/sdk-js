@@ -7,21 +7,13 @@ import type { Data } from '../data-types';
 import type { Class } from '../utils';
 
 describe('types', () => {
-  // In Edge and IE11, accessing the webkitRelativePath property on File instances triggers
-  // a "TypeError: Invalid calling object", although the property exists. We avoid this error
-  // by comparing only a subset of useful File properties:
-  const fileProps = (obj: Record<string, any>) => {
-    const { name, size, type, lastModified } = obj;
-    return { name, size, type, lastModified };
-  };
-
   const expectSameType = <A extends Data, B extends Data>(a: A, b: B) => expect(getConstructor(a)).to.equal(getConstructor(b));
 
   const expectSameLength = <A extends Data, B extends Data>(a: A, b: B) => expect(getDataLength(a)).to.equal(getDataLength(b));
 
   const expectDeepEqual = <A extends Data, B extends Data>(a: A, b: B) => {
     if (global.File && a instanceof File) {
-      expect(fileProps(a)).to.deep.equal(fileProps(b));
+      expect(a).to.deep.equal(b);
       return;
     }
 
@@ -30,8 +22,7 @@ describe('types', () => {
 
   const values: { type: Class<Data>, data: Data }[] = [];
 
-  const uint8array = new Uint8Array(8);
-  uint8array.set([0, 1, 2, 3, 4, 42, 128, 255]); // no .from() in IE11
+  const uint8array = Uint8Array.from([0, 1, 2, 3, 4, 42, 128, 255]);
 
   const arraybuffer = uint8array.buffer;
   values.push({ type: ArrayBuffer, data: arraybuffer });

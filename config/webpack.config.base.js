@@ -21,7 +21,7 @@ const webResolve = {
 
 const getLoaders = (env) => {
   const tsLoaderCompilerOptions = {
-    target: 'es5',
+    target: 'es2019',
     declaration: false,
     declarationDir: undefined,
     importHelpers: true,
@@ -116,8 +116,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
   };
 
   if (target === 'web') {
-    // 'es5' is necessary to support IE
-    base.target = ['web', 'es5'];
+    base.target = ['web', 'es2019'];
     base.resolve = webResolve;
     base.plugins.push(
       // Node.js Polyfills were removed in Webpack 5
@@ -157,9 +156,6 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
       '@tanker/client-browser': path.resolve(__dirname, '../packages/client-browser/src/index.ts'),
       '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
       '@tanker/functional-tests': path.resolve(__dirname, '../packages/functional-tests/src/index.ts'),
-      // dexie resolves to 'dist/modern/dexie.mjs' by default, which is not IE11 compatible
-      // 'dist/dexie.js' is compatible
-      dexie: path.resolve(__dirname, '../node_modules/dexie/dist/dexie.js'),
     },
     extensions,
   };

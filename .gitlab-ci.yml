@@ -127,16 +127,6 @@ check/windows/edge:
     - poetry run python run-ci.py check --runner windows-edge
   tags: !reference [.tags/windows, tags]
 
-check/windows/ie:
-  stage: check
-  rules:
-    - !reference [.rules/push-master, rules]
-    - !reference [.rules/nightly, rules]
-    - !reference [.rules/mr/manual, rules]
-  script:
-    - poetry run python run-ci.py check --runner windows-ie
-  tags: !reference [.tags/linux, tags]
-
 check/linux/nightly:
   extends:
     - .rules/nightly

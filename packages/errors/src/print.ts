@@ -1,16 +1,9 @@
-// Use a RegExp since IE11 does not implement Function.prototype.name
-const constructorNameRegExp = /^.*(?:function|class) +([^( ]+).*$/;
-
 const getConstructorName = (obj: Record<string, any>) => {
   const constructor = obj.constructor;
   if (typeof constructor !== 'function') { // e.g. 'undefined' for obj = Object.create(null)
     return 'Object';
   }
-  if (typeof constructor.name === 'string') {
-    return constructor.name;
-  }
-
-  return constructor.toString().trim().split('\n')[0]!.replace(constructorNameRegExp, '$1');
+  return constructor.name;
 };
 
 export const safePrintType = (value: any) => {
