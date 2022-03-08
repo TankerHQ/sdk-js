@@ -13,6 +13,8 @@ export interface EncryptionFormatReporter {
 
 const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5];
 
+export type Encryptor = Exclude<typeof encryptionFormats[0], undefined>;
+
 // The maximum byte size of a resource encrypted with the "simple" algorithms
 // (different from v4) is obtained by summing the sizes of:
 //  - the version: 1 byte

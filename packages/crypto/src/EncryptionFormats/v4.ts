@@ -26,12 +26,12 @@ export const overhead = 1 + uint32Length + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV
 
 export const defaultMaxEncryptedChunkSize = 1024 * 1024; // 1MB
 
-export const getClearSize = (encryptedSize: number, maxEncryptedChunkSize: number) => {
+export const getClearSize = (encryptedSize: number, maxEncryptedChunkSize: number = defaultMaxEncryptedChunkSize) => {
   const chunkCount = Math.ceil(encryptedSize / maxEncryptedChunkSize);
   return encryptedSize - chunkCount * overhead;
 };
 
-export const getEncryptedSize = (clearSize: number, maxEncryptedChunkSize: number) => {
+export const getEncryptedSize = (clearSize: number, maxEncryptedChunkSize: number = defaultMaxEncryptedChunkSize) => {
   const maxClearChunkSize = maxEncryptedChunkSize - overhead;
   // Note: if clearSize is multiple of maxClearChunkSize, an additional empty chunk is added
   //       at the end, hence the +1 to compute chunkCount
