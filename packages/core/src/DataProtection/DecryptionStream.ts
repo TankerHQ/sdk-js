@@ -1,10 +1,8 @@
 import type { Key } from '@tanker/crypto';
-import { encryptionV4, utils } from '@tanker/crypto';
+import { encryptionV4, utils, extractEncryptionFormat } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
-
-import { extractEncryptionFormat } from './types';
 
 export type ResourceIdKeyMapper = {
   findKey: (resourceID: Uint8Array) => Promise<Key>;

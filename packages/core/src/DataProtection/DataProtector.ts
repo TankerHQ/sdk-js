@@ -1,5 +1,5 @@
-import type { b64string } from '@tanker/crypto';
-import { utils } from '@tanker/crypto';
+import type { b64string, EncryptionFormatDescription } from '@tanker/crypto';
+import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -15,9 +15,9 @@ import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import type GroupManager from '../Groups/Manager';
 import type UserManager from '../Users/Manager';
 
-import { extractEncryptionFormat, getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource, SAFE_EXTRACTION_LENGTH, getClearSize } from './types';
+import { getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource } from './types';
 import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
-import type { Resource, EncryptionFormatDescription } from './types';
+import type { Resource } from './types';
 
 import type { User } from '../Users/types';
 import { getLastUserPublicKey } from '../Users/types';
@@ -128,8 +128,8 @@ export class DataProtector {
       const trustchainIdB64 = utils.toBase64(this._localUser.trustchainId);
 
       if (!identities.some(identity => identity.target === 'user'
-                                    && identity.value === selfUserIdB64
-                                    && identity.trustchain_id === trustchainIdB64)) {
+        && identity.value === selfUserIdB64
+        && identity.trustchain_id === trustchainIdB64)) {
         return identities.concat([{ trustchain_id: trustchainIdB64, target: 'user', value: selfUserIdB64 }]);
       }
     }

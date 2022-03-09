@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import type { b64string } from '@tanker/crypto';
-import { randomBase64Token, ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
+import { randomBase64Token, ready as cryptoReady, tcrypto, utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertInteger, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
@@ -47,7 +47,6 @@ import {
 } from './DataProtection/options';
 import type { EncryptionStream } from './DataProtection/EncryptionStream';
 import type { DecryptionStream } from './DataProtection/DecryptionStream';
-import { extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './DataProtection/types';
 import type { EncryptionSession } from './DataProtection/EncryptionSession';
 import type { UploadStream } from './CloudStorage/UploadStream';
 import type { DownloadStream } from './CloudStorage/DownloadStream';
