@@ -161,7 +161,9 @@ export class DataProtector {
 
     const encryption = extractEncryptionFormat(castEncryptedData);
     const encryptedSize = getDataLength(castEncryptedData);
-    // @ts-expect-error Already checked we are using a simple encryption
+    // Can't ts-expected-error because it says that there is no error, but we
+    // must ts-ignore because there actually is an error.
+    // @ts-ignore Already checked we are using a simple encryption
     const clearSize = encryption.getClearSize(encryptedSize);
     const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
 
