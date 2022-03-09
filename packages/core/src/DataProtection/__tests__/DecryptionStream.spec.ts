@@ -27,7 +27,7 @@ describe('DecryptionStream', () => {
   const encryptMsg = (index: number, clearChunkSize: number, str: string) => {
     const clear = utils.fromString(str);
     const encryptedChunkSize = encryptionV4.overhead + clearChunkSize;
-    const encrypted = encryptionV4.serialize(encryptionV4.encrypt(key, index, resourceId, encryptedChunkSize, clear));
+    const encrypted = encryptionV4.serialize(encryptionV4.encryptChunk(key, index, resourceId, encryptedChunkSize, clear));
     return { clear, encrypted };
   };
 

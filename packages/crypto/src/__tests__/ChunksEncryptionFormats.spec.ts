@@ -73,36 +73,36 @@ describe('Encryption V4', () => {
   });
 
   it('should throw if trying to unserialize a truncated buffer v4', () => {
-    expect(() => encryptorV4.decrypt(key, 0, encryptorV4.unserialize(truncate(chunk1)))).to.throw();
+    expect(() => encryptorV4.decryptChunk(key, 0, encryptorV4.unserialize(truncate(chunk1)))).to.throw();
   });
 
   it('can decrypt a chunk', async () => {
-    const clear = encryptorV4.decrypt(key, 0, encryptorV4.unserialize(chunk1));
+    const clear = encryptorV4.decryptChunk(key, 0, encryptorV4.unserialize(chunk1));
     expect(clear).to.deep.equal(utils.fromString('this is a'));
   });
 
   it('can decrypt a chunk with derivation', async () => {
-    const clear = encryptorV4.decrypt(key, 1, encryptorV4.unserialize(chunk2));
+    const clear = encryptorV4.decryptChunk(key, 1, encryptorV4.unserialize(chunk2));
     expect(clear).to.deep.equal(utils.fromString(' secret'));
   });
 
   it('throws when the index is wrong', async () => {
     expect(() => {
-      encryptorV4.decrypt(key, 0, encryptorV4.unserialize(chunk2));
+      encryptorV4.decryptChunk(key, 0, encryptorV4.unserialize(chunk2));
     }).to.throw();
   });
 
   it('should encrypt / decrypt a buffer', () => {
-    const encryptedData = encryptorV4.encrypt(key, 2, resourceId, encryptedChunkSize, testMessage);
-    const decryptedData = encryptorV4.decrypt(key, 2, encryptedData);
+    const encryptedData = encryptorV4.encryptChunk(key, 2, resourceId, encryptedChunkSize, testMessage);
+    const decryptedData = encryptorV4.decryptChunk(key, 2, encryptedData);
     expect(decryptedData).to.deep.equal(testMessage);
   });
 
   it('should encrypt / decrypt an empty buffer', () => {
-    const encryptedData = encryptorV4.serialize(encryptorV4.encrypt(key, 2, resourceId, encryptedChunkSize, new Uint8Array(0)));
+    const encryptedData = encryptorV4.serialize(encryptorV4.encryptChunk(key, 2, resourceId, encryptedChunkSize, new Uint8Array(0)));
     expect(encryptedData.length).to.equal(encryptorV4.overhead);
 
-    const decryptedData = encryptorV4.decrypt(key, 2, encryptorV4.unserialize(encryptedData));
+    const decryptedData = encryptorV4.decryptChunk(key, 2, encryptorV4.unserialize(encryptedData));
     expect(decryptedData).to.deep.equal(new Uint8Array(0));
   });
 

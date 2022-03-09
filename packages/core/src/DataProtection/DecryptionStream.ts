@@ -150,7 +150,7 @@ export class DecryptionStream extends Transform {
         try {
           const currentChunk = encryptionV4.unserialize(encryptedChunk);
           checkHeaderIntegrity({ encryptedChunkSize, resourceId }, currentChunk);
-          const clearData = encryptionV4.decrypt(key, this._state.index, currentChunk);
+          const clearData = encryptionV4.decryptChunk(key, this._state.index, currentChunk);
           this._decryptionStream.push(clearData);
         } catch (error) {
           done(new DecryptionFailed({ error: error as Error, b64ResourceId }));

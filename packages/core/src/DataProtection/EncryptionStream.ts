@@ -84,7 +84,7 @@ export class EncryptionStream extends Transform {
   }
 
   _encryptChunk(clearChunk: Uint8Array) {
-    const encryptedBuffer = encryptionV4.serialize(encryptionV4.encrypt(this._key, this._state.index, this._resourceId, this._maxEncryptedChunkSize, clearChunk));
+    const encryptedBuffer = encryptionV4.serialize(encryptionV4.encryptChunk(this._key, this._state.index, this._resourceId, this._maxEncryptedChunkSize, clearChunk));
     this._state.index += 1; // safe as long as index < 2^53
     this._state.lastClearChunkSize = clearChunk.length;
 

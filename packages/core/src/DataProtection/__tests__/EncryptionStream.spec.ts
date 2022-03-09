@@ -117,7 +117,7 @@ describe('EncryptionStream', () => {
     expect(buffer.length).to.equal(3);
 
     buffer.forEach((_, index) => {
-      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]!));
+      const clearData = encryptionV4.decryptChunk(key, index, encryptionV4.unserialize(buffer[index]!));
       const expectedMsg = index === 2 ? new Uint8Array(0) : msg;
       expect(clearData).to.deep.equal(expectedMsg);
     });
@@ -144,7 +144,7 @@ describe('EncryptionStream', () => {
     expect(buffer.length).to.equal(3);
 
     buffer.forEach((_, index) => {
-      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]!));
+      const clearData = encryptionV4.decryptChunk(key, index, encryptionV4.unserialize(buffer[index]!));
       const expectedMsg = index === 2 ? msg.subarray(1) : msg;
       expect(clearData).to.deep.equal(expectedMsg);
     });
