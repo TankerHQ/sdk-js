@@ -1,5 +1,5 @@
 import type { b64string, EncryptionFormatDescription } from '@tanker/crypto';
-import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize } from '@tanker/crypto';
+import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, EncryptionStream, DecryptionStream } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -26,8 +26,6 @@ import type { NatureKind } from '../Blocks/Nature';
 import type { Status } from '../Session/status';
 
 import type { OutputOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './options';
-import { EncryptionStream } from './EncryptionStream';
-import { DecryptionStream } from './DecryptionStream';
 import { ProgressHandler } from './ProgressHandler';
 import { EncryptionSession } from './EncryptionSession';
 

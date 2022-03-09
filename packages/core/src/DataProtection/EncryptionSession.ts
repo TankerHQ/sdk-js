@@ -1,4 +1,4 @@
-import type { b64string } from '@tanker/crypto';
+import type { b64string, EncryptionStream } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
 import type { Data, ResourceMetadata } from '@tanker/types';
 import { assertDataType, assertNotEmptyString } from '@tanker/types';
@@ -7,7 +7,6 @@ import { Status, assertStatus } from '../Session/status';
 import type { OutputOptions, ProgressOptions } from './options';
 import { extractOutputOptions, extractProgressOptions } from './options';
 import type { DataProtector } from './DataProtector';
-import type { EncryptionStream } from './EncryptionStream';
 import type { Resource } from './types';
 
 export class EncryptionSession {

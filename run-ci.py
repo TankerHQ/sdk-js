@@ -33,7 +33,6 @@ configs: List[Config] = [
     {"build": "file-reader", "publish": ["@tanker/file-reader"]},
     {"build": "http-utils", "publish": ["@tanker/http-utils"]},
     {"build": "types", "publish": ["@tanker/types"]},
-    {"build": "crypto", "publish": ["@tanker/crypto"]},
     {
         "build": "streams",
         "publish": [
@@ -41,6 +40,7 @@ configs: List[Config] = [
             "@tanker/stream-cloud-storage",
         ],
     },
+    {"build": "crypto", "publish": ["@tanker/crypto"]},
     {
         "build": "datastores",
         "publish": [

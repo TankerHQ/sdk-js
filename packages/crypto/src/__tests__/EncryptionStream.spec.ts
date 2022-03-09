@@ -1,10 +1,15 @@
 import { Writable } from '@tanker/stream-base';
-import { aead, random, ready as cryptoReady, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { PromiseWrapper } from '@tanker/types';
 
-import { EncryptionStream } from '../EncryptionStream';
+import * as tcrypto from '../tcrypto';
+import { ready as cryptoReady } from '../ready';
+import * as aead from '../aead';
+import { random } from '../random';
+import * as utils from '../utils';
+import * as encryptionV4 from '../EncryptionFormats/v4';
+import { EncryptionStream } from '../EncryptionFormats/EncryptionStream';
 
 describe('EncryptionStream', () => {
   let buffer: Array<Uint8Array>;

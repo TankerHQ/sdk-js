@@ -1,8 +1,10 @@
-import type { b64string } from '@tanker/crypto';
-import { utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
+
+import type { b64string } from '../aliases';
+import * as utils from '../utils';
+import * as encryptionV4 from './v4';
 
 export class EncryptionStream extends Transform {
   _maxClearChunkSize: number;

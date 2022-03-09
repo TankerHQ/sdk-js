@@ -1,11 +1,16 @@
 import type { SinonSpy } from 'sinon';
-import { utils, random, ready as cryptoReady, tcrypto, encryptionV4, encryptionV3 } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { Writable } from '@tanker/stream-base';
 import { PromiseWrapper } from '@tanker/types';
 
-import { DecryptionStream } from '../DecryptionStream';
+import * as tcrypto from '../tcrypto';
+import { ready as cryptoReady } from '../ready';
+import { random } from '../random';
+import * as utils from '../utils';
+import * as encryptionV4 from '../EncryptionFormats/v4';
+import * as encryptionV3 from '../EncryptionFormats/v3';
+import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
 
 describe('DecryptionStream', () => {
   let buffer: Array<Uint8Array>;

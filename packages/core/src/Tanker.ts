@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import type { b64string } from '@tanker/crypto';
+import type { b64string, EncryptionStream, DecryptionStream } from '@tanker/crypto';
 import { randomBase64Token, ready as cryptoReady, tcrypto, utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertInteger, assertNotEmptyString, castData } from '@tanker/types';
@@ -45,8 +45,6 @@ import {
   isObject,
   isSharingOptionsEmpty,
 } from './DataProtection/options';
-import type { EncryptionStream } from './DataProtection/EncryptionStream';
-import type { DecryptionStream } from './DataProtection/DecryptionStream';
 import type { EncryptionSession } from './DataProtection/EncryptionSession';
 import type { UploadStream } from './CloudStorage/UploadStream';
 import type { DownloadStream } from './CloudStorage/DownloadStream';
