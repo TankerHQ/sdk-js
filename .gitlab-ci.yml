@@ -180,6 +180,7 @@ pages:
   stage: deploy
   needs:
     - check/linux/node
+  before_script: []
   script:
     - mv lcov-report/ public/
   artifacts:
