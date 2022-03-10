@@ -8,7 +8,6 @@ export {
   assertInteger,
   assertString,
   assertNotEmptyString,
-  assertB64StringWithSize,
   assertNever,
 } from './data-types';
 

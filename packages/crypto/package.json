@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@tanker/errors": "0.0.1",
+    "@tanker/types": "0.0.1",
     "@types/libsodium-wrappers": "^0.7.9",
     "@types/varint": "^6.0.0",
     "libsodium-wrappers": "^0.7.9",

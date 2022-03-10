@@ -1,5 +1,4 @@
 import { InternalError, InvalidArgument } from '@tanker/errors';
-import { utils } from '@tanker/crypto';
 
 import FilePonyfill from '@tanker/file-ponyfill';
 import FileReader from '@tanker/file-reader';
@@ -77,22 +76,6 @@ export const assertInteger = (arg: any, argName: string, isUnsigned: boolean) =>
 
   if (isUnsigned && arg < 0) {
     throw new InvalidArgument(argName, `${argName} should be unsigned`, arg);
-  }
-};
-
-export const assertB64StringWithSize = (arg: any, argName: string, expectedSize: number) => {
-  assertNotEmptyString(arg, argName);
-
-  let unb64;
-
-  try {
-    unb64 = utils.fromBase64(arg);
-  } catch (e) {
-    throw new InvalidArgument(argName, `${argName} is not valid base64`, arg);
-  }
-
-  if (unb64.length !== expectedSize) {
-    throw new InvalidArgument(argName, `${argName} is not the right size, expected ${expectedSize}, got ${unb64.length}`, arg);
   }
 };
 

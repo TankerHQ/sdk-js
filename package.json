@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "build:all": "yarn build:ts && yarn build:emails",
-    "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:crypto && yarn build:types && yarn build:streams && yarn build:datastores && yarn build:core && yarn build:client-browser && yarn build:client-node && yarn build:fake-authentication && yarn build:verification-ui && yarn build:functional-tests",
+    "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:types && yarn build:crypto && yarn build:streams && yarn build:datastores && yarn build:core && yarn build:client-browser && yarn build:client-node && yarn build:fake-authentication && yarn build:verification-ui && yarn build:functional-tests",
     "build:client-browser-base": "rimraf packages/client-browser/dist && tsc --build packages/client-browser/config",
     "build:client-browser-umd": "webpack --config packages/client-browser/config/webpack.config.js",
     "build:client-browser": "yarn build:client-browser-base && yarn build:client-browser-umd",

@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import type { b64string } from '@tanker/crypto';
 import { randomBase64Token, ready as cryptoReady, tcrypto, utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
-import { assertDataType, assertInteger, assertNotEmptyString, assertB64StringWithSize, castData } from '@tanker/types';
+import { assertDataType, assertInteger, assertNotEmptyString, castData } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
 
 import { _deserializeProvisionalIdentity, isSecretProvisionalIdentity } from './Identity';
@@ -106,7 +106,7 @@ export class Tanker extends EventEmitter {
     }
 
     if ('appId' in options) {
-      assertB64StringWithSize(options.appId, 'options.appId', tcrypto.HASH_SIZE);
+      utils.assertB64StringWithSize(options.appId, 'options.appId', tcrypto.HASH_SIZE);
       this._trustchainId = options.appId as string;
     } else {
       throw new InvalidArgument('options.appId', 'string', options.appId);
@@ -429,7 +429,7 @@ export class Tanker extends EventEmitter {
     if (resourceIds.length === 0) {
       return;
     }
-    resourceIds.forEach(id => assertB64StringWithSize(id, 'resourceId', tcrypto.MAC_SIZE));
+    resourceIds.forEach(id => utils.assertB64StringWithSize(id, 'resourceId', tcrypto.MAC_SIZE));
 
     const sharingOptions = extractSharingOptions(options);
 
@@ -492,7 +492,7 @@ export class Tanker extends EventEmitter {
     if (nonOptUsersToAdd.length === 0 && nonOptUsersToRemove.length === 0)
       throw new InvalidArgument('no members to add or remove in updateGroupMembers');
 
-    assertB64StringWithSize(groupId, 'groupId', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    utils.assertB64StringWithSize(groupId, 'groupId', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
 
     return this.session.updateGroupMembers(groupId, nonOptUsersToAdd, nonOptUsersToRemove);
   }
@@ -568,7 +568,7 @@ export class Tanker extends EventEmitter {
   async download<T extends Data>(resourceId: b64string, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
   async download(resourceId: b64string, options: Partial<OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'download a file');
-    assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
+    utils.assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 
     if (!isObject(options))
       throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number, onProgress?: OnProgress }', options);
@@ -592,7 +592,7 @@ export class Tanker extends EventEmitter {
 
   async createDownloadStream(resourceId: b64string, options: ProgressOptions = {}): Promise<DownloadStream> {
     assertStatus(this.status, statuses.READY, 'download a file using stream');
-    assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
+    utils.assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
 
     if (!isObject(options))
       throw new InvalidArgument('options', '{ onProgress?: OnProgress }', options);

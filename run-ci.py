@@ -26,7 +26,6 @@ class Config(TypedDict):
 configs: List[Config] = [
     {"build": "global-this", "publish": ["@tanker/global-this"]},
     {"build": "errors", "publish": ["@tanker/errors"]},
-    {"build": "crypto", "publish": ["@tanker/crypto"]},
     {
         "build": "file-ponyfill",
         "publish": ["@tanker/file-ponyfill"],
@@ -34,6 +33,7 @@ configs: List[Config] = [
     {"build": "file-reader", "publish": ["@tanker/file-reader"]},
     {"build": "http-utils", "publish": ["@tanker/http-utils"]},
     {"build": "types", "publish": ["@tanker/types"]},
+    {"build": "crypto", "publish": ["@tanker/crypto"]},
     {
         "build": "streams",
         "publish": [
@@ -59,12 +59,12 @@ configs: List[Config] = [
     },
     {"build": "client-node", "publish": ["@tanker/client-node"]},
     {
-        "build": "verification-ui",
-        "publish": ["@tanker/verification-ui"],
-    },
-    {
         "build": "fake-authentication",
         "publish": ["@tanker/fake-authentication"],
+    },
+    {
+        "build": "verification-ui",
+        "publish": ["@tanker/verification-ui"],
     },
 ]
 

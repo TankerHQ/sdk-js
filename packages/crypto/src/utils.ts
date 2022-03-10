@@ -1,6 +1,7 @@
 /* eslint-disable no-bitwise */
 import sodium from 'libsodium-wrappers';
 import { InvalidArgument } from '@tanker/errors';
+import { assertNotEmptyString } from '@tanker/types';
 
 import type { b64string, safeb64string } from './aliases';
 import { generichash } from './hash';
@@ -147,6 +148,22 @@ export function fromSafeBase64(str: safeb64string): Uint8Array {
 
   return fromBase64(str.replace(/[-_]/g, base64FromUrlsafeReplacer));
 }
+
+export const assertB64StringWithSize = (arg: any, argName: string, expectedSize: number) => {
+  assertNotEmptyString(arg, argName);
+
+  let unb64;
+
+  try {
+    unb64 = fromBase64(arg);
+  } catch (e) {
+    throw new InvalidArgument(argName, `${argName} is not valid base64`, arg);
+  }
+
+  if (unb64.length !== expectedSize) {
+    throw new InvalidArgument(argName, `${argName} is not the right size, expected ${expectedSize}, got ${unb64.length}`, arg);
+  }
+};
 
 export function toString(bytes: Uint8Array): string {
   if (!(bytes instanceof Uint8Array))

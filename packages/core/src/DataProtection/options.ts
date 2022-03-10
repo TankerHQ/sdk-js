@@ -1,8 +1,8 @@
 import type { b64string } from '@tanker/crypto';
-import { tcrypto } from '@tanker/crypto';
+import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import globalThis from '@tanker/global-this';
-import { getConstructor, assertNotEmptyString, assertB64StringWithSize } from '@tanker/types';
+import { getConstructor, assertNotEmptyString } from '@tanker/types';
 import type { Class, Data, ResourceMetadata } from '@tanker/types';
 
 import type { OnProgress } from './ProgressHandler';
@@ -58,7 +58,7 @@ export const extractSharingOptions = (options: Record<string, any>, error: any =
 
   if (options['shareWithGroups']) {
     for (const groupId of options['shareWithGroups']) {
-      assertB64StringWithSize(groupId, 'options.shareWithGroups', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+      utils.assertB64StringWithSize(groupId, 'options.shareWithGroups', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
     }
   }
 

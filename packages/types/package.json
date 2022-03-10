@@ -26,7 +26,6 @@
     "test": "cd ../..; yarn test:types"
   },
   "dependencies": {
-    "@tanker/crypto": "0.0.1",
     "@tanker/errors": "0.0.1",
     "@tanker/file-ponyfill": "0.0.1",
     "@tanker/file-reader": "0.0.1",
