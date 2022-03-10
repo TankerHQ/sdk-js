@@ -3,9 +3,9 @@ import { utils, random, ready as cryptoReady, tcrypto, encryptionV4, encryptionV
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { Writable } from '@tanker/stream-base';
+import { PromiseWrapper } from '@tanker/types';
 
 import { DecryptionStream } from '../DecryptionStream';
-import { PromiseWrapper } from '../../PromiseWrapper';
 
 describe('DecryptionStream', () => {
   let buffer: Array<Uint8Array>;

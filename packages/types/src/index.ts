@@ -13,3 +13,4 @@ export {
 
 export type { Data, ResourceMetadata } from './data-types';
 export type { Class } from './utils';
+export { PromiseWrapper } from './PromiseWrapper';
