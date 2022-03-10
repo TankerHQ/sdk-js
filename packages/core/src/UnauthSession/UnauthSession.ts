@@ -40,4 +40,5 @@ export class UnauthSession {
   getOidcNonceManager = () => this._oidcNonceManager;
 
   createOidcNonce = this._syncForward(this.getOidcNonceManager, 'createOidcNonce');
+  setOidcTestNonce = this._syncForward(this.getOidcNonceManager, 'setTestNonce');
 }

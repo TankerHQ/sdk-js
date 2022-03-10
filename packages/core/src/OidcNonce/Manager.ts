@@ -8,6 +8,7 @@ const challengeLengthByte = 24;
 
 export class OidcNonceManager {
   declare _oidcStore: OidcStore;
+  declare _testNonce?: b64string;
 
   constructor(oidcStore: OidcStore) {
     this._oidcStore = oidcStore;
@@ -17,6 +18,14 @@ export class OidcNonceManager {
     const { privateKey, publicKey } = tcrypto.makeSignKeyPair();
     await this._oidcStore.saveOidcNonce(publicKey, privateKey);
     return utils.toBase64(publicKey);
+  }
+
+  setTestNonce(testNonce: b64string) {
+    this._testNonce = testNonce;
+  }
+
+  getTestNonce(): b64string | undefined {
+    return this._testNonce;
   }
 
   async signOidcChallenge(nonce: b64string, challenge: string): Promise<b64string> {
