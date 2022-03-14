@@ -113,7 +113,7 @@ export class Session extends EventEmitter {
     Obj extends { [k in Key]: (...args: any) => Promise<any> },
     Key extends string,
     R extends Awaited<ReturnType<Obj[Key]>>,
-  >(
+    >(
     managerGetter: () => Obj,
     func: Key,
   ) => async (...args: Parameters<Obj[Key]>): Promise<R> => {
@@ -141,7 +141,7 @@ export class Session extends EventEmitter {
 
   _promiseChain = <
     F extends (...args: any[]) => Promise<any>,
-  >(
+    >(
     f: F,
     success: () => Awaited<ReturnType<F>>,
     failure: (e: Error) => Promise<never> | never,
@@ -190,9 +190,7 @@ export class Session extends EventEmitter {
 
   // The `this` in `bind()` is ignored because `_forward()` returns an arrow function
   // `createEncryptionSession()` is always bound to the object instance
-  createEncryptionSession = this._forward(this._getDataProtector, 'createEncryptionSession').bind(this, (listener: (status: Status) => void) => {
-    this.on('status_change', listener);
-  });
+  createEncryptionSession = this._forward(this._getDataProtector, 'createEncryptionSession').bind(this, () => this._status);
 
   _assertRevocation = async () => {
     try {

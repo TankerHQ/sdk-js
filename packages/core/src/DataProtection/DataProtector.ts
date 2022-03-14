@@ -317,13 +317,11 @@ export class DataProtector {
     return new DecryptionStream(resourceIdKeyMapper);
   }
 
-  async createEncryptionSession(subscribeToStatusChange: (listener: (status: Status) => void) => void, encryptionOptions: EncryptionOptions): Promise<EncryptionSession> {
+  async createEncryptionSession(getStatus: () => Status, encryptionOptions: EncryptionOptions): Promise<EncryptionSession> {
     const resource = makeResource();
     await this._shareResources([resource], encryptionOptions);
 
-    const encryptionSession = new EncryptionSession(this, resource);
-    subscribeToStatusChange(s => encryptionSession.statusChange(s));
-    return encryptionSession;
+    return new EncryptionSession(this, getStatus, resource);
   }
 }
 
