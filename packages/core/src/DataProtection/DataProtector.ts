@@ -128,8 +128,8 @@ export class DataProtector {
       const trustchainIdB64 = utils.toBase64(this._localUser.trustchainId);
 
       if (!identities.some(identity => identity.target === 'user'
-                                    && identity.value === selfUserIdB64
-                                    && identity.trustchain_id === trustchainIdB64)) {
+        && identity.value === selfUserIdB64
+        && identity.trustchain_id === trustchainIdB64)) {
         return identities.concat([{ trustchain_id: trustchainIdB64, target: 'user', value: selfUserIdB64 }]);
       }
     }
@@ -317,13 +317,11 @@ export class DataProtector {
     return new DecryptionStream(resourceIdKeyMapper);
   }
 
-  async createEncryptionSession(subscribeToStatusChange: (listener: (status: Status) => void) => void, encryptionOptions: EncryptionOptions): Promise<EncryptionSession> {
+  async createEncryptionSession(getStatus: () => Status, encryptionOptions: EncryptionOptions): Promise<EncryptionSession> {
     const resource = makeResource();
     await this._shareResources([resource], encryptionOptions);
 
-    const encryptionSession = new EncryptionSession(this, resource);
-    subscribeToStatusChange(s => encryptionSession.statusChange(s));
-    return encryptionSession;
+    return new EncryptionSession(this, getStatus, resource);
   }
 }
 

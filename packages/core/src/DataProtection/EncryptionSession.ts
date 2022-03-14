@@ -13,16 +13,12 @@ import type { Resource } from './types';
 export class EncryptionSession {
   _dataProtector: DataProtector;
   _resource: Resource;
-  _status: Status;
+  _getStatus: () => Status;
 
-  constructor(dataProtector: DataProtector, resource: Resource) {
+  constructor(dataProtector: DataProtector, getStatus: () => Status, resource: Resource) {
     this._dataProtector = dataProtector;
     this._resource = resource;
-    this._status = Status.READY;
-  }
-
-  statusChange(newStatus: Status) {
-    this._status = newStatus;
+    this._getStatus = getStatus;
   }
 
   get resourceId(): b64string {
@@ -39,7 +35,7 @@ export class EncryptionSession {
   async encryptData<I extends Data>(clearData: I, options?: ResourceMetadata & ProgressOptions): Promise<I>;
   async encryptData<T extends Data>(clearData: Data, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
   async encryptData(clearData: Data, options: Partial<OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
-    assertStatus(this._status, Status.READY, 'encrypt with an encryption session');
+    assertStatus(this._getStatus(), Status.READY, 'encrypt with an encryption session');
     assertDataType(clearData, 'clearData');
 
     const outputOptions = extractOutputOptions(options, clearData);
@@ -49,7 +45,7 @@ export class EncryptionSession {
   }
 
   async createEncryptionStream(): Promise<EncryptionStream> {
-    assertStatus(this._status, Status.READY, 'create an encryption stream');
+    assertStatus(this._getStatus(), Status.READY, 'create an encryption stream');
     return this._dataProtector.createEncryptionStream({}, this._resource);
   }
 }
