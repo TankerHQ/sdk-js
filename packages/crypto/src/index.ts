@@ -17,7 +17,8 @@ import * as encryptionV7 from './EncryptionFormats/v7';
 
 export type { EncryptionFormatReporter, EncryptionFormatDescription, Encryptor } from './EncryptionFormats/types';
 export { getClearSize, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './EncryptionFormats/types';
-export { EncryptionStream } from './EncryptionFormats/EncryptionStream';
+export type { EncryptionStream } from './EncryptionFormats/EncryptionStream';
+export { EncryptionStreamV4 } from './EncryptionFormats/EncryptionStreamV4';
 export { DecryptionStream } from './EncryptionFormats/DecryptionStream';
 export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7 };
 export { Padding, padme, paddedFromClearSize } from './padding';

@@ -9,14 +9,14 @@ import * as aead from '../aead';
 import { random } from '../random';
 import * as utils from '../utils';
 import * as encryptionV4 from '../EncryptionFormats/v4';
-import { EncryptionStream } from '../EncryptionFormats/EncryptionStream';
+import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 
-describe('EncryptionStream', () => {
+describe('EncryptionStreamV4', () => {
   let buffer: Array<Uint8Array>;
   let key: Uint8Array;
   let resourceId: Uint8Array;
 
-  const watchStream = (stream: EncryptionStream) => {
+  const watchStream = (stream: EncryptionStreamV4) => {
     const sync = new PromiseWrapper<void>();
     stream.on('data', (data: Uint8Array) => buffer.push(data));
     stream.on('error', (err: Error) => sync.reject(err));
@@ -36,7 +36,7 @@ describe('EncryptionStream', () => {
   });
 
   it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
-    const stream = new EncryptionStream(resourceId, key);
+    const stream = new EncryptionStreamV4(resourceId, key);
     const sync = watchStream(stream);
 
     stream.write('fail');
@@ -46,7 +46,7 @@ describe('EncryptionStream', () => {
   });
 
   it('can give its associated resourceId', async () => {
-    const stream = new EncryptionStream(resourceId, key);
+    const stream = new EncryptionStreamV4(resourceId, key);
     const sync = watchStream(stream);
 
     expect(stream.resourceId).to.be.equal(utils.toBase64(resourceId));
@@ -56,7 +56,7 @@ describe('EncryptionStream', () => {
   });
 
   it('outputs a resource from which you can read the header', async () => {
-    const stream = new EncryptionStream(resourceId, key);
+    const stream = new EncryptionStreamV4(resourceId, key);
     const sync = watchStream(stream);
     stream.end();
     await sync.promise;
@@ -68,7 +68,7 @@ describe('EncryptionStream', () => {
   });
 
   it('outputs a resource from which you can directly get the resource id', async () => {
-    const stream = new EncryptionStream(resourceId, key);
+    const stream = new EncryptionStreamV4(resourceId, key);
     const sync = watchStream(stream);
     stream.end();
     await sync.promise;
@@ -78,7 +78,7 @@ describe('EncryptionStream', () => {
 
   it('derives its iv and push header before encryption', async () => {
     const msg = utils.fromString('message');
-    const stream = new EncryptionStream(resourceId, key);
+    const stream = new EncryptionStreamV4(resourceId, key);
     const sync = watchStream(stream);
 
     stream.write(msg);
@@ -107,7 +107,7 @@ describe('EncryptionStream', () => {
 
     const encryptedChunkSize = msg.length + encryptionV4.overhead;
 
-    const stream = new EncryptionStream(resourceId, key, encryptedChunkSize);
+    const stream = new EncryptionStreamV4(resourceId, key, encryptedChunkSize);
     const sync = watchStream(stream);
 
     // push msg twice
@@ -133,7 +133,7 @@ describe('EncryptionStream', () => {
 
     const encryptedChunkSize = msg.length + encryptionV4.overhead;
 
-    const stream = new EncryptionStream(resourceId, key, encryptedChunkSize);
+    const stream = new EncryptionStreamV4(resourceId, key, encryptedChunkSize);
     const sync = watchStream(stream);
 
     // push msg twice + 1 more byte
@@ -161,7 +161,7 @@ describe('EncryptionStream', () => {
         const chunk = new Uint8Array(chunkSize);
         const inputSize = 10 * chunkSize;
         const bufferCounter = new BufferingObserver();
-        const encryptionStream = new EncryptionStream(resourceId, key, chunkSize + encryptionV4.overhead);
+        const encryptionStream = new EncryptionStreamV4(resourceId, key, chunkSize + encryptionV4.overhead);
         const timeout = makeTimeoutPromise(50);
         const slowWritable = new Writable({
           highWaterMark: 1,

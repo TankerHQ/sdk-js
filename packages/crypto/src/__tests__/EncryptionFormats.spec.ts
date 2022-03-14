@@ -14,7 +14,7 @@ import * as encryptorV5 from '../EncryptionFormats/v5';
 import * as encryptorV6 from '../EncryptionFormats/v6';
 import * as encryptorV7 from '../EncryptionFormats/v7';
 import type { Encryptor } from '../EncryptionFormats/types';
-import { EncryptionStream } from '../EncryptionFormats/EncryptionStream';
+import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
 import { ready as cryptoReady } from '../ready';
 
@@ -425,7 +425,7 @@ describe('Simple Encryption', () => {
   });
   describe('EncryptionFormatV4', () => {
     generateCommonTests(encryptorV4, testVectorsV4, {
-      encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStream(random(tcrypto.MAC_SIZE), k), d),
+      encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStreamV4(random(tcrypto.MAC_SIZE), k), d),
       decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream({ findKey: async () => k }), d),
     });
     generateUnpaddedTests(encryptorV4, testVectorsV4);
