@@ -327,6 +327,23 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
       });
 
+      it('can use passphrase if another verification method is throttled', async () => {
+        const email = await appHelper.generateRandomEmail();
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ passphrase: 'passphrase' });
+
+        verificationCode = await appHelper.getWrongEmailVerificationCode(email);
+
+        await bobPhone.start(bobIdentity);
+        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
+          await expect(bobPhone.verifyIdentity({ email, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
+        }
+
+        expect(bobPhone.verifyIdentity({ passphrase: 'passphrase' })).to.be.fulfilled;
+      });
+
       it('fails to verify without having registered a passphrase', async () => {
         const email = await appHelper.generateRandomEmail();
         const phoneNumber = await appHelper.generateRandomPhoneNumber();
@@ -413,6 +430,20 @@ export const generateVerificationTests = (args: TestArgs) => {
         await expect(bobPhone.verifyIdentity({ email, verificationCode })).to.be.rejectedWith(errors.TooManyAttempts);
       });
 
+      it('can use email if another verification method is throttled', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.setVerificationMethod({ email, verificationCode });
+
+        await bobPhone.start(bobIdentity);
+        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
+          await expect(bobPhone.verifyIdentity({ passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
+        }
+
+        verificationCode = await appHelper.getEmailVerificationCode(email);
+        expect(bobPhone.verifyIdentity({ email, verificationCode })).to.be.fulfilled;
+      });
+
       it('fails to verify without having registered an email address', async () => {
         const phoneNumber = await appHelper.generateRandomPhoneNumber();
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
@@ -472,6 +503,21 @@ export const generateVerificationTests = (args: TestArgs) => {
           await expect(bobPhone.verifyIdentity({ phoneNumber, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
         }
         await expect(bobPhone.verifyIdentity({ phoneNumber, verificationCode })).to.be.rejectedWith(errors.TooManyAttempts);
+      });
+
+      it('an use phone number if another verification method is throttled', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+        let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode });
+
+        await bobPhone.start(bobIdentity);
+        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
+          await expect(bobPhone.verifyIdentity({ passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
+        }
+
+        verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+
+        expect(bobPhone.verifyIdentity({ phoneNumber, verificationCode })).to.be.fulfilled;
       });
 
       it('fails to verify without having registered a phone number', async () => {
