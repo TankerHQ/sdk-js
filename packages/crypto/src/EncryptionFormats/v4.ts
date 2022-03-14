@@ -26,12 +26,12 @@ export const overhead = 1 + uint32Length + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV
 
 export const defaultMaxEncryptedChunkSize = 1024 * 1024; // 1MB
 
-export const getClearSize = (encryptedSize: number, maxEncryptedChunkSize: number) => {
+export const getClearSize = (encryptedSize: number, maxEncryptedChunkSize: number = defaultMaxEncryptedChunkSize) => {
   const chunkCount = Math.ceil(encryptedSize / maxEncryptedChunkSize);
   return encryptedSize - chunkCount * overhead;
 };
 
-export const getEncryptedSize = (clearSize: number, maxEncryptedChunkSize: number) => {
+export const getEncryptedSize = (clearSize: number, maxEncryptedChunkSize: number = defaultMaxEncryptedChunkSize) => {
   const maxClearChunkSize = maxEncryptedChunkSize - overhead;
   // Note: if clearSize is multiple of maxClearChunkSize, an additional empty chunk is added
   //       at the end, hence the +1 to compute chunkCount
@@ -73,7 +73,7 @@ export const unserialize = (buffer: Uint8Array): EncryptionData => {
   return { ivSeed, encryptedChunkSize, resourceId, encryptedData };
 };
 
-export const encrypt = (key: Uint8Array, index: number, resourceId: Uint8Array, encryptedChunkSize: number, clearChunk: Uint8Array): EncryptionData => {
+export const encryptChunk = (key: Uint8Array, index: number, resourceId: Uint8Array, encryptedChunkSize: number, clearChunk: Uint8Array): EncryptionData => {
   const ivSeed = random(tcrypto.XCHACHA_IV_SIZE);
   const iv = tcrypto.deriveIV(ivSeed, index);
 
@@ -81,7 +81,7 @@ export const encrypt = (key: Uint8Array, index: number, resourceId: Uint8Array, 
   return { ivSeed, encryptedData, resourceId, encryptedChunkSize };
 };
 
-export const decrypt = (key: Uint8Array, index: number, data: EncryptionData): Uint8Array => {
+export const decryptChunk = (key: Uint8Array, index: number, data: EncryptionData): Uint8Array => {
   const iv = tcrypto.deriveIV(data.ivSeed, index);
   return aead.decryptAEAD(key, iv, data.encryptedData);
 };

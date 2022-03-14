@@ -1,6 +1,6 @@
 import { expect } from '@tanker/test-utils';
+import { PromiseWrapper } from '@tanker/types';
 
-import { PromiseWrapper } from '../PromiseWrapper';
 import { TaskQueue } from '../TaskQueue';
 
 describe('TaskQueue', () => {
@@ -39,7 +39,7 @@ describe('TaskQueue', () => {
 
       it('does not break after exceptions in previous tasks', async () => {
         const pw = new PromiseWrapper<void>();
-        q.enqueue(() => { throw err; }).catch(() => {});
+        q.enqueue(() => { throw err; }).catch(() => { });
         q.enqueue(pw.resolve);
 
         await expect(pw.promise).to.be.fulfilled;

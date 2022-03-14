@@ -3,8 +3,8 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { TankerError, DeviceRevoked, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
 import { fetch, retry, exponentialDelayGenerator } from '@tanker/http-utils';
 import type { DelayGenerator } from '@tanker/http-utils';
+import { PromiseWrapper } from '@tanker/types';
 
-import { PromiseWrapper } from '../PromiseWrapper';
 import { TaskQueue } from '../TaskQueue';
 import { signChallenge } from './Authenticator';
 import { genericErrorHandler } from './ErrorHandler';

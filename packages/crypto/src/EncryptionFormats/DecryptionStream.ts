@@ -1,9 +1,10 @@
-import type { Key } from '@tanker/crypto';
-import { encryptionV4, utils } from '@tanker/crypto';
 import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
+import type { Key } from '../aliases';
+import * as encryptionV4 from './v4';
+import * as utils from '../utils';
 import { extractEncryptionFormat } from './types';
 
 export type ResourceIdKeyMapper = {
@@ -150,7 +151,7 @@ export class DecryptionStream extends Transform {
         try {
           const currentChunk = encryptionV4.unserialize(encryptedChunk);
           checkHeaderIntegrity({ encryptedChunkSize, resourceId }, currentChunk);
-          const clearData = encryptionV4.decrypt(key, this._state.index, currentChunk);
+          const clearData = encryptionV4.decryptChunk(key, this._state.index, currentChunk);
           this._decryptionStream.push(clearData);
         } catch (error) {
           done(new DecryptionFailed({ error: error as Error, b64ResourceId }));

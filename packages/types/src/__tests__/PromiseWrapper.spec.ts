@@ -1,5 +1,4 @@
 import { expect } from '@tanker/test-utils';
-
 import PromiseWrapper from '../PromiseWrapper';
 
 const afterSomeTimeDo = (f: () => void): ReturnType<typeof setTimeout> => setTimeout(f, 20);

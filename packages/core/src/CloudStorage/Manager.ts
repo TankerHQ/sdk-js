@@ -1,5 +1,5 @@
-import type { b64string } from '@tanker/crypto';
-import { utils } from '@tanker/crypto';
+import type { EncryptionFormatDescription, b64string } from '@tanker/crypto';
+import { utils, getClearSize } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 import { MergerStream, ResizerStream, SlicerStream } from '@tanker/stream-base';
 import type { Readable, Transform, Writable, IWritable } from '@tanker/stream-base';
@@ -8,8 +8,8 @@ import { getDataLength } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
 
 import type { Client } from '../Network/Client';
-import { getStreamEncryptionFormatDescription, getClearSize } from '../DataProtection/types';
-import type { EncryptionFormatDescription, Resource } from '../DataProtection/types';
+import { getStreamEncryptionFormatDescription } from '../DataProtection/types';
+import type { Resource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
 import type { OutputOptions, ProgressOptions, EncryptionOptions } from '../DataProtection/options';

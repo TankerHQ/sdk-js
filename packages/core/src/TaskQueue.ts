@@ -1,4 +1,4 @@
-import { PromiseWrapper } from './PromiseWrapper';
+import { PromiseWrapper } from '@tanker/types';
 
 type Fn<T> = () => Promise<T> | T;
 type Task<T> = { fn: Fn<T>; pw: PromiseWrapper<T>; };

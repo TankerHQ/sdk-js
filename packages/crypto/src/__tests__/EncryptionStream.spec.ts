@@ -1,10 +1,15 @@
 import { Writable } from '@tanker/stream-base';
-import { aead, random, ready as cryptoReady, tcrypto, utils, encryptionV4 } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
+import { PromiseWrapper } from '@tanker/types';
 
-import { EncryptionStream } from '../EncryptionStream';
-import { PromiseWrapper } from '../../PromiseWrapper';
+import * as tcrypto from '../tcrypto';
+import { ready as cryptoReady } from '../ready';
+import * as aead from '../aead';
+import { random } from '../random';
+import * as utils from '../utils';
+import * as encryptionV4 from '../EncryptionFormats/v4';
+import { EncryptionStream } from '../EncryptionFormats/EncryptionStream';
 
 describe('EncryptionStream', () => {
   let buffer: Array<Uint8Array>;
@@ -117,7 +122,7 @@ describe('EncryptionStream', () => {
     expect(buffer.length).to.equal(3);
 
     buffer.forEach((_, index) => {
-      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]!));
+      const clearData = encryptionV4.decryptChunk(key, index, encryptionV4.unserialize(buffer[index]!));
       const expectedMsg = index === 2 ? new Uint8Array(0) : msg;
       expect(clearData).to.deep.equal(expectedMsg);
     });
@@ -144,7 +149,7 @@ describe('EncryptionStream', () => {
     expect(buffer.length).to.equal(3);
 
     buffer.forEach((_, index) => {
-      const clearData = encryptionV4.decrypt(key, index, encryptionV4.unserialize(buffer[index]!));
+      const clearData = encryptionV4.decryptChunk(key, index, encryptionV4.unserialize(buffer[index]!));
       const expectedMsg = index === 2 ? msg.subarray(1) : msg;
       expect(clearData).to.deep.equal(expectedMsg);
     });
