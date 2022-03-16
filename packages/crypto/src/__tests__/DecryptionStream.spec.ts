@@ -161,6 +161,11 @@ describe('DecryptionStream', () => {
       await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
+    it('throws DecryptionFailed when the buffer is empty', async () => {
+      stream.end();
+      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
+    });
+
     it('forwards the error when the key is not found for a small resource', async () => {
       const unknownKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
       mapper.findKey = sinon.fake(() => {
