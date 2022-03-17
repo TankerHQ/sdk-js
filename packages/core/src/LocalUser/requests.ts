@@ -19,8 +19,8 @@ type EmailRequest = {
 type OidcRequest = {
   oidc_id_token: string;
   oidc_challenge: b64string;
+  oidc_test_nonce?: string;
 };
-type TestOidcRequest = OidcRequest & { oidc_test_nonce: string; };
 type PhoneNumberRequest = {
   phone_number: string;
   encrypted_phone_number: Uint8Array;
@@ -33,8 +33,7 @@ export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preveri
 export type VerificationRequestWithToken = WithToken<PassphraseRequest>
 | WithVerificationCode<EmailRequest>
 | WithToken<OidcRequest>
-| WithVerificationCode<PhoneNumberRequest>
-| WithToken<TestOidcRequest>;
+| WithVerificationCode<PhoneNumberRequest>;
 export type VerificationRequest = VerificationRequestWithToken | PreverifiedVerificationRequest;
 
 export type ProvisionalKeysRequest = {
@@ -60,7 +59,7 @@ export const formatVerificationRequest = async (
   helper: VerificationRequestHelperInterface,
   provIdentity?: SecretProvisionalIdentity,
 ): Promise<VerificationRequest> => {
-  const localUser = helper.localUser;
+  const { localUser } = helper;
 
   if ('email' in verification) {
     return {
