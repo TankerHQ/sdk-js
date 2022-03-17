@@ -135,9 +135,6 @@ export default class ProvisionalIdentityManager {
   }
 
   async verifyProvisionalIdentity(verification: ProvisionalVerification) {
-    if (!('email' in verification) && !('phoneNumber' in verification))
-      throw new InvalidArgument(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
-
     if (!this._provisionalIdentity)
       throw new PreconditionFailed('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
 
