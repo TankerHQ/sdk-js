@@ -4,7 +4,7 @@ import type { DataStore } from '@tanker/datastore-base';
 import { errors as dbErrors } from '@tanker/datastore-base';
 
 export const TABLE = 'oidc_nonces';
-const EXPIRATION = 60 * 60 * 1000; // 1h in milliseconds;
+const EXPIRATION = 60 * 60 * 1000; // 1h in milliseconds
 
 export class OidcStore {
   declare _ds: DataStore;
@@ -28,17 +28,11 @@ export class OidcStore {
   async saveOidcNonce(nonce: Key, privateNonceKey: Key): Promise<void> {
     const b64OidcNonce = utils.toBase64(nonce);
     // We never want to overwrite an existing nonce
-    try {
-      await this._ds.get(TABLE, b64OidcNonce);
-      // if the key is already there, just ignore the new one
+    if (await this._ds.first(TABLE, { selector: { _id: b64OidcNonce } }) !== undefined) {
       return;
-    } catch (e) {
-      if (!(e instanceof dbErrors.RecordNotFound)) {
-        throw e;
-      }
     }
 
-    await this._ds.put(TABLE, { _id: b64OidcNonce, b64PrivateNonceKey: utils.toBase64(privateNonceKey), createdAt: Date.now() });
+    await this._ds.put(TABLE, { _id: b64OidcNonce, b64PrivateNonceKey: privateNonceKey, createdAt: Date.now() });
   }
 
   async removeOidcNonce(nonce: b64string): Promise<void> {
@@ -54,7 +48,7 @@ export class OidcStore {
   async findOidcNonce(nonce: b64string): Promise<Key | void> {
     try {
       const result = await this._ds.get(TABLE, nonce);
-      return utils.fromBase64(result['b64PrivateNonceKey']!);
+      return result['b64PrivateNonceKey']!;
     } catch (e) {
       if (e instanceof dbErrors.RecordNotFound) {
         return;

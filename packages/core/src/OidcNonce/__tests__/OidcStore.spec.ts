@@ -21,6 +21,10 @@ describe('OidcStore', () => {
     nonceStore = await OidcStore.open(datastore);
   });
 
+  it('returns undefined when the nonce is unknown', async () => {
+    expect(await nonceStore.findOidcNonce('unknown nonce')).to.eq(undefined);
+  });
+
   it('saves and finds private nonce keys', async () => {
     await nonceStore.saveOidcNonce(nonceKeys.publicKey, nonceKeys.privateKey);
     const noncePrivateKey = await nonceStore.findOidcNonce(b64Nonce);
@@ -53,8 +57,9 @@ describe('OidcStore', () => {
 
     // insert outdated nonce
     const nonceKeys2 = tcrypto.makeSignKeyPair();
+    const day = 24 * 60 * 60 * 1000; // 1 day in milliseconds
     // eslint-disable-next-line no-underscore-dangle
-    await nonceStore._ds.put(TABLE, { _id: utils.toBase64(nonceKeys2.publicKey), b64PrivateNonceKey: utils.toBase64(nonceKeys2.privateKey), createdAt: 0 });
+    await nonceStore._ds.put(TABLE, { _id: utils.toBase64(nonceKeys2.publicKey), b64PrivateNonceKey: nonceKeys2.privateKey, createdAt: Date.now() - day });
 
     expect(await nonceStore.findOidcNonce(b64Nonce)).to.deep.equal(nonceKeys.privateKey);
     expect(await nonceStore.findOidcNonce(utils.toBase64(nonceKeys2.publicKey))).to.deep.equal(nonceKeys2.privateKey);

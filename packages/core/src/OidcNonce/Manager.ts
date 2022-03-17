@@ -58,7 +58,12 @@ export class OidcNonceManager {
     if (parts.length !== 3) {
       throw new InvalidArgument('ID token could not be decoded');
     }
-    const payload = JSON.parse(utils.toString(utils.fromSafeBase64(parts[1]!)));
+    let payload: { nonce: string };
+    try {
+      payload = JSON.parse(utils.toString(utils.fromSafeBase64(parts[1]!)));
+    } catch (e) {
+      throw new InvalidArgument(`ID token could not be decoded: ${(e as Error).message}}`);
+    }
 
     utils.assertB64StringWithSize(payload.nonce, 'oidcIdToken.nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
     return payload.nonce;
