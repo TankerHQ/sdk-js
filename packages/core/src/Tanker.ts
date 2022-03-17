@@ -398,6 +398,11 @@ export class Tanker extends EventEmitter {
   async verifyProvisionalIdentity(verification: ProvisionalVerification): Promise<void> {
     assertStatus(this.status, statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
+
+    if (!('email' in verification) && !('phoneNumber' in verification)) {
+      throw new InvalidArgument(`Unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
+    }
+
     return this.session.verifyProvisionalIdentity(verification);
   }
 
