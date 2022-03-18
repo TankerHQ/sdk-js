@@ -4,6 +4,7 @@ import { InternalError } from '@tanker/errors';
 
 import type { RemoteVerification, RemoteVerificationWithToken, PreverifiedVerification } from './types';
 import type { SecretProvisionalIdentity } from '../Identity';
+import type { SignedChallenge } from '../OidcNonce/types';
 
 type WithToken<T> = T & { with_token?: { nonce: string; } };
 type WithVerificationCode<T> = WithToken<T> & { verification_code: string; };
@@ -19,6 +20,7 @@ type EmailRequest = {
 type OidcRequest = {
   oidc_id_token: string;
   oidc_challenge: b64string;
+  oidc_challenge_signature: b64string;
   oidc_test_nonce?: string;
 };
 type PhoneNumberRequest = {
@@ -50,7 +52,7 @@ export const isPreverifiedVerificationRequest = (request: VerificationRequest): 
 
 interface VerificationRequestHelperInterface {
   localUser: { userSecret: Uint8Array };
-  challengeOidcToken (idToken: string, nonce?: string): Promise<b64string>;
+  challengeOidcToken (idToken: string, nonce?: string): Promise<SignedChallenge>;
   getOidcTestNonce(): b64string | undefined;
 }
 
@@ -87,9 +89,11 @@ export const formatVerificationRequest = async (
 
   if ('oidcIdToken' in verification) {
     const testNonce = helper.getOidcTestNonce();
+    const { challenge, signature } = await helper.challengeOidcToken(verification.oidcIdToken, testNonce);
     return {
       oidc_id_token: verification.oidcIdToken,
-      oidc_challenge: await helper.challengeOidcToken(verification.oidcIdToken, testNonce),
+      oidc_challenge: challenge,
+      oidc_challenge_signature: signature,
       oidc_test_nonce: testNonce,
     };
   }
