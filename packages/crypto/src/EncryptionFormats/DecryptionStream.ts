@@ -6,6 +6,7 @@ import type { Key } from '../aliases';
 import { extractEncryptionFormat } from './types';
 import { DecryptionStreamSimple } from './DecryptionStreamSimple';
 import { DecryptionStreamV4 } from './DecryptionStreamV4';
+import { DecryptionStreamV8 } from './DecryptionStreamV8';
 
 export type ResourceIdKeyMapper = {
   findKey: (resourceID: Uint8Array) => Promise<Key>;
@@ -30,7 +31,7 @@ export class DecryptionStream extends Transform {
   }
 
   encryptedChunkSize(): number {
-    if (this._decryptionStream instanceof DecryptionStreamV4)
+    if (this._decryptionStream instanceof DecryptionStreamV4 || this._decryptionStream instanceof DecryptionStreamV8)
       return this._decryptionStream.encryptedChunkSize();
     throw new InternalError('Assertion error: trying to get encrypted chunk size on simple encryption');
   }
@@ -38,8 +39,10 @@ export class DecryptionStream extends Transform {
   async _initializeStreams(headOfEncryptedData: Uint8Array) {
     const encryption = extractEncryptionFormat(headOfEncryptedData);
 
-    if (encryption.features.chunks) {
+    if (encryption.version === 4) {
       this._decryptionStream = new DecryptionStreamV4(this._mapper);
+    } else if (encryption.version === 8) {
+      this._decryptionStream = new DecryptionStreamV8(this._mapper);
     } else {
       this._decryptionStream = new DecryptionStreamSimple(this._mapper);
     }
