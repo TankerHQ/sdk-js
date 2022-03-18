@@ -2,6 +2,7 @@ import type { Key, b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
 import type { DataStore } from '@tanker/datastore-base';
 import { errors as dbErrors } from '@tanker/datastore-base';
+import { InternalError } from '@tanker/errors';
 
 export const TABLE = 'oidc_nonces';
 const EXPIRATION = 60 * 60 * 1000; // 1h in milliseconds
@@ -29,7 +30,7 @@ export class OidcStore {
     const b64OidcNonce = utils.toBase64(nonce);
     // We never want to overwrite an existing nonce
     if (await this._ds.first(TABLE, { selector: { _id: b64OidcNonce } }) !== undefined) {
-      return;
+      throw new InternalError('Nonce already used');
     }
 
     await this._ds.put(TABLE, { _id: b64OidcNonce, b64PrivateNonceKey: privateNonceKey, createdAt: Date.now() });

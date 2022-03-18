@@ -1,4 +1,5 @@
 import { b64string, ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
+import { InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
@@ -31,11 +32,12 @@ describe('OidcStore', () => {
     expect(noncePrivateKey).to.deep.equal(nonceKeys.privateKey);
   });
 
-  it('ignores updates to nonce keys', async () => {
+  it('throws on updates to nonce keys', async () => {
     const nonceKeys2 = tcrypto.makeSignKeyPair();
 
     await nonceStore.saveOidcNonce(nonceKeys.publicKey, nonceKeys.privateKey);
-    await nonceStore.saveOidcNonce(nonceKeys.publicKey, nonceKeys2.privateKey);
+    expect(nonceStore.saveOidcNonce(nonceKeys.publicKey, nonceKeys2.privateKey)).to.be.rejectedWith(InternalError);
+
     const thekey = await nonceStore.findOidcNonce(b64Nonce);
     expect(thekey).to.deep.equal(nonceKeys.privateKey);
   });
