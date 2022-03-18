@@ -1,10 +1,9 @@
 import type { b64string } from '@tanker/crypto';
 import { utils, tcrypto } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
+import { challengePrefix, challengeLengthByte } from './types';
+import type { SignedChallenge } from './types';
 import type { OidcStore } from './OidcStore';
-
-const challengePrefix = 'oidc-verification-prefix';
-const challengeLengthByte = 24;
 
 export class OidcNonceManager {
   declare _oidcStore: OidcStore;
@@ -28,14 +27,14 @@ export class OidcNonceManager {
     return this._testNonce;
   }
 
-  async signOidcChallenge(nonce: b64string, challenge: string): Promise<b64string> {
+  async signOidcChallenge(nonce: b64string, challenge: string): Promise<SignedChallenge> {
     if (challenge.indexOf(challengePrefix) !== 0) {
       throw new InternalError('illformed oidc challenge: invalid prefix');
     }
 
-    const challengeStr = challenge.split(challengePrefix)[1]!;
+    const b64challenge = challenge.split(challengePrefix)[1]!;
     try {
-      utils.assertB64StringWithSize(challengeStr, 'oidc challenge', challengeLengthByte);
+      utils.assertB64StringWithSize(b64challenge, 'oidc challenge', challengeLengthByte);
     } catch (e) {
       throw new InternalError(`illformed oidc challenge: ${(e as Error).message}`);
     }
@@ -45,8 +44,11 @@ export class OidcNonceManager {
       throw new InvalidArgument(`could not find state for the given nonce: ${nonce}`);
     }
 
-    const challengePayload = utils.fromBase64(challengeStr);
-    return utils.toBase64(utils.concatArrays(challengePayload, tcrypto.sign(challengePayload, privateKey)));
+    const challengePayload = utils.fromBase64(b64challenge);
+    return {
+      challenge: b64challenge,
+      signature: utils.toBase64(tcrypto.sign(challengePayload, privateKey)),
+    };
   }
 
   async removeOidcNonce(nonce: b64string): Promise<void> {
