@@ -62,13 +62,6 @@ export class UnauthSessionStorage {
     await this._datastore.close();
   }
 
-  // WARNING: This WILL destroy ALL YOUR DATA! No refunds.
-  async nuke() {
-    await this._closeSubStores();
-    await this._datastore.destroy();
-    await this._datastore.close();
-  }
-
   async _closeSubStores() {
     await this._oidcStore.close();
   }
