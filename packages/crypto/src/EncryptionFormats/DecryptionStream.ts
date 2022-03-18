@@ -199,7 +199,7 @@ export class DecryptionStream extends Transform {
   override _flush(done: TransformCallback) {
     // When end() is called before any data has been written:
     if (!this._state.initialized) {
-      done();
+      done(new DecryptionFailed({ message: 'Data has been truncated' }));
       return;
     }
 
