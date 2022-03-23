@@ -1,5 +1,5 @@
 import type { SinonSpy } from 'sinon';
-import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
+import { InvalidArgument } from '@tanker/errors';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { Writable } from '@tanker/stream-base';
 import { PromiseWrapper } from '@tanker/types';
@@ -48,122 +48,22 @@ describe('DecryptionStream', () => {
     sync = watchStream(stream);
   });
 
-  it('can extract header v4, resource id and message', async () => {
-    const msg = encryptMsg(0, 11, '1st message');
-    const emptyMsg = encryptMsg(1, 11, '');
-
-    stream.write(utils.concatArrays(msg.encrypted, emptyMsg.encrypted));
-    stream.end();
-
-    await expect(sync.promise).to.be.fulfilled;
-
-    expect(mapper.findKey.calledOnce).to.be.true;
-    expect(mapper.findKey.args[0]).to.deep.equal([resourceId]);
-    expect(buffer.length).to.equal(1);
-    expect(buffer[0]).to.deep.equal(msg.clear);
-  });
-
-  it('can decrypt chunks of fixed size', async () => {
-    const msg1 = encryptMsg(0, 11, '1st message');
-    const msg2 = encryptMsg(1, 11, '2nd message');
-    const emptyMsg = encryptMsg(2, 11, '');
-
-    stream.write(msg1.encrypted);
-    stream.write(msg2.encrypted);
-    stream.write(emptyMsg.encrypted);
-    stream.end();
-
-    await expect(sync.promise).to.be.fulfilled;
-
-    expect(buffer.length).to.equal(2);
-    expect(buffer[0]).to.deep.equal(msg1.clear);
-    expect(buffer[1]).to.deep.equal(msg2.clear);
-  });
-
-  it('can decrypt chunks of fixed size except last one', async () => {
-    const msg1 = encryptMsg(0, 11, '1st message');
-    const msg2 = encryptMsg(1, 11, '2nd');
-
-    stream.write(msg1.encrypted);
-    stream.write(msg2.encrypted);
-    stream.end();
-
-    await expect(sync.promise).to.be.fulfilled;
-
-    expect(buffer.length).to.equal(2);
-    expect(buffer[0]).to.deep.equal(msg1.clear);
-    expect(buffer[1]).to.deep.equal(msg2.clear);
-  });
-
   describe('Errors', () => {
-    let chunks: Array<Uint8Array>;
-
-    beforeEach(async () => {
-      const msg1 = encryptMsg(0, 11, '1st message');
-      const msg2 = encryptMsg(1, 11, '2nd message');
-      const emptyMsg = encryptMsg(2, 11, '');
-      chunks = [msg1.encrypted, msg2.encrypted, emptyMsg.encrypted];
-    });
-
-    // This test is here to make sure the setup is correct before we start asserting on errors
-    it('decrypts all the chunks', async () => {
-      for (const chunk of chunks)
-        stream.write(chunk);
-      stream.end();
-      await expect(sync.promise).to.be.fulfilled;
-    });
-
     it('throws InvalidArgument when writing anything else than Uint8Array', async () => {
       stream.write('fail');
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
-    it('throws DecryptionFailed when missing empty chunk after only maximum size chunks', async () => {
-      stream.write(chunks[0]!); // valid chunk of the maximum size
-      stream.end();
-      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
-    });
-
-    it('throws DecryptionFailed when data is corrupted', async () => {
-      chunks[0]![61] += 1;
-      stream.write(chunks[0]!); // corrupted chunk
-      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
-    });
-
     it('throws InvalidArgument when the header is not fully given during first write', async () => {
-      const incompleteHeader = chunks[0]!.subarray(0, 1);
+      const incompleteHeader = new Uint8Array([4]);
       stream.write(incompleteHeader);
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
     });
 
     it('throws InvalidArgument when the header is corrupted', async () => {
-      chunks[0]![0] = 255; // unknown version number
-      stream.write(chunks[0]);
+      const invalidHeader = new Uint8Array([255]); // unknown version number
+      stream.write(invalidHeader);
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument);
-    });
-
-    it('throws DecryptionFailed when data is written in wrong order', async () => {
-      stream.write(chunks[1]!);
-      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
-    });
-
-    it('throws DecryptionFailed when encryptedChunkSize does not match between headers', async () => {
-      chunks[1]![1] -= 1;
-      for (const chunk of chunks)
-        stream.write(chunk);
-      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
-    });
-
-    it('throws DecryptionFailed when resource ID does not match between headers', async () => {
-      chunks[1]![5] -= 1;
-      for (const chunk of chunks)
-        stream.write(chunk);
-      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
-    });
-
-    it('throws DecryptionFailed when the buffer is empty', async () => {
-      stream.end();
-      await expect(sync.promise).to.be.rejectedWith(DecryptionFailed);
     });
 
     it('forwards the error when the key is not found for a small resource', async () => {
@@ -181,7 +81,8 @@ describe('DecryptionStream', () => {
       mapper.findKey = sinon.fake(() => {
         throw new InvalidArgument('some error');
       });
-      stream.write(chunks[0]);
+      const encryptedChunk = encryptMsg(0, 11, '1st message').encrypted;
+      stream.write(encryptedChunk);
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
     });
   });
