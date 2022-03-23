@@ -82,7 +82,7 @@ export class CloudStorageManager {
 
     const metadata: Metadata = {
       ...resourceMetadata,
-      encryptionFormat: getStreamEncryptionFormatDescription(),
+      encryptionFormat: getStreamEncryptionFormatDescription(encryptionOptions.paddingStep),
     };
     const encryptedMetadata = await this._encryptAndShareMetadata(metadata, { resourceId, key });
 
