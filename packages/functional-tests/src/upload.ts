@@ -9,9 +9,6 @@ import type { AppHelper, TestArgs, TestResourceSize } from './helpers';
 import { expectProgressReport, expectType, expectDeepEqual, pipeStreams } from './helpers';
 
 export const generateUploadTests = (args: TestArgs) => {
-  // Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
-  const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
-
   // Some sizes may not be tested on some platforms (e.g. 'big' on Safari)
   const forEachSize = (sizes: Array<TestResourceSize>, fun: (size: TestResourceSize) => void) => {
     const availableSizes = Object.keys(args.resources);
@@ -75,8 +72,6 @@ export const generateUploadTests = (args: TestArgs) => {
 
           if (storage === 's3') {
             chunkSize = 5 * 1024 * 1024;
-          } else if (isEdge()) {
-            chunkSize = encryptedSize;
           } else {
             chunkSize = encryptionV4.defaultMaxEncryptedChunkSize;
           }
@@ -228,7 +223,7 @@ export const generateUploadTests = (args: TestArgs) => {
         // no need to check for edge with gcs (the upload ends in one request anyway)
         // we chose to disable back pressure tests on s3 because they were hanging unexpectidly
         // we will investigate the issue and enable them again.
-        const canTestBackPressure = !(isEdge() && storage === 'gcs') && storage !== 's3';
+        const canTestBackPressure = (storage === 'gcs');
 
         if (canTestBackPressure) {
           const KB = 1024;
@@ -236,8 +231,10 @@ export const generateUploadTests = (args: TestArgs) => {
 
           describe('UploadStream', () => {
             // we buffer data upload depending on the cloud provider
+            // @ts-expect-error this condition will always return 'false', s3 not tested
             const maxBufferedLength = storage === 's3' ? 40 * MB : 15 * MB;
             // more chunk are needed for s3 since we need one more resizer
+            // @ts-expect-error this condition will always return 'false', s3 not tested
             const nbChunk = storage === 's3' ? 8 : 4;
             const chunkSize = 7 * MB;
             const inputSize = nbChunk * chunkSize;
