@@ -150,6 +150,13 @@ export const generateEncryptionTests = (args: TestArgs) => {
           await expectDecrypt([bobLaptop], clearText, encrypted);
         });
 
+        it('encrypt/decrypt with a huge padding step should select the v8 format', async () => {
+          const step = 2 * 1024 * 1024;
+          const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: step });
+          expect(encrypted[0]).to.equal(0x08);
+          await expectDecrypt([bobLaptop], clearText, encrypted);
+        });
+
         [null, 'invalid string', -42, 0, 1].forEach(step => {
           it(`throws when given a paddingStep set to ${step}`, async () => {
             // @ts-expect-error

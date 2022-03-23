@@ -1,6 +1,6 @@
 import { Padding, EncryptionOptions, errors } from '@tanker/core';
 import type { Tanker, b64string } from '@tanker/core';
-import { encryptionV4, utils } from '@tanker/crypto';
+import { encryptionV4, encryptionV8, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
@@ -354,6 +354,14 @@ export const generateUploadTests = (args: TestArgs) => {
       overhead: encryptionV4.overhead,
       defaultMaxEncryptedChunkSize: encryptionV4.defaultMaxEncryptedChunkSize,
       getEncryptedSize: encryptionV4.getEncryptedSize,
+    });
+  });
+  describe('binary file upload and download with padding', () => {
+    generateTestsWithOptions({
+      options: {},
+      overhead: encryptionV8.overhead,
+      defaultMaxEncryptedChunkSize: encryptionV8.defaultMaxEncryptedChunkSize,
+      getEncryptedSize: (clearSize: number, chunkSize: number) => encryptionV8.getEncryptedSize(clearSize, Padding.AUTO, chunkSize),
     });
   });
 };
