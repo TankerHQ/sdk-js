@@ -1,5 +1,5 @@
-import type { b64string, Padding, EncryptionFormatDescription } from '@tanker/crypto';
-import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, EncryptionStreamV4, DecryptionStream } from '@tanker/crypto';
+import type { b64string, EncryptionFormatDescription } from '@tanker/crypto';
+import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -297,18 +297,23 @@ export class DataProtector {
     return this._shareResources(keys, { ...sharingOptions, shareWithSelf: false });
   }
 
-  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStreamV4> {
-    let encryptionStreamV4;
-
+  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStreamV4 | EncryptionStreamV8> {
+    let resourceFinal;
     if (resource) {
-      encryptionStreamV4 = new EncryptionStreamV4(resource.resourceId, resource.key);
+      resourceFinal = resource;
     } else {
-      const newResource = makeResource();
-      await this._shareResources([newResource], encryptionOptions);
-      encryptionStreamV4 = new EncryptionStreamV4(newResource.resourceId, newResource.key);
+      resourceFinal = makeResource();
+      await this._shareResources([resourceFinal], encryptionOptions);
     }
 
-    return encryptionStreamV4;
+    let encryptionStream;
+    if (encryptionOptions.paddingStep === Padding.OFF) {
+      encryptionStream = new EncryptionStreamV4(resourceFinal.resourceId, resourceFinal.key);
+    } else {
+      encryptionStream = new EncryptionStreamV8(resourceFinal.resourceId, resourceFinal.key, encryptionOptions.paddingStep);
+    }
+
+    return encryptionStream;
   }
 
   async createDecryptionStream(): Promise<DecryptionStream> {
