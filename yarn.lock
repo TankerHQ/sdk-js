@@ -7010,9 +7010,9 @@ karma-chrome-launcher@3.1.0:
   dependencies:
     which "^1.2.1"
 
-"karma-edgium-launcher@https://github.com/matracey/karma-edgium-launcher.git#704328a9c0589c342121b3db8838f6d3ca412702":
+"karma-edgium-launcher@https://github.com/matracey/karma-edgium-launcher.git#9489be01fb033375830d2bd0127ffe68f53dc65b":
   version "3.1.0"
-  resolved "https://github.com/matracey/karma-edgium-launcher.git#704328a9c0589c342121b3db8838f6d3ca412702"
+  resolved "https://github.com/matracey/karma-edgium-launcher.git#9489be01fb033375830d2bd0127ffe68f53dc65b"
 
 karma-firefox-launcher@2.1.0:
   version "2.1.0"
