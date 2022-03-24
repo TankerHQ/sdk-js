@@ -1,21 +1,26 @@
 import type { WriteCallback, DestroyCallback } from '@tanker/stream-base';
 import { Writable, Transform } from '@tanker/stream-base';
 import type { b64string } from '@tanker/crypto';
+import { InvalidArgument } from '@tanker/errors';
 
 export class UploadStream extends Writable {
   _b64resourceId: b64string;
+  _processedSize: number;
+  _totalSize: number;
   _headStream: Transform;
   _tailStream: Writable;
   _streams: Array<Transform | Writable>;
 
   _tailStreamFinishPromise: Promise<void>;
 
-  constructor(b64resourceId: b64string, streams: Array<Transform | Writable>) {
+  constructor(b64resourceId: b64string, totalSize: number, streams: Array<Transform | Writable>) {
     super({
       highWaterMark: 1,
       objectMode: true,
     });
     this._b64resourceId = b64resourceId;
+    this._processedSize = 0;
+    this._totalSize = totalSize;
     this._streams = streams;
     this._headStream = this._streams[0] as Transform;
 
@@ -54,6 +59,15 @@ export class UploadStream extends Writable {
     encoding: string,
     callback: WriteCallback,
   ) {
+    if (!(chunk instanceof Uint8Array)) {
+      callback(new InvalidArgument('chunk', 'Uint8Array', chunk));
+      return;
+    }
+
+    this._processedSize += chunk.length;
+    if (this._processedSize > this._totalSize)
+      throw new InvalidArgument('cannot write to an upload stream past the content length');
+
     this._headStream.write(chunk, encoding, callback);
   }
 
