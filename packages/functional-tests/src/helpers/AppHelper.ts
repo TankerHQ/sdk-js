@@ -76,10 +76,6 @@ export class AppHelper {
     await this._update({ storage_provider: 'none' });
   }
 
-  async set2FA(enabled: boolean) {
-    await this._update({ session_certificates_enabled: enabled });
-  }
-
   async setPreverifiedMethodEnabled() {
     await this._update({ preverified_verification_enabled: true });
   }
