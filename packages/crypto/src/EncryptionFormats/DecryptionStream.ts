@@ -132,6 +132,9 @@ export class DecryptionStream extends Transform {
       throw new InvalidArgument('encryptedData is illformed for stream decryption');
     }
 
+    if (encryptedChunkSize < encryptionV4.overhead + 1)
+      throw new DecryptionFailed({ message: `invalid encrypted chunk size in header: ${encryptedChunkSize}` });
+
     const key = await this._mapper.findKey(resourceId);
 
     this._state.maxEncryptedChunkSize = encryptedChunkSize;

@@ -62,7 +62,7 @@ describe('Stream Encryption', () => {
     const encrypted = await processWithStream(() => new EncryptionStream(random(tcrypto.MAC_SIZE), key, smallChunkSize), buffer);
     // change the resource id in the second header
     encrypted[smallChunkSize + 1 + 4] -= 1;
-    expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted)).to.be.rejectedWith(DecryptionFailed);
   });
 
   it('wrong chunk order', async () => {
@@ -76,7 +76,7 @@ describe('Stream Encryption', () => {
     corrupted.set(encrypted.slice(smallChunkSize, 2 * smallChunkSize), 0);
     corrupted.set(encrypted.slice(0, smallChunkSize), smallChunkSize);
 
-    expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), corrupted)).to.be.rejectedWith(DecryptionFailed);
   });
 
   it('invalid encryptedChunkSize', async () => {
@@ -91,7 +91,7 @@ describe('Stream Encryption', () => {
     // set encryptedChunkSize to 2 in all chunks, less than the strict minimum
     invalidSizeTestVector[1] = 2;
     invalidSizeTestVector[smallChunkSize + 1] = 2;
-    expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), invalidSizeTestVector)).to.be.rejectedWith(DecryptionFailed);
 
     // with a corrupted encryptedChunkSize
 
@@ -99,6 +99,6 @@ describe('Stream Encryption', () => {
     // set encryptedChunkSize to 69, but the chunk is originally of size 70
     smallSizeTestVector[1] = 69;
     smallSizeTestVector[smallChunkSize + 1] = 69;
-    expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), smallSizeTestVector)).to.be.rejectedWith(DecryptionFailed);
   });
 });
