@@ -23,9 +23,6 @@ const pipeStreams = <T>(
     streams.reduce((leftStream, rightStream) => (leftStream as Readable).pipe(rightStream as IWritable)).on(resolveEvent, resolve);
   });
 
-// Detection of: Edge | Edge iOS | Edge Android - but not Edge (Chromium-based)
-const isEdge = () => /(edge|edgios|edga)\//i.test(typeof navigator === 'undefined' ? '' : navigator.userAgent);
-
 type Metadata = { encryptionFormat: EncryptionFormatDescription; } & ResourceMetadata;
 
 export class CloudStorageManager {
@@ -109,14 +106,7 @@ export class CloudStorageManager {
 
     const streams: Array<Transform | Writable> = [encryptor];
 
-    // Some version of Edge (e.g. version 18) fail to handle the 308 HTTP status used by
-    // GCS in a non-standard way (no redirection expected) when uploading in chunks. So we
-    // add a merger stream before the uploader to ensure there's a single upload request
-    // returning the 200 HTTP status.
-    if (service === 'GCS' && isEdge()) {
-      const merger = new MergerStream({ type: Uint8Array });
-      streams.push(merger);
-    } else if (service === 'S3') {
+    if (service === 'S3') {
       const resizer = new ResizerStream(recommendedChunkSize);
       streams.push(resizer);
     }
