@@ -1,10 +1,11 @@
 import { errors, Padding } from '@tanker/core';
 import type { b64string, Tanker, EncryptionSession, EncryptionStream } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
+import { random, utils, encryptionV4, encryptionV8 } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import type { TestArgs, AppHelper } from './helpers';
-import { expectDecrypt } from './helpers';
+import { expectDecrypt, watchStream } from './helpers';
 
 export const generateEncryptionSessionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
@@ -204,6 +205,66 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
       it('decrypts a shared resource encrypted with a stream', async () => {
         const decryptedData = await bobLaptop.decryptData(encryptedData);
+        expect(decryptedData).to.deep.equal(clearData);
+      });
+    });
+
+    describe('padding with streams', () => {
+      let clearData: Uint8Array;
+
+      beforeEach(async () => {
+        clearData = random(100);
+      });
+
+      it('encrypts with auto padding by default', async () => {
+        const encryptionSession = await aliceLaptop.createEncryptionSession();
+        const encryptor = await encryptionSession.createEncryptionStream();
+        encryptor.write(clearData);
+        encryptor.end();
+        const encrypted = utils.concatArrays(...await watchStream(encryptor));
+
+        expect(encryptionV8.getClearSize(encrypted.length)).to.equal(104);
+
+        const decryptedData = await aliceLaptop.decryptData(encrypted);
+        expect(decryptedData).to.deep.equal(clearData);
+      });
+
+      it('encrypts with auto padding', async () => {
+        const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: Padding.AUTO });
+        const encryptor = await encryptionSession.createEncryptionStream();
+        encryptor.write(clearData);
+        encryptor.end();
+        const encrypted = utils.concatArrays(...await watchStream(encryptor));
+
+        expect(encryptionV8.getClearSize(encrypted.length)).to.equal(104);
+
+        const decryptedData = await aliceLaptop.decryptData(encrypted);
+        expect(decryptedData).to.deep.equal(clearData);
+      });
+
+      it('encrypts and decrypts with no padding', async () => {
+        const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: Padding.OFF });
+        const encryptor = await encryptionSession.createEncryptionStream();
+        encryptor.write(clearData);
+        encryptor.end();
+        const encrypted = utils.concatArrays(...await watchStream(encryptor));
+
+        expect(encryptionV4.getClearSize(encrypted.length)).to.equal(clearData.length);
+
+        const decryptedData = await aliceLaptop.decryptData(encrypted);
+        expect(decryptedData).to.deep.equal(clearData);
+      });
+
+      it('encrypts and decrypts with a padding step', async () => {
+        const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: 500 });
+        const encryptor = await encryptionSession.createEncryptionStream();
+        encryptor.write(clearData);
+        encryptor.end();
+        const encrypted = utils.concatArrays(...await watchStream(encryptor));
+
+        expect(encryptionV8.getClearSize(encrypted.length) % 500).to.equal(0);
+
+        const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);
       });
     });
