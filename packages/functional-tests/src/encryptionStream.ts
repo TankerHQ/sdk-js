@@ -1,5 +1,5 @@
 import { errors } from '@tanker/core';
-import type { Tanker, EncryptionStream, DecryptionStream } from '@tanker/core';
+import type { Tanker } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
 import { utils } from '@tanker/crypto';
 import type { b64string } from '@tanker/crypto';
@@ -7,7 +7,7 @@ import { expect } from '@tanker/test-utils';
 import { MergerStream } from '@tanker/stream-base';
 
 import type { TestArgs } from './helpers';
-import { pipeStreams } from './helpers';
+import { pipeStreams, watchStream } from './helpers';
 
 export const generateEncryptionStreamTests = (args: TestArgs) => {
   describe('stream encryption', () => {
@@ -18,13 +18,6 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
     let bobLaptop: Tanker;
     let smallClearData: Uint8Array;
     let largeClearData: Uint8Array;
-
-    const watchStream = (stream: EncryptionStream | DecryptionStream) => new Promise<Array<Uint8Array>>((resolve, reject) => {
-      const result: Array<Uint8Array> = [];
-      stream.on('data', (data: Uint8Array) => result.push(data));
-      stream.on('end', () => resolve(result));
-      stream.on('error', reject);
-    });
 
     const setupTestData = () => {
       smallClearData = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
