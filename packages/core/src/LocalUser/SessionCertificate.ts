@@ -65,7 +65,7 @@ function verificationToVerificationMethod(verification: VerificationWithToken): 
 }
 
 export const serializeSessionCertificate = (sessionCertificate: SessionCertificateRecord): Uint8Array => {
-  if (!(sessionCertificate.verification_method_type in VERIFICATION_METHOD_TYPES_INT))
+  if (!(VERIFICATION_METHOD_TYPES_INT.includes(sessionCertificate.verification_method_type)))
     throw new InternalError('Assertion error: invalid session certificate method type');
   if (sessionCertificate.verification_method_target.length !== tcrypto.HASH_SIZE)
     throw new InternalError('Assertion error: invalid session certificate method target size');
