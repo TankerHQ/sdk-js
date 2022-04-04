@@ -271,8 +271,10 @@ export class Tanker extends EventEmitter {
 
     const userData = this._parseIdentity(identityB64);
 
-    await this._initUnauthSession();
-    const session = await Session.init(userData, this._unauthSession!.getOidcNonceManager(), this._dataStoreOptions, this._clientOptions);
+    const session = await Session.init(userData, async () => {
+      await this._initUnauthSession();
+      return this._unauthSession!.getOidcNonceManager();
+    }, this._dataStoreOptions, this._clientOptions);
     // Watch and start the session
     session.on('device_revoked', () => this._deviceRevoked());
     session.on('status_change', s => this.emit('statusChange', s));

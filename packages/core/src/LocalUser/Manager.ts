@@ -36,9 +36,9 @@ export class LocalUserManager extends EventEmitter {
 
   _keyStore: KeyStore;
   _client: Client;
-  _oidcNonceManager: OidcNonceManager;
+  _oidcNonceManagerGetter: () => Promise<OidcNonceManager>;
 
-  constructor(userData: UserData, oidcNonceManager: OidcNonceManager, client: Client, keyStore: KeyStore) {
+  constructor(userData: UserData, oidcNonceManagerGetter: () => Promise<OidcNonceManager>, client: Client, keyStore: KeyStore) {
     super();
     this._client = client;
     this._keyStore = keyStore;
@@ -46,7 +46,7 @@ export class LocalUserManager extends EventEmitter {
     this._localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
     this._delegationToken = userData.delegationToken;
     this._provisionalUserKeys = provisionalUserKeys;
-    this._oidcNonceManager = oidcNonceManager;
+    this._oidcNonceManagerGetter = oidcNonceManagerGetter;
   }
 
   init = async (): Promise<Status> => {
@@ -312,7 +312,7 @@ export class LocalUserManager extends EventEmitter {
     return decryptVerificationKey(encryptedVerificationKey, this._localUser.userSecret);
   };
 
-  getOidcTestNonce = () => this._oidcNonceManager.getTestNonce();
+  getOidcTestNonce = async () => (await this._oidcNonceManagerGetter()).getTestNonce();
 
   challengeOidcToken = async (idToken: string, testNonce?: string) => {
     let nonce = testNonce;
@@ -328,9 +328,10 @@ export class LocalUserManager extends EventEmitter {
       throw new InternalError(`illformed oidc nonce: ${(e as Error).message}`);
     }
 
+    const oidcNonceManage = await this._oidcNonceManagerGetter();
     const challenge = await this._client.getOidcChallenge(nonce);
-    const res = await this._oidcNonceManager.signOidcChallenge(nonce, challenge);
-    await this._oidcNonceManager.removeOidcNonce(nonce);
+    const res = await oidcNonceManage.signOidcChallenge(nonce, challenge);
+    await oidcNonceManage.removeOidcNonce(nonce);
     return res;
   };
 }

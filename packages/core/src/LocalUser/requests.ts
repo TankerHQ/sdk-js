@@ -53,7 +53,7 @@ export const isPreverifiedVerificationRequest = (request: VerificationRequest): 
 interface VerificationRequestHelperInterface {
   localUser: { userSecret: Uint8Array };
   challengeOidcToken (idToken: string, nonce?: string): Promise<SignedChallenge>;
-  getOidcTestNonce(): b64string | undefined;
+  getOidcTestNonce(): Promise<b64string | undefined>;
 }
 
 export const formatVerificationRequest = async (
@@ -88,7 +88,7 @@ export const formatVerificationRequest = async (
   }
 
   if ('oidcIdToken' in verification) {
-    const testNonce = helper.getOidcTestNonce();
+    const testNonce = await helper.getOidcTestNonce();
     const { challenge, signature } = await helper.challengeOidcToken(verification.oidcIdToken, testNonce);
     return {
       oidc_id_token: verification.oidcIdToken,

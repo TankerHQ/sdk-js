@@ -32,14 +32,14 @@ export class Session extends EventEmitter {
 
   _status: Status;
 
-  constructor(userData: UserData, storage: Storage, oidcNonceManager: OidcNonceManager, client: Client) {
+  constructor(userData: UserData, storage: Storage, oidcNonceManagerGetter: () => Promise<OidcNonceManager>, client: Client) {
     super();
 
     this._storage = storage;
     this._client = client;
     this._status = Status.STOPPED;
 
-    this._localUserManager = new LocalUserManager(userData, oidcNonceManager, client, storage.keyStore);
+    this._localUserManager = new LocalUserManager(userData, oidcNonceManagerGetter, client, storage.keyStore);
     this._localUserManager.on('error', async (e: Error) => {
       // These are expected errors respectively when no network access and
       // when stopping the session while another API call is in progress.
@@ -77,13 +77,13 @@ export class Session extends EventEmitter {
     }
   }
 
-  static init = async (userData: UserData, oidcNonceManager: OidcNonceManager, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
+  static init = async (userData: UserData, oidcNonceManagerGetter: () => Promise<OidcNonceManager>, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
     const client = new Client(userData.trustchainId, userData.userId, clientOptions);
 
     const storage = new Storage(storeOptions);
     await storage.open(userData.userId, userData.userSecret);
 
-    return new Session(userData, storage, oidcNonceManager, client);
+    return new Session(userData, storage, oidcNonceManagerGetter, client);
   };
 
   start = async (): Promise<void> => {
