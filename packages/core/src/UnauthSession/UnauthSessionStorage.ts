@@ -1,4 +1,5 @@
 import type { b64string } from '@tanker/crypto';
+import { utils } from '@tanker/crypto';
 import type { DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
 import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
@@ -38,7 +39,7 @@ export class UnauthSessionStorage {
       globalSchema,
       OidcStore.schemas,
     );
-    const dbName = `tanker_${prefix ? `${prefix}_` : ''}${appId}`;
+    const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(utils.fromBase64(appId))}`;
 
     try {
       // @ts-expect-error forward `dbPath` for pouchdb Adapters
