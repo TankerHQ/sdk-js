@@ -12,7 +12,7 @@ import { formatProvisionalKeysRequest, formatVerificationRequest } from '../Loca
 import type {
   EmailVerification,
   EmailVerificationMethod,
-  OIDCVerification, PhoneNumberVerification, PhoneNumberVerificationMethod, ProvisionalVerification,
+  PhoneNumberVerification, PhoneNumberVerificationMethod, ProvisionalVerification,
   ProvisionalVerificationMethod,
 } from '../LocalUser/types';
 import { Status } from '../Session/status';
@@ -134,25 +134,13 @@ export default class ProvisionalIdentityManager {
     throw new InternalError(`Assertion error: unsupported provisional identity target: ${provisionalIdentity.target}`);
   }
 
-  async verifyProvisionalIdentity(verification: ProvisionalVerification | OIDCVerification) {
-    if (!('email' in verification) && !('phoneNumber' in verification) && !('oidcIdToken' in verification))
-      throw new InternalError(`Assertion error: unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
-
+  async verifyProvisionalIdentity(verification: ProvisionalVerification) {
     if (!this._provisionalIdentity)
       throw new PreconditionFailed('Cannot call verifyProvisionalIdentity() without having called attachProvisionalIdentity() before');
 
     const provisionalIdentity = this._provisionalIdentity;
 
-    if ('oidcIdToken' in verification) {
-      let jwtPayload;
-      try {
-        jwtPayload = JSON.parse(utils.toString(utils.fromSafeBase64(verification.oidcIdToken.split('.')[1]!)));
-      } catch (e) {
-        throw new InvalidArgument('Failed to parse "verification.oidcIdToken"');
-      }
-      if (jwtPayload.email !== provisionalIdentity.value)
-        throw new InvalidArgument('"verification.oidcIdToken" does not match provisional identity');
-    } else if (provisionalIdentity.target === 'email' && (verification as EmailVerification).email !== provisionalIdentity.value) {
+    if (provisionalIdentity.target === 'email' && (verification as EmailVerification).email !== provisionalIdentity.value) {
       throw new InvalidArgument('"verification.email" does not match provisional identity');
     } else if (provisionalIdentity.target === 'phone_number' && (verification as PhoneNumberVerification).phoneNumber !== provisionalIdentity.value) {
       throw new InvalidArgument('"verification.phoneNumber" does not match provisional identity');
@@ -240,13 +228,13 @@ export default class ProvisionalIdentityManager {
     });
   }
 
-  async _getProvisionalIdentityKeys(provIdentity: SecretProvisionalIdentity, verification?: ProvisionalVerification | OIDCVerification): Promise<TankerProvisionalKeys> {
+  async _getProvisionalIdentityKeys(provIdentity: SecretProvisionalIdentity, verification?: ProvisionalVerification): Promise<TankerProvisionalKeys> {
     let tankerProvisionalKeysReply: TankerProvisionalIdentityResponse;
 
     const localUser = this._localUserManager.localUser;
     if (verification) {
       tankerProvisionalKeysReply = await this._client.getTankerProvisionalKeysWithVerif({
-        verification: formatVerificationRequest(verification, localUser, provIdentity),
+        verification: await formatVerificationRequest(verification, this._localUserManager, provIdentity),
       });
     } else {
       tankerProvisionalKeysReply = await this._client.getTankerProvisionalKeysFromSession(

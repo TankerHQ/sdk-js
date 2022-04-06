@@ -1,8 +1,10 @@
 import { encryptionV2, generichash, utils } from '@tanker/crypto';
+import type { b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type { RemoteVerification, RemoteVerificationWithToken, PreverifiedVerification } from './types';
 import type { SecretProvisionalIdentity } from '../Identity';
+import type { SignedChallenge } from '../OidcNonce/types';
 
 type WithToken<T> = T & { with_token?: { nonce: string; } };
 type WithVerificationCode<T> = WithToken<T> & { verification_code: string; };
@@ -15,8 +17,11 @@ type EmailRequest = {
   hashed_email: Uint8Array;
   v2_encrypted_email: Uint8Array;
 };
-type OIDCRequest = {
+type OidcRequest = {
   oidc_id_token: string;
+  oidc_challenge: b64string;
+  oidc_challenge_signature: b64string;
+  oidc_test_nonce?: string;
 };
 type PhoneNumberRequest = {
   phone_number: string;
@@ -29,7 +34,7 @@ export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preveri
 
 export type VerificationRequestWithToken = WithToken<PassphraseRequest>
 | WithVerificationCode<EmailRequest>
-| WithToken<OIDCRequest>
+| WithToken<OidcRequest>
 | WithVerificationCode<PhoneNumberRequest>;
 export type VerificationRequest = VerificationRequestWithToken | PreverifiedVerificationRequest;
 
@@ -45,11 +50,19 @@ export type ProvisionalKeysRequest = {
 
 export const isPreverifiedVerificationRequest = (request: VerificationRequest): request is PreverifiedVerificationRequest => ('is_preverified' in request && request.is_preverified);
 
-export const formatVerificationRequest = (
+interface VerificationRequestHelperInterface {
+  localUser: { userSecret: Uint8Array };
+  challengeOidcToken (idToken: string, nonce?: string): Promise<SignedChallenge>;
+  getOidcTestNonce(): Promise<b64string | undefined>;
+}
+
+export const formatVerificationRequest = async (
   verification: RemoteVerification | RemoteVerificationWithToken,
-  localUser: { userSecret: Uint8Array },
+  helper: VerificationRequestHelperInterface,
   provIdentity?: SecretProvisionalIdentity,
-): VerificationRequest => {
+): Promise<VerificationRequest> => {
+  const { localUser } = helper;
+
   if ('email' in verification) {
     return {
       hashed_email: generichash(utils.fromString(verification.email)),
@@ -75,8 +88,13 @@ export const formatVerificationRequest = (
   }
 
   if ('oidcIdToken' in verification) {
+    const testNonce = await helper.getOidcTestNonce();
+    const { challenge, signature } = await helper.challengeOidcToken(verification.oidcIdToken, testNonce);
     return {
       oidc_id_token: verification.oidcIdToken,
+      oidc_challenge: challenge,
+      oidc_challenge_signature: signature,
+      oidc_test_nonce: testNonce,
     };
   }
 
@@ -101,8 +119,8 @@ export const formatVerificationRequest = (
   throw new InternalError('Assertion error: invalid remote verification in formatVerificationRequest');
 };
 
-export const formatVerificationsRequest = (verifications: Array<PreverifiedVerification>, localUser: { userSecret: Uint8Array }): Array<PreverifiedVerificationRequest> => verifications.map(
-  (verification) => formatVerificationRequest(verification, localUser) as PreverifiedVerificationRequest,
+export const formatVerificationsRequest = (verifications: Array<PreverifiedVerification>, helper: VerificationRequestHelperInterface): Promise<Array<PreverifiedVerificationRequest>> => Promise.all(
+  verifications.map((verification) => formatVerificationRequest(verification, helper) as Promise<PreverifiedVerificationRequest>),
 );
 
 export const formatProvisionalKeysRequest = (provIdentity: SecretProvisionalIdentity, localUser: { userSecret: Uint8Array }): ProvisionalKeysRequest => {

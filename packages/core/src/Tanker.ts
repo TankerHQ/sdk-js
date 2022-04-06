@@ -14,7 +14,6 @@ import type { DataStoreOptions } from './Session/Storage';
 import {
   Verification,
   EmailVerification,
-  OIDCVerification,
   RemoteVerification,
   VerificationMethod,
   VerificationOptions,
@@ -33,6 +32,7 @@ import { extractUserData } from './LocalUser/UserData';
 import { statuses, assertStatus, statusDefs } from './Session/status';
 import type { Status } from './Session/status';
 import { Session } from './Session/Session';
+import { UnauthSession } from './UnauthSession/UnauthSession';
 
 import type { OutputOptions, ProgressOptions, EncryptionOptions, SharingOptions } from './DataProtection/options';
 import {
@@ -63,7 +63,7 @@ export type TankerCoreOptions = {
 export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
 
 export type Device = { id: string; isRevoked: boolean; };
-export type ProvisionalVerification = EmailVerification | OIDCVerification | PhoneNumberVerification;
+export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
   if (!options || typeof options !== 'object' || options instanceof Array)
@@ -88,6 +88,7 @@ export function optionsWithDefaults(options: TankerOptions, defaults: TankerCore
 export class Tanker extends EventEmitter {
   _trustchainId: b64string;
   _session?: Session;
+  _unauthSession?: UnauthSession;
   _options: TankerCoreOptions;
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
@@ -251,6 +252,17 @@ export class Tanker extends EventEmitter {
     await client.close();
   });
 
+  _initUnauthSession = async () => {
+    if (!this._unauthSession) {
+      this._unauthSession = await UnauthSession.start(this._trustchainId, this._dataStoreOptions);
+    }
+  };
+
+  createOidcNonce = async () => {
+    await this._initUnauthSession();
+    return this._unauthSession!.createOidcNonce();
+  };
+
   start = this._lockCall('start', async (identityB64: b64string) => {
     assertStatus(this.status, statuses.STOPPED, 'start a session');
 
@@ -259,7 +271,10 @@ export class Tanker extends EventEmitter {
 
     const userData = this._parseIdentity(identityB64);
 
-    const session = await Session.init(userData, this._dataStoreOptions, this._clientOptions);
+    const session = await Session.init(userData, async () => {
+      await this._initUnauthSession();
+      return this._unauthSession!.getOidcNonceManager();
+    }, this._dataStoreOptions, this._clientOptions);
     // Watch and start the session
     session.on('device_revoked', () => this._deviceRevoked());
     session.on('status_change', s => this.emit('statusChange', s));
@@ -380,6 +395,11 @@ export class Tanker extends EventEmitter {
   async verifyProvisionalIdentity(verification: ProvisionalVerification): Promise<void> {
     assertStatus(this.status, statuses.READY, 'verify a provisional identity');
     assertVerification(verification);
+
+    if (!('email' in verification) && !('phoneNumber' in verification)) {
+      throw new InvalidArgument(`Unsupported verification method for provisional identity: ${JSON.stringify(verification)}`);
+    }
+
     return this.session.verifyProvisionalIdentity(verification);
   }
 
@@ -395,16 +415,29 @@ export class Tanker extends EventEmitter {
   }
 
   async stop(): Promise<void> {
-    if (this._session) {
-      const session = this._session;
-      this.session = null;
+    // unplug every instance variable before doing async
+    const session = this._session;
+    const unauthSession = this._unauthSession;
+    this.session = null;
+    delete this._unauthSession;
+
+    if (session) {
       this._localDeviceLock = new Lock();
       await session.stop();
+    }
+
+    if (unauthSession) {
+      await unauthSession.stop();
     }
   }
 
   _deviceRevoked = async (): Promise<void> => {
     this.session = null; // the session has already closed itself
+    const unauthSession = this._unauthSession;
+    delete this._unauthSession;
+    if (unauthSession) {
+      await unauthSession.stop();
+    }
   };
 
   async getDeviceList(): Promise<Array<Device>> {

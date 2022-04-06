@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 
 import { encryptionV2, tcrypto, utils } from '@tanker/crypto';
-import { InternalError, InvalidVerification, UpgradeRequired, TankerError } from '@tanker/errors';
+import { InternalError, InvalidVerification, UpgradeRequired, TankerError, InvalidArgument } from '@tanker/errors';
 
 import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationKey, ghostDeviceKeysFromVerificationKey, decryptVerificationKey, ghostDeviceToEncryptedVerificationKey, decryptUserKeyForGhostDevice } from './ghostDevice';
 import type { IndexedProvisionalUserKeyPairs } from './KeySafe';
@@ -19,6 +19,7 @@ import { generateUserCreation, generateDeviceFromGhostDevice, generateGhostDevic
 import type { UserData, DelegationToken } from './UserData';
 
 import type { Client, PullOptions } from '../Network/Client';
+import { OidcNonceManager } from '../OidcNonce/Manager';
 import { Status } from '../Session/status';
 import type { Device } from '../Users/types';
 import { makeSessionCertificate } from './SessionCertificate';
@@ -35,8 +36,9 @@ export class LocalUserManager extends EventEmitter {
 
   _keyStore: KeyStore;
   _client: Client;
+  _oidcNonceManagerGetter: () => Promise<OidcNonceManager>;
 
-  constructor(userData: UserData, client: Client, keyStore: KeyStore) {
+  constructor(userData: UserData, oidcNonceManagerGetter: () => Promise<OidcNonceManager>, client: Client, keyStore: KeyStore) {
     super();
     this._client = client;
     this._keyStore = keyStore;
@@ -44,6 +46,7 @@ export class LocalUserManager extends EventEmitter {
     this._localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
     this._delegationToken = userData.delegationToken;
     this._provisionalUserKeys = provisionalUserKeys;
+    this._oidcNonceManagerGetter = oidcNonceManagerGetter;
   }
 
   init = async (): Promise<Status> => {
@@ -108,8 +111,8 @@ export class LocalUserManager extends EventEmitter {
     });
   };
 
-  setVerificationMethod = (verification: RemoteVerificationWithToken): Promise<void> => {
-    const requestVerification = formatVerificationRequest(verification, this._localUser);
+  setVerificationMethod = async (verification: RemoteVerificationWithToken): Promise<void> => {
+    const requestVerification = await formatVerificationRequest(verification, this);
     if (!isPreverifiedVerificationRequest(requestVerification)) {
       requestVerification.with_token = verification.withToken; // May be undefined
     }
@@ -138,10 +141,20 @@ export class LocalUserManager extends EventEmitter {
 
     const { block, ghostDevice } = generateGhostDevice(trustchainId, userId, ghostDeviceKeys, delegationToken);
 
-    const request: any = {
+    const helper = {
+      localUser: userData,
+      challengeOidcToken: async () => {
+        throw new InvalidArgument('OIDC is not available for user enrollment');
+      },
+      getOidcTestNonce: () => {
+        throw new InvalidArgument('OIDC is not available for user enrollment');
+      },
+    };
+
+    const request = {
       ghost_device_creation: block,
       encrypted_verification_key: ghostDeviceToEncryptedVerificationKey(ghostDevice, userSecret),
-      verifications: formatVerificationsRequest(verifications, userData),
+      verifications: await formatVerificationsRequest(verifications, helper),
     };
 
     await client.enrollUser(request);
@@ -174,7 +187,7 @@ export class LocalUserManager extends EventEmitter {
 
     if ('email' in verification || 'passphrase' in verification || 'oidcIdToken' in verification || 'phoneNumber' in verification) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
-      request.verification = formatVerificationRequest(verification, this._localUser);
+      request.verification = await formatVerificationRequest(verification, this);
       request.verification.with_token = verification.withToken; // May be undefined
     }
 
@@ -290,13 +303,36 @@ export class LocalUserManager extends EventEmitter {
       return verification.verificationKey;
     }
     const remoteVerification: RemoteVerificationWithToken = (verification as any);
-    const request = { verification: formatVerificationRequest(remoteVerification, this._localUser) };
+    const request = { verification: await formatVerificationRequest(remoteVerification, this) };
     if (!isPreverifiedVerificationRequest(request.verification)) {
       request.verification.with_token = verification.withToken; // May be undefined
     }
 
     const encryptedVerificationKey = await this._client.getVerificationKey(request);
     return decryptVerificationKey(encryptedVerificationKey, this._localUser.userSecret);
+  };
+
+  getOidcTestNonce = async () => (await this._oidcNonceManagerGetter()).getTestNonce();
+
+  challengeOidcToken = async (idToken: string, testNonce?: string) => {
+    let nonce = testNonce;
+    if (nonce) {
+      utils.assertB64StringWithSize(nonce, 'oidc test nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    } else {
+      nonce = OidcNonceManager.extractNonce(idToken);
+    }
+
+    try {
+      utils.assertB64StringWithSize(nonce, 'oidc nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    } catch (e) {
+      throw new InternalError(`illformed oidc nonce: ${(e as Error).message}`);
+    }
+
+    const oidcNonceManage = await this._oidcNonceManagerGetter();
+    const challenge = await this._client.getOidcChallenge(nonce);
+    const res = await oidcNonceManage.signOidcChallenge(nonce, challenge);
+    await oidcNonceManage.removeOidcNonce(nonce);
+    return res;
   };
 }
 
