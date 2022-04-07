@@ -16,7 +16,6 @@ import { generateGroupsTests } from './groups';
 import { generateSessionTests } from './session';
 import { generateUploadTests } from './upload';
 import { generateVerificationTests } from './verification';
-import { generateSessionTokenTests } from './sessionToken';
 import { generateConcurrencyTests } from './concurrency';
 
 export function generateFunctionalTests(
@@ -74,7 +73,6 @@ export function generateFunctionalTests(
     generateUploadTests(args);
     generateNetworkTests(args);
     generateFakeAuthenticationTests(args);
-    generateSessionTokenTests(args);
     generateConcurrencyTests(args);
   });
 }
