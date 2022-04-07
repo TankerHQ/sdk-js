@@ -26,20 +26,10 @@ const getLoaders = (env) => {
     declarationDir: undefined,
     importHelpers: true,
     downlevelIteration: true,
-    jsx: env.react ? 'react' : undefined,
     rootDir: path.resolve(__dirname, '..'),
   };
 
   return [
-    {
-      test: /\.tsx$/,
-      loader: 'ts-loader',
-      options: {
-        configFile: env.tsconfig || path.resolve(__dirname, 'tsconfig.tests.json'),
-        compilerOptions: tsLoaderCompilerOptions,
-      },
-      exclude: /node_modules/,
-    },
     {
       test: /\.ts$/,
       loader: 'ts-loader',
@@ -73,7 +63,7 @@ const getLoaders = (env) => {
   ];
 };
 
-const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig }) => {
+const makeBaseConfig = ({ mode, target, hmre, devtool, plugins, tsconfig }) => {
   const base = {
     target,
     mode,
@@ -90,7 +80,7 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
 
     module: {
       rules: [
-        ...getLoaders({ target, react, hmre, tsconfig }),
+        ...getLoaders({ target, hmre, tsconfig }),
         {
           test: /\.(eot|ttf|woff|woff2|svg|png|jpg)$/,
           type: 'asset',
@@ -127,9 +117,6 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
   }
 
   const extensions = ['.ts', '.js'];
-  if (react) {
-    extensions.push('.tsx');
-  }
 
   base.resolve = {
     ...base.resolve,
@@ -154,7 +141,6 @@ const makeBaseConfig = ({ mode, target, react, hmre, devtool, plugins, tsconfig 
       '@tanker/datastore-pouchdb-node': path.resolve(__dirname, '../packages/datastore/pouchdb-node/src/index.ts'),
       '@tanker/core': path.resolve(__dirname, '../packages/core/src/index.ts'),
       '@tanker/client-browser': path.resolve(__dirname, '../packages/client-browser/src/index.ts'),
-      '@tanker/verification-ui': path.resolve(__dirname, '../packages/verification-ui/src/index.tsx'),
       '@tanker/functional-tests': path.resolve(__dirname, '../packages/functional-tests/src/index.ts'),
     },
     extensions,

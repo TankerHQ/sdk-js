@@ -12,13 +12,11 @@ parserOptions:
 plugins:
   - import
   - "@typescript-eslint"
-  - react
 
 settings:
   polyfills:
     - "Promise"
-    - "URLSearchParams" # From fetch-ponyfill: feature checked before usage (seen: `umd/tanker-client-browser.min.js` and `umd/tanker-verification-ui.min.js`)
-    - "performance.now" # From performance-now imported by react: featured checked before usage (seen: `umd/tanker-verification-ui.min.js`)
+    - "URLSearchParams" # From fetch-ponyfill: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
     - "TextDecoder" # From libsodium: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
     - "document.currentScript" # Webpack boilerplate: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
     - "navigator.hardwareConcurrency" # From libsodium: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)

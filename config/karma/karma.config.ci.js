@@ -19,7 +19,6 @@ module.exports = (config) => {
     webpack: makeBaseConfig({
       mode: 'production',
       target: 'web',
-      react: true,
       devtool: 'eval',
       plugins: [plugin],
     }),

@@ -25,9 +25,6 @@
 [fakeauth_npm-badge]: https://img.shields.io/npm/v/@tanker/fake-authentication.svg
 [fakeauth_npm-link]: https://npmjs.com/package/@tanker/fake-authentication
 
-[verificationui_npm-badge]: https://img.shields.io/npm/v/@tanker/verification-ui.svg
-[verificationui_npm-link]: https://npmjs.com/package/@tanker/verification-ui
-
 <a href="#readme"><img src="https://tanker.io/images/github-logo.png" alt="Tanker logo" width="180" /></a>
 
 [![License][license-badge]][license-link]
@@ -95,14 +92,11 @@ End-to-end encryption requires that all users have cryptographic identities. The
 Tanker **Identity** is a server side package to link Tanker identities with your users in your application backend.
 It is available in multiple languages. This repository only contains the Javascript version.
 
-Tanker **Verification UI** is a UI element that wraps a Tanker **Core** instance in order to handle the verification process automatically. It takes the form of a modal that will appear when needed, send the verification code by email to the user, and prompt them to verify their identity with the code.
-
 Tanker **Fake Authentication** reduces the friction when starting new projects, by delaying the integration of Tanker Identity in your application server.
 
 | Package | Version |
 |:--------|:--------|
 | [@tanker/identity][identity_npm-link]    | [![identity_npm-badge]][identity_npm-link]   |
-| [@tanker/verification-ui][verificationui_npm-link]    | [![verificationui_npm-badge]][verificationui_npm-link]   |
 | [@tanker/fake-authentication][fakeauth_npm-link]    | [![fakeauth_npm-badge]][fakeauth_npm-link]   |
 
 ## Browser support
