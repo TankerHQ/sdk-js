@@ -1,5 +1,5 @@
 import type { b64string, EncryptionFormatDescription } from '@tanker/crypto';
-import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream } from '@tanker/crypto';
+import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -274,7 +274,7 @@ export class DataProtector {
   }
 
   async encryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
-    if (getDataLength(clearData) >= STREAM_THRESHOLD)
+    if (paddedFromClearSize(getDataLength(clearData), encryptionOptions.paddingStep) >= STREAM_THRESHOLD)
       return this._streamEncryptData(clearData, encryptionOptions, outputOptions, progressOptions, resource);
 
     if (resource) {
