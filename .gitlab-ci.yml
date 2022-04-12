@@ -253,6 +253,7 @@ bridge/bumpjs-compat-tests:
     - deploy
   extends:
     - .rules/deploy/js
+    - .variables/bridge-common
   variables:
     SDK_JS_RELEASE_VERSION: $SDK_JS_RELEASE_VERSION
     UPSTREAM_JOB_NAME: deploy
