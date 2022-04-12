@@ -9,7 +9,6 @@ module.exports = (config) => {
     webpack: makeBaseConfig({
       mode: 'development',
       target: 'web',
-      react: true,
       plugins: [plugin],
     }),
 

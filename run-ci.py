@@ -62,10 +62,6 @@ configs: List[Config] = [
         "build": "fake-authentication",
         "publish": ["@tanker/fake-authentication"],
     },
-    {
-        "build": "verification-ui",
-        "publish": ["@tanker/verification-ui"],
-    },
 ]
 
 
