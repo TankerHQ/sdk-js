@@ -200,6 +200,8 @@ bridge/compat:
     - !reference [.rules/web/auto, rules]
   needs:
     - check/linux/node
+  variables:
+    UPSTREAM_JOB_NAME: check/js
   trigger:
     project: TankerHQ/compatibility-tests
     strategy: depend
@@ -244,3 +246,16 @@ test/deployed:
   script:
     - poetry run python run-ci.py test-deploy --version "${SDK_JS_RELEASE_VERSION}"
   tags: !reference [.tags/linux, tags]
+
+bridge/bumpjs-compat-tests:
+  stage: deploy
+  needs:
+    - deploy
+  extends:
+    - .rules/deploy/js
+  variables:
+    SDK_JS_RELEASE_VERSION: $SDK_JS_RELEASE_VERSION
+    UPSTREAM_JOB_NAME: deploy
+  trigger:
+    project: TankerHQ/compatibility-tests
+    strategy: depend
