@@ -3,7 +3,7 @@
   "private": true,
   "license": "Apache-2.0",
   "scripts": {
-    "build:all": "yarn build:ts && yarn build:emails",
+    "build:all": "yarn build:ts",
     "build:ts": "yarn build:test-utils && yarn build:global-this && yarn build:errors && yarn build:file-ponyfill && yarn build:file-reader && yarn build:http-utils && yarn build:types && yarn build:streams && yarn build:crypto && yarn build:datastores && yarn build:core && yarn build:client-browser && yarn build:client-node && yarn build:fake-authentication && yarn build:functional-tests",
     "build:client-browser-base": "rimraf packages/client-browser/dist && tsc --build packages/client-browser/config",
     "build:client-browser-umd": "webpack --config packages/client-browser/config/webpack.config.js",
@@ -12,8 +12,6 @@
     "build:core": "rimraf packages/core/dist && tsc --build packages/core/config",
     "build:crypto": "rimraf packages/crypto/dist && tsc --build packages/crypto/config",
     "build:datastores": "rimraf packages/datastore/*/dist && tsc --build packages/datastore/config",
-    "start:emails": "cd packages/emails; yarn start",
-    "build:emails": "cd packages/emails; yarn build",
     "build:errors": "rimraf packages/errors/dist && tsc --build packages/errors/config",
     "build:fake-authentication": "rimraf packages/fake-authentication/dist && tsc --build packages/fake-authentication/config",
     "build:file-ponyfill": "rimraf packages/file-ponyfill/dist && tsc --build packages/file-ponyfill/config",
@@ -137,13 +135,10 @@
     "browserslist": "^4.19.3",
     "eslint-import-resolver-node": "0.3.4",
     "follow-redirects": "^1.14.8",
-    "glob-parent": "^5.1.2",
     "hosted-git-info": "^2.8.9",
     "lodash": "^4.17.21",
-    "log4js": "^6.4.0",
     "minimist": "^1.2.6",
-    "node-fetch": "^2.6.7",
-    "ws": "^7.4.6"
+    "node-fetch": "^2.6.7"
   },
   "devDependencies": {
     "rimraf": "^3.0.2"
