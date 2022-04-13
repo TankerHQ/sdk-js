@@ -252,8 +252,12 @@ bridge/bumpjs-compat-tests:
   needs:
     - deploy
   extends:
-    - .rules/deploy/js
     - .variables/bridge-common
+  rules:
+    - if: !reference [.if-invalid-js-release-version, if]
+      when: never
+    - if: !reference [.if-web-pipeline, if]
+      when: manual
   variables:
     SDK_JS_RELEASE_VERSION: $SDK_JS_RELEASE_VERSION
     UPSTREAM_JOB_NAME: deploy
