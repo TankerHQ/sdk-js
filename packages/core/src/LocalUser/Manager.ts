@@ -317,13 +317,13 @@ export class LocalUserManager extends EventEmitter {
   challengeOidcToken = async (idToken: string, testNonce?: string) => {
     let nonce = testNonce;
     if (nonce) {
-      utils.assertB64StringWithSize(nonce, 'oidc test nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+      utils.assertRawUrlB64StringWithSize(nonce, 'oidc test nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
     } else {
       nonce = OidcNonceManager.extractNonce(idToken);
     }
 
     try {
-      utils.assertB64StringWithSize(nonce, 'oidc nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+      utils.assertRawUrlB64StringWithSize(nonce, 'oidc nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
     } catch (e) {
       throw new InternalError(`illformed oidc nonce: ${(e as Error).message}`);
     }

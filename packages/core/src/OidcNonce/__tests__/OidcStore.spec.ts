@@ -4,7 +4,7 @@ import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
 
-import OidcStore, { TABLE } from '../OidcStore';
+import OidcStore, { TABLE, idFromNonce } from '../OidcStore';
 
 describe('OidcStore', () => {
   let nonceStore: OidcStore;
@@ -15,7 +15,7 @@ describe('OidcStore', () => {
 
   beforeEach(async () => {
     nonceKeys = tcrypto.makeSignKeyPair();
-    b64Nonce = utils.toBase64(nonceKeys.publicKey);
+    b64Nonce = utils.toRawUrlBase64(nonceKeys.publicKey);
     const dbName = `oidcNonce-test-${makePrefix()}`;
     const oidcNonceStoreConfig = { dbName, ...dataStoreConfig, schemas: OidcStore.schemas };
     const datastore = await openDataStore(oidcNonceStoreConfig);
@@ -51,7 +51,7 @@ describe('OidcStore', () => {
     await nonceStore.removeOidcNonce(b64Nonce);
 
     expect(await nonceStore.findOidcNonce(b64Nonce)).to.be.undefined;
-    expect(await nonceStore.findOidcNonce(utils.toBase64(nonceKeys2.publicKey))).to.deep.equal(nonceKeys2.privateKey);
+    expect(await nonceStore.findOidcNonce(utils.toRawUrlBase64(nonceKeys2.publicKey))).to.deep.equal(nonceKeys2.privateKey);
   });
 
   it('cleans outdated nonces', async () => {
@@ -60,14 +60,15 @@ describe('OidcStore', () => {
     // insert outdated nonce
     const nonceKeys2 = tcrypto.makeSignKeyPair();
     const day = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+    const nonce2 = utils.toRawUrlBase64(nonceKeys2.publicKey);
     // eslint-disable-next-line no-underscore-dangle
-    await nonceStore._ds.put(TABLE, { _id: utils.toBase64(nonceKeys2.publicKey), b64PrivateNonceKey: nonceKeys2.privateKey, createdAt: Date.now() - day });
+    await nonceStore._ds.put(TABLE, { _id: idFromNonce(nonce2), b64PrivateNonceKey: nonceKeys2.privateKey, createdAt: Date.now() - day });
 
     expect(await nonceStore.findOidcNonce(b64Nonce)).to.deep.equal(nonceKeys.privateKey);
-    expect(await nonceStore.findOidcNonce(utils.toBase64(nonceKeys2.publicKey))).to.deep.equal(nonceKeys2.privateKey);
+    expect(await nonceStore.findOidcNonce(nonce2)).to.deep.equal(nonceKeys2.privateKey);
 
     await nonceStore.clean();
     expect(await nonceStore.findOidcNonce(b64Nonce)).to.deep.equal(nonceKeys.privateKey);
-    expect(await nonceStore.findOidcNonce(utils.toBase64(nonceKeys2.publicKey))).to.be.undefined;
+    expect(await nonceStore.findOidcNonce(nonce2)).to.be.undefined;
   });
 });

@@ -153,13 +153,23 @@ export function fromSafeBase64(str: safeb64string): Uint8Array {
   return fromBase64(str.replace(/[-_]/g, base64FromUrlsafeReplacer));
 }
 
-export const assertB64StringWithSize = (arg: any, argName: string, expectedSize: number) => {
+export function fromRawUrlBase64(str: safeb64string): Uint8Array {
+  if (typeof str !== 'string')
+    throw new TypeError('"str" is not a string');
+
+  if (str.indexOf('=') !== -1)
+    throw new TypeError('"str" is not a unpadded base64');
+
+  return fromBase64(str.replace(/[-_]/g, base64FromUrlsafeReplacer));
+}
+
+const generateB64WithSizeAssertion = (codec: (arg: string) => Uint8Array) => (arg: any, argName: string, expectedSize: number) => {
   assertNotEmptyString(arg, argName);
 
   let unb64;
 
   try {
-    unb64 = fromBase64(arg);
+    unb64 = codec(arg);
   } catch (e) {
     throw new InvalidArgument(argName, `${argName} is not valid base64`, arg);
   }
@@ -168,6 +178,10 @@ export const assertB64StringWithSize = (arg: any, argName: string, expectedSize:
     throw new InvalidArgument(argName, `${argName} is not the right size, expected ${expectedSize}, got ${unb64.length}`, arg);
   }
 };
+
+export const assertB64StringWithSize = generateB64WithSizeAssertion(fromBase64);
+
+export const assertRawUrlB64StringWithSize = generateB64WithSizeAssertion(fromRawUrlBase64);
 
 export function toString(bytes: Uint8Array): string {
   if (!(bytes instanceof Uint8Array))
