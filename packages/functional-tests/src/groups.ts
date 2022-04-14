@@ -6,6 +6,15 @@ import { expect } from '@tanker/test-utils';
 import type { AppHelper, TestArgs } from './helpers';
 import { generateUserSession, generateProvisionalUserSession, UserSession, ProvisionalUserSession, encrypt, getPublicIdentities, attachProvisionalIdentities, checkGroup, checkDecrypt, checkDecryptFails } from './helpers';
 
+// These tests make a lot of devices and thus interact too much with IndexedDB
+// which regularly times out on Safari.
+const keepSingleTestForSafari = <T>(a: Array<T>) => {
+  if (global.navigator && /^((?!chrome|android).)*safari/i.test(global.navigator.userAgent)) {
+    while (a.length > 1)
+      a.shift();
+  }
+};
+
 export const generateGroupsTests = (args: TestArgs) => {
   describe('groups', () => {
     let appHelper: AppHelper;
@@ -60,6 +69,8 @@ export const generateGroupsTests = (args: TestArgs) => {
           { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
         ];
 
+        keepSingleTestForSafari(testCases);
+
         testCases.map(runTest);
       });
 
@@ -97,6 +108,8 @@ export const generateGroupsTests = (args: TestArgs) => {
           { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
           { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
         ];
+
+        keepSingleTestForSafari(testCases);
 
         testCases.map(runTest);
       });
@@ -204,6 +217,8 @@ export const generateGroupsTests = (args: TestArgs) => {
           { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
         ];
 
+        keepSingleTestForSafari(testCases);
+
         testCases.map(runTest);
       });
 
@@ -245,6 +260,8 @@ export const generateGroupsTests = (args: TestArgs) => {
           { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
         ];
 
+        keepSingleTestForSafari(testCases);
+
         testCases.map(runTest);
       });
 
@@ -281,6 +298,8 @@ export const generateGroupsTests = (args: TestArgs) => {
           { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
           { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
         ];
+
+        keepSingleTestForSafari(testCases);
 
         testCases.map(runTest);
       });
@@ -378,6 +397,8 @@ export const generateGroupsTests = (args: TestArgs) => {
           { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
         ];
 
+        keepSingleTestForSafari(testCases);
+
         testCases.map(runTest);
       });
 
@@ -427,6 +448,8 @@ export const generateGroupsTests = (args: TestArgs) => {
           { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
           { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
         ];
+
+        keepSingleTestForSafari(testCases);
 
         testCases.map(runTest);
       });
