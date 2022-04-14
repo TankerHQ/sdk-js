@@ -9,11 +9,6 @@ import type { TankerFactory } from './Device';
 import { requestManagement, requestTrustchaind } from './request';
 import { managementSettings, oidcSettings, storageSettings } from './config';
 
-function toUnpaddedSafeBase64(str: Uint8Array): string {
-  const b64 = utils.toSafeBase64(str);
-  return b64.substring(0, b64.indexOf('='));
-}
-
 export type AppProvisionalUser = {
   target: string;
   value: string;
@@ -57,7 +52,7 @@ export class AppHelper {
   async _update(body: Record<string, any>): Promise<void> {
     await requestManagement({
       method: 'PATCH',
-      path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`,
+      path: `/v1/apps/${utils.toRawUrlBase64(this.appId)}`,
       body,
     });
   }
@@ -208,7 +203,7 @@ export class AppHelper {
   async cleanup(): Promise<void> {
     await requestManagement({
       method: 'DELETE',
-      path: `/v1/apps/${toUnpaddedSafeBase64(this.appId)}`,
+      path: `/v1/apps/${utils.toRawUrlBase64(this.appId)}`,
     });
   }
 

@@ -136,6 +136,10 @@ export function toSafeBase64(bytes: Uint8Array): safeb64string {
   return toBase64(bytes).replace(/[/+]/g, base64ToUrlsafeReplacer);
 }
 
+export function toRawUrlBase64(bytes: Uint8Array): safeb64string {
+  return toSafeBase64(bytes).replace(/=/g, () => '');
+}
+
 function base64FromUrlsafeReplacer(char: string) {
   if (char === '_') return '/';
   if (char === '-') return '+';
