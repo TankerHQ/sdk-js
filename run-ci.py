@@ -175,13 +175,13 @@ def publish_npm_package(package_name: str, version: str) -> None:
 
 def run_tests_in_node() -> None:
     tankerci.js.run_yarn("exec", "--", "node", "--version")
-    tankerci.js.run_yarn("build:ts")
+    tankerci.js.run_yarn("build:all")
     tankerci.js.run_yarn("coverage")
 
 
 def lint() -> None:
     tankerci.js.yarn_install_deps()
-    tankerci.js.run_yarn("build:ts")
+    tankerci.js.run_yarn("build:all")
     tankerci.js.run_yarn("lint:js")
     tankerci.js.run_yarn("lint:ts:all")
     tankerci.js.run_yarn("lint:compat:all")
@@ -218,7 +218,7 @@ def e2e(*, use_local_sources: bool) -> None:
         tankerci.run("poetry", "install")
     with tankerci.working_directory(base_path / "sdk-js"):
         tankerci.js.yarn_install()
-        tankerci.js.run_yarn("build:ts")
+        tankerci.js.run_yarn("build:all")
     with tankerci.working_directory(base_path / "qa-python-js"):
         tankerci.run("poetry", "install")
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
