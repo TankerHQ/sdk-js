@@ -7,6 +7,10 @@ import { InternalError } from '@tanker/errors';
 export const TABLE = 'oidc_nonces';
 const EXPIRATION = 60 * 60 * 1000; // 1h in milliseconds
 
+// nonce is in raw url base64 encode and start with a lead `_`
+// pouchdb rejects entry with an leading `_`
+export const idFromNonce = (nonce: string) => `id:${nonce}`;
+
 export class OidcStore {
   declare _ds: DataStore;
 
@@ -27,18 +31,19 @@ export class OidcStore {
   }
 
   async saveOidcNonce(nonce: Key, privateNonceKey: Key): Promise<void> {
-    const b64OidcNonce = utils.toBase64(nonce);
+    const b64OidcNonce = utils.toRawUrlBase64(nonce);
+    const id = idFromNonce(b64OidcNonce);
     // We never want to overwrite an existing nonce
-    if (await this._ds.first(TABLE, { selector: { _id: b64OidcNonce } }) !== undefined) {
+    if (await this._ds.first(TABLE, { selector: { _id: id } }) !== undefined) {
       throw new InternalError('Nonce already used');
     }
 
-    await this._ds.put(TABLE, { _id: b64OidcNonce, b64PrivateNonceKey: privateNonceKey, createdAt: Date.now() });
+    await this._ds.put(TABLE, { _id: id, b64PrivateNonceKey: privateNonceKey, createdAt: Date.now() });
   }
 
   async removeOidcNonce(nonce: b64string): Promise<void> {
     try {
-      await this._ds.delete(TABLE, nonce);
+      await this._ds.delete(TABLE, idFromNonce(nonce));
     } catch (e) {
       if (!(e instanceof dbErrors.RecordNotFound)) {
         throw e;
@@ -48,7 +53,7 @@ export class OidcStore {
 
   async findOidcNonce(nonce: b64string): Promise<Key | void> {
     try {
-      const result = await this._ds.get(TABLE, nonce);
+      const result = await this._ds.get(TABLE, idFromNonce(nonce));
       return result['b64PrivateNonceKey']!;
     } catch (e) {
       if (e instanceof dbErrors.RecordNotFound) {

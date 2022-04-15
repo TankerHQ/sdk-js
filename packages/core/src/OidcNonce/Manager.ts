@@ -16,7 +16,7 @@ export class OidcNonceManager {
   async createOidcNonce(): Promise<b64string> {
     const { privateKey, publicKey } = tcrypto.makeSignKeyPair();
     await this._oidcStore.saveOidcNonce(publicKey, privateKey);
-    return utils.toBase64(publicKey);
+    return utils.toRawUrlBase64(publicKey);
   }
 
   setTestNonce(testNonce: b64string) {
@@ -67,7 +67,7 @@ export class OidcNonceManager {
       throw new InvalidArgument(`ID token could not be decoded: ${(e as Error).message}}`);
     }
 
-    utils.assertB64StringWithSize(payload.nonce, 'oidcIdToken.nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
+    utils.assertRawUrlB64StringWithSize(payload.nonce, 'oidcIdToken.nonce', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
     return payload.nonce;
   };
 }
