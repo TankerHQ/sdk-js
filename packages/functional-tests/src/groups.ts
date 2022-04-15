@@ -1,557 +1,708 @@
 import { errors } from '@tanker/core';
-import type { Tanker, b64string } from '@tanker/core';
-import { getPublicIdentity, createIdentity } from '@tanker/identity';
-import { expect, uuid } from '@tanker/test-utils';
+import { utils } from '@tanker/crypto';
+import { getPublicIdentity, createIdentity, createProvisionalIdentity } from '@tanker/identity';
+import { expect } from '@tanker/test-utils';
 
-import type { AppHelper, AppProvisionalUser, TestArgs } from './helpers';
-import { expectDecrypt } from './helpers';
+import type { AppHelper, TestArgs } from './helpers';
+import { generateUserSession, generateProvisionalUserSession, UserSession, ProvisionalUserSession, encrypt, getPublicIdentities, attachProvisionalIdentities, checkGroup, checkDecrypt, checkDecryptFails } from './helpers';
+
+// These tests make a lot of devices and thus interact too much with IndexedDB
+// which regularly times out on Safari.
+const keepSingleTestForSafari = <T>(a: Array<T>) => {
+  if (global.navigator && /^((?!chrome|android).)*safari/i.test(global.navigator.userAgent)) {
+    while (a.length > 1)
+      a.shift();
+  }
+};
 
 export const generateGroupsTests = (args: TestArgs) => {
   describe('groups', () => {
-    let aliceLaptop: Tanker;
-    let alicePublicIdentity: b64string;
-    let bobLaptop: Tanker;
-    let bobPublicIdentity: b64string;
-    let charlieLaptop: Tanker;
-    let charliePublicIdentity: b64string;
-    let unknownPublicIdentity: b64string;
     let appHelper: AppHelper;
-    const clearText = "Two's company, three's a crowd";
 
     before(async () => {
       ({ appHelper } = args);
-      const aliceIdentity = await appHelper.generateIdentity();
-      alicePublicIdentity = await getPublicIdentity(aliceIdentity);
-      aliceLaptop = args.makeTanker();
-      await aliceLaptop.start(aliceIdentity);
-      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
-
-      const bobIdentity = await appHelper.generateIdentity();
-      bobPublicIdentity = await getPublicIdentity(bobIdentity);
-      bobLaptop = args.makeTanker();
-      await bobLaptop.start(bobIdentity);
-      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-
-      const charlieIdentity = await args.appHelper.generateIdentity();
-      charliePublicIdentity = await getPublicIdentity(charlieIdentity);
-      charlieLaptop = args.makeTanker();
-      await charlieLaptop.start(charlieIdentity);
-      await charlieLaptop.registerIdentity({ passphrase: 'passphrase' });
-
-      unknownPublicIdentity = await getPublicIdentity(await appHelper.generateIdentity('galette'));
     });
 
     after(async () => {
-      await Promise.all([
-        aliceLaptop.stop(),
-        bobLaptop.stop(),
-        charlieLaptop.stop(),
-      ]);
+      await UserSession.closeAllSessions();
     });
 
-    it('creates a group and encrypts for it', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId], shareWithSelf: false });
+    type GroupConfig = {
+      nbUsers: number,
+      nbProvisionalUsersEmail: number,
+      nbProvisionalUsersPhoneNumber: number,
+    };
 
-      await expectDecrypt([aliceLaptop, bobLaptop], clearText, encrypted);
+    const describeTest = (config: GroupConfig) => `${config.nbUsers} users, ${config.nbProvisionalUsersEmail} email provisional users, and ${config.nbProvisionalUsersPhoneNumber} phone number provisional users`;
+
+    describe('createGroup', () => {
+      describe('create group with any kind of members', () => {
+        function runTest(config: GroupConfig) {
+          it(describeTest(config), async () => {
+            const owner = await UserSession.create(appHelper);
+
+            const users = await generateUserSession(appHelper, config.nbUsers);
+            const provisionalUsers = await generateProvisionalUserSession(appHelper, config.nbProvisionalUsersEmail, config.nbProvisionalUsersPhoneNumber);
+
+            const publicIdentities = getPublicIdentities(...users, ...provisionalUsers);
+
+            const myGroup = await owner.session.createGroup(publicIdentities);
+
+            const encryptedBuffer = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await attachProvisionalIdentities(provisionalUsers);
+            await checkGroup(myGroup,
+              [encryptedBuffer],
+              users.concat(provisionalUsers),
+              []);
+          });
+        }
+
+        const testCases = [
+          { nbUsers: 1, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 2 },
+          { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
+        ];
+
+        keepSingleTestForSafari(testCases);
+
+        testCases.map(runTest);
+      });
+
+      describe('create group with duplicate members', () => {
+        function runTest(config: GroupConfig) {
+          it(describeTest(config), async () => {
+            const owner = await UserSession.create(appHelper);
+
+            const users = await generateUserSession(appHelper, config.nbUsers);
+            const provisionalUsers = await generateProvisionalUserSession(appHelper, config.nbProvisionalUsersEmail, config.nbProvisionalUsersPhoneNumber);
+
+            const publicIdentities = getPublicIdentities(...users, ...provisionalUsers);
+
+            if (users[0])
+              publicIdentities.push(users[0].spublicIdentity);
+            if (provisionalUsers[0])
+              publicIdentities.push(provisionalUsers[0].spublicIdentity);
+
+            const myGroup = await owner.session.createGroup(publicIdentities);
+
+            const encryptedBuffer = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await attachProvisionalIdentities(provisionalUsers);
+            await checkGroup(myGroup,
+              [encryptedBuffer],
+              users.concat(provisionalUsers),
+              []);
+          });
+        }
+
+        const testCases = [
+          { nbUsers: 2, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 2 },
+          { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
+        ];
+
+        keepSingleTestForSafari(testCases);
+
+        testCases.map(runTest);
+      });
+
+      it('create group with an empty list', async () => {
+        const alice = await UserSession.create(appHelper);
+        await expect(alice.session.createGroup([]))
+          .to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('create group with invalid identities', async () => {
+        const alice = await UserSession.create(appHelper);
+        await expect(alice.session.createGroup(['AAAA=']))
+          .to.be.rejectedWith(errors.InvalidArgument, 'AAAA=');
+      });
+
+      it('create group with an unknown user', async () => {
+        const alice = await UserSession.create(appHelper);
+        const user = await appHelper.makeUser();
+        await expect(alice.session.createGroup([user.spublicIdentity]))
+          .to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('create group with a user from another trustchain', async () => {
+        const alice = await UserSession.create(appHelper);
+        const otherTrustchain = {
+          id: 'gOhJDFYKK/GNScGOoaZ1vLAwxkuqZCY36IwEo4jcnDE=',
+          sk: 'D9jiQt7nB2IlRjilNwUVVTPsYkfbCX0PelMzx5AAXIaVokZ71iUduWCvJ9Akzojca6lvV8u1rnDVEdh7yO6JAQ==',
+        };
+
+        const wrongIdentity = await createIdentity(otherTrustchain.id, otherTrustchain.sk, 'someone');
+        const wrongPublicIdentity = await getPublicIdentity(wrongIdentity);
+        await expect(alice.session.createGroup([wrongPublicIdentity]))
+          .to.be.rejectedWith(errors.InvalidArgument, 'Invalid appId for identities');
+      });
+
+      it('create group with an attached provisional identity', async () => {
+        const alice = await UserSession.create(appHelper);
+        const provisionalUser = await ProvisionalUserSession.create(appHelper);
+        await provisionalUser.attach();
+        await expect(alice.session.createGroup([provisionalUser.spublicIdentity]))
+          .to.be.rejectedWith(errors.IdentityAlreadyAttached);
+      });
+
+      it('create group with too many users', async () => {
+        const alice = await UserSession.create(appHelper);
+        const identities = [];
+        for (let i = 0; i < 1001; ++i)
+          identities.push(await getPublicIdentity(await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'email', `bobtest${i}@tanker.io`)));
+        await expect(alice.session.createGroup(identities))
+          .to.be.rejectedWith(errors.GroupTooBig);
+      });
+
+      it('create group without self in group', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+
+        const groupId = await alice.session.createGroup([bob.spublicIdentity]);
+
+        const encryptedBuffer = await encrypt(bob.session, { shareWithGroups: [groupId] });
+
+        await checkDecryptFails([alice], [encryptedBuffer]);
+
+        // We can't assert this with decrypt because the server will not send the
+        // key publish. This is the only way I have found to assert that.
+        // eslint-disable-next-line no-underscore-dangle
+        await expect(alice.session._session!._storage.groupStore._findGroupsByGroupId([groupId])).to.eventually.deep.equal([]);
+      });
     });
 
-    it('encrypts for two groups', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      const groupId2 = await aliceLaptop.createGroup([alicePublicIdentity, charliePublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId, groupId2] });
+    describe('updateGroup(usersToAdd)', () => {
+      describe('add any kind of members to group', () => {
+        const runTest = (config: GroupConfig) => {
+          it(describeTest(config), async () => {
+            const owner = await UserSession.create(appHelper);
 
-      await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
+            const users = await generateUserSession(appHelper, config.nbUsers);
+            const provisionalUsers = await generateProvisionalUserSession(appHelper, config.nbProvisionalUsersEmail, config.nbProvisionalUsersPhoneNumber);
+
+            const publicIdentities = getPublicIdentities(...users, ...provisionalUsers);
+            const myGroup = await owner.session.createGroup([owner.spublicIdentity]);
+
+            const encryptedBuffer = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await owner.session.updateGroupMembers(myGroup, { usersToAdd: publicIdentities });
+
+            const encryptedBuffer2 = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await attachProvisionalIdentities(provisionalUsers);
+            await checkGroup(myGroup,
+              [encryptedBuffer, encryptedBuffer2],
+              users.concat(provisionalUsers),
+              []);
+          });
+        };
+
+        const testCases = [
+          { nbUsers: 1, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 2 },
+          { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
+        ];
+
+        keepSingleTestForSafari(testCases);
+
+        testCases.map(runTest);
+      });
+
+      describe('add duplicate members to group', () => {
+        const runTest = (config: GroupConfig) => {
+          it(describeTest(config), async () => {
+            const owner = await UserSession.create(appHelper);
+
+            const users = await generateUserSession(appHelper, config.nbUsers);
+            const provisionalUsers = await generateProvisionalUserSession(appHelper, config.nbProvisionalUsersEmail, config.nbProvisionalUsersPhoneNumber);
+
+            const publicIdentities = getPublicIdentities(...users, ...provisionalUsers);
+            const myGroup = await owner.session.createGroup([owner.spublicIdentity]);
+
+            if (users[0])
+              publicIdentities.push(users[0].spublicIdentity);
+            if (provisionalUsers[0])
+              publicIdentities.push(provisionalUsers[0].spublicIdentity);
+
+            const encryptedBuffer = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await owner.session.updateGroupMembers(myGroup, { usersToAdd: publicIdentities });
+
+            const encryptedBuffer2 = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await attachProvisionalIdentities(provisionalUsers);
+            await checkGroup(myGroup,
+              [encryptedBuffer, encryptedBuffer2],
+              users.concat(provisionalUsers),
+              []);
+          });
+        };
+
+        const testCases = [
+          { nbUsers: 2, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 2 },
+          { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
+        ];
+
+        keepSingleTestForSafari(testCases);
+
+        testCases.map(runTest);
+      });
+
+      describe('add any kind of members multiple times to group', () => {
+        const runTest = (config: GroupConfig) => {
+          it(describeTest(config), async () => {
+            const owner = await UserSession.create(appHelper);
+
+            const users = await generateUserSession(appHelper, config.nbUsers);
+            const provisionalUsers = await generateProvisionalUserSession(appHelper, config.nbProvisionalUsersEmail, config.nbProvisionalUsersPhoneNumber);
+
+            const publicIdentities = getPublicIdentities(...users, ...provisionalUsers);
+            const myGroup = await owner.session.createGroup([owner.spublicIdentity]);
+
+            const encryptedBuffer = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await owner.session.updateGroupMembers(myGroup, { usersToAdd: publicIdentities });
+            await owner.session.updateGroupMembers(myGroup, { usersToAdd: publicIdentities });
+
+            const encryptedBuffer2 = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await attachProvisionalIdentities(provisionalUsers);
+            await checkGroup(myGroup,
+              [encryptedBuffer, encryptedBuffer2],
+              users.concat(provisionalUsers),
+              []);
+          });
+        };
+
+        const testCases = [
+          { nbUsers: 2, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 2 },
+          { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
+        ];
+
+        keepSingleTestForSafari(testCases);
+
+        testCases.map(runTest);
+      });
+
+      it('add too many members at once', async () => {
+        const alice = await UserSession.create(appHelper);
+
+        const groupId = await alice.session.createGroup([alice.spublicIdentity]);
+
+        const identities = [];
+        for (let i = 0; i < 1001; ++i)
+          identities.push(
+            await getPublicIdentity(await createProvisionalIdentity(
+              utils.toBase64(appHelper.appId), 'email', `bobtest${i}@tanker.io`,
+            )),
+          );
+        expect(alice.session.updateGroupMembers(groupId, { usersToAdd: identities }))
+          .to.be.rejectedWith(errors.GroupTooBig);
+      });
+
+      it('transitively add users to a group', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const charlie = await UserSession.create(appHelper);
+
+        const groupId = await alice.session.createGroup([bob.spublicIdentity]);
+        await bob.session.updateGroupMembers(groupId, { usersToAdd: [charlie.spublicIdentity] });
+        await charlie.session.updateGroupMembers(groupId, { usersToAdd: [alice.spublicIdentity] });
+
+        const encryptedBuffer = await encrypt(charlie.session, { shareWithGroups: [groupId] });
+
+        await checkGroup(groupId, [encryptedBuffer], [alice, bob, charlie], []);
+      });
     });
 
-    it('encrypts for a non-cached group', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      const encrypted = await charlieLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      await expectDecrypt([aliceLaptop], clearText, encrypted);
-    });
-
-    it('should create a group, encrypt and then share with it', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText);
-      const resourceId = await aliceLaptop.getResourceId(encrypted);
-      await aliceLaptop.share([resourceId], { shareWithGroups: [groupId] });
-
-      await expectDecrypt([bobLaptop], clearText, encrypted);
-    });
-
-    it('should encrypt and then share with two groups', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      const groupId2 = await aliceLaptop.createGroup([alicePublicIdentity, charliePublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText);
-      const resourceId = await aliceLaptop.getResourceId(encrypted);
-      await aliceLaptop.share([resourceId], { shareWithGroups: [groupId, groupId2] });
-
-      await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
-    });
-
-    it('throws on groupCreation with empty users', async () => {
-      await expect(aliceLaptop.createGroup([]))
-        .to.be.rejectedWith(errors.InvalidArgument);
-    });
-
-    it('throws on groupCreation with identities from another trustchain', async () => {
-      const userId = uuid.v4();
-      const otherTrustchain = {
-        id: 'gOhJDFYKK/GNScGOoaZ1vLAwxkuqZCY36IwEo4jcnDE=',
-        sk: 'D9jiQt7nB2IlRjilNwUVVTPsYkfbCX0PelMzx5AAXIaVokZ71iUduWCvJ9Akzojca6lvV8u1rnDVEdh7yO6JAQ==',
+    describe('updateGroup(usersToRemove)', () => {
+      const makeRemoveTestViews = (
+        users: Array<UserSession>,
+        provisionalUsers: Array<ProvisionalUserSession>,
+        nbUsers: number,
+        nbProvisionalUsersEmail: number,
+      ): [Array<UserSession>, Array<UserSession>, Array<UserSession>, Array<UserSession>] => {
+        const usersToRemove = users.slice(0, nbUsers);
+        const usersToKeep = users.slice(nbUsers);
+        const provisionalUsersToRemove = provisionalUsers.slice(0, nbProvisionalUsersEmail);
+        const provisionalUsersToKeep = provisionalUsers.slice(nbProvisionalUsersEmail);
+        return [usersToRemove,
+          usersToKeep,
+          provisionalUsersToRemove,
+          provisionalUsersToKeep];
       };
 
-      const wrongIdentity = await createIdentity(otherTrustchain.id, otherTrustchain.sk, userId);
-      const wrongPublicIdentity = await getPublicIdentity(wrongIdentity);
-      await expect(aliceLaptop.createGroup([wrongPublicIdentity]))
-        .to.be.rejectedWith(errors.InvalidArgument, 'Invalid appId for identities');
-    });
+      describe('remove any kind of members from group', () => {
+        const runTest = (config: GroupConfig) => {
+          it(describeTest(config), async () => {
+            const owner = await UserSession.create(appHelper);
 
-    it('should not keep the key if we are not part of the group', async () => {
-      const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
+            const users = await generateUserSession(appHelper, 2);
+            const provisionalUsers = await generateProvisionalUserSession(appHelper, 2, 2);
 
-      // eslint-disable-next-line no-underscore-dangle
-      if (!aliceLaptop._session)
-        throw new Error('_session cannot be null');
+            const [usersToRemove, usersToKeep, provisionalUsersToRemove, provisionalUsersToKeep] = makeRemoveTestViews(users, provisionalUsers, config.nbUsers, config.nbProvisionalUsersEmail + config.nbProvisionalUsersPhoneNumber);
 
-      // We can't assert this with decrypt because the server will not send the
-      // key publish. This is the only way I have found to assert that.
-      // eslint-disable-next-line no-underscore-dangle
-      await expect(aliceLaptop._session._storage.groupStore._findGroupsByGroupId([groupId])).to.eventually.deep.equal([]);
-    });
+            const publicIdentities = getPublicIdentities(...users, ...provisionalUsers, owner);
 
-    it('should add a member to a group', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+            const publicIdentitiesToRemove = getPublicIdentities(...usersToRemove, ...provisionalUsersToRemove);
 
-      await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
+            const myGroup = await owner.session.createGroup(publicIdentities);
 
-      // Also test resources shared after the group add
-      const encrypted2 = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+            const encryptedBuffer = await encrypt(owner.session, { shareWithGroups: [myGroup] });
 
-      await expectDecrypt([bobLaptop], clearText, encrypted);
-      await expectDecrypt([bobLaptop], clearText, encrypted2);
-    });
+            await owner.session.updateGroupMembers(
+              myGroup, { usersToRemove: publicIdentitiesToRemove },
+            );
 
-    it('should add two members to a group', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+            const encryptedBuffer2 = await encrypt(owner.session, { shareWithGroups: [myGroup] });
 
-      await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, charliePublicIdentity] });
+            await attachProvisionalIdentities(provisionalUsers);
+            await checkGroup(
+              myGroup,
+              [encryptedBuffer, encryptedBuffer2],
+              usersToKeep.concat(provisionalUsersToKeep),
+              usersToRemove.concat(provisionalUsersToRemove),
+            );
+          });
+        };
 
-      await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
-    });
+        const testCases = [
+          { nbUsers: 1, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 2 },
+          { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
+        ];
 
-    it('throws on updateGroupMembers with identities from another trustchain', async () => {
-      const userId = uuid.v4();
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      const otherTrustchain = {
-        id: 'gOhJDFYKK/GNScGOoaZ1vLAwxkuqZCY36IwEo4jcnDE=',
-        sk: 'D9jiQt7nB2IlRjilNwUVVTPsYkfbCX0PelMzx5AAXIaVokZ71iUduWCvJ9Akzojca6lvV8u1rnDVEdh7yO6JAQ==',
-      };
+        keepSingleTestForSafari(testCases);
 
-      const wrongIdentity = await createIdentity(otherTrustchain.id, otherTrustchain.sk, userId);
-      const wrongPublicIdentity = await getPublicIdentity(wrongIdentity);
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [wrongPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'Invalid appId for identities');
-    });
-
-    it('should remove a member from a group', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
-
-      const encrypted2 = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      // Bob was removed, he can't decrypt or update the group anymore
-      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-      await expect(bobLaptop.decrypt(encrypted2)).to.be.rejectedWith(errors.InvalidArgument);
-      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'You are not a member');
-      await expect(bobLaptop.updateGroupMembers(groupId, { usersToRemove: [charliePublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'You are not a member');
-
-      // Charlie was not removed, he should still be able to decrypt
-      await expectDecrypt([charlieLaptop], clearText, encrypted);
-      await expectDecrypt([charlieLaptop], clearText, encrypted2);
-    });
-
-    it('should remove two members from a group', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
-      const encryptedData = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity, charliePublicIdentity] })).to.be.fulfilled;
-
-      await expect(bobLaptop.decrypt(encryptedData)).to.be.rejectedWith(errors.InvalidArgument);
-      await expect(charlieLaptop.decrypt(encryptedData)).to.be.rejectedWith(errors.InvalidArgument);
-    });
-
-    it('should allow access to resources when adding back a member', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      await aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] });
-
-      // Bob was removed, he can't decrypt anymore
-      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-
-      await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
-
-      // Bob was added back, he can decrypt
-      await expectDecrypt([bobLaptop], clearText, encrypted);
-    });
-
-    it('removes two group members', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity, charliePublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [charliePublicIdentity] })).to.be.fulfilled;
-
-      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-      await expect(charlieLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-    });
-
-    it('should add a member to a group twice then remove it', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] })).to.be.fulfilled;
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
-
-      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-    });
-
-    it('throws when removing a member from a group twice', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.fulfilled;
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
-    });
-
-    it('should accept adding duplicate users', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, bobPublicIdentity] })).to.be.fulfilled;
-
-      await expectDecrypt([bobLaptop], clearText, encrypted);
-    });
-
-    it('should accept removing duplicate users', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity, bobPublicIdentity] })).to.be.fulfilled;
-
-      await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-    });
-
-    it('throws when removing a member not in the group', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [charliePublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
-    });
-
-    it('throws on groupCreation with invalid user', async () => {
-      await expect(aliceLaptop.createGroup([alicePublicIdentity, unknownPublicIdentity]))
-        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
-    });
-
-    it('throws on groupUpdate by adding invalid users', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [unknownPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
-    });
-
-    it('throws on groupUpdate by removing invalid users', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [unknownPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
-    });
-
-    it('throws on groupUpdate with invalid group ID', async () => {
-      const badGroupID = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-      await expect(aliceLaptop.updateGroupMembers(badGroupID, { usersToAdd: [alicePublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, badGroupID);
-    });
-
-    it('throws on groupUpdate with mix valid/invalid users', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity, unknownPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, unknownPublicIdentity);
-    });
-
-    it('throws on groupUpdate by adding and removing nobody', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [], usersToRemove: [] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'no members to add or remove');
-    });
-
-    it('throws on groupUpdate by removing the last member', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [alicePublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'removing all members');
-    });
-
-    it('throws when adding and removing the same user', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity], usersToRemove: [bobPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'both added to and removed');
-    });
-
-    it('should not be able to add a user to a group you are not in', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-      await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'Current user is not a group member');
-    });
-
-    it('should not be able to remove a user from a group you are not in', async () => {
-      const groupId = await aliceLaptop.createGroup([alicePublicIdentity, bobPublicIdentity]);
-      await expect(charlieLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] }))
-        .to.be.rejectedWith(errors.InvalidArgument, 'Current user is not a group member');
-    });
-
-    describe('with email (+second phone) provisionals', () => {
-      let provisional: AppProvisionalUser;
-      let provisional2: AppProvisionalUser;
-
-      beforeEach(async () => {
-        provisional = await appHelper.generateEmailProvisionalIdentity();
-        provisional2 = await appHelper.generatePhoneNumberProvisionalIdentity();
+        testCases.map(runTest);
       });
 
-      it('creates a group with provisional members', async () => {
-        const groupId = await aliceLaptop.createGroup([provisional.publicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+      describe('remove duplicate members from group', () => {
+        const runTest = (config: GroupConfig) => {
+          it(describeTest(config), async () => {
+            const owner = await UserSession.create(appHelper);
 
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
+            const users = await generateUserSession(appHelper, 2);
+            const provisionalUsers = await generateProvisionalUserSession(appHelper, 2, 2);
 
-        await expectDecrypt([bobLaptop], clearText, encrypted);
+            const [usersToRemove, usersToKeep, provisionalUsersToRemove, provisionalUsersToKeep] = makeRemoveTestViews(users, provisionalUsers, config.nbUsers, config.nbProvisionalUsersEmail + config.nbProvisionalUsersPhoneNumber);
+
+            const publicIdentities = getPublicIdentities(...users, ...provisionalUsers, owner);
+
+            const publicIdentitiesToRemove = getPublicIdentities(...usersToRemove, ...provisionalUsersToRemove);
+
+            if (usersToRemove[0])
+              publicIdentitiesToRemove.push(usersToRemove[0].spublicIdentity);
+            if (provisionalUsersToRemove[0])
+              publicIdentitiesToRemove.push(provisionalUsersToRemove[0].spublicIdentity);
+
+            const myGroup = await owner.session.createGroup(publicIdentities);
+
+            const encryptedBuffer = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await owner.session.updateGroupMembers(
+              myGroup, { usersToRemove: publicIdentitiesToRemove },
+            );
+
+            const encryptedBuffer2 = await encrypt(owner.session, { shareWithGroups: [myGroup] });
+
+            await attachProvisionalIdentities(provisionalUsers);
+            await checkGroup(
+              myGroup,
+              [encryptedBuffer, encryptedBuffer2],
+              usersToKeep.concat(provisionalUsersToKeep),
+              usersToRemove.concat(provisionalUsersToRemove),
+            );
+          });
+        };
+
+        const testCases = [
+          { nbUsers: 2, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 0 },
+          { nbUsers: 0, nbProvisionalUsersEmail: 0, nbProvisionalUsersPhoneNumber: 2 },
+          { nbUsers: 1, nbProvisionalUsersEmail: 1, nbProvisionalUsersPhoneNumber: 1 },
+          { nbUsers: 2, nbProvisionalUsersEmail: 2, nbProvisionalUsersPhoneNumber: 2 },
+        ];
+
+        keepSingleTestForSafari(testCases);
+
+        testCases.map(runTest);
       });
 
-      it('adds provisional members to a group', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity] });
-
-        const encrypted2 = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await expectDecrypt([bobLaptop], clearText, encrypted);
-        await expectDecrypt([bobLaptop], clearText, encrypted2);
+      it('update group members with empty lists', async () => {
+        const alice = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([alice.spublicIdentity]);
+        await expect(alice.session.updateGroupMembers(groupId, { usersToAdd: [], usersToRemove: [] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'no members to add or remove');
       });
 
-      it('adds two provisional members to a group', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity, provisional2.publicIdentity] });
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(charlieLaptop, provisional2);
-
-        await expectDecrypt([bobLaptop, charlieLaptop], clearText, encrypted);
+      it('update group members with invalid identities', async () => {
+        const alice = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([alice.spublicIdentity]);
+        await expect(alice.session.updateGroupMembers(groupId, { usersToAdd: ['AAAA='] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'AAAA=');
+        await expect(alice.session.updateGroupMembers(groupId, { usersToRemove: ['AAAA='] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'AAAA=');
       });
 
-      it('removes a provisional member from a group', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, charliePublicIdentity, provisional.publicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] });
-
-        const encrypted2 = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        // provisional was removed so Bob can't decrypt even after the claim
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-        await expect(bobLaptop.decrypt(encrypted2)).to.be.rejectedWith(errors.InvalidArgument);
-        await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [charliePublicIdentity] }))
-          .to.be.rejectedWith(errors.InvalidArgument, 'You are not a member of this group');
-
-        // Charlie is still part of the group and can decrypt
-        await expectDecrypt([charlieLaptop], clearText, encrypted);
-        await expectDecrypt([charlieLaptop], clearText, encrypted2);
+      it('update group members with an unknown user', async () => {
+        const alice = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([alice.spublicIdentity]);
+        const user = await appHelper.makeUser();
+        await expect(alice.session.updateGroupMembers(groupId, { usersToAdd: [user.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument);
+        // Here we test a removal of a non-registered user, however the detected error
+        // is not that the user is unknown but that the user is not a member of the
+        // group.
+        await expect(alice.session.updateGroupMembers(groupId, { usersToRemove: [user.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument);
       });
 
-      it('removes two provisional members from a group', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity, provisional2.publicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity, provisional2.publicIdentity] });
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(bobLaptop, provisional2);
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
+      it('update group members with a user from another trustchain', async () => {
+        const alice = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([alice.spublicIdentity]);
+        const otherTrustchain = {
+          id: 'gOhJDFYKK/GNScGOoaZ1vLAwxkuqZCY36IwEo4jcnDE=',
+          sk: 'D9jiQt7nB2IlRjilNwUVVTPsYkfbCX0PelMzx5AAXIaVokZ71iUduWCvJ9Akzojca6lvV8u1rnDVEdh7yO6JAQ==',
+        };
+        const wrongIdentity = await createIdentity(otherTrustchain.id, otherTrustchain.sk, 'someone');
+        const wrongPublicIdentity = await getPublicIdentity(wrongIdentity);
+        await expect(alice.session.updateGroupMembers(groupId, { usersToAdd: [wrongPublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'Invalid appId for identities');
       });
 
-      it('should allow access to resources when adding back a member as a provisional identity', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] });
-
-        // Bob was never added, he can't decrypt
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-
-        await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity] });
-
-        // Bob's provisional identity was added back, he can claim and decrypt
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await expectDecrypt([bobLaptop], clearText, encrypted);
-      });
-
-      it('should allow access to resources when adding back a member as a permanent identity', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] });
-
-        // Bob was removed, he can't decrypt anymore
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-
-        await aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [bobPublicIdentity] });
-
-        // Bob was added back, he can decrypt
-        await expectDecrypt([bobLaptop], clearText, encrypted);
-      });
-
-      it('should add a provisional member to a group twice then remove it', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity] })).to.be.fulfilled;
-        await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity] })).to.be.fulfilled;
-        await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] })).to.be.fulfilled;
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-      });
-
-      it('should add duplicate provisional users', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity, provisional.publicIdentity] })).to.be.fulfilled;
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await expectDecrypt([bobLaptop], clearText, encrypted);
-      });
-
-      it('should remove duplicate provisional users', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
-
-        await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity, provisional.publicIdentity] })).to.be.fulfilled;
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-      });
-
-      it('throws when adding and removing the same provisional user', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
-        await expect(aliceLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity], usersToRemove: [provisional.publicIdentity] }))
+      it('update group members adding and removing the same user', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([alice.spublicIdentity]);
+        await expect(alice.session.updateGroupMembers(groupId, { usersToAdd: [bob.spublicIdentity], usersToRemove: [bob.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'both added to and removed');
+        const provisionalUser2 = await ProvisionalUserSession.create(appHelper);
+        await expect(alice.session.updateGroupMembers(groupId, { usersToAdd: [provisionalUser2.spublicIdentity], usersToRemove: [provisionalUser2.spublicIdentity] }))
           .to.be.rejectedWith(errors.InvalidArgument, 'both added to and removed');
       });
 
-      it('fails when creating a group with an already attached provisional identity with no share', async () => {
-        await appHelper.attachVerifyEmailProvisionalIdentity(aliceLaptop, provisional);
-
-        await expect(bobLaptop.createGroup([provisional.publicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+      it('update group members with invalid group id', async () => {
+        const alice = await UserSession.create(appHelper);
+        await expect(alice.session.updateGroupMembers('', { usersToAdd: [alice.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument);
+        const badGroupID = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+        await expect(alice.session.updateGroupMembers(badGroupID, { usersToAdd: [alice.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, badGroupID);
       });
 
-      it('fails when creating a group with an already attached provisional identity', async () => {
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
+      it('update group members with an attached provisional identity', async () => {
+        const alice = await UserSession.create(appHelper);
+        const provisionalUser = await ProvisionalUserSession.create(appHelper);
+        const groupId = await alice.session.createGroup(
+          [alice.spublicIdentity, provisionalUser.spublicIdentity],
+        );
+        await provisionalUser.attach();
 
-        await appHelper.attachVerifyEmailProvisionalIdentity(aliceLaptop, provisional);
-
-        await expect(bobLaptop.createGroup([provisional.publicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
-      });
-
-      it('fails when removing a claimed provisional user with the provisional identity', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
-
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
-
-        await expect(aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] }))
+        await expect(alice.session.updateGroupMembers(
+          groupId, { usersToAdd: [provisionalUser.spublicIdentity] },
+        ))
+          .to.be.rejectedWith(errors.IdentityAlreadyAttached);
+        await expect(alice.session.updateGroupMembers(
+          groupId, { usersToRemove: [provisionalUser.spublicIdentity] },
+        ))
           .to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
-      it('removes a member added by provisional identity after they have claimed it', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
+      it('remove a user who is not a member', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([alice.spublicIdentity]);
 
-        await appHelper.attachVerifyEmailProvisionalIdentity(bobLaptop, provisional);
+        await expect(alice.session.updateGroupMembers(groupId, { usersToRemove: [bob.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'Some users are not part of this group');
+      });
 
-        await aliceLaptop.updateGroupMembers(groupId, { usersToRemove: [bobPublicIdentity] });
-        const encrypted = await aliceLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+      it('remove all group members', async () => {
+        const alice = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([alice.spublicIdentity]);
+        await expect(alice.session.updateGroupMembers(groupId, { usersToRemove: [alice.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'removing all members');
+      });
 
-        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-        await expect(bobLaptop.updateGroupMembers(groupId, { usersToAdd: [charliePublicIdentity] })).to.be.rejectedWith(errors.InvalidArgument, 'You are not a member of this group');
+      it('update a group we are not part of', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const charlie = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([alice.spublicIdentity, charlie.spublicIdentity]);
+        await expect(bob.session.updateGroupMembers(groupId, { usersToAdd: [bob.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'not a group member');
+        await expect(bob.session.updateGroupMembers(groupId, { usersToRemove: [charlie.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, 'not a group member');
+      });
+
+      it('remove oneself from group', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+
+        const groupId = await alice.session.createGroup([alice.spublicIdentity, bob.spublicIdentity]);
+        await alice.session.updateGroupMembers(groupId, { usersToRemove: [alice.spublicIdentity] });
+
+        const encryptedBuffer = await encrypt(bob.session, { shareWithGroups: [groupId] });
+
+        await checkGroup(groupId,
+          [encryptedBuffer],
+          [],
+          [alice]);
+      });
+
+      it('update group with added and removed members', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const charlie = await UserSession.create(appHelper);
+
+        const groupId = await alice.session.createGroup([alice.spublicIdentity, charlie.spublicIdentity]);
+
+        const encryptedBuffer = await encrypt(alice.session, { shareWithGroups: [groupId] });
+
+        await alice.session.updateGroupMembers(groupId,
+          { usersToAdd: [bob.spublicIdentity], usersToRemove: [charlie.spublicIdentity] });
+
+        await checkGroup(
+          groupId,
+          [encryptedBuffer],
+          [bob],
+          [charlie],
+        );
+      });
+
+      it('remove claimed provisional group members as a permanent identity', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await ProvisionalUserSession.create(appHelper);
+
+        const myGroup = await alice.session.createGroup(
+          [alice.spublicIdentity, bob.spublicIdentity],
+        );
+
+        await bob.attach();
+
+        await alice.session.updateGroupMembers(myGroup, { usersToRemove: [bob.userSPublicIdentity] });
+
+        const encryptedBuffer = await encrypt(alice.session, { shareWithGroups: [myGroup] });
+
+        await checkGroup(
+          myGroup,
+          [encryptedBuffer],
+          [alice],
+          [bob],
+        );
       });
     });
 
-    describe('with phone number provisionals', () => {
-      let provisional: AppProvisionalUser;
+    describe('encrypt/share', () => {
+      it('encrypt for two groups', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const charlie = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([bob.spublicIdentity]);
+        const groupId2 = await alice.session.createGroup([charlie.spublicIdentity]);
+        const encrypted = await encrypt(alice.session, { shareWithGroups: [groupId, groupId2] });
 
-      beforeEach(async () => {
-        provisional = await appHelper.generatePhoneNumberProvisionalIdentity();
+        await checkDecrypt([bob, charlie], [encrypted]);
       });
 
-      it('fails when creating a group with an already attached provisional identity', async () => {
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.fulfilled;
+      it('share with one group', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([bob.spublicIdentity]);
+        const encrypted = await encrypt(alice.session, {});
+        const resourceId = await alice.session.getResourceId(encrypted.encryptedData);
+        await alice.session.share([resourceId], { shareWithGroups: [groupId] });
 
-        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
-
-        await expect(bobLaptop.createGroup([provisional.publicIdentity])).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+        await checkDecrypt([bob], [encrypted]);
       });
 
-      it('shares keys with added provisional group members', async () => {
-        const groupId = await bobLaptop.createGroup([bobPublicIdentity]);
+      it('share with two groups', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const charlie = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([bob.spublicIdentity]);
+        const groupId2 = await alice.session.createGroup([charlie.spublicIdentity]);
+        const encrypted = await encrypt(alice.session, {});
+        const resourceId = await alice.session.getResourceId(encrypted.encryptedData);
+        await alice.session.share([resourceId], { shareWithGroups: [groupId, groupId2] });
 
-        await bobLaptop.updateGroupMembers(groupId, { usersToAdd: [provisional.publicIdentity] });
-        const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+        await checkDecrypt([bob, charlie], [encrypted]);
+      });
+    });
 
-        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
+    describe('edge cases', () => {
+      it('create group, verify group, attach provisional identity and decrypt', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await ProvisionalUserSession.create(appHelper);
 
-        await expectDecrypt([aliceLaptop], clearText, encrypted);
+        const myGroup = await alice.session.createGroup([bob.spublicIdentity]);
+
+        const encryptedBuffer = await encrypt(alice.session, { shareWithGroups: [myGroup] });
+
+        // Fetch the group and add it into the GroupStore as ExternalGroup
+        await encrypt(bob.session, { shareWithGroups: [myGroup] });
+
+        await bob.attach();
+
+        // Upgrade it to InternalGroup
+        await checkDecrypt([bob], [encryptedBuffer]);
       });
 
-      it('should update group when claimed provisional users remove a member from group', async () => {
-        const groupId = await aliceLaptop.createGroup([alicePublicIdentity, provisional.publicIdentity]);
+      it('add to group, verify group, attach provisional identity and decrypt', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await ProvisionalUserSession.create(appHelper);
 
-        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(bobLaptop, provisional);
+        const myGroup = await alice.session.createGroup([alice.spublicIdentity]);
 
-        await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [alicePublicIdentity] });
-        const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+        const encryptedBuffer = await encrypt(alice.session, { shareWithGroups: [myGroup] });
 
-        await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
+        await alice.session.updateGroupMembers(myGroup, { usersToAdd: [bob.spublicIdentity] });
+
+        // Fetch the group and add it into the GroupStore as ExternalGroup
+        await encrypt(bob.session, { shareWithGroups: [myGroup] });
+
+        await bob.attach();
+
+        // Upgrade it to InternalGroup
+        await checkDecrypt([bob], [encryptedBuffer]);
       });
 
-      it('should not share keys with removed provisional group members', async () => {
-        const groupId = await bobLaptop.createGroup([bobPublicIdentity, provisional.publicIdentity]);
-        const encrypted = await bobLaptop.encrypt(clearText, { shareWithGroups: [groupId] });
+      it('decrypt when a key is shared through two groups', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
 
-        await bobLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] });
+        const myGroup = await alice.session.createGroup([bob.spublicIdentity]);
+        const myGroup2 = await alice.session.createGroup([bob.spublicIdentity]);
 
-        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
+        const encryptedBuffer = await encrypt(alice.session, { shareWithGroups: [myGroup, myGroup2] });
 
-        await expect(aliceLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
-      });
-
-      it('should fail when removing a claimed provisional user with the provisional identity', async () => {
-        const groupId = await bobLaptop.createGroup([bobPublicIdentity, provisional.publicIdentity]);
-
-        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
-
-        await expect(bobLaptop.updateGroupMembers(groupId, { usersToRemove: [provisional.publicIdentity] }))
-          .to.be.rejectedWith(errors.IdentityAlreadyAttached);
+        await checkDecrypt([bob], [encryptedBuffer]);
       });
     });
   });

@@ -20,7 +20,7 @@ import { generateConcurrencyTests } from './concurrency';
 
 export function generateFunctionalTests(
   name: string,
-  makeTanker: (appId: b64string) => Tanker,
+  makeTanker: (appId: b64string, storagePrefix: string) => Tanker,
   generateTestResources: () => TestResources,
 ) {
   if (!appdUrl || !managementSettings || !oidcSettings || !trustchaindUrl) {
@@ -46,10 +46,10 @@ export function generateFunctionalTests(
     before(async () => {
       await cryptoReady;
 
-      args.appHelper = await AppHelper.newApp();
+      args.appHelper = await AppHelper.newApp(makeTanker);
       const b64DefaultAppId = utils.toBase64(args.appHelper.appId);
 
-      args.makeTanker = (b64AppId = b64DefaultAppId) => makeTanker(b64AppId);
+      args.makeTanker = (b64AppId = b64DefaultAppId) => makeTanker(b64AppId, makePrefix());
 
       silencer.silence('warn', /deprecated/);
     });
