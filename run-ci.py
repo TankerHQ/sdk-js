@@ -65,13 +65,6 @@ configs: List[Config] = [
 ]
 
 
-private_modules = [
-    "@tanker/datastore-dexie-memory",
-    "@tanker/benchmarks",
-    "@tanker/functional-tests",
-]
-
-
 def find_procs_by_name(name: str) -> psutil.Process:
     "Return a list of processes matching 'name'."
     ls = []

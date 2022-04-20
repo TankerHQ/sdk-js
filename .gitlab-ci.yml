@@ -135,8 +135,6 @@ check/linux/nightly:
     - poetry run python run-ci.py check --runner linux --nightly
   tags: !reference [.tags/linux, tags]
 
-# Benchmark jobs are pinned on a machine to have more consistent results.
-
 .bench/common:
   extends: .variables/bridge-common
   stage: bench

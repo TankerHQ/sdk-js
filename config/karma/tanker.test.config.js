@@ -23,9 +23,6 @@ const plugin = new webpack.EnvironmentPlugin({
   TANKER_FILEKIT_BUCKET_REGION: null,
   TANKER_FILEKIT_CLIENT_ID: null,
   TANKER_FILEKIT_CLIENT_SECRET: null,
-
-  TANKER_BENCHMARK_APP_ID: null,
-  TANKER_BENCHMARK_APP_SECRET: null,
 });
 
 module.exports = { plugin };
