@@ -112,12 +112,6 @@ def onerror(navigator: str) -> Callable[..., None]:
     return fcn
 
 
-def delete_safari_state() -> None:
-    safari_user_path = Path(r"~/Library/Safari").expanduser()
-    if safari_user_path.exists():
-        shutil.rmtree(safari_user_path)
-
-
 def run_tests_in_browser_ten_times(*, runner: str) -> None:
     failures = list()
     for i in range(1, 11):
@@ -139,8 +133,6 @@ def run_tests_in_browser(*, runner: str) -> None:
     if runner == "linux":
         tankerci.js.run_yarn("karma", "--browsers", "ChromeInDocker")
     elif runner == "macos":
-        tankerci.run("killall", "Safari", check=False)
-        delete_safari_state()
         tankerci.js.run_yarn("karma", "--browsers", "Safari")
     elif runner == "windows-edge":
         kill_windows_processes()
