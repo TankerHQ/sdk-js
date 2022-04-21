@@ -1,8 +1,4 @@
 const customLaunchers = {
-  Safari: {
-    base: 'SafariNative',
-  },
-
   // Sandbox does not work in un-privileged dockers, so
   // use a custom launcher when run in a docker container
   ChromeInDocker: {
