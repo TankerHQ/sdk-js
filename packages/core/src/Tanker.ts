@@ -266,6 +266,11 @@ export class Tanker extends EventEmitter {
     return this._unauthSession!.createOidcNonce();
   };
 
+  setOidcTestNonce = async (nonce: b64string) => {
+    await this._initUnauthSession();
+    await this._unauthSession!.setOidcTestNonce(nonce);
+  };
+
   start = this._lockCall('start', async (identityB64: b64string) => {
     assertStatus(this.status, statuses.STOPPED, 'start a session');
 
