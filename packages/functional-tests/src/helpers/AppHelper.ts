@@ -57,10 +57,16 @@ export class AppHelper {
     });
   }
 
-  async setOidc() {
+  async setOidc(provider: 'google' | 'pro-sante-bas' | 'pro-sante-bas-no-expiry' = 'google') {
+    const providers = {
+      google: oidcSettings.googleAuth.clientId,
+      'pro-sante-bas': 'doctolib-dev',
+      'pro-sante-bas-no-expiry': 'doctolib-dev',
+    };
+
     await this._update({
-      oidc_provider: 'google',
-      oidc_client_id: oidcSettings.googleAuth.clientId,
+      oidc_provider: provider,
+      oidc_client_id: providers[provider],
     });
   }
 
