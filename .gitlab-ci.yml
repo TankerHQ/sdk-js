@@ -51,6 +51,7 @@ check/linux/chrome:
     paths:
       - lcov-report/
     expire_in: 7 days
+  coverage: '/^Statements\s*:\s*([^%]+)/'
   tags: !reference [.tags/linux, tags]
 
 check/linux/node:
