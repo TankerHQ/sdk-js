@@ -5,13 +5,16 @@ import * as encryptionV2 from './v2';
 import * as encryptionV3 from './v3';
 import * as encryptionV4 from './v4';
 import * as encryptionV5 from './v5';
+import * as encryptionV6 from './v6';
+import * as encryptionV7 from './v7';
+import * as encryptionV8 from './v8';
 
 export interface EncryptionFormatReporter {
-  getClearSize(encryptedSize: number, maxEncryptedChunkSize?: number): number
-  getEncryptedSize(clearSize: number, maxEncryptedChunkSize?: number): number
+  getClearSize(encryptedSize: number): number
+  getEncryptedSize(clearSize: number): number
 }
 
-const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5];
+const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7, encryptionV8];
 
 export type Encryptor = Exclude<typeof encryptionFormats[0], undefined>;
 
@@ -31,7 +34,7 @@ export type EncryptionFormatDescription = {
 };
 
 export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescription, encryptedSize: number): number => {
-  const encryption: EncryptionFormatReporter | undefined = encryptionFormats[encryptionFormatDescription.version];
+  const encryption = encryptionFormats[encryptionFormatDescription.version];
   if (!encryption)
     throw new InvalidArgument(`Unhandled format version ${encryptionFormatDescription.version} used in encryptedData`);
 

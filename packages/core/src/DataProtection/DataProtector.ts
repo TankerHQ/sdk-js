@@ -1,5 +1,5 @@
 import type { b64string, EncryptionFormatDescription } from '@tanker/crypto';
-import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, EncryptionStream, DecryptionStream } from '@tanker/crypto';
+import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, EncryptionStreamV4, DecryptionStream } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -296,18 +296,18 @@ export class DataProtector {
     return this._shareResources(keys, { ...sharingOptions, shareWithSelf: false });
   }
 
-  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStream> {
-    let encryptionStream;
+  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStreamV4> {
+    let encryptionStreamV4;
 
     if (resource) {
-      encryptionStream = new EncryptionStream(resource.resourceId, resource.key);
+      encryptionStreamV4 = new EncryptionStreamV4(resource.resourceId, resource.key);
     } else {
       const newResource = makeResource();
       await this._shareResources([newResource], encryptionOptions);
-      encryptionStream = new EncryptionStream(newResource.resourceId, newResource.key);
+      encryptionStreamV4 = new EncryptionStreamV4(newResource.resourceId, newResource.key);
     }
 
-    return encryptionStream;
+    return encryptionStreamV4;
   }
 
   async createDecryptionStream(): Promise<DecryptionStream> {
