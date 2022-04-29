@@ -254,6 +254,9 @@ export class Tanker extends EventEmitter {
 
   _initUnauthSession = async () => {
     if (!this._unauthSession) {
+      // Prepare libsodium
+      await cryptoReady;
+
       this._unauthSession = await UnauthSession.start(this._trustchainId, this._dataStoreOptions);
     }
   };
