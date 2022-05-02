@@ -14,7 +14,7 @@ import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
 import type {
   FileUploadURLResponse, FileDownloadURLResponse,
   TankerProvisionalIdentityResponse, VerificationMethodResponse,
-  E2eVerificationKeyResponse,
+  E2eVerificationKeyResponse, EncryptedVerificationKeyResponse,
 } from './types';
 
 export const defaultApiEndpoint = 'https://api.tanker.io';
@@ -299,6 +299,16 @@ export class Client {
     return {
       encrypted_verification_key_for_user_key: utils.fromBase64(vkForUk),
       encrypted_verification_key_for_e2e_passphrase: utils.fromBase64(vkForPass),
+    };
+  };
+
+  getEncryptedVerificationKey = async (): Promise<EncryptedVerificationKeyResponse> => {
+    const reply = await this._apiCall('/encrypted-verification-key');
+    const vkForUs = reply.encrypted_verification_key_for_user_secret ? utils.fromBase64(reply.encrypted_verification_key_for_user_secret) : null;
+    const vkForUk = reply.encrypted_verification_key_for_user_key ? utils.fromBase64(reply.encrypted_verification_key_for_user_key) : null;
+    return {
+      encrypted_verification_key_for_user_secret: vkForUs,
+      encrypted_verification_key_for_user_key: vkForUk,
     };
   };
 
