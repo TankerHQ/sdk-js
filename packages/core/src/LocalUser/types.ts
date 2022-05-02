@@ -4,6 +4,7 @@ import { assertNotEmptyString, assertNever } from '@tanker/types';
 export type LegacyEmailVerificationMethod = { type: 'email' };
 export type EmailVerificationMethod = { type: 'email'; email: string; };
 export type PassphraseVerificationMethod = { type: 'passphrase'; };
+export type E2ePassphraseVerificationMethod = { type: 'e2ePassphrase'; };
 export type KeyVerificationMethod = { type: 'verificationKey'; };
 export type OidcVerificationMethod = { type: 'oidcIdToken'; };
 export type PhoneNumberVerificationMethod = { type: 'phoneNumber'; phoneNumber: string; };
@@ -11,10 +12,11 @@ export type PreverifiedEmailVerificationMethod = { type: 'preverifiedEmail'; pre
 export type PreverifiedPhoneNumberVerificationMethod = { type: 'preverifiedPhoneNumber'; preverifiedPhoneNumber: string; };
 
 export type ProvisionalVerificationMethod = EmailVerificationMethod | PhoneNumberVerificationMethod;
-export type VerificationMethod = PassphraseVerificationMethod | KeyVerificationMethod | OidcVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod | PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod;
+export type VerificationMethod = PassphraseVerificationMethod | E2ePassphraseVerificationMethod | KeyVerificationMethod | OidcVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod | PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod;
 
 export type EmailVerification = { email: string; verificationCode: string; };
 export type PassphraseVerification = { passphrase: string; };
+export type E2ePassphraseVerification = { e2ePassphrase: string; };
 export type KeyVerification = { verificationKey: string; };
 export type OidcVerification = { oidcIdToken: string; };
 export type PhoneNumberVerification = { phoneNumber: string; verificationCode: string; };
@@ -25,6 +27,7 @@ export type PreverifiedVerification = PreverifiedEmailVerification | Preverified
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
 export type RemoteVerification = EmailVerification
 | PassphraseVerification
+| E2ePassphraseVerification
 | OidcVerification
 | PhoneNumberVerification
 | PreverifiedEmailVerification
@@ -37,7 +40,7 @@ export type RemoteVerificationWithToken = RemoteVerification & WithTokenOptions;
 
 export type VerificationOptions = { withSessionToken?: boolean; };
 
-const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
+const validMethods = ['email', 'passphrase', 'e2ePassphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
 const validKeys = [...validMethods, 'verificationCode'];
 
 const validVerifOptionsKeys = ['withSessionToken'];
@@ -72,6 +75,8 @@ export const assertVerification = (verification: Verification) => {
     assertNotEmptyString(verification.verificationCode, 'verification.verificationCode');
   } else if ('passphrase' in verification) {
     assertNotEmptyString(verification.passphrase, 'verification.passphrase');
+  } else if ('e2ePassphrase' in verification) {
+    assertNotEmptyString(verification.e2ePassphrase, 'verification.e2ePassphrase');
   } else if ('verificationKey' in verification) {
     assertNotEmptyString(verification.verificationKey, 'verification.verificationKey');
   } else if ('oidcIdToken' in verification) {
