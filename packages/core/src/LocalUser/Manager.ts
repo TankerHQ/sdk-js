@@ -178,7 +178,7 @@ export class LocalUserManager extends EventEmitter {
     }
 
     const { trustchainId, userId } = this._localUser;
-    const { userCreationBlock, firstDeviceBlock, firstDeviceId, firstDeviceEncryptionKeyPair, firstDeviceSignatureKeyPair, ghostDevice } = generateUserCreation(trustchainId, userId, ghostDeviceKeys, this._delegationToken);
+    const { userCreationBlock, firstDeviceBlock, firstDeviceId, firstDeviceEncryptionKeyPair, firstDeviceSignatureKeyPair, ghostDevice, userKeys } = generateUserCreation(trustchainId, userId, ghostDeviceKeys, this._delegationToken);
 
     const request: any = {
       ghost_device_creation: userCreationBlock,
@@ -187,6 +187,15 @@ export class LocalUserManager extends EventEmitter {
 
     if ('email' in verification || 'passphrase' in verification || 'oidcIdToken' in verification || 'phoneNumber' in verification) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
+      request.verification = await formatVerificationRequest(verification, this);
+      request.verification.with_token = verification.withToken; // May be undefined
+    }
+
+    if ('e2ePassphrase' in verification) {
+      const verifKey = utils.fromString(ghostDeviceToVerificationKey(ghostDevice));
+      const passphraseKey = utils.e2ePassphraseKeyDerivation(utils.fromString(verification.e2ePassphrase));
+      request.encrypted_verification_key_for_e2e_passphrase = encryptionV2.serialize(encryptionV2.encrypt(passphraseKey, verifKey));
+      request.encrypted_verification_key_for_user_key = utils.toBase64(tcrypto.sealEncrypt(verifKey, userKeys.publicKey));
       request.verification = await formatVerificationRequest(verification, this);
       request.verification.with_token = verification.withToken; // May be undefined
     }

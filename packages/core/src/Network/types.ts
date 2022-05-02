@@ -26,3 +26,9 @@ export type VerificationMethodResponse = Array<(
   | { type: 'passphrase'; }
   | { type: 'oidc_id_token'; }
 )>;
+
+export type EncryptedVerificationKeyResponse = {
+  encrypted_verification_key_for_user_secret: Uint8Array,
+} | {
+  encrypted_verification_key_for_user_key: Uint8Array,
+};

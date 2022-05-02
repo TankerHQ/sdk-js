@@ -29,13 +29,17 @@ type PhoneNumberRequest = {
   user_salt: Uint8Array;
   provisional_salt?: Uint8Array;
 };
+type E2ePassphraseRequest = {
+  hashed_e2e_passphrase: Uint8Array;
+};
 
 export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preverified<PhoneNumberRequest>;
 
 export type VerificationRequestWithToken = WithToken<PassphraseRequest>
 | WithVerificationCode<EmailRequest>
 | WithToken<OidcRequest>
-| WithVerificationCode<PhoneNumberRequest>;
+| WithVerificationCode<PhoneNumberRequest>
+| WithToken<E2ePassphraseRequest>;
 export type VerificationRequest = VerificationRequestWithToken | PreverifiedVerificationRequest;
 
 export type ProvisionalKeysRequest = {
@@ -113,6 +117,12 @@ export const formatVerificationRequest = async (
       user_salt: generichash(localUser.userSecret),
       provisional_salt: provIdentity ? generichash(utils.fromBase64(provIdentity.private_signature_key)) : undefined,
       is_preverified: true,
+    };
+  }
+
+  if ('e2ePassphrase' in verification) {
+    return {
+      hashed_e2e_passphrase: utils.prehashE2eVerificationPassphrase(utils.fromString(verification.e2ePassphrase)),
     };
   }
 

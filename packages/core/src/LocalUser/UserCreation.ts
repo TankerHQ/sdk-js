@@ -125,6 +125,7 @@ export const generateUserCreation = (
     firstDeviceEncryptionKeyPair: firstDevice.encryptionKeyPair,
     firstDeviceSignatureKeyPair: firstDevice.signatureKeyPair,
     ghostDevice,
+    userKeys,
   };
 };
 

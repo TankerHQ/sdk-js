@@ -272,3 +272,27 @@ export function prehashPassword(data: Uint8Array): Uint8Array {
   const pepper = fromString('2NsxLuBPL7JanD2SIjb9erBgVHjMFh');
   return generichash(concatArrays(data, pepper));
 }
+
+// This function is NOT exposed to our users. It is important that others prehash passwords differently than we do,
+// otherwise when the password is the same, both parties would know the value that the other accepts as password hash.
+// The 'nothing up my sleeve' pepper constant provides confidence it wasn't picked to match a value that might be
+// already in use elsewhere (whether accidentally or maliciously).
+export function prehashE2eVerificationPassphrase(data: Uint8Array): Uint8Array {
+  if (!data || !data.length) {
+    throw new InvalidArgument('Cannot hash an empty e2e passphrase');
+  }
+
+  const pepper = fromString('tanker e2e verification passphrase pepper');
+  return generichash(concatArrays(data, pepper));
+}
+
+// This function is NOT exposed to our users. The key returned by this function is used directly for encryption,
+// so it is important that we never send this hash value to anyone. We use a 'nothing up my sleeve' pepper for this.
+export function e2ePassphraseKeyDerivation(data: Uint8Array): Uint8Array {
+  if (!data || !data.length) {
+    throw new InvalidArgument('Cannot do key derivation from an empty e2e passphrase');
+  }
+
+  const pepper = fromString('tanker e2e passphrase key derivation pepper');
+  return generichash(concatArrays(data, pepper));
+}

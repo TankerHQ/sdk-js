@@ -41,12 +41,16 @@ export type RemoteVerificationWithToken = RemoteVerification & WithTokenOptions;
 
 export type VerificationOptions = { withSessionToken?: boolean; allowE2eMethodSwitch?: boolean; };
 
-const validMethods = ['email', 'passphrase', 'e2ePassphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
+const validE2eMethods = ['e2ePassphrase'];
+const validNonE2eMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
+const validMethods = [...validE2eMethods, ...validNonE2eMethods];
 const validKeys = [...validMethods, 'verificationCode'];
 
 const validVerifOptionsKeys = ['withSessionToken', 'allowE2eMethodSwitch'];
 
-export const isE2eVerification = (verification: VerificationWithToken): verification is E2eRemoteVerification => 'e2ePassphrase' in verification;
+export const isE2eVerification = (verification: VerificationWithToken): verification is E2eRemoteVerification => Object.keys(verification).some(k => validE2eMethods.includes(k));
+
+export const isNonE2eVerification = (verification: VerificationWithToken) => Object.keys(verification).some(k => validNonE2eMethods.includes(k));
 
 export const isPreverifiedVerification = (verification: VerificationWithToken): verification is PreverifiedVerification => 'preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification;
 
