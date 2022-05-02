@@ -25,9 +25,10 @@ export type PreverifiedPhoneNumberVerification = { preverifiedPhoneNumber: strin
 export type PreverifiedVerification = PreverifiedEmailVerification | PreverifiedPhoneNumberVerification;
 
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
-export type RemoteVerification = EmailVerification
+export type E2eRemoteVerification = E2ePassphraseVerification;
+export type RemoteVerification = E2eRemoteVerification
+| EmailVerification
 | PassphraseVerification
-| E2ePassphraseVerification
 | OidcVerification
 | PhoneNumberVerification
 | PreverifiedEmailVerification
@@ -38,12 +39,14 @@ export type WithTokenOptions = { withToken?: { nonce: string; }; };
 export type VerificationWithToken = Verification & WithTokenOptions;
 export type RemoteVerificationWithToken = RemoteVerification & WithTokenOptions;
 
-export type VerificationOptions = { withSessionToken?: boolean; };
+export type VerificationOptions = { withSessionToken?: boolean; allowE2eMethodSwitch?: boolean; };
 
 const validMethods = ['email', 'passphrase', 'e2ePassphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
 const validKeys = [...validMethods, 'verificationCode'];
 
-const validVerifOptionsKeys = ['withSessionToken'];
+const validVerifOptionsKeys = ['withSessionToken', 'allowE2eMethodSwitch'];
+
+export const isE2eVerification = (verification: VerificationWithToken): verification is E2eRemoteVerification => 'e2ePassphrase' in verification;
 
 export const isPreverifiedVerification = (verification: VerificationWithToken): verification is PreverifiedVerification => 'preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification;
 
@@ -112,6 +115,8 @@ export function assertVerificationOptions(options: any): asserts options is Veri
 
   if ('withSessionToken' in options! && typeof options!.withSessionToken !== 'boolean')
     throw new InvalidArgument('options', 'withSessionToken must be a boolean', options);
+  if ('allowE2eMethodSwitch' in options! && typeof options!.allowE2eMethodSwitch !== 'boolean')
+    throw new InvalidArgument('options', 'allowE2eMethodSwitch must be a boolean', options);
 }
 
 export const countPreverifiedVerifications = (verifications: Array<PreverifiedVerification>) => {
