@@ -120,6 +120,16 @@ export const generateVerificationTests = (args: TestArgs) => {
         expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'phoneNumber', phoneNumber }]);
       });
 
+      it('can test that e2e passphrase verification method has been registered', async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'e2e passphrase' });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([{ type: 'e2ePassphrase' }]);
+      });
+
+      it('can register an e2e password verification method with the ignored allowE2eMethodSwitch flag', async () => {
+        await expect(bobLaptop.registerIdentity({ e2ePassphrase: 'e2e passphrase' })).to.be.fulfilled;
+      });
+
       it('should fail to register an email verification method if the verification code is wrong', async () => {
         const email = await appHelper.generateRandomEmail();
         const verificationCode = await appHelper.getWrongEmailVerificationCode(email);
