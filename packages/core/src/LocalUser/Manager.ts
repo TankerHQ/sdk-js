@@ -103,6 +103,9 @@ export class LocalUserManager extends EventEmitter {
           }
           return { type: 'phoneNumber', phoneNumber };
         }
+        case 'e2e_passphrase': {
+          return { type: 'e2ePassphrase' };
+        }
         default: {
           // @ts-expect-error this verification method's type is introduced in a later version of the sdk
           throw new UpgradeRequired(`unsupported verification method type: ${method.type}`);
