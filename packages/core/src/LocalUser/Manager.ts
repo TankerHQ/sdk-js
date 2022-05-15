@@ -15,6 +15,7 @@ import type {
   RemoteVerificationWithToken,
   LegacyEmailVerificationMethod,
 } from './types';
+import { isE2eVerification } from './types';
 import { generateUserCreation, generateDeviceFromGhostDevice, generateGhostDevice } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
 
@@ -318,6 +319,12 @@ export class LocalUserManager extends EventEmitter {
     const request = { verification: await formatVerificationRequest(remoteVerification, this) };
     if (!isPreverifiedVerificationRequest(request.verification)) {
       request.verification.with_token = verification.withToken; // May be undefined
+    }
+
+    if (isE2eVerification(verification)) {
+      const e2eVk = await this._client.getE2eVerificationKey(request);
+      const passphraseKey = utils.e2ePassphraseKeyDerivation(utils.fromString(verification.e2ePassphrase));
+      return decryptVerificationKey(e2eVk.encrypted_verification_key_for_e2e_passphrase, passphraseKey);
     }
 
     const encryptedVerificationKey = await this._client.getVerificationKey(request);

@@ -28,6 +28,11 @@ export type VerificationMethodResponse = Array<(
   | { type: 'oidc_id_token'; }
 )>;
 
+export type E2eVerificationKeyResponse = {
+  encrypted_verification_key_for_user_key: Uint8Array,
+  encrypted_verification_key_for_e2e_passphrase: Uint8Array,
+};
+
 export type EncryptedVerificationKeyResponse = {
   encrypted_verification_key_for_user_secret: Uint8Array,
 } | {

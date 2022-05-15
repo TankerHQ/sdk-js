@@ -14,6 +14,7 @@ import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
 import type {
   FileUploadURLResponse, FileDownloadURLResponse,
   TankerProvisionalIdentityResponse, VerificationMethodResponse,
+  E2eVerificationKeyResponse,
 } from './types';
 
 export const defaultApiEndpoint = 'https://api.tanker.io';
@@ -280,6 +281,25 @@ export class Client {
     const { encrypted_verification_key_for_user_secret: key } = await this._apiCall(path, options);
 
     return utils.fromBase64(key);
+  };
+
+  getE2eVerificationKey = async (body: any): Promise<E2eVerificationKeyResponse> => {
+    const path = `/users/${urlize(this._userId)}/verification-key`;
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(b64RequestObject(body)),
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    const {
+      encrypted_verification_key_for_user_key: vkForUk,
+      encrypted_verification_key_for_e2e_passphrase: vkForPass,
+    } = await this._apiCall(path, options);
+
+    return {
+      encrypted_verification_key_for_user_key: utils.fromBase64(vkForUk),
+      encrypted_verification_key_for_e2e_passphrase: utils.fromBase64(vkForPass),
+    };
   };
 
   getEncryptionKey = async (ghostDevicePublicSignatureKey: Uint8Array) => {
