@@ -883,6 +883,57 @@ export const generateVerificationTests = (args: TestArgs) => {
       });
     });
 
+    describe('verification by E2E passphrase', () => {
+      it('can register a verification e2e passphrase and open a new device with it', async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
+        await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'passphrase' })).to.be.fulfilled;
+      });
+
+      it('fails to verify with a wrong passphrase', async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
+        await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+
+      it('can call verifyIdentity with the ignored allowE2eSwitch flag', async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
+        await bobPhone.start(bobIdentity);
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+
+        await bobPhone.verifyIdentity({ e2ePassphrase: 'passphrase' }, { allowE2eMethodSwitch: true });
+        expect(bobPhone.status).to.equal(READY);
+      });
+
+      it(`gets throttled with a wrong passphrase over ${verificationThrottlingAttempts} times`, async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
+        await bobPhone.start(bobIdentity);
+        for (let i = 0; i < verificationThrottlingAttempts; ++i) {
+          await expect(bobPhone.verifyIdentity({ e2ePassphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
+        }
+        await expect(bobPhone.verifyIdentity({ e2ePassphrase: 'my wrong pass' })).to.be.rejectedWith(errors.TooManyAttempts);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+
+      it('fails to verify without having registered a passphrase', async () => {
+        const email = await appHelper.generateRandomEmail();
+        const phoneNumber = await appHelper.generateRandomPhoneNumber();
+        const verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        const phoneNumberVerificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobLaptop.setVerificationMethod({ phoneNumber, verificationCode: phoneNumberVerificationCode });
+
+        await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'my pass' })).to.be.rejectedWith(errors.PreconditionFailed);
+
+        // The status must not change so that retry is possible
+        expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+    });
+
     describe('verification key', () => {
       const corruptVerificationKey = (key: b64string, field: string, position: number): b64string => {
         const unwrappedKey = utils.fromB64Json(key);
