@@ -884,6 +884,10 @@ export const generateVerificationTests = (args: TestArgs) => {
     });
 
     describe('verification by E2E passphrase', () => {
+      before(async () => {
+        await appHelper.setPreverifiedMethodDisabled();
+      });
+
       it('can register a verification e2e passphrase and open a new device with it', async () => {
         await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
         await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'passphrase' })).to.be.fulfilled;
@@ -931,6 +935,64 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         // The status must not change so that retry is possible
         expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+      });
+
+      it('cannot switch to an e2e passphrase without the allowE2eMethodSwitch flag', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+        await expect(bobLaptop.setVerificationMethod({ e2ePassphrase: 'new passphrase' })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('cannot switch from an e2e passphrase without the allowE2eMethodSwitch flag', async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
+        await expect(bobLaptop.setVerificationMethod({ passphrase: 'new passphrase' })).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('erases previous methods when switching to an e2e passphrase', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+        await bobLaptop.setVerificationMethod({ e2ePassphrase: 'new passphrase' }, { allowE2eMethodSwitch: true });
+
+        const methods = await bobLaptop.getVerificationMethods();
+        expect(methods).to.have.length(1); // Redundant check with expectVerification, just to be explicit
+
+        await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
+        await bobPhone.stop();
+        await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'new passphrase' })).to.be.fulfilled;
+      });
+
+      it('erases previous methods when switching from an e2e passphrase', async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
+        await bobLaptop.setVerificationMethod({ passphrase: 'new passphrase' }, { allowE2eMethodSwitch: true });
+
+        const methods = await bobLaptop.getVerificationMethods();
+        expect(methods).to.have.length(1); // Redundant check with expectVerification, just to be explicit
+
+        await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'passphrase' })).to.be.rejectedWith(errors.PreconditionFailed);
+        await bobPhone.stop();
+        await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'new passphrase' })).to.be.fulfilled;
+      });
+
+      it('can switch several times back and forth before setting an e2e passphrase', async () => {
+        await bobLaptop.registerIdentity({ passphrase: 'one' });
+        await bobLaptop.setVerificationMethod({ e2ePassphrase: 'E2E two' }, { allowE2eMethodSwitch: true });
+        await bobLaptop.setVerificationMethod({ e2ePassphrase: 'E2E three' });
+        await bobLaptop.setVerificationMethod({ passphrase: 'four' }, { allowE2eMethodSwitch: true });
+        await bobLaptop.setVerificationMethod({ e2ePassphrase: 'E2E fifth' }, { allowE2eMethodSwitch: true });
+        await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'E2E fifth' })).to.be.fulfilled;
+      });
+
+      it('fails to setVerificationMethod with preverified email if preverified verification flag is disabled', async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
+
+        const email = await appHelper.generateRandomEmail();
+
+        await expect(bobLaptop.setVerificationMethod({ preverifiedEmail: email }, { allowE2eMethodSwitch: true })).to.be.rejectedWith(errors.PreconditionFailed);
+      });
+
+      it('fails to setVerificationMethod with preverified phone number if preverified verification flag is disabled', async () => {
+        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
+        const phoneNumber = await appHelper.generateRandomPhoneNumber();
+
+        await expect(bobLaptop.setVerificationMethod({ preverifiedPhoneNumber: phoneNumber }, { allowE2eMethodSwitch: true })).to.be.rejectedWith(errors.PreconditionFailed);
       });
     });
 
