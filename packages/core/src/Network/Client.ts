@@ -9,7 +9,7 @@ import { TaskQueue } from '../TaskQueue';
 import { signChallenge } from './Authenticator';
 import { genericErrorHandler } from './ErrorHandler';
 import { b64RequestObject, urlize } from './utils';
-import type { ProvisionalKeysRequest, VerificationRequest } from '../LocalUser/requests';
+import type { ProvisionalKeysRequest, SetVerificationMethodRequest, VerificationRequest } from '../LocalUser/requests';
 import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
 import type {
   FileUploadURLResponse, FileDownloadURLResponse,
@@ -306,10 +306,11 @@ export class Client {
     const reply = await this._apiCall('/encrypted-verification-key');
     const vkForUs = reply.encrypted_verification_key_for_user_secret ? utils.fromBase64(reply.encrypted_verification_key_for_user_secret) : null;
     const vkForUk = reply.encrypted_verification_key_for_user_key ? utils.fromBase64(reply.encrypted_verification_key_for_user_key) : null;
-    return {
-      encrypted_verification_key_for_user_secret: vkForUs,
-      encrypted_verification_key_for_user_key: vkForUk,
-    };
+    if (vkForUs)
+      return { encrypted_verification_key_for_user_secret: vkForUs };
+    if (vkForUk)
+      return { encrypted_verification_key_for_user_key: vkForUk };
+    throw new InternalError('both getEncryptedVerificationKey fields are null');
   };
 
   getEncryptionKey = async (ghostDevicePublicSignatureKey: Uint8Array) => {
@@ -444,7 +445,7 @@ export class Client {
     return verificationMethods;
   };
 
-  setVerificationMethod = async (body: any) => {
+  setVerificationMethod = async (body: SetVerificationMethodRequest) => {
     await this._apiCall(`/users/${urlize(this._userId)}/verification-methods`, {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),

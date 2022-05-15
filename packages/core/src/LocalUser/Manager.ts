@@ -3,11 +3,26 @@ import EventEmitter from 'events';
 import { encryptionV2, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidVerification, UpgradeRequired, TankerError, InvalidArgument } from '@tanker/errors';
 
-import { generateGhostDeviceKeys, extractGhostDevice, ghostDeviceToVerificationKey, ghostDeviceKeysFromVerificationKey, decryptVerificationKey, ghostDeviceToEncryptedVerificationKey, decryptUserKeyForGhostDevice } from './ghostDevice';
+import {
+  generateGhostDeviceKeys,
+  extractGhostDevice,
+  ghostDeviceToVerificationKey,
+  ghostDeviceKeysFromVerificationKey,
+  decryptVerificationKey,
+  ghostDeviceToEncryptedVerificationKey,
+  decryptUserKeyForGhostDevice,
+  encryptVerificationKeyBytes,
+  decryptVerificationKeyBytes,
+} from './ghostDevice';
 import type { IndexedProvisionalUserKeyPairs } from './KeySafe';
 import type KeyStore from './KeyStore';
 import LocalUser from './LocalUser';
-import { formatVerificationRequest, isPreverifiedVerificationRequest, formatVerificationsRequest } from './requests';
+import {
+  formatVerificationRequest,
+  isPreverifiedVerificationRequest,
+  formatVerificationsRequest,
+  SetVerificationMethodRequest,
+} from './requests';
 import type {
   VerificationMethod,
   VerificationWithToken,
@@ -115,15 +130,42 @@ export class LocalUserManager extends EventEmitter {
     });
   };
 
-  setVerificationMethod = async (verification: RemoteVerificationWithToken): Promise<void> => {
-    const requestVerification = await formatVerificationRequest(verification, this);
-    if (!isPreverifiedVerificationRequest(requestVerification)) {
-      requestVerification.with_token = verification.withToken; // May be undefined
+  setVerificationMethod = async (verification: RemoteVerificationWithToken, allowE2eMethodSwitch: boolean): Promise<void> => {
+    const encryptedVerifKey = await this._client.getEncryptedVerificationKey();
+    const isE2eMethod = isE2eVerification(verification);
+    const switchingOnE2e = isE2eMethod && 'encrypted_verification_key_for_user_secret' in encryptedVerifKey;
+    const switchingOffE2e = !isE2eMethod && 'encrypted_verification_key_for_user_key' in encryptedVerifKey;
+    if (switchingOnE2e && !allowE2eMethodSwitch)
+      throw new InvalidArgument('verification', 'must set allowE2eMethodSwitch flag to turn on E2E verification');
+    if (switchingOffE2e && !allowE2eMethodSwitch)
+      throw new InvalidArgument('verification', 'must set allowE2eMethodSwitch flag to turn off E2E verification');
+
+    // We only need to re-encrypt the verif key when switching, or updating an E2E method
+    let verifKey: Uint8Array | undefined;
+    if (switchingOffE2e || isE2eMethod) {
+      if ('encrypted_verification_key_for_user_secret' in encryptedVerifKey) {
+        verifKey = decryptVerificationKeyBytes(encryptedVerifKey.encrypted_verification_key_for_user_secret, this._localUser.userSecret);
+      } else if ('encrypted_verification_key_for_user_key' in encryptedVerifKey) {
+        verifKey = tcrypto.sealDecrypt(encryptedVerifKey.encrypted_verification_key_for_user_key, this._localUser.currentUserKey);
+      }
     }
 
-    return this._client.setVerificationMethod({
-      verification: requestVerification,
-    });
+    const request: SetVerificationMethodRequest = {
+      verification: await formatVerificationRequest(verification, this),
+    };
+    if (!isPreverifiedVerificationRequest(request.verification)) {
+      request.verification.with_token = verification.withToken; // May be undefined
+    }
+
+    if (switchingOffE2e) {
+      request.encrypted_verification_key_for_user_secret = encryptVerificationKeyBytes(verifKey!, this._localUser.userSecret);
+    } else if (isE2eMethod) {
+      const passphraseKey = utils.e2ePassphraseKeyDerivation(utils.fromString(verification.e2ePassphrase));
+      request.encrypted_verification_key_for_e2e_passphrase = encryptionV2.serialize(encryptionV2.encrypt(passphraseKey, verifKey!));
+      request.encrypted_verification_key_for_user_key = tcrypto.sealEncrypt(verifKey!, this._localUser.currentUserKey.publicKey);
+    }
+
+    return this._client.setVerificationMethod(request);
   };
 
   updateDeviceInfo = async (id: Uint8Array, encryptionKeyPair: tcrypto.SodiumKeyPair, signatureKeyPair: tcrypto.SodiumKeyPair): Promise<void> => {

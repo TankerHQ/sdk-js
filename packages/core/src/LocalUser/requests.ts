@@ -52,6 +52,13 @@ export type ProvisionalKeysRequest = {
   provisional_salt: Uint8Array;
 };
 
+export type SetVerificationMethodRequest = {
+  verification: VerificationRequest,
+  encrypted_verification_key_for_user_secret?: Uint8Array,
+  encrypted_verification_key_for_user_key?: Uint8Array,
+  encrypted_verification_key_for_e2e_passphrase?: Uint8Array,
+};
+
 export const isPreverifiedVerificationRequest = (request: VerificationRequest): request is PreverifiedVerificationRequest => ('is_preverified' in request && request.is_preverified);
 
 interface VerificationRequestHelperInterface {

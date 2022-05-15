@@ -28,14 +28,18 @@ export const extractGhostDevice = (verificationKey: b64string): GhostDevice => {
   };
 };
 
-export const decryptVerificationKey = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => utils.toString(encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedVerificationKey)));
+export const encryptVerificationKeyBytes = (verificationKey: Uint8Array, userSecret: Uint8Array) => encryptionV2.serialize(encryptionV2.encrypt(userSecret, verificationKey));
+
+export const decryptVerificationKeyBytes = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedVerificationKey));
+
+export const decryptVerificationKey = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => utils.toString(decryptVerificationKeyBytes(encryptedVerificationKey, userSecret));
 
 export const ghostDeviceToVerificationKey = (ghostDevice: GhostDevice) => utils.toB64Json({
   privateEncryptionKey: utils.toBase64(ghostDevice.privateEncryptionKey),
   privateSignatureKey: utils.toBase64(ghostDevice.privateSignatureKey),
 });
 
-export const ghostDeviceToEncryptedVerificationKey = (ghostDevice: GhostDevice, userSecret: Uint8Array) => encryptionV2.serialize(encryptionV2.encrypt(userSecret, utils.fromString(ghostDeviceToVerificationKey(ghostDevice))));
+export const ghostDeviceToEncryptedVerificationKey = (ghostDevice: GhostDevice, userSecret: Uint8Array) => encryptVerificationKeyBytes(utils.fromString(ghostDeviceToVerificationKey(ghostDevice)), userSecret);
 
 export const ghostDeviceKeysFromVerificationKey = (verificationKey: b64string): GhostDeviceKeys => {
   const ghostDevice = extractGhostDevice(verificationKey);
