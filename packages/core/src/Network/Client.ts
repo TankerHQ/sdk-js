@@ -277,7 +277,7 @@ export class Client {
       headers: { 'Content-Type': 'application/json' },
     };
 
-    const { encrypted_verification_key: key } = await this._apiCall(path, options);
+    const { encrypted_verification_key_for_user_secret: key } = await this._apiCall(path, options);
 
     return utils.fromBase64(key);
   };
