@@ -12,6 +12,7 @@ export const enum VerificationMethodTypes {
   verificationKey = 3,
   oidcIdToken = 4,
   phoneNumber = 5,
+  e2ePassphrase = 6,
 }
 
 const verificationMethodsFromName = {
@@ -20,6 +21,7 @@ const verificationMethodsFromName = {
   verificationKey: VerificationMethodTypes.verificationKey,
   oidcIdToken: VerificationMethodTypes.oidcIdToken,
   phoneNumber: VerificationMethodTypes.phoneNumber,
+  e2ePassphrase: VerificationMethodTypes.e2ePassphrase,
 };
 
 const VERIFICATION_METHOD_TYPES_INT: Array<VerificationMethodTypes> = [
@@ -28,6 +30,7 @@ const VERIFICATION_METHOD_TYPES_INT: Array<VerificationMethodTypes> = [
   VerificationMethodTypes.verificationKey,
   VerificationMethodTypes.oidcIdToken,
   VerificationMethodTypes.phoneNumber,
+  VerificationMethodTypes.e2ePassphrase,
 ];
 
 export type SessionCertificateRecord = {
@@ -60,6 +63,10 @@ function verificationToVerificationMethod(verification: VerificationWithToken): 
   if ('oidcIdToken' in verification)
     return {
       type: 'oidcIdToken',
+    };
+  if ('e2ePassphrase' in verification)
+    return {
+      type: 'e2ePassphrase',
     };
   throw new InvalidArgument('verification', 'unknown verification method used in verification', verification);
 }

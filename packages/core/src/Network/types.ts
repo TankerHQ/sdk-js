@@ -24,5 +24,17 @@ export type VerificationMethodResponse = Array<(
   { type: 'email'; encrypted_email?: string; is_preverified: boolean; }
   | { type: 'phone_number'; encrypted_phone_number: string; is_preverified: boolean; }
   | { type: 'passphrase'; }
+  | { type: 'e2e_passphrase'; }
   | { type: 'oidc_id_token'; }
 )>;
+
+export type E2eVerificationKeyResponse = {
+  encrypted_verification_key_for_user_key: Uint8Array,
+  encrypted_verification_key_for_e2e_passphrase: Uint8Array,
+};
+
+export type EncryptedVerificationKeyResponse = {
+  encrypted_verification_key_for_user_secret: Uint8Array,
+} | {
+  encrypted_verification_key_for_user_key: Uint8Array,
+};

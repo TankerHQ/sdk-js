@@ -362,6 +362,7 @@ export class Tanker extends EventEmitter {
 
     const verifWithToken: VerificationWithToken = verification;
     const withSessionToken = options && options.withSessionToken;
+    const allowE2eMethodSwitch = (options !== undefined) && (options.allowE2eMethodSwitch === true);
 
     if (withSessionToken) {
       if (isPreverifiedVerification(verifWithToken)) {
@@ -370,7 +371,7 @@ export class Tanker extends EventEmitter {
       verifWithToken.withToken = { nonce: randomBase64Token() };
     }
 
-    await this.session.setVerificationMethod(verifWithToken);
+    await this.session.setVerificationMethod(verifWithToken, allowE2eMethodSwitch);
 
     if (withSessionToken) {
       return this.session.getSessionToken(verifWithToken);

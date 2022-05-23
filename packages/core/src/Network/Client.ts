@@ -9,11 +9,12 @@ import { TaskQueue } from '../TaskQueue';
 import { signChallenge } from './Authenticator';
 import { genericErrorHandler } from './ErrorHandler';
 import { b64RequestObject, urlize } from './utils';
-import type { ProvisionalKeysRequest, VerificationRequest } from '../LocalUser/requests';
+import type { ProvisionalKeysRequest, SetVerificationMethodRequest, VerificationRequest } from '../LocalUser/requests';
 import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
 import type {
   FileUploadURLResponse, FileDownloadURLResponse,
   TankerProvisionalIdentityResponse, VerificationMethodResponse,
+  E2eVerificationKeyResponse, EncryptedVerificationKeyResponse,
 } from './types';
 
 export const defaultApiEndpoint = 'https://api.tanker.io';
@@ -277,9 +278,39 @@ export class Client {
       headers: { 'Content-Type': 'application/json' },
     };
 
-    const { encrypted_verification_key: key } = await this._apiCall(path, options);
+    const { encrypted_verification_key_for_user_secret: key } = await this._apiCall(path, options);
 
     return utils.fromBase64(key);
+  };
+
+  getE2eVerificationKey = async (body: any): Promise<E2eVerificationKeyResponse> => {
+    const path = `/users/${urlize(this._userId)}/verification-key`;
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(b64RequestObject(body)),
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    const {
+      encrypted_verification_key_for_user_key: vkForUk,
+      encrypted_verification_key_for_e2e_passphrase: vkForPass,
+    } = await this._apiCall(path, options);
+
+    return {
+      encrypted_verification_key_for_user_key: utils.fromBase64(vkForUk),
+      encrypted_verification_key_for_e2e_passphrase: utils.fromBase64(vkForPass),
+    };
+  };
+
+  getEncryptedVerificationKey = async (): Promise<EncryptedVerificationKeyResponse> => {
+    const reply = await this._apiCall('/encrypted-verification-key');
+    const vkForUs = reply.encrypted_verification_key_for_user_secret ? utils.fromBase64(reply.encrypted_verification_key_for_user_secret) : null;
+    const vkForUk = reply.encrypted_verification_key_for_user_key ? utils.fromBase64(reply.encrypted_verification_key_for_user_key) : null;
+    if (vkForUs)
+      return { encrypted_verification_key_for_user_secret: vkForUs };
+    if (vkForUk)
+      return { encrypted_verification_key_for_user_key: vkForUk };
+    throw new InternalError('both getEncryptedVerificationKey fields are null');
   };
 
   getEncryptionKey = async (ghostDevicePublicSignatureKey: Uint8Array) => {
@@ -414,7 +445,7 @@ export class Client {
     return verificationMethods;
   };
 
-  setVerificationMethod = async (body: any) => {
+  setVerificationMethod = async (body: SetVerificationMethodRequest) => {
     await this._apiCall(`/users/${urlize(this._userId)}/verification-methods`, {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),

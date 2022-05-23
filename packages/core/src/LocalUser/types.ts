@@ -4,6 +4,7 @@ import { assertNotEmptyString, assertNever } from '@tanker/types';
 export type LegacyEmailVerificationMethod = { type: 'email' };
 export type EmailVerificationMethod = { type: 'email'; email: string; };
 export type PassphraseVerificationMethod = { type: 'passphrase'; };
+export type E2ePassphraseVerificationMethod = { type: 'e2ePassphrase'; };
 export type KeyVerificationMethod = { type: 'verificationKey'; };
 export type OidcVerificationMethod = { type: 'oidcIdToken'; };
 export type PhoneNumberVerificationMethod = { type: 'phoneNumber'; phoneNumber: string; };
@@ -11,10 +12,11 @@ export type PreverifiedEmailVerificationMethod = { type: 'preverifiedEmail'; pre
 export type PreverifiedPhoneNumberVerificationMethod = { type: 'preverifiedPhoneNumber'; preverifiedPhoneNumber: string; };
 
 export type ProvisionalVerificationMethod = EmailVerificationMethod | PhoneNumberVerificationMethod;
-export type VerificationMethod = PassphraseVerificationMethod | KeyVerificationMethod | OidcVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod | PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod;
+export type VerificationMethod = PassphraseVerificationMethod | E2ePassphraseVerificationMethod | KeyVerificationMethod | OidcVerificationMethod | EmailVerificationMethod | PhoneNumberVerificationMethod | PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod;
 
 export type EmailVerification = { email: string; verificationCode: string; };
 export type PassphraseVerification = { passphrase: string; };
+export type E2ePassphraseVerification = { e2ePassphrase: string; };
 export type KeyVerification = { verificationKey: string; };
 export type OidcVerification = { oidcIdToken: string; };
 export type PhoneNumberVerification = { phoneNumber: string; verificationCode: string; };
@@ -23,7 +25,9 @@ export type PreverifiedPhoneNumberVerification = { preverifiedPhoneNumber: strin
 export type PreverifiedVerification = PreverifiedEmailVerification | PreverifiedPhoneNumberVerification;
 
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
-export type RemoteVerification = EmailVerification
+export type E2eRemoteVerification = E2ePassphraseVerification;
+export type RemoteVerification = E2eRemoteVerification
+| EmailVerification
 | PassphraseVerification
 | OidcVerification
 | PhoneNumberVerification
@@ -35,12 +39,18 @@ export type WithTokenOptions = { withToken?: { nonce: string; }; };
 export type VerificationWithToken = Verification & WithTokenOptions;
 export type RemoteVerificationWithToken = RemoteVerification & WithTokenOptions;
 
-export type VerificationOptions = { withSessionToken?: boolean; };
+export type VerificationOptions = { withSessionToken?: boolean; allowE2eMethodSwitch?: boolean; };
 
-const validMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
+const validE2eMethods = ['e2ePassphrase'];
+const validNonE2eMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
+const validMethods = [...validE2eMethods, ...validNonE2eMethods];
 const validKeys = [...validMethods, 'verificationCode'];
 
-const validVerifOptionsKeys = ['withSessionToken'];
+const validVerifOptionsKeys = ['withSessionToken', 'allowE2eMethodSwitch'];
+
+export const isE2eVerification = (verification: VerificationWithToken): verification is E2eRemoteVerification => Object.keys(verification).some(k => validE2eMethods.includes(k));
+
+export const isNonE2eVerification = (verification: VerificationWithToken) => Object.keys(verification).some(k => validNonE2eMethods.includes(k));
 
 export const isPreverifiedVerification = (verification: VerificationWithToken): verification is PreverifiedVerification => 'preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification;
 
@@ -72,6 +82,8 @@ export const assertVerification = (verification: Verification) => {
     assertNotEmptyString(verification.verificationCode, 'verification.verificationCode');
   } else if ('passphrase' in verification) {
     assertNotEmptyString(verification.passphrase, 'verification.passphrase');
+  } else if ('e2ePassphrase' in verification) {
+    assertNotEmptyString(verification.e2ePassphrase, 'verification.e2ePassphrase');
   } else if ('verificationKey' in verification) {
     assertNotEmptyString(verification.verificationKey, 'verification.verificationKey');
   } else if ('oidcIdToken' in verification) {
@@ -107,6 +119,8 @@ export function assertVerificationOptions(options: any): asserts options is Veri
 
   if ('withSessionToken' in options! && typeof options!.withSessionToken !== 'boolean')
     throw new InvalidArgument('options', 'withSessionToken must be a boolean', options);
+  if ('allowE2eMethodSwitch' in options! && typeof options!.allowE2eMethodSwitch !== 'boolean')
+    throw new InvalidArgument('options', 'allowE2eMethodSwitch must be a boolean', options);
 }
 
 export const countPreverifiedVerifications = (verifications: Array<PreverifiedVerification>) => {
