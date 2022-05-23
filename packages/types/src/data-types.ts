@@ -41,23 +41,24 @@ export const assertNever = (_: never, argName: string): never => {
   throw new InternalError(`assertion error: type error: name: ${argName} [never]`);
 };
 
-export const assertDataType = (value: any, argName: string): void => {
+export function assertDataType(value: unknown, argName: string): asserts value is Data {
   if (!dataTypeDefs.some(def => value instanceof def.type))
     throw new InvalidArgument(argName, 'ArrayBuffer | Blob | Buffer | File | Uint8Array', value);
-};
+}
 
-export const assertDataTypeClass = (value: any, argName: string): void => {
+export const assertDataTypeClass = (value: unknown, argName: string): void => {
   if (!dataTypeDefs.some(def => value === def.type))
     throw new InvalidArgument(argName, 'class in [ArrayBuffer | Blob | Buffer | File | Uint8Array]', value);
 };
 
-export const assertString = (arg: any, argName: string) => {
+type AssertString = (arg: unknown, argName: string) => asserts arg is string;
+export const assertString: AssertString = (arg: unknown, argName: string) => {
   if (typeof arg !== 'string') {
     throw new InvalidArgument(argName, `${argName} should be a string`, arg);
   }
 };
 
-export const assertNotEmptyString = (arg: any, argName: string) => {
+export const assertNotEmptyString: AssertString = (arg: unknown, argName: string) => {
   assertString(arg, argName);
 
   if (arg.length === 0) {
@@ -65,7 +66,7 @@ export const assertNotEmptyString = (arg: any, argName: string) => {
   }
 };
 
-export const assertInteger = (arg: any, argName: string, isUnsigned: boolean) => {
+export function assertInteger(arg: unknown, argName: string, isUnsigned: boolean): asserts arg is number {
   if (typeof arg !== 'number') {
     throw new InvalidArgument(argName, `${argName} should be an integer`, arg);
   }
@@ -77,7 +78,7 @@ export const assertInteger = (arg: any, argName: string, isUnsigned: boolean) =>
   if (isUnsigned && arg < 0) {
     throw new InvalidArgument(argName, `${argName} should be unsigned`, arg);
   }
-};
+}
 
 export const getConstructor = <T extends Data>(instance: T): Class<T> => {
   for (const def of dataTypeDefs) {
