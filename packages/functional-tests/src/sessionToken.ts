@@ -8,7 +8,7 @@ import { fetch } from '@tanker/http-utils';
 import type { AppHelper, TestArgs } from './helpers';
 import { trustchaindUrl } from './helpers';
 
-async function checkSessionToken(appHelper: AppHelper, publicIdentity: b64string, token: b64string, allowedMethods: Array<Record<string, any>>) {
+async function checkSessionToken(appHelper: AppHelper, publicIdentity: b64string, token: b64string, allowedMethods: Array<Record<string, unknown>>) {
   const url = `${trustchaindUrl}/verification/session-token`;
   const body = {
     app_id: utils.toBase64(appHelper.appId),

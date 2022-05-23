@@ -18,7 +18,7 @@ import { DownloadStream } from './DownloadStream';
 
 const pipeStreams = <T>(
   { streams, resolveEvent }: { streams: Array<Readable | IWritable>; resolveEvent: string; },
-) => new Promise((resolve: (value: T) => void, reject: (reason?: any) => void) => {
+) => new Promise((resolve: (value: T) => void, reject: (reason?: unknown) => void) => {
     streams.forEach(stream => stream.on('error', reject));
     streams.reduce((leftStream, rightStream) => (leftStream as Readable).pipe(rightStream as IWritable)).on(resolveEvent, resolve);
   });

@@ -21,9 +21,9 @@ export type EncryptionOptions = { shareWithUsers?: Array<b64string>; shareWithGr
 
 export type SharingOptions = { shareWithUsers?: Array<b64string>; shareWithGroups?: Array<string>; };
 
-export const isObject = (val: any): val is Record<string, any> => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
+export const isObject = (val: unknown): val is Record<string, any> => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
-export const extractSharingOptions = (options: Record<string, any>, error: any = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<b64string> }', options)): SharingOptions => {
+export const extractSharingOptions = (options: Record<string, unknown>, error: unknown = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<b64string> }', options)): SharingOptions => {
   if (!isObject(options))
     throw error;
 
@@ -65,7 +65,7 @@ export const extractSharingOptions = (options: Record<string, any>, error: any =
   return sharingOptions;
 };
 
-export const extractEncryptionOptions = (options: Record<string, any>): EncryptionOptions => {
+export const extractEncryptionOptions = (options: Record<string, unknown>): EncryptionOptions => {
   const error = new InvalidArgument('options', '{ shareWithUsers?: Array<b64string>, shareWithGroups?: Array<string>, shareWithSelf?: bool }', options);
 
   const encryptionOptions: EncryptionOptions = extractSharingOptions(options, error);
@@ -94,7 +94,7 @@ export const isSharingOptionsEmpty = (opts: SharingOptions): boolean => {
   return true;
 };
 
-export const extractResourceMetadata = (options: Record<string, any>, input?: Data): ResourceMetadata => {
+export const extractResourceMetadata = (options: Record<string, unknown>, input?: Data): ResourceMetadata => {
   if (!isObject(options))
     throw new InvalidArgument('options', '{ mime?: string, name?: string, lastModified?: number }', options);
 
@@ -119,7 +119,7 @@ export const extractResourceMetadata = (options: Record<string, any>, input?: Da
   return resourceMetadata;
 };
 
-export const extractOutputOptions = <T extends Data>(options: Record<string, any>, input?: Data): OutputOptions<T> => {
+export const extractOutputOptions = <T extends Data>(options: Record<string, unknown>, input?: Data): OutputOptions<T> => {
   if (!isObject(options))
     throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
 
@@ -141,14 +141,14 @@ export const extractOutputOptions = <T extends Data>(options: Record<string, any
   return outputOptions;
 };
 
-export const extractProgressOptions = (options: Record<string, any>): ProgressOptions => {
+export const extractProgressOptions = (options: Record<string, unknown>): ProgressOptions => {
   const progressOptions: ProgressOptions = {};
 
   if ('onProgress' in options) {
     if (typeof options['onProgress'] !== 'function')
       throw new InvalidArgument('options', '{ onProgress?: (progress: { currentBytes: number, totalBytes: ?number }) => void }', options);
 
-    progressOptions.onProgress = options['onProgress'];
+    progressOptions.onProgress = options['onProgress'] as OnProgress;
   }
 
   return progressOptions;

@@ -49,7 +49,7 @@ export class AppHelper {
     return new AppHelper(makeTanker, appId, appSecret, authToken);
   }
 
-  async _update(body: Record<string, any>): Promise<void> {
+  async _update(body: Record<string, unknown>): Promise<void> {
     await requestManagement({
       method: 'PATCH',
       path: `/v1/apps/${utils.toRawUrlBase64(this.appId)}`,

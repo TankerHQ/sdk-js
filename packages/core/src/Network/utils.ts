@@ -3,7 +3,7 @@ import { InternalError } from '@tanker/errors';
 
 const isObject = (val: unknown): val is Record<string, any> => !!val && typeof val === 'object' && Object.getPrototypeOf(val) === Object.prototype;
 
-export function b64RequestObject(requestObject: any): any {
+export function b64RequestObject(requestObject: unknown): unknown {
   if (requestObject instanceof Uint8Array) {
     return utils.toBase64(requestObject);
   }
@@ -15,7 +15,7 @@ export function b64RequestObject(requestObject: any): any {
   if (!isObject(requestObject))
     throw new InternalError('Assertion error: b64RequestObject operates only on Object, Array and Uint8Array instances');
 
-  const result: Record<string, any> = {};
+  const result: Record<string, unknown> = {};
 
   Object.keys(requestObject).forEach(key => {
     const value = requestObject[key];

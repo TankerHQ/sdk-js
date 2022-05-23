@@ -75,7 +75,7 @@ describe('print', () => {
   });
 
   it('should gracefully handle values that are not friendly printable', async () => {
-    const circular: { reference?: any } = { };
+    const circular: { reference?: unknown } = { };
     circular.reference = circular;
     expect(safePrintType(circular)).to.equal('Object');
     expect(safePrintValue(circular)).to.equal('[object Object]');

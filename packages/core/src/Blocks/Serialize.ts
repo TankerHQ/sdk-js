@@ -60,7 +60,7 @@ export function unserializeGeneric<T>(data: Uint8Array, functions: Array<Unseria
   if (result.newOffset !== data.length)
     throw new InternalError(`deserialization error: trailing garbage data (unserialized cursor: ${result.newOffset}, buffer length: ${data.length})`);
 
-  return result['value'] as any as T;
+  return result['value'] as unknown as T;
 }
 
 export function unserializeList(data: Uint8Array, f: Unserializer, offset: number, name: string = 'value') {

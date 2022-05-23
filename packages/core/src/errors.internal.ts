@@ -1,8 +1,8 @@
 export class InvalidBlockError extends Error {
   nature: string;
-  args?: Record<string, any>;
+  args?: Record<string, unknown>;
 
-  constructor(nature: string, message: string, e?: Record<string, any>) {
+  constructor(nature: string, message: string, e?: Record<string, unknown>) {
     super(message);
 
     // Set the prototype explicitly.

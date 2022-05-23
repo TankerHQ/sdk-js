@@ -49,7 +49,7 @@ describe('KeyDecryptor', () => {
   let decryptor: KeyDecryptor;
   let localUser: LocalUserStub;
   let groupManager: { getGroupEncryptionKeyPair: () => typeof keys | null; };
-  const provisionalIdentityManager = {} as any as ProvisionalIdentityManager;
+  const provisionalIdentityManager = {} as unknown as ProvisionalIdentityManager;
 
   before(async () => {
     await cryptoReady;
@@ -63,10 +63,10 @@ describe('KeyDecryptor', () => {
 
   beforeEach(() => {
     localUser = new LocalUserStub(refDeviceId, keys);
-    const castedLocalUser = localUser as any as LocalUserManager;
+    const castedLocalUser = localUser as unknown as LocalUserManager;
 
     groupManager = { getGroupEncryptionKeyPair: () => null };
-    const castedGroupManager = groupManager as any as GroupManager;
+    const castedGroupManager = groupManager as unknown as GroupManager;
 
     decryptor = new KeyDecryptor(castedLocalUser, castedGroupManager, provisionalIdentityManager);
   });

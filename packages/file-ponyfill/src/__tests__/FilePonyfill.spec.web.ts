@@ -44,8 +44,8 @@ describe('FilePonyfill (web)', () => {
     const reader = new FileReader();
     const readPromise = new Promise((resolve, reject) => {
       reader.addEventListener('error', reject);
-      reader.addEventListener('load', (event: any) => {
-        const buffer = event.target.result;
+      reader.addEventListener('load', (event) => {
+        const buffer = event.target!.result as Uint8Array;
         resolve(new Uint8Array(buffer));
       });
     });
