@@ -26,7 +26,7 @@ describe('Tanker', () => {
   });
 
   const valid32BytesB64 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-  const badVerifications: Array<any> = [
+  const badVerifications = [
     undefined,
     null,
     'valid@tanker.io',
@@ -47,7 +47,7 @@ describe('Tanker', () => {
     { preverifiedEmail: 'valid@tanker.io' },
     { preverifiedPhoneNumber: '+33639986789' },
   ];
-  const badPreverifiedVerifications: Array<any> = [
+  const badPreverifiedVerifications = [
     undefined,
     null,
     'valid@tanker.io',

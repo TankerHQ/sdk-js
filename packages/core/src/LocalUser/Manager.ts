@@ -357,7 +357,7 @@ export class LocalUserManager extends EventEmitter {
     if ('verificationKey' in verification) {
       return verification.verificationKey;
     }
-    const remoteVerification: RemoteVerificationWithToken = (verification as any);
+    const remoteVerification: RemoteVerificationWithToken = verification;
     const request = { verification: await formatVerificationRequest(remoteVerification, this) };
     if (!isPreverifiedVerificationRequest(request.verification)) {
       request.verification.with_token = verification.withToken; // May be undefined

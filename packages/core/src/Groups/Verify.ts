@@ -28,7 +28,7 @@ import { InvalidBlockError } from '../errors.internal';
 import { NATURE } from '../Blocks/Nature';
 
 export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, existingGroup: Group | null) {
-  const currentPayload: UserGroupCreationRecord = (entry as any);
+  const currentPayload = entry as UserGroupCreationRecord;
 
   if (!tcrypto.verifySignature(entry.hash, entry.signature, devicePublicSignatureKey))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', entry);
@@ -39,13 +39,13 @@ export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSigna
 
   let selfSigBuffer;
   if (entry.nature === NATURE.user_group_creation_v1) {
-    const versionedPayload: UserGroupCreationRecordV1 = (currentPayload as any);
+    const versionedPayload = currentPayload as UserGroupCreationRecordV1;
     selfSigBuffer = getUserGroupCreationBlockSignDataV1(versionedPayload);
   } else if (entry.nature === NATURE.user_group_creation_v2) {
-    const versionedPayload: UserGroupCreationRecordV2 = (currentPayload as any);
+    const versionedPayload = currentPayload as UserGroupCreationRecordV2;
     selfSigBuffer = getUserGroupCreationBlockSignDataV2(versionedPayload);
   } else if (entry.nature === NATURE.user_group_creation_v3) {
-    const versionedPayload: UserGroupCreationRecordV3 = (currentPayload as any);
+    const versionedPayload = currentPayload as UserGroupCreationRecordV3;
     selfSigBuffer = getUserGroupCreationBlockSignDataV3(versionedPayload);
   } else {
     throw new InvalidBlockError('invalid_nature', 'invalid nature for user group creation', { entry });
@@ -56,7 +56,7 @@ export function verifyUserGroupCreation(entry: UserGroupEntry, devicePublicSigna
 }
 
 export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSignatureKey: Uint8Array, currentGroup: Group | null) {
-  const currentPayload: UserGroupAdditionRecord = (entry as any);
+  const currentPayload = entry as UserGroupAdditionRecord;
 
   if (!tcrypto.verifySignature(entry.hash, entry.signature, devicePublicSignatureKey))
     throw new InvalidBlockError('invalid_signature', 'signature is invalid', entry);
@@ -66,13 +66,13 @@ export function verifyUserGroupAddition(entry: UserGroupEntry, devicePublicSigna
 
   let selfSigBuffer;
   if (entry.nature === NATURE.user_group_addition_v1) {
-    const versionedPayload: UserGroupAdditionRecordV1 = (currentPayload as any);
+    const versionedPayload = currentPayload as UserGroupAdditionRecordV1;
     selfSigBuffer = getUserGroupAdditionBlockSignDataV1(versionedPayload);
   } else if (entry.nature === NATURE.user_group_addition_v2) {
-    const versionedPayload: UserGroupAdditionRecordV2 = (currentPayload as any);
+    const versionedPayload = currentPayload as UserGroupAdditionRecordV2;
     selfSigBuffer = getUserGroupAdditionBlockSignDataV2(versionedPayload);
   } else if (entry.nature === NATURE.user_group_addition_v3) {
-    const versionedPayload: UserGroupAdditionRecordV3 = (currentPayload as any);
+    const versionedPayload = currentPayload as UserGroupAdditionRecordV3;
     selfSigBuffer = getUserGroupAdditionBlockSignDataV3(versionedPayload);
   } else {
     throw new InvalidBlockError('invalid_nature', 'invalid nature for user group addition', { entry });
