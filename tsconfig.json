@@ -12,9 +12,6 @@
     "paths": {
       "@tanker/*": [ // look for typescript source files first 
         "./node_modules/@tanker/*/src/",
-      ],
-      "dumb-reducer": [
-        "./src/typescript/dumb-reducer",
       ]
     }
   },
