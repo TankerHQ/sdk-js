@@ -6,14 +6,16 @@ const getConstructorName = (obj: Record<string, any>) => {
   return constructor.name;
 };
 
-export const safePrintType = (value: any) => {
+const hasLength = (value: { length?: unknown }): value is { length: number } => 'length' in value && typeof value.length === 'number';
+
+export const safePrintType = (value: unknown) => {
   try {
     if (value === null)
       return 'null';
 
     if (typeof value === 'object') {
       const constructorName = getConstructorName(value);
-      if ('length' in value)
+      if (hasLength(value))
         return `${constructorName}(${value.length})`;
       return constructorName;
     }
@@ -26,14 +28,14 @@ export const safePrintType = (value: any) => {
 };
 
 // Note: not recursive for now
-export const safePrintValue = (value: any, maxLength: number = 100) => {
+export const safePrintValue = (value: unknown, maxLength: number = 100) => {
   try {
     if (value === undefined)
       return 'undefined';
     if (value === null)
       return 'null';
     if (typeof value === 'object') {
-      if ('length' in value && value.length > maxLength)
+      if (hasLength(value) && value.length > maxLength)
         return '[too big to print]';
     }
     if (value !== value) // eslint-disable-line no-self-compare
