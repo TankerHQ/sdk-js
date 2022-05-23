@@ -1,19 +1,12 @@
 import { expect } from '@tanker/test-utils';
 import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 
-import { InvalidBlockError } from '../../errors.internal';
-
 import type { User } from '../../Users/types';
 import type { ClaimEntry } from '../Serialize';
 import { verifyProvisionalIdentityClaim } from '../Verify';
 
 import TestGenerator from '../../__tests__/TestGenerator';
-
-function assertFailWithNature(verifyFunc: () => any, nature: string) {
-  expect(verifyFunc)
-    .to.throw(InvalidBlockError)
-    .that.has.property('nature', nature);
-}
+import { assertFailWithNature } from '../../__tests__/assertFailWithNature';
 
 describe('BlockVerification', () => {
   let testGenerator: TestGenerator;

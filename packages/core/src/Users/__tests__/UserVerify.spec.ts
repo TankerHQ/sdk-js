@@ -2,20 +2,13 @@ import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import TestGenerator from '../../__tests__/TestGenerator';
-
-import { InvalidBlockError } from '../../errors.internal';
+import { assertFailWithNature } from '../../__tests__/assertFailWithNature';
 
 import { verifyDeviceCreation, verifyDeviceRevocation } from '../Verify';
 import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Serialize';
 import type { User } from '../types';
 
 import { NATURE } from '../../Blocks/Nature';
-
-function assertFailWithNature(verifyFunc: () => any, nature: string) {
-  expect(verifyFunc)
-    .to.throw(InvalidBlockError)
-    .that.has.property('nature', nature);
-}
 
 describe('BlockVerification', () => {
   let testGenerator: TestGenerator;
