@@ -113,7 +113,7 @@ check/macos/nightly:
     - poetry run python run-ci.py check --runner macos --nightly
   tags:
     - macos
-  timeout: 2h
+  timeout: 3h
 
 check/windows/edge:
   stage: check
