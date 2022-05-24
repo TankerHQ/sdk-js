@@ -26,7 +26,7 @@ export type KeySafe = {
 
 const base64Prefix = '__BASE64__';
 
-async function encryptObject(key: Uint8Array, plainObject: Record<string, any>): Promise<Uint8Array> {
+async function encryptObject(key: Uint8Array, plainObject: Record<string, unknown>): Promise<Uint8Array> {
   const json = JSON.stringify(plainObject, (_k, v) => {
     if (v instanceof Uint8Array) {
       return base64Prefix + utils.toBase64(v);

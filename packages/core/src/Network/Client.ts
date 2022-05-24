@@ -90,9 +90,9 @@ export class Client {
   _cancelable = <R>(fun: (...args: Array<any>) => Promise<R>) => (...args: Array<any>) => {
     // cancelationHandle.promise always rejects. Its returned type doesn't matter
     if (this._cancelationHandle.settled) {
-      return this._cancelationHandle.promise as any as Promise<R>;
+      return this._cancelationHandle.promise as unknown as Promise<R>;
     }
-    return Promise.race([this._cancelationHandle.promise as any as Promise<R>, fun(...args)]);
+    return Promise.race([this._cancelationHandle.promise as unknown as Promise<R>, fun(...args)]);
   };
 
   // Simple fetch wrapper with limited concurrency
@@ -270,7 +270,7 @@ export class Client {
     }
   };
 
-  getVerificationKey = async (body: any): Promise<Uint8Array> => {
+  getVerificationKey = async (body: unknown): Promise<Uint8Array> => {
     const path = `/users/${urlize(this._userId)}/verification-key`;
     const options = {
       method: 'POST',
@@ -334,7 +334,7 @@ export class Client {
     }
   };
 
-  enrollUser = async (body: any): Promise<void> => {
+  enrollUser = async (body: unknown): Promise<void> => {
     const path = `/users/${urlize(this._userId)}/enroll`;
 
     const options = {
@@ -346,7 +346,7 @@ export class Client {
     await this._apiCall(path, options);
   };
 
-  createUser = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: any): Promise<void> => {
+  createUser = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: unknown): Promise<void> => {
     const path = `/users/${urlize(this._userId)}`;
 
     const options = {
@@ -362,7 +362,7 @@ export class Client {
     this._deviceSignatureKeyPair = deviceSignatureKeyPair;
   };
 
-  createDevice = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: any): Promise<void> => {
+  createDevice = async (deviceId: Uint8Array, deviceSignatureKeyPair: tcrypto.SodiumKeyPair, body: unknown): Promise<void> => {
     const options = {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),
@@ -475,7 +475,7 @@ export class Client {
     return resourceKeys[0];
   };
 
-  publishResourceKeys = async (body: any): Promise<void> => {
+  publishResourceKeys = async (body: unknown): Promise<void> => {
     await this._apiCall('/resource-keys', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -483,7 +483,7 @@ export class Client {
     });
   };
 
-  createGroup = async (body: any): Promise<void> => {
+  createGroup = async (body: unknown): Promise<void> => {
     await this._apiCall('/user-groups', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -491,7 +491,7 @@ export class Client {
     });
   };
 
-  patchGroup = async (body: any): Promise<void> => {
+  patchGroup = async (body: unknown): Promise<void> => {
     await this._apiCall('/user-groups', {
       method: 'PATCH',
       body: JSON.stringify(body),
@@ -499,7 +499,7 @@ export class Client {
     });
   };
 
-  softUpdateGroup = async (body: any): Promise<void> => {
+  softUpdateGroup = async (body: unknown): Promise<void> => {
     await this._apiCall('/user-groups/soft-update', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -507,7 +507,7 @@ export class Client {
     });
   };
 
-  getSessionToken = async (body: any): Promise<b64string> => {
+  getSessionToken = async (body: unknown): Promise<b64string> => {
     const path = `/users/${urlize(this._userId)}/session-certificates`;
     // eslint-disable-next-line camelcase
     const { session_token: sessionToken } = await this._apiCall(path, {
@@ -615,7 +615,7 @@ export class Client {
     return provisionalKeys;
   };
 
-  claimProvisionalIdentity = async (body: any): Promise<void> => {
+  claimProvisionalIdentity = async (body: unknown): Promise<void> => {
     await this._apiCall('/provisional-identity-claims', {
       method: 'POST',
       body: JSON.stringify(body),

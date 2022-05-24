@@ -125,7 +125,7 @@ export function _serializeIdentity(identity: SecretIdentity | PublicIdentity): b
   return utils.toBase64(utils.fromString(dumpOrderedJson(identity)));
 }
 
-function _deserializeAndFreeze(identity: b64string): any { // eslint-disable-line no-underscore-dangle
+function _deserializeAndFreeze(identity: b64string): SecretIdentity | PublicIdentity { // eslint-disable-line no-underscore-dangle
   const result = utils.fromB64Json(identity);
   // Hidden property that carries the original serialized version of the
   // identity for debugging purposes (e.g. error messages)
@@ -136,7 +136,7 @@ function _deserializeAndFreeze(identity: b64string): any { // eslint-disable-lin
     writable: false,
   });
 
-  return Object.freeze(result);
+  return Object.freeze(result) as SecretIdentity | PublicIdentity;
 }
 
 export function _deserializePermanentIdentity(identity: b64string): SecretPermanentIdentity { // eslint-disable-line no-underscore-dangle
@@ -177,7 +177,7 @@ export function _deserializeProvisionalIdentity(identity: b64string): SecretProv
 
 export function _deserializePublicIdentity(identity: b64string): PublicIdentity { // eslint-disable-line no-underscore-dangle
   try {
-    return _deserializeAndFreeze(identity);
+    return _deserializeAndFreeze(identity) as PublicIdentity;
   } catch (e) {
     throw new InvalidArgument(`Invalid public identity provided: ${identity}`);
   }

@@ -200,7 +200,7 @@ export default class GroupStore {
       selector: {
         groupId: { $in: groupIds },
       },
-    }) as any as Array<GroupEntry>;
+    }) as unknown as Array<GroupEntry>;
   }
 
   async _findGroupsByPublicKey(Ids: Array<b64string>): Promise<Array<GroupEntry>> {
@@ -208,6 +208,6 @@ export default class GroupStore {
       selector: {
         _id: { $in: Ids },
       },
-    }) as any as Array<GroupEntry>;
+    }) as unknown as Array<GroupEntry>;
   }
 }

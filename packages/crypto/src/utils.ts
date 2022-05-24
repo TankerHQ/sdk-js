@@ -163,7 +163,7 @@ export function fromRawUrlBase64(str: safeb64string): Uint8Array {
   return fromBase64(str.replace(/[-_]/g, base64FromUrlsafeReplacer));
 }
 
-const generateB64WithSizeAssertion = (codec: (arg: string) => Uint8Array) => (arg: any, argName: string, expectedSize: number) => {
+const generateB64WithSizeAssertion = (codec: (arg: string) => Uint8Array) => (arg: unknown, argName: string, expectedSize: number) => {
   assertNotEmptyString(arg, argName);
 
   let unb64;
@@ -179,9 +179,11 @@ const generateB64WithSizeAssertion = (codec: (arg: string) => Uint8Array) => (ar
   }
 };
 
-export const assertB64StringWithSize = generateB64WithSizeAssertion(fromBase64);
+export type B64Assertion = (arg: unknown, argName: string, expectedSize: number) => asserts arg is string;
 
-export const assertRawUrlB64StringWithSize = generateB64WithSizeAssertion(fromRawUrlBase64);
+export const assertB64StringWithSize: B64Assertion = generateB64WithSizeAssertion(fromBase64);
+
+export const assertRawUrlB64StringWithSize: B64Assertion = generateB64WithSizeAssertion(fromRawUrlBase64);
 
 export function toString(bytes: Uint8Array): string {
   if (!(bytes instanceof Uint8Array))

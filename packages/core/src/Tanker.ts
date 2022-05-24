@@ -175,11 +175,13 @@ export class Tanker extends EventEmitter {
     return def && def.name || `invalid status: ${this.status}`;
   }
 
-  override addListener(eventName: string, listener: any): any {
+  override addListener(eventName: string, listener: (...args: Array<unknown>) =>
+  void) {
     return this.on(eventName, listener);
   }
 
-  override on(eventName: string, listener: any): any {
+  override on(eventName: string, listener: (...args: Array<unknown>) =>
+  void) {
     if (eventName === 'statusChanged') {
       console.warn('The "statusChanged" event is deprecated, it will be removed in the future');
     }
@@ -187,7 +189,8 @@ export class Tanker extends EventEmitter {
     return super.on(eventName, listener);
   }
 
-  override once(eventName: string, listener: any): any {
+  override once(eventName: string, listener: (...args: Array<unknown>) =>
+  void) {
     if (eventName === 'statusChanged') {
       console.warn('The "statusChanged" event is deprecated, it will be removed in the future');
     }

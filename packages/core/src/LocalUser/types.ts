@@ -106,7 +106,15 @@ export function assertVerifications(verifications: Array<Verification>) {
   verifications.forEach(assertVerification);
 }
 
-export function assertVerificationOptions(options: any): asserts options is VerificationOptions | null | undefined {
+function hasWithSessionToken(options: object): options is { withSessionToken: unknown } {
+  return 'withSessionToken' in options;
+}
+
+function hasAllowE2eMethodSwitch(options: object): options is { allowE2eMethodSwitch: unknown } {
+  return 'allowE2eMethodSwitch' in options;
+}
+
+export function assertVerificationOptions(options: unknown): asserts options is VerificationOptions | null | undefined {
   if (!options)
     return;
 
@@ -114,12 +122,12 @@ export function assertVerificationOptions(options: any): asserts options is Veri
     throw new InvalidArgument('options', 'object', options);
   }
 
-  if (Object.keys(options!).some(k => !validVerifOptionsKeys.includes(k)))
+  if (Object.keys(options).some(k => !validVerifOptionsKeys.includes(k)))
     throw new InvalidArgument('options', `should only contain keys in ${JSON.stringify(validVerifOptionsKeys)}`, options);
 
-  if ('withSessionToken' in options! && typeof options!.withSessionToken !== 'boolean')
+  if (hasWithSessionToken(options) && typeof options.withSessionToken !== 'boolean')
     throw new InvalidArgument('options', 'withSessionToken must be a boolean', options);
-  if ('allowE2eMethodSwitch' in options! && typeof options!.allowE2eMethodSwitch !== 'boolean')
+  if (hasAllowE2eMethodSwitch(options) && typeof options.allowE2eMethodSwitch !== 'boolean')
     throw new InvalidArgument('options', 'allowE2eMethodSwitch must be a boolean', options);
 }
 
