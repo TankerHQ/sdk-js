@@ -2,7 +2,7 @@
 [![NPM Package](https://img.shields.io/npm/v/@tanker/client-node.svg)](http://npmjs.org/package/@tanker/client-node)
 ![Node.js Version](https://img.shields.io/node/v/@tanker/client-node.svg)
 ![Minified Size](https://img.shields.io/bundlephobia/minzip/@tanker/client-node.svg)
-[![Build](https://img.shields.io/travis/TankerHQ/sdk-js/master.svg)](https://travis-ci.org/TankerHQ/sdk-js)
+[![Build](https://github.com/TankerHQ/sdk-js/actions/workflows/tests.yml/badge.svg)](https://github.com/TankerHQ/sdk-js/actions/workflows/tests.yml)
 
 # Tanker SDK for Node.js client applications
 
