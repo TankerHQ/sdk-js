@@ -16,7 +16,7 @@ import * as encryptionV6 from './EncryptionFormats/v6';
 import * as encryptionV7 from './EncryptionFormats/v7';
 import * as encryptionV8 from './EncryptionFormats/v8';
 
-export type { EncryptionFormatReporter, EncryptionFormatDescription, Encryptor } from './EncryptionFormats/types';
+export type { EncryptionFormatReporter, EncryptionFormatDescription, Encryptor, SimpleEncryptor, StreamEncryptor } from './EncryptionFormats/types';
 export { getClearSize, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './EncryptionFormats/types';
 export type { EncryptionStream } from './EncryptionFormats/EncryptionStream';
 export { EncryptionStreamV4 } from './EncryptionFormats/EncryptionStreamV4';

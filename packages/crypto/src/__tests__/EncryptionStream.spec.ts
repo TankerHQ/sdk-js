@@ -13,13 +13,13 @@ import * as encryptionV4 from '../EncryptionFormats/v4';
 import * as encryptionV8 from '../EncryptionFormats/v8';
 import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 import { EncryptionStreamV8 } from '../EncryptionFormats/EncryptionStreamV8';
-import type { Encryptor } from '../EncryptionFormats/types';
+import type { StreamEncryptor } from '../EncryptionFormats/types';
 
 type EncryptionStream = EncryptionStreamV4 | EncryptionStreamV8;
 
 type TestParameters = {
   makeEncryptionStream: (resourceId: Uint8Array, key: Uint8Array, chunkSize?: number) => EncryptionStream;
-  encryption: Extract<Encryptor, { decryptChunk: unknown }>;
+  encryption: StreamEncryptor;
   transformMsg: (message: Uint8Array) => Uint8Array,
 };
 
