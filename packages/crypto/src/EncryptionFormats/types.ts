@@ -18,6 +18,10 @@ const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, 
 
 export type Encryptor = Exclude<typeof encryptionFormats[0], undefined>;
 
+// Encryptor have either an `encrypt` or an `encryptChunk` property
+export type SimpleEncryptor = Extract<Encryptor, { encrypt: unknown }>;
+export type StreamEncryptor = Extract<Encryptor, { encryptChunk: unknown }>;
+
 // The maximum byte size of a resource encrypted with the "simple" algorithms
 // (different from v4) is obtained by summing the sizes of:
 //  - the version: 1 byte

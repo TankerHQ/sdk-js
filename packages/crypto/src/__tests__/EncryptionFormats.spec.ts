@@ -14,7 +14,7 @@ import * as encryptorV5 from '../EncryptionFormats/v5';
 import * as encryptorV6 from '../EncryptionFormats/v6';
 import * as encryptorV7 from '../EncryptionFormats/v7';
 import * as encryptorV8 from '../EncryptionFormats/v8';
-import type { Encryptor } from '../EncryptionFormats/types';
+import type { Encryptor, SimpleEncryptor } from '../EncryptionFormats/types';
 import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 import { EncryptionStreamV8 } from '../EncryptionFormats/EncryptionStreamV8';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
@@ -502,8 +502,6 @@ describe('Simple Encryption', () => {
     });
   };
 
-  // Encryptor with an `encrypt` property in opposition to `encryptChunk`
-  type SimpleEncryptor = Extract<Encryptor, { encrypt: unknown }>;
   // Discard first two types from tuple type
   type SkipTwo<T> = T extends [unknown, unknown, ...infer R] ? R: never;
 
