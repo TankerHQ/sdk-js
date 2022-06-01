@@ -1,15 +1,11 @@
 import { PromiseWrapper } from '@tanker/types';
 
-const unsettledId: unique symbol = Symbol('Unsettled Id');
-type Unsettled = typeof unsettledId;
-function isSettled<T>(value: T | Unsettled): value is T {
-  return value !== unsettledId;
-}
-
-export type Resolver<Id, Value> = (id: Id, value: Value) => void;
-
 type IdProp<T extends { id: unknown }> = T['id'];
-type RunningTask<Value extends { id: number | string | symbol }> = Partial<Record<IdProp<Value>, PromiseWrapper<Value | Unsettled>>>;
+type RunningTask<Value extends { id: number | string | symbol }> = Partial<Record<IdProp<Value>, PromiseWrapper<Value | null>>>;
+
+function isNull<T>(value: T | null): value is T {
+  return value !== null;
+}
 
 // TaskCoalescer allows sharing results between identical tasks run concurrently.
 //
@@ -28,7 +24,7 @@ export class TaskCoalescer<Value extends { id: number | string | symbol }> {
     const newTasks: RunningTask<Value> = {};
     const newTaskIds: Array<IdProp<Value>> = [];
 
-    const taskPromises: Array<Promise<Value | Unsettled>> = [];
+    const taskPromises: Array<Promise<Value | null>> = [];
 
     for (const id of ids) {
       let task = this._runningTasks[id];
@@ -57,11 +53,11 @@ export class TaskCoalescer<Value extends { id: number | string | symbol }> {
       } catch (e) {
         newTaskIds.forEach(id => newTasks[id]!.reject(e));
       } finally {
-        newTaskIds.forEach(id => newTasks[id]!.resolve(unsettledId));
+        newTaskIds.forEach(id => newTasks[id]!.resolve(null));
       }
     }
 
     const taskResults = await Promise.all(taskPromises);
-    return taskResults.filter(isSettled);
+    return taskResults.filter(isNull);
   };
 }
