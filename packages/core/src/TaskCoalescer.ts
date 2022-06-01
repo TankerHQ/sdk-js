@@ -1,29 +1,32 @@
 import { PromiseWrapper } from '@tanker/types';
 
-const unsettledID: unique symbol = Symbol('Unsettled ID');
-type Unsettled = typeof unsettledID;
+const unsettledId: unique symbol = Symbol('Unsettled Id');
+type Unsettled = typeof unsettledId;
 function isSettled<T>(value: T | Unsettled): value is T {
-  return value !== unsettledID;
+  return value !== unsettledId;
 }
 
-export type Resolver<ID, Value> = (id: ID, value: Value) => void;
+export type Resolver<Id, Value> = (id: Id, value: Value) => void;
 
-// TaskCoalescer allows to share results between identical tasks run concurrently.
+type IdProp<T extends { id: unknown }> = T['id'];
+type RunningTask<Value extends { id: number | string | symbol }> = Partial<Record<IdProp<Value>, PromiseWrapper<Value | Unsettled>>>;
+
+// TaskCoalescer allows sharing results between identical tasks run concurrently.
 //
 // When calling `run()` with a list of IDs, the coalescer will look if a
 // task is already running for any subset of the given IDs. It will re-use
 // the results from the previous task for the matching IDs and run the task
 // only with the remaining IDs.
 export class TaskCoalescer<Value extends { id: number | string | symbol }> {
-  declare _runningTasks: Partial<Record<Value['id'], PromiseWrapper<Value | Unsettled>>>;
+  declare _runningTasks: RunningTask<Value>;
 
   constructor() {
     this._runningTasks = {};
   }
 
-  run = async (tasksHandler: (ids: Array<Value['id']>) => Promise<Array<Value>>, ids: Array<Value['id']>): Promise<Array<Value>> => {
-    const newTasks: Partial<Record<Value['id'], PromiseWrapper<Value | Unsettled>>> = {};
-    const newTaskIds: Array<Value['id']> = [];
+  run = async (tasksHandler: (ids: Array<IdProp<Value>>) => Promise<Array<Value>>, ids: Array<IdProp<Value>>): Promise<Array<Value>> => {
+    const newTasks: RunningTask<Value> = {};
+    const newTaskIds: Array<IdProp<Value>> = [];
 
     const taskPromises: Array<Promise<Value | Unsettled>> = [];
 
@@ -47,23 +50,15 @@ export class TaskCoalescer<Value extends { id: number | string | symbol }> {
       taskPromises.push(task.promise);
     }
 
-    const resolveTasks = (tasks: Array<Value>) => {
-      tasks.forEach(value => newTasks[value.id as Value['id']]!.resolve(value));
-    };
-
-    const rejectUnsettledTasks = (e: any) => {
-      newTaskIds.forEach(id => newTasks[id]!.reject(e));
-    };
-
-    const handleUnsettledTasks = () => {
-      newTaskIds.forEach(id => newTasks[id]!.resolve(unsettledID));
-    };
-
     if (newTaskIds.length) {
-      await tasksHandler(newTaskIds)
-        .then(resolveTasks)
-        .catch(rejectUnsettledTasks)
-        .finally(handleUnsettledTasks);
+      try {
+        const tasks = await tasksHandler(newTaskIds);
+        tasks.forEach(value => newTasks[value.id as IdProp<Value>]!.resolve(value));
+      } catch (e) {
+        newTaskIds.forEach(id => newTasks[id]!.reject(e));
+      } finally {
+        newTaskIds.forEach(id => newTasks[id]!.resolve(unsettledId));
+      }
     }
 
     const taskResults = await Promise.all(taskPromises);
