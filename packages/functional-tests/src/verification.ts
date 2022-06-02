@@ -8,6 +8,7 @@ import { createProvisionalIdentity } from '@tanker/identity';
 
 import type { AppHelper, TestArgs } from './helpers';
 import { oidcSettings, trustchaindUrl } from './helpers';
+import { verificationApiToken } from './helpers/config';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
@@ -1129,7 +1130,7 @@ export const generateVerificationTests = (args: TestArgs) => {
             method: 'POST',
             body: JSON.stringify({
               app_id: utils.toBase64(args.appHelper.appId),
-              auth_token: args.appHelper.authToken,
+              auth_token: verificationApiToken,
               email,
             }),
           });
@@ -1150,7 +1151,7 @@ export const generateVerificationTests = (args: TestArgs) => {
             method: 'POST',
             body: JSON.stringify({
               app_id: utils.toBase64(args.appHelper.appId),
-              auth_token: args.appHelper.authToken,
+              auth_token: verificationApiToken,
               phone_number: phoneNumber,
             }),
           });

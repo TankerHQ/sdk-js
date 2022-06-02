@@ -7,7 +7,7 @@ import { expect, uuid } from '@tanker/test-utils';
 import { User } from './User';
 import type { TankerFactory } from './Device';
 import { requestManagement, requestTrustchaind } from './request';
-import { managementSettings, oidcSettings, storageSettings } from './config';
+import { managementSettings, oidcSettings, storageSettings, verificationApiToken } from './config';
 
 export type AppProvisionalUser = {
   target: string;
@@ -27,13 +27,11 @@ export class AppHelper {
   makeTanker: TankerFactory;
   appId: Uint8Array;
   appSecret: Uint8Array;
-  authToken: string;
 
-  constructor(makeTanker: TankerFactory, appId: Uint8Array, appSecret: Uint8Array, authToken: string) {
+  constructor(makeTanker: TankerFactory, appId: Uint8Array, appSecret: Uint8Array) {
     this.makeTanker = makeTanker;
     this.appId = appId;
     this.appSecret = appSecret;
-    this.authToken = authToken;
   }
 
   static async newApp(makeTanker: TankerFactory): Promise<AppHelper> {
@@ -43,10 +41,9 @@ export class AppHelper {
       environment_name: managementSettings.defaultEnvironmentName,
     };
     const createResponse = await requestManagement({ method: 'POST', path: '/v1/apps', body });
-    const authToken = createResponse['app'].auth_token;
     const appId = utils.fromBase64(createResponse['app'].id);
     const appSecret = utils.fromBase64(createResponse['app'].private_signature_key);
-    return new AppHelper(makeTanker, appId, appSecret, authToken);
+    return new AppHelper(makeTanker, appId, appSecret);
   }
 
   async _update(body: Record<string, unknown>): Promise<void> {
@@ -164,7 +161,7 @@ export class AppHelper {
     const path = '/verification/email/code';
     const body = {
       app_id: utils.toBase64(this.appId),
-      auth_token: this.authToken,
+      auth_token: verificationApiToken,
       email,
     };
     const { verification_code: verificationCode } = await requestTrustchaind({ method: 'POST', path, body });
@@ -180,7 +177,7 @@ export class AppHelper {
     const path = '/verification/sms/code';
     const body = {
       app_id: utils.toBase64(this.appId),
-      auth_token: this.authToken,
+      auth_token: verificationApiToken,
       phone_number: phoneNumber,
     };
     const { verification_code: verificationCode } = await requestTrustchaind({ method: 'POST', path, body });
