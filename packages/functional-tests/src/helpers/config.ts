@@ -3,6 +3,8 @@
 const appdUrl = process.env['TANKER_APPD_URL'] || '';
 const fakeAuthUrl = process.env['TANKER_FAKE_AUTH_URL'] || '';
 const trustchaindUrl = process.env['TANKER_TRUSTCHAIND_URL'] || '';
+const verificationApiToken = process.env['TANKER_VERIFICATION_API_TEST_TOKEN'] || '';
+
 const managementSettings = {
   accessToken: process.env['TANKER_MANAGEMENT_API_ACCESS_TOKEN'] || '',
   defaultEnvironmentName: process.env['TANKER_MANAGEMENT_API_DEFAULT_ENVIRONMENT_NAME'] || '',
@@ -34,4 +36,4 @@ const storageSettings = {
   },
 };
 
-export { appdUrl, fakeAuthUrl, trustchaindUrl, managementSettings, oidcSettings, storageSettings };
+export { appdUrl, fakeAuthUrl, trustchaindUrl, managementSettings, oidcSettings, storageSettings, verificationApiToken };

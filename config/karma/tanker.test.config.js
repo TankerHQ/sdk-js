@@ -23,6 +23,8 @@ const plugin = new webpack.EnvironmentPlugin({
   TANKER_FILEKIT_BUCKET_REGION: null,
   TANKER_FILEKIT_CLIENT_ID: null,
   TANKER_FILEKIT_CLIENT_SECRET: null,
+
+  TANKER_VERIFICATION_API_TEST_TOKEN: null,
 });
 
 module.exports = { plugin };

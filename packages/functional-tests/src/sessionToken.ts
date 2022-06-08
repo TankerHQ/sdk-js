@@ -7,12 +7,13 @@ import { utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
 import type { AppHelper, TestArgs } from './helpers';
 import { trustchaindUrl } from './helpers';
+import { verificationApiToken } from './helpers/config';
 
 async function checkSessionToken(appHelper: AppHelper, publicIdentity: b64string, token: b64string, allowedMethods: Array<Record<string, unknown>>) {
   const url = `${trustchaindUrl}/verification/session-token`;
   const body = {
     app_id: utils.toBase64(appHelper.appId),
-    auth_token: appHelper.authToken,
+    auth_token: verificationApiToken,
     public_identity: publicIdentity,
     session_token: token,
     allowed_methods: allowedMethods,
