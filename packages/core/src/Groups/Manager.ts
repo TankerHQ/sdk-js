@@ -3,6 +3,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, _serializeIdentity, assertTrustchainId } from '../Identity';
+import { TaskCoalescer } from '../TaskCoalescer';
 import type { PublicPermanentIdentity, PublicProvisionalIdentity } from '../Identity';
 import type UserManager from '../Users/Manager';
 import type LocalUser from '../LocalUser/LocalUser';
@@ -10,13 +11,18 @@ import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 
 import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV3, makeUserGroupRemoval } from './Serialize';
 import type { Client } from '../Network/Client';
-import type GroupStore from './GroupStore';
+import type { GroupStore } from './GroupStore';
 import type { InternalGroup, Group } from './types';
 import { isInternalGroup } from './types';
 import { assertExpectedGroups, assertPublicIdentities, groupsFromEntries } from './ManagerHelper';
 
+type GroupPublicKeyRecord = {
+  id: b64string;
+  key: Uint8Array;
+};
+
 type CachedPublicKeysResult = {
-  cachedKeys: Array<Uint8Array>;
+  cachedKeys: Array<GroupPublicKeyRecord>;
   missingGroupIds: Array<Uint8Array>;
 };
 
@@ -45,12 +51,19 @@ function checkAddedAndRemoved(permanentIdentitiesToAdd: Array<PublicPermanentIde
     throw new InvalidArgument(`The identities ${addedAndRemovedIdentities.join(', ')} are both added to and removed from the group.`);
 }
 
+type GroupEncryptionKeyPairRecord = {
+  id: b64string;
+  keys: tcrypto.SodiumKeyPair;
+};
+
 export default class GroupManager {
   _localUser: LocalUser;
   _UserManager: UserManager;
   _provisionalIdentityManager: ProvisionalIdentityManager;
   _client: Client;
   _groupStore: GroupStore;
+  _encryptionKeyPairLookupsInProgress: TaskCoalescer<GroupEncryptionKeyPairRecord>;
+  _publicEncryptionKeyLookupsInProgress: TaskCoalescer<GroupPublicKeyRecord>;
 
   constructor(
     client: Client,
@@ -64,6 +77,8 @@ export default class GroupManager {
     this._client = client;
     this._groupStore = groupStore;
     this._provisionalIdentityManager = provisionalIdentityManager;
+    this._encryptionKeyPairLookupsInProgress = new TaskCoalescer();
+    this._publicEncryptionKeyLookupsInProgress = new TaskCoalescer();
   }
 
   async createGroup(publicIdentities: Array<b64string>): Promise<b64string> {
@@ -163,7 +178,13 @@ export default class GroupManager {
       await this._client.patchGroup({ user_group_addition: additionBlock });
   }
 
-  async getGroupsPublicEncryptionKeys(groupIds: Array<Uint8Array>): Promise<Array<Uint8Array>> {
+  async getGroupsPublicEncryptionKeys(groupIds: Array<b64string>): Promise<Array<Uint8Array>> {
+    const result = await this._publicEncryptionKeyLookupsInProgress.run(this._getGroupsPublicEncryptionKeys, groupIds);
+
+    return result.map(record => record.key);
+  }
+
+  _getGroupsPublicEncryptionKeys = async (groupIds: Array<b64string>): Promise<Array<GroupPublicKeyRecord>> => {
     if (groupIds.length === 0) return [];
     const {
       cachedKeys,
@@ -194,7 +215,7 @@ export default class GroupManager {
           });
         }
 
-        newKeys.push(group.lastPublicEncryptionKey);
+        newKeys.push({ id: utils.toBase64(group.groupId), key: group.lastPublicEncryptionKey });
       }
 
       await this._groupStore.saveGroupPublicEncryptionKeys(externalGroupRecords);
@@ -202,44 +223,55 @@ export default class GroupManager {
     }
 
     return cachedKeys.concat(newKeys);
-  }
+  };
 
   async getGroupEncryptionKeyPair(groupPublicEncryptionKey: Uint8Array) {
-    const cachedEncryptionKeyPair = await this._groupStore.findGroupEncryptionKeyPair(groupPublicEncryptionKey);
+    const b64GroupPublicEncryptionKey = utils.toBase64(groupPublicEncryptionKey);
 
-    if (cachedEncryptionKeyPair) {
-      return cachedEncryptionKeyPair;
-    }
+    const result = await this._encryptionKeyPairLookupsInProgress.run(this._getGroupEncryptionKeyPairs, [b64GroupPublicEncryptionKey]);
+    return result[0]!.keys;
+  }
 
-    const { histories: blocks } = await this._client.getGroupHistoriesByGroupPublicEncryptionKey(groupPublicEncryptionKey);
-    const groups = await this._groupsFromBlocks(blocks);
+  _getGroupEncryptionKeyPairs = (b64GroupPublicEncryptionKeys: Array<b64string>): Promise<Array<GroupEncryptionKeyPairRecord>> => {
+    const promises = b64GroupPublicEncryptionKeys.map(async (b64GroupPublicEncryptionKey) => {
+      const groupPublicEncryptionKey = utils.fromBase64(b64GroupPublicEncryptionKey);
+      const cachedEncryptionKeyPair = await this._groupStore.findGroupEncryptionKeyPair(groupPublicEncryptionKey);
 
-    let result;
-    const internalGroupRecords = [];
-    for (const group of groups) {
-      if (isInternalGroup(group)) {
-        for (const encryptionKeyPair of group.encryptionKeyPairs) {
-          internalGroupRecords.push({
-            groupId: group.groupId,
-            publicEncryptionKey: encryptionKeyPair.publicKey,
-            privateEncryptionKey: encryptionKeyPair.privateKey,
-          });
+      if (cachedEncryptionKeyPair) {
+        return { id: b64GroupPublicEncryptionKey, keys: cachedEncryptionKeyPair };
+      }
 
-          if (utils.equalArray(groupPublicEncryptionKey, encryptionKeyPair.publicKey)) {
-            result = encryptionKeyPair;
+      const { histories: blocks } = await this._client.getGroupHistoriesByGroupPublicEncryptionKey(groupPublicEncryptionKey);
+      const groups = await this._groupsFromBlocks(blocks);
+
+      let result;
+      const internalGroupRecords = [];
+      for (const group of groups) {
+        if (isInternalGroup(group)) {
+          for (const encryptionKeyPair of group.encryptionKeyPairs) {
+            internalGroupRecords.push({
+              groupId: group.groupId,
+              publicEncryptionKey: encryptionKeyPair.publicKey,
+              privateEncryptionKey: encryptionKeyPair.privateKey,
+            });
+
+            if (utils.equalArray(groupPublicEncryptionKey, encryptionKeyPair.publicKey)) {
+              result = encryptionKeyPair;
+            }
           }
         }
       }
-    }
 
-    await this._groupStore.saveGroupEncryptionKeys(internalGroupRecords);
+      await this._groupStore.saveGroupEncryptionKeys(internalGroupRecords);
 
-    if (!result) {
-      throw new InvalidArgument('Current user is not a group member');
-    }
+      if (!result) {
+        throw new InvalidArgument('Current user is not a group member');
+      }
 
-    return result;
-  }
+      return { id: b64GroupPublicEncryptionKey, keys: result };
+    });
+    return Promise.all(promises);
+  };
 
   async _getInternalGroupById(groupId: Uint8Array): Promise<InternalGroup> {
     const { histories: blocks } = await this._client.getGroupHistoriesByGroupIds([groupId]);
@@ -267,13 +299,13 @@ export default class GroupManager {
     return groupsFromEntries(entries, devicePublicSignatureKeyMap, this._localUser, this._provisionalIdentityManager);
   }
 
-  async _getCachedGroupsPublicKeys(groupsIds: Array<Uint8Array>): Promise<CachedPublicKeysResult> {
-    const cachePublicKeys = await this._groupStore.findGroupsPublicKeys(groupsIds);
+  async _getCachedGroupsPublicKeys(groupsIds: Array<b64string>): Promise<CachedPublicKeysResult> {
+    const cachePublicKeys = await this._groupStore.findGroupsPublicKeys(groupsIds.map(utils.fromBase64));
     const missingGroupIds = [];
 
     const isGroupInCache: Record<b64string, boolean> = {};
     for (const groupId of groupsIds) {
-      isGroupInCache[utils.toBase64(groupId)] = false;
+      isGroupInCache[groupId] = false;
     }
 
     for (const group of cachePublicKeys) {
@@ -287,7 +319,7 @@ export default class GroupManager {
     }
 
     return {
-      cachedKeys: cachePublicKeys.map(r => r.publicEncryptionKey),
+      cachedKeys: cachePublicKeys.map(r => ({ id: utils.toBase64(r.groupId), key: r.publicEncryptionKey })),
       missingGroupIds,
     };
   }
