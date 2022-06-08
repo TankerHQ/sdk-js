@@ -136,7 +136,7 @@ export class DataProtector {
   };
 
   async _shareResources(keys: Array<Resource>, encryptionOptions: EncryptionOptions): Promise<void> {
-    const groupIds = (encryptionOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
+    const groupIds = encryptionOptions.shareWithGroups || [];
     const groupsKeys = await this._groupManager.getGroupsPublicEncryptionKeys(groupIds);
     const deserializedIdentities = (encryptionOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
     assertTrustchainId(deserializedIdentities, this._localUser.trustchainId);

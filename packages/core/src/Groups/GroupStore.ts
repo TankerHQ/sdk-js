@@ -55,7 +55,7 @@ const schemaV13 = {
 };
 
 type GroupPublicEncryptionKeyRecord = {
-  groupId: Uint8Array;
+  groupId: b64string;
   publicEncryptionKey: Uint8Array;
 };
 
@@ -67,7 +67,7 @@ type GroupEntry = {
   privateEncryptionKey?: b64string;
 };
 
-export default class GroupStore {
+export class GroupStore {
   declare _ds: DataStore;
   declare _userSecret: Uint8Array;
   static schemas = [
@@ -106,7 +106,7 @@ export default class GroupStore {
   }
 
   saveGroupPublicEncryptionKeys = async (groupPublicKeys: Array<GroupPublicEncryptionKeyRecord>): Promise<void> => {
-    const b64groupPK = groupPublicKeys.map(gpk => ({ _id: utils.toBase64(gpk.publicEncryptionKey), groupId: utils.toBase64(gpk.groupId) }));
+    const b64groupPK = groupPublicKeys.map(gpk => ({ _id: utils.toBase64(gpk.publicEncryptionKey), groupId: gpk.groupId }));
     const knownGroupEntries = await this._findGroupsByGroupId(b64groupPK.map(g => g.groupId));
     const knownGroups: Record<string, boolean> = {};
 
@@ -138,7 +138,7 @@ export default class GroupStore {
       const encryptedPrivateKey = encryptionV2.serialize(encryptionV2.encrypt(this._userSecret, gk.privateEncryptionKey));
       return {
         _id: utils.toBase64(gk.publicEncryptionKey),
-        groupId: utils.toBase64(gk.groupId),
+        groupId: gk.groupId,
         privateEncryptionKey: utils.toBase64(encryptedPrivateKey),
       };
     });
@@ -167,9 +167,7 @@ export default class GroupStore {
     await this._ds.bulkPut(GROUPS_ENCRYPTION_KEYS_TABLE, toInsert);
   };
 
-  async findGroupEncryptionKeyPair(publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair | null> {
-    const b64PublicKey = utils.toBase64(publicKey);
-
+  async findGroupEncryptionKeyPair(b64PublicKey: b64string): Promise<tcrypto.SodiumKeyPair | null> {
     const existingKey = await this._ds.first(GROUPS_ENCRYPTION_KEYS_TABLE, {
       selector: {
         _id: b64PublicKey,
@@ -183,14 +181,14 @@ export default class GroupStore {
     const encryptedPrivateEncryptionKey = utils.fromBase64(existingKey['privateEncryptionKey']!);
     const privateKey = encryptionV2.decrypt(this._userSecret, encryptionV2.unserialize(encryptedPrivateEncryptionKey));
 
-    return { publicKey, privateKey };
+    return { publicKey: utils.fromBase64(b64PublicKey), privateKey };
   }
 
-  async findGroupsPublicKeys(groupIds: Array<Uint8Array>): Promise<Array<GroupPublicEncryptionKeyRecord>> {
-    const records = await this._findGroupsByGroupId(groupIds.map(groupId => utils.toBase64(groupId)));
+  async findGroupsPublicKeys(groupIds: Array<b64string>): Promise<Array<GroupPublicEncryptionKeyRecord>> {
+    const records = await this._findGroupsByGroupId(groupIds);
 
     return records.map(r => ({
-      groupId: utils.fromBase64(r.groupId),
+      groupId: r.groupId,
       publicEncryptionKey: utils.fromBase64(r._id), //eslint-disable-line no-underscore-dangle
     }));
   }
@@ -211,3 +209,5 @@ export default class GroupStore {
     }) as unknown as Array<GroupEntry>;
   }
 }
+
+export default GroupStore;

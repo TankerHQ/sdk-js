@@ -252,7 +252,8 @@ class TestGenerator {
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
     const unverifiedDeviceRevocation = userEntryFromBlock(block) as DeviceRevocationEntry;
 
-    const testUser = { ...parentDevice.testUser,
+    const testUser = {
+      ...parentDevice.testUser,
       devices: parentDevice.testUser.devices.map(d => {
         if (utils.equalArray(d.id, deviceIdToRevoke)) {
           return { ...d, revoked: true };
