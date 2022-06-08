@@ -67,7 +67,7 @@ type GroupEntry = {
   privateEncryptionKey?: b64string;
 };
 
-export default class GroupStore {
+export class GroupStore {
   declare _ds: DataStore;
   declare _userSecret: Uint8Array;
   static schemas = [
@@ -211,3 +211,5 @@ export default class GroupStore {
     }) as unknown as Array<GroupEntry>;
   }
 }
+
+export default GroupStore;
