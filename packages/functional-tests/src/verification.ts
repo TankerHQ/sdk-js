@@ -22,13 +22,21 @@ async function getGoogleIdToken(refreshToken: string): Promise<string> {
     refresh_token: refreshToken,
   });
 
-  const response = await fetch('https://www.googleapis.com/oauth2/v4/token', {
+  const url = 'https://www.googleapis.com/oauth2/v4/token';
+
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: formData,
   });
+
+  if (!response.ok) {
+    const description = `${response.status} ${response.statusText}: ${await response.text()}`;
+    throw new Error(`Failed to get an ID token from ${url}:\n${description}`);
+  }
+
   const data = await response.json();
   return data.id_token;
 }
