@@ -104,7 +104,7 @@ Tanker **Fake Authentication** reduces the friction when starting new projects, 
 The Tanker JavaScript SDKs support the following platforms:
 
 * Chrome, Firefox, Safari, Microsoft Edge, and Internet Explorer 11
-* Node.js 12+
+* Node.js 14+
 
 The Tanker JavaScript SDKs are constantly tested with all of the supported browsers via unit and functional tests.
 
