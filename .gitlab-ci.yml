@@ -75,6 +75,16 @@ check/linux/node-lts:
   variables:
     NODE_VERSION: 14
 
+check/linux/node-next:
+  extends:
+    - .check/linux/node-base
+  rules:
+    - !reference [.rules/push-master, rules]
+    - !reference [.rules/mr/manual, rules]
+    - !reference [.rules/nightly, rules]
+  variables:
+    NODE_VERSION: 18
+
 check/macos:
   stage: check
   rules:
