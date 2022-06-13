@@ -1,7 +1,6 @@
 import { InternalError, InvalidArgument } from '@tanker/errors';
 
 import FilePonyfill from '@tanker/file-ponyfill';
-import FileReader from '@tanker/file-reader';
 import globalThis from '@tanker/global-this';
 
 import type { Class } from './utils';
@@ -143,8 +142,7 @@ const toUint8Array = async (value: Data, maxBytes?: number): Promise<Uint8Array>
   if (value instanceof ArrayBuffer)
     return new Uint8Array(value);
 
-  const reader = new FileReader(value);
-  const buffer = await reader.readAsArrayBuffer(maxBytes || value.size);
+  const buffer = await value.slice(0, maxBytes || value.size).arrayBuffer();
   return new Uint8Array(buffer);
 };
 
