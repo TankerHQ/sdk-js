@@ -1,4 +1,4 @@
-import type { b64string, EncryptionFormatDescription } from '@tanker/crypto';
+import type { b64string, EncryptionFormatDescription, SimpleEncryptor } from '@tanker/crypto';
 import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, EncryptionStreamV4, DecryptionStream } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
@@ -136,7 +136,7 @@ export class DataProtector {
   };
 
   async _shareResources(keys: Array<Resource>, encryptionOptions: EncryptionOptions): Promise<void> {
-    const groupIds = (encryptionOptions.shareWithGroups || []).map(g => utils.fromBase64(g));
+    const groupIds = encryptionOptions.shareWithGroups || [];
     const groupsKeys = await this._groupManager.getGroupsPublicEncryptionKeys(groupIds);
     const deserializedIdentities = (encryptionOptions.shareWithUsers || []).map(i => _deserializePublicIdentity(i));
     assertTrustchainId(deserializedIdentities, this._localUser.trustchainId);
@@ -159,11 +159,8 @@ export class DataProtector {
   async _simpleDecryptData<T extends Data>(encryptedData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const castEncryptedData = await castData(encryptedData, { type: Uint8Array });
 
-    const encryption = extractEncryptionFormat(castEncryptedData);
+    const encryption = extractEncryptionFormat(castEncryptedData) as SimpleEncryptor;
     const encryptedSize = getDataLength(castEncryptedData);
-    // Can't ts-expected-error because it says that there is no error, but we
-    // must ts-ignore because there actually is an error.
-    // @ts-ignore Already checked we are using a simple encryption
     const clearSize = encryption.getClearSize(encryptedSize);
     const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
 
@@ -173,7 +170,6 @@ export class DataProtector {
     let clearData;
 
     try {
-      // @ts-expect-error Already checked we are using a simple encryption
       clearData = encryption.decrypt(key, encryption.unserialize(castEncryptedData));
     } catch (error) {
       const b64ResourceId = utils.toBase64(resourceId);
