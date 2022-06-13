@@ -104,7 +104,7 @@
   "browserslist": [
     "last 2 versions",
     "Firefox ESR",
-    "node >= 12",
+    "node >= 14",
     "not IE 11",
     "not dead"
   ],
