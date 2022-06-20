@@ -1,10 +1,9 @@
 import type { b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
-import { InternalError } from '@tanker/errors';
 
-import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from './Serialize';
-import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from './User';
-import { verifyDeviceCreation, verifyDeviceRevocation } from './Verify';
+import { isDeviceCreation, userEntryFromBlock } from './Serialize';
+import { applyDeviceCreationToUser } from './User';
+import { verifyDeviceCreation } from './Verify';
 import type { User } from './types';
 
 export async function usersFromBlocks(userBlocks: Array<b64string>, trustchainId: Uint8Array, trustchainPublicKey: Uint8Array) {
@@ -22,21 +21,6 @@ export async function usersFromBlocks(userBlocks: Array<b64string>, trustchainId
 
       userIdToUserMap.set(base64UserId, user);
       deviceIdToUserIdMap.set(utils.toBase64(userEntry.hash), base64UserId);
-    }
-
-    if (isDeviceRevocation(userEntry)) {
-      const authorUserId = deviceIdToUserIdMap.get(utils.toBase64(userEntry.author));
-      if (!authorUserId) {
-        throw new InternalError('no such author user id');
-      }
-      let user = userIdToUserMap.get(authorUserId);
-      if (!user) {
-        throw new InternalError('No such user');
-      }
-      verifyDeviceRevocation(userEntry, user);
-      user = applyDeviceRevocationToUser(userEntry, user);
-
-      userIdToUserMap.set(authorUserId, user);
     }
   }
 

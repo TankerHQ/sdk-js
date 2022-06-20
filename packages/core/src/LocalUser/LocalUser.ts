@@ -1,12 +1,12 @@
 import EventEmitter from 'events';
 import type { b64string } from '@tanker/crypto';
 import { tcrypto, utils } from '@tanker/crypto';
-import { InternalError, DeviceRevoked } from '@tanker/errors';
+import { InternalError } from '@tanker/errors';
 
 import type { UserKeys, UserKeyPair } from '../Users/Serialize';
-import { isDeviceCreation, isDeviceRevocation, userEntryFromBlock } from '../Users/Serialize';
-import { applyDeviceCreationToUser, applyDeviceRevocationToUser } from '../Users/User';
-import { verifyDeviceCreation, verifyDeviceRevocation } from '../Users/Verify';
+import { isDeviceCreation, userEntryFromBlock } from '../Users/Serialize';
+import { applyDeviceCreationToUser } from '../Users/User';
+import { verifyDeviceCreation } from '../Users/Verify';
 import type { Device } from '../Users/types';
 
 import { createBlock } from '../Blocks/Block';
@@ -167,21 +167,6 @@ export class LocalUser extends EventEmitter {
             encryptedUserKeys.unshift(userEntry.user_key_pair);
           }
         }
-      } else if (isDeviceRevocation(userEntry)) {
-        if (!user) {
-          throw new InternalError('Assertion error: Cannot revoke device of non existing user');
-        }
-
-        verifyDeviceRevocation(userEntry, user);
-        user = applyDeviceRevocationToUser(userEntry, user);
-
-        if (this._deviceId && utils.equalArray(userEntry.device_id, this._deviceId)) {
-          throw new DeviceRevoked();
-        }
-
-        if (userEntry.user_keys) {
-          encryptedUserKeys.unshift(userEntry.user_keys);
-        }
       }
     }
 
@@ -243,7 +228,7 @@ export class LocalUser extends EventEmitter {
 
       if (existingUserKey) {
         localUserKeys = this._localUserKeysFromPrivateKey(encryptedUserKey.encrypted_previous_encryption_key, existingUserKey, localUserKeys);
-      // Key encrypted after our device creation
+        // Key encrypted after our device creation
       } else {
         const privKey = encryptedUserKey.private_keys.find(k => utils.equalArray(k.recipient, deviceId));
         if (!privKey)
