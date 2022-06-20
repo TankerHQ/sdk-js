@@ -4,8 +4,8 @@ import { expect } from '@tanker/test-utils';
 import TestGenerator from '../../__tests__/TestGenerator';
 import { assertFailWithNature } from '../../__tests__/assertFailWithNature';
 
-import { verifyDeviceCreation, verifyDeviceRevocation } from '../Verify';
-import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Serialize';
+import { verifyDeviceCreation } from '../Verify';
+import type { DeviceCreationEntry } from '../Serialize';
 import type { User } from '../types';
 
 import { NATURE } from '../../Blocks/Nature';
@@ -130,106 +130,6 @@ describe('BlockVerification', () => {
       unverifiedDeviceCreation.nature = NATURE.device_creation_v1;
       user.userPublicKeys = [];
       expect(() => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainId, trustchainKeys.publicKey))
-        .to.not.throw();
-    });
-  });
-
-  describe('device revocation', () => {
-    let user: User;
-    let unverifiedDeviceRevocation: DeviceRevocationEntry;
-
-    beforeEach(async () => {
-      testGenerator.makeTrustchainCreation();
-      const userId = random(tcrypto.HASH_SIZE);
-      const userCreation = await testGenerator.makeUserCreation(userId);
-      const deviceCreation = testGenerator.makeDeviceCreation(userCreation);
-      user = deviceCreation.user;
-      const deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation, deviceCreation.testDevice.id);
-      unverifiedDeviceRevocation = deviceRevocation.unverifiedDeviceRevocation;
-    });
-
-    it('should accept a revocation v2 when all requirements are met', () => {
-      expect(() => verifyDeviceRevocation(unverifiedDeviceRevocation, user)).not.to.throw();
-    });
-
-    it('should reject a revocation of a device that doesn\'t exist', () => {
-      unverifiedDeviceRevocation.device_id = random(tcrypto.HASH_SIZE);
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_revoked_device',
-      );
-    });
-
-    it('should reject a revocation with an invalid signature', () => {
-      unverifiedDeviceRevocation.signature[0] += 1;
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_signature',
-      );
-    });
-
-    it('should reject a revocation of an already revoked device', () => {
-      user.devices[1]!.revoked = true;
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'device_already_revoked',
-      );
-    });
-
-    it('should reject a revocation v2 with too many elements in the private_keys field', () => {
-      unverifiedDeviceRevocation.user_keys!.private_keys.push(unverifiedDeviceRevocation.user_keys!.private_keys[0]!);
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_new_key',
-      );
-    });
-
-    it('should reject a revocation v2 with too few elements in the private_keys field', () => {
-      unverifiedDeviceRevocation.user_keys!.private_keys = [];
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_new_key',
-      );
-    });
-
-    it('should reject a revocation v2 with an encrypted_keys_for_devices that does not target the users devices', () => {
-      unverifiedDeviceRevocation.user_keys!.private_keys[0]!.recipient = random(tcrypto.HASH_SIZE);
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_new_key',
-      );
-    });
-
-    it('should reject a revocation v2 if user keys are missing', () => {
-      delete unverifiedDeviceRevocation.user_keys;
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'missing_user_keys',
-      );
-    });
-
-    it('should reject a revocation v2 if previous public user encryption key does not match', () => {
-      unverifiedDeviceRevocation.user_keys!.previous_public_encryption_key = new Uint8Array([1]);
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_previous_key',
-      );
-    });
-
-    it('should reject a revocation v1 if the user has a user key', () => {
-      unverifiedDeviceRevocation.nature = NATURE.device_revocation_v1;
-      delete unverifiedDeviceRevocation.user_keys;
-      assertFailWithNature(
-        () => verifyDeviceRevocation(unverifiedDeviceRevocation, user),
-        'invalid_revocation_version',
-      );
-    });
-
-    it('should accept a revocation v1 when all requirements are met', () => {
-      unverifiedDeviceRevocation.nature = NATURE.device_revocation_v1;
-      delete unverifiedDeviceRevocation.user_keys;
-      user.userPublicKeys = [];
-      expect(() => verifyDeviceRevocation(unverifiedDeviceRevocation, user))
         .to.not.throw();
     });
   });
