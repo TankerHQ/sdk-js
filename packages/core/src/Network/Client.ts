@@ -1,6 +1,6 @@
 import type { b64string } from '@tanker/crypto';
 import { tcrypto, utils } from '@tanker/crypto';
-import { TankerError, DeviceRevoked, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
+import { TankerError, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
 import { fetch, retry, exponentialDelayGenerator } from '@tanker/http-utils';
 import type { DelayGenerator } from '@tanker/http-utils';
 import { PromiseWrapper } from '@tanker/types';
@@ -155,7 +155,6 @@ export class Client {
       genericErrorHandler(apiMethod, url, error);
     } catch (err) {
       const e = err as Error;
-      if (e instanceof DeviceRevoked) this._isRevoked = true;
       if (e instanceof TankerError) throw e;
       throw new InternalError(e.toString());
     }
@@ -248,11 +247,7 @@ export class Client {
     this._deviceId = deviceId;
     this._deviceSignatureKeyPair = signatureKeyPair;
 
-    return this._authenticate().then(() => {
-      if (this._isRevoked) {
-        throw new DeviceRevoked();
-      }
-    });
+    return this._authenticate();
   };
 
   getUser = async (): Promise<unknown | null> => {
