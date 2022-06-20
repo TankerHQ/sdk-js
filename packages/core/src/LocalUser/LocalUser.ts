@@ -4,7 +4,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type { UserKeys, UserKeyPair } from '../Users/Serialize';
-import { isDeviceCreation, userEntryFromBlock } from '../Users/Serialize';
+import { deviceCreationEntryFromBlock } from '../Users/Serialize';
 import { applyDeviceCreationToUser } from '../Users/User';
 import { verifyDeviceCreation } from '../Users/Verify';
 import type { Device } from '../Users/types';
@@ -154,18 +154,16 @@ export class LocalUser extends EventEmitter {
     let deviceFound = false;
 
     for (const b64Block of userBlocks) {
-      const userEntry = userEntryFromBlock(b64Block);
+      const deviceCreationEntry = deviceCreationEntryFromBlock(b64Block);
 
-      if (isDeviceCreation(userEntry)) {
-        verifyDeviceCreation(userEntry, user, this.trustchainId, this.trustchainPublicKey);
-        user = applyDeviceCreationToUser(userEntry, user);
+      verifyDeviceCreation(deviceCreationEntry, user, this.trustchainId, this.trustchainPublicKey);
+      user = applyDeviceCreationToUser(deviceCreationEntry, user);
 
-        if (utils.equalArray(this.deviceId, userEntry.hash)) {
-          deviceFound = true;
+      if (utils.equalArray(this.deviceId, deviceCreationEntry.hash)) {
+        deviceFound = true;
 
-          if (userEntry.user_key_pair) {
-            encryptedUserKeys.unshift(userEntry.user_key_pair);
-          }
+        if (deviceCreationEntry.user_key_pair) {
+          encryptedUserKeys.unshift(deviceCreationEntry.user_key_pair);
         }
       }
     }

@@ -12,7 +12,7 @@ import {
 import type { TrustchainCreationEntry } from '../LocalUser/Serialize';
 import { trustchainCreationFromBlock } from '../LocalUser/Serialize';
 import type { DeviceCreationEntry } from '../Users/Serialize';
-import { userEntryFromBlock } from '../Users/Serialize';
+import { deviceCreationEntryFromBlock } from '../Users/Serialize';
 import type { UserGroupEntry } from '../Groups/Serialize';
 import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV2, makeUserGroupAdditionV3 } from '../Groups/Serialize';
 import type { KeyPublishEntry } from '../Resources/Serialize';
@@ -174,7 +174,7 @@ class TestGenerator {
     const ghostDeviceKeys = generateGhostDeviceKeys();
 
     const { userCreationBlock, ghostDevice } = generateUserCreation(this._trustchainId, userId, ghostDeviceKeys, delegationToken);
-    const unverifiedDeviceCreation = userEntryFromBlock(userCreationBlock) as DeviceCreationEntry;
+    const unverifiedDeviceCreation = deviceCreationEntryFromBlock(userCreationBlock) as DeviceCreationEntry;
 
     const privateUserKey = tcrypto.sealDecrypt(unverifiedDeviceCreation.user_key_pair.encrypted_private_encryption_key, ghostDeviceKeys.encryptionKeyPair);
 
@@ -216,7 +216,7 @@ class TestGenerator {
     const newDevice = generateDeviceFromGhostDevice(this._trustchainId, parentDevice.testUser.id, parentDevice.testUser.ghostDevice, parentDevice.testUser.devices[0]!.id, userKeys);
     const newDeviceBlock = newDevice.block;
 
-    const unverifiedDeviceCreation = userEntryFromBlock(newDeviceBlock) as DeviceCreationEntry;
+    const unverifiedDeviceCreation = deviceCreationEntryFromBlock(newDeviceBlock) as DeviceCreationEntry;
 
     const testDevice: TestDevice = {
       id: unverifiedDeviceCreation.hash,
