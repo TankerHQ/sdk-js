@@ -211,10 +211,6 @@ export function isDeviceCreation(entry: UserEntry): entry is DeviceCreationEntry
   return entry.nature === NATURE.device_creation_v1 || entry.nature === NATURE.device_creation_v2 || entry.nature === NATURE.device_creation_v3;
 }
 
-export function isDeviceRevocation(entry: UserEntry): entry is DeviceRevocationEntry {
-  return entry.nature === NATURE.device_revocation_v1 || entry.nature === NATURE.device_revocation_v2;
-}
-
 export function userEntryFromBlock(b64Block: string): UserEntry {
   const block = unserializeBlock(utils.fromBase64(b64Block));
 
