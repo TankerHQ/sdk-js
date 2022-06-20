@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 
-import { TankerError, DeviceRevoked, ExpiredVerification, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
+import { TankerError, ExpiredVerification, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
 
 import type { DataStoreOptions } from './Storage';
 import Storage from './Storage';
@@ -52,8 +52,7 @@ export class Session extends EventEmitter {
           await this._handleUnrecoverableError(e);
         throw e;
       } catch (e2) {
-        if (!(e2 instanceof DeviceRevoked))
-          console.error('Unexpected fatal error caught on the local user manager:', e2 as Error);
+        console.error('Unexpected fatal error caught on the local user manager:', e2 as Error);
         /* noawait */ this.stop(e2 as Error);
       }
     });
@@ -102,11 +101,10 @@ export class Session extends EventEmitter {
     this.removeAllListeners();
   };
 
-  _wipeDeviceAndStop = async (isRevocation: boolean) => {
+  _wipeDeviceAndStop = async () => {
     await this._client.close();
     await this._storage.nuke();
     this.status = Status.STOPPED;
-    if (isRevocation) this.emit('device_revoked');
     this.removeAllListeners();
   };
 
@@ -114,7 +112,7 @@ export class Session extends EventEmitter {
     Obj extends { [k in Key]: (...args: any) => Promise<any> },
     Key extends string,
     R extends Awaited<ReturnType<Obj[Key]>>,
-    >(
+  >(
     managerGetter: () => Obj,
     func: Key,
   ) => async (...args: Parameters<Obj[Key]>): Promise<R> => {
@@ -142,7 +140,7 @@ export class Session extends EventEmitter {
 
   _promiseChain = <
     F extends (...args: any[]) => Promise<any>,
-    >(
+  >(
     f: F,
     success: () => Awaited<ReturnType<F>>,
     failure: (e: Error) => Promise<never> | never,
@@ -193,18 +191,6 @@ export class Session extends EventEmitter {
   // `createEncryptionSession()` is always bound to the object instance
   createEncryptionSession = this._forward(this._getDataProtector, 'createEncryptionSession').bind(this, () => this._status);
 
-  _assertRevocation = async () => {
-    try {
-      await this._localUserManager.updateLocalUser({ isLight: true });
-      throw new InternalError('The server is rejecting us but we are not revoked');
-    } catch (e) {
-      // We haven't be able to confirm from the blocks returned by the server that we're actually revoked
-      if (!(e instanceof DeviceRevoked)) {
-        throw e;
-      }
-    }
-  };
-
   _assertUnrecoverableError = async (e: unknown) => {
     const unrecoverableApiCodes = ['invalid_challenge_signature', 'invalid_challenge_public_key', 'device_not_found'];
     if (!(e instanceof InternalError) || !unrecoverableApiCodes.includes(e.apiCode!)) {
@@ -213,12 +199,8 @@ export class Session extends EventEmitter {
   };
 
   _handleUnrecoverableError = async (e: unknown) => {
-    if (e instanceof DeviceRevoked) {
-      await this._assertRevocation();
-    } else {
-      await this._assertUnrecoverableError(e);
-    }
+    await this._assertUnrecoverableError(e);
 
-    await this._wipeDeviceAndStop(e instanceof DeviceRevoked);
+    await this._wipeDeviceAndStop();
   };
 }

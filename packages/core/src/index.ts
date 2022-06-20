@@ -2,7 +2,6 @@
 import {
   Conflict,
   DecryptionFailed,
-  DeviceRevoked,
   ExpiredVerification,
   GroupTooBig,
   IdentityAlreadyAttached,
@@ -61,7 +60,6 @@ export type { DownloadStream } from './CloudStorage/DownloadStream';
 const errors = {
   Conflict,
   DecryptionFailed,
-  DeviceRevoked,
   ExpiredVerification,
   GroupTooBig,
   IdentityAlreadyAttached,
