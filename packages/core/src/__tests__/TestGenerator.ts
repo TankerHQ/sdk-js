@@ -11,7 +11,7 @@ import {
 
 import type { TrustchainCreationEntry } from '../LocalUser/Serialize';
 import { trustchainCreationFromBlock } from '../LocalUser/Serialize';
-import type { DeviceCreationEntry, DeviceRevocationEntry } from '../Users/Serialize';
+import type { DeviceCreationEntry } from '../Users/Serialize';
 import { userEntryFromBlock } from '../Users/Serialize';
 import type { UserGroupEntry } from '../Groups/Serialize';
 import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV2, makeUserGroupAdditionV3 } from '../Groups/Serialize';
@@ -30,7 +30,7 @@ import { rootBlockAuthor } from '../LocalUser/Verify';
 
 import type { GhostDevice } from '../LocalUser/ghostDevice';
 import { generateGhostDeviceKeys } from '../LocalUser/ghostDevice';
-import { generateUserCreation, generateDeviceFromGhostDevice, makeDeviceRevocation } from '../LocalUser/UserCreation';
+import { generateUserCreation, generateDeviceFromGhostDevice } from '../LocalUser/UserCreation';
 
 import type { DelegationToken } from '../LocalUser/UserData';
 
@@ -78,13 +78,6 @@ export type TestDeviceCreation = {
   block: b64string;
   testUser: TestUser;
   testDevice: TestDevice;
-  user: User;
-};
-
-export type TestDeviceRevocation = {
-  unverifiedDeviceRevocation: DeviceRevocationEntry;
-  block: b64string;
-  testUser: TestUser;
   user: User;
 };
 
@@ -240,47 +233,6 @@ class TestGenerator {
       block: newDeviceBlock,
       testUser,
       testDevice,
-      user: this._testUserToUser(testUser),
-    };
-  };
-
-  makeDeviceRevocation = (parentDevice: TestDeviceCreation, deviceIdToRevoke: Uint8Array): TestDeviceRevocation => {
-    const refreshedDevices = this._testUserToUser(parentDevice.testUser).devices;
-    const { payload, nature } = makeDeviceRevocation(refreshedDevices, parentDevice.testUser.userKeys[parentDevice.testUser.userKeys.length - 1]!, deviceIdToRevoke);
-
-    this._trustchainIndex += 1;
-    const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
-    const unverifiedDeviceRevocation = userEntryFromBlock(block) as DeviceRevocationEntry;
-
-    const testUser = {
-      ...parentDevice.testUser,
-      devices: parentDevice.testUser.devices.map(d => {
-        if (utils.equalArray(d.id, deviceIdToRevoke)) {
-          return { ...d, revoked: true };
-        }
-        return { ...d };
-      }),
-      userKeys: [...parentDevice.testUser.userKeys],
-    };
-
-    const keyForParentDevice = unverifiedDeviceRevocation.user_keys!.private_keys.find(key => utils.equalArray(key.recipient, parentDevice.testDevice.id));
-
-    if (keyForParentDevice) {
-      testUser.userKeys.push({
-        publicKey: unverifiedDeviceRevocation.user_keys!.public_encryption_key,
-        privateKey: tcrypto.sealDecrypt(keyForParentDevice.key, parentDevice.testDevice.encryptionKeys),
-      });
-    } else {
-      testUser.userKeys.push({
-        publicKey: unverifiedDeviceRevocation.user_keys!.public_encryption_key,
-        privateKey: random(tcrypto.ENCRYPTION_PRIVATE_KEY_SIZE),
-      });
-    }
-
-    return {
-      unverifiedDeviceRevocation,
-      block,
-      testUser,
       user: this._testUserToUser(testUser),
     };
   };

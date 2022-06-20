@@ -19,21 +19,19 @@ describe('UserManagerHelper', () => {
       const userCreation = await testGenerator.makeUserCreation(userId);
       const deviceCreation = await testGenerator.makeDeviceCreation(userCreation);
       const deviceCreation2 = await testGenerator.makeDeviceCreation(deviceCreation);
-      const deviceRevocation = await testGenerator.makeDeviceRevocation(deviceCreation2, deviceCreation2.testDevice.id);
 
       const userCreation2 = await testGenerator.makeUserCreation(userId2);
       const deviceCreationUser2 = await testGenerator.makeDeviceCreation(userCreation2);
 
-      const blocks = [userCreation.block, userCreation2.block, deviceCreation.block, deviceCreationUser2.block, deviceCreation2.block, deviceRevocation.block];
+      const blocks = [userCreation.block, userCreation2.block, deviceCreation.block, deviceCreationUser2.block, deviceCreation2.block];
 
       const { userIdToUserMap, deviceIdToUserIdMap } = await usersFromBlocks(blocks, trustchainCreation.trustchainId, trustchainCreation.trustchainKeys.publicKey);
 
       expect(userIdToUserMap.size).to.deep.equal(2);
-      expect(deviceIdToUserIdMap.size).to.deep.equal(5); // revoked device still is a device
+      expect(deviceIdToUserIdMap.size).to.deep.equal(5);
       const b64UserId = utils.toBase64(userCreation.user.userId);
       const b64UserId2 = utils.toBase64(userCreation2.user.userId);
 
-      expect(userIdToUserMap.get(b64UserId)).to.deep.equal(deviceRevocation.user);
       expect(userIdToUserMap.get(b64UserId2)).to.deep.equal(deviceCreationUser2.user);
 
       expect(deviceIdToUserIdMap.get(utils.toBase64(userCreation.testDevice.id))).to.deep.equal(b64UserId);

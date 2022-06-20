@@ -3,7 +3,7 @@ import type { b64string } from '@tanker/crypto';
 import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
-import type { TestUser, TestTrustchainCreation, TestDeviceCreation, TestDeviceRevocation } from '../../__tests__/TestGenerator';
+import type { TestUser, TestTrustchainCreation, TestDeviceCreation } from '../../__tests__/TestGenerator';
 import TestGenerator from '../../__tests__/TestGenerator';
 
 import LocalUser from '../LocalUser';
@@ -79,52 +79,5 @@ describe('Local User', () => {
 
     expect(userKeys).to.deep.equal(localUser._userKeys); //eslint-disable-line no-underscore-dangle
     expect(currentUserKey).to.deep.equal(localUser.currentUserKey);
-  });
-
-  describe('with revocation before own creation', () => {
-    let deviceRevocation: TestDeviceRevocation;
-    let deviceCreation3: TestDeviceCreation;
-    let deviceCreation3Block: b64string;
-    let deviceRevocationBlock: b64string;
-
-    beforeEach(() => {
-      deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation1, deviceCreation2.testDevice.id);
-      deviceRevocationBlock = deviceRevocation.block;
-      deviceCreation3 = testGenerator.makeDeviceCreation({ ...deviceCreation1, testUser: deviceRevocation.testUser });
-      deviceCreation3Block = deviceCreation3.block;
-
-      const localData = {
-        deviceSignatureKeyPair: deviceCreation3.testDevice.signKeys,
-        deviceEncryptionKeyPair: deviceCreation3.testDevice.encryptionKeys,
-        userKeys: {},
-        currentUserKey: null,
-        devices: [],
-        deviceId: deviceCreation3.testDevice.id,
-        trustchainPublicKey: null,
-      };
-      localUser = new LocalUser(userData.trustchainId, userData.userId, userData.userSecret, localData);
-    });
-
-    it('decrypts encrypted user keys', async () => {
-      await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block, deviceRevocationBlock, deviceCreation3Block]);
-
-      const { userKeys, currentUserKey } = localUserKeysFromTestUser(deviceCreation3.testUser);
-
-      expect(userKeys).to.deep.equal(localUser._userKeys); //eslint-disable-line no-underscore-dangle
-      expect(currentUserKey).to.deep.equal(localUser.currentUserKey);
-    });
-  });
-
-  describe('with revocation after own creation', () => {
-    it('decrypts new user keys', async () => {
-      const deviceRevocation = testGenerator.makeDeviceRevocation(deviceCreation2, deviceCreation1.testDevice.id);
-      const deviceRevocationBlock = deviceRevocation.block;
-
-      await localUser.initializeWithBlocks([trustchainCreationBlock, deviceCreation1Block, deviceCreation2Block, deviceRevocationBlock]);
-      const { userKeys, currentUserKey } = localUserKeysFromTestUser(deviceRevocation.testUser);
-
-      expect(userKeys).to.deep.equal(localUser._userKeys); //eslint-disable-line no-underscore-dangle
-      expect(currentUserKey).to.deep.equal(localUser.currentUserKey);
-    });
   });
 });
