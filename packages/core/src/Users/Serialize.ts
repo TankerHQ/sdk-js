@@ -44,10 +44,6 @@ export type DeviceRevocationRecord = {
 
 export type DeviceCreationEntry = DeviceCreationRecord & VerificationFields;
 
-export type DeviceRevocationEntry = DeviceRevocationRecord & VerificationFields;
-
-export type UserEntry = DeviceCreationEntry | DeviceRevocationEntry;
-
 function serializePrivateKey(userKey: UserPrivateKey): Uint8Array {
   return utils.concatArrays(userKey.recipient, userKey.key);
 }
@@ -207,11 +203,7 @@ export function unserializeDeviceRevocationV2(src: Uint8Array): DeviceRevocation
   ]);
 }
 
-export function isDeviceCreation(entry: UserEntry): entry is DeviceCreationEntry {
-  return entry.nature === NATURE.device_creation_v1 || entry.nature === NATURE.device_creation_v2 || entry.nature === NATURE.device_creation_v3;
-}
-
-export function userEntryFromBlock(b64Block: string): UserEntry {
+export function deviceCreationEntryFromBlock(b64Block: string): DeviceCreationEntry {
   const block = unserializeBlock(utils.fromBase64(b64Block));
 
   const author = block.author;
@@ -219,7 +211,7 @@ export function userEntryFromBlock(b64Block: string): UserEntry {
   const nature = block.nature;
   const hash = hashBlock(block);
 
-  const toCreationEntry = (record: DeviceCreationRecord): UserEntry => ({
+  const toCreationEntry = (record: DeviceCreationRecord): DeviceCreationEntry => ({
     ...record,
     author,
     signature,
@@ -227,13 +219,6 @@ export function userEntryFromBlock(b64Block: string): UserEntry {
     hash,
   });
 
-  const toRevocationEntry = (record: DeviceRevocationRecord): UserEntry => ({
-    ...record,
-    author,
-    signature,
-    nature,
-    hash,
-  });
   switch (block.nature) {
     case NATURE.device_creation_v1:
       return toCreationEntry(unserializeUserDeviceV1(block.payload));
@@ -241,11 +226,7 @@ export function userEntryFromBlock(b64Block: string): UserEntry {
       return toCreationEntry(unserializeUserDeviceV2(block.payload));
     case NATURE.device_creation_v3:
       return toCreationEntry(unserializeUserDeviceV3(block.payload));
-    case NATURE.device_revocation_v1:
-      return toRevocationEntry(unserializeDeviceRevocationV1(block.payload));
-    case NATURE.device_revocation_v2:
-      return toRevocationEntry(unserializeDeviceRevocationV2(block.payload));
     default:
-      throw new InternalError('Assertion error: wrong block nature for userEntryFromBlock');
+      throw new InternalError('Assertion error: wrong block nature for deviceCreationEntryFromBlock');
   }
 }
