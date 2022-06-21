@@ -9,7 +9,6 @@ from typing import Any, Callable, List, TypedDict
 import cli_ui as ui
 import psutil
 import tankerci
-import tankerci.conan
 import tankerci.js
 
 
@@ -189,16 +188,17 @@ def e2e(*, use_local_sources: bool) -> None:
         base_path = tankerci.git.prepare_sources(
             repos=["sdk-python", "sdk-js", "qa-python-js"]
         )
-    tankerci.conan.set_home_isolation()
-    tankerci.conan.update_config()
     with tankerci.working_directory(base_path / "sdk-python"):
         tankerci.run("poetry", "install", "--no-root")
-        tankerci.conan.install_tanker_source(
-            tankerci.conan.TankerSource.SAME_AS_BRANCH,
-            output_path=Path("conan") / "out",
-            profiles=["linux-release"],
-            update=False,
-            tanker_deployed_ref=None,
+        tankerci.run(
+            "poetry",
+            "run",
+            "python",
+            "run-ci.py",
+            "--isolate-conan-user-home",
+            "prepare",
+            "--use-tanker=same-as-branch",
+            "--profile=linux-x86_64",
         )
         tankerci.run("poetry", "install")
     with tankerci.working_directory(base_path / "sdk-js"):
