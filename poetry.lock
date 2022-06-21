@@ -480,7 +480,7 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "tankerci"
-version = "2022.6.4330"
+version = "2022.6.4341"
 description = "Tanker CI library"
 category = "main"
 optional = false
@@ -919,8 +919,8 @@ tabulate = [
     {file = "tabulate-0.8.10.tar.gz", hash = "sha256:6c57f3f3dd7ac2782770155f3adb2db0b1a269637e42f27599925e64b114f519"},
 ]
 tankerci = [
-    {file = "tankerci-2022.6.4330-py3-none-any.whl", hash = "sha256:4433665b2eceae57413f5fbd807cec933df832da3b43aca8c9e86252375777ba"},
-    {file = "tankerci-2022.6.4330.tar.gz", hash = "sha256:9a75a02484e0002fba52061793824e8846a96f0c46e1002f73b44ee2b8d1781e"},
+    {file = "tankerci-2022.6.4341-py3-none-any.whl", hash = "sha256:fadc58e402350bcb58f08d2bca09fee19ffb16af8f0f5485bdef35ccf03104c7"},
+    {file = "tankerci-2022.6.4341.tar.gz", hash = "sha256:e758a6e4ffc9fbc94803d9c92c7dcfcdb8b22667d83342205f3648077df2dfc7"},
 ]
 tbump = [
     {file = "tbump-6.9.0-py3-none-any.whl", hash = "sha256:683eab2e5a4d4861b6928c422d9e51e1d3aeccbbd69d0281fab2c374345e1d9f"},
