@@ -16,7 +16,6 @@ export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, u
     devicePublicEncryptionKey: deviceCreation.public_encryption_key,
     devicePublicSignatureKey: deviceCreation.public_signature_key,
     isGhostDevice: deviceCreation.is_ghost_device,
-    revoked: false,
   };
 
   for (const existingDev of oldDevices) {

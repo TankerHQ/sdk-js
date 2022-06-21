@@ -34,9 +34,6 @@ export function verifyDeviceCreation(entry: DeviceCreationEntry, authorUser: Use
     if (!tcrypto.verifySignature(delegationBuffer, entry.delegation_signature, authorDevice.devicePublicSignatureKey))
       throw new InvalidBlockError('invalid_delegation_signature', 'invalid signature from device creation author', { entry, authorDevice });
 
-    if (authorDevice.revoked)
-      throw new InvalidBlockError('revoked_author_error', 'device creation author is revoked', { entry });
-
     if (entry.nature === NATURE.device_creation_v3 && userPublicKey && entry.user_key_pair
       && !utils.equalArray(entry.user_key_pair.public_encryption_key, userPublicKey))
       throw new InvalidBlockError('invalid_public_user_key', 'public_user_key is different than the author\'s one', { entry, authorDevice });

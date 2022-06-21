@@ -62,7 +62,7 @@ export type TankerCoreOptions = {
 
 export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
 
-export type Device = { id: string; isRevoked: boolean; };
+export type Device = { id: string; };
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
@@ -447,7 +447,6 @@ export class Tanker extends EventEmitter {
     const devices = await this.session.listDevices();
     return devices.map(d => ({
       id: utils.toBase64(d.deviceId),
-      isRevoked: d.revoked,
     }));
   }
 

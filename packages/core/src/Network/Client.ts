@@ -63,7 +63,6 @@ export class Client {
   declare _deviceSignatureKeyPair: tcrypto.SodiumKeyPair | null;
   declare _fetchQueue: TaskQueue;
   declare _instanceId: string;
-  declare _isRevoked: boolean;
   declare _retryDelayGenerator: DelayGenerator;
   declare _sdkType: string;
   declare _sdkVersion: string;
@@ -80,7 +79,6 @@ export class Client {
     this._deviceSignatureKeyPair = null;
     this._fetchQueue = new TaskQueue(MAX_CONCURRENCY);
     this._instanceId = instanceInfo.id;
-    this._isRevoked = false;
     this._retryDelayGenerator = exponentialDelayGenerator;
     this._sdkType = sdkInfo.type;
     this._sdkVersion = sdkInfo.version;
@@ -224,7 +222,7 @@ export class Client {
       const signature = signChallenge(deviceSignatureKeyPair, challenge);
       const signaturePublicKey = deviceSignatureKeyPair.publicKey;
 
-      const { access_token: accessToken, is_revoked: isRevoked } = await this._cancelable(
+      const { access_token: accessToken } = await this._cancelable(
         () => this._baseApiCall(`/devices/${urlize(deviceId)}/sessions`, {
           method: 'POST',
           body: JSON.stringify(b64RequestObject({ signature, challenge, signature_public_key: signaturePublicKey })),
@@ -233,7 +231,6 @@ export class Client {
       )();
 
       this._accessToken = accessToken;
-      this._isRevoked = isRevoked;
     };
 
     this._authenticating = auth().finally(() => {
@@ -386,14 +383,6 @@ export class Client {
     };
   };
 
-  getRevokedDeviceHistory = async (): Promise<{ root: b64string; histories: Array<b64string>; }> => {
-    if (!this._deviceId)
-      throw new InternalError('Assertion error: trying to get revoked device history without a device id');
-    const deviceId = this._deviceId;
-    const { root, history: histories } = await this._apiCall(`/devices/${urlize(deviceId)}/revoked-device-history`);
-    return { root, histories };
-  };
-
   getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions) => {
     const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
@@ -410,10 +399,6 @@ export class Client {
   getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions) => {
     if (!this._deviceId)
       throw new InternalError('Assertion error: trying to get user histories without a device id');
-
-    if (this._isRevoked && deviceIds.length === 1 && utils.equalArray(deviceIds[0]!, this._deviceId)) {
-      return this.getRevokedDeviceHistory();
-    }
 
     const urlizedDeviceIds = unique(deviceIds.map(deviceId => urlize(deviceId)));
     const result: { root: b64string; histories: Array<b64string>; } = { root: '', histories: [] };

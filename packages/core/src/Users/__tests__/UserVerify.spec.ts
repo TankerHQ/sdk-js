@@ -65,14 +65,6 @@ describe('BlockVerification', () => {
         .not.to.throw();
     });
 
-    it('should reject a device creation by a revoked author', () => {
-      user.devices[0]!.revoked = true;
-      assertFailWithNature(
-        () => verifyDeviceCreation(unverifiedDeviceCreation, user, trustchainId, trustchainKeys.publicKey),
-        'revoked_author_error',
-      );
-    });
-
     it('should reject a second device if the parent has a different user_id', () => {
       user.userId = random(tcrypto.HASH_SIZE);
       assertFailWithNature(
