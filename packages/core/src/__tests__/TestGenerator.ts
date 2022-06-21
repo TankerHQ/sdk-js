@@ -38,7 +38,6 @@ export type TestDevice = {
   id: Uint8Array;
   signKeys: tcrypto.SodiumKeyPair;
   encryptionKeys: tcrypto.SodiumKeyPair;
-  revoked: boolean;
   isGhost: boolean;
 };
 
@@ -182,7 +181,6 @@ class TestGenerator {
       id: unverifiedDeviceCreation.hash,
       signKeys: ghostDeviceKeys.signatureKeyPair,
       encryptionKeys: ghostDeviceKeys.encryptionKeyPair,
-      revoked: false,
       isGhost: true,
     };
     const identity = await createIdentity(utils.toBase64(this._trustchainId), utils.toBase64(this._trustchainKeys.privateKey), utils.toBase64(userId));
@@ -222,7 +220,6 @@ class TestGenerator {
       id: unverifiedDeviceCreation.hash,
       signKeys: newDevice.signatureKeyPair,
       encryptionKeys: newDevice.encryptionKeyPair,
-      revoked: false,
       isGhost: false,
     };
     const testUser = { ...parentDevice.testUser };
@@ -393,7 +390,6 @@ class TestGenerator {
     deviceId: testDevice.id,
     devicePublicEncryptionKey: testDevice.encryptionKeys.publicKey,
     devicePublicSignatureKey: testDevice.signKeys.publicKey,
-    revoked: testDevice.revoked,
     isGhostDevice: testDevice.isGhost,
   });
 
