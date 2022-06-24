@@ -105,7 +105,7 @@ def onerror(navigator: str) -> Callable[..., None]:
 
 
 def run_tests_in_browser_ten_times(*, runner: str) -> None:
-    failures = list()
+    failures = []
     for i in range(1, 11):
         print("\n" + "-" * 80 + "\n")
         print("Running tests round", i)
