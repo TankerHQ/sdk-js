@@ -37,7 +37,7 @@ export class AppHelper {
   static async newApp(makeTanker: TankerFactory): Promise<AppHelper> {
     await cryptoReady;
     const body = {
-      name: `functest-${uuid.v4()}`,
+      name: `sdk-js-functional-tests-${uuid.v4()}`,
       environment_name: managementSettings.defaultEnvironmentName,
     };
     const createResponse = await requestManagement({ method: 'POST', path: '/v1/apps', body });
