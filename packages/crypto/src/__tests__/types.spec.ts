@@ -1,4 +1,3 @@
-import varint from 'varint';
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
@@ -47,10 +46,8 @@ describe('Resource', () => {
   ];
 
   it('should throw when an unsupported format version is detected', () => {
-    const zeroVersion = new Uint8Array();
-    varint.encode(0, zeroVersion);
-    const incorrectVersion = new Uint8Array();
-    varint.encode(52, incorrectVersion);
+    const zeroVersion = new Uint8Array([0]);
+    const incorrectVersion = new Uint8Array([52]);
     expect(() => extractEncryptionFormat(zeroVersion)).to.throw(InvalidArgument);
     expect(() => extractEncryptionFormat(incorrectVersion)).to.throw(InvalidArgument);
   });
