@@ -1,3 +1,4 @@
+import { utils } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type { DeviceCreationEntry } from './Serialize';
@@ -19,7 +20,7 @@ export function applyDeviceCreationToUser(deviceCreation: DeviceCreationEntry, u
   };
 
   for (const existingDev of oldDevices) {
-    if (existingDev.deviceId === newDevice.deviceId)
+    if (utils.equalArray(existingDev.deviceId, newDevice.deviceId))
       throw new InternalError('Assertion error: Adding an already existing device.');
   }
 
