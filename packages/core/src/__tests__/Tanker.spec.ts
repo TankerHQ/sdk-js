@@ -179,10 +179,6 @@ describe('Tanker', () => {
       expect(tanker.options).to.deep.equal(options);
     });
 
-    it('should throw when trying to get deviceId', async () => {
-      expect(() => tanker.deviceId).to.throw(PreconditionFailed);
-    });
-
     it('should throw when trying to get verification methods', async () => {
       await expect(tanker.getVerificationMethods()).to.be.rejectedWith(PreconditionFailed);
     });
