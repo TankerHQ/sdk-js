@@ -208,18 +208,6 @@ export class Tanker extends EventEmitter {
     return this._session;
   }
 
-  get deviceId(): b64string {
-    console.warn('The "deviceId" property is deprecated, it will be removed in the future');
-
-    assertStatus(this.status, statuses.READY, 'get the device id');
-
-    const deviceId = this.session.deviceId();
-    if (!deviceId)
-      throw new InternalError('Tried to get our device id, but could not find it!');
-
-    return utils.toBase64(deviceId);
-  }
-
   _lockCall<T, F extends (...args: any[]) => Promise<T>>(name: string, f: F): (...args: Parameters<F>) => ReturnType<F> {
     return (...args: Parameters<F>) => this._localDeviceLock.lock(name, () => f(...args)) as ReturnType<F>;
   }
