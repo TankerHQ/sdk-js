@@ -179,11 +179,6 @@ export const generateSessionTests = (args: TestArgs) => {
         await expect(bobLaptop.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
 
         await bobLaptop.verifyIdentity({ passphrase: 'passphrase' });
-
-        // Check two devices have been created
-        const devices = await bobLaptop.getDeviceList();
-        expect(devices).to.have.lengthOf(2);
-        expect(devices).to.deep.include.members([{ id: bobLaptop.deviceId }]);
       });
     });
 
@@ -215,11 +210,6 @@ export const generateSessionTests = (args: TestArgs) => {
         await expect(bobLaptop.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
 
         await bobLaptop.verifyIdentity({ passphrase: 'passphrase' });
-
-        // Check two devices have been created
-        const devices = await bobLaptop.getDeviceList();
-        expect(devices).to.have.lengthOf(3);
-        expect(devices).to.deep.include.members([{ id: bobLaptop.deviceId }]);
       });
     });
   });

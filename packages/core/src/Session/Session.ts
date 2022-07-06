@@ -159,7 +159,6 @@ export class Session extends EventEmitter {
   createNewDevice = this._promiseChain(this._forward(this._getLocalUserManager, 'createNewDevice'), this._setReady, this._stopIfNotRetryable);
 
   getVerificationKey = this._forward(this._getLocalUserManager, 'getVerificationKey');
-  listDevices = this._forward(this._getLocalUserManager, 'listDevices');
   deviceId = () => this._localUserManager.localUser.deviceId;
 
   setVerificationMethod = this._forward(this._getLocalUserManager, 'setVerificationMethod');
