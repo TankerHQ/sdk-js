@@ -62,7 +62,6 @@ export type TankerCoreOptions = {
 
 export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
 
-export type Device = { id: string; };
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
@@ -437,17 +436,6 @@ export class Tanker extends EventEmitter {
     if (unauthSession) {
       await unauthSession.stop();
     }
-  }
-
-  async getDeviceList(): Promise<Array<Device>> {
-    console.warn('The "getDeviceList" method is deprecated, it will be removed in the future');
-
-    assertStatus(this.status, statuses.READY, 'get the device list');
-
-    const devices = await this.session.listDevices();
-    return devices.map(d => ({
-      id: utils.toBase64(d.deviceId),
-    }));
   }
 
   async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {
