@@ -1,6 +1,6 @@
 import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, OutputOptions } from '@tanker/core';
-import { encryptionV4, tcrypto, utils } from '@tanker/crypto';
+import { encryptionV4, encryptionV6, tcrypto, utils, Padding, padme } from '@tanker/crypto';
 import { Data, getConstructorName, getDataLength } from '@tanker/types';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
@@ -9,6 +9,8 @@ import type { TestArgs, AppHelper, AppProvisionalUser, TestResourceSize } from '
 import { expectProgressReport, expectType, expectSameType, expectDeepEqual, expectDecrypt } from './helpers';
 
 const { READY } = statuses;
+
+const streamStepSize = encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead;
 
 export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
@@ -116,6 +118,55 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expectDecrypt([bobLaptop], clearText, encrypted);
       });
 
+      describe('with padding', () => {
+        const simpleEncryptionOverhead = 17;
+        const paddedSimpleEncryptionOverhead = simpleEncryptionOverhead + 1;
+
+        describe('auto', () => {
+          const clearTextAutoPadding = 'my clear data is clear!';
+          const lengthWithPadme = 24;
+
+          it('encrypts with auto padding by default', async () => {
+            const encrypted = await bobLaptop.encrypt(clearTextAutoPadding);
+            expect(encrypted.length - paddedSimpleEncryptionOverhead).to.equal(lengthWithPadme);
+            await expectDecrypt([bobLaptop], clearTextAutoPadding, encrypted);
+          });
+
+          it('encrypts and decrypts with auto padding', async () => {
+            const encrypted = await bobLaptop.encrypt(clearTextAutoPadding, { paddingStep: Padding.AUTO });
+            expect(encrypted.length - paddedSimpleEncryptionOverhead).to.equal(lengthWithPadme);
+            await expectDecrypt([bobLaptop], clearTextAutoPadding, encrypted);
+          });
+        });
+
+        it('encrypts and decrypts with no padding', async () => {
+          const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: Padding.OFF });
+          expect(encrypted.length - simpleEncryptionOverhead).to.equal(clearText.length);
+          await expectDecrypt([bobLaptop], clearText, encrypted);
+        });
+
+        it('encrypts and decrypts with a padding step', async () => {
+          const step = 13;
+          const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: step });
+          expect((encrypted.length - paddedSimpleEncryptionOverhead) % step).to.equal(0);
+          await expectDecrypt([bobLaptop], clearText, encrypted);
+        });
+
+        it('encrypt/decrypt with a huge padding step should select the v8 format', async () => {
+          const step = 2 * 1024 * 1024;
+          const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: step });
+          expect(encrypted[0]).to.equal(0x08);
+          await expectDecrypt([bobLaptop], clearText, encrypted);
+        });
+
+        [null, 'invalid string', -42, 0, 1].forEach(step => {
+          it(`throws when given a paddingStep set to ${step}`, async () => {
+            // @ts-expect-error
+            await expect(bobLaptop.encrypt(clearText, { paddingStep: step })).to.be.rejectedWith(errors.InvalidArgument);
+          });
+        });
+      });
+
       it('can report progress when encrypting and decrypting', async () => {
         const onProgress = sinon.fake();
 
@@ -124,7 +175,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         onProgress.resetHistory();
 
         const decrypted = await bobLaptop.decrypt(encrypted, { onProgress });
-        expectProgressReport(onProgress, decrypted.length, encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
+        expectProgressReport(onProgress, padme(decrypted.length), streamStepSize);
       });
 
       it('encrypt should ignore resource id argument', async () => {
@@ -195,6 +246,16 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
         await expectDecrypt([bobPhone], clearText, encrypted);
         await bobPhone.stop();
+      });
+
+      it('shares and manually pads the data at the same time', async () => {
+        const step = 13;
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity], paddingStep: step });
+
+        const paddedSize = encrypted.length - encryptionV6.overhead;
+        expect(paddedSize % step).to.equal(0);
+
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
     });
 
@@ -576,7 +637,11 @@ export const generateEncryptionTests = (args: TestArgs) => {
         it(`can encrypt and decrypt a ${size} ${getConstructorName(type)}`, async () => {
           const onProgress = sinon.fake();
 
-          const encrypted = await aliceLaptop.encryptData(clear, { onProgress });
+          // We disable padding for this test because we need to test the
+          // progress report precisely. This test tests only progress reports,
+          // padding does not influence that (except the fact that the numbers
+          // are a little off because they become unpredictable).
+          const encrypted = await aliceLaptop.encryptData(clear, { paddingStep: Padding.OFF, onProgress });
           expectSameType(encrypted, clear);
           expectProgressReport(onProgress, getDataLength(encrypted));
           onProgress.resetHistory();
@@ -584,7 +649,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
           const decrypted = await aliceLaptop.decryptData(encrypted, { onProgress });
           expectSameType(decrypted, clear);
           expectDeepEqual(decrypted, clear);
-          expectProgressReport(onProgress, getDataLength(decrypted), encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead);
+          expectProgressReport(onProgress, getDataLength(decrypted), streamStepSize);
         });
       });
     });

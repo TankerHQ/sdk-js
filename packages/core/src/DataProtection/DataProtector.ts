@@ -1,5 +1,5 @@
 import type { b64string, EncryptionFormatDescription, SimpleEncryptor } from '@tanker/crypto';
-import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, EncryptionStreamV4, DecryptionStream } from '@tanker/crypto';
+import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -215,15 +215,16 @@ export class DataProtector {
   }
 
   async _simpleEncryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
-    const encryption = getSimpleEncryption();
+    const paddingStep = encryptionOptions.paddingStep;
+    const encryption = getSimpleEncryption(paddingStep);
 
     const clearSize = getDataLength(clearData);
-    const encryptedSize = encryption.getEncryptedSize(clearSize);
+    const encryptedSize = encryption.getEncryptedSize(clearSize, paddingStep);
     const progressHandler = new ProgressHandler(progressOptions).start(encryptedSize);
 
     const castClearData = await castData(clearData, { type: Uint8Array });
     const { key } = makeResource();
-    const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData));
+    const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData, paddingStep));
     const resourceId = encryption.extractResourceId(encryptedData);
     await this._shareResources([{ resourceId, key }], encryptionOptions);
     const castEncryptedData = await castData(encryptedData, outputOptions);
@@ -233,17 +234,17 @@ export class DataProtector {
     return castEncryptedData;
   }
 
-  async _simpleEncryptDataWithResource<T extends Data>(clearData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource: Resource): Promise<T> {
-    const encryption = getSimpleEncryptionWithFixedResourceId();
+  async _simpleEncryptDataWithResource<T extends Data>(clearData: Data, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource: Resource, paddingStep?: number | Padding): Promise<T> {
+    const encryption = getSimpleEncryptionWithFixedResourceId(paddingStep);
 
     const clearSize = getDataLength(clearData);
-    const encryptedSize = encryption.getEncryptedSize(clearSize);
+    const encryptedSize = encryption.getEncryptedSize(clearSize, paddingStep);
     const progressHandler = new ProgressHandler(progressOptions).start(encryptedSize);
 
     const castClearData = await castData(clearData, { type: Uint8Array });
     if (!resource)
       throw new InternalError('Assertion error: called _simpleEncryptDataWithResource without a resource');
-    const encryptedData = encryption.serialize(encryption.encrypt(resource.key, castClearData, resource.resourceId));
+    const encryptedData = encryption.serialize(encryption.encrypt(resource.key, castClearData, resource.resourceId, paddingStep));
     const castEncryptedData = await castData(encryptedData, outputOptions);
 
     progressHandler.report(encryptedSize);
@@ -269,13 +270,13 @@ export class DataProtector {
   }
 
   async encryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
-    if (getDataLength(clearData) >= STREAM_THRESHOLD)
+    if (paddedFromClearSize(getDataLength(clearData), encryptionOptions.paddingStep) >= STREAM_THRESHOLD)
       return this._streamEncryptData(clearData, encryptionOptions, outputOptions, progressOptions, resource);
 
     if (resource) {
-      // We can ignore the EncryptionOptions (aka SharingOptions) because this path is only accessed through
-      // UploadStream and Encryption session which both manage the share operation on their own
-      return this._simpleEncryptDataWithResource(clearData, outputOptions, progressOptions, resource);
+      // We can ignore the EncryptionOptions (aka SharingOptions) other than paddingStep because this path is only
+      // accessed through UploadStream and Encryption session which both manage the share operation on their own
+      return this._simpleEncryptDataWithResource(clearData, outputOptions, progressOptions, resource, encryptionOptions.paddingStep);
     }
 
     return this._simpleEncryptData(clearData, encryptionOptions, outputOptions, progressOptions);
@@ -292,18 +293,23 @@ export class DataProtector {
     return this._shareResources(keys, { ...sharingOptions, shareWithSelf: false });
   }
 
-  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStreamV4> {
-    let encryptionStreamV4;
-
+  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStreamV4 | EncryptionStreamV8> {
+    let resourceFinal;
     if (resource) {
-      encryptionStreamV4 = new EncryptionStreamV4(resource.resourceId, resource.key);
+      resourceFinal = resource;
     } else {
-      const newResource = makeResource();
-      await this._shareResources([newResource], encryptionOptions);
-      encryptionStreamV4 = new EncryptionStreamV4(newResource.resourceId, newResource.key);
+      resourceFinal = makeResource();
+      await this._shareResources([resourceFinal], encryptionOptions);
     }
 
-    return encryptionStreamV4;
+    let encryptionStream;
+    if (encryptionOptions.paddingStep === Padding.OFF) {
+      encryptionStream = new EncryptionStreamV4(resourceFinal.resourceId, resourceFinal.key);
+    } else {
+      encryptionStream = new EncryptionStreamV8(resourceFinal.resourceId, resourceFinal.key, encryptionOptions.paddingStep);
+    }
+
+    return encryptionStream;
   }
 
   async createDecryptionStream(): Promise<DecryptionStream> {
@@ -317,7 +323,7 @@ export class DataProtector {
     const resource = makeResource();
     await this._shareResources([resource], encryptionOptions);
 
-    return new EncryptionSession(this, getStatus, resource);
+    return new EncryptionSession(this, getStatus, resource, encryptionOptions.paddingStep);
   }
 }
 

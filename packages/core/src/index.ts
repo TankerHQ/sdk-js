@@ -17,6 +17,7 @@ import {
   UpgradeRequired,
 } from '@tanker/errors';
 
+import { Padding } from '@tanker/crypto';
 import { Tanker, optionsWithDefaults } from './Tanker';
 import { Status, statuses } from './Session/status';
 import { fromBase64, toBase64, prehashPassword } from './utils';
@@ -84,4 +85,5 @@ export {
   statuses,
   toBase64,
   prehashPassword,
+  Padding,
 };

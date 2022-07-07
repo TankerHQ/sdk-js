@@ -82,7 +82,7 @@ export class CloudStorageManager {
 
     const metadata: Metadata = {
       ...resourceMetadata,
-      encryptionFormat: getStreamEncryptionFormatDescription(),
+      encryptionFormat: getStreamEncryptionFormatDescription(encryptionOptions.paddingStep),
     };
     const encryptedMetadata = await this._encryptAndShareMetadata(metadata, { resourceId, key });
 
@@ -113,7 +113,7 @@ export class CloudStorageManager {
 
     streams.push(uploader);
 
-    return new UploadStream(b64ResourceId, streams);
+    return new UploadStream(b64ResourceId, totalClearSize, streams);
   }
 
   async createDownloadStream(b64ResourceId: string, progressOptions: ProgressOptions): Promise<DownloadStream> {
