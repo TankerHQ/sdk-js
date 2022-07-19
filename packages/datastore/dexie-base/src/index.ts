@@ -146,14 +146,6 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
 
       this._db.version(version).stores(definitions);
     }
-
-    const tableMap: Record<string, boolean> = {};
-
-    for (const schema of schemas) {
-      for (const table of schema.tables) {
-        tableMap[table.name] = true;
-      }
-    }
   }
 
   add = async (table: string, record: Record<string, any>) => {
