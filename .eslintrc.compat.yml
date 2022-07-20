@@ -15,9 +15,4 @@ plugins:
 
 settings:
   polyfills:
-    - "Promise"
-    - "URLSearchParams" # From fetch-ponyfill: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
-    - "TextDecoder" # From libsodium: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
-    - "document.currentScript" # Webpack boilerplate: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
-    - "navigator.hardwareConcurrency" # From libsodium: feature checked before usage (seen: `umd/tanker-client-browser.min.js`)
-    - "navigator.userAgentData" # From dexie: feature check (seen: `umd/tanker-client-browser.min.js`)
+    - "Promise" # for op_mini all (opera mini)
