@@ -36,7 +36,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     return this.constructor.name;
   }
 
-  // Note: this does NOT support multi-column indexes (yet)
+  // Note: this does NOT support multi-column indexes
   isIndexed(table: string, field: string): boolean {
     return field === '_id' || !!(this._indexes[table] && this._indexes[table]![field]);
   }
@@ -134,6 +134,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
                 this._indexes[name] = {};
               }
 
+              // Note: this does not support multi-column indexes
               this._indexes[name]![i[0]!] = true; // remember indexed fields
 
               definition.push(i.length === 1 ? i[0]! : `[${i.join('+')}]`);
@@ -145,14 +146,6 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
       }
 
       this._db.version(version).stores(definitions);
-    }
-
-    const tableMap: Record<string, boolean> = {};
-
-    for (const schema of schemas) {
-      for (const table of schema.tables) {
-        tableMap[table.name] = true;
-      }
     }
   }
 

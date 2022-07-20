@@ -123,7 +123,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     return store;
   }
 
-  static async _openDatabase(config: Record<string, any>): Promise<typeof PouchDB> {
+  static async _openDatabase(config: { dbName: string, tableName: string }): Promise<typeof PouchDB> {
     const { dbName, tableName } = config;
     const name = `${dbName}_${tableName}`;
 
