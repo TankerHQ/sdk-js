@@ -113,7 +113,7 @@ export class CloudStorageManager {
 
     streams.push(uploader);
 
-    return new UploadStream(b64ResourceId, totalClearSize, streams);
+    return new UploadStream(b64ResourceId, streams);
   }
 
   async createDownloadStream(b64ResourceId: string, progressOptions: ProgressOptions): Promise<DownloadStream> {
