@@ -149,14 +149,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
-      it('encrypt/decrypt with a huge padding step should select the v8 format', async () => {
-        const step = 2 * 1024 * 1024;
-        const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: step });
-        const encrypted = await encryptionSession.encrypt(clearText);
-        expect(encrypted[0]).to.equal(0x08);
-        await expectDecrypt([aliceLaptop], clearText, encrypted);
-      });
-
       [null, 'invalid string', -42, 0, 1].forEach(step => {
         it(`throws when given ${step} as paddingStep`, async () => {
           // @ts-expect-error
