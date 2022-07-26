@@ -47,6 +47,6 @@ export class EncryptionSession {
 
   async createEncryptionStream(): Promise<EncryptionStream> {
     assertStatus(this._getStatus(), Status.READY, 'create an encryption stream');
-    return this._dataProtector.createEncryptionStream({ paddingStep: this._paddingStep }, this._resource);
+    return this._dataProtector.createEncryptionStream({}, this._resource);
   }
 }
