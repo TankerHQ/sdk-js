@@ -1,4 +1,4 @@
-import type { b64string, EncryptionStream, Padding } from '@tanker/crypto';
+import type { b64string, EncryptionStream } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
 import type { Data, ResourceMetadata } from '@tanker/types';
 import { assertDataType, assertNotEmptyString } from '@tanker/types';
@@ -12,14 +12,12 @@ import type { Resource } from './types';
 export class EncryptionSession {
   _dataProtector: DataProtector;
   _resource: Resource;
-  _paddingStep?: number | Padding;
   _getStatus: () => Status;
 
-  constructor(dataProtector: DataProtector, getStatus: () => Status, resource: Resource, paddingStep?: number | Padding) {
+  constructor(dataProtector: DataProtector, getStatus: () => Status, resource: Resource) {
     this._dataProtector = dataProtector;
     this._resource = resource;
     this._getStatus = getStatus;
-    this._paddingStep = paddingStep;
   }
 
   get resourceId(): b64string {
@@ -42,7 +40,7 @@ export class EncryptionSession {
     const outputOptions = extractOutputOptions(options, clearData);
     const progressOptions = extractProgressOptions(options);
 
-    return this._dataProtector.encryptData(clearData, { paddingStep: this._paddingStep }, outputOptions, progressOptions, this._resource);
+    return this._dataProtector.encryptData(clearData, {}, outputOptions, progressOptions, this._resource);
   }
 
   async createEncryptionStream(): Promise<EncryptionStream> {
