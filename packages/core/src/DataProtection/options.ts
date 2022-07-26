@@ -2,7 +2,7 @@ import type { b64string } from '@tanker/crypto';
 import { tcrypto, utils, Padding, isPaddingStep } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import globalThis from '@tanker/global-this';
-import { getConstructor, assertNotEmptyString, assertInteger } from '@tanker/types';
+import { getConstructor, assertNotEmptyString } from '@tanker/types';
 import type { Class, Data, ResourceMetadata } from '@tanker/types';
 
 import type { OnProgress } from './ProgressHandler';
@@ -93,10 +93,6 @@ export const extractEncryptionOptions = (options: Record<string, unknown>): Encr
 
     if (!isPaddingStep(ps)) {
       throw error;
-    }
-
-    if (typeof ps === 'number') {
-      assertInteger(ps, 'paddingStep', true);
     }
 
     encryptionOptions.paddingStep = ps;

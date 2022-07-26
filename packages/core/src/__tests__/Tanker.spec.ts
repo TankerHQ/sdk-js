@@ -409,12 +409,6 @@ describe('Tanker', () => {
           { shareWithGroups: ['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB='] },
           {}, // empty is not allowed on reshare
           [{ shareWithUsers: ['userId'] }], // unexpected extra outer array
-          { paddingStep: -1 },
-          { paddingStep: 0 },
-          { paddingStep: 1 },
-          { paddingStep: 2.42 },
-          { paddingStep: 'a random string' },
-          { paddingStep: null },
         ];
 
         const resourceId = utils.toBase64(new Uint8Array(16));
