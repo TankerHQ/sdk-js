@@ -112,16 +112,15 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
     describe('with the padding option', async () => {
       const encryptSessionOverhead = 57;
-      const paddedEncryptSessionOverhead = encryptSessionOverhead + 1;
       describe('auto', async () => {
-        const clearTextAutoPadding = 'my clear data is clear!';
-        const lengthWithPadme = 24;
+        const clearTextAutoPadding = 'my clear data is clear';
+        const lengthWithPadme = 22;
 
         it('encrypts with auto padding by default', async () => {
           const encryptionSession = await aliceLaptop.createEncryptionSession();
           const encrypted = await encryptionSession.encrypt(clearTextAutoPadding);
 
-          expect(encrypted.length - paddedEncryptSessionOverhead).to.equal(lengthWithPadme);
+          expect(encrypted.length - encryptSessionOverhead - 1).to.equal(lengthWithPadme);
           await expectDecrypt([aliceLaptop], clearTextAutoPadding, encrypted);
           const resourceId = await aliceLaptop.getResourceId(encrypted);
           expect(resourceId).to.deep.equal(encryptionSession.resourceId);
@@ -131,7 +130,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
           const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: Padding.AUTO });
           const encrypted = await encryptionSession.encrypt(clearTextAutoPadding);
 
-          expect(encrypted.length - paddedEncryptSessionOverhead).to.equal(lengthWithPadme);
+          expect(encrypted.length - encryptSessionOverhead - 1).to.equal(lengthWithPadme);
           await expectDecrypt([aliceLaptop], clearTextAutoPadding, encrypted);
           const resourceId = await aliceLaptop.getResourceId(encrypted);
           expect(resourceId).to.deep.equal(encryptionSession.resourceId);
@@ -153,7 +152,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         const encryptionSession = await aliceLaptop.createEncryptionSession({ paddingStep: step });
         const encrypted = await encryptionSession.encrypt(clearText);
 
-        expect((encrypted.length - paddedEncryptSessionOverhead) % step).to.equal(0);
+        expect((encrypted.length - encryptSessionOverhead - 1) % step).to.equal(0);
         await expectDecrypt([aliceLaptop], clearText, encrypted);
         const resourceId = await aliceLaptop.getResourceId(encrypted);
         expect(resourceId).to.deep.equal(encryptionSession.resourceId);

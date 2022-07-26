@@ -120,21 +120,19 @@ export const generateEncryptionTests = (args: TestArgs) => {
 
       describe('with padding', () => {
         const simpleEncryptionOverhead = 17;
-        const paddedSimpleEncryptionOverhead = simpleEncryptionOverhead + 1;
-
         describe('auto', () => {
-          const clearTextAutoPadding = 'my clear data is clear!';
-          const lengthWithPadme = 24;
+          const clearTextAutoPadding = 'my clear data is clear';
+          const lengthWithPadme = 23;
 
           it('encrypts with auto padding by default', async () => {
             const encrypted = await bobLaptop.encrypt(clearTextAutoPadding);
-            expect(encrypted.length - paddedSimpleEncryptionOverhead).to.equal(lengthWithPadme);
+            expect(encrypted.length - simpleEncryptionOverhead).to.equal(lengthWithPadme);
             await expectDecrypt([bobLaptop], clearTextAutoPadding, encrypted);
           });
 
           it('encrypts and decrypts with auto padding', async () => {
             const encrypted = await bobLaptop.encrypt(clearTextAutoPadding, { paddingStep: Padding.AUTO });
-            expect(encrypted.length - paddedSimpleEncryptionOverhead).to.equal(lengthWithPadme);
+            expect(encrypted.length - simpleEncryptionOverhead).to.equal(lengthWithPadme);
             await expectDecrypt([bobLaptop], clearTextAutoPadding, encrypted);
           });
         });
@@ -148,7 +146,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         it('encrypts and decrypts with a padding step', async () => {
           const step = 13;
           const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: step });
-          expect((encrypted.length - paddedSimpleEncryptionOverhead) % step).to.equal(0);
+          expect((encrypted.length - simpleEncryptionOverhead - 1) % step).to.equal(0);
           await expectDecrypt([bobLaptop], clearText, encrypted);
         });
 
