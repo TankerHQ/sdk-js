@@ -1,5 +1,5 @@
 import type { Key, EncryptionFormatDescription } from '@tanker/crypto';
-import { encryptionV3, encryptionV4, encryptionV5, encryptionV6, random, tcrypto, Padding } from '@tanker/crypto';
+import { encryptionV3, encryptionV4, encryptionV5, random, tcrypto } from '@tanker/crypto';
 
 export type Resource = {
   resourceId: Uint8Array;
@@ -12,7 +12,7 @@ export function makeResource(): Resource {
   return { key, resourceId };
 }
 
-export const getSimpleEncryption = (paddingStep?: number | Padding) => (paddingStep === Padding.OFF ? encryptionV3 : encryptionV6);
+export const getSimpleEncryption = () => encryptionV3;
 
 export const getSimpleEncryptionWithFixedResourceId = () => encryptionV5;
 
