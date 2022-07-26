@@ -122,8 +122,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
           expect(encrypted.length - encryptSessionOverhead - 1).to.equal(lengthWithPadme);
           await expectDecrypt([aliceLaptop], clearTextAutoPadding, encrypted);
-          const resourceId = await aliceLaptop.getResourceId(encrypted);
-          expect(resourceId).to.deep.equal(encryptionSession.resourceId);
         });
 
         it('encrypts and decrypts with auto padding by default', async () => {
@@ -132,8 +130,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
           expect(encrypted.length - encryptSessionOverhead - 1).to.equal(lengthWithPadme);
           await expectDecrypt([aliceLaptop], clearTextAutoPadding, encrypted);
-          const resourceId = await aliceLaptop.getResourceId(encrypted);
-          expect(resourceId).to.deep.equal(encryptionSession.resourceId);
         });
       });
 
@@ -143,8 +139,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
         expect(encrypted.length - encryptSessionOverhead).to.equal(clearText.length);
         await expectDecrypt([aliceLaptop], clearText, encrypted);
-        const resourceId = await aliceLaptop.getResourceId(encrypted);
-        expect(resourceId).to.deep.equal(encryptionSession.resourceId);
       });
 
       it('encrypts with a paddingStep of 13', async () => {
@@ -154,8 +148,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
         expect((encrypted.length - encryptSessionOverhead - 1) % step).to.equal(0);
         await expectDecrypt([aliceLaptop], clearText, encrypted);
-        const resourceId = await aliceLaptop.getResourceId(encrypted);
-        expect(resourceId).to.deep.equal(encryptionSession.resourceId);
       });
 
       it('encrypt/decrypt with a huge padding step should select the v8 format', async () => {
@@ -235,8 +227,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);
-        const resourceId = await aliceLaptop.getResourceId(encrypted);
-        expect(resourceId).to.deep.equal(encryptionSession.resourceId);
       });
 
       it('encrypts with auto padding', async () => {
@@ -250,8 +240,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);
-        const resourceId = await aliceLaptop.getResourceId(encrypted);
-        expect(resourceId).to.deep.equal(encryptionSession.resourceId);
       });
 
       it('encrypts and decrypts with no padding', async () => {
@@ -265,8 +253,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);
-        const resourceId = await aliceLaptop.getResourceId(encrypted);
-        expect(resourceId).to.deep.equal(encryptionSession.resourceId);
       });
 
       it('encrypts and decrypts with a padding step', async () => {
@@ -280,8 +266,6 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
 
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);
-        const resourceId = await aliceLaptop.getResourceId(encrypted);
-        expect(resourceId).to.deep.equal(encryptionSession.resourceId);
       });
     });
   });
