@@ -1,4 +1,5 @@
 import { InvalidArgument, DecryptionFailed } from '@tanker/errors';
+import varint from 'varint';
 import { Padding, paddedFromClearSize, padClearData, removePadding } from '../padding';
 
 import * as aead from '../aead';
@@ -25,10 +26,10 @@ export const getClearSize = (encryptedSize: number) => encryptedSize - overhead;
 
 export const getEncryptedSize = (clearSize: number, paddingStep?: number | Padding) => paddedFromClearSize(clearSize, paddingStep) + overhead - 1;
 
-export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array([version]), data.encryptedData);
+export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array(varint.encode(version)), data.encryptedData);
 
 export const unserialize = (buffer: Uint8Array): EncryptionData => {
-  const bufferVersion = buffer[0];
+  const bufferVersion = varint.decode(buffer);
   if (bufferVersion !== version) {
     throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
   }

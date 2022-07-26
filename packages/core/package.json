@@ -35,7 +35,6 @@
     "@tanker/stream-base": "0.0.1",
     "@tanker/stream-cloud-storage": "0.0.1",
     "@tanker/types": "0.0.1",
-    "@types/varint": "^6.0.0",
     "tslib": "^2.3.1",
     "varint": "^6.0.0"
   },
