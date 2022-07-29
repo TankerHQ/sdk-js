@@ -597,6 +597,15 @@ export const generateGroupsTests = (args: TestArgs) => {
     });
 
     describe('encrypt/share', () => {
+      it('dedupes groupIds when encrypting/sharing with the same group twice', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+        const groupId = await alice.session.createGroup([bob.spublicIdentity]);
+        const encrypted = await encrypt(alice.session, { shareWithGroups: [groupId, groupId] });
+
+        await checkDecrypt([bob], [encrypted]);
+      });
+
       it('encrypt for two groups', async () => {
         const alice = await UserSession.create(appHelper);
         const bob = await UserSession.create(appHelper);
