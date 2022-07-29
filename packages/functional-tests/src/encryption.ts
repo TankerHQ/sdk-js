@@ -199,6 +199,11 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expectDecrypt([aliceLaptop, bobLaptop], clearText, encrypted);
       });
 
+      it('dedupes identities when encrypting/sharing with the same permanent identity twice', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity, alicePublicIdentity] });
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
+      });
+
       it('encrypts and shares with a permanent identity and not self', async () => {
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity], shareWithSelf: false });
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
