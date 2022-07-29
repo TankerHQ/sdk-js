@@ -179,7 +179,8 @@ export default class GroupManager {
   }
 
   async getGroupsPublicEncryptionKeys(groupIds: Array<b64string>): Promise<Array<Uint8Array>> {
-    const result = await this._publicEncryptionKeyLookupCoalescer.run(this._getGroupsPublicEncryptionKeys, groupIds);
+    const uniqueGroupIds = [...new Set(groupIds)];
+    const result = await this._publicEncryptionKeyLookupCoalescer.run(this._getGroupsPublicEncryptionKeys, uniqueGroupIds);
 
     return result.map(record => record.key);
   }
