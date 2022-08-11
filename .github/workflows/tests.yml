@@ -28,8 +28,9 @@ jobs:
         run: yarn install
       - name: Tests on ${{ matrix.browser }}
         run: yarn karma --browsers ${{ matrix.browser }}
-        # Browserstack tests are flaky, we allow failures here
-        continue-on-error: true
+        # You can allow a job to pass when this step fails (e.g. temporarily if Browserstack tests
+        # are too flaky), by uncommenting the following line:
+        # continue-on-error: true
         env:
           BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
           BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}
