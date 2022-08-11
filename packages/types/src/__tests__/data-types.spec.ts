@@ -22,7 +22,7 @@ describe('types', () => {
 
   const values: { type: Class<Data>, data: Data }[] = [];
 
-  const uint8array = Uint8Array.from([0, 1, 2, 3, 4, 42, 128, 255]);
+  const uint8array = new Uint8Array([0, 1, 2, 3, 4, 42, 128, 255]);
 
   const arraybuffer = uint8array.buffer;
   values.push({ type: ArrayBuffer, data: arraybuffer });
