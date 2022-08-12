@@ -218,6 +218,9 @@ export class AppHelper {
     return `${randomBase64Token()}@doctolib.com`;
   }
 
+  // We only generate fictitious phone numbers to avoid accidental sendings to real people:
+  //   - Rules for fictitious phone numbers: https://en.wikipedia.org/wiki/Fictitious_telephone_number#France
+  //   - Rules for french valid mobile phone numbers: https://github.com/google/libphonenumber/blob/922efffc/resources/PhoneNumberMetadata.xml#L10072-L10088
   async generateRandomPhoneNumber(): Promise<string> {
     return `+3363998${Math.floor(1000 + Math.random() * 9000)}`;
   }

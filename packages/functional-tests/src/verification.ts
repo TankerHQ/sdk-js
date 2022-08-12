@@ -160,7 +160,10 @@ export const generateVerificationTests = (args: TestArgs) => {
 
       it('should fail to register a phone number verification method if the verification code is not for the targeted phone number', async () => {
         const phoneNumber = await appHelper.generateRandomPhoneNumber();
-        const otherPhoneNumber = await appHelper.generateRandomPhoneNumber();
+        let otherPhoneNumber = phoneNumber;
+        while (otherPhoneNumber === phoneNumber) {
+          otherPhoneNumber = await appHelper.generateRandomPhoneNumber();
+        }
         const verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
         await expect(bobLaptop.registerIdentity({ phoneNumber: otherPhoneNumber, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
@@ -265,9 +268,12 @@ export const generateVerificationTests = (args: TestArgs) => {
         let verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
         await bobLaptop.registerIdentity({ phoneNumber, verificationCode });
 
-        // try to update email with a code for another email address
+        // try to update email with a code for another phone number
         verificationCode = await appHelper.getSMSVerificationCode(phoneNumber);
-        const otherPhoneNumber = await appHelper.generateRandomPhoneNumber();
+        let otherPhoneNumber = phoneNumber;
+        while (otherPhoneNumber === phoneNumber) {
+          otherPhoneNumber = await appHelper.generateRandomPhoneNumber();
+        }
         await expect(bobLaptop.setVerificationMethod({ phoneNumber: otherPhoneNumber, verificationCode })).to.be.rejectedWith(errors.InvalidVerification);
       });
 
