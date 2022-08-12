@@ -1,6 +1,7 @@
 import { InternalError, InvalidArgument } from '@tanker/errors';
 
 import FilePonyfill from '@tanker/file-ponyfill';
+import FileReader from '@tanker/file-reader';
 import globalThis from '@tanker/global-this';
 
 import type { Class } from './utils';
@@ -142,6 +143,16 @@ const toUint8Array = async (value: Data, maxBytes?: number): Promise<Uint8Array>
   if (value instanceof ArrayBuffer)
     return new Uint8Array(value);
 
+  // Legacy browsers don't support Blob.arrayBuffer() (e.g. Safari < 15, Chrome < 76...)
+  // See: https://developer.mozilla.org/en-US/docs/Web/API/Blob/arrayBuffer
+  // Warning: contrary to what MDN says, Safari 14 does not support it either
+  if (!('arrayBuffer' in value)) {
+    const reader = new FileReader(value as Blob);
+    const buffer = await reader.readAsArrayBuffer(maxBytes || (value as Blob).size);
+    return new Uint8Array(buffer);
+  }
+
+  // Modern browsers and Node.js 18+ do support Blob.arrayBuffer()
   const buffer = await value.slice(0, maxBytes || value.size).arrayBuffer();
   return new Uint8Array(buffer);
 };
