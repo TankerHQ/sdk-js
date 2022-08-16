@@ -222,6 +222,7 @@ deploy:
   release:
     description: sdk-js v${SDK_JS_RELEASE_VERSION}
     tag_name: v${SDK_JS_RELEASE_VERSION}
+    ref: ${CI_COMMIT_REF_NAME}
   tags: !reference [.tags/linux, tags]
 
 test/deployed:
