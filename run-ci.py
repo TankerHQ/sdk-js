@@ -9,6 +9,7 @@ from typing import Any, Callable, List, TypedDict
 import cli_ui as ui
 import psutil
 import tankerci
+import tankerci.git
 import tankerci.js
 
 
@@ -249,6 +250,11 @@ def _main() -> None:
     test_deploy_parser = subparsers.add_parser("test-deploy")
     test_deploy_parser.add_argument("--version", required=True)
 
+    write_bridge_dotenv = subparsers.add_parser("write-bridge-dotenv")
+    write_bridge_dotenv.add_argument(
+        "--downstream", dest="downstreams", action="append", required=True
+    )
+
     args = parser.parse_args()
     if args.command == "check":
         runner = args.runner
@@ -262,6 +268,18 @@ def _main() -> None:
         e2e(use_local_sources=args.use_local_sources)
     elif args.command == "test-deploy":
         test_deploy(version=args.version)
+    elif args.command == "write-bridge-dotenv":
+        branches = [
+            tankerci.git.matching_branch_or_default(repo) for repo in args.downstreams
+        ]
+        keys = [
+            repo.replace("-", "_").upper() + "_BRIDGE_BRANCH"
+            for repo in args.downstreams
+        ]
+        env_list = "\n".join([f"{k}={v}" for k, v in zip(keys, branches)])
+        with open("bridge.env", "a+") as f:
+            f.write(env_list)
+        ui.info(env_list)
     else:
         parser.print_help()
         sys.exit(1)
