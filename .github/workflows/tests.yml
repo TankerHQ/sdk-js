@@ -8,17 +8,31 @@ jobs:
       fail-fast: false
       matrix:
         browser:
+          # - ChromeWindows11
           - ChromeWindows10
-          - Chrome70Windows7
-          - EdgeWindows10
-          - Edge18Windows10
-          - FirefoxWindows10
-          - Firefox64Windows8
+          - Chrome70Windows8
           - ChomeOSX
+          - Chrome70OSX
+          # - EdgeWindows11
+          - EdgeWindows10
+          - Edge88Windows8
+          # - FirefoxWindows11
+          - FirefoxWindows10
+          - Firefox78Windows8
           - FirefoxOSX
-          - Android10
-          - Android6
-          - iOS12
+          - Firefox78OSX
+          - OperaOSX
+          - Android12Samsung
+          - Android12Chrome
+          # - Android10Chrome
+          # - Android8Chrome
+          - Android6Chrome
+          - Safari15Monterey
+          - Safari14BigSur
+          - Safari13Catalina
+          - iOS15
+          - iOS14
+          - iOS13
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v2
@@ -28,8 +42,9 @@ jobs:
         run: yarn install
       - name: Tests on ${{ matrix.browser }}
         run: yarn karma --browsers ${{ matrix.browser }}
-        # Browserstack tests are flaky, we allow failures here
-        continue-on-error: true
+        # You can allow a job to pass when this step fails (e.g. temporarily if Browserstack tests
+        # are too flaky), by uncommenting the following line:
+        # continue-on-error: true
         env:
           BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
           BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}
@@ -57,7 +72,7 @@ jobs:
       matrix:
         os:
           - ubuntu-20.04
-          - macos-10.15
+          - macos-11
           - windows-2019
         node_version:
           - '14'
