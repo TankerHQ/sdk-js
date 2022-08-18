@@ -3,7 +3,7 @@ import { Readable } from 'readable-stream';
 // WARNING: don't import the File ponyfill here! We want to test against the real
 //          File constructor, for both real and ponyfilled files to be accepted.
 import { InvalidArgument } from '@tanker/errors';
-import { assertDataType } from '@tanker/types';
+import { assertDataType, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
 
 export default class SlicerStream extends Readable {
@@ -42,9 +42,7 @@ export default class SlicerStream extends Readable {
       this._readChunk = (startIndex: number, endIndex: number) => src.subarray(startIndex, endIndex);
     } else {
       this._readingState.byteSize = source.size;
-      this._readChunk = async (startIndex: number, endIndex: number) => new Uint8Array(
-        await source.slice(startIndex, endIndex).arrayBuffer(),
-      );
+      this._readChunk = async (startIndex: number, endIndex: number) => castData(source.slice(startIndex, endIndex), { type: Uint8Array });
     }
   }
 
