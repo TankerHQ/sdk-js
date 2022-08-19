@@ -124,16 +124,38 @@ check/linux/nightly:
     - poetry run python run-ci.py check --runner linux --nightly
   tags: !reference [.tags/linux, tags]
 
+check/bridge-dotenv:
+  stage: check
+  inherit:
+    default: false
+  before_script:
+    - poetry install
+  script:
+    - poetry run python run-ci.py write-bridge-dotenv --downstream benchmarks
+                                                      --downstream compatibility-tests
+  rules: # Other jobs cannot "needs" this once if the rules don't match
+    - !reference [.rules/mr/auto, rules]
+    - !reference [.rules/web/auto, rules]
+    - !reference [.rules/push-master-or-feat, rules]
+    - !reference [.rules/nightly, rules]
+  artifacts:
+    expire_in: 7 days
+    reports:
+      dotenv: bridge.env
+  tags: !reference [.tags/linux, tags]
+
 .bench/common:
   extends: .variables/bridge-common
   stage: bench
-  needs: []
+  needs:
+    - check/bridge-dotenv
   variables:
     UPSTREAM_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
     UPSTREAM_COMMIT_SHA: $CI_COMMIT_SHA
     UPSTREAM_COMMIT_REF_NAME: $CI_COMMIT_REF_NAME
   trigger:
     project: TankerHQ/benchmarks
+    branch: $BENCHMARKS_BRIDGE_BRANCH
     strategy: depend
 
 .rules/bench:
@@ -187,10 +209,12 @@ bridge/compat:
     - !reference [.rules/web/auto, rules]
   needs:
     - check/linux/node
+    - check/bridge-dotenv
   variables:
     UPSTREAM_JOB_NAME: check/js
   trigger:
     project: TankerHQ/compatibility-tests
+    branch: $COMPATIBILITY_TESTS_BRIDGE_BRANCH
     strategy: depend
 
 check/e2e:
@@ -238,6 +262,7 @@ bridge/bumpjs-compat-tests:
   stage: deploy
   needs:
     - deploy
+    - check/bridge-dotenv
   extends:
     - .variables/bridge-common
   rules:
@@ -250,4 +275,5 @@ bridge/bumpjs-compat-tests:
     UPSTREAM_JOB_NAME: deploy
   trigger:
     project: TankerHQ/compatibility-tests
+    branch: $COMPATIBILITY_TESTS_BRIDGE_BRANCH
     strategy: depend
