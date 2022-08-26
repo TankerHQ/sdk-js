@@ -5,7 +5,7 @@ import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 import type { VerificationFields } from '../Blocks/Block';
 import { hashBlock } from '../Blocks/Block';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-import { unserializeBlock } from '../Blocks/payloads';
+import { BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
 import type { ProvisionalUserKeys } from '../Identity';
 
 export type ProvisionalIdentityClaimRecord = {
@@ -79,7 +79,7 @@ export function provisionalIdentityClaimFromBlock(b64Block: string): ClaimEntry 
   };
 }
 
-export const makeProvisionalIdentityClaim = (userId: Uint8Array, deviceId: Uint8Array, userPublicKey: Uint8Array, provisionalUserKeys: ProvisionalUserKeys) => {
+export const makeProvisionalIdentityClaim = (userId: Uint8Array, deviceId: Uint8Array, userPublicKey: Uint8Array, provisionalUserKeys: ProvisionalUserKeys): BlockNoMetadata => {
   const multiSignedPayload = utils.concatArrays(
     deviceId,
     provisionalUserKeys.appSignatureKeyPair.publicKey,

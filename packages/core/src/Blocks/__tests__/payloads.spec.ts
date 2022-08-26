@@ -1,14 +1,14 @@
 import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { UpgradeRequired } from '@tanker/errors';
-import { serializeBlock, unserializeBlock } from '../payloads';
-import { preferredNature, NATURE_KIND } from '../Nature';
+import { Block, serializeBlock, unserializeBlock } from '../payloads';
+import { preferredNature, NATURE_KIND, Nature } from '../Nature';
 
 describe('blocks: payloads', () => {
   before(() => cryptoReady);
 
   it('should throw when unserializing unsupported block version', async () => {
-    const block = {
+    const block: Block = {
       author: random(tcrypto.HASH_SIZE),
       signature: random(tcrypto.SIGNATURE_SIZE),
       trustchain_id: random(tcrypto.HASH_SIZE),
@@ -21,19 +21,19 @@ describe('blocks: payloads', () => {
   });
 
   it('should throw when unserializing unknown block nature', async () => {
-    const block = {
+    const block: Block = {
       author: random(tcrypto.HASH_SIZE),
       signature: random(tcrypto.SIGNATURE_SIZE),
       trustchain_id: random(tcrypto.HASH_SIZE),
       payload: new Uint8Array(0),
-      nature: Number.MAX_SAFE_INTEGER,
+      nature: Number.MAX_SAFE_INTEGER as Nature,
     };
     const serializedBlock = serializeBlock(block);
     expect(() => unserializeBlock(serializedBlock)).to.throw(UpgradeRequired);
   });
 
   it('should serialize/unserialize a Block', async () => {
-    const block = {
+    const block: Block = {
       trustchain_id: new Uint8Array(tcrypto.HASH_SIZE),
       nature: preferredNature(NATURE_KIND.key_publish_to_device),
       payload: random(450),

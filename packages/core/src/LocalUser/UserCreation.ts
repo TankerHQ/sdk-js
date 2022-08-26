@@ -10,6 +10,7 @@ import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 import { createBlock } from '../Blocks/Block';
 import type { GhostDevice, GhostDeviceKeys } from './ghostDevice';
 import type { DelegationToken } from './UserData';
+import type { BlockNoMetadata } from '../Blocks/payloads';
 
 export const generateDeviceFromGhostDevice = (
   trustchainId: Uint8Array,
@@ -156,7 +157,7 @@ const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKe
   };
 };
 
-export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
+export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array): BlockNoMetadata => {
   const remainingDevices: Array<Device> = [];
   let deviceToRevokeFound = false;
   let deviceAlreadyRevoked = false;
