@@ -503,7 +503,7 @@ describe('Simple Encryption', () => {
   };
 
   // Discard first two types from tuple type
-  type SkipTwo<T> = T extends [unknown, unknown, ...infer R] ? R: never;
+  type SkipTwo<T> = T extends [unknown, unknown, ...infer R] ? R : never;
 
   const generateSimpleTests = <T extends SimpleEncryptor>(encryptor: T, testVectors: Array<TestVector>, extraArgs?: () => SkipTwo<Parameters<T['encrypt']>>) => {
     it('should unserialize/serialize a test vector', () => {
