@@ -19,7 +19,7 @@ import type { KeyPublishEntry } from '../Resources/Serialize';
 import { getKeyPublishEntryFromBlock, makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
 
 import { hashBlock, createBlock } from '../Blocks/Block';
-import { serializeBlock } from '../Blocks/payloads';
+import { Block, serializeBlock } from '../Blocks/payloads';
 import { NATURE_KIND, preferredNature } from '../Blocks/Nature';
 
 import type { User, Device } from '../Users/types';
@@ -127,7 +127,7 @@ class TestGenerator {
   makeTrustchainCreation = (): TestTrustchainCreation => {
     this._trustchainKeys = tcrypto.makeSignKeyPair();
     this._trustchainIndex += 1;
-    const rootBlock = {
+    const rootBlock: Block = {
       trustchain_id: new Uint8Array(0),
       nature: preferredNature(NATURE_KIND.trustchain_creation),
       author: rootBlockAuthor,

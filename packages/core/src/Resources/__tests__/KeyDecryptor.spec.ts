@@ -96,7 +96,7 @@ describe('KeyDecryptor', () => {
   });
 
   it('throws when not called with a key publish', async () => {
-    const badKeyPublish = { nature: 42 } as KeyPublishEntry;
+    const badKeyPublish = { nature: 42 } as unknown as KeyPublishEntry;
 
     await expect(decryptor.keyFromKeyPublish(badKeyPublish)).to.be.rejectedWith(InternalError);
   });

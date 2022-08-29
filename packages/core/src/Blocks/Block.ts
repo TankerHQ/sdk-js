@@ -26,7 +26,7 @@ export function hashBlock(block: Block | BlockNoSignature): Uint8Array {
 }
 
 export function createBlock(payload: Uint8Array, nature: Nature, trustchainId: Uint8Array, author: Uint8Array, signatureKey: Uint8Array): { block: b64string; hash: Uint8Array; } {
-  const block = {
+  const block: BlockNoSignature = {
     trustchain_id: trustchainId,
     nature,
     author,

@@ -4,7 +4,7 @@ import varint from 'varint';
 import type { VerificationMethod, VerificationWithToken } from './types';
 import { isPreverifiedVerification, isPreverifiedVerificationMethod } from './types';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-import { NATURE_KIND, preferredNature } from '../Blocks/Nature';
+import { Nature, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 
 export const enum VerificationMethodTypes {
   email = 1,
@@ -100,7 +100,7 @@ export const unserializeSessionCertificate = (payload: Uint8Array): SessionCerti
   (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'verification_method_target'),
 ]);
 
-export const makeSessionCertificate = (verification: VerificationWithToken) => {
+export const makeSessionCertificate = (verification: VerificationWithToken): { payload: Uint8Array, nature: Nature } => {
   if (isPreverifiedVerification(verification)) {
     throw new InvalidArgument('cannot make session certificate with preverified verification method type');
   }

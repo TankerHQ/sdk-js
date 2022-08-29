@@ -7,10 +7,13 @@ import { getArray, getStaticArray, encodeArrayLength } from './Serialize';
 import type { Nature } from './Nature';
 import { natureExists } from './Nature';
 
-export type BlockNoSignature = {
-  trustchain_id: Uint8Array;
+export type BlockNoMetadata = {
   nature: Nature;
   payload: Uint8Array;
+};
+
+export type BlockNoSignature = BlockNoMetadata & {
+  trustchain_id: Uint8Array;
   author: Uint8Array;
 };
 

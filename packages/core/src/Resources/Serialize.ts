@@ -3,7 +3,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 
 import type { PublicProvisionalUser } from '../Identity';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-import { unserializeBlock } from '../Blocks/payloads';
+import { BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
 import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
 import type { NatureKind, Nature } from '../Blocks/Nature';
 
@@ -73,7 +73,7 @@ export const getKeyPublishEntryFromBlock = (b64Block: b64string): KeyPublishEntr
   return { ...keyPublishRecord, nature };
 };
 
-export const makeKeyPublish = (publicEncryptionKey: Uint8Array, resourceKey: Uint8Array, resourceId: Uint8Array, nature: NatureKind) => {
+export const makeKeyPublish = (publicEncryptionKey: Uint8Array, resourceKey: Uint8Array, resourceId: Uint8Array, nature: NatureKind): BlockNoMetadata => {
   const sharedKey = tcrypto.sealEncrypt(
     resourceKey,
     publicEncryptionKey,
@@ -88,7 +88,7 @@ export const makeKeyPublish = (publicEncryptionKey: Uint8Array, resourceKey: Uin
   return { payload: serializeKeyPublish(payload), nature: preferredNature(nature) };
 };
 
-export const makeKeyPublishToProvisionalUser = (publicProvisionalUser: PublicProvisionalUser, resourceKey: Uint8Array, resourceId: Uint8Array) => {
+export const makeKeyPublishToProvisionalUser = (publicProvisionalUser: PublicProvisionalUser, resourceKey: Uint8Array, resourceId: Uint8Array): BlockNoMetadata => {
   const preEncryptedKey = tcrypto.sealEncrypt(
     resourceKey,
     publicProvisionalUser.appEncryptionPublicKey,

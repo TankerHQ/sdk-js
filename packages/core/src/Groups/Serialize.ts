@@ -4,7 +4,7 @@ import { InternalError } from '@tanker/errors';
 
 import type { PublicProvisionalUser } from '../Identity';
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength, encodeUint32 } from '../Blocks/Serialize';
-import { unserializeBlock } from '../Blocks/payloads';
+import { BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
 import type { VerificationFields } from '../Blocks/Block';
 import { hashBlock } from '../Blocks/Block';
 import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
@@ -584,7 +584,7 @@ export const getUserGroupRemovalBlockSignData = (record: UserGroupRemovalRecord,
   ...record.provisional_members_to_remove.map(m => utils.concatArrays(m.app_signature_public_key, m.tanker_signature_public_key)),
 );
 
-export const makeUserGroupCreation = (signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
+export const makeUserGroupCreation = (signatureKeyPair: tcrypto.SodiumKeyPair, encryptionKeyPair: tcrypto.SodiumKeyPair, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>): BlockNoMetadata => {
   const encryptedPrivateSignatureKey = tcrypto.sealEncrypt(signatureKeyPair.privateKey, encryptionKeyPair.publicKey);
 
   const keysForUsers = users.map(u => {
@@ -631,7 +631,7 @@ export const makeUserGroupCreation = (signatureKeyPair: tcrypto.SodiumKeyPair, e
   return { payload: serializeUserGroupCreationV3(payload), nature: preferredNature(NATURE_KIND.user_group_creation) };
 };
 
-export const makeUserGroupAdditionV2 = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
+export const makeUserGroupAdditionV2 = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>): BlockNoMetadata => {
   const keysForUsers = users.map(u => {
     const userPublicKey = getLastUserPublicKey(u);
     if (!userPublicKey)
@@ -670,7 +670,7 @@ export const makeUserGroupAdditionV2 = (groupId: Uint8Array, privateSignatureKey
   return { payload: serializeUserGroupAdditionV2(payload), nature: NATURE.user_group_addition_v2 };
 };
 
-export const makeUserGroupAdditionV3 = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>) => {
+export const makeUserGroupAdditionV3 = (groupId: Uint8Array, privateSignatureKey: Uint8Array, previousGroupBlock: Uint8Array, privateEncryptionKey: Uint8Array, users: Array<User>, provisionalUsers: Array<PublicProvisionalUser>): BlockNoMetadata => {
   const keysForUsers = users.map(u => {
     const userPublicKey = getLastUserPublicKey(u);
     if (!userPublicKey)
@@ -714,7 +714,7 @@ export const makeUserGroupAdditionV3 = (groupId: Uint8Array, privateSignatureKey
   return { payload: serializeUserGroupAdditionV3(payload), nature: NATURE.user_group_addition_v3 };
 };
 
-export const makeUserGroupRemoval = (author: Uint8Array, groupId: Uint8Array, privateSignatureKey: Uint8Array, users: Array<Uint8Array>, provisionalUsers: Array<PublicProvisionalUser>) => {
+export const makeUserGroupRemoval = (author: Uint8Array, groupId: Uint8Array, privateSignatureKey: Uint8Array, users: Array<Uint8Array>, provisionalUsers: Array<PublicProvisionalUser>) : BlockNoMetadata => {
   const provisionalMembers = provisionalUsers.map(u => ({
     app_signature_public_key: u.appSignaturePublicKey,
     tanker_signature_public_key: u.tankerSignaturePublicKey,
