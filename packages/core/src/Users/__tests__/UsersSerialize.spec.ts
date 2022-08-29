@@ -1,15 +1,11 @@
-import { ready as cryptoReady, tcrypto, random, utils } from '@tanker/crypto';
+import { ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import { encodeListLength } from '../../Blocks/Serialize';
 import {
   serializeUserDeviceV3,
   unserializeUserDeviceV1,
   unserializeUserDeviceV2,
   unserializeUserDeviceV3,
-  serializeDeviceRevocationV2,
-  unserializeDeviceRevocationV1,
-  unserializeDeviceRevocationV2,
 } from '../Serialize';
 import type {
   DeviceCreationRecord,
@@ -160,69 +156,6 @@ describe('user serialization: payload test vectors', () => {
 
     expect(unserializeUserDeviceV3(payload)).to.deep.equal(deviceCreation);
   });
-
-  it('correctly deserializes a DeviceRevocationV1 test vector', async () => {
-    const deviceRevocation = {
-      device_id: new Uint8Array([
-        0xe9, 0x0b, 0x0a, 0x13, 0x05, 0xb1, 0x82, 0x85, 0xab, 0x9d, 0xbe, 0x3f, 0xdb, 0x57, 0x2b, 0x71,
-        0x6c, 0x0d, 0xa1, 0xa3, 0xad, 0xb8, 0x86, 0x9b, 0x39, 0x58, 0xcb, 0x00, 0xfa, 0x31, 0x5d, 0x87,
-      ]),
-    };
-
-    const payload = deviceRevocation.device_id;
-
-    expect(unserializeDeviceRevocationV1(payload)).to.deep.equal(deviceRevocation);
-  });
-
-  it('correctly deserializes a DeviceRevocationV2 test vector', async () => {
-    const deviceRevocation = {
-      device_id: new Uint8Array([
-        0xe9, 0x0b, 0x0a, 0x13, 0x05, 0xb1, 0x82, 0x85, 0xab, 0x9d, 0xbe, 0x3f, 0xdb, 0x57, 0x2b, 0x71,
-        0x6c, 0x0d, 0xa1, 0xa3, 0xad, 0xb8, 0x86, 0x9b, 0x39, 0x58, 0xcb, 0x00, 0xfa, 0x31, 0x5d, 0x87,
-      ]),
-      user_keys: {
-        public_encryption_key: new Uint8Array([
-          0x42, 0x9a, 0xfa, 0x09, 0xee, 0xea, 0xce, 0x12, 0xec, 0x59, 0x06, 0x35, 0xa8, 0x7f, 0x82, 0xe6,
-          0x39, 0xc8, 0xce, 0xd0, 0xc8, 0xe5, 0x57, 0x16, 0x72, 0x94, 0x9e, 0xfb, 0xed, 0x59, 0xde, 0x2e,
-        ]),
-        previous_public_encryption_key: new Uint8Array([
-          0x8e, 0x3e, 0x33, 0x57, 0x3d, 0xd5, 0x3c, 0xe7, 0x29, 0xbc, 0x73, 0x90, 0x7f, 0x83, 0x20, 0xee,
-          0xe9, 0x0b, 0x0a, 0x13, 0x05, 0xb1, 0x82, 0x85, 0xab, 0x9d, 0xbe, 0x3f, 0xdb, 0x57, 0x2b, 0x71,
-        ]),
-        encrypted_previous_encryption_key: new Uint8Array([
-          0xf1, 0x28, 0xa8, 0x12, 0x03, 0x8e, 0x7c, 0x9c, 0x39, 0xad, 0x73, 0x21, 0xa3, 0xee, 0x50, 0x53,
-          0xc1, 0x1d, 0xda, 0x76, 0xaf, 0xc8, 0xfd, 0x70, 0x74, 0x5c, 0xbb, 0xd6, 0xb8, 0x7f, 0x8f, 0x6b,
-          0xe1, 0xaf, 0x36, 0x80, 0x3f, 0xf3, 0xbc, 0xb2, 0xfb, 0x4e, 0xe1, 0x7d, 0xea, 0xbd, 0x19, 0x6b,
-          0x8e, 0x3e, 0x33, 0x57, 0x3d, 0xd5, 0x3c, 0xe7, 0x29, 0xbc, 0x73, 0x90, 0x7f, 0x83, 0x20, 0xee,
-          0x0e, 0xc0, 0x91, 0x63, 0xe7, 0xc2, 0x04, 0x69, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        ]),
-        private_keys: [{
-          recipient: new Uint8Array([
-            0xd0, 0xa8, 0x9e, 0xff, 0x7d, 0x59, 0x48, 0x3a, 0xee, 0x7c, 0xe4, 0x99, 0x49, 0x4d, 0x1c, 0xd7,
-            0x87, 0x54, 0x41, 0xf5, 0xba, 0x51, 0xd7, 0x65, 0xbf, 0x91, 0x45, 0x08, 0x03, 0xf1, 0xe9, 0xc7,
-          ]),
-          key: new Uint8Array([
-            0xe1, 0xaf, 0x36, 0x80, 0x3f, 0xf3, 0xbc, 0xb2, 0xfb, 0x4e, 0xe1, 0x7d, 0xea, 0xbd, 0x19, 0x6b,
-            0x8e, 0x3e, 0x33, 0x57, 0x3d, 0xd5, 0x3c, 0xe7, 0x29, 0xbc, 0x73, 0x90, 0x7f, 0x83, 0x20, 0xee,
-            0xf1, 0x28, 0xa8, 0x12, 0x03, 0x8e, 0x7c, 0x9c, 0x39, 0xad, 0x73, 0x21, 0xa3, 0xee, 0x50, 0x53,
-            0xc1, 0x1d, 0xda, 0x76, 0xaf, 0xc8, 0xfd, 0x70, 0x74, 0x5c, 0xbb, 0xd6, 0xb8, 0x7f, 0x8f, 0x6b,
-            0x0e, 0xc0, 0x91, 0x63, 0xe7, 0xc2, 0x04, 0x69, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-          ]),
-        }],
-      },
-    };
-
-    const payload = utils.concatArrays(
-      deviceRevocation.device_id,
-      deviceRevocation.user_keys.public_encryption_key,
-      deviceRevocation.user_keys.previous_public_encryption_key,
-      deviceRevocation.user_keys.encrypted_previous_encryption_key,
-      encodeListLength(deviceRevocation.user_keys.private_keys),
-      ...deviceRevocation.user_keys.private_keys.map(userKey => utils.concatArrays(userKey.recipient, userKey.key)),
-    );
-
-    expect(unserializeDeviceRevocationV2(payload)).to.deep.equal(deviceRevocation);
-  });
 });
 
 describe('user serialization: payloads', () => {
@@ -246,63 +179,6 @@ describe('user serialization: payloads', () => {
     };
 
     expect(unserializeUserDeviceV3(serializeUserDeviceV3(userDevice))).to.deep.equal(userDevice);
-  });
-
-  it('should serialize/unserialize a DeviceRevocation', async () => {
-    const deviceRevocation = {
-      device_id: random(tcrypto.HASH_SIZE),
-      user_keys: {
-        public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        previous_public_encryption_key: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_previous_encryption_key: random(tcrypto.SEALED_KEY_SIZE),
-        private_keys: [],
-      },
-    };
-
-    expect(unserializeDeviceRevocationV2(serializeDeviceRevocationV2(deviceRevocation))).to.deep.equal(deviceRevocation);
-  });
-
-  it('should throw when serializing invalid revocation blocks', async () => {
-    const initValidBlock: any = () => ({
-      device_id: new Uint8Array(tcrypto.HASH_SIZE),
-      user_keys: {
-        public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        previous_public_encryption_key: new Uint8Array(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
-        encrypted_previous_encryption_key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
-        private_keys: [{
-          recipient: new Uint8Array(tcrypto.HASH_SIZE),
-          key: new Uint8Array(tcrypto.SEALED_KEY_SIZE),
-        }],
-      },
-    });
-
-    let invalidBlock = initValidBlock();
-    invalidBlock.device_id = new Uint8Array(0);
-    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
-
-    invalidBlock = initValidBlock();
-    invalidBlock.user_keys = {};
-    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
-
-    invalidBlock = initValidBlock();
-    invalidBlock.user_keys.public_encryption_key = new Uint8Array(0);
-    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
-
-    invalidBlock = initValidBlock();
-    invalidBlock.user_keys.previous_public_encryption_key = new Uint8Array(0);
-    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
-
-    invalidBlock = initValidBlock();
-    invalidBlock.user_keys.encrypted_previous_encryption_key = new Uint8Array(0);
-    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
-
-    invalidBlock = initValidBlock();
-    invalidBlock.user_keys.private_keys[0].recipient = new Uint8Array(0);
-    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
-
-    invalidBlock = initValidBlock();
-    invalidBlock.user_keys.private_keys[0].key = new Uint8Array(0);
-    expect(() => serializeDeviceRevocationV2(invalidBlock)).to.throw();
   });
 
   it('should throw if the last reset is not null when serializing a new userDeviceV3', async () => {

@@ -37,7 +37,6 @@ import type { UserData, DelegationToken } from './UserData';
 import type { Client, PullOptions } from '../Network/Client';
 import { OidcNonceManager } from '../OidcNonce/Manager';
 import { Status } from '../Session/status';
-import type { Device } from '../Users/types';
 import { makeSessionCertificate } from './SessionCertificate';
 
 export type PrivateProvisionalKeys = {
@@ -277,12 +276,6 @@ export class LocalUserManager extends EventEmitter {
 
       throw new InternalError(e.toString());
     }
-  };
-
-  listDevices = async (): Promise<Array<Device>> => {
-    await this.updateLocalUser({ isLight: false });
-    const devices = this._localUser.devices;
-    return devices.filter(d => !d.isGhostDevice);
   };
 
   getSessionToken = async (verification: VerificationWithToken): Promise<string> => {

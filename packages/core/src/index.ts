@@ -2,7 +2,6 @@
 import {
   Conflict,
   DecryptionFailed,
-  DeviceRevoked,
   ExpiredVerification,
   GroupTooBig,
   IdentityAlreadyAttached,
@@ -53,7 +52,7 @@ export type {
   LegacyEmailVerificationMethod,
 } from './LocalUser/types';
 export type { AttachResult } from './ProvisionalIdentity/types';
-export type { TankerOptions, Device, ProvisionalVerification } from './Tanker';
+export type { TankerOptions, ProvisionalVerification } from './Tanker';
 export type { EncryptionSession } from './DataProtection/EncryptionSession';
 export type { UploadStream } from './CloudStorage/UploadStream';
 export type { DownloadStream } from './CloudStorage/DownloadStream';
@@ -61,7 +60,6 @@ export type { DownloadStream } from './CloudStorage/DownloadStream';
 const errors = {
   Conflict,
   DecryptionFailed,
-  DeviceRevoked,
   ExpiredVerification,
   GroupTooBig,
   IdentityAlreadyAttached,

@@ -1,10 +1,6 @@
 import { tcrypto, utils } from '@tanker/crypto';
-import { InvalidArgument, PreconditionFailed } from '@tanker/errors';
 
-import type { UserKeys } from '../Users/Serialize';
-import { serializeUserDeviceV3, serializeDeviceRevocationV2 } from '../Users/Serialize';
-
-import type { Device } from '../Users/types';
+import { serializeUserDeviceV3 } from '../Users/Serialize';
 
 import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 import { createBlock } from '../Blocks/Block';
@@ -127,61 +123,4 @@ export const generateUserCreation = (
     ghostDevice,
     userKeys,
   };
-};
-
-const rotateUserKeys = (devices: Array<Device>, currentUserKey: tcrypto.SodiumKeyPair): UserKeys => {
-  const newUserKeyPair = tcrypto.makeEncryptionKeyPair();
-
-  const encryptedPreviousUserKey = tcrypto.sealEncrypt(
-    currentUserKey.privateKey,
-    newUserKeyPair.publicKey,
-  );
-
-  const encryptedUserKeyForDevices = devices.map(device => {
-    const encryptedUserKey = tcrypto.sealEncrypt(
-      newUserKeyPair.privateKey,
-      device.devicePublicEncryptionKey,
-    );
-    return {
-      recipient: device.deviceId,
-      key: encryptedUserKey,
-    };
-  });
-
-  return {
-    public_encryption_key: newUserKeyPair.publicKey,
-    previous_public_encryption_key: currentUserKey.publicKey,
-    encrypted_previous_encryption_key: encryptedPreviousUserKey,
-    private_keys: encryptedUserKeyForDevices,
-  };
-};
-
-export const makeDeviceRevocation = (devices: Array<Device>, currentUserKeys: tcrypto.SodiumKeyPair, deviceId: Uint8Array) => {
-  const remainingDevices: Array<Device> = [];
-  let deviceToRevokeFound = false;
-  let deviceAlreadyRevoked = false;
-
-  devices.forEach(device => {
-    if (utils.equalArray(device.deviceId, deviceId)) {
-      deviceToRevokeFound = true;
-      deviceAlreadyRevoked = device.revoked;
-    } else if (!device.revoked) {
-      remainingDevices.push(device);
-    }
-  });
-
-  if (!deviceToRevokeFound) {
-    throw new InvalidArgument('The deviceId provided does not match one of your devices');
-  }
-  if (deviceAlreadyRevoked) {
-    throw new PreconditionFailed('The deviceId provided targets a device which is already revoked');
-  }
-
-  const userKeys = rotateUserKeys(remainingDevices, currentUserKeys);
-  const revocationRecord = {
-    device_id: deviceId,
-    user_keys: userKeys,
-  };
-
-  return { payload: serializeDeviceRevocationV2(revocationRecord), nature: preferredNature(NATURE_KIND.device_revocation) };
 };

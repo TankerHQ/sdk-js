@@ -11,7 +11,6 @@ import { generateEncryptionTests } from './encryption';
 import { generateEnrollTests } from './enroll';
 import { generateFakeAuthenticationTests } from './fake-authentication';
 import { generateNetworkTests } from './network';
-import { generateGetDeviceListTests } from './getDeviceList';
 import { generateGroupsTests } from './groups';
 import { generateSessionTests } from './session';
 import { generateUploadTests } from './upload';
@@ -64,7 +63,6 @@ export function generateFunctionalTests(
     });
 
     generateSessionTests(args);
-    generateGetDeviceListTests(args);
     generateVerificationTests(args);
     generateEncryptionTests(args);
     generateEncryptionSessionTests(args);
