@@ -117,6 +117,7 @@
       "packages/**/tests"
     ],
     "reporter": [
+      "cobertura",
       "lcov",
       "text-summary"
     ],
