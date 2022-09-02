@@ -3,7 +3,6 @@ export type Device = {
   devicePublicEncryptionKey: Uint8Array;
   devicePublicSignatureKey: Uint8Array;
   isGhostDevice: boolean;
-  revoked: boolean;
 };
 
 export type User = {

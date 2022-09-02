@@ -62,7 +62,6 @@ export type TankerCoreOptions = {
 
 export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
 
-export type Device = { id: string; isRevoked: boolean; };
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
 
 export function optionsWithDefaults(options: TankerOptions, defaults: TankerCoreOptions): TankerCoreOptions {
@@ -175,13 +174,11 @@ export class Tanker extends EventEmitter {
     return def && def.name || `invalid status: ${this.status}`;
   }
 
-  override addListener(eventName: string, listener: (...args: Array<unknown>) =>
-  void) {
+  override addListener(eventName: string, listener: (...args: Array<unknown>) => void) {
     return this.on(eventName, listener);
   }
 
-  override on(eventName: string, listener: (...args: Array<unknown>) =>
-  void) {
+  override on(eventName: string, listener: (...args: Array<unknown>) => void) {
     if (eventName === 'statusChanged') {
       console.warn('The "statusChanged" event is deprecated, it will be removed in the future');
     }
@@ -189,8 +186,7 @@ export class Tanker extends EventEmitter {
     return super.on(eventName, listener);
   }
 
-  override once(eventName: string, listener: (...args: Array<unknown>) =>
-  void) {
+  override once(eventName: string, listener: (...args: Array<unknown>) => void) {
     if (eventName === 'statusChanged') {
       console.warn('The "statusChanged" event is deprecated, it will be removed in the future');
     }
@@ -210,18 +206,6 @@ export class Tanker extends EventEmitter {
     if (!this._session)
       throw new InternalError('Trying to access non existing _session');
     return this._session;
-  }
-
-  get deviceId(): b64string {
-    console.warn('The "deviceId" property is deprecated, it will be removed in the future');
-
-    assertStatus(this.status, statuses.READY, 'get the device id');
-
-    const deviceId = this.session.deviceId();
-    if (!deviceId)
-      throw new InternalError('Tried to get our device id, but could not find it!');
-
-    return utils.toBase64(deviceId);
   }
 
   _lockCall<T, F extends (...args: any[]) => Promise<T>>(name: string, f: F): (...args: Parameters<F>) => ReturnType<F> {
@@ -287,7 +271,6 @@ export class Tanker extends EventEmitter {
       return this._unauthSession!.getOidcNonceManager();
     }, this._dataStoreOptions, this._clientOptions);
     // Watch and start the session
-    session.on('device_revoked', () => this._deviceRevoked());
     session.on('status_change', s => this.emit('statusChange', s));
     await session.start();
 
@@ -441,27 +424,6 @@ export class Tanker extends EventEmitter {
     if (unauthSession) {
       await unauthSession.stop();
     }
-  }
-
-  _deviceRevoked = async (): Promise<void> => {
-    this.session = null; // the session has already closed itself
-    const unauthSession = this._unauthSession;
-    delete this._unauthSession;
-    if (unauthSession) {
-      await unauthSession.stop();
-    }
-  };
-
-  async getDeviceList(): Promise<Array<Device>> {
-    console.warn('The "getDeviceList" method is deprecated, it will be removed in the future');
-
-    assertStatus(this.status, statuses.READY, 'get the device list');
-
-    const devices = await this.session.listDevices();
-    return devices.map(d => ({
-      id: utils.toBase64(d.deviceId),
-      isRevoked: d.revoked,
-    }));
   }
 
   async share(resourceIds: Array<b64string>, options: SharingOptions): Promise<void> {

@@ -48,7 +48,6 @@ describe('KeyStore', () => {
       devicePublicEncryptionKey: random(tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE),
       devicePublicSignatureKey: random(tcrypto.SIGNATURE_PUBLIC_KEY_SIZE),
       isGhostDevice: true,
-      revoked: true,
     };
 
     const keystore = await openKeystore();
