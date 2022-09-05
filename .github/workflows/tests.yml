@@ -89,7 +89,7 @@ jobs:
       - name: build TypeScript
         run: yarn build:all
       - name: Tests on ${{ matrix.os }} with Node ${{ matrix.node_version }}
-        run: yarn test
+        run: yarn coverage
         env:
           BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
           BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}
@@ -111,3 +111,5 @@ jobs:
           TANKER_OIDC_PROVIDER: ${{ secrets.TANKER_OIDC_PROVIDER }}
           TANKER_TRUSTCHAIND_URL: ${{ secrets.TANKER_TRUSTCHAIND_URL }}
           TANKER_VERIFICATION_API_TEST_TOKEN: ${{ secrets.TANKER_VERIFICATION_API_TEST_TOKEN }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3

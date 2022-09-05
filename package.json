@@ -56,7 +56,6 @@
     "@typescript-eslint/eslint-plugin": "^5.35.1",
     "@typescript-eslint/parser": "^5.35.1",
     "buffer": "6.0.3",
-    "codecov": "3.8.1",
     "colorette": "1.2.1",
     "core-js": "^3.18.3",
     "core-js-pure": "^3.18.3",
@@ -118,6 +117,7 @@
       "packages/**/tests"
     ],
     "reporter": [
+      "cobertura",
       "lcov",
       "text-summary"
     ],

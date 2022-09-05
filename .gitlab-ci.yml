@@ -48,10 +48,14 @@ check/linux/chrome:
     - /usr/local/nvm/nvm-exec poetry run python run-ci.py check --runner node
     - mv coverage/lcov-report lcov-report
   artifacts:
-    paths:
-      - lcov-report/
     expire_in: 7 days
-  coverage: '/^Statements\s*:\s*([^%]+)/'
+    paths:
+      - lcov-report/ # For manual download of coverage reports (artifacts.zip)
+    reports:
+      coverage_report: # For display of full coverage reports in MR diffs
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+  coverage: '/^Statements\s*:\s*([^%]+)/' # For display of summary coverage % in pipeline/MR titles
   tags: !reference [.tags/linux, tags]
 
 check/linux/node:
