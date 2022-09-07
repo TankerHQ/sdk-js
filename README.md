@@ -10,9 +10,6 @@
 [codecov-badge]: https://img.shields.io/codecov/c/github/TankerHQ/sdk-js.svg?label=Coverage
 [codecov-link]: https://codecov.io/gh/TankerHQ/sdk-js
 
-[fakeauth_npm-badge]: https://img.shields.io/npm/v/@tanker/fake-authentication.svg
-[fakeauth_npm-link]: https://npmjs.com/package/@tanker/fake-authentication
-
 [identity_npm-badge]: https://img.shields.io/npm/v/@tanker/identity.svg
 [identity_npm-link]: https://npmjs.com/package/@tanker/identity
 
@@ -92,12 +89,9 @@ End-to-end encryption requires that all users have cryptographic identities. The
 Tanker **Identity** is a server side package to link Tanker identities with your users in your application backend.
 It is available in multiple languages. This repository only contains the Javascript version.
 
-Tanker **Fake Authentication** reduces the friction when starting new projects, by delaying the integration of Tanker Identity in your application server.
-
 | Package | Version |
 |:--------|:--------|
 | [@tanker/identity][identity_npm-link]    | [![identity_npm-badge]][identity_npm-link]   |
-| [@tanker/fake-authentication][fakeauth_npm-link]    | [![fakeauth_npm-badge]][fakeauth_npm-link]   |
 
 ## Browser support
 

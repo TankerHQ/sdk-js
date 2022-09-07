@@ -129,7 +129,6 @@ const makeBaseConfig = ({ mode, target, hmre, devtool, plugins, tsconfig }) => {
       '@tanker/file-reader': path.resolve(__dirname, '../packages/file-reader/src/index.ts'),
       '@tanker/types': path.resolve(__dirname, '../packages/types/src/index.ts'),
       '@tanker/http-utils': path.resolve(__dirname, '../packages/http-utils/src/index.ts'),
-      '@tanker/fake-authentication': path.resolve(__dirname, '../packages/fake-authentication/src/index.ts'),
       '@tanker/stream-base': path.resolve(__dirname, '../packages/stream/base/src/index.ts'),
       '@tanker/stream-cloud-storage': path.resolve(__dirname, '../packages/stream/cloud-storage/src/index.ts'),
       '@tanker/datastore-base': path.resolve(__dirname, '../packages/datastore/base/src/index.ts'),

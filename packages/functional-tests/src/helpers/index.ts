@@ -1,4 +1,4 @@
-export { appdUrl, fakeAuthUrl, trustchaindUrl, managementSettings, oidcSettings } from './config';
+export { appdUrl, trustchaindUrl, managementSettings, oidcSettings } from './config';
 export { expectProgressReport, expectType, expectSameType, expectDeepEqual, expectDecrypt } from './expectations';
 export { makePrefix } from './makePrefix';
 export { makeRandomUint8Array } from './makeRandomUint8Array';

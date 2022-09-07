@@ -1,7 +1,6 @@
 // webpack will actually throw for undefined value
 //  https://github.com/webpack/webpack/blob/0740909b901afa69fcc1657a03215d1e011bb5c3/lib/EnvironmentPlugin.js#L41
 const appdUrl = process.env['TANKER_APPD_URL'] || '';
-const fakeAuthUrl = process.env['TANKER_FAKE_AUTH_URL'] || '';
 const trustchaindUrl = process.env['TANKER_TRUSTCHAIND_URL'] || '';
 const verificationApiToken = process.env['TANKER_VERIFICATION_API_TEST_TOKEN'] || '';
 
@@ -36,4 +35,4 @@ const storageSettings = {
   },
 };
 
-export { appdUrl, fakeAuthUrl, trustchaindUrl, managementSettings, oidcSettings, storageSettings, verificationApiToken };
+export { appdUrl, trustchaindUrl, managementSettings, oidcSettings, storageSettings, verificationApiToken };

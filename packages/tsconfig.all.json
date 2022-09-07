@@ -8,7 +8,6 @@
     { "path": "./file-reader/config/" },
     { "path": "./types/config/" },
     { "path": "./http-utils/config/" },
-    { "path": "./fake-authentication/config/" },
     { "path": "./stream/config/" },
     { "path": "./datastore/config/" },
     { "path": "./core/config/" },

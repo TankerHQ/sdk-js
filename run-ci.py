@@ -58,10 +58,6 @@ configs: List[Config] = [
         "publish": ["@tanker/client-browser"],
     },
     {"build": "client-node", "publish": ["@tanker/client-node"]},
-    {
-        "build": "fake-authentication",
-        "publish": ["@tanker/fake-authentication"],
-    },
 ]
 
 

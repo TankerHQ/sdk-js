@@ -9,7 +9,6 @@ import { generateEncryptionStreamTests } from './encryptionStream';
 import { generateEncryptionSessionTests } from './encryptionSession';
 import { generateEncryptionTests } from './encryption';
 import { generateEnrollTests } from './enroll';
-import { generateFakeAuthenticationTests } from './fake-authentication';
 import { generateNetworkTests } from './network';
 import { generateGroupsTests } from './groups';
 import { generateSessionTests } from './session';
@@ -71,7 +70,6 @@ export function generateFunctionalTests(
     generateGroupsTests(args);
     generateUploadTests(args);
     generateNetworkTests(args);
-    generateFakeAuthenticationTests(args);
     generateConcurrencyTests(args);
     generateSessionTokenTests(args);
   });

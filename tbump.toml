@@ -28,7 +28,3 @@ search = '"@tanker/[^"]+": "{current_version}"'
 [[file]]
 src = "packages/core/src/version.ts"
 search = "TANKER_SDK_VERSION = '{current_version}'"
-
-[[file]]
-src = "packages/fake-authentication/src/FakeAuthentication.ts"
-search = "TANKER_FAKEAUTH_VERSION = '{current_version}'"

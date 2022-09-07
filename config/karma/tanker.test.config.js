@@ -4,7 +4,6 @@ const plugin = new webpack.EnvironmentPlugin({
   CI: null,
 
   TANKER_APPD_URL: null,
-  TANKER_FAKE_AUTH_URL: null,
   TANKER_TRUSTCHAIND_URL: null,
 
   TANKER_MANAGEMENT_API_ACCESS_TOKEN: null,
