@@ -1,5 +1,5 @@
 import type { Tanker } from '@tanker/core';
-import { encryptionV4 } from '@tanker/crypto';
+import { EncryptionV4 } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import { getConstructor } from '@tanker/types';
@@ -13,7 +13,7 @@ type SpyObj = {
 export const expectProgressReport = (
   spy: SpyObj,
   totalBytes: number,
-  maxBytesPerStep: number = encryptionV4.defaultMaxEncryptedChunkSize,
+  maxBytesPerStep: number = EncryptionV4.defaultMaxEncryptedChunkSize,
 ) => {
   // add 1 for initial progress report (currentBytes = 0)
   const stepCount = 1 + (totalBytes === 0 ? 1 : Math.ceil(totalBytes / maxBytesPerStep));

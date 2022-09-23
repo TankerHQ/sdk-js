@@ -6,7 +6,7 @@ import type { b64string } from '../aliases';
 import * as utils from '../utils';
 import type { Padding } from '../padding';
 import { paddedFromClearSize } from '../padding';
-import * as encryptionV8 from './v8';
+import { EncryptionV8 } from './v8';
 
 export class EncryptionStreamV8 extends Transform {
   _maxClearChunkSize: number;
@@ -23,7 +23,7 @@ export class EncryptionStreamV8 extends Transform {
     paddingLeft: null | number;
   };
 
-  constructor(resourceId: Uint8Array, key: Uint8Array, paddingStep?: undefined | number | Padding, maxEncryptedChunkSize: number = encryptionV8.defaultMaxEncryptedChunkSize) {
+  constructor(resourceId: Uint8Array, key: Uint8Array, paddingStep?: undefined | number | Padding, maxEncryptedChunkSize: number = EncryptionV8.defaultMaxEncryptedChunkSize) {
     super({
       // buffering a single input chunk ('drain' can pull more)
       writableHighWaterMark: 1,
@@ -33,7 +33,7 @@ export class EncryptionStreamV8 extends Transform {
       readableObjectMode: true,
     });
 
-    this._maxClearChunkSize = maxEncryptedChunkSize - encryptionV8.overhead;
+    this._maxClearChunkSize = maxEncryptedChunkSize - EncryptionV8.overhead;
     this._maxEncryptedChunkSize = maxEncryptedChunkSize;
     this._resourceId = resourceId;
     this._key = key;
@@ -126,7 +126,7 @@ export class EncryptionStreamV8 extends Transform {
   }
 
   _encryptChunk(clearChunk: Uint8Array) {
-    const encryptedBuffer = encryptionV8.serialize(encryptionV8.encryptChunk(this._key, this._state.index, this._resourceId, this._maxEncryptedChunkSize, clearChunk));
+    const encryptedBuffer = EncryptionV8.serialize(EncryptionV8.encryptChunk(this._key, this._state.index, this._resourceId, this._maxEncryptedChunkSize, clearChunk));
     this._state.index += 1; // safe as long as index < 2^53
     this._state.lastClearChunkSize = clearChunk.length - 1;
 
@@ -163,5 +163,5 @@ export class EncryptionStreamV8 extends Transform {
     return utils.toBase64(this._resourceId);
   }
 
-  getEncryptedSize = (clearSize: number): number => encryptionV8.getEncryptedSize(clearSize, this._paddingStep, this._maxEncryptedChunkSize);
+  getEncryptedSize = (clearSize: number): number => EncryptionV8.getEncryptedSize(clearSize, this._paddingStep, this._maxEncryptedChunkSize);
 }

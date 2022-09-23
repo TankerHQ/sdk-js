@@ -5,58 +5,65 @@ import * as aead from '../aead';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 
-export type EncryptionData = {
+type EncryptionData = {
   encryptedData: Uint8Array,
   resourceId: Uint8Array,
   iv: Uint8Array,
 };
 
-export const version = 6;
-
-export const features = {
+type Features = {
   chunks: false,
   fixedResourceId: false,
 };
 
-export const overhead = 1 + tcrypto.MAC_SIZE + 1;
+export class EncryptionV6 {
+  static version: 6 = 6;
 
-// -1 is the padding byte (0x80)
-export const getClearSize = (encryptedSize: number) => encryptedSize - overhead;
+  static features: Features = {
+    chunks: false,
+    fixedResourceId: false,
+  };
 
-export const getEncryptedSize = (clearSize: number, paddingStep?: number | Padding) => paddedFromClearSize(clearSize, paddingStep) + overhead - 1;
+  static overhead = 1 + tcrypto.MAC_SIZE + 1;
 
-export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array([version]), data.encryptedData);
+  // -1 is the padding byte (0x80)
+  static getClearSize = (encryptedSize: number) => encryptedSize - this.overhead;
 
-export const unserialize = (buffer: Uint8Array): EncryptionData => {
-  const bufferVersion = buffer[0];
-  if (bufferVersion !== version) {
-    throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
-  }
+  static getEncryptedSize = (clearSize: number, paddingStep?: number | Padding) => paddedFromClearSize(clearSize, paddingStep) + this.overhead - 1;
 
-  if (buffer.length < overhead) {
-    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${overhead} for encryption v6` });
-  }
+  static serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array([this.version]), data.encryptedData);
 
-  const encryptedData = buffer.subarray(1);
-  const resourceId = aead.extractMac(encryptedData);
-  const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
+  static unserialize = (buffer: Uint8Array): EncryptionData => {
+    const bufferVersion = buffer[0];
+    if (bufferVersion !== this.version) {
+      throw new InvalidArgument(`expected buffer version to be ${this.version}, was ${bufferVersion}`);
+    }
 
-  return { encryptedData, resourceId, iv };
-};
+    if (buffer.length < this.overhead) {
+      throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${this.overhead} for encryption v6` });
+    }
 
-export const encrypt = (key: Uint8Array, plaintext: Uint8Array, paddingStep?: number | Padding): EncryptionData => {
-  const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
-  const paddedData = padClearData(plaintext, paddingStep);
-  const associatedData = new Uint8Array([version]);
-  const encryptedData = aead.encryptAEAD(key, iv, paddedData, associatedData);
-  const resourceId = aead.extractMac(encryptedData);
-  return { encryptedData, iv, resourceId };
-};
+    const encryptedData = buffer.subarray(1);
+    const resourceId = aead.extractMac(encryptedData);
+    const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
 
-export const decrypt = (key: Uint8Array, data: EncryptionData): Uint8Array => {
-  const associatedData = new Uint8Array([version]);
-  const paddedData = aead.decryptAEAD(key, data.iv, data.encryptedData, associatedData);
-  return removePadding(paddedData);
-};
+    return { encryptedData, resourceId, iv };
+  };
 
-export const extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
+  static encrypt = (key: Uint8Array, plaintext: Uint8Array, paddingStep?: number | Padding): EncryptionData => {
+    const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
+    const paddedData = padClearData(plaintext, paddingStep);
+    const associatedData = new Uint8Array([this.version]);
+    const encryptedData = aead.encryptAEAD(key, iv, paddedData, associatedData);
+    const resourceId = aead.extractMac(encryptedData);
+    return { encryptedData, iv, resourceId };
+  };
+
+  static decrypt = (key: Uint8Array, data: EncryptionData): Uint8Array => {
+    const associatedData = new Uint8Array([this.version]);
+    const paddedData = aead.decryptAEAD(key, data.iv, data.encryptedData, associatedData);
+    return removePadding(paddedData);
+  };
+
+  static extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
+}

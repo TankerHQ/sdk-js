@@ -5,63 +5,70 @@ import { random } from '../random';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 
-export type EncryptionData = {
+type EncryptionData = {
   encryptedData: Uint8Array;
   resourceId: Uint8Array;
   iv: Uint8Array;
 };
 
-export const version = 5;
-
-export const features = {
+type Features = {
   chunks: false,
   fixedResourceId: true,
 };
 
-export const overhead = 1 + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
+export class EncryptionV5 {
+  static version: 5 = 5;
 
-export const getClearSize = (encryptedSize: number) => encryptedSize - overhead;
+  static features: Features = {
+    chunks: false,
+    fixedResourceId: true,
+  };
 
-export const getEncryptedSize = (clearSize: number) => clearSize + overhead;
+  static overhead = 1 + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
 
-export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array([version]), data.resourceId, data.iv, data.encryptedData);
+  static getClearSize = (encryptedSize: number) => encryptedSize - this.overhead;
 
-export const unserialize = (buffer: Uint8Array): EncryptionData => {
-  const bufferVersion = buffer[0];
+  static getEncryptedSize = (clearSize: number) => clearSize + this.overhead;
 
-  if (bufferVersion !== version) {
-    throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
-  }
+  static serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array([this.version]), data.resourceId, data.iv, data.encryptedData);
 
-  if (buffer.length < overhead) {
-    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${overhead} for encryption v5` });
-  }
+  static unserialize = (buffer: Uint8Array): EncryptionData => {
+    const bufferVersion = buffer[0];
 
-  let pos = 1;
-  const resourceId = buffer.subarray(pos, pos + tcrypto.MAC_SIZE);
-  pos += tcrypto.MAC_SIZE;
+    if (bufferVersion !== this.version) {
+      throw new InvalidArgument(`expected buffer version to be ${this.version}, was ${bufferVersion}`);
+    }
 
-  const iv = buffer.subarray(pos, pos + tcrypto.XCHACHA_IV_SIZE);
-  pos += tcrypto.XCHACHA_IV_SIZE;
+    if (buffer.length < this.overhead) {
+      throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${this.overhead} for encryption v5` });
+    }
 
-  const encryptedData = buffer.subarray(pos);
+    let pos = 1;
+    const resourceId = buffer.subarray(pos, pos + tcrypto.MAC_SIZE);
+    pos += tcrypto.MAC_SIZE;
 
-  return { encryptedData, resourceId, iv };
-};
+    const iv = buffer.subarray(pos, pos + tcrypto.XCHACHA_IV_SIZE);
+    pos += tcrypto.XCHACHA_IV_SIZE;
 
-export const encrypt = (key: Uint8Array, plaintext: Uint8Array, resourceId?: Uint8Array): EncryptionData => {
-  if (!resourceId) {
-    throw new InvalidArgument('Expected a resource ID for encrypt V5');
-  }
-  const iv = random(tcrypto.XCHACHA_IV_SIZE);
+    const encryptedData = buffer.subarray(pos);
 
-  const encryptedData = aead.encryptAEAD(key, iv, plaintext, resourceId);
-  return { encryptedData, iv, resourceId };
-};
+    return { encryptedData, resourceId, iv };
+  };
 
-export const decrypt = (key: Uint8Array, data: EncryptionData): Uint8Array => aead.decryptAEAD(key, data.iv, data.encryptedData, data.resourceId);
+  static encrypt = (key: Uint8Array, plaintext: Uint8Array, resourceId?: Uint8Array): EncryptionData => {
+    if (!resourceId) {
+      throw new InvalidArgument('Expected a resource ID for encrypt V5');
+    }
+    const iv = random(tcrypto.XCHACHA_IV_SIZE);
 
-export const extractResourceId = (buffer: Uint8Array): Uint8Array => {
-  const data = unserialize(buffer);
-  return data.resourceId;
-};
+    const encryptedData = aead.encryptAEAD(key, iv, plaintext, resourceId);
+    return { encryptedData, iv, resourceId };
+  };
+
+  static decrypt = (key: Uint8Array, data: EncryptionData): Uint8Array => aead.decryptAEAD(key, data.iv, data.encryptedData, data.resourceId);
+
+  static extractResourceId = (buffer: Uint8Array): Uint8Array => {
+    const data = this.unserialize(buffer);
+    return data.resourceId;
+  };
+}

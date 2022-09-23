@@ -9,8 +9,8 @@ import { ready as cryptoReady } from '../ready';
 import * as aead from '../aead';
 import { random } from '../random';
 import * as utils from '../utils';
-import * as encryptionV4 from '../EncryptionFormats/v4';
-import * as encryptionV8 from '../EncryptionFormats/v8';
+import { EncryptionV4 } from '../EncryptionFormats/v4';
+import { EncryptionV8 } from '../EncryptionFormats/v8';
 import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 import { EncryptionStreamV8 } from '../EncryptionFormats/EncryptionStreamV8';
 import type { StreamEncryptor } from '../EncryptionFormats/types';
@@ -193,7 +193,7 @@ const generateEncryptionStreamTests = ({ makeEncryptionStream, encryption, trans
 describe('EncryptionStreamV4', () => {
   generateEncryptionStreamTests({
     makeEncryptionStream: (resourceId: Uint8Array, key: Uint8Array, chunkSize?: number) => new EncryptionStreamV4(resourceId, key, chunkSize),
-    encryption: encryptionV4,
+    encryption: EncryptionV4,
     transformMsg: m => m,
   });
 
@@ -223,7 +223,7 @@ describe('EncryptionStreamV4', () => {
     await expect(sync.promise).to.be.fulfilled;
 
     expect(buffer.length).to.be.equal(1);
-    const data = encryptionV4.unserialize(buffer[0]!);
+    const data = EncryptionV4.unserialize(buffer[0]!);
 
     expect(data.resourceId).to.deep.equal(resourceId);
 
@@ -239,7 +239,7 @@ describe('EncryptionStreamV4', () => {
 describe('EncryptionStreamV8', () => {
   generateEncryptionStreamTests({
     makeEncryptionStream: (resourceId: Uint8Array, key: Uint8Array, chunkSize?: number) => new EncryptionStreamV8(resourceId, key, Padding.OFF, chunkSize),
-    encryption: encryptionV8,
+    encryption: EncryptionV8,
     transformMsg: removePadding,
   });
 });

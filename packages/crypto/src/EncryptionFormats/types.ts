@@ -1,20 +1,20 @@
 import { InvalidArgument } from '@tanker/errors';
 
-import * as encryptionV1 from './v1';
-import * as encryptionV2 from './v2';
-import * as encryptionV3 from './v3';
-import * as encryptionV4 from './v4';
-import * as encryptionV5 from './v5';
-import * as encryptionV6 from './v6';
-import * as encryptionV7 from './v7';
-import * as encryptionV8 from './v8';
+import { EncryptionV1 } from './v1';
+import { EncryptionV2 } from './v2';
+import { EncryptionV3 } from './v3';
+import { EncryptionV4 } from './v4';
+import { EncryptionV5 } from './v5';
+import { EncryptionV6 } from './v6';
+import { EncryptionV7 } from './v7';
+import { EncryptionV8 } from './v8';
 
 export interface EncryptionFormatReporter {
   getClearSize(encryptedSize: number): number
   getEncryptedSize(clearSize: number): number
 }
 
-const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7, encryptionV8];
+const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8];
 
 export type Encryptor = Exclude<typeof encryptionFormats[0], undefined>;
 

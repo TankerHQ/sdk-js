@@ -4,7 +4,7 @@ import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { b64string } from '../aliases';
 import * as utils from '../utils';
-import * as encryptionV4 from './v4';
+import { EncryptionV4 } from './v4';
 
 export class EncryptionStreamV4 extends Transform {
   _maxClearChunkSize: number;
@@ -18,7 +18,7 @@ export class EncryptionStreamV4 extends Transform {
     lastClearChunkSize: number;
   };
 
-  constructor(resourceId: Uint8Array, key: Uint8Array, maxEncryptedChunkSize: number = encryptionV4.defaultMaxEncryptedChunkSize) {
+  constructor(resourceId: Uint8Array, key: Uint8Array, maxEncryptedChunkSize: number = EncryptionV4.defaultMaxEncryptedChunkSize) {
     super({
       // buffering a single input chunk ('drain' can pull more)
       writableHighWaterMark: 1,
@@ -28,7 +28,7 @@ export class EncryptionStreamV4 extends Transform {
       readableObjectMode: true,
     });
 
-    this._maxClearChunkSize = maxEncryptedChunkSize - encryptionV4.overhead;
+    this._maxClearChunkSize = maxEncryptedChunkSize - EncryptionV4.overhead;
     this._maxEncryptedChunkSize = maxEncryptedChunkSize;
     this._resourceId = resourceId;
     this._key = key;
@@ -86,7 +86,7 @@ export class EncryptionStreamV4 extends Transform {
   }
 
   _encryptChunk(clearChunk: Uint8Array) {
-    const encryptedBuffer = encryptionV4.serialize(encryptionV4.encryptChunk(this._key, this._state.index, this._resourceId, this._maxEncryptedChunkSize, clearChunk));
+    const encryptedBuffer = EncryptionV4.serialize(EncryptionV4.encryptChunk(this._key, this._state.index, this._resourceId, this._maxEncryptedChunkSize, clearChunk));
     this._state.index += 1; // safe as long as index < 2^53
     this._state.lastClearChunkSize = clearChunk.length;
 
@@ -119,5 +119,5 @@ export class EncryptionStreamV4 extends Transform {
     return utils.toBase64(this._resourceId);
   }
 
-  getEncryptedSize = (clearSize: number): number => encryptionV4.getEncryptedSize(clearSize, this._maxEncryptedChunkSize);
+  getEncryptedSize = (clearSize: number): number => EncryptionV4.getEncryptedSize(clearSize, this._maxEncryptedChunkSize);
 }

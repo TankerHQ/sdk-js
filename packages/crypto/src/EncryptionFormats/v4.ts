@@ -15,83 +15,90 @@ export type EncryptionData = {
   encryptedChunkSize: number;
 };
 
-export const version = 4;
-
-export const features = {
+type Features = {
   chunks: true,
   fixedResourceId: true,
 };
 
-export const overhead = 1 + uint32Length + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
+export class EncryptionV4 {
+  static version: 4 = 4;
 
-export const defaultMaxEncryptedChunkSize = 1024 * 1024; // 1MB
+  static features: Features = {
+    chunks: true,
+    fixedResourceId: true,
+  };
 
-export const getClearSize = (encryptedSize: number, maxEncryptedChunkSize: number = defaultMaxEncryptedChunkSize) => {
-  const chunkCount = Math.ceil(encryptedSize / maxEncryptedChunkSize);
-  return encryptedSize - chunkCount * overhead;
-};
+  static overhead = 1 + uint32Length + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
 
-export const getEncryptedSize = (clearSize: number, maxEncryptedChunkSize: number = defaultMaxEncryptedChunkSize) => {
-  const maxClearChunkSize = maxEncryptedChunkSize - overhead;
-  // Note: if clearSize is multiple of maxClearChunkSize, an additional empty chunk is added
-  //       at the end, hence the +1 to compute chunkCount
-  const chunkCount = Math.ceil((clearSize + 1) / maxClearChunkSize);
-  return clearSize + chunkCount * overhead;
-};
+  static defaultMaxEncryptedChunkSize = 1024 * 1024; // 1MB
 
-export const serialize = (data: EncryptionData): Uint8Array => utils.concatArrays(
-  new Uint8Array([version]),
-  number.toUint32le(data.encryptedChunkSize),
-  data.resourceId,
-  data.ivSeed,
-  data.encryptedData,
-);
+  static getClearSize = (encryptedSize: number, maxEncryptedChunkSize: number = this.defaultMaxEncryptedChunkSize) => {
+    const chunkCount = Math.ceil(encryptedSize / maxEncryptedChunkSize);
+    return encryptedSize - chunkCount * this.overhead;
+  };
 
-export const unserialize = (buffer: Uint8Array): EncryptionData => {
-  const bufferVersion = buffer[0];
+  static getEncryptedSize = (clearSize: number, maxEncryptedChunkSize: number = this.defaultMaxEncryptedChunkSize) => {
+    const maxClearChunkSize = maxEncryptedChunkSize - this.overhead;
+    // Note: if clearSize is multiple of maxClearChunkSize, an additional empty chunk is added
+    //       at the end, hence the +1 to compute chunkCount
+    const chunkCount = Math.ceil((clearSize + 1) / maxClearChunkSize);
+    return clearSize + chunkCount * this.overhead;
+  };
 
-  if (bufferVersion !== version) {
-    throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
-  }
+  static serialize = (data: EncryptionData): Uint8Array => utils.concatArrays(
+    new Uint8Array([this.version]),
+    number.toUint32le(data.encryptedChunkSize),
+    data.resourceId,
+    data.ivSeed,
+    data.encryptedData,
+  );
 
-  if (buffer.length < overhead) {
-    throw new InvalidArgument('buffer is too short for encryption format v4');
-  }
+  static unserialize = (buffer: Uint8Array): EncryptionData => {
+    const bufferVersion = buffer[0];
 
-  let pos = 1;
-  const encryptedChunkSize = number.fromUint32le(buffer.subarray(pos, pos + uint32Length));
-  pos += uint32Length;
+    if (bufferVersion !== this.version) {
+      throw new InvalidArgument(`expected buffer version to be ${this.version}, was ${bufferVersion}`);
+    }
 
-  const resourceId = buffer.subarray(pos, pos + tcrypto.MAC_SIZE);
-  pos += tcrypto.MAC_SIZE;
+    if (buffer.length < this.overhead) {
+      throw new InvalidArgument('buffer is too short for encryption format v4');
+    }
 
-  const ivSeed = buffer.subarray(pos, pos + tcrypto.XCHACHA_IV_SIZE);
-  pos += tcrypto.XCHACHA_IV_SIZE;
+    let pos = 1;
+    const encryptedChunkSize = number.fromUint32le(buffer.subarray(pos, pos + uint32Length));
+    pos += uint32Length;
 
-  const encryptedData = buffer.subarray(pos);
+    const resourceId = buffer.subarray(pos, pos + tcrypto.MAC_SIZE);
+    pos += tcrypto.MAC_SIZE;
 
-  return { ivSeed, encryptedChunkSize, resourceId, encryptedData };
-};
+    const ivSeed = buffer.subarray(pos, pos + tcrypto.XCHACHA_IV_SIZE);
+    pos += tcrypto.XCHACHA_IV_SIZE;
 
-export const encryptChunk = (key: Uint8Array, index: number, resourceId: Uint8Array, encryptedChunkSize: number, clearChunk: Uint8Array): EncryptionData => {
-  const ivSeed = random(tcrypto.XCHACHA_IV_SIZE);
-  const iv = tcrypto.deriveIV(ivSeed, index);
+    const encryptedData = buffer.subarray(pos);
 
-  const encryptedData = aead.encryptAEAD(key, iv, clearChunk);
-  return { ivSeed, encryptedData, resourceId, encryptedChunkSize };
-};
+    return { ivSeed, encryptedChunkSize, resourceId, encryptedData };
+  };
 
-export const decryptChunk = (key: Uint8Array, index: number, data: EncryptionData): Uint8Array => {
-  const iv = tcrypto.deriveIV(data.ivSeed, index);
-  return aead.decryptAEAD(key, iv, data.encryptedData);
-};
+  static encryptChunk = (key: Uint8Array, index: number, resourceId: Uint8Array, encryptedChunkSize: number, clearChunk: Uint8Array): EncryptionData => {
+    const ivSeed = random(tcrypto.XCHACHA_IV_SIZE);
+    const iv = tcrypto.deriveIV(ivSeed, index);
 
-export const extractResourceId = (buffer: Uint8Array): Uint8Array => {
-  const resourceId = unserialize(buffer).resourceId;
+    const encryptedData = aead.encryptAEAD(key, iv, clearChunk);
+    return { ivSeed, encryptedData, resourceId, encryptedChunkSize };
+  };
 
-  if (!resourceId) {
-    throw new InvalidArgument('Assertion error: no resourceId in buffer');
-  }
+  static decryptChunk = (key: Uint8Array, index: number, data: EncryptionData): Uint8Array => {
+    const iv = tcrypto.deriveIV(data.ivSeed, index);
+    return aead.decryptAEAD(key, iv, data.encryptedData);
+  };
 
-  return resourceId;
-};
+  static extractResourceId = (buffer: Uint8Array): Uint8Array => {
+    const resourceId = this.unserialize(buffer).resourceId;
+
+    if (!resourceId) {
+      throw new InvalidArgument('Assertion error: no resourceId in buffer');
+    }
+
+    return resourceId;
+  };
+}

@@ -9,9 +9,9 @@ import * as tcrypto from '../tcrypto';
 import { ready as cryptoReady } from '../ready';
 import { random } from '../random';
 import * as utils from '../utils';
-import * as encryptionV8 from '../EncryptionFormats/v8';
-import * as encryptionV4 from '../EncryptionFormats/v4';
-import * as encryptionV3 from '../EncryptionFormats/v3';
+import { EncryptionV3 } from '../EncryptionFormats/v3';
+import { EncryptionV4 } from '../EncryptionFormats/v4';
+import { EncryptionV8 } from '../EncryptionFormats/v8';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
 
 describe('DecryptionStream', () => {
@@ -66,7 +66,7 @@ describe('DecryptionStream', () => {
       mapper.findKey = sinon.fake(() => {
         throw new InvalidArgument('some error');
       });
-      const chunk = encryptionV3.serialize(encryptionV3.encrypt(unknownKey, utils.fromString('some random data')));
+      const chunk = EncryptionV3.serialize(EncryptionV3.encrypt(unknownKey, utils.fromString('some random data')));
       stream.write(chunk);
       stream.end();
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
@@ -78,7 +78,7 @@ describe('DecryptionStream', () => {
       });
 
       const clear = utils.fromString('test');
-      const encryptedChunk = encryptionV4.serialize(encryptionV4.encryptChunk(key, 0, resourceId, encryptionV4.overhead + clear.length, clear));
+      const encryptedChunk = EncryptionV4.serialize(EncryptionV4.encryptChunk(key, 0, resourceId, EncryptionV4.overhead + clear.length, clear));
       stream.write(encryptedChunk);
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
     });
@@ -89,7 +89,7 @@ describe('DecryptionStream', () => {
       });
 
       const clear = padClearData(utils.fromString('test'));
-      const encryptedChunk = encryptionV8.serialize(encryptionV8.encryptChunk(key, 0, resourceId, encryptionV8.overhead + clear.length, clear));
+      const encryptedChunk = EncryptionV8.serialize(EncryptionV8.encryptChunk(key, 0, resourceId, EncryptionV8.overhead + clear.length, clear));
       stream.write(encryptedChunk);
       await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
     });
@@ -158,11 +158,11 @@ describe('DecryptionStream', () => {
     generateBufferTests({
       encryptMsg: (index: number, clearChunkSize: number, str: string) => {
         const clear = utils.fromString(str);
-        const encryptedChunkSize = encryptionV4.overhead + clearChunkSize;
-        const encrypted = encryptionV4.serialize(encryptionV4.encryptChunk(key, index, resourceId, encryptedChunkSize, clear));
+        const encryptedChunkSize = EncryptionV4.overhead + clearChunkSize;
+        const encrypted = EncryptionV4.serialize(EncryptionV4.encryptChunk(key, index, resourceId, encryptedChunkSize, clear));
         return { clear, encrypted };
       },
-      overhead: encryptionV4.overhead,
+      overhead: EncryptionV4.overhead,
     });
   });
 
@@ -170,11 +170,11 @@ describe('DecryptionStream', () => {
     generateBufferTests({
       encryptMsg: (index: number, clearChunkSize: number, str: string) => {
         const clear = padClearData(utils.fromString(str), Padding.OFF);
-        const encryptedChunkSize = encryptionV8.overhead + clearChunkSize;
-        const encrypted = encryptionV8.serialize(encryptionV8.encryptChunk(key, index, resourceId, encryptedChunkSize, clear));
+        const encryptedChunkSize = EncryptionV8.overhead + clearChunkSize;
+        const encrypted = EncryptionV8.serialize(EncryptionV8.encryptChunk(key, index, resourceId, encryptedChunkSize, clear));
         return { clear, encrypted };
       },
-      overhead: encryptionV8.overhead,
+      overhead: EncryptionV8.overhead,
     });
   });
 });

@@ -4,52 +4,59 @@ import * as aead from '../aead';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 
-export type EncryptionData = {
+type EncryptionData = {
   encryptedData: Uint8Array;
   resourceId: Uint8Array;
   iv: Uint8Array;
 };
 
-export const version = 3;
-
-export const features = {
+type Features = {
   chunks: false,
   fixedResourceId: false,
 };
 
-export const overhead = 1 + tcrypto.MAC_SIZE;
+export class EncryptionV3 {
+  static version: 3 = 3;
 
-export const getClearSize = (encryptedSize: number) => encryptedSize - overhead;
+  static features: Features = {
+    chunks: false,
+    fixedResourceId: false,
+  };
 
-export const getEncryptedSize = (clearSize: number) => clearSize + overhead;
+  static overhead = 1 + tcrypto.MAC_SIZE;
 
-export const serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array([version]), data.encryptedData);
+  static getClearSize = (encryptedSize: number) => encryptedSize - this.overhead;
 
-export const unserialize = (buffer: Uint8Array): EncryptionData => {
-  const bufferVersion = buffer[0];
+  static getEncryptedSize = (clearSize: number) => clearSize + this.overhead;
 
-  if (bufferVersion !== version) {
-    throw new InvalidArgument(`expected buffer version to be ${version}, was ${bufferVersion}`);
-  }
+  static serialize = (data: EncryptionData) => utils.concatArrays(new Uint8Array([this.version]), data.encryptedData);
 
-  if (buffer.length < overhead) {
-    throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${overhead} for encryption v3` });
-  }
+  static unserialize = (buffer: Uint8Array): EncryptionData => {
+    const bufferVersion = buffer[0];
 
-  const encryptedData = buffer.subarray(1);
-  const resourceId = aead.extractMac(encryptedData);
-  const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
+    if (bufferVersion !== this.version) {
+      throw new InvalidArgument(`expected buffer version to be ${this.version}, was ${bufferVersion}`);
+    }
 
-  return { encryptedData, resourceId, iv };
-};
+    if (buffer.length < this.overhead) {
+      throw new DecryptionFailed({ message: `truncated encrypted data. Length should be at least ${this.overhead} for encryption v3` });
+    }
 
-export const encrypt = (key: Uint8Array, plaintext: Uint8Array): EncryptionData => {
-  const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
-  const encryptedData = aead.encryptAEAD(key, iv, plaintext);
-  const resourceId = aead.extractMac(encryptedData);
-  return { encryptedData, iv, resourceId };
-};
+    const encryptedData = buffer.subarray(1);
+    const resourceId = aead.extractMac(encryptedData);
+    const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
 
-export const decrypt = (key: Uint8Array, data: EncryptionData): Uint8Array => aead.decryptAEAD(key, data.iv, data.encryptedData);
+    return { encryptedData, resourceId, iv };
+  };
 
-export const extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
+  static encrypt = (key: Uint8Array, plaintext: Uint8Array): EncryptionData => {
+    const iv = new Uint8Array(tcrypto.XCHACHA_IV_SIZE); // zeros
+    const encryptedData = aead.encryptAEAD(key, iv, plaintext);
+    const resourceId = aead.extractMac(encryptedData);
+    return { encryptedData, iv, resourceId };
+  };
+
+  static decrypt = (key: Uint8Array, data: EncryptionData): Uint8Array => aead.decryptAEAD(key, data.iv, data.encryptedData);
+
+  static extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
+}

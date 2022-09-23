@@ -1,7 +1,7 @@
 import { errors, Padding } from '@tanker/core';
 import type { b64string, Tanker, EncryptionSession, EncryptionStream } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
-import { random, utils, encryptionV4, encryptionV8 } from '@tanker/crypto';
+import { random, utils, EncryptionV4, EncryptionV8 } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
 import type { TestArgs, AppHelper } from './helpers';
@@ -232,7 +232,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         encryptor.end();
         const encrypted = utils.concatArrays(...await watchStream(encryptor));
 
-        expect(encryptionV8.getClearSize(encrypted.length)).to.equal(104);
+        expect(EncryptionV8.getClearSize(encrypted.length)).to.equal(104);
 
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);
@@ -247,7 +247,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         encryptor.end();
         const encrypted = utils.concatArrays(...await watchStream(encryptor));
 
-        expect(encryptionV8.getClearSize(encrypted.length)).to.equal(104);
+        expect(EncryptionV8.getClearSize(encrypted.length)).to.equal(104);
 
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);
@@ -262,7 +262,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         encryptor.end();
         const encrypted = utils.concatArrays(...await watchStream(encryptor));
 
-        expect(encryptionV4.getClearSize(encrypted.length)).to.equal(clearData.length);
+        expect(EncryptionV4.getClearSize(encrypted.length)).to.equal(clearData.length);
 
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);
@@ -277,7 +277,7 @@ export const generateEncryptionSessionTests = (args: TestArgs) => {
         encryptor.end();
         const encrypted = utils.concatArrays(...await watchStream(encryptor));
 
-        expect(encryptionV8.getClearSize(encrypted.length) % 500).to.equal(0);
+        expect(EncryptionV8.getClearSize(encrypted.length) % 500).to.equal(0);
 
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(clearData);

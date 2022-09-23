@@ -1,5 +1,5 @@
 import type { b64string } from '@tanker/crypto';
-import { utils, tcrypto, encryptionV2 } from '@tanker/crypto';
+import { utils, tcrypto, EncryptionV2 } from '@tanker/crypto';
 
 export type GhostDevice = {
   privateEncryptionKey: Uint8Array;
@@ -28,9 +28,9 @@ export const extractGhostDevice = (verificationKey: b64string): GhostDevice => {
   };
 };
 
-export const encryptVerificationKeyBytes = (verificationKey: Uint8Array, userSecret: Uint8Array) => encryptionV2.serialize(encryptionV2.encrypt(userSecret, verificationKey));
+export const encryptVerificationKeyBytes = (verificationKey: Uint8Array, userSecret: Uint8Array) => EncryptionV2.serialize(EncryptionV2.encrypt(userSecret, verificationKey));
 
-export const decryptVerificationKeyBytes = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => encryptionV2.decrypt(userSecret, encryptionV2.unserialize(encryptedVerificationKey));
+export const decryptVerificationKeyBytes = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => EncryptionV2.decrypt(userSecret, EncryptionV2.unserialize(encryptedVerificationKey));
 
 export const decryptVerificationKey = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => utils.toString(decryptVerificationKeyBytes(encryptedVerificationKey, userSecret));
 

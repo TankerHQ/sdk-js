@@ -1,6 +1,6 @@
 import { Padding, EncryptionOptions, errors } from '@tanker/core';
 import type { Tanker, b64string } from '@tanker/core';
-import { encryptionV4, encryptionV8, utils } from '@tanker/crypto';
+import { EncryptionV4, EncryptionV8, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
@@ -351,17 +351,17 @@ export const generateUploadTests = (args: TestArgs) => {
   describe('binary file upload and download without padding', () => {
     generateTestsWithOptions({
       options: { paddingStep: Padding.OFF },
-      overhead: encryptionV4.overhead,
-      defaultMaxEncryptedChunkSize: encryptionV4.defaultMaxEncryptedChunkSize,
-      getEncryptedSize: encryptionV4.getEncryptedSize,
+      overhead: EncryptionV4.overhead,
+      defaultMaxEncryptedChunkSize: EncryptionV4.defaultMaxEncryptedChunkSize,
+      getEncryptedSize: EncryptionV4.getEncryptedSize,
     });
   });
   describe('binary file upload and download with padding', () => {
     generateTestsWithOptions({
       options: {},
-      overhead: encryptionV8.overhead,
-      defaultMaxEncryptedChunkSize: encryptionV8.defaultMaxEncryptedChunkSize,
-      getEncryptedSize: (clearSize: number, chunkSize: number) => encryptionV8.getEncryptedSize(clearSize, Padding.AUTO, chunkSize),
+      overhead: EncryptionV8.overhead,
+      defaultMaxEncryptedChunkSize: EncryptionV8.defaultMaxEncryptedChunkSize,
+      getEncryptedSize: (clearSize: number, chunkSize: number) => EncryptionV8.getEncryptedSize(clearSize, Padding.AUTO, chunkSize),
     });
   });
 };

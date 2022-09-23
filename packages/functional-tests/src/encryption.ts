@@ -1,6 +1,6 @@
 import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, OutputOptions } from '@tanker/core';
-import { encryptionV4, encryptionV6, tcrypto, utils, Padding, padme } from '@tanker/crypto';
+import { EncryptionV4, EncryptionV6, tcrypto, utils, Padding, padme } from '@tanker/crypto';
 import { Data, getConstructorName, getDataLength } from '@tanker/types';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
@@ -10,7 +10,7 @@ import { expectProgressReport, expectType, expectSameType, expectDeepEqual, expe
 
 const { READY } = statuses;
 
-const streamStepSize = encryptionV4.defaultMaxEncryptedChunkSize - encryptionV4.overhead;
+const streamStepSize = EncryptionV4.defaultMaxEncryptedChunkSize - EncryptionV4.overhead;
 
 export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
@@ -257,7 +257,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const step = 13;
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity], paddingStep: step });
 
-        const paddedSize = encrypted.length - encryptionV6.overhead;
+        const paddedSize = encrypted.length - EncryptionV6.overhead;
         expect(paddedSize % step).to.equal(0);
 
         await expectDecrypt([aliceLaptop], clearText, encrypted);
