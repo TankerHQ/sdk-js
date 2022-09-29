@@ -393,21 +393,6 @@ export const generateVerificationTests = (args: TestArgs) => {
 
         await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'new passphrase' })).to.be.fulfilled;
       });
-
-      it('fails to setVerificationMethod with preverified email if preverified verification flag is disabled', async () => {
-        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-
-        const email = await appHelper.generateRandomEmail();
-
-        await expect(bobLaptop.setVerificationMethod({ preverifiedEmail: email })).to.be.rejectedWith(errors.PreconditionFailed);
-      });
-
-      it('fails to setVerificationMethod with preverified phone number if preverified verification flag is disabled', async () => {
-        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
-        const phoneNumber = await appHelper.generateRandomPhoneNumber();
-
-        await expect(bobLaptop.setVerificationMethod({ preverifiedPhoneNumber: phoneNumber })).to.be.rejectedWith(errors.PreconditionFailed);
-      });
     });
 
     describe('verification by email', () => {
@@ -899,10 +884,6 @@ export const generateVerificationTests = (args: TestArgs) => {
     });
 
     describe('verification by E2E passphrase', () => {
-      before(async () => {
-        await appHelper.setPreverifiedMethodDisabled();
-      });
-
       it('can register a verification e2e passphrase and open a new device with it', async () => {
         await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
         await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'passphrase' })).to.be.fulfilled;
@@ -993,21 +974,6 @@ export const generateVerificationTests = (args: TestArgs) => {
         await bobLaptop.setVerificationMethod({ passphrase: 'four' }, { allowE2eMethodSwitch: true });
         await bobLaptop.setVerificationMethod({ e2ePassphrase: 'E2E fifth' }, { allowE2eMethodSwitch: true });
         await expect(expectVerification(bobPhone, bobIdentity, { e2ePassphrase: 'E2E fifth' })).to.be.fulfilled;
-      });
-
-      it('fails to setVerificationMethod with preverified email if preverified verification flag is disabled', async () => {
-        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
-
-        const email = await appHelper.generateRandomEmail();
-
-        await expect(bobLaptop.setVerificationMethod({ preverifiedEmail: email }, { allowE2eMethodSwitch: true })).to.be.rejectedWith(errors.PreconditionFailed);
-      });
-
-      it('fails to setVerificationMethod with preverified phone number if preverified verification flag is disabled', async () => {
-        await bobLaptop.registerIdentity({ e2ePassphrase: 'passphrase' });
-        const phoneNumber = await appHelper.generateRandomPhoneNumber();
-
-        await expect(bobLaptop.setVerificationMethod({ preverifiedPhoneNumber: phoneNumber }, { allowE2eMethodSwitch: true })).to.be.rejectedWith(errors.PreconditionFailed);
       });
     });
 

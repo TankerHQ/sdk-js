@@ -89,10 +89,6 @@ export class AppHelper {
     await this._update({ preverified_verification_enabled: true });
   }
 
-  async setPreverifiedMethodDisabled() {
-    await this._update({ preverified_verification_enabled: false });
-  }
-
   async setEnrollUsersEnabled() {
     await this._update({ enroll_users_enabled: true });
   }
