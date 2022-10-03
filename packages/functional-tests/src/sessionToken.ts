@@ -36,7 +36,6 @@ export const generateSessionTokenTests = (args: TestArgs) => {
     });
 
     beforeEach(async () => {
-      await appHelper.setPreverifiedMethodEnabled();
       const bobId = uuid.v4();
       bobIdentity = await appHelper.generateIdentity(bobId);
       bobPublicIdentity = await getPublicIdentity(bobIdentity);

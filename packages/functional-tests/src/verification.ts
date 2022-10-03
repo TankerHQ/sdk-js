@@ -550,7 +550,6 @@ export const generateVerificationTests = (args: TestArgs) => {
       let preverifiedEmail: string;
 
       beforeEach(async () => {
-        await appHelper.setPreverifiedMethodEnabled();
         email = await appHelper.generateRandomEmail();
         preverifiedEmail = await appHelper.generateRandomEmail();
       });
@@ -644,7 +643,6 @@ export const generateVerificationTests = (args: TestArgs) => {
       let preverifiedPhoneNumber: string;
 
       beforeEach(async () => {
-        await appHelper.setPreverifiedMethodEnabled();
         phoneNumber = await appHelper.generateRandomPhoneNumber();
         preverifiedPhoneNumber = await appHelper.generateRandomPhoneNumber();
       });
