@@ -14,13 +14,11 @@ export interface EncryptionFormatReporter {
   getEncryptedSize(clearSize: number): number
 }
 
+export type SimpleEncryptor = typeof EncryptionV1 | typeof EncryptionV2 | typeof EncryptionV3 | typeof EncryptionV5 | typeof EncryptionV6 | typeof EncryptionV7;
+export type StreamEncryptor = typeof EncryptionV4 | typeof EncryptionV8;
+export type Encryptor = SimpleEncryptor | StreamEncryptor;
+
 const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8];
-
-export type Encryptor = Exclude<typeof encryptionFormats[0], undefined>;
-
-// Encryptor have either an `encrypt` or an `encryptChunk` property
-export type SimpleEncryptor = Extract<Encryptor, { features: { chunks: false } }>;
-export type StreamEncryptor = Extract<Encryptor, { features: { chunks: true } }>;
 
 // The maximum byte size of a resource encrypted with the "simple" algorithms
 // (different from v4) is obtained by summing the sizes of:
