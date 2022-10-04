@@ -10,12 +10,14 @@ import { paddedFromClearSize } from '../padding';
 
 const uint32Length = 4;
 
-export type EncryptionData = {
+type EncryptionData = {
   encryptedData: Uint8Array;
   resourceId: Uint8Array;
   ivSeed: Uint8Array;
   encryptedChunkSize: number;
 };
+
+export type ChunkHeader = Pick<EncryptionData, 'resourceId' | 'encryptedChunkSize'>;
 
 type Features = {
   chunks: true,

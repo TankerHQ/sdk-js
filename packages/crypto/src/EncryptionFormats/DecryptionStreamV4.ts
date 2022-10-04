@@ -3,15 +3,13 @@ import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { Key } from '../aliases';
-import type { EncryptionData } from './v4';
+import type { ChunkHeader } from './v4';
 import { EncryptionV4 } from './v4';
 import * as utils from '../utils';
 
 export type ResourceIdKeyMapper = {
   findKey: (resourceID: Uint8Array) => Promise<Key>;
 };
-
-type ChunkHeader = Pick<EncryptionData, 'resourceId' | 'encryptedChunkSize'>;
 
 const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader) => {
   if (!utils.equalArray(oldHeader.resourceId, currentHeader.resourceId)) {

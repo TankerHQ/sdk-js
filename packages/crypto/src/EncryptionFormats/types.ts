@@ -19,8 +19,8 @@ const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, 
 export type Encryptor = Exclude<typeof encryptionFormats[0], undefined>;
 
 // Encryptor have either an `encrypt` or an `encryptChunk` property
-export type SimpleEncryptor = Extract<Encryptor, { encrypt: unknown }>;
-export type StreamEncryptor = Extract<Encryptor, { encryptChunk: unknown }>;
+export type SimpleEncryptor = Extract<Encryptor, { features: { chunks: false } }>;
+export type StreamEncryptor = Extract<Encryptor, { features: { chunks: true } }>;
 
 // The maximum byte size of a resource encrypted with the "simple" algorithms
 // (different from v4) is obtained by summing the sizes of:
@@ -59,3 +59,7 @@ export const extractEncryptionFormat = (encryptedData: Uint8Array) => {
 
   return encryption;
 };
+
+export function isStreamEncryptionFormat(encryptor: Encryptor): encryptor is StreamEncryptor {
+  return encryptor.features.chunks;
+}

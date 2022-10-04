@@ -4,15 +4,13 @@ import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { Key } from '../aliases';
 import { removePadding } from '../padding';
-import type { EncryptionData } from './v8';
+import type { ChunkHeader } from './v8';
 import { EncryptionV8 } from './v8';
 import * as utils from '../utils';
 
 export type ResourceIdKeyMapper = {
   findKey: (resourceID: Uint8Array) => Promise<Key>;
 };
-
-type ChunkHeader = Pick<EncryptionData, 'resourceId' | 'encryptedChunkSize'>;
 
 const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader) => {
   if (!utils.equalArray(oldHeader.resourceId, currentHeader.resourceId)) {
