@@ -2,7 +2,7 @@ import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
 import * as utils from '../utils';
-import { extractEncryptionFormat } from '../EncryptionFormats/types';
+import { extractEncryptionFormat } from '../EncryptionFormats/EncryptionFormats';
 
 describe('Resource', () => {
   const configs = [

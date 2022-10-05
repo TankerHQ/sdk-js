@@ -4,7 +4,7 @@ import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { Key } from '../aliases';
 import * as utils from '../utils';
-import { extractEncryptionFormat } from './types';
+import { extractEncryptionFormat } from './EncryptionFormats';
 
 export type ResourceIdKeyMapper = {
   findKey: (resourceID: Uint8Array) => Promise<Key>;

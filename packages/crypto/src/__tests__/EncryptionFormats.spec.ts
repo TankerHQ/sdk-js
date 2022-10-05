@@ -14,7 +14,7 @@ import { EncryptionV5 } from '../EncryptionFormats/v5';
 import { EncryptionV6 } from '../EncryptionFormats/v6';
 import { EncryptionV7 } from '../EncryptionFormats/v7';
 import { EncryptionV8 } from '../EncryptionFormats/v8';
-import type { Encryptor, SimpleEncryptor } from '../EncryptionFormats/types';
+import type { Encryptor, SimpleEncryptor } from '../EncryptionFormats/EncryptionFormats';
 import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 import { EncryptionStreamV8 } from '../EncryptionFormats/EncryptionStreamV8';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';

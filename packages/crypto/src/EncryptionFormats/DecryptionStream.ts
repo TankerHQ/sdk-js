@@ -3,7 +3,7 @@ import { Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { Key } from '../aliases';
-import { extractEncryptionFormat } from './types';
+import { extractEncryptionFormat } from './EncryptionFormats';
 import { DecryptionStreamSimple } from './DecryptionStreamSimple';
 import { DecryptionStreamV4 } from './DecryptionStreamV4';
 import { DecryptionStreamV8 } from './DecryptionStreamV8';
