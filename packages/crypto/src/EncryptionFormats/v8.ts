@@ -19,18 +19,13 @@ type EncryptionData = {
 
 export type ChunkHeader = Pick<EncryptionData, 'resourceId' | 'encryptedChunkSize'>;
 
-type Features = {
-  chunks: true,
-  fixedResourceId: true,
-};
-
 export class EncryptionV8 {
-  static version: 8 = 8;
+  static version = 8 as const;
 
-  static features : Features = {
+  static features = {
     chunks: true,
     fixedResourceId: true,
-  };
+  } as const;
 
   static overhead = 1 + uint32Length + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE + 1;
 

@@ -10,18 +10,13 @@ type EncryptionData = {
   iv: Uint8Array;
 };
 
-type Features = {
-  chunks: false,
-  fixedResourceId: false,
-};
-
 export class EncryptionV3 {
-  static version: 3 = 3;
+  static version = 3 as const;
 
-  static features: Features = {
+  static features = {
     chunks: false,
     fixedResourceId: false,
-  };
+  } as const;
 
   static overhead = 1 + tcrypto.MAC_SIZE;
 

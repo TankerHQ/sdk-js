@@ -18,7 +18,7 @@ export type SimpleEncryptor = typeof EncryptionV1 | typeof EncryptionV2 | typeof
 export type StreamEncryptor = typeof EncryptionV4 | typeof EncryptionV8;
 export type Encryptor = SimpleEncryptor | StreamEncryptor;
 
-const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8];
+const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8] as const;
 
 // The maximum byte size of a resource encrypted with the "simple" algorithms
 // (different from v4) is obtained by summing the sizes of:
@@ -31,7 +31,7 @@ const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, 
 export const SAFE_EXTRACTION_LENGTH = 1 + 16 + 24 + 5 * (1024 * 1024);
 
 export type EncryptionFormatDescription = {
-  version: number;
+  version: Encryptor['version'];
   encryptedChunkSize?: number;
 };
 
