@@ -532,6 +532,13 @@ describe('Simple Encryption', () => {
     });
     generateUnpaddedTests(EncryptionV1, testVectorsV1);
     generateSimpleTests(EncryptionV1, testVectorsV1);
+
+    describe('compatDecrypt', () => {
+      it('decrypts legacy encrypted payload (without version)', () => {
+        const data = testVectorsV1[0]!;
+        EncryptionV1.compatDecrypt(data.key, data.encryptedData.slice(1));
+      });
+    });
   });
   describe('EncryptionFormatV2', () => {
     generateCommonTests(EncryptionV2, testVectorsV2, {
