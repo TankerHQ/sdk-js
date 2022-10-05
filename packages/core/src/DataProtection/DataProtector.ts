@@ -1,6 +1,6 @@
 import type { b64string, EncryptionFormatDescription, SimpleEncryptor } from '@tanker/crypto';
 import { utils, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream } from '@tanker/crypto';
-import { DecryptionFailed, InternalError } from '@tanker/errors';
+import { InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
 
@@ -164,17 +164,9 @@ export class DataProtector {
     const clearSize = encryption.getClearSize(encryptedSize);
     const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
 
-    const resourceId = encryption.extractResourceId(castEncryptedData);
-    const key = await this._resourceManager.findKeyFromResourceId(resourceId);
+    const keyMapper = (keyID: Uint8Array) => this._resourceManager.findKeyFromResourceId(keyID);
 
-    let clearData;
-
-    try {
-      clearData = encryption.decrypt(key, encryption.unserialize(castEncryptedData));
-    } catch (error) {
-      const b64ResourceId = utils.toBase64(resourceId);
-      throw new DecryptionFailed({ error: error as Error, b64ResourceId });
-    }
+    const clearData = await encryption.decrypt(keyMapper, encryption.unserialize(castEncryptedData));
 
     const castClearData = await castData(clearData, outputOptions);
 

@@ -4,7 +4,7 @@ import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { KeyMapper } from './KeyMapper';
 import * as utils from '../utils';
-import { extractEncryptionFormat } from './EncryptionFormats';
+import { extractEncryptionFormat, SimpleEncryptor } from './EncryptionFormats';
 
 export class DecryptionStreamSimple extends Transform {
   _mapper: KeyMapper;
@@ -36,14 +36,13 @@ export class DecryptionStreamSimple extends Transform {
       // transform will only be called once when every data has been received
       transform: async (encryptedChunk: Uint8Array, _: BufferEncoding, done: TransformCallback) => {
         try {
-          const encryption = extractEncryptionFormat(encryptedChunk);
+          const encryption = extractEncryptionFormat(encryptedChunk) as SimpleEncryptor;
           const resourceId = encryption.extractResourceId(encryptedChunk);
 
           const key = await this._mapper(resourceId);
 
           try {
-            // @ts-expect-error Already checked we are using a simple encryption
-            const clearData = encryption.decrypt(key, encryption.unserialize(encryptedChunk));
+            const clearData = await encryption.decrypt(() => key, encryption.unserialize(encryptedChunk));
             this._decryptionStream.push(clearData);
           } catch (error) {
             const b64ResourceId = utils.toBase64(resourceId);

@@ -5,6 +5,7 @@ import * as aead from '../aead';
 import { random } from '../random';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
+import type { KeyMapper } from './KeyMapper';
 
 type EncryptionData = {
   encryptedData: Uint8Array;
@@ -63,9 +64,17 @@ export class EncryptionV7 {
     return { encryptedData, iv, resourceId };
   };
 
-  static decrypt = (key: Uint8Array, data: EncryptionData): Uint8Array => {
-    const associatedData = utils.concatArrays(new Uint8Array([this.version]), data.resourceId);
-    const paddedData = aead.decryptAEAD(key, data.iv, data.encryptedData, associatedData);
+  static decrypt = async (keyMapper: KeyMapper, data: EncryptionData): Promise<Uint8Array> => {
+    const key = await keyMapper(data.resourceId);
+
+    let paddedData;
+    try {
+      const associatedData = utils.concatArrays(new Uint8Array([this.version]), data.resourceId);
+      paddedData = aead.decryptAEAD(key, data.iv, data.encryptedData, associatedData);
+    } catch (error) {
+      const b64ResourceId = utils.toBase64(data.resourceId);
+      throw new DecryptionFailed({ error: error as Error, b64ResourceId });
+    }
     return removePadding(paddedData);
   };
 

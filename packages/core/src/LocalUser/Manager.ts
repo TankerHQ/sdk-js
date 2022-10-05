@@ -88,7 +88,7 @@ export class LocalUserManager extends EventEmitter {
       return [{ type: 'verificationKey' }];
     }
 
-    return verificationMethods.map((method) => {
+    return Promise.all(verificationMethods.map(async (method) => {
       switch (method.type) {
         case 'email': {
           // Compat: encrypted_email value might be missing.
@@ -98,7 +98,7 @@ export class LocalUserManager extends EventEmitter {
           }
 
           const encryptedEmail = utils.fromBase64(method.encrypted_email!);
-          const email = utils.toString(EncryptionV2.decrypt(this._localUser.userSecret, EncryptionV2.unserialize(encryptedEmail)));
+          const email = utils.toString(await EncryptionV2.decrypt(() => this._localUser.userSecret, EncryptionV2.unserialize(encryptedEmail)));
           if (method.is_preverified) {
             return { type: 'preverifiedEmail', preverifiedEmail: email };
           }
@@ -112,7 +112,7 @@ export class LocalUserManager extends EventEmitter {
         }
         case 'phone_number': {
           const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
-          const phoneNumber = utils.toString(EncryptionV2.decrypt(this._localUser.userSecret, EncryptionV2.unserialize(encryptedPhoneNumber)));
+          const phoneNumber = utils.toString(await EncryptionV2.decrypt(() => this._localUser.userSecret, EncryptionV2.unserialize(encryptedPhoneNumber)));
           if (method.is_preverified) {
             return { type: 'preverifiedPhoneNumber', preverifiedPhoneNumber: phoneNumber };
           }
@@ -126,7 +126,7 @@ export class LocalUserManager extends EventEmitter {
           throw new UpgradeRequired(`unsupported verification method type: ${method.type}`);
         }
       }
-    });
+    }));
   };
 
   setVerificationMethod = async (verification: RemoteVerificationWithToken, allowE2eMethodSwitch: boolean): Promise<void> => {
@@ -143,7 +143,7 @@ export class LocalUserManager extends EventEmitter {
     let verifKey: Uint8Array | undefined;
     if (switchingOffE2e || isE2eMethod) {
       if ('encrypted_verification_key_for_user_secret' in encryptedVerifKey) {
-        verifKey = decryptVerificationKeyBytes(encryptedVerifKey.encrypted_verification_key_for_user_secret, this._localUser.userSecret);
+        verifKey = await decryptVerificationKeyBytes(encryptedVerifKey.encrypted_verification_key_for_user_secret, this._localUser.userSecret);
       } else if ('encrypted_verification_key_for_user_key' in encryptedVerifKey) {
         verifKey = tcrypto.sealDecrypt(encryptedVerifKey.encrypted_verification_key_for_user_key, this._localUser.currentUserKey);
       }

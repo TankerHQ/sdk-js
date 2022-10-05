@@ -66,7 +66,7 @@ export default class ResourceStore {
       const result = await this._ds.get(TABLE, b64ResourceId);
       const encryptedKey = utils.fromBase64(result['b64EncryptedKey']!);
 
-      return EncryptionV1.compatDecrypt(this._userSecret, encryptedKey, resourceId);
+      return await EncryptionV1.compatDecrypt(this._userSecret, encryptedKey, resourceId);
     } catch (e) {
       if (e instanceof dbErrors.RecordNotFound) {
         return;
