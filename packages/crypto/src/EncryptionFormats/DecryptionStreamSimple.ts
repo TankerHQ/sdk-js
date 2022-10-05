@@ -2,21 +2,17 @@ import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
-import type { Key } from '../aliases';
+import type { KeyMapper } from './KeyMapper';
 import * as utils from '../utils';
 import { extractEncryptionFormat } from './EncryptionFormats';
 
-export type ResourceIdKeyMapper = {
-  findKey: (resourceID: Uint8Array) => Promise<Key>;
-};
-
 export class DecryptionStreamSimple extends Transform {
-  _mapper: ResourceIdKeyMapper;
+  _mapper: KeyMapper;
 
   _resizerStream!: ResizerStream;
   _decryptionStream!: Transform;
 
-  constructor(mapper: ResourceIdKeyMapper) {
+  constructor(mapper: KeyMapper) {
     super({
       // buffering a single input chunk ('drain' can pull more)
       writableHighWaterMark: 1,

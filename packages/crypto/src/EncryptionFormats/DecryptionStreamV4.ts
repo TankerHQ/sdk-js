@@ -2,14 +2,10 @@ import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
-import type { Key } from '../aliases';
+import type { KeyMapper } from './KeyMapper';
 import type { ChunkHeader } from './v4';
 import { EncryptionV4 } from './v4';
 import * as utils from '../utils';
-
-export type ResourceIdKeyMapper = {
-  findKey: (resourceID: Uint8Array) => Promise<Key>;
-};
 
 const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader) => {
   if (!utils.equalArray(oldHeader.resourceId, currentHeader.resourceId)) {
@@ -25,7 +21,7 @@ const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader
 };
 
 export class DecryptionStreamV4 extends Transform {
-  _mapper: ResourceIdKeyMapper;
+  _mapper: KeyMapper;
 
   _state: {
     initialized: boolean;
@@ -37,7 +33,7 @@ export class DecryptionStreamV4 extends Transform {
   _resizerStream!: ResizerStream;
   _decryptionStream!: Transform;
 
-  constructor(mapper: ResourceIdKeyMapper) {
+  constructor(mapper: KeyMapper) {
     super({
       // buffering a single input chunk ('drain' can pull more)
       writableHighWaterMark: 1,

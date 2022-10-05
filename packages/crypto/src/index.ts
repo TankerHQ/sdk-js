@@ -16,6 +16,7 @@ export { EncryptionV6 } from './EncryptionFormats/v6';
 export { EncryptionV7 } from './EncryptionFormats/v7';
 export { EncryptionV8 } from './EncryptionFormats/v8';
 
+export type { KeyMapper } from './EncryptionFormats/KeyMapper';
 export type { EncryptionFormatReporter, EncryptionFormatDescription, Encryptor, SimpleEncryptor, StreamEncryptor } from './EncryptionFormats/EncryptionFormats';
 export { getClearSize, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_EXTRACTION_LENGTH } from './EncryptionFormats/EncryptionFormats';
 export type { EncryptionStream } from './EncryptionFormats/EncryptionStream';
