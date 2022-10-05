@@ -1,5 +1,5 @@
 import type { b64string, EncryptionFormatDescription, SimpleEncryptor } from '@tanker/crypto';
-import { utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream } from '@tanker/crypto';
+import { utils, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream } from '@tanker/crypto';
 import { DecryptionFailed, InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -208,7 +208,7 @@ export class DataProtector {
     const leadingBytes = await castData(encryptedData, { type: Uint8Array }, SAFE_EXTRACTION_LENGTH);
     const encryptionFormat = extractEncryptionFormat(leadingBytes);
 
-    if (encryptionFormat.features.chunks)
+    if (isStreamEncryptionFormat(encryptionFormat))
       return this._streamDecryptData(encryptedData, { version: encryptionFormat.version }, outputOptions, progressOptions);
 
     return this._simpleDecryptData(encryptedData, outputOptions, progressOptions);

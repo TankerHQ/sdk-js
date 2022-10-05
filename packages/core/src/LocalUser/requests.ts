@@ -1,4 +1,4 @@
-import { encryptionV2, generichash, utils } from '@tanker/crypto';
+import { EncryptionV2, generichash, utils } from '@tanker/crypto';
 import type { b64string } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
@@ -77,7 +77,7 @@ export const formatVerificationRequest = async (
   if ('email' in verification) {
     return {
       hashed_email: generichash(utils.fromString(verification.email)),
-      v2_encrypted_email: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.email))),
+      v2_encrypted_email: EncryptionV2.serialize(EncryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.email))),
       verification_code: verification.verificationCode,
     };
   }
@@ -91,7 +91,7 @@ export const formatVerificationRequest = async (
   if ('phoneNumber' in verification) {
     return {
       phone_number: verification.phoneNumber,
-      encrypted_phone_number: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.phoneNumber))),
+      encrypted_phone_number: EncryptionV2.serialize(EncryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.phoneNumber))),
       user_salt: generichash(localUser.userSecret),
       provisional_salt: provIdentity ? generichash(utils.fromBase64(provIdentity.private_signature_key)) : undefined,
       verification_code: verification.verificationCode,
@@ -112,7 +112,7 @@ export const formatVerificationRequest = async (
   if ('preverifiedEmail' in verification) {
     return {
       hashed_email: generichash(utils.fromString(verification.preverifiedEmail)),
-      v2_encrypted_email: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.preverifiedEmail))),
+      v2_encrypted_email: EncryptionV2.serialize(EncryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.preverifiedEmail))),
       is_preverified: true,
     };
   }
@@ -120,7 +120,7 @@ export const formatVerificationRequest = async (
   if ('preverifiedPhoneNumber' in verification) {
     return {
       phone_number: verification.preverifiedPhoneNumber,
-      encrypted_phone_number: encryptionV2.serialize(encryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.preverifiedPhoneNumber))),
+      encrypted_phone_number: EncryptionV2.serialize(EncryptionV2.encrypt(localUser.userSecret, utils.fromString(verification.preverifiedPhoneNumber))),
       user_salt: generichash(localUser.userSecret),
       provisional_salt: provIdentity ? generichash(utils.fromBase64(provIdentity.private_signature_key)) : undefined,
       is_preverified: true,

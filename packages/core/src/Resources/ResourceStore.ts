@@ -1,5 +1,5 @@
 import type { Key } from '@tanker/crypto';
-import { utils, encryptionV1 } from '@tanker/crypto';
+import { utils, EncryptionV1 } from '@tanker/crypto';
 import type { DataStore } from '@tanker/datastore-base';
 import { errors as dbErrors } from '@tanker/datastore-base';
 import { InternalError } from '@tanker/errors';
@@ -44,7 +44,7 @@ export default class ResourceStore {
 
   async saveResourceKey(resourceId: Uint8Array, key: Key): Promise<void> {
     // prevent db corruption by using the resourceId as additional data
-    const encryptedKey = encryptionV1.serialize(encryptionV1.encrypt(this._userSecret, key, resourceId));
+    const encryptedKey = EncryptionV1.serialize(EncryptionV1.encrypt(this._userSecret, key, resourceId));
     const b64ResourceId = utils.toBase64(resourceId);
     // We never want to overwrite a key for a given resourceId
     try {
@@ -66,7 +66,7 @@ export default class ResourceStore {
       const result = await this._ds.get(TABLE, b64ResourceId);
       const encryptedKey = utils.fromBase64(result['b64EncryptedKey']!);
 
-      return encryptionV1.compatDecrypt(this._userSecret, encryptedKey, resourceId);
+      return EncryptionV1.compatDecrypt(this._userSecret, encryptedKey, resourceId);
     } catch (e) {
       if (e instanceof dbErrors.RecordNotFound) {
         return;

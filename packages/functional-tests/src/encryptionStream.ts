@@ -1,7 +1,7 @@
 import { errors, Padding } from '@tanker/core';
 import type { Tanker } from '@tanker/core';
 import { getPublicIdentity } from '@tanker/identity';
-import { utils, encryptionV4, encryptionV8 } from '@tanker/crypto';
+import { utils, EncryptionV4, EncryptionV8 } from '@tanker/crypto';
 import type { b64string } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { MergerStream } from '@tanker/stream-base';
@@ -102,7 +102,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
         const encrypted = utils.concatArrays(...await watchStream(encryptor));
 
         // padme rounds to 5MiB in this case
-        expect(encryptionV8.getClearSize(encrypted.length)).to.equal(fiveMiB);
+        expect(EncryptionV8.getClearSize(encrypted.length)).to.equal(fiveMiB);
 
         const decryptor = await aliceLaptop.createDecryptionStream();
         decryptor.write(encrypted);
@@ -119,7 +119,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
         const encrypted = utils.concatArrays(...await watchStream(encryptor));
 
         // padme rounds to 5MiB in this case
-        expect(encryptionV8.getClearSize(encrypted.length)).to.equal(fiveMiB);
+        expect(EncryptionV8.getClearSize(encrypted.length)).to.equal(fiveMiB);
 
         const decryptor = await aliceLaptop.createDecryptionStream();
         decryptor.write(encrypted);
@@ -135,7 +135,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
         encryptor.end();
         const encrypted = utils.concatArrays(...await watchStream(encryptor));
 
-        expect(encryptionV4.getClearSize(encrypted.length)).to.equal(almost5MiBBuffer.length);
+        expect(EncryptionV4.getClearSize(encrypted.length)).to.equal(almost5MiBBuffer.length);
 
         const decryptor = await aliceLaptop.createDecryptionStream();
         decryptor.write(encrypted);
@@ -151,7 +151,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
         encryptor.end();
         const encrypted = utils.concatArrays(...await watchStream(encryptor));
 
-        expect(encryptionV8.getClearSize(encrypted.length) % 500).to.equal(0);
+        expect(EncryptionV8.getClearSize(encrypted.length) % 500).to.equal(0);
 
         const decryptor = await aliceLaptop.createDecryptionStream();
         decryptor.write(encrypted);
@@ -178,7 +178,7 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
       it('encrypts with auto padding by default', async () => {
         const encrypted = await aliceLaptop.encryptData(almost5MiBBuffer);
         // padme rounds to 5MiB in this case
-        expect(encryptionV8.getClearSize(encrypted.length)).to.equal(fiveMiB);
+        expect(EncryptionV8.getClearSize(encrypted.length)).to.equal(fiveMiB);
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(almost5MiBBuffer);
       });
@@ -186,21 +186,21 @@ export const generateEncryptionStreamTests = (args: TestArgs) => {
       it('encrypts with auto padding by default', async () => {
         const encrypted = await aliceLaptop.encryptData(almost5MiBBuffer, { paddingStep: Padding.AUTO });
         // padme rounds to 5MiB in this case
-        expect(encryptionV8.getClearSize(encrypted.length)).to.equal(fiveMiB);
+        expect(EncryptionV8.getClearSize(encrypted.length)).to.equal(fiveMiB);
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(almost5MiBBuffer);
       });
 
       it('encrypts and decrypts with no padding', async () => {
         const encrypted = await aliceLaptop.encryptData(almost5MiBBuffer, { paddingStep: Padding.OFF });
-        expect(encryptionV4.getClearSize(encrypted.length)).to.equal(almost5MiBBuffer.length);
+        expect(EncryptionV4.getClearSize(encrypted.length)).to.equal(almost5MiBBuffer.length);
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(almost5MiBBuffer);
       });
 
       it('encrypts and decrypts with a padding step', async () => {
         const encrypted = await aliceLaptop.encryptData(almost5MiBBuffer, { paddingStep: 500 });
-        expect(encryptionV8.getClearSize(encrypted.length) % 500).to.equal(0);
+        expect(EncryptionV8.getClearSize(encrypted.length) % 500).to.equal(0);
         const decryptedData = await aliceLaptop.decryptData(encrypted);
         expect(decryptedData).to.deep.equal(almost5MiBBuffer);
       });

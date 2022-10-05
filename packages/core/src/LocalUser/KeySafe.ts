@@ -1,5 +1,5 @@
 import type { b64string } from '@tanker/crypto';
-import { tcrypto, utils, encryptionV1 } from '@tanker/crypto';
+import { tcrypto, utils, EncryptionV1 } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 
 import type { Device } from '../Users/types';
@@ -33,11 +33,11 @@ async function encryptObject(key: Uint8Array, plainObject: Record<string, unknow
     }
     return v;
   });
-  return encryptionV1.serialize(encryptionV1.encrypt(key, utils.fromString(json)));
+  return EncryptionV1.serialize(EncryptionV1.encrypt(key, utils.fromString(json)));
 }
 
 async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<any> {
-  const jsonBytes = encryptionV1.compatDecrypt(key, ciphertext);
+  const jsonBytes = EncryptionV1.compatDecrypt(key, ciphertext);
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
     if (typeof v === 'string' && v.startsWith(base64Prefix))
       return utils.fromBase64(v.substring(base64Prefix.length));

@@ -3,7 +3,7 @@ import '@tanker/datastore-base';
 import { InternalError } from '@tanker/errors';
 
 import type { b64string } from '@tanker/crypto';
-import { tcrypto, utils, encryptionV2 } from '@tanker/crypto';
+import { tcrypto, utils, EncryptionV2 } from '@tanker/crypto';
 
 const GROUPS_ENCRYPTION_KEYS_TABLE = 'groups_encryption_keys';
 
@@ -135,7 +135,7 @@ export class GroupStore {
 
   saveGroupEncryptionKeys = async (groupKeys: Array<GroupEncryptionKeyPairRecord>) => {
     const b64groupKeys = groupKeys.map(gk => {
-      const encryptedPrivateKey = encryptionV2.serialize(encryptionV2.encrypt(this._userSecret, gk.privateEncryptionKey));
+      const encryptedPrivateKey = EncryptionV2.serialize(EncryptionV2.encrypt(this._userSecret, gk.privateEncryptionKey));
       return {
         _id: utils.toBase64(gk.publicEncryptionKey),
         groupId: gk.groupId,
@@ -179,7 +179,7 @@ export class GroupStore {
     }
 
     const encryptedPrivateEncryptionKey = utils.fromBase64(existingKey['privateEncryptionKey']!);
-    const privateKey = encryptionV2.decrypt(this._userSecret, encryptionV2.unserialize(encryptedPrivateEncryptionKey));
+    const privateKey = EncryptionV2.decrypt(this._userSecret, EncryptionV2.unserialize(encryptedPrivateEncryptionKey));
 
     return { publicKey: utils.fromBase64(b64PublicKey), privateKey };
   }

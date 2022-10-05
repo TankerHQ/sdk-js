@@ -5,8 +5,8 @@ import { DecryptionFailed } from '@tanker/errors';
 import { Padding } from '../padding';
 import { random } from '../random';
 import * as tcrypto from '../tcrypto';
-import * as encryptorV4 from '../EncryptionFormats/v4';
-import * as encryptorV8 from '../EncryptionFormats/v8';
+import { EncryptionV4 } from '../EncryptionFormats/v4';
+import { EncryptionV8 } from '../EncryptionFormats/v8';
 import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 import { EncryptionStreamV8 } from '../EncryptionFormats/EncryptionStreamV8';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
@@ -75,7 +75,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
   generateSmallChunkTest(300); // lots of chunks
 
   it('Encrypt/decrypt huge buffer', async () => {
-    const buffer = new Uint8Array(24 + 5 * encryptorV4.defaultMaxEncryptedChunkSize);
+    const buffer = new Uint8Array(24 + 5 * EncryptionV4.defaultMaxEncryptedChunkSize);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
     const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key), buffer);
@@ -158,16 +158,16 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
 describe('Stream Encryption V4', () => {
   generateStreamEncryptionTests({
     makeEncryptionStream: (resourceId: Uint8Array, key: Uint8Array, chunkSize?: number) => new EncryptionStreamV4(resourceId, key, chunkSize),
-    overhead: encryptorV4.overhead,
+    overhead: EncryptionV4.overhead,
   });
 });
 describe('Stream Encryption V8', () => {
   generateStreamEncryptionTests({
     makeEncryptionStream: (resourceId: Uint8Array, key: Uint8Array, chunkSize?: number) => new EncryptionStreamV8(resourceId, key, Padding.OFF, chunkSize),
-    overhead: encryptorV8.overhead,
+    overhead: EncryptionV8.overhead,
   });
 
-  const smallClearChunkSize = smallChunkSize - encryptorV8.overhead;
+  const smallClearChunkSize = smallChunkSize - EncryptionV8.overhead;
 
   it('exactly 2 chunks including padding', async () => {
     const buffer = random(15);
@@ -175,7 +175,7 @@ describe('Stream Encryption V8', () => {
 
     const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, Padding.AUTO, smallChunkSize), buffer);
 
-    expect(encrypted.length).to.equal(2 * smallChunkSize + encryptorV8.overhead);
+    expect(encrypted.length).to.equal(2 * smallChunkSize + EncryptionV8.overhead);
 
     const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
 
@@ -190,7 +190,7 @@ describe('Stream Encryption V8', () => {
 
     const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, buffer.length + paddingSize, smallChunkSize), buffer);
 
-    expect(encrypted.length).to.equal(2 * smallChunkSize + paddingSize + encryptorV8.overhead);
+    expect(encrypted.length).to.equal(2 * smallChunkSize + paddingSize + EncryptionV8.overhead);
 
     const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
 
@@ -216,7 +216,7 @@ describe('Stream Encryption V8', () => {
 
     const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, 3 * smallClearChunkSize, smallChunkSize), buffer);
 
-    expect(encrypted.length).to.equal(3 * smallChunkSize + encryptorV8.overhead);
+    expect(encrypted.length).to.equal(3 * smallChunkSize + EncryptionV8.overhead);
 
     const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
 
@@ -229,7 +229,7 @@ describe('Stream Encryption V8', () => {
 
     let encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, 3 * smallClearChunkSize, smallChunkSize), buffer);
 
-    expect(encrypted.length).to.equal(3 * smallChunkSize + encryptorV8.overhead);
+    expect(encrypted.length).to.equal(3 * smallChunkSize + EncryptionV8.overhead);
 
     // truncate last chunk
     encrypted = encrypted.subarray(0, 3 * smallChunkSize);
@@ -251,8 +251,8 @@ describe('Stream Encryption V8', () => {
     const encrypted2 = await processWithStream(() => new EncryptionStreamV8(resourceId, key, 3 * smallClearChunkSize, smallChunkSize), buffer2);
 
     // Make sure we got the math right, we should have 3 chunks + 1 empty chunk
-    expect(encrypted1.length).to.equal(3 * smallChunkSize + encryptorV8.overhead);
-    expect(encrypted2.length).to.equal(3 * smallChunkSize + encryptorV8.overhead);
+    expect(encrypted1.length).to.equal(3 * smallChunkSize + EncryptionV8.overhead);
+    expect(encrypted2.length).to.equal(3 * smallChunkSize + EncryptionV8.overhead);
 
     swapSecondChunk(encrypted1, encrypted2);
 

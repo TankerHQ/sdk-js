@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 
-import { encryptionV2, tcrypto, utils } from '@tanker/crypto';
+import { EncryptionV2, tcrypto, utils } from '@tanker/crypto';
 import { InternalError, InvalidVerification, UpgradeRequired, TankerError, InvalidArgument } from '@tanker/errors';
 
 import {
@@ -98,7 +98,7 @@ export class LocalUserManager extends EventEmitter {
           }
 
           const encryptedEmail = utils.fromBase64(method.encrypted_email!);
-          const email = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedEmail)));
+          const email = utils.toString(EncryptionV2.decrypt(this._localUser.userSecret, EncryptionV2.unserialize(encryptedEmail)));
           if (method.is_preverified) {
             return { type: 'preverifiedEmail', preverifiedEmail: email };
           }
@@ -112,7 +112,7 @@ export class LocalUserManager extends EventEmitter {
         }
         case 'phone_number': {
           const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
-          const phoneNumber = utils.toString(encryptionV2.decrypt(this._localUser.userSecret, encryptionV2.unserialize(encryptedPhoneNumber)));
+          const phoneNumber = utils.toString(EncryptionV2.decrypt(this._localUser.userSecret, EncryptionV2.unserialize(encryptedPhoneNumber)));
           if (method.is_preverified) {
             return { type: 'preverifiedPhoneNumber', preverifiedPhoneNumber: phoneNumber };
           }
@@ -160,7 +160,7 @@ export class LocalUserManager extends EventEmitter {
       request.encrypted_verification_key_for_user_secret = encryptVerificationKeyBytes(verifKey!, this._localUser.userSecret);
     } else if (isE2eMethod) {
       const passphraseKey = utils.e2ePassphraseKeyDerivation(utils.fromString(verification.e2ePassphrase));
-      request.encrypted_verification_key_for_e2e_passphrase = encryptionV2.serialize(encryptionV2.encrypt(passphraseKey, verifKey!));
+      request.encrypted_verification_key_for_e2e_passphrase = EncryptionV2.serialize(EncryptionV2.encrypt(passphraseKey, verifKey!));
       request.encrypted_verification_key_for_user_key = tcrypto.sealEncrypt(verifKey!, this._localUser.currentUserKey.publicKey);
     }
 
@@ -239,7 +239,7 @@ export class LocalUserManager extends EventEmitter {
     if ('e2ePassphrase' in verification) {
       const verifKey = utils.fromString(ghostDeviceToVerificationKey(ghostDevice));
       const passphraseKey = utils.e2ePassphraseKeyDerivation(utils.fromString(verification.e2ePassphrase));
-      request.encrypted_verification_key_for_e2e_passphrase = encryptionV2.serialize(encryptionV2.encrypt(passphraseKey, verifKey));
+      request.encrypted_verification_key_for_e2e_passphrase = EncryptionV2.serialize(EncryptionV2.encrypt(passphraseKey, verifKey));
       request.encrypted_verification_key_for_user_key = utils.toBase64(tcrypto.sealEncrypt(verifKey, userKeys.publicKey));
       request.verification = await formatVerificationRequest(verification, this);
       request.verification.with_token = verification.withToken; // May be undefined

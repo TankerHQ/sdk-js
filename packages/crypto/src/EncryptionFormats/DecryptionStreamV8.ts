@@ -4,14 +4,13 @@ import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { Key } from '../aliases';
 import { removePadding } from '../padding';
-import * as encryptionV8 from './v8';
+import type { ChunkHeader } from './v8';
+import { EncryptionV8 } from './v8';
 import * as utils from '../utils';
 
 export type ResourceIdKeyMapper = {
   findKey: (resourceID: Uint8Array) => Promise<Key>;
 };
-
-type ChunkHeader = Pick<encryptionV8.EncryptionData, 'resourceId' | 'encryptedChunkSize'>;
 
 const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader) => {
   if (!utils.equalArray(oldHeader.resourceId, currentHeader.resourceId)) {
@@ -70,12 +69,12 @@ export class DecryptionStreamV8 extends Transform {
     let resourceId: Uint8Array;
 
     try {
-      ({ encryptedChunkSize, resourceId } = encryptionV8.unserialize(headOfEncryptedData));
+      ({ encryptedChunkSize, resourceId } = EncryptionV8.unserialize(headOfEncryptedData));
     } catch (e) {
       throw new InvalidArgument('encryptedData is illformed for stream v8 decryption');
     }
 
-    if (encryptedChunkSize < encryptionV8.overhead + 1)
+    if (encryptedChunkSize < EncryptionV8.overhead + 1)
       throw new DecryptionFailed({ message: `invalid encrypted chunk size in header v8: ${encryptedChunkSize}` });
 
     const key = await this._mapper.findKey(resourceId);
@@ -90,14 +89,14 @@ export class DecryptionStreamV8 extends Transform {
       writableHighWaterMark: encryptedChunkSize,
       writableObjectMode: false,
       // buffering output bytes until clear chunk size is reached
-      readableHighWaterMark: encryptedChunkSize - encryptionV8.overhead,
+      readableHighWaterMark: encryptedChunkSize - EncryptionV8.overhead,
       readableObjectMode: false,
 
       transform: (encryptedChunk: Uint8Array, _: BufferEncoding, done: TransformCallback) => {
         try {
-          const currentChunk = encryptionV8.unserialize(encryptedChunk);
+          const currentChunk = EncryptionV8.unserialize(encryptedChunk);
           checkHeaderIntegrity({ encryptedChunkSize, resourceId }, currentChunk);
-          const clearPaddedData = encryptionV8.decryptChunk(key, this._state.index, currentChunk);
+          const clearPaddedData = EncryptionV8.decryptChunk(key, this._state.index, currentChunk);
           const clearData = removePadding(clearPaddedData);
           if (this._state.onlyPaddingLeft) {
             if (clearData.length !== 0) {

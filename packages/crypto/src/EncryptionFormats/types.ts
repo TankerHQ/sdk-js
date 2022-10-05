@@ -1,26 +1,24 @@
 import { InvalidArgument } from '@tanker/errors';
 
-import * as encryptionV1 from './v1';
-import * as encryptionV2 from './v2';
-import * as encryptionV3 from './v3';
-import * as encryptionV4 from './v4';
-import * as encryptionV5 from './v5';
-import * as encryptionV6 from './v6';
-import * as encryptionV7 from './v7';
-import * as encryptionV8 from './v8';
+import { EncryptionV1 } from './v1';
+import { EncryptionV2 } from './v2';
+import { EncryptionV3 } from './v3';
+import { EncryptionV4 } from './v4';
+import { EncryptionV5 } from './v5';
+import { EncryptionV6 } from './v6';
+import { EncryptionV7 } from './v7';
+import { EncryptionV8 } from './v8';
 
 export interface EncryptionFormatReporter {
   getClearSize(encryptedSize: number): number
   getEncryptedSize(clearSize: number): number
 }
 
-const encryptionFormats = [undefined, encryptionV1, encryptionV2, encryptionV3, encryptionV4, encryptionV5, encryptionV6, encryptionV7, encryptionV8];
+export type SimpleEncryptor = typeof EncryptionV1 | typeof EncryptionV2 | typeof EncryptionV3 | typeof EncryptionV5 | typeof EncryptionV6 | typeof EncryptionV7;
+export type StreamEncryptor = typeof EncryptionV4 | typeof EncryptionV8;
+export type Encryptor = SimpleEncryptor | StreamEncryptor;
 
-export type Encryptor = Exclude<typeof encryptionFormats[0], undefined>;
-
-// Encryptor have either an `encrypt` or an `encryptChunk` property
-export type SimpleEncryptor = Extract<Encryptor, { encrypt: unknown }>;
-export type StreamEncryptor = Extract<Encryptor, { encryptChunk: unknown }>;
+const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8] as const;
 
 // The maximum byte size of a resource encrypted with the "simple" algorithms
 // (different from v4) is obtained by summing the sizes of:
@@ -33,7 +31,7 @@ export type StreamEncryptor = Extract<Encryptor, { encryptChunk: unknown }>;
 export const SAFE_EXTRACTION_LENGTH = 1 + 16 + 24 + 5 * (1024 * 1024);
 
 export type EncryptionFormatDescription = {
-  version: number;
+  version: Encryptor['version'];
   encryptedChunkSize?: number;
 };
 
@@ -59,3 +57,7 @@ export const extractEncryptionFormat = (encryptedData: Uint8Array) => {
 
   return encryption;
 };
+
+export function isStreamEncryptionFormat(encryptor: Encryptor): encryptor is StreamEncryptor {
+  return encryptor.features.chunks;
+}
