@@ -313,10 +313,8 @@ export class DataProtector {
   }
 
   async createDecryptionStream(): Promise<DecryptionStream> {
-    const resourceIdKeyMapper = {
-      findKey: (resourceId: Uint8Array) => this._resourceManager.findKeyFromResourceId(resourceId),
-    };
-    return new DecryptionStream(resourceIdKeyMapper);
+    const keyMapper = (keyId: Uint8Array) => this._resourceManager.findKeyFromResourceId(keyId);
+    return new DecryptionStream(keyMapper);
   }
 
   async createEncryptionSession(getStatus: () => Status, encryptionOptions: EncryptionOptions): Promise<EncryptionSession> {

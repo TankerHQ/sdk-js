@@ -559,7 +559,7 @@ describe('Simple Encryption', () => {
   describe('EncryptionFormatV4', () => {
     generateCommonTests(EncryptionV4, testVectorsV4, {
       encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStreamV4(random(tcrypto.MAC_SIZE), k), d),
-      decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream({ findKey: async () => k }), d),
+      decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream(() => k), d),
     });
     generateUnpaddedTests(EncryptionV4, testVectorsV4);
 
@@ -625,11 +625,11 @@ describe('Simple Encryption', () => {
   describe('EncryptionFormatV8', () => {
     generateCommonTests(EncryptionV8, testVectorsV8, {
       encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), k), d),
-      decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream({ findKey: async () => k }), d),
+      decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream(() => k), d),
     });
     generatePaddedTests(EncryptionV8, testVectorsV8, {
       encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), k, padding), d),
-      decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream({ findKey: async () => k }), d),
+      decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream(() => k), d),
     });
   });
 });

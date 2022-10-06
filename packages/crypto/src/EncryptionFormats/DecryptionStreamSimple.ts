@@ -39,7 +39,7 @@ export class DecryptionStreamSimple extends Transform {
           const encryption = extractEncryptionFormat(encryptedChunk);
           const resourceId = encryption.extractResourceId(encryptedChunk);
 
-          const key = await this._mapper.findKey(resourceId);
+          const key = await this._mapper(resourceId);
 
           try {
             // @ts-expect-error Already checked we are using a simple encryption

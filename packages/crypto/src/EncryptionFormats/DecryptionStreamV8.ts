@@ -73,7 +73,7 @@ export class DecryptionStreamV8 extends Transform {
     if (encryptedChunkSize < EncryptionV8.overhead + 1)
       throw new DecryptionFailed({ message: `invalid encrypted chunk size in header v8: ${encryptedChunkSize}` });
 
-    const key = await this._mapper.findKey(resourceId);
+    const key = await this._mapper(resourceId);
 
     this._state.maxEncryptedChunkSize = encryptedChunkSize;
     this._resizerStream = new ResizerStream(encryptedChunkSize);

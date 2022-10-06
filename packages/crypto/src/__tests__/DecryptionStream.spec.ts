@@ -18,7 +18,8 @@ describe('DecryptionStream', () => {
   let buffer: Array<Uint8Array>;
   let key: Uint8Array;
   let resourceId: Uint8Array;
-  let mapper: { findKey: SinonSpy<any[], Promise<Uint8Array>> };
+  let error: Error | null;
+  let mapper: SinonSpy<any[], Promise<Uint8Array>>;
   let stream: DecryptionStream;
   let sync: PromiseWrapper<void>;
 
@@ -36,9 +37,10 @@ describe('DecryptionStream', () => {
   beforeEach(() => {
     key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     resourceId = random(16);
+    error = null;
     // Note: we don't use sinon.fake.resolves(key) that would bind the key
-    //       now, as the key is overridden later in some tests ;-)
-    mapper = { findKey: sinon.fake(() => Promise.resolve(key)) };
+    //       now, as the key and error are overridden later in some tests ;-)
+    mapper = sinon.fake(() => (error ? Promise.reject(error) : Promise.resolve(key)));
     stream = new DecryptionStream(mapper);
     sync = watchStream(stream);
   });
@@ -63,35 +65,29 @@ describe('DecryptionStream', () => {
 
     it('forwards the error when the key is not found for a simple resource', async () => {
       const unknownKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-      mapper.findKey = sinon.fake(() => {
-        throw new InvalidArgument('some error');
-      });
+      error = new InvalidArgument('some error');
       const chunk = EncryptionV3.serialize(EncryptionV3.encrypt(unknownKey, utils.fromString('some random data')));
       stream.write(chunk);
       stream.end();
-      await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
+      await expect(sync.promise).to.be.rejectedWith(error);
     });
 
     it('forwards the error when the key is not found for a resource v4', async () => {
-      mapper.findKey = sinon.fake(() => {
-        throw new InvalidArgument('some error');
-      });
+      error = new InvalidArgument('some error');
 
       const clear = utils.fromString('test');
       const encryptedChunk = EncryptionV4.serialize(EncryptionV4.encryptChunk(key, 0, resourceId, EncryptionV4.overhead + clear.length, clear));
       stream.write(encryptedChunk);
-      await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
+      await expect(sync.promise).to.be.rejectedWith(error);
     });
 
     it('forwards the error when the key is not found for a resource v8', async () => {
-      mapper.findKey = sinon.fake(() => {
-        throw new InvalidArgument('some error');
-      });
+      error = new InvalidArgument('some error');
 
       const clear = padClearData(utils.fromString('test'));
       const encryptedChunk = EncryptionV8.serialize(EncryptionV8.encryptChunk(key, 0, resourceId, EncryptionV8.overhead + clear.length, clear));
       stream.write(encryptedChunk);
-      await expect(sync.promise).to.be.rejectedWith(InvalidArgument, 'some error');
+      await expect(sync.promise).to.be.rejectedWith(error);
     });
   });
 
