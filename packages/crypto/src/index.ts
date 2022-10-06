@@ -15,6 +15,7 @@ export { EncryptionV5 } from './EncryptionFormats/v5';
 export { EncryptionV6 } from './EncryptionFormats/v6';
 export { EncryptionV7 } from './EncryptionFormats/v7';
 export { EncryptionV8 } from './EncryptionFormats/v8';
+export { EncryptionV9, EncryptionV10 } from './EncryptionFormats/TransparentEncryption';
 
 export type { KeyMapper } from './EncryptionFormats/KeyMapper';
 export type { EncryptionFormatReporter, EncryptionFormatDescription, Encryptor, SimpleEncryptor, StreamEncryptor } from './EncryptionFormats/EncryptionFormats';

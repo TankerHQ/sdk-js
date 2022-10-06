@@ -14,11 +14,13 @@ import { EncryptionV5 } from '../EncryptionFormats/v5';
 import { EncryptionV6 } from '../EncryptionFormats/v6';
 import { EncryptionV7 } from '../EncryptionFormats/v7';
 import { EncryptionV8 } from '../EncryptionFormats/v8';
-import type { Encryptor, SimpleEncryptor } from '../EncryptionFormats/EncryptionFormats';
+import type { Encryptor, SimpleEncryptor, TransparentSessionEncryptor } from '../EncryptionFormats/EncryptionFormats';
 import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 import { EncryptionStreamV8 } from '../EncryptionFormats/EncryptionStreamV8';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
 import { ready as cryptoReady } from '../ready';
+import { EncryptionV10, EncryptionV9 } from '../EncryptionFormats/TransparentEncryption';
+import { deriveSessionKey, isCompositeResourceId } from '../resourceId';
 
 type TestVector = {
   key: Uint8Array,
@@ -360,6 +362,50 @@ describe('Simple Encryption', () => {
     ]),
   }];
 
+  const testVectorsV9 = [{
+    key: new Uint8Array([
+      0x18, 0x89, 0xa4, 0xb6, 0x66, 0x0c, 0x14, 0x4e, 0x3a, 0xef, 0x29,
+      0x46, 0xcb, 0x6e, 0x10, 0xf3, 0x26, 0xf5, 0xf9, 0x48, 0x4c, 0x99,
+      0x95, 0x49, 0x96, 0x7f, 0x48, 0xb0, 0xcc, 0x68, 0xe5, 0xa3,
+    ]),
+    clearData: utils.fromString('this is very secret'),
+    encryptedData: new Uint8Array([
+      0x09, 0x66, 0xf3, 0x4d, 0x6b, 0x50, 0x98, 0x52, 0x38, 0x9d, 0x3e, 0x55,
+      0x53, 0xf2, 0xbe, 0x22, 0x6c, 0x95, 0x06, 0x59, 0x02, 0x9c, 0x53, 0x4f,
+      0xec, 0x23, 0x40, 0x60, 0x77, 0x20, 0xee, 0x07, 0x5c, 0x6f, 0x51, 0xcf,
+      0x88, 0xe5, 0x00, 0xaa, 0x3a, 0x90, 0x08, 0x8e, 0x4b, 0x22, 0x93, 0xbc,
+      0x24, 0x02, 0x62, 0x89, 0x79, 0x51, 0x95, 0x8e, 0x2b, 0x03, 0xcd, 0xcf,
+      0xc6, 0x23, 0x90, 0xb4, 0xe3, 0x94, 0xe5, 0x98,
+    ]),
+    resourceId: new Uint8Array([
+      0x00, 0x66, 0xf3, 0x4d, 0x6b, 0x50, 0x98, 0x52, 0x38, 0x9d, 0x3e,
+      0x55, 0x53, 0xf2, 0xbe, 0x22, 0x6c, 0x95, 0x06, 0x59, 0x02, 0x9c,
+      0x53, 0x4f, 0xec, 0x23, 0x40, 0x60, 0x77, 0x20, 0xee, 0x07, 0x5c,
+    ]),
+  }];
+
+  const testVectorsV10 = [{
+    key: new Uint8Array([
+      0x6f, 0xc5, 0xd1, 0xe4, 0x18, 0x3d, 0xfa, 0x71, 0x71, 0x0c, 0x54,
+      0xb0, 0x98, 0x12, 0x95, 0x74, 0xae, 0xae, 0x25, 0x13, 0xd3, 0x9f,
+      0xc3, 0xdd, 0x18, 0x05, 0x93, 0xb2, 0x5a, 0xa4, 0x77, 0xf7,
+    ]),
+    clearData: utils.fromString('this is very secret'),
+    encryptedData: new Uint8Array([
+      0x0a, 0x1e, 0x6e, 0x97, 0xbf, 0x8d, 0xeb, 0xbe, 0xe9, 0xc6, 0x60, 0x4d,
+      0x7b, 0x5f, 0x91, 0x2a, 0x83, 0x0a, 0xaa, 0xb7, 0xe3, 0x2e, 0x70, 0x06,
+      0x85, 0xc9, 0x92, 0xff, 0x0a, 0x03, 0x21, 0x86, 0x78, 0x51, 0x5a, 0x1f,
+      0xbf, 0x88, 0x0a, 0x41, 0x32, 0x3f, 0x9e, 0x8f, 0x59, 0x8b, 0x96, 0xae,
+      0xb5, 0x7a, 0x50, 0x5b, 0xb7, 0xfd, 0x6c, 0x09, 0xc7, 0x25, 0x88, 0xc1,
+      0x6a, 0x4c, 0x32, 0x7f, 0x69, 0x13, 0xd0, 0xfb, 0x11, 0x56,
+    ]),
+    resourceId: new Uint8Array([
+      0x00, 0x1e, 0x6e, 0x97, 0xbf, 0x8d, 0xeb, 0xbe, 0xe9, 0xc6, 0x60,
+      0x4d, 0x7b, 0x5f, 0x91, 0x2a, 0x83, 0x0a, 0xaa, 0xb7, 0xe3, 0x2e,
+      0x70, 0x06, 0x85, 0xc9, 0x92, 0xff, 0x0a, 0x03, 0x21, 0x86, 0x78,
+    ]),
+  }];
+
   const tamperWith = (data: Uint8Array, position?: number): Uint8Array => {
     if (position === undefined)
       position = Math.floor(Math.random() * data.length); // eslint-disable-line no-param-reassign
@@ -525,6 +571,36 @@ describe('Simple Encryption', () => {
     });
   };
 
+  const generateTransparentSessionTests = <T extends TransparentSessionEncryptor>(encryptor: T) => {
+    it('composite resource ID has expected type', async () => {
+      const sessionKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+      const sessionId = random(tcrypto.SESSION_ID_SIZE);
+      const clearText = utils.fromString('my composite resource id test');
+      const encryptedData = encryptor.serialize(encryptor.encrypt(sessionKey, clearText, sessionId));
+      const resourceId = encryptor.extractResourceId(encryptedData);
+      expect(isCompositeResourceId(resourceId)).to.be.true;
+    });
+
+    it('decrypts buffer with individual resource key', async () => {
+      const sessionKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+      const sessionId = random(tcrypto.SESSION_ID_SIZE);
+      const clearText = utils.fromString('my composite resource id test');
+      const data = encryptor.encrypt(sessionKey, clearText, sessionId);
+
+      const resourceKey = deriveSessionKey(sessionKey, data.resourceId);
+      const decryptedData = await encryptor.decrypt(
+        (id) => {
+          if (utils.equalArray(id, data.resourceId))
+            return resourceKey;
+          throw new Error('key not found');
+        },
+        data,
+      );
+
+      expect(decryptedData).to.deep.equal(clearText);
+    });
+  };
+
   describe('EncryptionFormatV1', () => {
     generateCommonTests(EncryptionV1, testVectorsV1, {
       encrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV1.serialize(EncryptionV1.encrypt(k, d)),
@@ -631,5 +707,24 @@ describe('Simple Encryption', () => {
       encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), k, padding), d),
       decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream(() => k), d),
     });
+  });
+  describe('EncryptionFormatV9', () => {
+    generateCommonTests(EncryptionV9, testVectorsV9, {
+      encrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV9.serialize(EncryptionV9.encrypt(k, d, random(tcrypto.SESSION_ID_SIZE))),
+      decrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV9.decrypt(() => k, EncryptionV9.unserialize(d)),
+    });
+    generateUnpaddedTests(EncryptionV9, testVectorsV9);
+    generateTransparentSessionTests(EncryptionV9);
+  });
+  describe('EncryptionFormatV10', () => {
+    generateCommonTests(EncryptionV10, testVectorsV10, {
+      encrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV10.serialize(EncryptionV10.encrypt(k, d, random(tcrypto.SESSION_ID_SIZE))),
+      decrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV10.decrypt(() => k, EncryptionV10.unserialize(d)),
+    });
+    generatePaddedTests(EncryptionV10, testVectorsV10, {
+      encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => EncryptionV10.serialize(EncryptionV10.encrypt(k, d, random(tcrypto.SESSION_ID_SIZE), padding)),
+      decrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV10.decrypt(() => k, EncryptionV10.unserialize(d)),
+    });
+    generateTransparentSessionTests(EncryptionV10);
   });
 });
