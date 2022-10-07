@@ -4,6 +4,8 @@ import * as aead from '../aead';
 import { random } from '../random';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
+import { tryDecryptAEAD } from './helpers';
+import type { KeyMapper } from './KeyMapper';
 
 type EncryptionData = {
   encryptedData: Uint8Array;
@@ -52,18 +54,19 @@ export class EncryptionV1 {
     return { encryptedData, iv, resourceId };
   };
 
-  static decrypt(key: Uint8Array, data: EncryptionData, associatedData?: Uint8Array): Uint8Array {
-    return aead.decryptAEAD(key, data.iv, data.encryptedData, associatedData);
+  static async decrypt(keyMapper: KeyMapper, data: EncryptionData, associatedData?: Uint8Array): Promise<Uint8Array> {
+    const key = await keyMapper(data.resourceId);
+    return tryDecryptAEAD(data.resourceId, key, data.iv, data.encryptedData, associatedData);
   }
 
   static extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
 
-  static compatDecrypt = (key: Uint8Array, buffer: Uint8Array, additionalData?: Uint8Array): Uint8Array => {
+  static compatDecrypt = async (key: Uint8Array, buffer: Uint8Array, additionalData?: Uint8Array): Promise<Uint8Array> => {
     try {
-      return this.decrypt(key, this.unserialize(buffer), additionalData);
+      return await this.decrypt(() => key, this.unserialize(buffer), additionalData);
     } catch (e) {
       const bufferWithVersion = utils.concatArrays(new Uint8Array([this.version]), buffer);
-      return this.decrypt(key, this.unserialize(bufferWithVersion), additionalData);
+      return await this.decrypt(() => key, this.unserialize(bufferWithVersion), additionalData);
     }
   };
 }

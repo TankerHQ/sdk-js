@@ -37,7 +37,7 @@ async function encryptObject(key: Uint8Array, plainObject: Record<string, unknow
 }
 
 async function decryptObject(key: Uint8Array, ciphertext: Uint8Array): Promise<any> {
-  const jsonBytes = EncryptionV1.compatDecrypt(key, ciphertext);
+  const jsonBytes = await EncryptionV1.compatDecrypt(key, ciphertext);
   return JSON.parse(utils.toString(jsonBytes), (_k, v) => {
     if (typeof v === 'string' && v.startsWith(base64Prefix))
       return utils.fromBase64(v.substring(base64Prefix.length));

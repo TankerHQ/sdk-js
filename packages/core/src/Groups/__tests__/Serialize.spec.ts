@@ -429,15 +429,14 @@ describe('groups blocks', () => {
       expect(() => serializeUserGroupCreationV1(userGroupCreation)).not.to.throw();
     });
 
-    const fields: Array<keyof UserGroupCreationRecordV1> = [
+    const fields = [
       'public_signature_key',
       'public_encryption_key',
       'encrypted_group_private_signature_key',
       'self_signature',
-    ];
+    ] as const;
     fields.forEach(field => {
       it(`should throw when serializing a user group creation block with invalid ${field}`, async () => {
-        // @ts-expect-error fields only contains Uint8Array fields from UserGroupCreationRecordV1
         userGroupCreation[field] = new Uint8Array(0);
         expect(() => serializeUserGroupCreationV1(userGroupCreation)).to.throw();
       });
@@ -800,7 +799,7 @@ describe('groups blocks', () => {
   const fields = [
     'previous_group_block',
     'self_signature_with_current_key',
-  ];
+  ] as const;
   fields.forEach(field => {
     it(`should throw when serializing an user group addition block with invalid ${field}`, async () => {
       const userGroupAdd = {
@@ -810,7 +809,6 @@ describe('groups blocks', () => {
         encrypted_group_private_encryption_keys_for_users: [],
       };
       expect(() => serializeUserGroupAdditionV1(userGroupAdd)).not.to.throw();
-      // @ts-expect-error fields only contains Uint8Array fields from userGroupAdd
       userGroupAdd[field] = new Uint8Array(0);
       expect(() => serializeUserGroupAdditionV1(userGroupAdd)).to.throw();
     });

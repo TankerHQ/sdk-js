@@ -116,8 +116,7 @@ describe('types', () => {
 
   describe('assertNever', () => {
     it('throws an InternalError when called', () => {
-      // @ts-expect-error
-      expect(() => assertNever({}, 'never')).to.throw(InternalError);
+      expect(() => assertNever({} as never, 'never')).to.throw(InternalError);
     });
   });
 });

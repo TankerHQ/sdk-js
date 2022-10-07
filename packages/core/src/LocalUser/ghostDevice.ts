@@ -30,9 +30,9 @@ export const extractGhostDevice = (verificationKey: b64string): GhostDevice => {
 
 export const encryptVerificationKeyBytes = (verificationKey: Uint8Array, userSecret: Uint8Array) => EncryptionV2.serialize(EncryptionV2.encrypt(userSecret, verificationKey));
 
-export const decryptVerificationKeyBytes = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => EncryptionV2.decrypt(userSecret, EncryptionV2.unserialize(encryptedVerificationKey));
+export const decryptVerificationKeyBytes = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => EncryptionV2.decrypt(() => userSecret, EncryptionV2.unserialize(encryptedVerificationKey));
 
-export const decryptVerificationKey = (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => utils.toString(decryptVerificationKeyBytes(encryptedVerificationKey, userSecret));
+export const decryptVerificationKey = async (encryptedVerificationKey: Uint8Array, userSecret: Uint8Array) => utils.toString(await decryptVerificationKeyBytes(encryptedVerificationKey, userSecret));
 
 export const ghostDeviceToVerificationKey = (ghostDevice: GhostDevice) => utils.toB64Json({
   privateEncryptionKey: utils.toBase64(ghostDevice.privateEncryptionKey),

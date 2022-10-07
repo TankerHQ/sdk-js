@@ -4,6 +4,8 @@ import * as aead from '../aead';
 import { random } from '../random';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
+import { tryDecryptAEAD } from './helpers';
+import type { KeyMapper } from './KeyMapper';
 
 type EncryptionData = {
   encryptedData: Uint8Array;
@@ -51,7 +53,10 @@ export class EncryptionV2 {
     return { iv, encryptedData, resourceId };
   };
 
-  static decrypt = (key: Uint8Array, data: EncryptionData, additionalData?: Uint8Array): Uint8Array => aead.decryptAEAD(key, data.iv, data.encryptedData, additionalData);
+  static decrypt = async (keyMapper: KeyMapper, data: EncryptionData, additionalData?: Uint8Array): Promise<Uint8Array> => {
+    const key = await keyMapper(data.resourceId);
+    return tryDecryptAEAD(data.resourceId, key, data.iv, data.encryptedData, additionalData);
+  };
 
   static extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
 }

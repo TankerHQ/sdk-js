@@ -60,7 +60,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
       const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
       const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key, smallChunkSize), buffer);
-      const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
+      const decrypted = await processWithStream(() => new DecryptionStream(() => key), encrypted);
 
       expect(decrypted).to.deep.equal(buffer);
       // @ts-expect-error getEncryptedSize exists, we need to extract an Encryptor interface to help TS here
@@ -79,7 +79,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
     const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key), buffer);
-    const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
+    const decrypted = await processWithStream(() => new DecryptionStream(() => key), encrypted);
 
     expect(decrypted).to.deep.equal(buffer);
   });
@@ -91,7 +91,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key, smallChunkSize), buffer);
     // change the resource id in the second header
     encrypted[smallChunkSize + 1 + 4] -= 1;
-    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream(() => key), encrypted)).to.be.rejectedWith(DecryptionFailed);
   });
 
   it('wrong chunk order', async () => {
@@ -105,7 +105,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     corrupted.set(encrypted.slice(smallChunkSize, 2 * smallChunkSize), 0);
     corrupted.set(encrypted.slice(0, smallChunkSize), smallChunkSize);
 
-    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), corrupted)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream(() => key), corrupted)).to.be.rejectedWith(DecryptionFailed);
   });
 
   it('invalid encryptedChunkSize', async () => {
@@ -120,7 +120,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     // set encryptedChunkSize to 2 in all chunks, less than the strict minimum
     invalidSizeTestVector[1] = 2;
     invalidSizeTestVector[smallChunkSize + 1] = 2;
-    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), invalidSizeTestVector)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream(() => key), invalidSizeTestVector)).to.be.rejectedWith(DecryptionFailed);
 
     // with a corrupted encryptedChunkSize
 
@@ -128,7 +128,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     // set encryptedChunkSize to 69, but the chunk is originally of size 70
     smallSizeTestVector[1] = 69;
     smallSizeTestVector[smallChunkSize + 1] = 69;
-    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), smallSizeTestVector)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream(() => key), smallSizeTestVector)).to.be.rejectedWith(DecryptionFailed);
   });
 
   // Make sure our test helper works
@@ -144,8 +144,8 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
 
     swapSecondChunk(encrypted1, encrypted2);
 
-    const decrypted1 = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted1);
-    const decrypted2 = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted2);
+    const decrypted1 = await processWithStream(() => new DecryptionStream(() => key), encrypted1);
+    const decrypted2 = await processWithStream(() => new DecryptionStream(() => key), encrypted2);
 
     expect(decrypted1.subarray(0, smallClearChunkSize)).to.deep.equal(buffer1.subarray(0, smallClearChunkSize));
     expect(decrypted1.subarray(smallClearChunkSize)).to.deep.equal(buffer2.subarray(smallClearChunkSize));
@@ -177,7 +177,7 @@ describe('Stream Encryption V8', () => {
 
     expect(encrypted.length).to.equal(2 * smallChunkSize + EncryptionV8.overhead);
 
-    const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
+    const decrypted = await processWithStream(() => new DecryptionStream(() => key), encrypted);
 
     expect(decrypted).to.deep.equal(buffer);
   });
@@ -192,7 +192,7 @@ describe('Stream Encryption V8', () => {
 
     expect(encrypted.length).to.equal(2 * smallChunkSize + paddingSize + EncryptionV8.overhead);
 
-    const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
+    const decrypted = await processWithStream(() => new DecryptionStream(() => key), encrypted);
 
     expect(decrypted).to.deep.equal(buffer);
   });
@@ -205,7 +205,7 @@ describe('Stream Encryption V8', () => {
 
     expect(encrypted.length).to.equal(3 * smallChunkSize - 1);
 
-    const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
+    const decrypted = await processWithStream(() => new DecryptionStream(() => key), encrypted);
 
     expect(decrypted).to.deep.equal(buffer);
   });
@@ -218,7 +218,7 @@ describe('Stream Encryption V8', () => {
 
     expect(encrypted.length).to.equal(3 * smallChunkSize + EncryptionV8.overhead);
 
-    const decrypted = await processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted);
+    const decrypted = await processWithStream(() => new DecryptionStream(() => key), encrypted);
 
     expect(decrypted).to.deep.equal(buffer);
   });
@@ -233,11 +233,11 @@ describe('Stream Encryption V8', () => {
 
     // truncate last chunk
     encrypted = encrypted.subarray(0, 3 * smallChunkSize);
-    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream(() => key), encrypted)).to.be.rejectedWith(DecryptionFailed);
 
     // truncate last two chunks
     encrypted = encrypted.subarray(0, 2 * smallChunkSize);
-    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted)).to.be.rejectedWith(DecryptionFailed);
+    await expect(processWithStream(() => new DecryptionStream(() => key), encrypted)).to.be.rejectedWith(DecryptionFailed);
   });
 
   it('decrypt forged buffer with padding in middle of data', async () => {
@@ -256,7 +256,7 @@ describe('Stream Encryption V8', () => {
 
     swapSecondChunk(encrypted1, encrypted2);
 
-    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted1)).to.be.rejectedWith(DecryptionFailed, 'unable to remove padding');
-    await expect(processWithStream(() => new DecryptionStream({ findKey: async () => key }), encrypted2)).to.be.rejectedWith(DecryptionFailed, 'unable to remove padding');
+    await expect(processWithStream(() => new DecryptionStream(() => key), encrypted1)).to.be.rejectedWith(DecryptionFailed, 'unable to remove padding');
+    await expect(processWithStream(() => new DecryptionStream(() => key), encrypted2)).to.be.rejectedWith(DecryptionFailed, 'unable to remove padding');
   });
 });

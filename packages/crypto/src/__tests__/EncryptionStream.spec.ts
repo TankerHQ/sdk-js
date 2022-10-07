@@ -13,7 +13,7 @@ import { EncryptionV4 } from '../EncryptionFormats/v4';
 import { EncryptionV8 } from '../EncryptionFormats/v8';
 import { EncryptionStreamV4 } from '../EncryptionFormats/EncryptionStreamV4';
 import { EncryptionStreamV8 } from '../EncryptionFormats/EncryptionStreamV8';
-import type { StreamEncryptor } from '../EncryptionFormats/types';
+import type { StreamEncryptor } from '../EncryptionFormats/EncryptionFormats';
 
 type EncryptionStream = EncryptionStreamV4 | EncryptionStreamV8;
 

@@ -5,6 +5,8 @@ import * as aead from '../aead';
 import { random } from '../random';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
+import type { KeyMapper } from './KeyMapper';
+import { tryDecryptAEAD } from './helpers';
 
 type EncryptionData = {
   encryptedData: Uint8Array;
@@ -63,10 +65,11 @@ export class EncryptionV7 {
     return { encryptedData, iv, resourceId };
   };
 
-  static decrypt = (key: Uint8Array, data: EncryptionData): Uint8Array => {
+  static decrypt = async (keyMapper: KeyMapper, data: EncryptionData): Promise<Uint8Array> => {
+    const key = await keyMapper(data.resourceId);
+
     const associatedData = utils.concatArrays(new Uint8Array([this.version]), data.resourceId);
-    const paddedData = aead.decryptAEAD(key, data.iv, data.encryptedData, associatedData);
-    return removePadding(paddedData);
+    return removePadding(tryDecryptAEAD(data.resourceId, key, data.iv, data.encryptedData, associatedData));
   };
 
   static extractResourceId = (buffer: Uint8Array): Uint8Array => {

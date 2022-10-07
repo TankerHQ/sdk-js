@@ -179,7 +179,7 @@ export class GroupStore {
     }
 
     const encryptedPrivateEncryptionKey = utils.fromBase64(existingKey['privateEncryptionKey']!);
-    const privateKey = EncryptionV2.decrypt(this._userSecret, EncryptionV2.unserialize(encryptedPrivateEncryptionKey));
+    const privateKey = await EncryptionV2.decrypt(() => this._userSecret, EncryptionV2.unserialize(encryptedPrivateEncryptionKey));
 
     return { publicKey: utils.fromBase64(b64PublicKey), privateKey };
   }

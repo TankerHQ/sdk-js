@@ -35,13 +35,12 @@ export const extractSharingOptions = (options: Record<string, unknown>, error: u
   const sharingOptions: SharingOptions = {};
   let recipientCount = 0;
 
-  ['shareWithUsers', 'shareWithGroups'].forEach(key => {
+  (['shareWithUsers', 'shareWithGroups'] as const).forEach(key => {
     if (key in options) {
       const array: Array<string> = options[key];
       if (!(array instanceof Array))
         throw error;
       array.forEach(el => assertNotEmptyString(el, `options.${key}`));
-      // @ts-expect-error '[key]' is always a field of 'SharingOption'
       sharingOptions[key] = array;
       recipientCount += array.length;
     }

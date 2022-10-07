@@ -2,15 +2,11 @@ import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
-import type { Key } from '../aliases';
+import type { KeyMapper } from './KeyMapper';
 import { removePadding } from '../padding';
 import type { ChunkHeader } from './v8';
 import { EncryptionV8 } from './v8';
 import * as utils from '../utils';
-
-export type ResourceIdKeyMapper = {
-  findKey: (resourceID: Uint8Array) => Promise<Key>;
-};
 
 const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader) => {
   if (!utils.equalArray(oldHeader.resourceId, currentHeader.resourceId)) {
@@ -26,7 +22,7 @@ const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader
 };
 
 export class DecryptionStreamV8 extends Transform {
-  _mapper: ResourceIdKeyMapper;
+  _mapper: KeyMapper;
 
   _state: {
     initialized: boolean;
@@ -39,7 +35,7 @@ export class DecryptionStreamV8 extends Transform {
   _resizerStream!: ResizerStream;
   _decryptionStream!: Transform;
 
-  constructor(mapper: ResourceIdKeyMapper) {
+  constructor(mapper: KeyMapper) {
     super({
       // buffering a single input chunk ('drain' can pull more)
       writableHighWaterMark: 1,
@@ -77,7 +73,7 @@ export class DecryptionStreamV8 extends Transform {
     if (encryptedChunkSize < EncryptionV8.overhead + 1)
       throw new DecryptionFailed({ message: `invalid encrypted chunk size in header v8: ${encryptedChunkSize}` });
 
-    const key = await this._mapper.findKey(resourceId);
+    const key = await this._mapper(resourceId);
 
     this._state.maxEncryptedChunkSize = encryptedChunkSize;
     this._resizerStream = new ResizerStream(encryptedChunkSize);
