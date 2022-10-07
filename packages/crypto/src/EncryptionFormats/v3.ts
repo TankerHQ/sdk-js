@@ -3,6 +3,7 @@ import { InvalidArgument, DecryptionFailed } from '@tanker/errors';
 import * as aead from '../aead';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
+import { tryDecryptAEAD } from './helpers';
 import type { KeyMapper } from './KeyMapper';
 
 type EncryptionData = {
@@ -54,12 +55,7 @@ export class EncryptionV3 {
 
   static decrypt = async (keyMapper: KeyMapper, data: EncryptionData): Promise<Uint8Array> => {
     const key = await keyMapper(data.resourceId);
-    try {
-      return aead.decryptAEAD(key, data.iv, data.encryptedData);
-    } catch (error) {
-      const b64ResourceId = utils.toBase64(data.resourceId);
-      throw new DecryptionFailed({ error: error as Error, b64ResourceId });
-    }
+    return tryDecryptAEAD(data.resourceId, key, data.iv, data.encryptedData);
   };
 
   static extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);

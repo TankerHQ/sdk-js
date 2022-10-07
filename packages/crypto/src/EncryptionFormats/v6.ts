@@ -5,6 +5,7 @@ import * as aead from '../aead';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 import type { KeyMapper } from './KeyMapper';
+import { tryDecryptAEAD } from './helpers';
 
 type EncryptionData = {
   encryptedData: Uint8Array,
@@ -58,15 +59,8 @@ export class EncryptionV6 {
   static decrypt = async (keyMapper: KeyMapper, data: EncryptionData): Promise<Uint8Array> => {
     const key = await keyMapper(data.resourceId);
 
-    let paddedData;
-    try {
-      const associatedData = new Uint8Array([this.version]);
-      paddedData = aead.decryptAEAD(key, data.iv, data.encryptedData, associatedData);
-    } catch (error) {
-      const b64ResourceId = utils.toBase64(data.resourceId);
-      throw new DecryptionFailed({ error: error as Error, b64ResourceId });
-    }
-    return removePadding(paddedData);
+    const associatedData = new Uint8Array([this.version]);
+    return removePadding(tryDecryptAEAD(data.resourceId, key, data.iv, data.encryptedData, associatedData));
   };
 
   static extractResourceId = (buffer: Uint8Array): Uint8Array => aead.extractMac(buffer);
