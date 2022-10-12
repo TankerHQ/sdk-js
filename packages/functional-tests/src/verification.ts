@@ -847,7 +847,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         });
       });
 
-      describe('using Pro Sante Connect', () => {
+      describe.skip('using Pro Sante Connect', () => {
         const pscIdToken = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjaDNLZkFqOXZhX2tUZ2xGY01'
           + 'tTWlQVXZaSkNyU2l0NXZyeGVfZVgzbWpNIn0.eyJleHAiOjE2NTA4OTI4MTAsImlhdCI6MTY1MDg5Mjc1MCwiYXV0aF9'
           + '0aW1lIjoxNjUwODkyNjQ4LCJqdGkiOiJmMWRmZTlmNy1kZmE5LTQ1NmYtODM5Mi1mYzAzNTZjN2I0OTAiLCJpc3MiOiJ'
