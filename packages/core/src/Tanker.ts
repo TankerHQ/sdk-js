@@ -1,6 +1,6 @@
 import EventEmitter from 'events';
 import type { b64string, EncryptionStream, DecryptionStream } from '@tanker/crypto';
-import { randomBase64Token, ready as cryptoReady, tcrypto, utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH } from '@tanker/crypto';
+import { randomBase64Token, ready as cryptoReady, tcrypto, utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, assertResourceId } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertDataType, assertInteger, assertNotEmptyString, castData } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
@@ -434,7 +434,7 @@ export class Tanker extends EventEmitter {
     if (resourceIds.length === 0) {
       return;
     }
-    resourceIds.forEach(id => utils.assertB64StringWithSize(id, 'resourceId', tcrypto.MAC_SIZE));
+    resourceIds.forEach(id => assertResourceId(id));
 
     const sharingOptions = extractSharingOptions(options);
 
