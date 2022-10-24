@@ -17,6 +17,7 @@ import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
 import ResourceManager from '../Resources/Manager';
 import DataProtector from '../DataProtection/DataProtector';
 import type OidcNonceManager from '../OidcNonce/Manager';
+import SessionManager from '../TransparentSession/Manager';
 
 export class Session extends EventEmitter {
   _storage: Storage;
@@ -27,6 +28,7 @@ export class Session extends EventEmitter {
   _groupManager: GroupManager;
   _provisionalIdentityManager: ProvisionalIdentityManager;
   _resourceManager: ResourceManager;
+  _sessionManager: SessionManager;
   _dataProtector: DataProtector;
   _cloudStorageManager: CloudStorageManager;
 
@@ -61,6 +63,7 @@ export class Session extends EventEmitter {
     this._provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, this._localUserManager, this._userManager);
     this._groupManager = new GroupManager(client, storage.groupStore, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager);
     this._resourceManager = new ResourceManager(client, storage.resourceStore, this._localUserManager, this._groupManager, this._provisionalIdentityManager);
+    this._sessionManager = new SessionManager(storage.sessionStore);
     this._dataProtector = new DataProtector(client, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager, this._groupManager, this._resourceManager);
     this._cloudStorageManager = new CloudStorageManager(client, this._dataProtector);
   }

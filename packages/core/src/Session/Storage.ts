@@ -7,6 +7,7 @@ import KeyStore from '../LocalUser/KeyStore';
 import ResourceStore from '../Resources/ResourceStore';
 import GroupStore from '../Groups/GroupStore';
 import { globalSchema, TABLE_METADATA } from './schema';
+import { TransparentSessionStore } from '../TransparentSession/SessionStore';
 
 const STORAGE_VERSION_KEY = 'storageVersion';
 const CURRENT_STORAGE_VERSION = 1;
@@ -24,6 +25,7 @@ export default class Storage {
   _keyStore!: KeyStore;
   _resourceStore!: ResourceStore;
   _groupStore!: GroupStore;
+  _sessionStore!: TransparentSessionStore;
   _schemas!: Array<Schema>;
 
   constructor(options: DataStoreOptions) {
@@ -42,6 +44,10 @@ export default class Storage {
     return this._groupStore;
   }
 
+  get sessionStore(): TransparentSessionStore {
+    return this._sessionStore;
+  }
+
   async open(userId: Uint8Array, userSecret: Uint8Array): Promise<void> {
     const { adapter, prefix, dbPath, url } = this._options;
 
@@ -50,6 +56,7 @@ export default class Storage {
       KeyStore.schemas,
       ResourceStore.schemas,
       GroupStore.schemas,
+      TransparentSessionStore.schemas,
     );
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
 
@@ -68,6 +75,7 @@ export default class Storage {
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
     this._groupStore = await GroupStore.open(this._datastore, userSecret);
+    this._sessionStore = await TransparentSessionStore.open(this._datastore, userSecret);
 
     await this._checkVersion(userSecret);
   }
@@ -85,6 +93,7 @@ export default class Storage {
   }
 
   async _closeSubStores() {
+    await this._sessionStore.close();
     await this._groupStore.close();
     await this._resourceStore.close();
     await this._keyStore.close();

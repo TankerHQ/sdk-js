@@ -24,6 +24,7 @@ export default class ResourceStore {
     { version: 11, tables: [{ name: TABLE }] },
     { version: 12, tables: [{ name: TABLE }] },
     { version: 13, tables: [{ name: TABLE }] },
+    { version: 14, tables: [{ name: TABLE }] },
     // {
     //   version: 8,
     //   tables: [{

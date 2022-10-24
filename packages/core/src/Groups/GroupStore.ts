@@ -85,6 +85,7 @@ export class GroupStore {
     { version: 11, ...schemaV11 },
     { version: 12, ...schemaV11 },
     { version: 13, ...schemaV13 },
+    { version: 14, ...schemaV13 },
   ];
 
   constructor(ds: DataStore, userSecret: Uint8Array) {
