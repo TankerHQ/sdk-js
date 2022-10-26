@@ -13,6 +13,9 @@ import { EncryptionV3 } from '../EncryptionFormats/v3';
 import { EncryptionV4 } from '../EncryptionFormats/v4';
 import { EncryptionV8 } from '../EncryptionFormats/v8';
 import { DecryptionStream } from '../EncryptionFormats/DecryptionStream';
+import { EncryptionV11 } from '../EncryptionFormats/TransparentEncryption';
+import { deriveSessionKey, isCompositeResourceId } from '../resourceId';
+import { DecryptionStreamV11 } from '../EncryptionFormats/DecryptionStreamV11';
 
 describe('DecryptionStream', () => {
   let buffer: Array<Uint8Array>;
@@ -92,17 +95,19 @@ describe('DecryptionStream', () => {
   });
 
   type TestParameters = {
-    encryptMsg: (index: number, clearChunkSize: number, str: string) => { clear: Uint8Array, encrypted: Uint8Array },
+    initStream: (clearChunkSize: number) => Uint8Array | null,
+    encryptMsg: (index: number, str: string) => { clear: Uint8Array, encrypted: Uint8Array },
     overhead: number,
   };
 
   const coef = 3;
-  const generateBufferTests = ({ encryptMsg, overhead }: TestParameters) => {
+  const generateBufferTests = ({ initStream, encryptMsg, overhead }: TestParameters) => {
     [10, 50, 100, 1000].forEach(chunkSize => {
       it(`supports back pressure when piped to a slow writable with ${chunkSize} bytes input chunks`, async () => {
         const timeout = makeTimeoutPromise(50);
         const chunk = '0'.repeat(chunkSize);
-        const inputSize = 10 * (chunkSize + overhead);
+        const nbChunk = 10;
+        const inputSize = nbChunk * (chunkSize + overhead);
         const bufferCounter = new BufferingObserver();
         const slowWritable = new Writable({
           highWaterMark: 1,
@@ -121,13 +126,13 @@ describe('DecryptionStream', () => {
         const continueWriting = () => {
           do {
             idx += 1;
-            msg = encryptMsg(idx, chunkSize, chunk);
+            msg = encryptMsg(idx, chunk);
             bufferCounter.incrementInput(msg.encrypted.length);
             timeout.reset();
           } while (bufferCounter.inputWritten < inputSize && stream.write(msg.encrypted));
 
           if (bufferCounter.inputWritten === inputSize) {
-            const emptyMsg = encryptMsg(idx, chunkSize, '');
+            const emptyMsg = encryptMsg(idx, '');
             stream.write(emptyMsg.encrypted);
             stream.end();
           }
@@ -138,6 +143,10 @@ describe('DecryptionStream', () => {
           stream.on('drain', continueWriting);
           slowWritable.on('finish', resolve);
           stream.pipe(slowWritable);
+          const header = initStream(chunkSize);
+          if (header) {
+            stream.write(header);
+          }
           continueWriting();
         });
         bufferCounter.snapshots.forEach(bufferedLength => {
@@ -150,11 +159,85 @@ describe('DecryptionStream', () => {
     });
   };
 
+  describe('EncryptionV11', () => {
+    it('composite resource ID has expected type', async () => {
+      const sessionId = random(tcrypto.SESSION_ID_SIZE);
+      const seed = random(tcrypto.SESSION_SEED_SIZE);
+      const encryptedChunkSize = EncryptionV11.defaultMaxEncryptedChunkSize;
+      const encryptedData = EncryptionV11.serializeHeader({
+        sessionId,
+        resourceId: seed,
+        encryptedChunkSize,
+      });
+      const compositeResourceId = EncryptionV11.extractResourceId(encryptedData);
+      expect(isCompositeResourceId(compositeResourceId)).to.be.true;
+    });
+
+    it('decrypts buffer with individual resource key', async () => {
+      const streamHeader = {
+        sessionId: random(tcrypto.SESSION_ID_SIZE),
+        resourceId: random(tcrypto.SESSION_SEED_SIZE),
+        encryptedChunkSize: EncryptionV11.defaultMaxEncryptedChunkSize,
+      };
+      const sessionKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
+      const clearText = utils.fromString('my composite resource id test');
+      const resourceKey = deriveSessionKey(sessionKey, streamHeader.resourceId);
+      const encryptedData = EncryptionV11.encryptChunk(resourceKey, 0, streamHeader, utils.concatArrays(
+        new Uint8Array(4),
+        clearText,
+      ));
+
+      stream = new DecryptionStreamV11(
+        (id) => {
+          if (utils.equalArray(id, streamHeader.resourceId))
+            return resourceKey;
+          throw new Error('key not found');
+        },
+      );
+      sync = watchStream(stream);
+
+      stream.write(EncryptionV11.serializeHeader(streamHeader));
+      stream.write(encryptedData);
+      stream.end();
+
+      await sync.promise;
+      expect(buffer[0]).to.deep.equal(clearText);
+    });
+
+    describe(`buffers at most ${coef} * max encrypted chunk size`, () => {
+      const headerData = {
+        sessionId: random(tcrypto.SESSION_ID_SIZE),
+        resourceId,
+        encryptedChunkSize: 0,
+      };
+
+      generateBufferTests({
+        initStream: (clearChunkSize: number) => {
+          headerData.resourceId = resourceId;
+          headerData.encryptedChunkSize = EncryptionV11.chunkOverhead + clearChunkSize;
+          return EncryptionV11.serializeHeader(headerData);
+        },
+        encryptMsg: (index: number, str: string) => {
+          // 0 byte of padding per chunk
+          const clear = utils.concatArrays(new Uint8Array(4), utils.fromString(str));
+          const k = deriveSessionKey(key, headerData.resourceId);
+          const encrypted = EncryptionV11.encryptChunk(k, index, headerData, clear);
+          return { clear, encrypted };
+        },
+        overhead: EncryptionV11.chunkOverhead,
+      });
+    });
+  });
+
   describe(`v4 buffers at most ${coef} * max encrypted chunk size`, () => {
+    let encryptedChunkSize: number;
     generateBufferTests({
-      encryptMsg: (index: number, clearChunkSize: number, str: string) => {
+      initStream: (clearChunkSize: number) => {
+        encryptedChunkSize = EncryptionV4.overhead + clearChunkSize;
+        return null;
+      },
+      encryptMsg: (index: number, str: string) => {
         const clear = utils.fromString(str);
-        const encryptedChunkSize = EncryptionV4.overhead + clearChunkSize;
         const encrypted = EncryptionV4.serialize(EncryptionV4.encryptChunk(key, index, resourceId, encryptedChunkSize, clear));
         return { clear, encrypted };
       },
@@ -163,10 +246,14 @@ describe('DecryptionStream', () => {
   });
 
   describe(`v8 buffers at most ${coef} * max encrypted chunk size`, () => {
+    let encryptedChunkSize: number;
     generateBufferTests({
-      encryptMsg: (index: number, clearChunkSize: number, str: string) => {
+      initStream: (clearChunkSize: number) => {
+        encryptedChunkSize = EncryptionV8.overhead + clearChunkSize;
+        return null;
+      },
+      encryptMsg: (index: number, str: string) => {
         const clear = padClearData(utils.fromString(str), Padding.OFF);
-        const encryptedChunkSize = EncryptionV8.overhead + clearChunkSize;
         const encrypted = EncryptionV8.serialize(EncryptionV8.encryptChunk(key, index, resourceId, encryptedChunkSize, clear));
         return { clear, encrypted };
       },
