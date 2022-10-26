@@ -1,9 +1,8 @@
-import { DecryptionFailed, InvalidArgument } from '@tanker/errors';
+import { InvalidArgument } from '@tanker/errors';
 import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { KeyMapper } from './KeyMapper';
-import * as utils from '../utils';
 import { extractEncryptionFormat, SimpleEncryptor } from './EncryptionFormats';
 
 export class DecryptionStreamSimple extends Transform {
@@ -37,16 +36,12 @@ export class DecryptionStreamSimple extends Transform {
       transform: async (encryptedChunk: Uint8Array, _: BufferEncoding, done: TransformCallback) => {
         try {
           const encryption = extractEncryptionFormat(encryptedChunk) as SimpleEncryptor;
-          const resourceId = encryption.extractResourceId(encryptedChunk);
-
-          const key = await this._mapper(resourceId);
 
           try {
-            const clearData = await encryption.decrypt(() => key, encryption.unserialize(encryptedChunk));
+            const clearData = await encryption.decrypt(this._mapper, encryption.unserialize(encryptedChunk));
             this._decryptionStream.push(clearData);
           } catch (error) {
-            const b64ResourceId = utils.toBase64(resourceId);
-            done(new DecryptionFailed({ error: error as Error, b64ResourceId }));
+            done(error as Error);
             return;
           }
         } catch (error) {
