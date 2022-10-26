@@ -143,7 +143,7 @@ export const generateGroupsTests = (args: TestArgs) => {
 
       it('create group with too many users', async () => {
         const alice = await UserSession.create(appHelper);
-        const identities = [];
+        const identities: Array<string> = [];
         for (let i = 0; i < 1001; ++i)
           identities.push(await getPublicIdentity(await createProvisionalIdentity(utils.toBase64(appHelper.appId), 'email', `bobtest${i}@tanker.io`)));
         await expect(alice.session.createGroup(identities))
@@ -290,7 +290,7 @@ export const generateGroupsTests = (args: TestArgs) => {
 
         const groupId = await alice.session.createGroup([alice.spublicIdentity]);
 
-        const identities = [];
+        const identities: Array<string> = [];
         for (let i = 0; i < 1001; ++i)
           identities.push(
             await getPublicIdentity(await createProvisionalIdentity(
