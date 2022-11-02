@@ -18,6 +18,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof netwo
 
   describe(`with ${issueType.replace(/_/g, ' ')}`, () => {
     let alicePhone: Tanker;
+    let aliceLaptop: Tanker;
     let aliceIdentity: b64string;
 
     const { url } = networkIssues[issueType];
@@ -32,8 +33,11 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof netwo
     beforeEach(async () => {
       aliceIdentity = await args.appHelper.generateIdentity();
       alicePhone = args.makeTanker();
+      aliceLaptop = args.makeTanker();
       await alicePhone.start(aliceIdentity);
       await alicePhone.registerIdentity({ passphrase: 'passphrase' });
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.verifyIdentity({ passphrase: 'passphrase' });
     });
 
     afterEach(async () => {
@@ -53,6 +57,33 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof netwo
       expect(decrypted).to.equal(clearText);
     });
 
+    it('uses already created transparent session', async () => {
+      await alicePhone.encrypt(clearText);
+
+      await restartWithNetworkIssue(alicePhone, aliceIdentity);
+
+      const encrypted = await alicePhone.encrypt(clearText);
+      const decrypted = await alicePhone.decrypt(encrypted);
+      expect(decrypted).to.equal(clearText);
+    });
+
+    it('decrypts all resources from a transparent session', async () => {
+      const encrypted = await Promise.all([
+        alicePhone.encrypt(clearText),
+        alicePhone.encrypt(clearText),
+        alicePhone.encrypt(clearText),
+      ]);
+
+      // pull key form only one resource
+      expect(await aliceLaptop.decrypt(encrypted[0])).to.equal(clearText);
+
+      await restartWithNetworkIssue(aliceLaptop, aliceIdentity);
+      for (const encryptedText of encrypted) {
+        const decrypted = await aliceLaptop.decrypt(encryptedText);
+        expect(decrypted).to.equal(clearText);
+      }
+    });
+
     it('throws if trying to encrypt', async () => {
       await restartWithNetworkIssue(alicePhone, aliceIdentity);
       await expect(alicePhone.encrypt(clearText)).to.be.rejectedWith(errors.NetworkError);
@@ -61,9 +92,6 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof netwo
     it('throws if trying to decrypt without the resource key', async () => {
       await alicePhone.stop();
 
-      const aliceLaptop = args.makeTanker();
-      await aliceLaptop.start(aliceIdentity);
-      await aliceLaptop.verifyIdentity({ passphrase: 'passphrase' });
       const encrypted = await aliceLaptop.encrypt(clearText);
 
       await restartWithNetworkIssue(alicePhone, aliceIdentity);
