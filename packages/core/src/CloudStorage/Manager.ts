@@ -1,5 +1,5 @@
 import type { EncryptionFormatDescription, b64string } from '@tanker/crypto';
-import { utils, getClearSize } from '@tanker/crypto';
+import { utils, getClearSize, EncryptionV4, EncryptionV8, Padding } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 import { MergerStream, ResizerStream, SlicerStream } from '@tanker/stream-base';
 import type { Readable, Transform, Writable, IWritable } from '@tanker/stream-base';
@@ -8,7 +8,6 @@ import { getDataLength } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
 
 import type { Client } from '../Network/Client';
-import { getStreamEncryptionFormatDescription } from '../DataProtection/types';
 import type { Resource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
@@ -24,6 +23,18 @@ const pipeStreams = <T>(
   });
 
 type Metadata = { encryptionFormat: EncryptionFormatDescription; } & ResourceMetadata;
+
+const getStreamEncryptionFormatDescription = (paddingStep?: number | Padding): EncryptionFormatDescription => {
+  if (paddingStep === Padding.OFF)
+    return ({
+      version: 4,
+      encryptedChunkSize: EncryptionV4.defaultMaxEncryptedChunkSize,
+    });
+  return ({
+    version: 8,
+    encryptedChunkSize: EncryptionV8.defaultMaxEncryptedChunkSize,
+  });
+};
 
 export class CloudStorageManager {
   _client: Client;
