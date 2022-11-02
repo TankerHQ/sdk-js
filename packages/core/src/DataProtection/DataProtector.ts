@@ -1,5 +1,4 @@
-import type { b64string, EncryptionFormatDescription, SimpleEncryptor } from '@tanker/crypto';
-import { utils, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream, getKeyFromResourceId } from '@tanker/crypto';
+import { b64string, EncryptionFormatDescription, SimpleEncryptor, EncryptionStreamV11, utils, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream, getKeyFromResourceId } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -28,6 +27,8 @@ import type { Status } from '../Session/status';
 import type { OutputOptions, ProgressOptions, SharingOptions, EncryptionOptions } from './options';
 import { ProgressHandler } from './ProgressHandler';
 import { EncryptionSession } from './EncryptionSession';
+import type { SessionManager } from '../TransparentSession/Manager';
+import type { SessionResult } from '../TransparentSession/SessionStore';
 
 // Stream encryption will be used starting from this clear data size:
 const STREAM_THRESHOLD = 1024 * 1024; // 1MB
@@ -40,6 +41,7 @@ export class DataProtector {
   _provisionalIdentityManager: ProvisionalIdentityManager;
   _groupManager: GroupManager;
   _resourceManager: ResourceManager;
+  _sessionManager: SessionManager;
 
   constructor(
     client: Client,
@@ -48,6 +50,7 @@ export class DataProtector {
     provisionalIdentityManager: ProvisionalIdentityManager,
     groupManager: GroupManager,
     resourceManager: ResourceManager,
+    sessionManager: SessionManager,
   ) {
     this._client = client;
     this._groupManager = groupManager;
@@ -55,6 +58,7 @@ export class DataProtector {
     this._userManager = userManager;
     this._provisionalIdentityManager = provisionalIdentityManager;
     this._resourceManager = resourceManager;
+    this._sessionManager = sessionManager;
   }
 
   _makeKeyPublishBlocks(
@@ -206,6 +210,19 @@ export class DataProtector {
     return this._simpleDecryptData(encryptedData, outputOptions, progressOptions);
   }
 
+  async _createTransparentSession(encryptionOptions: Omit<EncryptionOptions, 'paddingStep'>): Promise<SessionResult> {
+    const resource = makeResource();
+    await this._shareResources([resource], encryptionOptions);
+    return { id: utils.toBase64(resource.resourceId), key: resource.key };
+  }
+
+  async _getTransparentSession(encryptionOptions: Omit<EncryptionOptions, 'paddingStep'>): Promise<SessionResult> {
+    return this._sessionManager.getTransparentSession(
+      encryptionOptions,
+      this._createTransparentSession.bind(this, encryptionOptions),
+    );
+  }
+
   async _simpleEncryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions): Promise<T> {
     const paddingStep = encryptionOptions.paddingStep;
     const encryption = getSimpleEncryption(paddingStep);
@@ -215,10 +232,8 @@ export class DataProtector {
     const progressHandler = new ProgressHandler(progressOptions).start(encryptedSize);
 
     const castClearData = await castData(clearData, { type: Uint8Array });
-    const { key } = makeResource();
-    const encryptedData = encryption.serialize(encryption.encrypt(key, castClearData, paddingStep));
-    const resourceId = encryption.extractResourceId(encryptedData);
-    await this._shareResources([{ resourceId, key }], encryptionOptions);
+    const session = await this._getTransparentSession(encryptionOptions);
+    const encryptedData = encryption.serialize(encryption.encrypt(session.key, castClearData, utils.fromBase64(session.id), paddingStep));
     const castEncryptedData = await castData(encryptedData, outputOptions);
 
     progressHandler.report(encryptedSize);
@@ -246,8 +261,12 @@ export class DataProtector {
 
   async _streamEncryptData<T extends Data>(clearData: Data, encryptionOptions: EncryptionOptions, outputOptions: OutputOptions<T>, progressOptions: ProgressOptions, resource?: Resource): Promise<T> {
     const slicer = new SlicerStream({ source: clearData });
-    const encryptor = await this.createEncryptionStream(encryptionOptions, resource);
-
+    let encryptor: EncryptionStreamV4 | EncryptionStreamV8 | EncryptionStreamV11;
+    if (resource) {
+      encryptor = await this.createEncryptionStream(encryptionOptions, resource);
+    } else {
+      encryptor = await this.createEncryptionStream(encryptionOptions);
+    }
     const clearSize = getDataLength(clearData);
     const encryptedSize = encryptor.getEncryptedSize(clearSize);
     const progressHandler = new ProgressHandler(progressOptions).start(encryptedSize);
@@ -286,23 +305,20 @@ export class DataProtector {
     return this._shareResources(keys, { ...sharingOptions, shareWithSelf: false });
   }
 
-  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStreamV4 | EncryptionStreamV8> {
-    let resourceFinal;
+  async createEncryptionStream(encryptionOptions: EncryptionOptions): Promise<EncryptionStreamV11>;
+  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource: Resource): Promise<EncryptionStreamV4 | EncryptionStreamV8>;
+  async createEncryptionStream(encryptionOptions: EncryptionOptions, resource?: Resource): Promise<EncryptionStreamV4 | EncryptionStreamV8 | EncryptionStreamV11> {
+    // encryption from legacy session
     if (resource) {
-      resourceFinal = resource;
-    } else {
-      resourceFinal = makeResource();
-      await this._shareResources([resourceFinal], encryptionOptions);
+      if (encryptionOptions.paddingStep === Padding.OFF) {
+        return new EncryptionStreamV4(resource.resourceId, resource.key);
+      }
+      return new EncryptionStreamV8(resource.resourceId, resource.key, encryptionOptions.paddingStep);
     }
 
-    let encryptionStream;
-    if (encryptionOptions.paddingStep === Padding.OFF) {
-      encryptionStream = new EncryptionStreamV4(resourceFinal.resourceId, resourceFinal.key);
-    } else {
-      encryptionStream = new EncryptionStreamV8(resourceFinal.resourceId, resourceFinal.key, encryptionOptions.paddingStep);
-    }
-
-    return encryptionStream;
+    // encryption using transparent sessions
+    const session = await this._getTransparentSession(encryptionOptions);
+    return new EncryptionStreamV11(utils.fromBase64(session.id), session.key, encryptionOptions.paddingStep);
   }
 
   async createDecryptionStream(): Promise<DecryptionStream> {

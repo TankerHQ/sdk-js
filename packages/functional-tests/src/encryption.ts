@@ -1,6 +1,6 @@
 import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, OutputOptions } from '@tanker/core';
-import { EncryptionV4, EncryptionV6, EncryptionV9, EncryptionV11, tcrypto, unserializeCompositeResourceId, utils, Padding, padme, generichash } from '@tanker/crypto';
+import { EncryptionV9, EncryptionV10, EncryptionV11, tcrypto, unserializeCompositeResourceId, utils, Padding, padme, generichash } from '@tanker/crypto';
 import { Data, getConstructorName, getDataLength } from '@tanker/types';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
@@ -10,7 +10,7 @@ import { TestArgs, AppHelper, AppProvisionalUser, TestResourceSize, pipeStreams,
 
 const { READY } = statuses;
 
-const streamStepSize = EncryptionV4.defaultMaxEncryptedChunkSize - EncryptionV4.overhead;
+const streamStepSize = EncryptionV11.defaultMaxEncryptedChunkSize - EncryptionV11.chunkOverhead;
 
 export const generateEncryptionTests = (args: TestArgs) => {
   const clearText: string = 'Rivest Shamir Adleman';
@@ -99,16 +99,23 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
-      it('throws when calling decrypt with a corrupted buffer (resource id)', async () => {
+      it('throws when calling decrypt with a corrupted buffer (session id)', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
-        const corruptPos = encrypted.length - 4;
+        const corruptPos = tcrypto.SESSION_ID_SIZE;
         encrypted[corruptPos] = (encrypted[corruptPos]! + 1) % 256;
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 
+      it('throws when calling decrypt with a corrupted buffer (Mac)', async () => {
+        const encrypted = await bobLaptop.encrypt(clearText);
+        const corruptPos = encrypted.length - 4;
+        encrypted[corruptPos] = (encrypted[corruptPos]! + 1) % 256;
+        await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptionFailed);
+      });
+
       it('throws when calling decrypt with a corrupted buffer (data)', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
-        const corruptPos = 4;
+        const corruptPos = encrypted.length - tcrypto.MAC_SIZE - 4;
         encrypted[corruptPos] = (encrypted[corruptPos]! + 1) % 256;
         await expect(bobLaptop.decrypt(encrypted)).to.be.rejectedWith(errors.DecryptionFailed);
       });
@@ -119,8 +126,8 @@ export const generateEncryptionTests = (args: TestArgs) => {
       });
 
       describe('with padding', () => {
-        const simpleEncryptionOverhead = 17;
-        const paddedSimpleEncryptionOverhead = simpleEncryptionOverhead + 1;
+        const simpleEncryptionOverhead = EncryptionV9.overhead;
+        const paddedSimpleEncryptionOverhead = EncryptionV10.overhead;
 
         describe('auto', () => {
           const clearTextAutoPadding = 'my clear data is clear!';
@@ -152,10 +159,10 @@ export const generateEncryptionTests = (args: TestArgs) => {
           await expectDecrypt([bobLaptop], clearText, encrypted);
         });
 
-        it('encrypt/decrypt with a huge padding step should select the v8 format', async () => {
+        it('encrypt/decrypt with a huge padding step should select the v11 format', async () => {
           const step = 2 * 1024 * 1024;
           const encrypted = await bobLaptop.encrypt(clearText, { paddingStep: step });
-          expect(encrypted[0]).to.equal(0x08);
+          expect(encrypted[0]).to.equal(EncryptionV11.version);
           await expectDecrypt([bobLaptop], clearText, encrypted);
         });
 
@@ -257,7 +264,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
         const step = 13;
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity], paddingStep: step });
 
-        const paddedSize = encrypted.length - EncryptionV6.overhead;
+        const paddedSize = encrypted.length - EncryptionV10.overhead;
         expect(paddedSize % step).to.equal(0);
 
         await expectDecrypt([aliceLaptop], clearText, encrypted);
@@ -436,12 +443,25 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
-      it('throws when sharing with already claimed identity', async () => {
+      it('encrypts for already claimed identity with session from cache', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
 
         await appHelper.attachVerifyEmailProvisionalIdentity(aliceLaptop, provisional);
 
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
+      });
+
+      it('throws when encrypting using already claimed identity without session from cache', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
+
+        await appHelper.attachVerifyEmailProvisionalIdentity(aliceLaptop, provisional);
+
+        // new device with fresh cache
+        const bobPhone = args.makeTanker();
+        await bobPhone.start(bobIdentity);
+        await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
+        await expect(bobPhone.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
       it('gracefully accept an already attached provisional identity', async () => {
@@ -524,12 +544,25 @@ export const generateEncryptionTests = (args: TestArgs) => {
         await expectDecrypt([aliceLaptop], clearText, encrypted);
       });
 
-      it('throws when sharing with already claimed identity', async () => {
+      it('encrypts for already claimed identity with session from cache', async () => {
         await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
 
         await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
 
-        await expect(bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
+        const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
+        await expectDecrypt([aliceLaptop], clearText, encrypted);
+      });
+
+      it('throws when encrypting using already claimed identity without session from cache', async () => {
+        await bobLaptop.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] });
+
+        await appHelper.attachVerifyPhoneNumberProvisionalIdentity(aliceLaptop, provisional);
+
+        // new device with fresh cache
+        const bobPhone = args.makeTanker();
+        await bobPhone.start(bobIdentity);
+        await bobPhone.verifyIdentity({ passphrase: 'passphrase' });
+        await expect(bobPhone.encrypt(clearText, { shareWithUsers: [provisional.publicIdentity] })).to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
       it('gracefully accept an already attached provisional identity', async () => {
@@ -641,6 +674,11 @@ export const generateEncryptionTests = (args: TestArgs) => {
       args.resources[size]!.forEach(({ type, resource: clear }) => {
         it(`can encrypt and decrypt a ${size} ${getConstructorName(type)}`, async () => {
           const onProgress = sinon.fake();
+          // handle reporting of stream header
+          let streamPreHeaderOverhead = 0;
+          if (size === 'medium' || size === 'big') {
+            streamPreHeaderOverhead = EncryptionV11.overhead;
+          }
 
           // We disable padding for this test because we need to test the
           // progress report precisely. This test tests only progress reports,
@@ -648,7 +686,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
           // are a little off because they become unpredictable).
           const encrypted = await aliceLaptop.encryptData(clear, { paddingStep: Padding.OFF, onProgress });
           expectSameType(encrypted, clear);
-          expectProgressReport(onProgress, getDataLength(encrypted));
+          expectProgressReport(onProgress, getDataLength(encrypted), EncryptionV11.defaultMaxEncryptedChunkSize, streamPreHeaderOverhead);
           onProgress.resetHistory();
 
           const decrypted = await aliceLaptop.decryptData(encrypted, { onProgress });
