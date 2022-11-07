@@ -84,7 +84,7 @@
     "mocha": "^9.2.0",
     "nyc": "15.1.0",
     "process": "^0.11.10",
-    "ts-loader": "~8.4.0",
+    "ts-loader": "~9.4.1",
     "ts-node": "~10.9.1",
     "tsconfig-paths": "^3.11.0",
     "typescript": "~4.8.0",
