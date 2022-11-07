@@ -27,6 +27,11 @@ const getLoaders = (env) => {
     importHelpers: true,
     downlevelIteration: true,
     rootDir: path.resolve(__dirname, '..'),
+    paths: {
+      '@tanker/*': [ // look for typescript source files first
+        './node_modules/@tanker/*/src/',
+      ],
+    },
   };
 
   return [
