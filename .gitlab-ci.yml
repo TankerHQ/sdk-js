@@ -89,6 +89,16 @@ check/linux/node-next:
   variables:
     NODE_VERSION: 18
 
+check/linux/node/19:
+  extends:
+    - .check/linux/node-base
+  rules:
+    - !reference [.rules/push-master, rules]
+    - !reference [.rules/mr/manual, rules]
+    - !reference [.rules/nightly, rules]
+  variables:
+    NODE_VERSION: 19
+
 check/macos:
   stage: check
   rules:
