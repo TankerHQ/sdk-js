@@ -23,6 +23,7 @@ export { getClearSize, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_E
 export type { EncryptionStream } from './EncryptionFormats/EncryptionStream';
 export { EncryptionStreamV4 } from './EncryptionFormats/EncryptionStreamV4';
 export { EncryptionStreamV8 } from './EncryptionFormats/EncryptionStreamV8';
+export { EncryptionStreamV11 } from './EncryptionFormats/EncryptionStreamV11';
 export { DecryptionStream } from './EncryptionFormats/DecryptionStream';
 export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils };
 export { Padding, padme, paddedFromClearSize, isPaddingStep } from './padding';
