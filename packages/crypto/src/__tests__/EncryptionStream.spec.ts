@@ -125,7 +125,7 @@ const generateEncryptionStreamTests = ({ makeEncryptionStream, encryption, trans
     const stream = makeEncryptionStream(resourceId, key, encryptedChunkSize);
     const sync = watchStream(stream);
 
-    // push msg twice + 1 more byte
+    // push msg twice + an incomplete msg
     stream.write(msg.subarray(0, 5));
     stream.write(msg.subarray(5));
     stream.write(msg);
@@ -325,7 +325,7 @@ describe('EncryptionStreamV11', () => {
     const stream = makeEncryptionStream(encryptedChunkSize);
     const sync = watchStream(stream);
 
-    // push msg twice + 1 more byte
+    // push msg twice + an incomplete msg
     stream.write(msg.subarray(0, 5));
     stream.write(msg.subarray(5));
     stream.write(msg);
