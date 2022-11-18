@@ -7,6 +7,7 @@ import { extractEncryptionFormat } from './EncryptionFormats';
 import { DecryptionStreamSimple } from './DecryptionStreamSimple';
 import { DecryptionStreamV4 } from './DecryptionStreamV4';
 import { DecryptionStreamV8 } from './DecryptionStreamV8';
+import { DecryptionStreamV11 } from './DecryptionStreamV11';
 
 export class DecryptionStream extends Transform {
   _mapper: KeyMapper;
@@ -27,7 +28,9 @@ export class DecryptionStream extends Transform {
   }
 
   encryptedChunkSize(): number {
-    if (this._decryptionStream instanceof DecryptionStreamV4 || this._decryptionStream instanceof DecryptionStreamV8)
+    if (this._decryptionStream instanceof DecryptionStreamV4
+      || this._decryptionStream instanceof DecryptionStreamV8
+      || this._decryptionStream instanceof DecryptionStreamV11)
       return this._decryptionStream.encryptedChunkSize();
     throw new InternalError('Assertion error: trying to get encrypted chunk size on simple encryption');
   }
@@ -39,6 +42,8 @@ export class DecryptionStream extends Transform {
       this._decryptionStream = new DecryptionStreamV4(this._mapper);
     } else if (encryption.version === 8) {
       this._decryptionStream = new DecryptionStreamV8(this._mapper);
+    } else if (encryption.version === 11) {
+      this._decryptionStream = new DecryptionStreamV11(this._mapper);
     } else {
       this._decryptionStream = new DecryptionStreamSimple(this._mapper);
     }

@@ -8,6 +8,7 @@ import { EncryptionV5 } from './v5';
 import { EncryptionV6 } from './v6';
 import { EncryptionV7 } from './v7';
 import { EncryptionV8 } from './v8';
+import { EncryptionV9, EncryptionV10, EncryptionV11 } from './TransparentEncryption';
 
 export interface EncryptionFormatReporter {
   getClearSize(encryptedSize: number): number
@@ -16,19 +17,18 @@ export interface EncryptionFormatReporter {
 
 export type SimpleEncryptor = typeof EncryptionV1 | typeof EncryptionV2 | typeof EncryptionV3 | typeof EncryptionV5 | typeof EncryptionV6 | typeof EncryptionV7;
 export type StreamEncryptor = typeof EncryptionV4 | typeof EncryptionV8;
-export type Encryptor = SimpleEncryptor | StreamEncryptor;
+export type TransparentSessionEncryptor = typeof EncryptionV9 | typeof EncryptionV10;
+export type TransparentSessionStreamEncryptor = typeof EncryptionV11;
+export type Encryptor = SimpleEncryptor | StreamEncryptor | TransparentSessionEncryptor | TransparentSessionStreamEncryptor;
 
-const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8] as const;
+const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8, EncryptionV9, EncryptionV10, EncryptionV11] as const;
 
 // The maximum byte size of a resource encrypted with the "simple" algorithms
-// (different from v4) is obtained by summing the sizes of:
-//  - the version: 1 byte
-//  - the MAC: 16 bytes
-//  - the IV: 24 bytes
-//  - the data: 5 megabytes (libsodium's hard limit)
-//
+// (different from v4 & v8) is obtained by summing the sizes of:
+//  - the largest format overhead (currently v9 & v10)
+//  - the data: 5 megabytes (max size for simple encryption)
 // By reading an input up to this size, we're sure to be able to extract the resource ID.
-export const SAFE_EXTRACTION_LENGTH = 1 + 16 + 24 + 5 * (1024 * 1024);
+export const SAFE_EXTRACTION_LENGTH = EncryptionV10.overhead + 5 * (1024 * 1024);
 
 export type EncryptionFormatDescription = {
   version: Encryptor['version'];

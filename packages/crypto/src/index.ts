@@ -15,6 +15,7 @@ export { EncryptionV5 } from './EncryptionFormats/v5';
 export { EncryptionV6 } from './EncryptionFormats/v6';
 export { EncryptionV7 } from './EncryptionFormats/v7';
 export { EncryptionV8 } from './EncryptionFormats/v8';
+export { EncryptionV9, EncryptionV10, EncryptionV11 } from './EncryptionFormats/TransparentEncryption';
 
 export type { KeyMapper } from './EncryptionFormats/KeyMapper';
 export type { EncryptionFormatReporter, EncryptionFormatDescription, Encryptor, SimpleEncryptor, StreamEncryptor } from './EncryptionFormats/EncryptionFormats';
@@ -22,7 +23,9 @@ export { getClearSize, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_E
 export type { EncryptionStream } from './EncryptionFormats/EncryptionStream';
 export { EncryptionStreamV4 } from './EncryptionFormats/EncryptionStreamV4';
 export { EncryptionStreamV8 } from './EncryptionFormats/EncryptionStreamV8';
+export { EncryptionStreamV11 } from './EncryptionFormats/EncryptionStreamV11';
 export { DecryptionStream } from './EncryptionFormats/DecryptionStream';
 export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils };
 export { Padding, padme, paddedFromClearSize, isPaddingStep } from './padding';
 export type { b64string, safeb64string, Key };
+export { assertResourceId, getKeyFromResourceId, unserializeCompositeResourceId } from './resourceId';

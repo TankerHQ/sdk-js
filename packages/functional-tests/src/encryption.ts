@@ -1,12 +1,12 @@
 import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, OutputOptions } from '@tanker/core';
-import { EncryptionV4, EncryptionV6, tcrypto, utils, Padding, padme } from '@tanker/crypto';
+import { EncryptionV4, EncryptionV6, EncryptionV9, EncryptionV11, tcrypto, unserializeCompositeResourceId, utils, Padding, padme, generichash } from '@tanker/crypto';
 import { Data, getConstructorName, getDataLength } from '@tanker/types';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 
-import type { TestArgs, AppHelper, AppProvisionalUser, TestResourceSize } from './helpers';
-import { expectProgressReport, expectType, expectSameType, expectDeepEqual, expectDecrypt } from './helpers';
+import { MergerStream } from '@tanker/stream-base/';
+import { TestArgs, AppHelper, AppProvisionalUser, TestResourceSize, pipeStreams, expectProgressReport, expectType, expectSameType, expectDeepEqual, expectDecrypt } from './helpers';
 
 const { READY } = statuses;
 
@@ -687,6 +687,166 @@ export const generateEncryptionTests = (args: TestArgs) => {
           });
         });
       });
+    });
+  });
+
+  describe('Transparent session forward compatibility', () => {
+    let appHelper: AppHelper;
+    let aliceLaptop: Tanker;
+    let aliceIdentity: b64string;
+    let alicePublicIdentity: b64string;
+    let bobLaptop: Tanker;
+    let bobIdentity: b64string;
+    let bobPublicIdentity: b64string;
+
+    type TestVector = {
+      key: Uint8Array;
+      clearData: string;
+      encryptedData: Uint8Array;
+      resourceId: Uint8Array;
+    };
+    const testVectorV9: TestVector = {
+      key: new Uint8Array([
+        0x18, 0x89, 0xa4, 0xb6, 0x66, 0x0c, 0x14, 0x4e, 0x3a, 0xef, 0x29,
+        0x46, 0xcb, 0x6e, 0x10, 0xf3, 0x26, 0xf5, 0xf9, 0x48, 0x4c, 0x99,
+        0x95, 0x49, 0x96, 0x7f, 0x48, 0xb0, 0xcc, 0x68, 0xe5, 0xa3,
+      ]),
+      clearData: 'this is very secret',
+      encryptedData: new Uint8Array([
+        0x09, 0x66, 0xf3, 0x4d, 0x6b, 0x50, 0x98, 0x52, 0x38, 0x9d, 0x3e, 0x55,
+        0x53, 0xf2, 0xbe, 0x22, 0x6c, 0x95, 0x06, 0x59, 0x02, 0x9c, 0x53, 0x4f,
+        0xec, 0x23, 0x40, 0x60, 0x77, 0x20, 0xee, 0x07, 0x5c, 0x6f, 0x51, 0xcf,
+        0x88, 0xe5, 0x00, 0xaa, 0x3a, 0x90, 0x08, 0x8e, 0x4b, 0x22, 0x93, 0xbc,
+        0x24, 0x02, 0x62, 0x89, 0x79, 0x51, 0x95, 0x8e, 0x2b, 0x03, 0xcd, 0xcf,
+        0xc6, 0x23, 0x90, 0xb4, 0xe3, 0x94, 0xe5, 0x98,
+      ]),
+      resourceId: new Uint8Array([
+        0x00, 0x66, 0xf3, 0x4d, 0x6b, 0x50, 0x98, 0x52, 0x38, 0x9d, 0x3e,
+        0x55, 0x53, 0xf2, 0xbe, 0x22, 0x6c, 0x95, 0x06, 0x59, 0x02, 0x9c,
+        0x53, 0x4f, 0xec, 0x23, 0x40, 0x60, 0x77, 0x20, 0xee, 0x07, 0x5c,
+      ]),
+    };
+
+    const testVectorV11: TestVector = {
+      key: new Uint8Array([
+        0xbc, 0xb7, 0xc3, 0x08, 0x92, 0x01, 0xf9, 0x05, 0x15, 0x52, 0x1c,
+        0x05, 0xdc, 0xe2, 0x99, 0x60, 0xa4, 0x61, 0xa3, 0x77, 0x0d, 0x2c,
+        0x37, 0xf0, 0xed, 0x3e, 0xb1, 0x23, 0x41, 0x40, 0x76, 0x64,
+      ]),
+      clearData: 'this is very secret',
+      encryptedData: new Uint8Array([
+        0x0b, 0xa3, 0xe6, 0x5d, 0x0e, 0xcc, 0x6f, 0x7e, 0xd4, 0xb2, 0xc7,
+        0x7e, 0xa0, 0x87, 0xa6, 0xde, 0x7c, 0xca, 0xbe, 0x4a, 0x9b, 0xa1,
+        0x3d, 0xfc, 0x93, 0x62, 0xf8, 0x49, 0x11, 0xb1, 0x09, 0x69, 0xae,
+        0x1e, 0x00, 0x00, 0x00, 0x75, 0xbe, 0xe5, 0x08, 0x83, 0x61, 0xcb,
+        0xc5, 0xa0, 0xf9, 0xa6, 0x9d, 0x13, 0x52, 0xb0, 0x63, 0x61, 0x20,
+        0x85, 0xf7, 0xa8, 0x0e, 0xf8, 0x96, 0xd0, 0x73, 0xa6, 0xf6, 0x8c,
+        0x30, 0x3c, 0xed, 0x7b, 0xd5, 0x47, 0xe6, 0xf2, 0xb3, 0x7e, 0xa8,
+        0x69, 0x75, 0x7e, 0xe7, 0xa4, 0xde, 0x40, 0xc5, 0x2e, 0xdc, 0xc9,
+        0x4d, 0x32, 0x71, 0x32, 0x93, 0x68, 0x71, 0x19,
+      ]),
+      resourceId: new Uint8Array([
+        0x00, 0xa3, 0xe6, 0x5d, 0x0e, 0xcc, 0x6f, 0x7e, 0xd4, 0xb2, 0xc7,
+        0x7e, 0xa0, 0x87, 0xa6, 0xde, 0x7c, 0xca, 0xbe, 0x4a, 0x9b, 0xa1,
+        0x3d, 0xfc, 0x93, 0x62, 0xf8, 0x49, 0x11, 0xb1, 0x09, 0x69, 0xae,
+      ]),
+    };
+
+    beforeEach(async () => {
+      ({ appHelper } = args);
+      aliceIdentity = await appHelper.generateIdentity();
+      alicePublicIdentity = await getPublicIdentity(aliceIdentity);
+      bobIdentity = await appHelper.generateIdentity();
+      bobPublicIdentity = await getPublicIdentity(bobIdentity);
+      aliceLaptop = args.makeTanker();
+      bobLaptop = args.makeTanker();
+      await aliceLaptop.start(aliceIdentity);
+      await aliceLaptop.registerIdentity({ passphrase: 'passphrase' });
+      await bobLaptop.start(bobIdentity);
+      await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+    });
+
+    const generateForwardCompatTests = (encryptor: typeof EncryptionV9 | typeof EncryptionV11, testVector: TestVector) => {
+      it('decrypts cypher text', async () => {
+        // eslint-disable-next-line no-underscore-dangle
+        bobLaptop._session!._resourceManager.findKeyFromResourceId = sinon.fake(() => testVector.key);
+        expect(await bobLaptop.decrypt(testVector.encryptedData)).to.equal(testVector.clearData);
+      });
+
+      it('decrypts with a DecryptionStream', async () => {
+        // eslint-disable-next-line no-underscore-dangle
+        bobLaptop._session!._resourceManager.findKeyFromResourceId = sinon.fake(() => testVector.key);
+
+        const decryptor = await bobLaptop.createDecryptionStream();
+        const merger = new MergerStream({ type: Uint8Array });
+
+        decryptor.write(testVector.encryptedData);
+        decryptor.end();
+
+        const data = await pipeStreams({ resolveEvent: 'data', streams: [decryptor, merger] });
+        expect(data).to.deep.equal(utils.fromString(testVector.clearData));
+      });
+
+      it('shares composite resourceID from session key', async () => {
+        const fakeBob = sinon.fake(() => testVector.key);
+        // eslint-disable-next-line no-underscore-dangle
+        bobLaptop._session!._resourceManager.findKeyFromResourceId = fakeBob;
+
+        // eslint-disable-next-line no-underscore-dangle
+        const fake = sinon.fake(aliceLaptop._session!._resourceManager._findKeysFromResourceIds);
+        // eslint-disable-next-line no-underscore-dangle
+        aliceLaptop._session!._resourceManager._findKeysFromResourceIds = fake;
+
+        await bobLaptop.share([utils.toBase64(testVector.resourceId)], { shareWithUsers: [alicePublicIdentity] });
+        expect(await aliceLaptop.decrypt(testVector.encryptedData)).to.equal(testVector.clearData);
+
+        // called during share
+        expect(fakeBob.callCount).to.equal(1);
+
+        // called during decrypt
+        expect(fake.callCount).to.equal(2);
+        expect(fake.firstCall.returnValue).to.be.rejectedWith(errors.InvalidArgument);
+      });
+
+      it('shares composite resourceID from individual resource key', async () => {
+        const data = encryptor.extractResourceId(testVector.encryptedData);
+        const compositeId = unserializeCompositeResourceId(data);
+        const resourceKey = generichash(utils.concatArrays(testVector.key, compositeId.resourceId));
+
+        const fakeBob = sinon.fake((id: Uint8Array) => {
+          if (utils.equalArray(id, compositeId.resourceId))
+            return resourceKey;
+          throw new Error('use the individual resource key instead');
+        });
+        // eslint-disable-next-line no-underscore-dangle
+        bobLaptop._session!._resourceManager.findKeyFromResourceId = fakeBob;
+
+        // eslint-disable-next-line no-underscore-dangle
+        const fake = sinon.fake(aliceLaptop._session!._resourceManager._findKeysFromResourceIds);
+        // eslint-disable-next-line no-underscore-dangle
+        aliceLaptop._session!._resourceManager._findKeysFromResourceIds = fake;
+
+        // share from session key
+        await bobLaptop.share([utils.toBase64(testVector.resourceId)], { shareWithUsers: [alicePublicIdentity] });
+        // share from individual resoutceId
+        await aliceLaptop.share([utils.toBase64(testVector.resourceId)], { shareWithUsers: [bobPublicIdentity] });
+        expect(await aliceLaptop.decrypt(testVector.encryptedData)).to.equal(testVector.clearData);
+
+        // called during share
+        expect(fakeBob.args).to.deep.equal([[compositeId.sessionId], [compositeId.resourceId]]);
+
+        // called during share and decrypt
+        expect(fake.callCount).to.equal(4);
+        expect(fake.firstCall.returnValue).to.be.rejectedWith(errors.InvalidArgument);
+      });
+    };
+
+    describe('V9', () => {
+      generateForwardCompatTests(EncryptionV9, testVectorV9);
+    });
+
+    describe('V11', () => {
+      generateForwardCompatTests(EncryptionV11, testVectorV11);
     });
   });
 };

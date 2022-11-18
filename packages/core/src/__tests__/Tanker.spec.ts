@@ -422,7 +422,7 @@ describe('Tanker', () => {
       });
 
       it('sharing should throw if invalid resourceId argument given', async () => {
-        await expect(tanker.share(['resourceId'], { shareWithUsers: ['userId'] })).to.be.rejectedWith(InvalidArgument, 'resourceId');
+        await expect(tanker.share(['resourceId'], { shareWithUsers: ['userId'] })).to.be.rejectedWith(InvalidArgument);
       });
 
       it('attaching a public provisional identity throws', async () => {

@@ -1,5 +1,5 @@
 import type { b64string, EncryptionFormatDescription, SimpleEncryptor } from '@tanker/crypto';
-import { utils, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream } from '@tanker/crypto';
+import { utils, extractEncryptionFormat, isStreamEncryptionFormat, SAFE_EXTRACTION_LENGTH, getClearSize, paddedFromClearSize, Padding, EncryptionStreamV4, EncryptionStreamV8, DecryptionStream, getKeyFromResourceId } from '@tanker/crypto';
 import { InternalError } from '@tanker/errors';
 import { MergerStream, SlicerStream } from '@tanker/stream-base';
 import { castData, getDataLength } from '@tanker/types';
@@ -277,11 +277,12 @@ export class DataProtector {
   async share(resourceIds: Array<b64string>, sharingOptions: SharingOptions): Promise<void> {
     // nothing to return, just wait for the promises to finish
     const uniqueResourceIds = [...new Set(resourceIds)];
-    const keys = await Promise.all(uniqueResourceIds.map(async b64ResourceId => {
-      const resourceId = utils.fromBase64(b64ResourceId);
-      const key = await this._resourceManager.findKeyFromResourceId(resourceId);
-      return { resourceId, key };
-    }));
+    const keys = await Promise.all(uniqueResourceIds.map(
+      b64ResourceId => getKeyFromResourceId(
+        b64ResourceId,
+        (keyId: Uint8Array) => this._resourceManager.findKeyFromResourceId(keyId),
+      ),
+    ));
     return this._shareResources(keys, { ...sharingOptions, shareWithSelf: false });
   }
 
