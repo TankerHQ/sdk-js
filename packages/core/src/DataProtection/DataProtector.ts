@@ -6,7 +6,7 @@ import { castData, getDataLength } from '@tanker/types';
 
 import type { Data } from '@tanker/types';
 
-import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, assertTrustchainId } from '../Identity';
+import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, assertTrustchainId, _serializeIdentity } from '../Identity';
 import type { PublicIdentity, PublicProvisionalUser } from '../Identity';
 import type { Client } from '../Network/Client';
 import type LocalUser from '../LocalUser/LocalUser';
@@ -218,8 +218,16 @@ export class DataProtector {
   }
 
   async _getTransparentSession(encryptionOptions: Omit<EncryptionOptions, 'paddingStep'>): Promise<SessionResult> {
+    const shareWithUsers = encryptionOptions.shareWithUsers || [];
+    const shareWithGroups = encryptionOptions.shareWithGroups || [];
+
+    if (encryptionOptions.shareWithSelf) {
+      const selfIdentity = _serializeIdentity(this._handleShareWithSelf([], encryptionOptions.shareWithSelf)[0]!);
+      shareWithUsers.push(selfIdentity);
+    }
+
     return this._sessionManager.getTransparentSession(
-      encryptionOptions,
+      { shareWithUsers, shareWithGroups },
       this._createTransparentSession.bind(this, encryptionOptions),
     );
   }
