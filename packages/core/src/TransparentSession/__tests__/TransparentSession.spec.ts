@@ -86,51 +86,72 @@ describe('computeRecipientHash', () => {
 
     for (let index = 0; index < ids.length; index++) {
       expect(
-        computeRecipientHash({ shareWithUsers: ids.slice(index) }),
+        computeRecipientHash({
+          shareWithUsers: ids.slice(index),
+          shareWithGroups: [],
+        }),
       ).to.not.deep.equal(
-        computeRecipientHash({ shareWithGroups: ids.slice(index) }),
+        computeRecipientHash({
+          shareWithUsers: [],
+          shareWithGroups: ids.slice(index),
+        }),
       );
     }
 
     for (let index = 0; index < ids.length; index++) {
       expect(
-        computeRecipientHash({ shareWithUsers: [ids[0]!] }),
+        computeRecipientHash({
+          shareWithUsers: [ids[0]!],
+          shareWithGroups: [],
+        }),
       ).to.not.deep.equal(
-        computeRecipientHash({ shareWithUsers: ids.slice(2) }),
+        computeRecipientHash({
+          shareWithUsers: ids.slice(2),
+          shareWithGroups: [],
+        }),
       );
     }
 
     expect(
-      computeRecipientHash({ shareWithUsers: ids.slice(0, 1) }),
+      computeRecipientHash({
+        shareWithUsers: ids.slice(0, 1),
+        shareWithGroups: [],
+      }),
     ).to.not.deep.equal(
-      computeRecipientHash({ shareWithUsers: ids.slice(1) }),
+      computeRecipientHash({
+        shareWithUsers: ids.slice(1),
+        shareWithGroups: [],
+      }),
     );
   });
 
-  it('ignores order inside arrays', () => {
+  it('ignores order', () => {
     const id1 = utils.toBase64(random(32));
     const id2 = utils.toBase64(random(32));
 
     const hash = computeRecipientHash({
+      shareWithUsers: [],
       shareWithGroups: [id1, id2],
     });
 
     expect(computeRecipientHash({
+      shareWithUsers: [],
       shareWithGroups: [id2, id1],
     })).to.deep.equal(hash);
   });
 
-  it('changes when sharing w/ and w/o self', () => {
-    const groupId = utils.toBase64(random(32));
+  it('ignores duplicates', () => {
+    const id1 = utils.toBase64(random(32));
+    const id2 = utils.toBase64(random(32));
 
     const hash = computeRecipientHash({
-      shareWithGroups: [groupId],
-      shareWithSelf: true,
+      shareWithUsers: [id1, id1],
+      shareWithGroups: [id2, id2],
     });
 
     expect(computeRecipientHash({
-      shareWithGroups: [groupId],
-      shareWithSelf: false,
-    })).to.not.deep.equal(hash);
+      shareWithUsers: [id1],
+      shareWithGroups: [id2],
+    })).to.deep.equal(hash);
   });
 });
