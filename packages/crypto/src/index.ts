@@ -28,4 +28,4 @@ export { DecryptionStream } from './EncryptionFormats/DecryptionStream';
 export { aead, generichash, number, random, randomBase64Token, ready, tcrypto, utils };
 export { Padding, padme, paddedFromClearSize, isPaddingStep } from './padding';
 export type { b64string, safeb64string, Key };
-export { assertResourceId, getKeyFromResourceId, unserializeCompositeResourceId } from './resourceId';
+export { assertResourceId, getKeyFromResourceId } from './resourceId';
