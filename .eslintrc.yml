@@ -15,6 +15,7 @@ parserOptions:
     - ./config/tsconfig.lint.json
 
 plugins:
+  - import
   - "@typescript-eslint"
   - chai-expect
   - chai-friendly
