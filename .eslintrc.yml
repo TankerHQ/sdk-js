@@ -58,6 +58,8 @@ rules:
   chai-friendly/no-unused-expressions: 2
 
   import/no-named-as-default: 0
+  import/no-unresolved:
+    - error
   import/prefer-default-export: 0
 
   mocha-no-only/mocha-no-only:
