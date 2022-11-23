@@ -9,6 +9,7 @@ import type { Data, ResourceMetadata } from '@tanker/types';
 
 import type { Client } from '../Network/Client';
 import type { Resource } from '../DataProtection/types';
+import { makeResource } from '../DataProtection/types';
 import type { DataProtector } from '../DataProtection/DataProtector';
 import { ProgressHandler } from '../DataProtection/ProgressHandler';
 import type { OutputOptions, ProgressOptions, EncryptionOptions } from '../DataProtection/options';
@@ -48,10 +49,10 @@ export class CloudStorageManager {
     this._dataProtector = dataProtector;
   }
 
-  async _encryptAndShareMetadata(metadata: Metadata, resource: Resource): Promise<b64string> {
+  async _encryptMetadata(metadata: Metadata, resource: Resource): Promise<b64string> {
     const jsonMetadata = JSON.stringify(metadata);
     const clearMetadata = utils.fromString(jsonMetadata);
-    const encryptedMetadata = await this._dataProtector.encryptData(clearMetadata, {}, { type: Uint8Array }, {}, resource);
+    const encryptedMetadata = await this._dataProtector.encryptDataWithResource(clearMetadata, {}, { type: Uint8Array }, {}, resource);
     return utils.toBase64(encryptedMetadata);
   }
 
@@ -84,9 +85,9 @@ export class CloudStorageManager {
   }
 
   async createUploadStream(clearSize: number, encryptionOptions: EncryptionOptions, resourceMetadata: ResourceMetadata, progressOptions: ProgressOptions): Promise<UploadStream> {
-    const encryptor = await this._dataProtector.createEncryptionStream(encryptionOptions);
-    const { _resourceId: resourceId, _key: key } = encryptor;
-    const b64ResourceId = utils.toBase64(resourceId);
+    const resource = makeResource();
+    const encryptor = await this._dataProtector.createEncryptionStreamWithResource(encryptionOptions, resource);
+    const b64ResourceId = utils.toBase64(resource.resourceId);
 
     const totalClearSize = clearSize;
     const totalEncryptedSize = encryptor.getEncryptedSize(totalClearSize);
@@ -95,14 +96,17 @@ export class CloudStorageManager {
       ...resourceMetadata,
       encryptionFormat: getStreamEncryptionFormatDescription(encryptionOptions.paddingStep),
     };
-    const encryptedMetadata = await this._encryptAndShareMetadata(metadata, { resourceId, key });
+
+    // eslint-disable-next-line no-underscore-dangle
+    await this._dataProtector._shareResources([resource], encryptionOptions);
+    const encryptedMetadata = await this._encryptMetadata(metadata, resource);
 
     const {
       urls,
       headers,
       service,
       recommended_chunk_size: recommendedChunkSize,
-    } = await this._client.getFileUploadURL(resourceId, encryptedMetadata, totalEncryptedSize);
+    } = await this._client.getFileUploadURL(resource.resourceId, encryptedMetadata, totalEncryptedSize);
 
     if (!streamCloudStorage[service])
       throw new InternalError(`unsupported cloud storage service: ${service}`);
