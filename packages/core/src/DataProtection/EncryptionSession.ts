@@ -42,11 +42,11 @@ export class EncryptionSession {
     const outputOptions = extractOutputOptions(options, clearData);
     const progressOptions = extractProgressOptions(options);
 
-    return this._dataProtector.encryptData(clearData, { paddingStep: this._paddingStep }, outputOptions, progressOptions, this._resource);
+    return this._dataProtector.encryptDataWithResource(clearData, { paddingStep: this._paddingStep }, outputOptions, progressOptions, this._resource);
   }
 
   async createEncryptionStream(): Promise<EncryptionStream> {
     assertStatus(this._getStatus(), Status.READY, 'create an encryption stream');
-    return this._dataProtector.createEncryptionStream({ paddingStep: this._paddingStep }, this._resource);
+    return this._dataProtector.createEncryptionStreamWithResource({ paddingStep: this._paddingStep }, this._resource);
   }
 }
