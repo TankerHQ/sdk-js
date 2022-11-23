@@ -61,10 +61,11 @@ describe('Padding', () => {
         [0x74, 0x72, 0x75, 0x65, 0x80, 0x42],
         [0x74, 0x72, 0x75, 0x65, 0x80, 0x00, 0x42, 0x00],
         [0x74, 0x72, 0x75, 0x65, 0x80, 0x00, 0x00, 0x42],
-      ];
+      ].map(buf => new Uint8Array(buf));
 
-      for (const buffer of buffers)
-        expect(() => padding.removePadding(new Uint8Array(buffer))).to.throw();
+      for (const buffer of buffers) {
+        expect(() => padding.removePadding(buffer)).to.throw();
+      }
     });
 
     it('returns a trimed array', () => {
