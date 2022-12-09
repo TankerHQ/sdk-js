@@ -218,8 +218,12 @@ export class DataProtector {
   }
 
   async _getTransparentSession(encryptionOptions: Omit<EncryptionOptions, 'paddingStep'>): Promise<SessionResult> {
-    const shareWithUsers = encryptionOptions.shareWithUsers || [];
-    const shareWithGroups = encryptionOptions.shareWithGroups || [];
+    const shareWithUsers = [
+      ...encryptionOptions.shareWithUsers || [],
+    ];
+    const shareWithGroups = [
+      ...encryptionOptions.shareWithGroups || [],
+    ];
 
     if (encryptionOptions.shareWithSelf) {
       const selfIdentity = _serializeIdentity(this._handleShareWithSelf([], encryptionOptions.shareWithSelf)[0]!);

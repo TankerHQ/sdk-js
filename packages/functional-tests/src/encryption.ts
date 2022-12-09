@@ -197,6 +197,15 @@ export const generateEncryptionTests = (args: TestArgs) => {
     });
 
     describe('share at encryption time', () => {
+      it('does not alter sharing options', async () => {
+        const options = {
+          shareWithUsers: [alicePublicIdentity],
+        };
+        await expect(bobLaptop.encrypt(clearText, options)).to.be.fulfilled;
+
+        expect(options.shareWithUsers.length).to.equal(1);
+      });
+
       it('encrypts and shares with a permanent identity', async () => {
         const encrypted = await bobLaptop.encrypt(clearText, { shareWithUsers: [alicePublicIdentity] });
         await expectDecrypt([aliceLaptop], clearText, encrypted);
