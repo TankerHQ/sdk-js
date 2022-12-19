@@ -14,15 +14,22 @@ export const expectProgressReport = (
   spy: SpyObj,
   totalBytes: number,
   maxBytesPerStep: number = EncryptionV4.defaultMaxEncryptedChunkSize,
+  preHeaderSize: number = 0,
 ) => {
   // add 1 for initial progress report (currentBytes = 0)
-  const stepCount = 1 + (totalBytes === 0 ? 1 : Math.ceil(totalBytes / maxBytesPerStep));
+  let stepCount = 1 + (totalBytes === 0 ? 1 : Math.ceil(totalBytes / maxBytesPerStep));
+  if (preHeaderSize > 0)
+    stepCount += 1;
   expect(spy.callCount).to.equal(stepCount);
 
   let currentBytes = 0;
   for (let step = 0; step < stepCount - 1; step++) {
     expect(spy.getCall(step).args).to.deep.equal([{ currentBytes, totalBytes }]);
-    currentBytes += maxBytesPerStep;
+    if (step === 0 && preHeaderSize !== 0) {
+      currentBytes += preHeaderSize;
+    } else {
+      currentBytes += maxBytesPerStep;
+    }
   }
   expect(spy.getCall(stepCount - 1).args).to.deep.equal([{ currentBytes: totalBytes, totalBytes }]);
 };

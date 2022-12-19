@@ -1,5 +1,5 @@
-import type { Key, EncryptionFormatDescription } from '@tanker/crypto';
-import { EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8, random, tcrypto, Padding } from '@tanker/crypto';
+import type { Key } from '@tanker/crypto';
+import { EncryptionV5, EncryptionV7, EncryptionV9, EncryptionV10, random, tcrypto, Padding } from '@tanker/crypto';
 
 export type Resource = {
   resourceId: Uint8Array;
@@ -12,18 +12,6 @@ export function makeResource(): Resource {
   return { key, resourceId };
 }
 
-export const getSimpleEncryption = (paddingStep?: number | Padding) => (paddingStep === Padding.OFF ? EncryptionV3 : EncryptionV6);
+export const getSimpleEncryption = (paddingStep?: number | Padding) => (paddingStep === Padding.OFF ? EncryptionV9 : EncryptionV10);
 
 export const getSimpleEncryptionWithFixedResourceId = (paddingStep?: number | Padding) => (paddingStep === Padding.OFF ? EncryptionV5 : EncryptionV7);
-
-export const getStreamEncryptionFormatDescription = (paddingStep?: number | Padding): EncryptionFormatDescription => {
-  if (paddingStep === Padding.OFF)
-    return ({
-      version: 4,
-      encryptedChunkSize: EncryptionV4.defaultMaxEncryptedChunkSize,
-    });
-  return ({
-    version: 8,
-    encryptedChunkSize: EncryptionV8.defaultMaxEncryptedChunkSize,
-  });
-};
