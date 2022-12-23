@@ -34,6 +34,7 @@
     "test:http-utils": "yarn _test \"packages/http-utils/**/src/**/*.spec{,.node}.ts\"",
     "test:streams": "yarn _test \"packages/stream/**/src/**/*.spec{,.node}.ts\"",
     "test:types": "yarn _test \"packages/types/src/**/*.spec{,.node}.ts\"",
+    "test-matcher:export-test-names": "yarn test --reporter ./config/mocha/name-exporter.js --dry-run --grep 'functional-tests'",
     "karma": "karma start config/karma/karma.config.ci.js",
     "debug": "karma start config/karma/karma.config.debug.js",
     "debug:core": "karma start packages/core/config/karma.config.debug.js",
