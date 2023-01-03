@@ -51,15 +51,15 @@ export function unserializeBlock(src: Uint8Array): Block {
   let newOffset = 0;
   let value;
   const version = varint.decode(src, newOffset);
-  newOffset += varint.decode.bytes;
+  newOffset += varint.decode.bytes!;
   if (version > currentVersion)
     throw new UpgradeRequired(`unsupported block version: ${version}`);
   /*const index = */varint.decode(src, newOffset);
-  newOffset += varint.decode.bytes;
+  newOffset += varint.decode.bytes!;
   ({ value, newOffset } = getStaticArray(src, trustchainIdSize, newOffset));
   const trustchain_id = value!;
   value = varint.decode(src, newOffset);
-  newOffset += varint.decode.bytes;
+  newOffset += varint.decode.bytes!;
   const nature = value;
   if (!natureExists(nature))
     throw new UpgradeRequired(`unknown block nature: ${nature}`);
