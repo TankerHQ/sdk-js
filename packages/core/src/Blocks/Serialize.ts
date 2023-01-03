@@ -7,7 +7,7 @@ type Unserializer = (src: Uint8Array, offset: number) => { newOffset: number; [n
 export function getArray(src: Uint8Array, offset: number, name: string = 'value'): Record<string, any> {
   let pos = offset;
   const len = varint.decode(src, pos);
-  pos += varint.decode.bytes;
+  pos += varint.decode.bytes!;
   const buffer = new Uint8Array(src.buffer, src.byteOffset + pos, len);
   pos += len;
   return { [name]: buffer, newOffset: pos };
@@ -67,7 +67,7 @@ export function unserializeList(data: Uint8Array, f: Unserializer, offset: numbe
   let newOffset = offset;
 
   const len = varint.decode(data, newOffset);
-  newOffset += varint.decode.bytes;
+  newOffset += varint.decode.bytes!;
 
   const result = [];
   for (let i = 0; i < len; ++i) {

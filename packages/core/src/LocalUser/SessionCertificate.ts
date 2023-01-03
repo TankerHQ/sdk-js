@@ -95,7 +95,7 @@ export const unserializeSessionCertificate = (payload: Uint8Array): SessionCerti
   }),
   (d, o) => ({
     verification_method_type: varint.decode(d, o),
-    newOffset: o + varint.decode.bytes,
+    newOffset: o + varint.decode.bytes!,
   }),
   (d, o) => getStaticArray(d, tcrypto.HASH_SIZE, o, 'verification_method_target'),
 ]);
