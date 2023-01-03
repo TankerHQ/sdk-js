@@ -128,7 +128,8 @@
   },
   "resolutions": {
     "minimatch": "^3.1.2",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "tsconfig-paths": "^4.1.2"
   },
   "devDependencies": {
     "rimraf": "^3.0.2"
