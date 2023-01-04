@@ -164,7 +164,7 @@ def lint() -> None:
     tankerci.js.yarn_install_deps()
     tankerci.js.run_yarn("build:all")
     tankerci.js.run_yarn("lint:js")
-    tankerci.js.run_yarn("lint:ts:all")
+    tankerci.js.run_yarn("lint:ts")
     tankerci.js.run_yarn("lint:compat:all")
 
 
