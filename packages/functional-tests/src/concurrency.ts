@@ -225,8 +225,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
             bobSessions.map(session => retry(
               () => session.updateGroupMembers(groupID, { usersToAdd: [alicePublicIdentity] }),
               bobSessions.length,
-              'Invalid user group addition block', // verify failed: previous operation processed before verif
-              'There was a conflict with a concurrent operation', // DB upsert failed: previous operation not processed before verif
+              'There was a conflict with a concurrent operation',
             )),
           ), 'failed to updateGroupMember from both sessions').to.be.fulfilled;
 
