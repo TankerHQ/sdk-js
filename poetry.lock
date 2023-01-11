@@ -81,7 +81,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "conan"
-version = "1.49.0"
+version = "1.55.0"
 description = "Conan C/C++ package manager"
 category = "main"
 optional = false
@@ -90,7 +90,7 @@ python-versions = ">=3.6"
 [package.dependencies]
 bottle = ">=0.12.8,<0.13"
 colorama = ">=0.3.3,<0.5.0"
-distro = {version = ">=1.0.2,<=1.6.0", markers = "sys_platform == \"linux\" or sys_platform == \"linux2\""}
+distro = {version = ">=1.0.2,<=1.7.0", markers = "sys_platform == \"linux\" or sys_platform == \"linux2\""}
 fasteners = ">=0.14.1"
 Jinja2 = {version = ">=3.0,<4.0.0", markers = "python_version >= \"3\""}
 node-semver = "0.6.1"
@@ -480,7 +480,7 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "tankerci"
-version = "2022.8.4413"
+version = "2022.12.4584"
 description = "Tanker CI library"
 category = "main"
 optional = false
@@ -488,7 +488,7 @@ python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
 cli-ui = ">=0.17.0,<0.18.0"
-conan = "1.49.0"
+conan = "1.55.0"
 psutil = ">=5.9.1,<6.0.0"
 python-dotenv = ">=0.20.0,<0.21.0"
 python-gitlab = ">=3.5.0,<4.0.0"
@@ -582,7 +582,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "5a8b21746d44dfc297ab9f1b045203a1ffdd611c788264abf28b84d547d252ad"
+content-hash = "a7371d6f5207179c261e52a9fa556401125d64927938b0de1611689ceb52896c"
 
 [metadata.files]
 black = [
@@ -635,7 +635,7 @@ colorama = [
     {file = "colorama-0.4.5.tar.gz", hash = "sha256:e6c6b4334fc50988a639d9b98aa429a0b57da6e17b9a44f0451f930b6967b7a4"},
 ]
 conan = [
-    {file = "conan-1.49.0.tar.gz", hash = "sha256:740df4a1be8bb8944752ede0581f0e6c674c78305ca664ea1443c317d390d57f"},
+    {file = "conan-1.55.0.tar.gz", hash = "sha256:8c103b235d21a7061320441b1b7d4ed4094c0ab0b0ea86be6bd9174672701a09"},
 ]
 contextlib2 = [
     {file = "contextlib2-21.6.0-py2.py3-none-any.whl", hash = "sha256:3fbdb64466afd23abaf6c977627b75b6139a5a3e8ce38405c5b413aed7a0471f"},
@@ -919,8 +919,8 @@ tabulate = [
     {file = "tabulate-0.8.10.tar.gz", hash = "sha256:6c57f3f3dd7ac2782770155f3adb2db0b1a269637e42f27599925e64b114f519"},
 ]
 tankerci = [
-    {file = "tankerci-2022.8.4413-py3-none-any.whl", hash = "sha256:20a1b9b1cb96fc0fc203884c0dc30b19fae93fd7af4c0a7636bead08fa5fe9f4"},
-    {file = "tankerci-2022.8.4413.tar.gz", hash = "sha256:3e55a31f784e43d16ffed5495eb9bb2603b119ec0a34f191d30f40297fa3fbbb"},
+    {file = "tankerci-2022.12.4584-py3-none-any.whl", hash = "sha256:529822c7e5f218d383a6d451ae37b2b75588efd0bba73ecfa19b0b773ce52eda"},
+    {file = "tankerci-2022.12.4584.tar.gz", hash = "sha256:7797f2c878f48a413e47e3d1ab8f899a6fc66da01af37c171c30e0a4b9b0730d"},
 ]
 tbump = [
     {file = "tbump-6.9.0-py3-none-any.whl", hash = "sha256:683eab2e5a4d4861b6928c422d9e51e1d3aeccbbd69d0281fab2c374345e1d9f"},
