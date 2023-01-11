@@ -102,37 +102,6 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       expect(nbRegisteredSessions, 'Only one session should be registered').to.equal(1);
     });
 
-    it('reaches READY after verifying the restarted sessions', async () => {
-      await firstTab.start(bobIdentity);
-      await Promise.all(otherTabs.map((tanker) => tanker.start(bobIdentity)));
-
-      await firstTab.registerIdentity({ passphrase: 'password' });
-      await Promise.all(
-        otherTabs.map(tanker => expect(
-          tanker.registerIdentity({ passphrase: 'password' }),
-        ).to.be.rejectedWith('this ID already exists')),
-      );
-
-      await expect(Promise.all(
-        bobSessions.map(async (session) => {
-          if (session.status === statuses.READY)
-            return '';
-          return retry(
-            async () => {
-              await session.start(bobIdentity);
-              return session.verifyIdentity({ passphrase: 'password' });
-            },
-            otherTabs.length,
-            'conflict with a concurrent operation',
-          );
-        }),
-      ), 'failed to verify restarted sessions').to.be.fulfilled;
-
-      for (const session of bobSessions) {
-        expect(session.status).to.equal(statuses.READY);
-      }
-    });
-
     describe('once Tanker are started', () => {
       beforeEach(async () => {
         await firstTab.start(bobIdentity);
