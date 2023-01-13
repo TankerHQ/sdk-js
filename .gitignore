@@ -11,5 +11,6 @@ yarn-*.log
 .sass-cache
 !.gitkeep
 __pycache__
+.cache
 
 package-lock.json

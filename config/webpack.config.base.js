@@ -24,6 +24,7 @@ const getLoaders = (env) => {
     target: 'es2019',
     declaration: false,
     declarationDir: undefined,
+    composite: false,
     importHelpers: true,
     downlevelIteration: true,
     rootDir: path.resolve(__dirname, '..'),
