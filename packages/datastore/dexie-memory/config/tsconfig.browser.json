@@ -8,4 +8,8 @@
   "include": [
     "../src/**/*",
   ],
+  "references": [
+    { "path": "../../base/config/tsconfig.browser.json" },
+    { "path": "../../dexie-base/config/tsconfig.browser.json" },
+  ],
 }

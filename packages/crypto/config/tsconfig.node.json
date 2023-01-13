@@ -8,4 +8,10 @@
   "include": [
     "../src/**/*",
   ],
+  "references": [
+    { "path": "../../errors/config/tsconfig.node.json" },
+    { "path": "../../types/config/tsconfig.node.json" },
+    { "path": "../../stream/base/config/tsconfig.node.json" },
+    { "path": "../../test-utils/config/tsconfig.node.json" },
+  ],
 }

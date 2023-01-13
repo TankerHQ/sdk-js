@@ -8,4 +8,10 @@
   "include": [
     "../src/**/*",
   ],
+  "references": [
+    { "path": "../../errors/config/tsconfig.browser.json" },
+    { "path": "../../types/config/tsconfig.browser.json" },
+    { "path": "../../stream/base/config/tsconfig.browser.json" },
+    { "path": "../../test-utils/config/tsconfig.browser.json" },
+  ],
 }

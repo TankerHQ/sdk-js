@@ -8,4 +8,16 @@
   "include": [
     "../src/**/*",
   ],
+  "references": [
+    { "path": "../../crypto/config/tsconfig.browser.json" },
+    { "path": "../../datastore/base/config/tsconfig.browser.json" },
+    { "path": "../../errors/config/tsconfig.browser.json" },
+    { "path": "../../global-this/config/tsconfig.browser.json" },
+    { "path": "../../http-utils/config/tsconfig.browser.json" },
+    { "path": "../../stream/base/config/tsconfig.browser.json" },
+    { "path": "../../stream/cloud-storage/config/tsconfig.browser.json" },
+    { "path": "../../types/config/tsconfig.browser.json" },
+    { "path": "../../datastore/dexie-memory/config/tsconfig.browser.json" },
+    { "path": "../../test-utils/config/tsconfig.browser.json" },
+  ],
 }

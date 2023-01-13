@@ -8,4 +8,9 @@
   "include": [
     "../src/**/*",
   ],
+  "references": [
+    { "path": "../../core/config/tsconfig.es.json"},
+    { "path": "../../datastore/pouchdb-node/config/tsconfig.es.json"},
+    { "path": "../../datastore/pouchdb-memory/config/tsconfig.es.json"},
+  ],
 }

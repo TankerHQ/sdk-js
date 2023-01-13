@@ -8,4 +8,8 @@
   "include": [
     "../src/**/*",
   ],
+  "references": [
+    { "path": "../../../crypto/config/tsconfig.es.json" },
+    { "path": "../../../test-utils/config/tsconfig.es.json" },
+  ],
 }
