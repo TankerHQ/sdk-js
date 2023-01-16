@@ -4,6 +4,7 @@
     "outDir": "../dist/es",
     "rootDir": "../src",
     "declarationDir": "../dist/types",
+    "tsBuildInfoFile": ".cache/tsconfig.es.tsbuildinfo",
   },
   "include": [
     "../src/**/*",

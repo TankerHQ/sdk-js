@@ -4,6 +4,7 @@
     "outDir": "../dist/node",
     "rootDir": "../src",
     "declarationDir": "../dist/types",
+    "tsBuildInfoFile": ".cache/tsconfig.node.tsbuildinfo",
     "types": ["node"], // limit global packages included from @types
   },
   "include": [

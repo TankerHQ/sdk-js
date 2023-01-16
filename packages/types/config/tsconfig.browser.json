@@ -4,6 +4,7 @@
     "outDir": "../dist/browser",
     "rootDir": "../src",
     "declarationDir": "../dist/types",
+    "tsBuildInfoFile": ".cache/tsconfig.browser.tsbuildinfo",
     "types": ["node"], // limit global packages included from @types
   },
   "include": [
