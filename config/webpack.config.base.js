@@ -23,7 +23,9 @@ const getLoaders = (env) => {
   const tsLoaderCompilerOptions = {
     target: 'es2019',
     declaration: false,
+    sourceMap: false,
     declarationDir: undefined,
+    composite: false,
     importHelpers: true,
     downlevelIteration: true,
     rootDir: path.resolve(__dirname, '..'),

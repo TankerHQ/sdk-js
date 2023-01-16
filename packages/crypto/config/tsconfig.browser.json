@@ -4,8 +4,15 @@
     "outDir": "../dist/browser",
     "rootDir": "../src",
     "declarationDir": "../dist/types",
+    "tsBuildInfoFile": ".cache/tsconfig.browser.tsbuildinfo",
   },
   "include": [
     "../src/**/*",
+  ],
+  "references": [
+    { "path": "../../errors/config/tsconfig.browser.json" },
+    { "path": "../../types/config/tsconfig.browser.json" },
+    { "path": "../../stream/base/config/tsconfig.browser.json" },
+    { "path": "../../test-utils/config/tsconfig.browser.json" },
   ],
 }

@@ -4,8 +4,21 @@
     "outDir": "../dist/es",
     "rootDir": "../src",
     "declarationDir": "../dist/types",
+    "tsBuildInfoFile": ".cache/tsconfig.es.tsbuildinfo",
   },
   "include": [
     "../src/**/*",
+  ],
+  "references": [
+    { "path": "../../crypto/config/tsconfig.es.json" },
+    { "path": "../../datastore/base/config/tsconfig.es.json" },
+    { "path": "../../errors/config/tsconfig.es.json" },
+    { "path": "../../global-this/config/tsconfig.es.json" },
+    { "path": "../../http-utils/config/tsconfig.es.json" },
+    { "path": "../../stream/base/config/tsconfig.es.json" },
+    { "path": "../../stream/cloud-storage/config/tsconfig.es.json" },
+    { "path": "../../types/config/tsconfig.es.json" },
+    { "path": "../../datastore/dexie-memory/config/tsconfig.es.json" },
+    { "path": "../../test-utils/config/tsconfig.es.json" },
   ],
 }

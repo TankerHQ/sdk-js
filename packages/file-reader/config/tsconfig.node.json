@@ -4,8 +4,13 @@
     "outDir": "../dist/node",
     "rootDir": "../src",
     "declarationDir": "../dist/types",
+    "tsBuildInfoFile": ".cache/tsconfig.node.tsbuildinfo",
   },
   "include": [
     "../src/**/*",
+  ],
+  "references": [
+    { "path": "../../global-this/config/tsconfig.node.json" },
+    { "path": "../../test-utils/config/tsconfig.node.json" },
   ],
 }

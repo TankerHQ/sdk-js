@@ -4,8 +4,13 @@
     "outDir": "../dist/browser",
     "rootDir": "../src",
     "declarationDir": "../dist/types",
+    "tsBuildInfoFile": ".cache/tsconfig.browser.tsbuildinfo",
   },
   "include": [
     "../src/**/*",
+  ],
+  "references": [
+    { "path": "../../base/config/tsconfig.browser.json" },
+    { "path": "../../dexie-base/config/tsconfig.browser.json" },
   ],
 }

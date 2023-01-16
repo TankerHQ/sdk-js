@@ -4,8 +4,14 @@
     "outDir": "../dist/node",
     "rootDir": "../src",
     "declarationDir": "../dist/types",
+    "tsBuildInfoFile": ".cache/tsconfig.node.tsbuildinfo",
   },
   "include": [
     "../src/**/*",
+  ],
+  "references": [
+    { "path": "../../core/config/tsconfig.node.json"},
+    { "path": "../../datastore/pouchdb-node/config/tsconfig.node.json"},
+    { "path": "../../datastore/pouchdb-memory/config/tsconfig.node.json"},
   ],
 }
