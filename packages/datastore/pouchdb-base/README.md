@@ -12,5 +12,3 @@ Tanker's client SDKs allow for seamless integration of client-side end-to-end en
 Tanker is available for iOS, Android, and Web apps.
 
 Read the [documentation](https://docs.tanker.io/latest/) to get started.
-
-Go to [tanker.io](https://tanker.io) for more information about Tanker.
