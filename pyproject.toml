@@ -2,7 +2,7 @@
 name = "tanker-js-sdk"
 version = "0.1.0"
 description = "Tanker Javascript client"
-authors = ["Tanker dev team <tech@tanker.io>"]
+authors = ["Tanker team"]
 
 [tool.poetry.dependencies]
 python = "^3.8"

@@ -112,7 +112,7 @@ Tanker is also available for your **mobile applications**: use our open-source *
 
 ## Contributing
 
-We welcome feedback, [bug reports](https://tanker.atlassian.net/servicedesk/customer/portals), and bug fixes in the form of [pull requests](https://github.com/TankerHQ/sdk-js/pulls).
+We welcome feedback, bug reports, and bug fixes in the form of [pull requests](https://github.com/TankerHQ/sdk-js/pulls).
 
 To build the JavaScript SDKs yourself, please follow the steps below.
 

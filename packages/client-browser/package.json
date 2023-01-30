@@ -4,13 +4,10 @@
   "description": "Tanker end-to-end encryption SDK for web applications",
   "author": "Tanker Team",
   "license": "Apache-2.0",
-  "homepage": "https://tanker.io/",
+  "homepage": "https://github.com/TankerHQ/sdk-js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TankerHQ/sdk-js.git"
-  },
-  "bugs": {
-    "url": "https://tanker.atlassian.net/servicedesk/customer/portals"
   },
   "keywords": [
     "tanker",
