@@ -4,13 +4,10 @@
   "description": "Tanker SDK (common error classes)",
   "author": "Tanker Team",
   "license": "Apache-2.0",
-  "homepage": "https://tanker.io/",
+  "homepage": "https://github.com/TankerHQ/sdk-js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TankerHQ/sdk-js.git"
-  },
-  "bugs": {
-    "url": "https://tanker.atlassian.net/servicedesk/customer/portals"
   },
   "main": "dist/node/index.js",
   "module": "dist/es/index.js",
