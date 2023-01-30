@@ -12,5 +12,6 @@ yarn-*.log
 !.gitkeep
 __pycache__
 .cache
+functional_test_list.json
 
 package-lock.json

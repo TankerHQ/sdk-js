@@ -138,6 +138,20 @@ check/linux/nightly:
     - poetry run python run-ci.py check --runner linux --nightly
   tags: !reference [.tags/linux, tags]
 
+check/test-matcher:
+  stage: check
+  rules:
+    - !reference [.rules/push-master, rules]
+    - !reference [.rules/mr/manual, rules]
+  script:
+    - /usr/local/nvm/nvm-exec poetry run python run-ci.py test-matcher
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - functional_test_list.json
+  tags: !reference [.tags/linux, tags]
+  variables: !reference [check/linux/node, variables]
+
 check/bridge-dotenv:
   stage: check
   inherit:
