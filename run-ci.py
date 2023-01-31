@@ -178,6 +178,15 @@ def check(*, runner: str, nightly: bool) -> None:
         run_tests_in_browser(runner=runner)
 
 
+def test_matcher() -> None:
+    tankerci.js.yarn_install_deps()
+    tankerci.js.run_yarn(
+        "test-matcher:export-test-names",
+        "--reporter-options",
+        "'outputFile=functional_test_list.json'",
+    )
+
+
 def e2e(*, use_local_sources: bool) -> None:
     if use_local_sources:
         base_path = Path.cwd().parent
@@ -242,6 +251,7 @@ def _main() -> None:
     e2e_parser.add_argument("--use-local-sources", action="store_true", default=False)
 
     subparsers.add_parser("lint")
+    subparsers.add_parser("test-matcher")
 
     test_deploy_parser = subparsers.add_parser("test-deploy")
     test_deploy_parser.add_argument("--version", required=True)
@@ -256,6 +266,8 @@ def _main() -> None:
         runner = args.runner
         nightly = args.nightly
         check(runner=runner, nightly=nightly)
+    elif args.command == "test-matcher":
+        test_matcher()
     elif args.command == "lint":
         lint()
     elif args.command == "deploy":
