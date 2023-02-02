@@ -5,7 +5,7 @@ import { getPublicIdentity } from '@tanker/identity';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
 
-import type { AppHelper, TestArgs, TestResourceSize } from './helpers';
+import { AppHelper, ignoreTag, TestArgs, TestResourceSize } from './helpers';
 import { expectProgressReport, expectType, expectDeepEqual, pipeStreams } from './helpers';
 
 export const generateUploadTests = (args: TestArgs) => {
@@ -61,7 +61,7 @@ export const generateUploadTests = (args: TestArgs) => {
         }
 
         forEachSize(['empty', 'small', 'medium'], size => {
-          it(`can upload and download a ${size} file`, async () => {
+          it(`can upload and download a ${size} file ${ignoreTag}`, async () => {
             const { type: originalType, resource: clear } = args.resources[size][2]!;
 
             const fileId = await aliceLaptop.upload(clear, options);
@@ -87,7 +87,7 @@ export const generateUploadTests = (args: TestArgs) => {
           onProgress.resetHistory();
         };
 
-        it('can report progress at simple upload and download', async () => {
+        it(`can report progress at simple upload and download ${ignoreTag}`, async () => {
           const onProgress = sinon.fake();
           const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2]!;
 
@@ -100,7 +100,7 @@ export const generateUploadTests = (args: TestArgs) => {
           expectProgressReport(onProgress, clearSize, defaultMaxEncryptedChunkSize - overhead);
         });
 
-        it('can report progress at stream upload and download', async () => {
+        it(`can report progress at stream upload and download ${ignoreTag}`, async () => {
           const onProgress = sinon.fake();
           const { type, resource: clear, size: clearSize } = args.resources.medium[0]!;
 
@@ -120,7 +120,7 @@ export const generateUploadTests = (args: TestArgs) => {
           expectProgressReport(onProgress, clearSize, defaultMaxEncryptedChunkSize - overhead);
         });
 
-        it('can download a file shared at upload', async () => {
+        it(`can download a file shared at upload ${ignoreTag}`, async () => {
           const { type: originalType, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear, { ...options, shareWithUsers: [bobPublicIdentity] });
@@ -131,7 +131,7 @@ export const generateUploadTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
 
-        it('can download a file shared via upload with streams', async () => {
+        it(`can download a file shared via upload with streams ${ignoreTag}`, async () => {
           const { type, resource: clear, size: clearSize } = args.resources.medium[0]!;
 
           const uploadStream = await aliceLaptop.createUploadStream(clearSize, { ...options, shareWithUsers: [bobPublicIdentity] });
@@ -144,7 +144,7 @@ export const generateUploadTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
 
-        it('can download with streams a file shared via upload', async () => {
+        it(`can download with streams a file shared via upload ${ignoreTag}`, async () => {
           const { type, resource: clear } = args.resources.medium[0]!;
 
           const fileId = await aliceLaptop.upload(clear, { ...options, shareWithUsers: [bobPublicIdentity] });
@@ -157,7 +157,7 @@ export const generateUploadTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
 
-        it('can upload a file and not share with self', async () => {
+        it(`can upload a file and not share with self ${ignoreTag}`, async () => {
           const { type: originalType, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear, { ...options, shareWithUsers: [bobPublicIdentity], shareWithSelf: false });
@@ -170,7 +170,7 @@ export const generateUploadTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
 
-        it('can upload a file and share with a group', async () => {
+        it(`can upload a file and share with a group ${ignoreTag}`, async () => {
           const { type: originalType, resource: clear } = args.resources.small[2]!;
           const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
           const fileId = await aliceLaptop.upload(clear, { ...options, shareWithGroups: [groupId] });
@@ -180,7 +180,7 @@ export const generateUploadTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
 
-        it('can share a file after upload', async () => {
+        it(`can share a file after upload ${ignoreTag}`, async () => {
           const { type: originalType, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear, options);
@@ -192,12 +192,12 @@ export const generateUploadTests = (args: TestArgs) => {
           expectDeepEqual(decrypted, clear);
         });
 
-        it('throws InvalidArgument if downloading a non existing file', async () => {
+        it(`throws InvalidArgument if downloading a non existing file ${ignoreTag}`, async () => {
           const nonExistingFileId = 'AAAAAAAAAAAAAAAAAAAAAA==';
           await expect(aliceLaptop.download(nonExistingFileId)).to.be.rejectedWith(errors.InvalidArgument);
         });
 
-        it('throws InvalidArgument if giving an obviously wrong fileId', async () => {
+        it(`throws InvalidArgument if giving an obviously wrong fileId ${ignoreTag}`, async () => {
           const promises = [undefined, null, 'not a resourceId', [], {}].map(async (invalidFileId, i) => {
             // @ts-expect-error Giving invalid options
             await expect(aliceLaptop.download(invalidFileId), `failed test #${i}`).to.be.rejectedWith(errors.InvalidArgument);
@@ -206,7 +206,7 @@ export const generateUploadTests = (args: TestArgs) => {
           await Promise.all(promises);
         });
 
-        it('throws InvalidArgument if given an invalid clearSize', async () => {
+        it(`throws InvalidArgument if given an invalid clearSize ${ignoreTag}`, async () => {
           const promises = [undefined, null, 'not a clearSize', [], {}, -1].map(async (invalidClearSize, i) => {
             // @ts-expect-error Giving invalid clearSize
             await expect(aliceLaptop.createUploadStream(invalidClearSize, options), `failed test #${i}`).to.be.rejectedWith(errors.InvalidArgument);
@@ -215,7 +215,7 @@ export const generateUploadTests = (args: TestArgs) => {
           await Promise.all(promises);
         });
 
-        it('throws InvalidArgument if given too much data', async () => {
+        it(`throws InvalidArgument if given too much data ${ignoreTag}`, async () => {
           const clearSize = 50;
           const uploadStream = await aliceLaptop.createUploadStream(clearSize, options);
 
@@ -246,7 +246,7 @@ export const generateUploadTests = (args: TestArgs) => {
             const chunkSize = 7 * MB;
             const inputSize = nbChunk * chunkSize;
 
-            it(`buffers at most ${maxBufferedLength / MB}MB when uploading ${inputSize / MB}MB split in ${nbChunk} chunks`, async function () { // eslint-disable-line func-names
+            it(`buffers at most ${maxBufferedLength / MB}MB when uploading ${inputSize / MB}MB split in ${nbChunk} chunks ${ignoreTag}`, async function () { // eslint-disable-line func-names
               this.timeout(60000);
               const chunk = new Uint8Array(chunkSize);
               const bufferCounter = new BufferingObserver();
@@ -300,7 +300,7 @@ export const generateUploadTests = (args: TestArgs) => {
             const maxBufferedLength = 2 * storageChunkDownloadSize + 5 * defaultMaxEncryptedChunkSize;
             const payloadSize = 30;
 
-            it(`buffers at most ${maxBufferedLength / MB}MB when downloading ${payloadSize}MB`, async function () { // eslint-disable-line func-names
+            it(`buffers at most ${maxBufferedLength / MB}MB when downloading ${payloadSize}MB ${ignoreTag}`, async function () { // eslint-disable-line func-names
               this.timeout(60000);
               const inputSize = payloadSize * MB;
               const bufferCounter = new BufferingObserver();

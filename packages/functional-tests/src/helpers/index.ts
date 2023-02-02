@@ -12,3 +12,4 @@ export type { TestResource, TestResources, TestArgs, TestResourceSize } from './
 export type { EncryptedBuffer } from './encrypt';
 export { encrypt, checkDecrypt, checkDecryptFails } from './encrypt';
 export { checkGroup } from './groups';
+export { ignoreTag } from './tag';
