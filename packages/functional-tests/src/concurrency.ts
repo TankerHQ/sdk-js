@@ -72,14 +72,14 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       await aliceLaptop.stop();
     });
 
-    it('starts without error', async () => {
+    it('starts without error [0FPGL1]', async () => {
       await expect(Promise.all([
         firstTab.start(bobIdentity),
         ...otherTabs.map((tanker) => tanker.start(bobIdentity)),
       ]), 'failed to start both sessions').be.fulfilled;
     });
 
-    it('registers only one of the sessions, others should restart', async () => {
+    it('registers only one of the sessions, others should restart [73BPC3]', async () => {
       await firstTab.start(bobIdentity);
       await Promise.all(otherTabs.map((tanker) => tanker.start(bobIdentity)));
       let nbRegisteredSessions = 0;
@@ -113,7 +113,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
         }
       });
 
-      it('decrypt concurrently', async () => {
+      it('decrypt concurrently [MX7QG2]', async () => {
         const clearData = 'a beautiful word';
         const encryptedData = await aliceLaptop.encrypt(clearData, { shareWithUsers: [bobPublicIdentity] });
 
@@ -126,7 +126,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
         }
       });
 
-      it('decrypt resource shared through group concurrently', async () => {
+      it('decrypt resource shared through group concurrently [RO6DP7]', async () => {
         const clearData = 'a beautiful word';
         const groupID = await aliceLaptop.createGroup([bobPublicIdentity]);
         const encryptedData = await aliceLaptop.encrypt(clearData, { shareWithGroups: [groupID] });
@@ -140,7 +140,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
         }
       });
 
-      it('encrypt concurrently', async () => {
+      it('encrypt concurrently [SMS58X]', async () => {
         const clearData = 'an unexpected response';
         const encryptedDataArray = await expect(Promise.all(
           bobSessions.map((session) => session.encrypt(clearData, { shareWithUsers: [alicePublicIdentity] })),
@@ -151,7 +151,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
         );
       });
 
-      it('share concurrently', async () => {
+      it('share concurrently [HNWFV3]', async () => {
         const clearData = 'an unexpected response';
         const encryptedData = await bobSessions[0]!.encrypt(clearData);
         const resourceID = await bobSessions[0]!.getResourceId(encryptedData);
@@ -174,7 +174,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
           resourceID = await bobSessions[0]!.getResourceId(encryptedData);
         });
 
-        it('create group concurrently', async () => {
+        it('create group concurrently [WX3H50]', async () => {
           const groups = await expect(Promise.all(
             bobSessions.map(session => session.createGroup([alicePublicIdentity])),
           ), 'failed to createGroup from both sessions').to.be.fulfilled as Array<b64string>;
@@ -186,7 +186,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
           await expectDecrypt([aliceLaptop], clearData, encryptedData);
         });
 
-        it('add member to a group concurrently', async () => {
+        it('add member to a group concurrently [BXA5BC]', async () => {
           const groupID = await bobSessions[0]!.createGroup([bobPublicIdentity]);
           await bobSessions[0]!.share([resourceID], { shareWithGroups: [groupID] });
 
@@ -202,7 +202,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
         });
       });
 
-      describe('handling provisional identities', () => {
+      describe('handling provisional identities [TK7LDV]', () => {
         let provisionalIdentity: AppProvisionalUser;
         let clearData: string;
         let encryptedData: Uint8Array;
@@ -214,7 +214,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
           encryptedData = await aliceLaptop.encrypt(clearData, { shareWithUsers: [provisionalIdentity.publicIdentity] });
         });
 
-        it('attach using verification code', async () => {
+        it('attach using verification code [ETH2UR]', async () => {
           await Promise.all(
             bobSessions.map(session => appHelper.attachVerifyEmailProvisionalIdentity(session, provisionalIdentity)
               .catch((error) => expect(error.message).to.contain.oneOf([
@@ -232,7 +232,7 @@ export const generateConcurrencyTests = (args: TestArgs) => {
           await expectDecrypt(bobSessions, clearData, encryptedData);
         });
 
-        it('attach using verification code using the fast path', async () => {
+        it('attach using verification code using the fast path [DT6P6N]', async () => {
           const verificationCode = await appHelper.getEmailVerificationCode(provisionalIdentity.value);
           await bobSessions[0]!.setVerificationMethod({ email: provisionalIdentity.value, verificationCode });
 

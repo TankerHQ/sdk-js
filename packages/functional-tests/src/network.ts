@@ -44,11 +44,11 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof netwo
       await alicePhone.stop();
     });
 
-    it('can open a local session', async () => {
+    it('can open a local session [VDTNXV]', async () => {
       await restartWithNetworkIssue(alicePhone, aliceIdentity);
     });
 
-    it('can decrypt a resource locally', async () => {
+    it('can decrypt a resource locally [FMHLH4]', async () => {
       const encrypted = await alicePhone.encrypt(clearText);
       await alicePhone.decrypt(encrypted);
 
@@ -57,7 +57,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof netwo
       expect(decrypted).to.equal(clearText);
     });
 
-    it('uses already created transparent session', async () => {
+    it('uses already created transparent session [V4VUC5]', async () => {
       await alicePhone.encrypt(clearText);
 
       await restartWithNetworkIssue(alicePhone, aliceIdentity);
@@ -67,7 +67,7 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof netwo
       expect(decrypted).to.equal(clearText);
     });
 
-    it('decrypts all resources from a transparent session', async () => {
+    it('decrypts all resources from a transparent session [68OTX2]', async () => {
       const encrypted = await Promise.all([
         alicePhone.encrypt(clearText),
         alicePhone.encrypt(clearText),
@@ -84,12 +84,12 @@ const generateNetworkIssueTests = (args: TestArgs, issueType: keyof typeof netwo
       }
     });
 
-    it('throws if trying to encrypt', async () => {
+    it('throws if trying to encrypt [AFOZAL]', async () => {
       await restartWithNetworkIssue(alicePhone, aliceIdentity);
       await expect(alicePhone.encrypt(clearText)).to.be.rejectedWith(errors.NetworkError);
     });
 
-    it('throws if trying to decrypt without the resource key', async () => {
+    it('throws if trying to decrypt without the resource key [0MYRMO]', async () => {
       await alicePhone.stop();
 
       const encrypted = await aliceLaptop.encrypt(clearText);

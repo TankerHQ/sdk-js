@@ -35,15 +35,15 @@ export const generateEnrollTests = (args: TestArgs) => {
 
     describe('server', () => {
       describe('with user enrollment disabled', () => {
-        it('fails to enroll a user with an email address', async () => {
+        it('fails to enroll a user with an email address [QKOWQB]', async () => {
           await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.rejectedWith(errors.PreconditionFailed);
         });
 
-        it('fails to enroll a user with a phone number', async () => {
+        it('fails to enroll a user with a phone number [D9OGI5]', async () => {
           await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.rejectedWith(errors.PreconditionFailed);
         });
 
-        it('fails to enroll a user with both an email address and a phone number', async () => {
+        it('fails to enroll a user with both an email address and a phone number [ARRQBH]', async () => {
           await expect(server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification])).to.be.rejectedWith(errors.PreconditionFailed);
         });
       });
@@ -53,20 +53,20 @@ export const generateEnrollTests = (args: TestArgs) => {
           await appHelper.setEnrollUsersEnabled();
         });
 
-        it('enrolls a user with an email address', async () => {
+        it('enrolls a user with an email address [53ZC44]', async () => {
           await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.fulfilled;
         });
 
-        it('enrolls a user with a phone number', async () => {
+        it('enrolls a user with a phone number [DEJGHP]', async () => {
           await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.fulfilled;
         });
 
-        it('throws when enrolling a user multiple times', async () => {
+        it('throws when enrolling a user multiple times [BMANVI]', async () => {
           await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.fulfilled;
           await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.rejectedWith(errors.Conflict);
         });
 
-        it('throws when enrolling a registered user', async () => {
+        it('throws when enrolling a registered user [02NKOO]', async () => {
           const bobLaptop = args.makeTanker();
           await bobLaptop.start(bobIdentity);
           await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
@@ -74,11 +74,11 @@ export const generateEnrollTests = (args: TestArgs) => {
           await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.rejectedWith(errors.Conflict);
         });
 
-        it('enrolls a user with both an email address and a phone number', async () => {
+        it('enrolls a user with both an email address and a phone number [FJJCBC]', async () => {
           await expect(server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification])).to.be.fulfilled;
         });
 
-        it('stays STOPPED after enrolling a user', async () => {
+        it('stays STOPPED after enrolling a user [ED45GK]', async () => {
           await expect(server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification])).to.be.fulfilled;
           expect(server.status).to.equal(statuses.STOPPED);
         });
@@ -110,7 +110,7 @@ export const generateEnrollTests = (args: TestArgs) => {
         await server.stop();
       });
 
-      it('must verify new devices', async () => {
+      it('must verify new devices [FJQEQC]', async () => {
         bobPhone = args.makeTanker();
 
         await bobLaptop.start(bobIdentity);
@@ -125,7 +125,7 @@ export const generateEnrollTests = (args: TestArgs) => {
         await expect(bobPhone.verifyIdentity({ phoneNumber, verificationCode: phoneNumberCode })).to.be.fulfilled;
       });
 
-      it('can attache a provisional identity', async () => {
+      it('can attache a provisional identity [BV4VOS]', async () => {
         const provisionalIdentity = await appHelper.generateEmailProvisionalIdentity(email);
         const encryptedTest = await server.encrypt(clearText, { shareWithUsers: [provisionalIdentity.publicIdentity], shareWithSelf: false });
 
@@ -137,7 +137,7 @@ export const generateEnrollTests = (args: TestArgs) => {
         await expectDecrypt([bobLaptop], clearText, encryptedTest);
       });
 
-      it('access data shared before first verification', async () => {
+      it('access data shared before first verification [PJW7DE]', async () => {
         const encryptedTest = await server.encrypt(clearText, { shareWithUsers: [bobPubIdentity], shareWithSelf: false });
 
         await bobLaptop.start(bobIdentity);
@@ -147,7 +147,7 @@ export const generateEnrollTests = (args: TestArgs) => {
         await expectDecrypt([bobLaptop], clearText, encryptedTest);
       });
 
-      it('can be added to group before first verification', async () => {
+      it('can be added to group before first verification [KQABZ5]', async () => {
         const groupId = await server.createGroup([bobPubIdentity]);
 
         const encryptedTest = await server.encrypt(clearText, { shareWithGroups: [groupId], shareWithSelf: false });
@@ -159,7 +159,7 @@ export const generateEnrollTests = (args: TestArgs) => {
         await expectDecrypt([bobLaptop], clearText, encryptedTest);
       });
 
-      it('decrypts data shared with a provisional identity through a group before first verification', async () => {
+      it('decrypts data shared with a provisional identity through a group before first verification [847P9U]', async () => {
         const provisionalIdentity = await appHelper.generateEmailProvisionalIdentity(email);
 
         const groupId = await server.createGroup([provisionalIdentity.publicIdentity]);
