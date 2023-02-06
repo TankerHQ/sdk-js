@@ -332,7 +332,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'passphrase' })).to.be.fulfilled;
       });
 
-      it('fails to verify with a wrong passphrase', async () => {
+      it('fails to verify with a wrong passphrase [KHWR1T]', async () => {
         await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
         await expect(expectVerification(bobPhone, bobIdentity, { passphrase: 'my wrong pass' })).to.be.rejectedWith(errors.InvalidVerification);
 
