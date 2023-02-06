@@ -67,7 +67,7 @@ check/linux/node:
     - !reference [.rules/push-master-or-feat, rules]
     - !reference [.rules/nightly, rules]
   variables:
-    NODE_VERSION: 16
+    NODE_VERSION: 18
 
 check/linux/node/14:
   extends:
@@ -79,7 +79,7 @@ check/linux/node/14:
   variables:
     NODE_VERSION: 14
 
-check/linux/node/18:
+check/linux/node/16:
   extends:
     - .check/linux/node-base
   rules:
@@ -87,7 +87,7 @@ check/linux/node/18:
     - !reference [.rules/mr/manual, rules]
     - !reference [.rules/nightly, rules]
   variables:
-    NODE_VERSION: 18
+    NODE_VERSION: 16
 
 check/linux/node/19:
   extends:
