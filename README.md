@@ -26,9 +26,9 @@
 
 [![License][license-badge]][license-link]
 [![Build][actions-badge]][actions-link]
-[![BrowserStack Status][browserstack-badge]][browserstack-link]
+[![BrowserStack status][browserstack-badge]][browserstack-link]
 [![Coverage][codecov-badge]][codecov-link]
-[![Last Commit][last-commit-badge]][last-commit-link]
+[![Last commit][last-commit-badge]][last-commit-link]
 
 # Encryption SDKs for JavaScript
 
@@ -36,16 +36,16 @@
 
 ## Overview
 
-Tanker is an open-source solution to protect sensitive data in any application, with a simple end-user experience and good performance. No cryptographic skills are required to implement it.
+Tanker is an open-source solution to protect sensitive data in any application, with a simple end-user experience and good performance. No cryptographic expertise required.
 
 ## Tanker Core
 
 Tanker **Core** is the foundation, it provides powerful **end-to-end encryption** of any type of data, textual or binary. Tanker **Core** handles multi-device, identity verification, user groups and pre-registration sharing.
 
-| Package | Version |
-|:--------|:--------|
+| Package                                    | Version                                  |
+|:-------------------------------------------|:-----------------------------------------|
 | [@tanker/client-browser][browser_npm-link] | [![browser_npm-badge]][browser_npm-link] |
-| [@tanker/client-node][nodejs_npm-link]    | [![nodejs_npm-badge]][nodejs_npm-link]   |
+| [@tanker/client-node][nodejs_npm-link]     | [![nodejs_npm-badge]][nodejs_npm-link]   |
 
 Detailed changes for each release are documented in the [Release Notes](https://github.com/TankerHQ/sdk-js/releases).
 
@@ -80,8 +80,6 @@ For more details and advanced examples, please refer to:
 * [Core SDK implementation guide](https://docs.tanker.io/latest/guides/)
 * [Core API reference](https://docs.tanker.io/latest/api/core/js/)
 
-Or fiddle with the [quickstart examples](https://github.com/TankerHQ/quickstart-examples) to see the Tanker SDKs integrated in a collection of demo apps.
-
 ## Identity management
 
 End-to-end encryption requires that all users have cryptographic identities. The following packages help to handle them:
@@ -89,15 +87,15 @@ End-to-end encryption requires that all users have cryptographic identities. The
 Tanker **Identity** is a server side package to link Tanker identities with your users in your application backend.
 It is available in multiple languages. This repository only contains the Javascript version.
 
-| Package | Version |
-|:--------|:--------|
-| [@tanker/identity][identity_npm-link]    | [![identity_npm-badge]][identity_npm-link]   |
+| Package                               | Version                                    |
+|:--------------------------------------|:-------------------------------------------|
+| [@tanker/identity][identity_npm-link] | [![identity_npm-badge]][identity_npm-link] |
 
 ## Browser support
 
 The Tanker JavaScript SDKs support the following platforms:
 
-* Chrome, Firefox, Safari, Microsoft Edge, and Internet Explorer 11
+* Chrome, Firefox, Safari, and Microsoft Edge
 * Node.js 14+
 
 The Tanker JavaScript SDKs are constantly tested with all of the supported browsers via unit and functional tests.
@@ -108,7 +106,7 @@ We use [BrowserStack](https://www.browserstack.com/) to automate testing on many
 
 ## Other platforms
 
-Tanker is also available for your **mobile applications**: use our open-source **[iOS](https://github.com/TankerHQ/sdk-ios)** and **[Android](https://github.com/TankerHQ/sdk-android)** SDKs.
+Tanker is also available for your **desktop and mobile applications**: use our open-source **[Python](https://github.com/TankerHQ/sdk-python)**, **[Ruby](https://github.com/TankerHQ/sdk-ruby)**, and **[Rust](https://github.com/TankerHQ/sdk-rust)** SDKs.
 
 ## Contributing
 
@@ -118,7 +116,7 @@ To build the JavaScript SDKs yourself, please follow the steps below.
 
 ### Prerequisites
 
-Install [Yarn](https://yarnpkg.com/en/docs/install) version 1.0 or greater.
+Install [Yarn](https://yarnpkg.com/en/docs/install) version 1.0 or higher.
 
 Use this command to check the Yarn version installed on your system:
 ```bash
@@ -154,7 +152,3 @@ Before submitting your pull request, please make sure that your changes pass the
 For non-trivial changes, we highly recommend including extra tests.
 
 When you're ready, submit your [pull request](https://github.com/TankerHQ/sdk-js/pulls), targeting the `master` branch of this repository.
-
-## License
-
-The Tanker JavaScript SDK is licensed under the [Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
