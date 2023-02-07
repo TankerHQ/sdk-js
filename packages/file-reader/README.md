@@ -1,10 +1,10 @@
+# A promisified FileReader for browsers
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![NPM Package](https://img.shields.io/npm/v/@tanker/file-reader.svg)](http://npmjs.org/package/@tanker/file-reader)
 ![Minified Size](https://img.shields.io/bundlephobia/minzip/@tanker/file-reader.svg)
 
-# A promisified FileReader for browsers
-
-A promisified `FileReader` implementation very similar to the [browser's FileReader API](https://developer.mozilla.org/en-US/docs/Web/API/FileReader), with a few differencies:
+A promisified `FileReader` implementation very similar to the [browser's FileReader API](https://developer.mozilla.org/en-US/docs/Web/API/FileReader), with a few differences:
 
 * the File or Blob instance is given at construction time;
 * all `readAs...` methods don't take a Blob or File instance as first argument anymore;
@@ -42,12 +42,11 @@ do {
 } while (chunk.byteLength > 0);
 ```
 
-## License
+## About Tanker
 
-Developped by [Tanker](https://tanker.io), under the [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0) license.
+This package is a dependency of the Tanker client SDKs for end-to-end encryption:
 
-Tanker's client SDKs allow for seamless integration of client-side end-to-end encryption in your application.
-
-Tanker is available for iOS, Android, and Web apps.
+* [@tanker/client-browser](https://www.npmjs.com/package/@tanker/client-browser) for Web applications
+* [@tanker/client-node](https://www.npmjs.com/package/@tanker/client-node) for Node.js client applications
 
 Read the [documentation](https://docs.tanker.io/latest/) to get started.
