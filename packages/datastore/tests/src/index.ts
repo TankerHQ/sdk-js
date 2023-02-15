@@ -93,13 +93,14 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await store.close();
 
       // Upgrade the schema
-      storeConfig.schemas!.push({
+      storeConfig.schemas.push({
         version: 2,
         tables: [{
           name: tableName,
           indexes: [['a'], ['b'], ['c'], ['e']], // add index on 'e'
         }],
       });
+      storeConfig.defaultVersion = 2;
 
       const storeWithNewSchema = await generator(storeConfig);
 
@@ -116,13 +117,14 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await store.close();
 
       // Upgrade the schema
-      storeConfig.schemas!.push({
+      storeConfig.schemas.push({
         version: 2,
         tables: [{
           name: tableName,
           deleted: true, // delete the only table
         }],
       });
+      storeConfig.defaultVersion = 2;
 
       const storeWithNewSchema = await generator(storeConfig);
 
@@ -133,21 +135,46 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
 
     // pouchDB doesn't handle "schema" versions
     if (!dataStoreName.match(/pouchdb/)) {
-      it('throws VersionError when opening a storage using downgraded schema', async () => {
-        storeConfig.schemas!.push({
+      it('throws VersionError when opening a storage using an unknown schema', async () => {
+        storeConfig.schemas.push({
           version: 2,
           tables: [{
-            name: tableName,
+            name: `new-${tableName}`,
             indexes: [['a'], ['b'], ['c']],
           }],
         });
+        storeConfig.defaultVersion = 2;
         const store = await generator(storeConfig);
         await store.close();
 
-        storeConfig.schemas!.pop();
+        // forget about the upgraded schema
+        storeConfig.schemas.pop();
+        storeConfig.defaultVersion = 1;
         await expect(generator(storeConfig)).to.be.rejectedWith(VersionError);
       });
     }
+
+    it('recovers when opening a storage using a downgraded schema', async () => {
+      storeConfig.schemas.push({
+        version: 2,
+        tables: [{
+          name: `new-${tableName}`,
+          indexes: [['a'], ['b'], ['c']],
+        }],
+      });
+      storeConfig.defaultVersion = 2;
+      let store = await generator(storeConfig);
+      await store.put(tableName, record1);
+      await store.close();
+
+      // Simulate SDK downgrade: the actual schema is a forward compatible version > default version
+      storeConfig.defaultVersion = 1;
+      store = await generator(storeConfig);
+
+      const result = await store.get(tableName, record1._id);
+      expect(cleanRecord(result)).to.deep.equal(record1);
+      await store.close();
+    });
   });
 
   describe('regular operations', () => {

@@ -73,18 +73,45 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     await this._db.table(table).clear();
   }
 
+  private static async expectedVersion(db: IDexie, defaultVersion: number): Promise<number> {
+    let expectedVersion = defaultVersion;
+
+    try {
+      await db.open();
+
+      const actualVersion = db.verno;
+      if (actualVersion > expectedVersion) {
+        expectedVersion = actualVersion;
+      }
+
+      db.close();
+    } catch (err) {
+      const e = err as Error;
+      if (e.name === 'NoSuchDatabaseError') {
+        return defaultVersion;
+      }
+      throw new dbErrors.UnknownError(e);
+    }
+
+    return expectedVersion;
+  }
+
   static async open(config: Config): Promise<DexieBrowserStore> {
     if (!config || !config.dbName) {
       throw new Error('Invalid empty dbName in config');
     }
 
+    const { dbName, schemas, defaultVersion } = config;
     const dbOptions = { autoOpen: false };
+    const db = new DexieClass(dbName, dbOptions);
 
-    const db = new DexieClass(config.dbName, dbOptions);
+    const expectedVersion = await DexieBrowserStore.expectedVersion(db, defaultVersion);
+    if (!schemas.find(schema => schema.version === expectedVersion)) {
+      throw new dbErrors.VersionError(new Error(`unknown schema for version ${expectedVersion}`));
+    }
 
     const store = new DexieBrowserStore(db);
-
-    await store.defineSchemas(config.schemas!);
+    await store.defineSchemas(schemas.filter(schema => schema.version <= expectedVersion));
 
     try {
       await db.open();

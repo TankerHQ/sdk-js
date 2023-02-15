@@ -79,13 +79,14 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
       throw new Error('Invalid empty config');
     }
 
-    const { dbName, schemas } = config;
+    const { dbName, schemas, defaultVersion } = config;
 
     if (!dbName) {
       throw new Error('Invalid empty dbName in config');
     }
 
-    if (!schemas) {
+    const currentSchemas = schemas.filter(schema => schema.version <= defaultVersion);
+    if (!currentSchemas) {
       throw new Error('The PouchDB adapter requires schemas in open()\'s config');
     }
 
@@ -95,7 +96,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     // In PouchDB, each table requires its own database. We'll start creating
     // databases starting from the latest schema and going back in time to
     // delete flagged tables.
-    const reversedSchemas = [...schemas].reverse();
+    const reversedSchemas = [...currentSchemas].reverse();
 
     for (const schema of reversedSchemas) {
       for (const table of schema.tables) {
@@ -124,7 +125,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     await Promise.all(Object.values(openingDatabases));
 
     const store = new PouchDBStoreBase(openedDatabases);
-    await store.defineSchemas(schemas);
+    await store.defineSchemas(currentSchemas);
 
     return store;
   }
