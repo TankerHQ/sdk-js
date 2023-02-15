@@ -24,6 +24,19 @@ export class UnauthSessionStorage {
   _oidcStore!: OidcStore;
   _schemas!: Array<Schema>;
 
+  private static _schemas: Schema[];
+
+  static schemas = () => {
+    if (!this._schemas) {
+      this._schemas = mergeSchemas(
+        globalSchema,
+        OidcStore.schemas,
+      );
+    }
+
+    return this._schemas;
+  };
+
   constructor(options: DataStoreOptions) {
     this._options = options;
   }
@@ -35,15 +48,12 @@ export class UnauthSessionStorage {
   async open(appId: b64string): Promise<void> {
     const { adapter, prefix, dbPath, url } = this._options;
 
-    const schemas = mergeSchemas(
-      globalSchema,
-      OidcStore.schemas,
-    );
+    const schemas = UnauthSessionStorage.schemas();
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(utils.fromBase64(appId))}`;
 
     try {
       // @ts-expect-error forward `dbPath` for pouchdb Adapters
-      this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
+      this._datastore = await adapter().open({ dbName, dbPath, schemas: schemas, url });
     } catch (e) {
       if (e instanceof dbErrors.VersionError) {
         throw new UpgradeRequired(e);
