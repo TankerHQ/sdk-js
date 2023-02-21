@@ -28,22 +28,28 @@ const tablesV8 = [
   },
 ];
 
+const tablesV9 = tablesV8.filter(t => !t.deleted);
+
 const tablesV11 = [
   // Delete all previous tables
-  ...tablesV8.map<TableSchema>(t => ({ ...t, deleted: true })),
+  ...tablesV9.map<TableSchema>(t => ({ ...t, deleted: true })),
   // And replace by the new table
   {
     name: 'group_encryption_keys',
   },
 ];
 
+const tablesV12 = tablesV11.filter(t => !t.deleted);
+
 const tablesV13 = [
-  ...tablesV11.map<TableSchema>(t => ({ ...t, deleted: true })),
+  ...tablesV12.map<TableSchema>(t => ({ ...t, deleted: true })),
   {
     name: GROUPS_ENCRYPTION_KEYS_TABLE,
     indexes: [['groupId']],
   },
 ];
+
+const tablesV14 = tablesV13.filter(t => !t.deleted);
 
 type GroupPublicEncryptionKeyRecord = {
   groupId: b64string;
@@ -71,12 +77,12 @@ export class GroupStore {
     { version: 6, tables: tablesV3 },
     { version: 7, tables: tablesV7 },
     { version: 8, tables: tablesV8 },
-    { version: 9, tables: tablesV8 },
-    { version: 10, tables: tablesV8 },
+    { version: 9, tables: tablesV9 },
+    { version: 10, tables: tablesV9 },
     { version: 11, tables: tablesV11 },
-    { version: 12, tables: tablesV11 },
+    { version: 12, tables: tablesV12 },
     { version: 13, tables: tablesV13 },
-    { version: 14, tables: tablesV13 },
+    { version: 14, tables: tablesV14 },
   ];
 
   constructor(ds: DataStore, userSecret: Uint8Array) {

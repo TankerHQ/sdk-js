@@ -13,8 +13,8 @@ describe('local storage schema', () => {
         const { deleted, name } = table;
 
         expect(
-          !deleted && deletedTables.has(name),
-          `table "${name}" is used in version ${version} but was deleted in version ${deletedTables.get(name)}`,
+          deletedTables.has(name),
+          `table "${name}" is mentioned in version ${version} but was deleted in version ${deletedTables.get(name)}`,
         ).to.be.false;
 
         if (deleted) {
