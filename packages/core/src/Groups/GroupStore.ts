@@ -1,4 +1,5 @@
-import type { DataStore } from '@tanker/datastore-base';
+import type { DataStore, TableSchema } from '@tanker/datastore-base';
+
 import '@tanker/datastore-base';
 import { InternalError } from '@tanker/errors';
 
@@ -7,52 +8,42 @@ import { tcrypto, utils, EncryptionV2 } from '@tanker/crypto';
 
 const GROUPS_ENCRYPTION_KEYS_TABLE = 'groups_encryption_keys';
 
-const schemaV3 = {
-  tables: [{
-    name: 'groups',
+const tablesV3 = [{
+  name: 'groups',
+  indexes: [['publicEncryptionKey']],
+}];
+
+const tablesV7 = [...tablesV3, {
+  name: 'groups_pending_encryption_keys',
+  indexes: [['publicSignatureKeys']],
+}];
+
+const tablesV8 = [
+  // Delete all previous tables
+  ...tablesV7.map<TableSchema>(t => ({ ...t, deleted: true })),
+  // And replace by the new table
+  {
+    name: 'group_encryption_key_pairs',
     indexes: [['publicEncryptionKey']],
-  }],
-};
+  },
+];
 
-const schemaV7 = {
-  tables: [...schemaV3.tables, {
-    name: 'groups_pending_encryption_keys',
-    indexes: [['publicSignatureKeys']],
-  }],
-};
+const tablesV11 = [
+  // Delete all previous tables
+  ...tablesV8.map<TableSchema>(t => ({ ...t, deleted: true })),
+  // And replace by the new table
+  {
+    name: 'group_encryption_keys',
+  },
+];
 
-const schemaV8 = {
-  tables: [
-    // Delete all previous tables
-    ...schemaV7.tables.map(t => ({ ...t, deleted: true })),
-    // And replace by the new table
-    {
-      name: 'group_encryption_key_pairs',
-      indexes: [['publicEncryptionKey']],
-    },
-  ],
-};
-
-const schemaV11 = {
-  tables: [
-    // Delete all previous tables
-    ...schemaV8.tables.map(t => ({ ...t, deleted: true })),
-    // And replace by the new table
-    {
-      name: 'group_encryption_keys',
-    },
-  ],
-};
-
-const schemaV13 = {
-  tables: [
-    ...schemaV11.tables.map(t => ({ ...t, deleted: true })),
-    {
-      name: GROUPS_ENCRYPTION_KEYS_TABLE,
-      indexes: [['groupId']],
-    },
-  ],
-};
+const tablesV13 = [
+  ...tablesV11.map<TableSchema>(t => ({ ...t, deleted: true })),
+  {
+    name: GROUPS_ENCRYPTION_KEYS_TABLE,
+    indexes: [['groupId']],
+  },
+];
 
 type GroupPublicEncryptionKeyRecord = {
   groupId: b64string;
@@ -74,18 +65,18 @@ export class GroupStore {
     // this store didn't exist in schema version 1 and 2
     { version: 1, tables: [] },
     { version: 2, tables: [] },
-    { version: 3, ...schemaV3 },
-    { version: 4, ...schemaV3 },
-    { version: 5, ...schemaV3 },
-    { version: 6, ...schemaV3 },
-    { version: 7, ...schemaV7 },
-    { version: 8, ...schemaV8 },
-    { version: 9, ...schemaV8 },
-    { version: 10, ...schemaV8 },
-    { version: 11, ...schemaV11 },
-    { version: 12, ...schemaV11 },
-    { version: 13, ...schemaV13 },
-    { version: 14, ...schemaV13 },
+    { version: 3, tables: tablesV3 },
+    { version: 4, tables: tablesV3 },
+    { version: 5, tables: tablesV3 },
+    { version: 6, tables: tablesV3 },
+    { version: 7, tables: tablesV7 },
+    { version: 8, tables: tablesV8 },
+    { version: 9, tables: tablesV8 },
+    { version: 10, tables: tablesV8 },
+    { version: 11, tables: tablesV11 },
+    { version: 12, tables: tablesV11 },
+    { version: 13, tables: tablesV13 },
+    { version: 14, tables: tablesV13 },
   ];
 
   constructor(ds: DataStore, userSecret: Uint8Array) {
