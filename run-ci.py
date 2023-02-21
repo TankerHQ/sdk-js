@@ -250,7 +250,6 @@ def _main() -> None:
     e2e_parser = subparsers.add_parser("e2e")
     e2e_parser.add_argument("--use-local-sources", action="store_true", default=False)
 
-    subparsers.add_parser("lint")
     subparsers.add_parser("test-matcher")
 
     test_deploy_parser = subparsers.add_parser("test-deploy")
