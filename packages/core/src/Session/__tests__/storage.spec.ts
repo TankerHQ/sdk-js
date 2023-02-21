@@ -4,20 +4,21 @@ import { StorageSchema } from '../Storage';
 
 describe('local storage schema', () => {
   it('does not reuse tables deleted by previous versions', () => {
-    const deletedTable: Record<string, number> = {};
-    for (const version of StorageSchema.versions()) {
-      for (const table of version.tables) {
-        const deleted = table.deleted;
-        const name = table.name;
-        const deletedSince = deletedTable[name];
+    const deletedTables = new Map<string, number>();
+
+    for (const schema of StorageSchema.versions()) {
+      const { tables, version } = schema;
+
+      for (const table of tables) {
+        const { deleted, name } = table;
 
         expect(
-          !deleted && deletedSince !== undefined,
-          `table "${name}" is used in version ${version.version} but was deleted in version ${deletedSince}`,
+          !deleted && deletedTables.has(name),
+          `table "${name}" is used in version ${version} but was deleted in version ${deletedTables.get(name)}`,
         ).to.be.false;
 
         if (deleted) {
-          deletedTable[name] ||= version.version;
+          deletedTables.set(name, version);
         }
       }
     }
