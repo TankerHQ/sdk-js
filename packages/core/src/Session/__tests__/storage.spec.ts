@@ -1,12 +1,12 @@
 import { expect } from '@tanker/test-utils';
 
-import { StorageSchema } from '../Storage';
+import Storage from '../Storage';
 
 describe('local storage schema', () => {
   it('does not reuse tables deleted by previous versions', () => {
     const deletedTables = new Map<string, number>();
 
-    for (const schema of StorageSchema.versions()) {
+    for (const schema of Storage.schemas()) {
       const { tables, version } = schema;
 
       for (const table of tables) {
