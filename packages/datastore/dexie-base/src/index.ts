@@ -100,6 +100,10 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     return store;
   }
 
+  version(): number {
+    return this._db.verno;
+  }
+
   async defineSchemas(schemas: Array<Schema>): Promise<void> {
     // Example:
     //

@@ -21,10 +21,12 @@ function extractSortKey(sort: SortParams): string {
 
 export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implements DataStore {
   declare _dbs: Record<string, typeof PouchDB>;
+  declare _version: number;
 
   constructor(dbs: Record<string, typeof PouchDB>) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_dbs', { value: dbs, writable: true });
+    Object.defineProperty(this, '_version', { value: 0, writable: true });
     return this;
   }
 
@@ -45,6 +47,8 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
       await this.parallelEachDb((db: PouchDBStoreBase) => db.close());
       // @ts-expect-error
       this._dbs = null;
+      // @ts-expect-error
+      this._version = null;
     } catch (error) {
       console.error(`Error when closing ${this.className}: `, error);
     }
@@ -58,6 +62,8 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     await this.parallelEachDb(db => db.destroy());
     // @ts-expect-error
     this._dbs = null;
+    // @ts-expect-error
+    this._version = null;
   }
 
   async clear(table: string): Promise<void> {
@@ -151,9 +157,14 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     });
   }
 
+  version(): number {
+    return this._version;
+  }
+
   async defineSchemas(schemas: Array<Schema>): Promise<void> {
     // Create indexes from the latest schema only
     const schema = schemas[schemas.length - 1]!;
+    this._version = schema.version;
 
     const { tables } = schema;
 

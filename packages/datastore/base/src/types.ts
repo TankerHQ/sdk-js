@@ -47,6 +47,7 @@ export interface DataStore {
   add(table: string, record: Record<string, any>): Promise<any>;
   put(table: string, record: Record<string, any>): Promise<void>;
   delete(table: string, id: string): Promise<void>;
+  version(): number;
 }
 
 export type DataStoreAdapter = Class<DataStore> & {
