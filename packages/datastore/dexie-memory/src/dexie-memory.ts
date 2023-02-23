@@ -26,7 +26,7 @@ export class DexieMemory implements IDexie {
   declare dbName: string;
   declare _open: boolean;
   declare _tables: Record<string, Table>;
-  declare _version: number;
+  declare verno: number;
   static dataStoreName = 'DexieMemory';
 
   constructor(dbName: string, options: Record<string, any>) {
@@ -44,7 +44,9 @@ export class DexieMemory implements IDexie {
   }
 
   version = (version: number) => {
-    this._version = version;
+    if (!this.verno || this.verno < version) {
+      this.verno = version;
+    }
     return {
       stores: (schema: Record<string, string | null>) => {
         for (const name of Object.keys(schema)) {
@@ -78,19 +80,19 @@ export class DexieMemory implements IDexie {
   open = async () => {
     const memoryVersion = inMemoryDatabaseVersion[this.dbName];
 
-    if (!memoryVersion && !this._version) {
+    if (!memoryVersion && !this.verno) {
       throw new DexieMemoryError('NoSuchDatabaseError', `database "${this.dbName}" has no schema.`);
     }
 
-    if (memoryVersion && this._version && memoryVersion > this._version) {
-      throw new DexieMemoryError('VersionError', `schema version mismatch: required version ${this._version} too low, storage version is already ${memoryVersion}`);
+    if (memoryVersion && this.verno && memoryVersion > this.verno) {
+      throw new DexieMemoryError('VersionError', `schema version mismatch: required version ${this.verno} too low, storage version is already ${memoryVersion}`);
     }
 
-    if (!this._version) {
-      this._version = memoryVersion!;
+    if (!this.verno) {
+      this.verno = memoryVersion!;
     }
 
-    inMemoryDatabaseVersion[this.dbName] = this._version;
+    inMemoryDatabaseVersion[this.dbName] = this.verno;
     this._open = true;
 
     return this;
@@ -99,7 +101,7 @@ export class DexieMemory implements IDexie {
   close = () => {
     this._open = false;
     // @ts-expect-error
-    this._version = undefined;
+    this.verno = undefined;
   };
 
   delete = async () => {

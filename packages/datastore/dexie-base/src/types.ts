@@ -54,6 +54,8 @@ export interface IDexie {
   close(): void;
   delete(): Promise<void>;
 
+  readonly verno: number;
+
   Table: Class<ITable>;
   Collection: Class<ICollection>;
   WhereClause: Class<IWhereClause>;
