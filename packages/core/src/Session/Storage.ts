@@ -26,7 +26,6 @@ export default class Storage {
   _resourceStore!: ResourceStore;
   _groupStore!: GroupStore;
   _sessionStore!: TransparentSessionStore;
-  _schemas!: Array<Schema>;
 
   private static _schemas: Schema[];
 
@@ -78,8 +77,6 @@ export default class Storage {
       throw e;
     }
 
-    this._schemas = schemas;
-
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
     this._groupStore = await GroupStore.open(this._datastore, userSecret);
@@ -124,11 +121,17 @@ export default class Storage {
   }
 
   async cleanupCaches(userSecret: Uint8Array) {
-    const currentSchema = this._schemas[this._schemas.length - 1]!;
+    await this._keyStore.clearCache(userSecret);
+
+    const schemaVersion = this._datastore.version();
+    const currentSchema = Storage.schemas().find((schema) => schema.version === schemaVersion);
+    if (!currentSchema) {
+      return;
+    }
+
     const cacheTables = currentSchema.tables.filter(t => !t.persistent && !t.deleted).map(t => t.name);
     for (const table of cacheTables) {
       await this._datastore.clear(table);
     }
-    await this._keyStore.clearCache(userSecret);
   }
 }

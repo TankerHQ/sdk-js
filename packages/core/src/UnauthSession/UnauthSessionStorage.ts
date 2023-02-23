@@ -22,7 +22,6 @@ export class UnauthSessionStorage {
   _options: DataStoreOptions;
   _datastore!: DataStore;
   _oidcStore!: OidcStore;
-  _schemas!: Array<Schema>;
 
   private static _schemas: Schema[];
 
@@ -61,8 +60,6 @@ export class UnauthSessionStorage {
       throw e;
     }
 
-    this._schemas = schemas;
-
     this._oidcStore = await OidcStore.open(this._datastore);
 
     await this._checkVersion();
@@ -94,7 +91,12 @@ export class UnauthSessionStorage {
   }
 
   async cleanupCaches() {
-    const currentSchema = this._schemas[this._schemas.length - 1]!;
+    const schemaVersion = this._datastore.version();
+    const currentSchema = UnauthSessionStorage.schemas().find((schema) => schema.version == schemaVersion);
+    if (!currentSchema) {
+      return;
+    }
+
     const cacheTables = currentSchema.tables.filter(t => !t.persistent && !t.deleted).map(t => t.name);
     for (const table of cacheTables) {
       await this._datastore.clear(table);
