@@ -94,7 +94,9 @@ const tablesV9 = tablesV8.filter(def => !def.deleted).map<TableSchema>(def => {
   return deleted ? { ...def, deleted: true } : def;
 });
 
-const tablesV10 = tablesV9.filter(def => !def.deleted).map<TableSchema>(def => {
+const tablesV10 = tablesV9.filter(def => !def.deleted);
+
+const tablesV12 = tablesV10.map<TableSchema>(def => {
   const deleted = [
     'users',
     'devices_to_user',
@@ -102,6 +104,8 @@ const tablesV10 = tablesV9.filter(def => !def.deleted).map<TableSchema>(def => {
   ].includes(def.name);
   return deleted ? { ...def, deleted: true } : def;
 });
+
+const tablesV13 = tablesV12.filter(def => !def.deleted);
 
 export const globalSchema = [
   { version: 1, tables: tablesV1 },
@@ -113,9 +117,9 @@ export const globalSchema = [
   { version: 7, tables: tablesV6 },
   { version: 8, tables: tablesV8 },
   { version: 9, tables: tablesV9 },
-  { version: 10, tables: tablesV9 },
-  { version: 11, tables: tablesV9 },
-  { version: 12, tables: tablesV10 },
-  { version: 13, tables: tablesV10 },
-  { version: 14, tables: tablesV10 },
+  { version: 10, tables: tablesV10 },
+  { version: 11, tables: tablesV10 },
+  { version: 12, tables: tablesV12 },
+  { version: 13, tables: tablesV13 },
+  { version: 14, tables: tablesV13 },
 ];

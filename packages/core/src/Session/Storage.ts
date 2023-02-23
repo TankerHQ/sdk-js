@@ -19,26 +19,6 @@ export type DataStoreOptions = {
   url?: string;
 };
 
-export class StorageSchema {
-  private static _versions: Schema[];
-
-  /* eslint-disable no-underscore-dangle */
-  static versions = () => {
-    if (!StorageSchema._versions) {
-      StorageSchema._versions = mergeSchemas(
-        globalSchema,
-        KeyStore.schemas,
-        ResourceStore.schemas,
-        GroupStore.schemas,
-        TransparentSessionStore.schemas,
-      );
-    }
-
-    return StorageSchema._versions;
-  };
-  /* eslint-enable no-underscore-dangle */
-}
-
 export default class Storage {
   _options: DataStoreOptions;
   _datastore!: DataStore;
@@ -47,6 +27,20 @@ export default class Storage {
   _groupStore!: GroupStore;
   _sessionStore!: TransparentSessionStore;
   _schemas!: Array<Schema>;
+
+  private static _schemas: Schema[];
+
+  static schemas = () => {
+    if (this._schemas) return this._schemas;
+
+    return this._schemas = mergeSchemas(
+      globalSchema,
+      KeyStore.schemas,
+      ResourceStore.schemas,
+      GroupStore.schemas,
+      TransparentSessionStore.schemas,
+    );
+  };
 
   constructor(options: DataStoreOptions) {
     this._options = options;
@@ -71,7 +65,7 @@ export default class Storage {
   async open(userId: Uint8Array, userSecret: Uint8Array): Promise<void> {
     const { adapter, prefix, dbPath, url } = this._options;
 
-    const schemas = StorageSchema.versions();
+    const schemas = Storage.schemas();
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
 
     try {
