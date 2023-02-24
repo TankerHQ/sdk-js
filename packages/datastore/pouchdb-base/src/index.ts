@@ -1,3 +1,4 @@
+import { NOT_OPEN } from 'pouchdb-errors';
 import type PouchDBType from 'pouchdb-core';
 
 import type { DataStore, SortParams, Schema, BaseConfig } from '@tanker/datastore-base';
@@ -18,6 +19,29 @@ function extractSortKey(sort: SortParams): string {
   const [sortKey] = Object.keys(sortParam as Record<string, any>);
   return sortKey!;
 }
+
+const isClosedError = (reason: any) => reason.status === NOT_OPEN.status && reason.message === NOT_OPEN.message && reason.name === NOT_OPEN.name;
+
+const remapError = (err: any) => {
+  // forward already wrapped error
+  if (err instanceof dbErrors.DataStoreError) {
+    return err;
+  }
+
+  if (isClosedError(err)) {
+    return new dbErrors.DataStoreClosedError(err);
+  }
+
+  if (err.status === 404) {
+    return new dbErrors.RecordNotFound(err);
+  }
+
+  if (err.status === 409) {
+    return new dbErrors.RecordNotUnique(err);
+  }
+
+  return new dbErrors.UnknownError(err);
+};
 
 type PouchConstructor = ReturnType<typeof PouchDBType.defaults>;
 type PouchInstance = InstanceType<PouchConstructor>;
@@ -188,12 +212,7 @@ export default ((PouchDB: PouchConstructor, prefix?: string) => class PouchDBSto
       const result = await this._dbs[table]!.put(toDB(recordWithoutRev));
       return { ...recordWithoutRev, _rev: result.rev };
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 409) {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err);
     }
   };
 
@@ -213,12 +232,7 @@ export default ((PouchDB: PouchConstructor, prefix?: string) => class PouchDBSto
 
       await this._dbs[table]!.put(toDB(rec));
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 409) {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err);
     }
   };
 
@@ -235,12 +249,7 @@ export default ((PouchDB: PouchConstructor, prefix?: string) => class PouchDBSto
       });
       await this._dbs[table]!.bulkDocs(toDB(allWithoutRevs));
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 409) {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err);
     }
   };
 
@@ -269,12 +278,7 @@ export default ((PouchDB: PouchConstructor, prefix?: string) => class PouchDBSto
 
       await this._dbs[table]!.bulkDocs(toDB(all));
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 409) {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err);
     }
   };
 
@@ -291,12 +295,7 @@ export default ((PouchDB: PouchConstructor, prefix?: string) => class PouchDBSto
     try {
       return fromDB(await this._dbs[table]!.get(id));
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 404) {
-        throw new dbErrors.RecordNotFound(e);
-      } else {
-        throw new dbErrors.UnknownError(e);
-      }
+      throw remapError(err);
     }
   };
 
