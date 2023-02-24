@@ -3,7 +3,7 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
-import Storage from '../../Session/Storage';
+import { Storage } from '../../Session/Storage';
 
 import SharedKeystore from '../ResourceStore';
 

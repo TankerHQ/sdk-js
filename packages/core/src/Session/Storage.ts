@@ -19,7 +19,7 @@ export type DataStoreOptions = {
   url?: string;
 };
 
-export default class Storage {
+export class Storage {
   _options: DataStoreOptions;
   _datastore!: DataStore;
   _keyStore!: KeyStore;
@@ -137,3 +137,5 @@ export default class Storage {
     }
   }
 }
+
+export default Storage;

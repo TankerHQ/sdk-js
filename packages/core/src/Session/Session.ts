@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import { TankerError, ExpiredVerification, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
 
 import type { DataStoreOptions } from './Storage';
-import Storage from './Storage';
+import { Storage } from './Storage';
 import type { ClientOptions } from '../Network/Client';
 import { Client } from '../Network/Client';
 import type { UserData } from '../LocalUser/UserData';

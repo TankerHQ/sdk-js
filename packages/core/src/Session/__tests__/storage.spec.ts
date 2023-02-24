@@ -1,6 +1,6 @@
 import { expect } from '@tanker/test-utils';
 
-import Storage from '../Storage';
+import { Storage } from '../Storage';
 
 describe('session local storage schema', () => {
   it('defines a schema for the default version', () => {

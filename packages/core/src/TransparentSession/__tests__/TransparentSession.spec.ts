@@ -3,7 +3,7 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { expect, sinon } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
-import Storage from '../../Session/Storage';
+import { Storage } from '../../Session/Storage';
 
 import { TransparentSessionStore } from '../SessionStore';
 import { computeRecipientHash } from '../Manager';

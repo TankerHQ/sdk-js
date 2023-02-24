@@ -4,7 +4,7 @@ import { expect } from '@tanker/test-utils';
 import type { DataStore } from '@tanker/datastore-base';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
-import Storage from '../../Session/Storage';
+import { Storage } from '../../Session/Storage';
 
 import KeyStore from '../KeyStore';
 
