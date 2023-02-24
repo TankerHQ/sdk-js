@@ -19,7 +19,8 @@ export type Schema = {
 export type BaseConfig = {
   dbName: string;
   url?: string;
-  schemas?: Array<Schema>;
+  schemas: Array<Schema>;
+  defaultVersion: number;
 };
 
 export type SortParams = ReadonlyArray<string | Record<string, 'asc' | 'desc'>>;

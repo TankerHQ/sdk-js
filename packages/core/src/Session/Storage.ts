@@ -1,5 +1,5 @@
 import { utils } from '@tanker/crypto';
-import type { DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
+import type { BaseConfig, DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
 import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
 
@@ -27,6 +27,7 @@ export default class Storage {
   _groupStore!: GroupStore;
   _sessionStore!: TransparentSessionStore;
 
+  static defaultVersion = 14;
   private static _schemas: Schema[];
 
   static schemas = () => {
@@ -65,11 +66,12 @@ export default class Storage {
     const { adapter, prefix, dbPath, url } = this._options;
 
     const schemas = Storage.schemas();
+    const defaultVersion = Storage.defaultVersion;
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
 
     try {
-      // @ts-expect-error forward `dbPath` for pouchdb Adapters
-      this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
+      // forward `dbPath` for pouchdb Adapters
+      this._datastore = await adapter().open({ dbName, dbPath, schemas, defaultVersion, url } as BaseConfig);
     } catch (e) {
       if (e instanceof dbErrors.VersionError) {
         throw new UpgradeRequired(e);

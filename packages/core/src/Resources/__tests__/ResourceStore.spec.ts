@@ -3,6 +3,7 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
+import Storage from '../../Session/Storage';
 
 import SharedKeystore from '../ResourceStore';
 
@@ -14,7 +15,7 @@ describe('ResourceStore', () => {
   beforeEach(async () => {
     const dbName = `sharedKeystore-test-${makePrefix()}`;
     const userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
-    const sharedKeystoreConfig = { dbName, ...dataStoreConfig, schemas: SharedKeystore.schemas };
+    const sharedKeystoreConfig = { dbName, ...dataStoreConfig, schemas: SharedKeystore.schemas, defaultVersion: Storage.defaultVersion };
     const datastore = await openDataStore(sharedKeystoreConfig);
     sharedKeystore = await SharedKeystore.open(datastore, userSecret);
   });

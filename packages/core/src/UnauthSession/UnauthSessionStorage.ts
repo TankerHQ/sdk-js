@@ -1,6 +1,6 @@
 import type { b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
-import type { DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
+import type { BaseConfig, DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
 import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
 
@@ -23,6 +23,7 @@ export class UnauthSessionStorage {
   _datastore!: DataStore;
   _oidcStore!: OidcStore;
 
+  static defaultVersion = 1;
   private static _schemas: Schema[];
 
   static schemas = () => {
@@ -48,11 +49,12 @@ export class UnauthSessionStorage {
     const { adapter, prefix, dbPath, url } = this._options;
 
     const schemas = UnauthSessionStorage.schemas();
+    const defaultVersion = UnauthSessionStorage.defaultVersion;
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(utils.fromBase64(appId))}`;
 
     try {
-      // @ts-expect-error forward `dbPath` for pouchdb Adapters
-      this._datastore = await adapter().open({ dbName, dbPath, schemas: schemas, url });
+      // forward `dbPath` for pouchdb Adapters
+      this._datastore = await adapter().open({ dbName, dbPath, schemas, defaultVersion, url } as BaseConfig);
     } catch (e) {
       if (e instanceof dbErrors.VersionError) {
         throw new UpgradeRequired(e);

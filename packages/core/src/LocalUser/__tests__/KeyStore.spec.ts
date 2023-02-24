@@ -4,6 +4,7 @@ import { expect } from '@tanker/test-utils';
 import type { DataStore } from '@tanker/datastore-base';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
+import Storage from '../../Session/Storage';
 
 import KeyStore from '../KeyStore';
 
@@ -23,7 +24,7 @@ describe('KeyStore', () => {
     const dbName = `keystore-test-${makePrefix()}`;
 
     openKeystore = async () => {
-      const datastore = await openDataStore({ ...dataStoreConfig, dbName, schemas });
+      const datastore = await openDataStore({ ...dataStoreConfig, dbName, schemas, defaultVersion: Storage.defaultVersion });
       datastoresToClose.push(datastore);
       return KeyStore.open(datastore, secret);
     };

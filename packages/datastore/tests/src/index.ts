@@ -61,7 +61,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
     let storeConfig: BaseConfig;
 
     beforeEach(() => {
-      storeConfig = { dbName: makeDBName(), schemas: [...schemas] };
+      storeConfig = { dbName: makeDBName(), schemas: [...schemas], defaultVersion: 1 };
     });
 
     it('persists data after reopening', async () => {
@@ -154,7 +154,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
     let store: DataStore;
 
     before(async () => {
-      store = await generator({ dbName: makeDBName(), schemas });
+      store = await generator({ dbName: makeDBName(), schemas, defaultVersion: 1 });
     });
 
     beforeEach(async () => {

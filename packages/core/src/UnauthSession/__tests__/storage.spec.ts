@@ -3,6 +3,10 @@ import { expect } from '@tanker/test-utils';
 import { UnauthSessionStorage } from '../UnauthSessionStorage';
 
 describe('unauthenticated local storage schema', () => {
+  it('defines a schema for the default version', () => {
+    expect(UnauthSessionStorage.schemas().find(schema => schema.version == UnauthSessionStorage.defaultVersion)).to.not.be.undefined;
+  });
+
   it('does not reuse tables deleted by previous versions', () => {
     const deletedTables = new Map<string, number>();
 

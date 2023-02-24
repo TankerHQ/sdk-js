@@ -3,6 +3,10 @@ import { expect } from '@tanker/test-utils';
 import Storage from '../Storage';
 
 describe('session local storage schema', () => {
+  it('defines a schema for the default version', () => {
+    expect(Storage.schemas().find(schema => schema.version == Storage.defaultVersion)).to.not.be.undefined;
+  });
+
   it('does not reuse tables deleted by previous versions', () => {
     const deletedTables = new Map<string, number>();
 
