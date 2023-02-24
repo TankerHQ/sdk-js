@@ -22,6 +22,23 @@ class UnsupportedTypeError extends Error {
 const iframe = (typeof window !== 'undefined') && window.parent && window.parent !== window;
 const fromDB = iframe ? transform.fixObjects : transform.identity;
 
+const remapError = (err: Error) => {
+  // forward already wrapped error
+  if (err instanceof dbErrors.DataStoreError) {
+    return err;
+  }
+
+  if (err.name === 'DatabaseClosedError') {
+    return new dbErrors.DataStoreClosedError(err);
+  }
+
+  if (err.name === 'ConstraintError') {
+    return new dbErrors.RecordNotUnique(err);
+  }
+
+  return new dbErrors.UnknownError(err);
+};
+
 export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrowserStore implements DataStore {
   declare _db: IDexie;
   declare _indexes: Record<string, Record<string, boolean>>;
@@ -107,7 +124,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
 
     const expectedVersion = await DexieBrowserStore.expectedVersion(db, defaultVersion);
     if (!schemas.find(schema => schema.version === expectedVersion)) {
-      throw new dbErrors.VersionError(new Error(`unknown schema for version ${expectedVersion}`));
+      throw new dbErrors.VersionError(new Error(`[dexie-base] schema version mismatch: required version ${defaultVersion} too low, storage version is already ${expectedVersion}`));
     }
 
     const store = new DexieBrowserStore(db);
@@ -184,12 +201,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     try {
       await this._db.table(table).add(record);
     } catch (err) {
-      const e = err as Error;
-      if (e.name === 'ConstraintError') {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err as Error);
     }
   };
 
@@ -197,12 +209,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     try {
       await this._db.table(table).put(record);
     } catch (err) {
-      const e = err as Error;
-      if (e.name === 'ConstraintError') {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err as Error);
     }
   };
 
@@ -218,7 +225,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
         }
       }
 
-      throw new dbErrors.UnknownError(e);
+      throw remapError(e);
     }
   };
 
@@ -227,12 +234,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     try {
       await this._db.table(table).bulkPut(allRecords);
     } catch (err) {
-      const e = err as Error;
-      if (e.name === 'ConstraintError') {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err as Error);
     }
   };
 
@@ -241,7 +243,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     try {
       await this._db.table(table).bulkDelete(allRecords.map(r => r['_id']));
     } catch (e) {
-      throw new dbErrors.UnknownError(e as Error);
+      throw remapError(e as Error);
     }
   };
 
@@ -251,7 +253,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     try {
       record = fromDB(await this._db.table(table).get(id));
     } catch (e) {
-      throw new dbErrors.UnknownError(e as Error);
+      throw remapError(e as Error);
     }
 
     // undefined is returned when record not found
@@ -335,7 +337,7 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     try {
       await this._db.table(table).delete(id);
     } catch (e) {
-      throw new dbErrors.UnknownError(e as Error);
+      throw remapError(e as Error);
     }
   };
 
