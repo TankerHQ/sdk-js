@@ -23,7 +23,7 @@ export type BaseConfig = {
   defaultVersion: number;
 };
 
-export type SortParams = ReadonlyArray<string | Record<string, 'asc' | 'desc'>>;
+export type SortParams = Array<string | Record<string, 'asc' | 'desc'>>;
 
 export interface DataStore {
   readonly className: string;

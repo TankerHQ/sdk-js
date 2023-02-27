@@ -46,3 +46,10 @@ export class VersionError extends DataStoreError {
     Object.setPrototypeOf(this, VersionError.prototype);
   }
 }
+
+export class DataStoreClosedError extends DataStoreError {
+  constructor(error?: Error) {
+    super('DataStoreClosedError', error);
+    Object.setPrototypeOf(this, DataStoreClosedError.prototype);
+  }
+}

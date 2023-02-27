@@ -1,3 +1,6 @@
+import { NOT_OPEN } from 'pouchdb-errors';
+import type PouchDBType from 'pouchdb-core';
+
 import type { DataStore, SortParams, Schema, BaseConfig } from '@tanker/datastore-base';
 import { errors as dbErrors, transform } from '@tanker/datastore-base';
 
@@ -17,13 +20,38 @@ function extractSortKey(sort: SortParams): string {
   return sortKey!;
 }
 
+const isClosedError = (reason: any) => reason.status === NOT_OPEN.status && reason.message === NOT_OPEN.message && reason.name === NOT_OPEN.name;
+
+const remapError = (err: any) => {
+  // forward already wrapped error
+  if (err instanceof dbErrors.DataStoreError) {
+    return err;
+  }
+
+  if (isClosedError(err)) {
+    return new dbErrors.DataStoreClosedError(err);
+  }
+
+  if (err.status === 404) {
+    return new dbErrors.RecordNotFound(err);
+  }
+
+  if (err.status === 409) {
+    return new dbErrors.RecordNotUnique(err);
+  }
+
+  return new dbErrors.UnknownError(err);
+};
+
+type PouchConstructor = ReturnType<typeof PouchDBType.defaults>;
+type PouchInstance = InstanceType<PouchConstructor>;
 /* eslint-disable no-underscore-dangle */
 
-export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implements DataStore {
-  declare _dbs: Record<string, typeof PouchDB>;
+export default ((PouchDB: PouchConstructor, prefix?: string) => class PouchDBStoreBase implements DataStore {
+  declare _dbs: Record<string, PouchInstance>;
   declare _version: number;
 
-  constructor(dbs: Record<string, typeof PouchDB>) {
+  constructor(dbs: Record<string, PouchInstance>) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_dbs', { value: dbs, writable: true });
     Object.defineProperty(this, '_version', { value: 0, writable: true });
@@ -34,7 +62,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     return this.constructor.name;
   }
 
-  parallelEachDb<R>(fun: (arg0: typeof PouchDB) => Promise<R>): Promise<Array<R>> {
+  parallelEachDb<R>(fun: (arg0: PouchInstance) => Promise<R>): Promise<Array<R>> {
     const promises = Object.keys(this._dbs!).map(k => fun(this._dbs[k]!));
     return Promise.all(promises);
   }
@@ -44,7 +72,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
       return;
 
     try {
-      await this.parallelEachDb((db: PouchDBStoreBase) => db.close());
+      await this.parallelEachDb((db) => db.close());
       // @ts-expect-error
       this._dbs = null;
       // @ts-expect-error
@@ -71,7 +99,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     const records = await this.getAll(table);
     records.forEach(record => { record['_deleted'] = true; }); // eslint-disable-line
 
-    await this._dbs[table].bulkDocs(records);
+    await this._dbs[table]!.bulkDocs(records);
   }
 
   static async open(config: BaseConfig): Promise<PouchDBStoreBase> {
@@ -91,7 +119,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     }
 
     const openingDatabases: Record<string, Promise<void>> = {};
-    const openedDatabases: Record<string, typeof PouchDB> = {};
+    const openedDatabases: PouchDBStoreBase['_dbs'] = {};
 
     // In PouchDB, each table requires its own database. We'll start creating
     // databases starting from the latest schema and going back in time to
@@ -130,12 +158,12 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     return store;
   }
 
-  static async _openDatabase(config: { dbName: string, tableName: string }): Promise<typeof PouchDB> {
+  static async _openDatabase(config: { dbName: string, tableName: string }): Promise<PouchInstance> {
     const { dbName, tableName } = config;
     const name = `${dbName}_${tableName}`;
 
     // wait for the db to be ready before returning the store
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       // but timeout after 30s if db not ready yet
       // declare error outside the setTimeout for a better callstack
       const error = new Error(`Could not open PouchDB for: ${name}`);
@@ -143,13 +171,9 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
 
       try {
         const db = new PouchDB(prefix ? prefix + name : name);
-
-        db.addListener('created', () => resolve(db));
-
-        // resolve if already created
-        if (db.taskqueue.isReady) {
-          resolve(db);
-        }
+        // resolve when datastore is ready
+        await db.info();
+        resolve(db);
       } catch (e) {
         reject(e);
       }
@@ -175,7 +199,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
       // Skip deleted tables
       if (!deleted && indexes) {
         for (const index of indexes) {
-          await this._dbs[name].createIndex({ index: { fields: index } });
+          await this._dbs[name]!.createIndex({ index: { fields: index } });
         }
       }
     }
@@ -185,15 +209,10 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
     try {
       const recordWithoutRev = { ...record };
       delete recordWithoutRev['_rev'];
-      const result = await this._dbs[table].put(toDB(recordWithoutRev));
+      const result = await this._dbs[table]!.put(toDB(recordWithoutRev));
       return { ...recordWithoutRev, _rev: result.rev };
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 409) {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err);
     }
   };
 
@@ -211,14 +230,9 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
         }
       }
 
-      await this._dbs[table].put(toDB(rec));
+      await this._dbs[table]!.put(toDB(rec));
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 409) {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err);
     }
   };
 
@@ -233,14 +247,9 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
         delete recordWithoutRev['_rev'];
         return recordWithoutRev;
       });
-      await this._dbs[table].bulkDocs(toDB(allWithoutRevs));
+      await this._dbs[table]!.bulkDocs(toDB(allWithoutRevs));
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 409) {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err);
     }
   };
 
@@ -267,14 +276,9 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
         });
       }
 
-      await this._dbs[table].bulkDocs(toDB(all));
+      await this._dbs[table]!.bulkDocs(toDB(all));
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 409) {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
+      throw remapError(err);
     }
   };
 
@@ -289,19 +293,14 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
 
   get = async (table: string, id: string) => {
     try {
-      return fromDB(await this._dbs[table].get(id));
+      return fromDB(await this._dbs[table]!.get(id));
     } catch (err) {
-      const e = err as Error & { status: number };
-      if (e.status === 404) {
-        throw new dbErrors.RecordNotFound(e);
-      } else {
-        throw new dbErrors.UnknownError(e);
-      }
+      throw remapError(err);
     }
   };
 
   getAll = async (table: string) => {
-    const result: PouchDB.Core.AllDocsResponse<any> = await this._dbs[table].allDocs({ include_docs: true });
+    const result: PouchDB.Core.AllDocsResponse<any> = await this._dbs[table]!.allDocs({ include_docs: true });
     const records: Array<Record<string, any>> = [];
     result.rows.forEach(row => {
       const { doc } = row;
@@ -327,7 +326,7 @@ export default ((PouchDB: any, prefix?: string) => class PouchDBStoreBase implem
       }
     }
 
-    const { docs } = await this._dbs[table].find({ ...query, selector });
+    const { docs } = await this._dbs[table]!.find({ ...query, selector });
     const records = fromDB(docs);
     return records;
   };
