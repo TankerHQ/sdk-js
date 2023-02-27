@@ -1,4 +1,4 @@
-import { TankerError, Conflict, ExpiredVerification, GroupTooBig, IdentityAlreadyAttached, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, UpgradeRequired } from '@tanker/errors';
+import { TankerError, Conflict, ExpiredVerification, GroupTooBig, IdentityAlreadyAttached, InternalError, InvalidArgument, InvalidVerification, PreconditionFailed, TooManyAttempts, TooManyRequests, UpgradeRequired } from '@tanker/errors';
 import type { Class } from '@tanker/types';
 
 const apiCodeErrorMap: Record<string, Class<TankerError>> = {
@@ -16,6 +16,7 @@ const apiCodeErrorMap: Record<string, Class<TankerError>> = {
   not_a_user_group_member: InvalidArgument,
   provisional_identity_already_attached: IdentityAlreadyAttached,
   too_many_attempts: TooManyAttempts,
+  too_many_requests: TooManyRequests,
   upgrade_required: UpgradeRequired,
   verification_code_expired: ExpiredVerification,
   verification_code_not_found: InvalidVerification,
