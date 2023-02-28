@@ -27,7 +27,7 @@ export class Storage {
   _groupStore!: GroupStore;
   _sessionStore!: TransparentSessionStore;
 
-  static defaultVersion = 14;
+  static defaultVersion = 15;
   private static _schemas: Schema[];
 
   static schemas = () => {
