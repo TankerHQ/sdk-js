@@ -33,6 +33,7 @@ export class TransparentSessionStore {
     { version: 12, tables: [] },
     { version: 13, tables: [] },
     { version: 14, tables: [{ name: TABLE }] },
+    { version: 15, tables: [{ name: TABLE }] },
   ];
 
   constructor(ds: DataStore, userSecret: Uint8Array) {
