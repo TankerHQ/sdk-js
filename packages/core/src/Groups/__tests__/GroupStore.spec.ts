@@ -2,6 +2,7 @@ import { random, ready as cryptoReady, tcrypto, utils } from '@tanker/crypto';
 import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
+import { Storage } from '../../Session/Storage';
 import GroupStore from '../GroupStore';
 
 describe('GroupStore', () => {
@@ -18,7 +19,7 @@ describe('GroupStore', () => {
   beforeEach(async () => {
     dbName = `groupStore-test-${makePrefix()}`;
     userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
-    groupStoreConfig = { dbName, ...dataStoreConfig, schemas: GroupStore.schemas };
+    groupStoreConfig = { dbName, ...dataStoreConfig, schemas: GroupStore.schemas, defaultVersion: Storage.defaultVersion };
     datastore = await openDataStore(groupStoreConfig);
     groupStore = await GroupStore.open(datastore, userSecret);
   });

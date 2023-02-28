@@ -19,10 +19,11 @@ export type Schema = {
 export type BaseConfig = {
   dbName: string;
   url?: string;
-  schemas?: Array<Schema>;
+  schemas: Array<Schema>;
+  defaultVersion: number;
 };
 
-export type SortParams = ReadonlyArray<string | Record<string, 'asc' | 'desc'>>;
+export type SortParams = Array<string | Record<string, 'asc' | 'desc'>>;
 
 export interface DataStore {
   readonly className: string;
@@ -47,6 +48,7 @@ export interface DataStore {
   add(table: string, record: Record<string, any>): Promise<any>;
   put(table: string, record: Record<string, any>): Promise<void>;
   delete(table: string, id: string): Promise<void>;
+  version(): number;
 }
 
 export type DataStoreAdapter = Class<DataStore> & {

@@ -3,6 +3,7 @@ import { InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
+import { UnauthSessionStorage } from '../../UnauthSession/UnauthSessionStorage';
 
 import OidcStore, { TABLE, idFromNonce } from '../OidcStore';
 
@@ -17,7 +18,7 @@ describe('OidcStore', () => {
     nonceKeys = tcrypto.makeSignKeyPair();
     b64Nonce = utils.toRawUrlBase64(nonceKeys.publicKey);
     const dbName = `oidcNonce-test-${makePrefix()}`;
-    const oidcNonceStoreConfig = { dbName, ...dataStoreConfig, schemas: OidcStore.schemas };
+    const oidcNonceStoreConfig = { dbName, ...dataStoreConfig, schemas: OidcStore.schemas, defaultVersion: UnauthSessionStorage.defaultVersion };
     const datastore = await openDataStore(oidcNonceStoreConfig);
     nonceStore = await OidcStore.open(datastore);
   });

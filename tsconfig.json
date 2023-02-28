@@ -12,7 +12,10 @@
     "paths": {
       "@tanker/*": [ // look for typescript source files first
         "./node_modules/@tanker/*/src/",
-      ]
+      ],
+      "pouchdb-errors": [
+        "./src/@types/pouchdb-errors",
+      ],
     }
   },
   "references": [

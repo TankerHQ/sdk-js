@@ -1,6 +1,6 @@
 import type { b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
-import type { DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
+import type { BaseConfig, DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
 import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
 
@@ -22,7 +22,20 @@ export class UnauthSessionStorage {
   _options: DataStoreOptions;
   _datastore!: DataStore;
   _oidcStore!: OidcStore;
-  _schemas!: Array<Schema>;
+
+  static defaultVersion = 1;
+  private static _schemas: Schema[];
+
+  static schemas = () => {
+    if (!this._schemas) {
+      this._schemas = mergeSchemas(
+        globalSchema,
+        OidcStore.schemas,
+      );
+    }
+
+    return this._schemas;
+  };
 
   constructor(options: DataStoreOptions) {
     this._options = options;
@@ -35,23 +48,19 @@ export class UnauthSessionStorage {
   async open(appId: b64string): Promise<void> {
     const { adapter, prefix, dbPath, url } = this._options;
 
-    const schemas = mergeSchemas(
-      globalSchema,
-      OidcStore.schemas,
-    );
+    const schemas = UnauthSessionStorage.schemas();
+    const defaultVersion = UnauthSessionStorage.defaultVersion;
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(utils.fromBase64(appId))}`;
 
     try {
-      // @ts-expect-error forward `dbPath` for pouchdb Adapters
-      this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
+      // forward `dbPath` for pouchdb Adapters
+      this._datastore = await adapter().open({ dbName, dbPath, schemas, defaultVersion, url } as BaseConfig);
     } catch (e) {
       if (e instanceof dbErrors.VersionError) {
         throw new UpgradeRequired(e);
       }
       throw e;
     }
-
-    this._schemas = schemas;
 
     this._oidcStore = await OidcStore.open(this._datastore);
 
@@ -84,7 +93,12 @@ export class UnauthSessionStorage {
   }
 
   async cleanupCaches() {
-    const currentSchema = this._schemas[this._schemas.length - 1]!;
+    const schemaVersion = this._datastore.version();
+    const currentSchema = UnauthSessionStorage.schemas().find((schema) => schema.version == schemaVersion);
+    if (!currentSchema) {
+      return;
+    }
+
     const cacheTables = currentSchema.tables.filter(t => !t.persistent && !t.deleted).map(t => t.name);
     for (const table of cacheTables) {
       await this._datastore.clear(table);

@@ -61,7 +61,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
     let storeConfig: BaseConfig;
 
     beforeEach(() => {
-      storeConfig = { dbName: makeDBName(), schemas: [...schemas] };
+      storeConfig = { dbName: makeDBName(), schemas: [...schemas], defaultVersion: 1 };
     });
 
     it('persists data after reopening', async () => {
@@ -93,13 +93,14 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await store.close();
 
       // Upgrade the schema
-      storeConfig.schemas!.push({
+      storeConfig.schemas.push({
         version: 2,
         tables: [{
           name: tableName,
           indexes: [['a'], ['b'], ['c'], ['e']], // add index on 'e'
         }],
       });
+      storeConfig.defaultVersion = 2;
 
       const storeWithNewSchema = await generator(storeConfig);
 
@@ -116,13 +117,14 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await store.close();
 
       // Upgrade the schema
-      storeConfig.schemas!.push({
+      storeConfig.schemas.push({
         version: 2,
         tables: [{
           name: tableName,
           deleted: true, // delete the only table
         }],
       });
+      storeConfig.defaultVersion = 2;
 
       const storeWithNewSchema = await generator(storeConfig);
 
@@ -131,21 +133,87 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
       await storeWithNewSchema.close();
     });
 
-    // pouchDB doesn't handle "schema" versions
+    it('recovers when opening a storage using a downgraded schema', async () => {
+      storeConfig.schemas.push({
+        version: 2,
+        tables: [{
+          name: `new-${tableName}`,
+          indexes: [['a'], ['b'], ['c']],
+        }],
+      });
+      storeConfig.defaultVersion = 2;
+      let store = await generator(storeConfig);
+      await store.put(tableName, record1);
+      await store.close();
+
+      // Simulate SDK downgrade: the actual schema is a forward compatible version > default version
+      storeConfig.defaultVersion = 1;
+      store = await generator(storeConfig);
+
+      const result = await store.get(tableName, record1._id);
+      expect(cleanRecord(result)).to.deep.equal(record1);
+      await store.close();
+    });
+
+    // PouchDB doesn't consider "schema" version mismatchs as errors
+    // It also doesn't support automatic re-open
     if (!dataStoreName.match(/pouchdb/)) {
-      it('throws VersionError when opening a storage using downgraded schema', async () => {
-        storeConfig.schemas!.push({
+      it('throws VersionError when opening a storage using an unknown schema', async () => {
+        storeConfig.schemas.push({
           version: 2,
           tables: [{
-            name: tableName,
+            name: `new-${tableName}`,
             indexes: [['a'], ['b'], ['c']],
           }],
         });
+        storeConfig.defaultVersion = 2;
         const store = await generator(storeConfig);
         await store.close();
 
-        storeConfig.schemas!.pop();
+        // forget about the upgraded schema
+        storeConfig.schemas.pop();
+        storeConfig.defaultVersion = 1;
         await expect(generator(storeConfig)).to.be.rejectedWith(VersionError);
+      });
+
+      describe('after live storage upgrade', () => {
+        it('recovers seamlessly when the upgraded schema is known', async () => {
+          storeConfig.schemas.push({
+            version: 2,
+            tables: [{
+              name: `new-${tableName}`,
+              indexes: [['a'], ['b'], ['c']],
+            }],
+          });
+          let store = await generator(storeConfig);
+          await store.put(tableName, record1);
+
+          // Simulate SDK upgrade to known schema
+          const upgradedStore = await generator({ ...storeConfig, defaultVersion: 2 });
+          await upgradedStore.close();
+
+          const result = await store.get(tableName, record1._id);
+          expect(cleanRecord(result)).to.deep.equal(record1);
+          await store.close();
+        });
+
+        it('throws version error when the upgraded schema is unknown', async () => {
+          let store = await generator(storeConfig);
+          await store.put(tableName, record1);
+
+          // Simulate SDK upgrade to unknown schema
+          const extraVersion = {
+            version: 2,
+            tables: [{
+              name: `new-${tableName}`,
+              indexes: [['a'], ['b'], ['c']],
+            }],
+          };
+          const upgradedStore = await generator({ ...storeConfig, schemas: [...storeConfig.schemas, extraVersion], defaultVersion: 2 });
+          await upgradedStore.close();
+
+          await expect(store.get(tableName, record1._id)).to.be.rejectedWith(VersionError);
+        });
       });
     }
   });
@@ -154,7 +222,7 @@ export const generateDataStoreTests = (dataStoreName: string, generator: DataSto
     let store: DataStore;
 
     before(async () => {
-      store = await generator({ dbName: makeDBName(), schemas });
+      store = await generator({ dbName: makeDBName(), schemas, defaultVersion: 1 });
     });
 
     beforeEach(async () => {

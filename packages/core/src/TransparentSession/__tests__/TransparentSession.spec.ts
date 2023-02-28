@@ -3,6 +3,7 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { expect, sinon } from '@tanker/test-utils';
 
 import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
+import { Storage } from '../../Session/Storage';
 
 import { TransparentSessionStore } from '../SessionStore';
 import { computeRecipientHash } from '../Manager';
@@ -28,7 +29,7 @@ describe('TransparentSessionStore', () => {
   beforeEach(async () => {
     const dbName = `sessionStore-test-${makePrefix()}`;
     const userSecret = createUserSecretBinary('trustchainid', 'Merkle–Damgård');
-    const sessionStoreConfig = { dbName, ...dataStoreConfig, schemas: TransparentSessionStore.schemas };
+    const sessionStoreConfig = { dbName, ...dataStoreConfig, schemas: TransparentSessionStore.schemas, defaultVersion: Storage.defaultVersion };
     const datastore = await openDataStore(sessionStoreConfig);
     sessionStore = await TransparentSessionStore.open(datastore, userSecret);
     hash = random(32);

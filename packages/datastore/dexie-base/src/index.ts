@@ -22,14 +22,33 @@ class UnsupportedTypeError extends Error {
 const iframe = (typeof window !== 'undefined') && window.parent && window.parent !== window;
 const fromDB = iframe ? transform.fixObjects : transform.identity;
 
+const remapError = (err: Error) => {
+  // forward already wrapped error
+  if (err instanceof dbErrors.DataStoreError) {
+    return err;
+  }
+
+  if (err.name === 'DatabaseClosedError') {
+    return new dbErrors.DataStoreClosedError(err);
+  }
+
+  if (err.name === 'ConstraintError') {
+    return new dbErrors.RecordNotUnique(err);
+  }
+
+  return new dbErrors.UnknownError(err);
+};
+
 export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrowserStore implements DataStore {
   declare _db: IDexie;
   declare _indexes: Record<string, Record<string, boolean>>;
+  declare _config: Config;
 
-  constructor(db: IDexie) {
+  constructor(db: IDexie, config: Config) {
     // _ properties won't be enumerable, nor reconfigurable
     Object.defineProperty(this, '_db', { value: db, writable: true });
     Object.defineProperty(this, '_indexes', { value: {}, writable: true });
+    Object.defineProperty(this, '_config', { value: config, writable: true });
   }
 
   get className(): string {
@@ -73,18 +92,45 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     await this._db.table(table).clear();
   }
 
+  private static async expectedVersion(db: IDexie, defaultVersion: number): Promise<number> {
+    let expectedVersion = defaultVersion;
+
+    try {
+      await db.open();
+
+      const actualVersion = db.verno;
+      if (actualVersion > expectedVersion) {
+        expectedVersion = actualVersion;
+      }
+
+      db.close();
+    } catch (err) {
+      const e = err as Error;
+      if (e.name === 'NoSuchDatabaseError') {
+        return defaultVersion;
+      }
+      throw new dbErrors.UnknownError(e);
+    }
+
+    return expectedVersion;
+  }
+
   static async open(config: Config): Promise<DexieBrowserStore> {
     if (!config || !config.dbName) {
       throw new Error('Invalid empty dbName in config');
     }
 
+    const { dbName, schemas, defaultVersion } = config;
     const dbOptions = { autoOpen: false };
+    const db = new DexieClass(dbName, dbOptions);
 
-    const db = new DexieClass(config.dbName, dbOptions);
+    const expectedVersion = await DexieBrowserStore.expectedVersion(db, defaultVersion);
+    if (!schemas.find(schema => schema.version === expectedVersion)) {
+      throw new dbErrors.VersionError(new Error(`[dexie-base] schema version mismatch: required version ${defaultVersion} too low, storage version is already ${expectedVersion}`));
+    }
 
-    const store = new DexieBrowserStore(db);
-
-    await store.defineSchemas(config.schemas!);
+    const store = new DexieBrowserStore(db, config);
+    await store.defineSchemas(schemas.filter(schema => schema.version <= expectedVersion));
 
     try {
       await db.open();
@@ -98,6 +144,29 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     }
 
     return store;
+  }
+
+  private withReopen = <
+    F extends (...args: any[]) => Promise<any>,
+  >(f: F) => {
+    return async (...args: Parameters<F>) => {
+      try {
+        return await f(...args);
+      } catch (e) {
+        const err = e as Error;
+        if (err.name !== 'DatabaseClosedError') {
+          throw remapError(err);
+        }
+        const newStorage = await DexieBrowserStore.open(this._config);
+        this._db = newStorage._db; // eslint-disable-line no-underscore-dangle
+        this._indexes = newStorage._indexes; // eslint-disable-line no-underscore-dangle
+        return f(...args).catch(reason => { throw remapError(reason); });
+      }
+    };
+  };
+
+  version(): number {
+    return this._db.verno;
   }
 
   async defineSchemas(schemas: Array<Schema>): Promise<void> {
@@ -149,79 +218,34 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     }
   }
 
-  add = async (table: string, record: Record<string, any>) => {
-    try {
-      await this._db.table(table).add(record);
-    } catch (err) {
-      const e = err as Error;
-      if (e.name === 'ConstraintError') {
-        throw new dbErrors.RecordNotUnique(e);
-      }
+  add = this.withReopen((table: string, record: Record<string, any>) => this._db.table(table).add(record));
 
-      throw new dbErrors.UnknownError(e);
-    }
-  };
+  put = this.withReopen((table: string, record: Record<string, any>) => this._db.table(table).put(record));
 
-  put = async (table: string, record: Record<string, any>) => {
-    try {
-      await this._db.table(table).put(record);
-    } catch (err) {
-      const e = err as Error;
-      if (e.name === 'ConstraintError') {
-        throw new dbErrors.RecordNotUnique(e);
-      }
-
-      throw new dbErrors.UnknownError(e);
-    }
-  };
-
-  bulkAdd = async (table: string, records: Array<Record<string, any>> | Record<string, any>, ...otherRecords: Array<Record<string, any>>) => {
+  bulkAdd = this.withReopen((table: string, records: Array<Record<string, any>> | Record<string, any>, ...otherRecords: Array<Record<string, any>>) => {
     const allRecords = (records instanceof Array) ? records : [records, ...otherRecords];
-    try {
-      await this._db.table(table).bulkAdd(allRecords);
-    } catch (error) {
-      const e = error as Error;
-      if (e.name === 'BulkError') {
-        if ((e as (Error & { failures: Array<Error> })).failures.every(err => err.name === 'ConstraintError')) {
-          return; // ignore duplicate adds
-        }
+    return this._db.table(table).bulkAdd(allRecords).catch(reason => {
+      const e = reason as Error;
+      if (e.name === 'BulkError' && (e as (Error & { failures: Array<Error> })).failures.every(err => err.name === 'ConstraintError')) {
+        return; // ignore duplicate adds
       }
 
-      throw new dbErrors.UnknownError(e);
-    }
-  };
+      throw e;
+    });
+  });
 
-  bulkPut = async (table: string, records: Array<Record<string, any>> | Record<string, any>, ...otherRecords: Array<Record<string, any>>) => {
+  bulkPut = this.withReopen((table: string, records: Array<Record<string, any>> | Record<string, any>, ...otherRecords: Array<Record<string, any>>) => {
     const allRecords = (records instanceof Array) ? records : [records, ...otherRecords];
-    try {
-      await this._db.table(table).bulkPut(allRecords);
-    } catch (err) {
-      const e = err as Error;
-      if (e.name === 'ConstraintError') {
-        throw new dbErrors.RecordNotUnique(e);
-      }
+    return this._db.table(table).bulkPut(allRecords);
+  });
 
-      throw new dbErrors.UnknownError(e);
-    }
-  };
-
-  bulkDelete = async (table: string, records: Array<Record<string, any>> | Record<string, any>, ...otherRecords: Array<Record<string, any>>) => {
+  bulkDelete = this.withReopen((table: string, records: Array<Record<string, any>> | Record<string, any>, ...otherRecords: Array<Record<string, any>>) => {
     const allRecords = records instanceof Array ? records : [records, ...otherRecords];
-    try {
-      await this._db.table(table).bulkDelete(allRecords.map(r => r['_id']));
-    } catch (e) {
-      throw new dbErrors.UnknownError(e as Error);
-    }
-  };
+    return this._db.table(table).bulkDelete(allRecords.map(r => r['_id']));
+  });
 
-  get = async (table: string, id: string) => {
-    let record;
-
-    try {
-      record = fromDB(await this._db.table(table).get(id));
-    } catch (e) {
-      throw new dbErrors.UnknownError(e as Error);
-    }
+  get = this.withReopen(async (table: string, id: string) => {
+    const record = fromDB(await this._db.table(table).get(id));
 
     // undefined is returned when record not found
     if (!record) {
@@ -229,14 +253,11 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
     }
 
     return record;
-  };
+  });
 
-  getAll = async (table: string) => {
-    const records = await this._db.table(table).toArray();
-    return fromDB(records);
-  };
+  getAll = this.withReopen(async (table: string) => this._db.table(table).toArray().then(fromDB));
 
-  find = async (table: string, query: { selector?: Record<string, any>; sort?: SortParams; limit?: number; } = {}) => {
+  find = this.withReopen((table: string, query: { selector?: Record<string, any>; sort?: SortParams; limit?: number; } = {}) => {
     const { selector, sort, limit } = query;
     const dexieTable: ITable = this._db.table(table);
     let index: string | null = null;
@@ -292,21 +313,15 @@ export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrow
       res = withLimit as typeof res;
     }
 
-    return fromDB(await res);
-  };
+    return res.then(fromDB);
+  });
 
   first = async (table: string, query: { selector?: Record<string, any>; sort?: SortParams; } = {}) => {
     const results = await this.find(table, { ...query, limit: 1 });
     return results[0];
   };
 
-  delete = async (table: string, id: string) => {
-    try {
-      await this._db.table(table).delete(id);
-    } catch (e) {
-      throw new dbErrors.UnknownError(e as Error);
-    }
-  };
+  delete = this.withReopen((table: string, id: string) => this._db.table(table).delete(id));
 
   _isTable(obj: any): boolean {
     // @ts-expect-error this._db.Table is a Class (has a prototype)

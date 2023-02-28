@@ -1,5 +1,5 @@
 import { utils } from '@tanker/crypto';
-import type { DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
+import type { BaseConfig, DataStore, DataStoreAdapter, Schema } from '@tanker/datastore-base';
 import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
 
@@ -19,15 +19,15 @@ export type DataStoreOptions = {
   url?: string;
 };
 
-export default class Storage {
+export class Storage {
   _options: DataStoreOptions;
   _datastore!: DataStore;
   _keyStore!: KeyStore;
   _resourceStore!: ResourceStore;
   _groupStore!: GroupStore;
   _sessionStore!: TransparentSessionStore;
-  _schemas!: Array<Schema>;
 
+  static defaultVersion = 14;
   private static _schemas: Schema[];
 
   static schemas = () => {
@@ -66,19 +66,18 @@ export default class Storage {
     const { adapter, prefix, dbPath, url } = this._options;
 
     const schemas = Storage.schemas();
+    const defaultVersion = Storage.defaultVersion;
     const dbName = `tanker_${prefix ? `${prefix}_` : ''}${utils.toSafeBase64(userId)}`;
 
     try {
-      // @ts-expect-error forward `dbPath` for pouchdb Adapters
-      this._datastore = await adapter().open({ dbName, dbPath, schemas, url });
+      // forward `dbPath` for pouchdb Adapters
+      this._datastore = await adapter().open({ dbName, dbPath, schemas, defaultVersion, url } as BaseConfig);
     } catch (e) {
       if (e instanceof dbErrors.VersionError) {
         throw new UpgradeRequired(e);
       }
       throw e;
     }
-
-    this._schemas = schemas;
 
     this._keyStore = await KeyStore.open(this._datastore, userSecret);
     this._resourceStore = await ResourceStore.open(this._datastore, userSecret);
@@ -124,11 +123,19 @@ export default class Storage {
   }
 
   async cleanupCaches(userSecret: Uint8Array) {
-    const currentSchema = this._schemas[this._schemas.length - 1]!;
+    await this._keyStore.clearCache(userSecret);
+
+    const schemaVersion = this._datastore.version();
+    const currentSchema = Storage.schemas().find((schema) => schema.version === schemaVersion);
+    if (!currentSchema) {
+      return;
+    }
+
     const cacheTables = currentSchema.tables.filter(t => !t.persistent && !t.deleted).map(t => t.name);
     for (const table of cacheTables) {
       await this._datastore.clear(table);
     }
-    await this._keyStore.clearCache(userSecret);
   }
 }
+
+export default Storage;
