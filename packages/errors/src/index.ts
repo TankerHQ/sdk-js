@@ -11,6 +11,7 @@ export { NetworkError } from './errors/NetworkError';
 export { OperationCanceled } from './errors/OperationCanceled';
 export { PreconditionFailed } from './errors/PreconditionFailed';
 export { TooManyAttempts } from './errors/TooManyAttempts';
+export { TooManyRequests } from './errors/TooManyRequests';
 export { Conflict } from './errors/Conflict';
 export { UpgradeRequired } from './errors/UpgradeRequired';
 
