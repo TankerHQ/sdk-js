@@ -191,7 +191,7 @@ describe('DecryptionStream', () => {
         (id) => {
           if (utils.equalArray(id, streamHeader.resourceId))
             return resourceKey;
-          throw new Error('key not found');
+          return null;
         },
       );
       sync = watchStream(stream);

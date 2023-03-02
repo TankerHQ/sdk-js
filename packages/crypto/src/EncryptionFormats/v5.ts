@@ -2,6 +2,7 @@ import { InvalidArgument, DecryptionFailed } from '@tanker/errors';
 
 import * as aead from '../aead';
 import { random } from '../random';
+import { assertKey } from '../resourceId';
 import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 import { tryDecryptAEAD } from './helpers';
@@ -64,6 +65,7 @@ export class EncryptionV5 {
 
   static decrypt = async (keyMapper: KeyMapper, data: EncryptionData): Promise<Uint8Array> => {
     const key = await keyMapper(data.resourceId);
+    assertKey(data.resourceId, key);
     return tryDecryptAEAD(data.resourceId, key, data.iv, data.encryptedData, data.resourceId);
   };
 

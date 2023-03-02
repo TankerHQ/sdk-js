@@ -6,6 +6,7 @@ import type { KeyMapper } from './KeyMapper';
 import type { ChunkHeader } from './v4';
 import { EncryptionV4 } from './v4';
 import * as utils from '../utils';
+import { assertKey } from '../resourceId';
 
 const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader) => {
   if (!utils.equalArray(oldHeader.resourceId, currentHeader.resourceId)) {
@@ -71,6 +72,7 @@ export class DecryptionStreamV4 extends Transform {
       throw new DecryptionFailed({ message: `invalid encrypted chunk size in header v4: ${encryptedChunkSize}` });
 
     const key = await this._mapper(resourceId);
+    assertKey(resourceId, key);
 
     this._state.maxEncryptedChunkSize = encryptedChunkSize;
     this._resizerStream = new ResizerStream(encryptedChunkSize);
