@@ -1,3 +1,5 @@
 import type { Key } from '../aliases';
 
-export type KeyMapper = (keyID: Uint8Array) => Promise<Key> | Key;
+type MaybePromise<T> = T | Promise<T>;
+
+export type KeyMapper = (keyID: Uint8Array) => MaybePromise<Key | null>;

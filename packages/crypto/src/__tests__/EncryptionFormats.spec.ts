@@ -711,7 +711,7 @@ describe('Simple Encryption', () => {
         (id) => {
           if (utils.equalArray(id, data.resourceId))
             return resourceKey;
-          throw new Error('key not found');
+          return null;
         },
         data,
       );

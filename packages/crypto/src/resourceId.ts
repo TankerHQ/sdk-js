@@ -1,4 +1,4 @@
-import { InvalidArgument, TankerError } from '@tanker/errors';
+import { InvalidArgument } from '@tanker/errors';
 import { assertString } from '@tanker/types';
 import type { b64string, Key } from './aliases';
 import type { KeyMapper } from './EncryptionFormats/KeyMapper';
@@ -61,39 +61,34 @@ export function assertResourceId(arg: unknown): asserts arg is string {
 
 export const deriveSessionKey = (sessionKey: Key, seed: Uint8Array): Key => generichash(utils.concatArrays(sessionKey, seed));
 
-const safeGetKey = async (resourceId: Uint8Array, getter: () => Key | Promise<Key>) => {
-  try {
-    return await getter();
-  } catch (e) {
-    if (e instanceof TankerError)
-      throw e;
+export function assertKey(resourceId: Uint8Array, key: Key | null): asserts key is Key {
+  if (!key) {
     throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
   }
-};
+}
 
-export const getKeyFromCompositeResourceId = async (resourceId: CompositeResourceId, keyMapper: KeyMapper) => safeGetKey(
-  serializeCompositeResourceId(resourceId),
-  async () => {
-    try {
-      const sessionKey = await keyMapper(resourceId.sessionId);
-      return deriveSessionKey(sessionKey, resourceId.resourceId);
-    } catch (e) {
-      return await keyMapper(resourceId.resourceId);
-    }
-  },
-);
+export const getKeyFromCompositeResourceId = async (resourceId: CompositeResourceId, keyMapper: KeyMapper) => {
+  let key: Key | null;
+  const sessionKey = await keyMapper(resourceId.sessionId);
+  if (sessionKey) {
+    key = deriveSessionKey(sessionKey, resourceId.resourceId);
+  } else {
+    key = await keyMapper(resourceId.resourceId);
+  }
+
+  assertKey(serializeCompositeResourceId(resourceId), key);
+  return key;
+};
 
 export const getKeyFromResourceId = async (b64resourceId: b64string, keyMapper: KeyMapper) => {
   const resourceId = parseResourceId(b64resourceId);
 
-  let key: Uint8Array;
+  let key: Key | null;
   if ('sessionId' in resourceId) {
     key = await getKeyFromCompositeResourceId(resourceId, keyMapper);
   } else {
-    key = await safeGetKey(
-      resourceId.resourceId,
-      () => keyMapper(getSimpleResourceId(resourceId)),
-    );
+    key = await keyMapper(getSimpleResourceId(resourceId));
+    assertKey(resourceId.resourceId, key);
   }
 
   return {

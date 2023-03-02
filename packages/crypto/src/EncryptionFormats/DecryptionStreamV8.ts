@@ -7,6 +7,7 @@ import { removePadding } from '../padding';
 import type { ChunkHeader } from './v8';
 import { EncryptionV8 } from './v8';
 import * as utils from '../utils';
+import { assertKey } from '../resourceId';
 
 const checkHeaderIntegrity = (oldHeader: ChunkHeader, currentHeader: ChunkHeader) => {
   if (!utils.equalArray(oldHeader.resourceId, currentHeader.resourceId)) {
@@ -74,6 +75,7 @@ export class DecryptionStreamV8 extends Transform {
       throw new DecryptionFailed({ message: `invalid encrypted chunk size in header v8: ${encryptedChunkSize}` });
 
     const key = await this._mapper(resourceId);
+    assertKey(resourceId, key);
 
     this._state.maxEncryptedChunkSize = encryptedChunkSize;
     this._resizerStream = new ResizerStream(encryptedChunkSize);

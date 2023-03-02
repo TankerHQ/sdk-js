@@ -7,6 +7,7 @@ import * as tcrypto from '../tcrypto';
 import * as utils from '../utils';
 import type { KeyMapper } from './KeyMapper';
 import { tryDecryptAEAD } from './helpers';
+import { assertKey } from '../resourceId';
 
 type EncryptionData = {
   encryptedData: Uint8Array;
@@ -67,6 +68,7 @@ export class EncryptionV7 {
 
   static decrypt = async (keyMapper: KeyMapper, data: EncryptionData): Promise<Uint8Array> => {
     const key = await keyMapper(data.resourceId);
+    assertKey(data.resourceId, key);
 
     const associatedData = utils.concatArrays(new Uint8Array([this.version]), data.resourceId);
     return removePadding(tryDecryptAEAD(data.resourceId, key, data.iv, data.encryptedData, associatedData));

@@ -446,11 +446,11 @@ export class Client {
     return challenge;
   };
 
-  getResourceKey = async (resourceId: Uint8Array): Promise<b64string> => {
+  getResourceKey = async (resourceId: Uint8Array): Promise<b64string | null> => {
     const query = `resource_ids[]=${urlize(resourceId)}`;
     const { resource_keys: resourceKeys } = await this._apiCall(`/resource-keys?${query}`);
     if (resourceKeys.length === 0) {
-      throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
+      return null;
     }
     return resourceKeys[0];
   };
