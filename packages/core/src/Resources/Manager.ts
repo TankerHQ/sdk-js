@@ -8,10 +8,10 @@ import { KeyDecryptor } from './KeyDecryptor';
 import { TaskCoalescer } from '../TaskCoalescer';
 
 import type { Client } from '../Network/Client';
-import type ResourceStore from './ResourceStore';
-import type LocalUserManager from '../LocalUser/Manager';
-import type GroupManager from '../Groups/Manager';
-import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
+import type { ResourceStore } from './ResourceStore';
+import type { LocalUserManager } from '../LocalUser/Manager';
+import type { GroupManager } from '../Groups/Manager';
+import type { ProvisionalIdentityManager } from '../ProvisionalIdentity/Manager';
 
 export type KeyResult = {
   id: b64string;
@@ -71,5 +71,3 @@ export class ResourceManager {
 
   saveResourceKey = (resourceId: Uint8Array, key: Uint8Array): Promise<void> => this._resourceStore.saveResourceKey(resourceId, key);
 }
-
-export default ResourceManager;

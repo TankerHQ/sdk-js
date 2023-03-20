@@ -15,8 +15,8 @@ import {
   decryptVerificationKeyBytes,
 } from './ghostDevice';
 import type { IndexedProvisionalUserKeyPairs } from './KeySafe';
-import type KeyStore from './KeyStore';
-import LocalUser from './LocalUser';
+import type { KeyStore } from './KeyStore';
+import { LocalUser } from './LocalUser';
 import {
   formatVerificationRequest,
   isPreverifiedVerificationRequest,
@@ -389,5 +389,3 @@ export class LocalUserManager extends EventEmitter {
     return res;
   };
 }
-
-export default LocalUserManager;

@@ -1,8 +1,8 @@
 import { ready as cryptoReady } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import TestGenerator from '../../__tests__/TestGenerator';
-import makeUint8Array from '../../__tests__/makeUint8Array';
+import { TestGenerator } from '../../__tests__/TestGenerator';
+import { makeUint8Array } from '../../__tests__/makeUint8Array';
 import { assertFailWithNature } from '../../__tests__/assertFailWithNature';
 
 import { verifyTrustchainCreation } from '../Verify';

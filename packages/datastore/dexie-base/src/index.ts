@@ -39,7 +39,7 @@ const remapError = (err: Error) => {
   return new dbErrors.UnknownError(err);
 };
 
-export default ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrowserStore implements DataStore {
+export const dexieStoreBase = ((DexieClass: Class<IDexie>): DataStoreAdapter => class DexieBrowserStore implements DataStore {
   declare _db: IDexie;
   declare _indexes: Record<string, Record<string, boolean>>;
   declare _config: Config;

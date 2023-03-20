@@ -6,7 +6,7 @@ import { InvalidArgument } from '@tanker/errors';
 import { assertDataType, castData } from '@tanker/types';
 import type { Data } from '@tanker/types';
 
-export default class SlicerStream extends Readable {
+export class SlicerStream extends Readable {
   _outputSize: number = 5 * 1024 * 1024; // 5MB
   _readChunk!: (startIndex: number, endIndex: number) => Promise<Uint8Array> | Uint8Array;
   _readingState = {

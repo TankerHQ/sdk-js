@@ -22,8 +22,6 @@ import { Status, statuses } from './Session/status';
 import { fromBase64, toBase64, prehashPassword } from './utils';
 
 // export
-export default Tanker;
-
 export type { b64string } from '@tanker/crypto';
 export type { EncryptionStream } from '@tanker/crypto';
 export type { DecryptionStream } from '@tanker/crypto';

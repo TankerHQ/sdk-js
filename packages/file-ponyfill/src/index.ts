@@ -1,1 +1,1 @@
-export { default } from './FilePonyfill';
+export { FilePonyfill } from './FilePonyfill';

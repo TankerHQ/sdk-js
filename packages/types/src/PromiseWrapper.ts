@@ -11,5 +11,3 @@ export class PromiseWrapper<T> {
     });
   }
 }
-
-export default PromiseWrapper;

@@ -1,7 +1,7 @@
-import File from '@tanker/file-ponyfill';
+import { FilePonyfill as File } from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 
-import FileReader from '../FileReader';
+import { FileReader } from '../FileReader';
 
 describe('FileReader', () => {
   const ascii = 'The quick brown fox jumps over the lazy dog';

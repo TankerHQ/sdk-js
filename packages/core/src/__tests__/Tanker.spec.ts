@@ -5,7 +5,7 @@ import { createIdentity, getPublicIdentity, createProvisionalIdentity } from '@t
 import { expect, isBrowser } from '@tanker/test-utils';
 import { castData } from '@tanker/types';
 
-import dataStoreConfig, { makePrefix } from './TestDataStore';
+import { dataStoreConfig, makePrefix } from './TestDataStore';
 
 import { Tanker, optionsWithDefaults } from '..';
 import { EncryptionSession } from '../DataProtection/EncryptionSession';

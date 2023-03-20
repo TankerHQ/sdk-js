@@ -1,8 +1,8 @@
-import globalThis from '@tanker/global-this';
+import { globalThis } from '@tanker/global-this';
 
 type FileReaderResolver = ((data: string) => void) | ((data: ArrayBuffer) => void);
 
-class FileReader {
+export class FileReader {
   _source: Blob;
   _reader: globalThis.FileReader;
   _readPositions: {
@@ -91,5 +91,3 @@ class FileReader {
     });
   }
 }
-
-export default FileReader;

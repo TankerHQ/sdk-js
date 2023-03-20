@@ -16,7 +16,7 @@ A promisified `FileReader` implementation very similar to the [browser's FileRea
 ## Usage
 
 ```javascript
-import FileReader from '@tanker/file-reader';
+import { FileReader } from '@tanker/file-reader';
 
 // Retrieve a file or blob somehow
 const file = new File(

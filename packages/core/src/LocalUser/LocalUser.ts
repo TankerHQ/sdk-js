@@ -243,5 +243,3 @@ export class LocalUser extends EventEmitter {
     return localUserKeys;
   };
 }
-
-export default LocalUser;

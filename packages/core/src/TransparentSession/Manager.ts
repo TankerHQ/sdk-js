@@ -67,5 +67,3 @@ export class SessionManager {
     return sessions[0]!.session;
   }
 }
-
-export default SessionManager;

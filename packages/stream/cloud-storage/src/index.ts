@@ -1,7 +1,7 @@
-import GCSDownloadStream from './gcs/DownloadStream';
-import GCSUploadStream from './gcs/UploadStream';
-import S3DownloadStream from './s3/DownloadStream';
-import S3UploadStream from './s3/UploadStream';
+import { DownloadStream as GCSDownloadStream } from './gcs/DownloadStream';
+import { UploadStream as GCSUploadStream } from './gcs/UploadStream';
+import { DownloadStream as S3DownloadStream } from './s3/DownloadStream';
+import { UploadStream as S3UploadStream } from './s3/UploadStream';
 
 export const GCS = {
   DownloadStream: GCSDownloadStream,
@@ -13,7 +13,7 @@ export const S3 = {
   UploadStream: S3UploadStream,
 };
 
-export default {
+export const streamCloudStorage = {
   GCS,
   S3,
 };

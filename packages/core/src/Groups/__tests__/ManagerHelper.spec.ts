@@ -8,9 +8,9 @@ import type { UserGroupCreationRecord, UserGroupEntry } from '../Serialize';
 import type { ExternalGroup } from '../types';
 
 import type { TestDeviceCreation, TestUserGroup } from '../../__tests__/TestGenerator';
-import TestGenerator from '../../__tests__/TestGenerator';
-import type ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
-import type LocalUser from '../../LocalUser/LocalUser';
+import { TestGenerator } from '../../__tests__/TestGenerator';
+import type { ProvisionalIdentityManager } from '../../ProvisionalIdentity/Manager';
+import type { LocalUser } from '../../LocalUser/LocalUser';
 
 function getExternalGroupFromUserGroupCreation(userGroupEntry: UserGroupEntry): ExternalGroup {
   const userGroupCreation = userGroupEntry as UserGroupCreationRecord;

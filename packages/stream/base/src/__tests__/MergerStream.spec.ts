@@ -1,9 +1,9 @@
-import FilePonyfill from '@tanker/file-ponyfill';
+import { FilePonyfill } from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 import { castData, getConstructorName } from '@tanker/types';
 import type { Class, ResourceMetadata, Data } from '@tanker/types';
 
-import MergerStream from '../MergerStream';
+import { MergerStream } from '../MergerStream';
 
 describe('MergerStream', () => {
   const testBytes = new Uint8Array([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102]); // 16 bytes

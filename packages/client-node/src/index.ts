@@ -1,9 +1,9 @@
 import type { TankerOptions } from '@tanker/core';
 import { Tanker as TankerCore, optionsWithDefaults } from '@tanker/core';
-import PouchDB from '@tanker/datastore-pouchdb-node';
+import { pouchDBNode } from '@tanker/datastore-pouchdb-node';
 
 const defaultOptions = {
-  dataStore: { adapter: PouchDB },
+  dataStore: { adapter: pouchDBNode },
   sdkType: 'client-node',
 };
 

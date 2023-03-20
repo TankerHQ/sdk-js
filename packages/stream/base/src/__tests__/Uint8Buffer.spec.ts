@@ -1,7 +1,7 @@
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import Uint8Buffer from '../Uint8Buffer';
+import { Uint8Buffer } from '../Uint8Buffer';
 
 describe('Uint8Buffer', () => {
   it('throws InvalidArgument when consuming more than stored data', () => {

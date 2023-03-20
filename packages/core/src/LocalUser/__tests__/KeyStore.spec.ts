@@ -3,10 +3,10 @@ import { createUserSecretBinary } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 import type { DataStore } from '@tanker/datastore-base';
 
-import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
+import { dataStoreConfig, makePrefix, openDataStore } from '../../__tests__/TestDataStore';
 import { Storage } from '../../Session/Storage';
 
-import KeyStore from '../KeyStore';
+import { KeyStore } from '../KeyStore';
 
 describe('KeyStore', () => {
   let datastoresToClose: Array<DataStore>;

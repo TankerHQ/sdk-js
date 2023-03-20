@@ -1,4 +1,4 @@
-import DexieMemory from '@tanker/datastore-dexie-memory';
+import { dexieMemory } from '@tanker/datastore-dexie-memory';
 import type { DataStore, DataStoreAdapter, BaseConfig } from '@tanker/datastore-base';
 import { uuid } from '@tanker/test-utils';
 
@@ -15,4 +15,4 @@ export const openDataStore = async (config: DataStoreConfig): Promise<DataStore>
   return adapter().open(baseConfig);
 };
 
-export default { adapter: DexieMemory };
+export const dataStoreConfig = { adapter: dexieMemory };

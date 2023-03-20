@@ -47,7 +47,7 @@ type PouchConstructor = ReturnType<typeof PouchDBType.defaults>;
 type PouchInstance = InstanceType<PouchConstructor>;
 /* eslint-disable no-underscore-dangle */
 
-export default ((PouchDB: PouchConstructor, prefix?: string) => class PouchDBStoreBase implements DataStore {
+export const pouchDBStoreBase = ((PouchDB: PouchConstructor, prefix?: string) => class PouchDBStoreBase implements DataStore {
   declare _dbs: Record<string, PouchInstance>;
   declare _version: number;
 

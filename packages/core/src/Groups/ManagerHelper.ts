@@ -8,8 +8,8 @@ import type { Group, ExternalGroup, InternalGroup } from './types';
 import { isInternalGroup } from './types';
 import { verifyGroupAction } from './Verify';
 
-import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
-import type LocalUser from '../LocalUser/LocalUser';
+import type { ProvisionalIdentityManager } from '../ProvisionalIdentity/Manager';
+import type { LocalUser } from '../LocalUser/LocalUser';
 import type { PrivateProvisionalKeys } from '../LocalUser/Manager';
 
 export const MAX_GROUP_MEMBERS_PER_OPERATION = 1000;

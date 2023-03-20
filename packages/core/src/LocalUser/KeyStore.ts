@@ -18,7 +18,7 @@ export type LocalData = {
   userKeys: Record<string, tcrypto.SodiumKeyPair>;
 };
 
-export default class KeyStore {
+export class KeyStore {
   declare _ds: DataStore;
   declare _safe: KeySafe;
 

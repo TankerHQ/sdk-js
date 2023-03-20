@@ -5,9 +5,9 @@ import { expect } from '@tanker/test-utils';
 
 import { KeyDecryptor } from '../KeyDecryptor';
 
-import type GroupManager from '../../Groups/Manager';
-import type LocalUserManager from '../../LocalUser/Manager';
-import type ProvisionalIdentityManager from '../../ProvisionalIdentity/Manager';
+import type { GroupManager } from '../../Groups/Manager';
+import type { LocalUserManager } from '../../LocalUser/Manager';
+import type { ProvisionalIdentityManager } from '../../ProvisionalIdentity/Manager';
 import { NATURE } from '../../Blocks/Nature';
 import type { Nature } from '../../Blocks/Nature';
 

@@ -4,7 +4,7 @@ import PouchDB from 'pouchdb-core';
 import PouchDBAdapterLevel from 'pouchdb-adapter-leveldb';
 import PouchDBFind from 'pouchdb-find';
 import type { Config as BaseConfig } from '@tanker/datastore-pouchdb-base';
-import PouchDBStoreBase from '@tanker/datastore-pouchdb-base';
+import { pouchDBStoreBase } from '@tanker/datastore-pouchdb-base';
 
 export type Config = BaseConfig & { dbPath: string; };
 let _initialized = false; // eslint-disable-line no-underscore-dangle, @typescript-eslint/naming-convention
@@ -37,10 +37,10 @@ const pouchDBNodeBackend = () => {
   return PouchDB.defaults({ adapter: 'leveldb', auto_compaction: true });
 };
 
-export default (() => {
+export const pouchDBNode = (() => {
   // PouchDBStore is a Class
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const PouchDBStore = PouchDBStoreBase(pouchDBNodeBackend());
+  const PouchDBStore = pouchDBStoreBase(pouchDBNodeBackend());
 
   return class PouchDBNodeStore extends PouchDBStore {
     static override async open(config: Config): Promise<PouchDBNodeStore> {

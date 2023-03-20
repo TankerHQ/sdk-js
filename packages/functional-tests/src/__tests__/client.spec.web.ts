@@ -1,5 +1,5 @@
 import Tanker from '@tanker/client-browser';
-import FilePonyfill from '@tanker/file-ponyfill';
+import { FilePonyfill } from '@tanker/file-ponyfill';
 
 import type { b64string } from '@tanker/core';
 

@@ -1,6 +1,6 @@
 import { InvalidArgument } from '@tanker/errors';
 
-export default class Uint8Buffer {
+export class Uint8Buffer {
   _arrays: Array<Uint8Array> = [];
   _byteSize: number = 0;
 

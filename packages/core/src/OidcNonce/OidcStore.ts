@@ -85,5 +85,3 @@ export class OidcStore {
     return new OidcStore(ds);
   }
 }
-
-export default OidcStore;
