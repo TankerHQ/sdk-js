@@ -3,9 +3,9 @@ import type { BaseConfig, DataStore, DataStoreAdapter, Schema } from '@tanker/da
 import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
 
-import KeyStore from '../LocalUser/KeyStore';
-import ResourceStore from '../Resources/ResourceStore';
-import GroupStore from '../Groups/GroupStore';
+import { KeyStore } from '../LocalUser/KeyStore';
+import { ResourceStore } from '../Resources/ResourceStore';
+import { GroupStore } from '../Groups/GroupStore';
 import { globalSchema, TABLE_METADATA } from './schema';
 import { TransparentSessionStore } from '../TransparentSession/SessionStore';
 
@@ -137,5 +137,3 @@ export class Storage {
     }
   }
 }
-
-export default Storage;

@@ -6,7 +6,7 @@ import type { UserGroupEntry } from '../Serialize';
 import { verifyUserGroupCreation, verifyUserGroupAddition } from '../Verify';
 import type { User } from '../../Users/types';
 
-import TestGenerator from '../../__tests__/TestGenerator';
+import { TestGenerator } from '../../__tests__/TestGenerator';
 import { assertFailWithNature } from '../../__tests__/assertFailWithNature';
 
 describe('BlockVerification', () => {

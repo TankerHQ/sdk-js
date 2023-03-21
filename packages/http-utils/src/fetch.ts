@@ -1,5 +1,5 @@
 import { NetworkError } from '@tanker/errors';
-import globalThis from '@tanker/global-this';
+import { globalThis } from '@tanker/global-this';
 import fetchPonyfill from 'fetch-ponyfill';
 
 // Use the window.fetch if available or the ponyfill otherwise (Node.js)

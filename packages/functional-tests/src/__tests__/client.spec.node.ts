@@ -1,5 +1,5 @@
 import Tanker from '@tanker/client-node';
-import PouchDBMemory from '@tanker/datastore-pouchdb-memory';
+import { pouchDBMemory } from '@tanker/datastore-pouchdb-memory';
 
 import type { b64string } from '@tanker/core';
 
@@ -10,7 +10,7 @@ import { generateFunctionalTests } from '..';
 const makeTanker = (appId: b64string, storagePrefix: string): Tanker => {
   const tanker = new Tanker({
     appId,
-    dataStore: { adapter: PouchDBMemory, prefix: storagePrefix },
+    dataStore: { adapter: pouchDBMemory, prefix: storagePrefix },
     sdkType: 'js-functional-tests-node',
     url: appdUrl,
   });

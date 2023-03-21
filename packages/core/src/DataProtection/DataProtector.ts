@@ -9,11 +9,11 @@ import type { Data } from '@tanker/types';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, assertTrustchainId, _serializeIdentity } from '../Identity';
 import type { PublicIdentity, PublicProvisionalUser } from '../Identity';
 import type { Client } from '../Network/Client';
-import type LocalUser from '../LocalUser/LocalUser';
-import type ResourceManager from '../Resources/Manager';
-import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
-import type GroupManager from '../Groups/Manager';
-import type UserManager from '../Users/Manager';
+import type { LocalUser } from '../LocalUser/LocalUser';
+import type { ResourceManager } from '../Resources/Manager';
+import type { ProvisionalIdentityManager } from '../ProvisionalIdentity/Manager';
+import type { GroupManager } from '../Groups/Manager';
+import type { UserManager } from '../Users/Manager';
 
 import { getSimpleEncryptionWithFixedResourceId, getSimpleEncryption, makeResource } from './types';
 import { makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
@@ -353,5 +353,3 @@ export class DataProtector {
     return new EncryptionSession(this, getStatus, resource, encryptionOptions.paddingStep);
   }
 }
-
-export default DataProtector;

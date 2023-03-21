@@ -1,4 +1,4 @@
-import FilePonyfill from '@tanker/file-ponyfill';
+import { FilePonyfill } from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 import { InvalidArgument, InternalError } from '@tanker/errors';
 

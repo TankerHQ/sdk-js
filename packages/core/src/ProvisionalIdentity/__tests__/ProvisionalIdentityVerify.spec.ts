@@ -5,7 +5,7 @@ import type { User } from '../../Users/types';
 import type { ClaimEntry } from '../Serialize';
 import { verifyProvisionalIdentityClaim } from '../Verify';
 
-import TestGenerator from '../../__tests__/TestGenerator';
+import { TestGenerator } from '../../__tests__/TestGenerator';
 import { assertFailWithNature } from '../../__tests__/assertFailWithNature';
 
 describe('BlockVerification', () => {

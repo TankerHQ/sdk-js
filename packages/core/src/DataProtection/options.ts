@@ -1,7 +1,7 @@
 import type { b64string } from '@tanker/crypto';
 import { tcrypto, utils, Padding, isPaddingStep } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
-import globalThis from '@tanker/global-this';
+import { globalThis } from '@tanker/global-this';
 import { getConstructor, assertNotEmptyString, assertInteger } from '@tanker/types';
 import type { Class, Data, ResourceMetadata } from '@tanker/types';
 

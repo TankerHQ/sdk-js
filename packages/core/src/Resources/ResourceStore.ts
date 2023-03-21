@@ -6,7 +6,7 @@ import { InternalError } from '@tanker/errors';
 
 const TABLE = 'resource_keys';
 
-export default class ResourceStore {
+export class ResourceStore {
   declare _ds: DataStore;
   declare _userSecret: Uint8Array;
 

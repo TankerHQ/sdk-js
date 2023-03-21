@@ -1,6 +1,6 @@
 import { expect } from '@tanker/test-utils';
 
-import FilePonyfill from '../FilePonyfill';
+import { FilePonyfill } from '../FilePonyfill';
 
 describe('FilePonyfill (web)', () => {
   // Skip if nothing to test

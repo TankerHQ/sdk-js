@@ -112,7 +112,7 @@ function createDelegationToken(userId: Uint8Array, trustchainPrivateKey: Uint8Ar
   };
 }
 
-class TestGenerator {
+export class TestGenerator {
   _trustchainIndex: number = 0;
   _trustchainKeys!: tcrypto.SodiumKeyPair;
   _trustchainId!: Uint8Array;
@@ -401,5 +401,3 @@ class TestGenerator {
     };
   }
 }
-
-export default TestGenerator;

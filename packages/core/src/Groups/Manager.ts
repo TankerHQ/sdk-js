@@ -5,9 +5,9 @@ import { InvalidArgument } from '@tanker/errors';
 import { _deserializePublicIdentity, _splitProvisionalAndPermanentPublicIdentities, _serializeIdentity, assertTrustchainId } from '../Identity';
 import { TaskCoalescer } from '../TaskCoalescer';
 import type { PublicPermanentIdentity, PublicProvisionalIdentity } from '../Identity';
-import type UserManager from '../Users/Manager';
-import type LocalUser from '../LocalUser/LocalUser';
-import type ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
+import type { UserManager } from '../Users/Manager';
+import type { LocalUser } from '../LocalUser/LocalUser';
+import type { ProvisionalIdentityManager } from '../ProvisionalIdentity/Manager';
 
 import { getGroupEntryFromBlock, makeUserGroupCreation, makeUserGroupAdditionV3, makeUserGroupRemoval } from './Serialize';
 import type { Client } from '../Network/Client';
@@ -56,7 +56,7 @@ type GroupEncryptionKeyPairRecord = {
   keys: tcrypto.SodiumKeyPair;
 };
 
-export default class GroupManager {
+export class GroupManager {
   _localUser: LocalUser;
   _UserManager: UserManager;
   _provisionalIdentityManager: ProvisionalIdentityManager;

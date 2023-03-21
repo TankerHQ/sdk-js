@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-import globalThis from '@tanker/global-this';
+import { globalThis } from '@tanker/global-this';
 
 const { File } = globalThis;
 // By default, suppose File doesn't need to be ponyfilled
@@ -42,4 +42,4 @@ try {
   FilePonyfill.prototype = proto;
 }
 
-export default FilePonyfill;
+export { FilePonyfill };

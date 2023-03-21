@@ -17,7 +17,7 @@ Using feature detection, this package will either expose a `File` ponyfill in br
 You can safely use this package as a drop-in replacement for the native `File` class in all browsers, e.g.:
 
 ```javascript
-import FilePonyfill from '@tanker/file-ponyfill';
+import { FilePonyfill } from '@tanker/file-ponyfill';
 
 // Get bits from whatever method you want, using fetch() as an example
 const response = await fetch('https://your.server.com/path/to/a/report.pdf');

@@ -1,13 +1,15 @@
 import { Writable } from 'readable-stream';
 import { getConstructor, getConstructorName } from '@tanker/types';
-import FilePonyfill from '@tanker/file-ponyfill';
+import { FilePonyfill } from '@tanker/file-ponyfill';
 import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 
-import SlicerStream from '../SlicerStream';
+import type { Data } from '@tanker/types';
+
+import { SlicerStream } from '../SlicerStream';
 
 describe('SlicerStream', () => {
   const bytes = new Uint8Array([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 97, 98, 99, 100, 101, 102]); // 16 bytes
-  const sources = [];
+  const sources: Array<Data> = [];
 
   sources.push(bytes); // Uint8Array
   sources.push(bytes.buffer); // ArrayBuffer

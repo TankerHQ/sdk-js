@@ -7,7 +7,7 @@ import type { Client } from '../Network/Client';
 import type { TankerProvisionalIdentityResponse } from '../Network/types';
 import type { PrivateProvisionalKeys, LocalUserManager } from '../LocalUser/Manager';
 
-import type KeyStore from '../LocalUser/KeyStore';
+import type { KeyStore } from '../LocalUser/KeyStore';
 import { formatProvisionalKeysRequest, formatVerificationRequest } from '../LocalUser/requests';
 import type {
   EmailVerification,
@@ -16,7 +16,7 @@ import type {
   ProvisionalVerificationMethod,
 } from '../LocalUser/types';
 import { Status } from '../Session/status';
-import type UserManager from '../Users/Manager';
+import type { UserManager } from '../Users/Manager';
 
 import { provisionalIdentityClaimFromBlock, makeProvisionalIdentityClaim } from './Serialize';
 import { verifyProvisionalIdentityClaim } from './Verify';
@@ -39,7 +39,7 @@ const toTankerProvisionalKeys = (serverResult: TankerProvisionalIdentityResponse
   },
 });
 
-export default class ProvisionalIdentityManager {
+export class ProvisionalIdentityManager {
   _client: Client;
   _keyStore: KeyStore;
   _localUserManager: LocalUserManager;

@@ -2,10 +2,10 @@ import { b64string, ready as cryptoReady, tcrypto, utils } from '@tanker/crypto'
 import { InternalError } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 
-import dataStoreConfig, { makePrefix, openDataStore } from '../../__tests__/TestDataStore';
+import { dataStoreConfig, makePrefix, openDataStore } from '../../__tests__/TestDataStore';
 import { UnauthSessionStorage } from '../../UnauthSession/UnauthSessionStorage';
 
-import OidcStore, { TABLE, idFromNonce } from '../OidcStore';
+import { OidcStore, TABLE, idFromNonce } from '../OidcStore';
 
 describe('OidcStore', () => {
   let nonceStore: OidcStore;

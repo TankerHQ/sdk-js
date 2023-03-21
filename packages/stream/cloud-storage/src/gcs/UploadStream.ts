@@ -103,5 +103,3 @@ export class UploadStream extends Writable {
     done(null); // success
   }
 }
-
-export default UploadStream;

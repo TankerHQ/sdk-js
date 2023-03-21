@@ -60,7 +60,7 @@
     "colorette": "2.0.19",
     "core-js": "^3.27.1",
     "core-js-pure": "^3.27.1",
-    "eslint": "8.31.0",
+    "eslint": "8.36.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-config-airbnb-typescript": "17.0.0",
     "eslint-plugin-chai-expect": "3.0.0",

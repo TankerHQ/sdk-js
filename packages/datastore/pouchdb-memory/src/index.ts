@@ -1,7 +1,7 @@
 import PouchDB from 'pouchdb-core';
 import PouchDBAdapterMemory from 'pouchdb-adapter-memory';
 import PouchDBFind from 'pouchdb-find';
-import PouchDBStoreBase from '@tanker/datastore-pouchdb-base';
+import { pouchDBStoreBase } from '@tanker/datastore-pouchdb-base';
 
 export type { Config } from '@tanker/datastore-pouchdb-base';
 
@@ -21,4 +21,4 @@ const pouchDBMemoryBackend = () => {
   return PouchDB.defaults({ adapter: 'memory', auto_compaction: true });
 };
 
-export default (() => PouchDBStoreBase(pouchDBMemoryBackend()));
+export const pouchDBMemory = () => pouchDBStoreBase(pouchDBMemoryBackend());

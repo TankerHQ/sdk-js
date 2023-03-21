@@ -3,7 +3,7 @@ import { utils, getClearSize, EncryptionV4, EncryptionV8, Padding } from '@tanke
 import { InternalError } from '@tanker/errors';
 import { MergerStream, ResizerStream, SlicerStream } from '@tanker/stream-base';
 import type { Readable, Transform, Writable, IWritable } from '@tanker/stream-base';
-import streamCloudStorage from '@tanker/stream-cloud-storage';
+import { streamCloudStorage } from '@tanker/stream-cloud-storage';
 import { getDataLength } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
 
@@ -162,5 +162,3 @@ export class CloudStorageManager {
     return new DownloadStream(streams, resourceMetadata);
   }
 }
-
-export default CloudStorageManager;

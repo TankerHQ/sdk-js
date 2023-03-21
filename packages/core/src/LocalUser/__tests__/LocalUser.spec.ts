@@ -4,9 +4,9 @@ import { createIdentity } from '@tanker/identity';
 import { expect } from '@tanker/test-utils';
 
 import type { TestUser, TestTrustchainCreation, TestDeviceCreation } from '../../__tests__/TestGenerator';
-import TestGenerator from '../../__tests__/TestGenerator';
+import { TestGenerator } from '../../__tests__/TestGenerator';
 
-import LocalUser from '../LocalUser';
+import { LocalUser } from '../LocalUser';
 import { extractUserData } from '../UserData';
 import type { UserData } from '../UserData';
 

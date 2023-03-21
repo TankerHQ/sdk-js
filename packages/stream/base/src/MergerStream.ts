@@ -2,9 +2,9 @@ import { InvalidArgument } from '@tanker/errors';
 import type { ResourceMetadata, Data, Class } from '@tanker/types';
 import { assertDataTypeClass, castData } from '@tanker/types';
 
-import ResizerStream from './ResizerStream';
+import { ResizerStream } from './ResizerStream';
 
-export default class MergerStream<T extends Data> extends ResizerStream {
+export class MergerStream<T extends Data> extends ResizerStream {
   _options: { type: Class<T> } & ResourceMetadata;
 
   constructor(options: { type: Class<T> } & ResourceMetadata) {

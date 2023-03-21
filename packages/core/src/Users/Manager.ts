@@ -10,7 +10,7 @@ import type { LocalUser } from '../LocalUser/LocalUser';
 import { usersFromBlocks } from './ManagerHelper';
 
 // ensure that the UserStore is always up-to-date before requesting it.
-export default class UserManager {
+export class UserManager {
   _client: Client;
   _localUser: LocalUser;
 

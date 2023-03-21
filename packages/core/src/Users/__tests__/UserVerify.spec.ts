@@ -1,7 +1,7 @@
 import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 
-import TestGenerator from '../../__tests__/TestGenerator';
+import { TestGenerator } from '../../__tests__/TestGenerator';
 import { assertFailWithNature } from '../../__tests__/assertFailWithNature';
 
 import { verifyDeviceCreation } from '../Verify';

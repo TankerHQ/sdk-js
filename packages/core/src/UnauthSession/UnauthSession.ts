@@ -1,7 +1,7 @@
 import type { DataStoreOptions } from './UnauthSessionStorage';
-import UnauthSessionStorage from './UnauthSessionStorage';
+import { UnauthSessionStorage } from './UnauthSessionStorage';
 
-import OidcNonceManager from '../OidcNonce/Manager';
+import { OidcNonceManager } from '../OidcNonce/Manager';
 import type { b64string } from '..';
 
 export class UnauthSession {

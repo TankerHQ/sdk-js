@@ -1,8 +1,8 @@
 import { InternalError, InvalidArgument } from '@tanker/errors';
 
-import FilePonyfill from '@tanker/file-ponyfill';
-import FileReader from '@tanker/file-reader';
-import globalThis from '@tanker/global-this';
+import { FilePonyfill } from '@tanker/file-ponyfill';
+import { FileReader } from '@tanker/file-reader';
+import { globalThis } from '@tanker/global-this';
 
 import type { Class } from './utils';
 

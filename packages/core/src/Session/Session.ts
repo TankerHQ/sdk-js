@@ -9,15 +9,15 @@ import { Client } from '../Network/Client';
 import type { UserData } from '../LocalUser/UserData';
 import { Status } from './status';
 
-import LocalUserManager from '../LocalUser/Manager';
-import UserManager from '../Users/Manager';
-import GroupManager from '../Groups/Manager';
-import CloudStorageManager from '../CloudStorage/Manager';
-import ProvisionalIdentityManager from '../ProvisionalIdentity/Manager';
-import ResourceManager from '../Resources/Manager';
-import DataProtector from '../DataProtection/DataProtector';
-import type OidcNonceManager from '../OidcNonce/Manager';
-import SessionManager from '../TransparentSession/Manager';
+import { LocalUserManager } from '../LocalUser/Manager';
+import { UserManager } from '../Users/Manager';
+import { GroupManager } from '../Groups/Manager';
+import { CloudStorageManager } from '../CloudStorage/Manager';
+import { ProvisionalIdentityManager } from '../ProvisionalIdentity/Manager';
+import { ResourceManager } from '../Resources/Manager';
+import { DataProtector } from '../DataProtection/DataProtector';
+import type { OidcNonceManager } from '../OidcNonce/Manager';
+import { SessionManager } from '../TransparentSession/Manager';
 
 export class Session extends EventEmitter {
   _storage: Storage;

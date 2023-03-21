@@ -71,5 +71,3 @@ export class OidcNonceManager {
     return payload.nonce;
   };
 }
-
-export default OidcNonceManager;

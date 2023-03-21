@@ -615,5 +615,3 @@ export class Tanker extends EventEmitter {
     return this.session.createEncryptionSession(encryptionOptions);
   }
 }
-
-export default Tanker;

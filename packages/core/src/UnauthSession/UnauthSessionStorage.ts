@@ -4,7 +4,7 @@ import type { BaseConfig, DataStore, DataStoreAdapter, Schema } from '@tanker/da
 import { errors as dbErrors, mergeSchemas } from '@tanker/datastore-base';
 import { UpgradeRequired } from '@tanker/errors';
 
-import OidcStore from '../OidcNonce/OidcStore';
+import { OidcStore } from '../OidcNonce/OidcStore';
 
 import { globalSchema, TABLE_METADATA } from './schema';
 
@@ -105,5 +105,3 @@ export class UnauthSessionStorage {
     }
   }
 }
-
-export default UnauthSessionStorage;

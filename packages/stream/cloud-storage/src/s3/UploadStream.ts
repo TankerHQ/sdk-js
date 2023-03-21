@@ -110,5 +110,3 @@ export class UploadStream extends Writable {
     return `<CompleteMultipartUpload>\n${partsXML.join('\n')}\n</CompleteMultipartUpload>`;
   }
 }
-
-export default UploadStream;

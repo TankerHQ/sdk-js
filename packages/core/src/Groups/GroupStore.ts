@@ -207,5 +207,3 @@ export class GroupStore {
     }) as unknown as Array<GroupEntry>;
   }
 }
-
-export default GroupStore;

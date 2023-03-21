@@ -1,7 +1,7 @@
 import { Writable } from 'readable-stream';
 import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 
-import ResizerStream from '../ResizerStream';
+import { ResizerStream } from '../ResizerStream';
 
 describe('ResizerStream', () => {
   let buffer: Array<Uint8Array>;

@@ -129,5 +129,3 @@ export class DownloadStream extends Readable {
     return pushMore;
   }
 }
-
-export default DownloadStream;
