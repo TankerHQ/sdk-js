@@ -57,8 +57,6 @@ const getLoaders = (env) => {
         },
       },
       include: [
-        // they use esm imports
-        /node_modules(\\|\/)((?!core-js).).*(\\|\/)es(\\|\/)/,
         // they use arrow functions
         /node_modules(\\|\/)chai-as-promised/,
         // they use arrow functions
