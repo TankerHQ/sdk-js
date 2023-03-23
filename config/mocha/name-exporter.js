@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-const mocha = require('mocha');
+const mocha = require('mocha'); // eslint-disable-line import/no-extraneous-dependencies
 const {
   EVENT_RUN_END,
   EVENT_TEST_BEGIN,
