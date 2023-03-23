@@ -46,7 +46,7 @@
     "proof": "poetry install && poetry run python run-ci.py lint && yarn test",
     "coverage": "nyc yarn test"
   },
-  "dependencies": {
+  "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^10.0.1",
@@ -86,6 +86,7 @@
     "node-fetch": "^3.3.0",
     "nyc": "15.1.0",
     "process": "^0.11.10",
+    "rimraf": "^3.0.2",
     "ts-loader": "~9.4.2",
     "ts-node": "~10.9.1",
     "tsconfig-paths": "^4.1.2",
@@ -93,6 +94,11 @@
     "util": "^0.12.5",
     "webpack": "5.76.1",
     "webpack-cli": "^5.0.1"
+  },
+  "resolutions": {
+    "minimatch": "^3.1.2",
+    "node-fetch": "^2.6.7",
+    "tsconfig-paths": "^4.1.2"
   },
   "workspaces": [
     "packages/*",
@@ -127,13 +133,5 @@
       ".ts"
     ],
     "sourceMap": true
-  },
-  "resolutions": {
-    "minimatch": "^3.1.2",
-    "node-fetch": "^2.6.7",
-    "tsconfig-paths": "^4.1.2"
-  },
-  "devDependencies": {
-    "rimraf": "^3.0.2"
   }
 }
