@@ -262,7 +262,7 @@ audit:
   stage: check
   script:
     - yarn
-    - yarn audit
+    - yarn audit --groups "dependencies optionalDependencies"
   tags: !reference [.tags/linux, tags]
 
 deploy:
