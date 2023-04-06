@@ -88,9 +88,9 @@ export class Client {
   _cancelable = <R>(fun: (...args: Array<any>) => Promise<R>) => (...args: Array<any>) => {
     // cancelationHandle.promise always rejects. Its returned type doesn't matter
     if (this._cancelationHandle.settled) {
-      return this._cancelationHandle.promise as unknown as Promise<R>;
+      return this._cancelationHandle.promise as never;
     }
-    return Promise.race([this._cancelationHandle.promise as unknown as Promise<R>, fun(...args)]);
+    return Promise.race([this._cancelationHandle.promise as never, fun(...args)]);
   };
 
   // Simple fetch wrapper with limited concurrency
