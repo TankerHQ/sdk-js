@@ -1,4 +1,4 @@
-import { InvalidArgument } from '@tanker/errors';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assertString } from '@tanker/types';
 import type { b64string, Key } from './aliases';
 import type { KeyMapper } from './EncryptionFormats/KeyMapper';
@@ -63,12 +63,17 @@ export const deriveSessionKey = (sessionKey: Key, seed: Uint8Array): Key => gene
 
 export function assertKey(resourceId: Uint8Array, key: Key | null): asserts key is Key {
   if (!key) {
+    if (key !== null) {
+      // This is a safeguard for unexpected behavior between local-storage, network and the resource coalescer:
+      // We suspect that a falsy value different from null is mixed in keys somehow
+      throw new InternalError(`Unreachable code during resource key look-up: ${utils.toBase64(resourceId)}, key found: ${key}`);
+    }
     throw new InvalidArgument(`could not find key for resource: ${utils.toBase64(resourceId)}`);
   }
 }
 
 export const getKeyFromCompositeResourceId = async (resourceId: CompositeResourceId, keyMapper: KeyMapper) => {
-  let key: Key | null;
+  let key: Key | null = null;
   const sessionKey = await keyMapper(resourceId.sessionId);
   if (sessionKey) {
     key = deriveSessionKey(sessionKey, resourceId.resourceId);
@@ -83,7 +88,7 @@ export const getKeyFromCompositeResourceId = async (resourceId: CompositeResourc
 export const getKeyFromResourceId = async (b64resourceId: b64string, keyMapper: KeyMapper) => {
   const resourceId = parseResourceId(b64resourceId);
 
-  let key: Key | null;
+  let key: Key | null = null;
   if ('sessionId' in resourceId) {
     key = await getKeyFromCompositeResourceId(resourceId, keyMapper);
   } else {
