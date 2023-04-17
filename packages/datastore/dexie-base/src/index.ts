@@ -308,9 +308,9 @@ export const dexieStoreBase = ((DexieClass: Class<IDexie>): DataStoreAdapter => 
     //   - either withLimit is a Dexie Collection or Table to convert to a Promise<Array<Object>>
     //   - or sortBy() has been called and withLimit is already a Promise<Array<Object>>,
     if (this._isTable(withLimit) || this._isCollection(withLimit)) {
-      res = (withLimit as ITable | ICollection).toArray();
+      res = withLimit.toArray();
     } else {
-      res = withLimit as typeof res;
+      res = withLimit;
     }
 
     return res.then(fromDB);
@@ -323,12 +323,12 @@ export const dexieStoreBase = ((DexieClass: Class<IDexie>): DataStoreAdapter => 
 
   delete = this.withReopen((table: string, id: string) => this._db.table(table).delete(id));
 
-  _isTable(obj: any): boolean {
+  _isTable(obj: any): obj is ITable {
     // @ts-expect-error this._db.Table is a Class (has a prototype)
     return obj instanceof this._db.Table;
   }
 
-  _isCollection(obj: any): boolean {
+  _isCollection(obj: any): obj is ICollection {
     // @ts-expect-error this._db.Collection is a Class (has a prototype)
     return obj instanceof this._db.Collection;
   }
@@ -457,7 +457,7 @@ export const dexieStoreBase = ((DexieClass: Class<IDexie>): DataStoreAdapter => 
       this._isTable(q)
       && (index === sortKey || !index && this.isIndexed(table, sortKey))
     ) {
-      res = (q as ITable).orderBy(sortKey); // ICollection (Dexie)
+      res = q.orderBy(sortKey); // ICollection (Dexie)
     } else {
       res = (q as ICollection).sortBy(sortKey); // Promise<Array<Object>>
     }
@@ -469,9 +469,9 @@ export const dexieStoreBase = ((DexieClass: Class<IDexie>): DataStoreAdapter => 
     let res: ICollection | Promise<Array<Record<string, any>>>;
 
     if (this._isTable(query) || this._isCollection(query)) {
-      res = (query as ITable | ICollection).limit(limit);
+      res = query.limit(limit);
     } else {
-      res = (query as Promise<Array<Record<string, any>>>).then((array) => array.slice(0, limit));
+      res = query.then((array) => array.slice(0, limit));
     }
 
     return res;

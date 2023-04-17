@@ -1,10 +1,10 @@
-import { InvalidArgument } from '@tanker/errors';
+import { InternalError, InvalidArgument } from '@tanker/errors';
 import { assert, expect, sinon } from '@tanker/test-utils';
 
 import { random } from '../random';
 import { ready } from '../ready';
-import { getKeyFromCompositeResourceId } from '../resourceId';
-import { MAC_SIZE, SESSION_ID_SIZE } from '../tcrypto';
+import { assertKey, getKeyFromCompositeResourceId } from '../resourceId';
+import { MAC_SIZE, SESSION_ID_SIZE, SYMMETRIC_KEY_SIZE } from '../tcrypto';
 import type { CompositeResourceId } from '../resourceId';
 
 describe('getKeyFromCompositeResourceId', () => {
@@ -34,5 +34,32 @@ describe('getKeyFromCompositeResourceId', () => {
 
     await expect(getKeyFromCompositeResourceId(compositeResourceId, keyMapper)).to.be.rejectedWith(InvalidArgument);
     assert(keyMapper.calledTwice);
+  });
+});
+
+describe('assertKey', () => {
+  let resourceId: Uint8Array;
+
+  before(async () => {
+    await ready;
+    resourceId = random(MAC_SIZE);
+  });
+
+  it('succeeds when the key is a Uint8Array', () => {
+    expect(() => assertKey(resourceId, new Uint8Array())).to.not.throw();
+    expect(() => assertKey(resourceId, random(SYMMETRIC_KEY_SIZE))).to.not.throw();
+  });
+
+  it('throws InvalidArgument when the key is null', () => {
+    expect(() => assertKey(resourceId, null)).to.throw(InvalidArgument);
+  });
+
+  it('throws InternalError when the key is falsy but not null', () => {
+    //@ts-expect-error
+    expect(() => assertKey(resourceId, undefined)).to.throw(InternalError);
+    //@ts-expect-error
+    expect(() => assertKey(resourceId, '')).to.throw(InternalError);
+    //@ts-expect-error
+    expect(() => assertKey(resourceId, 0)).to.throw(InternalError);
   });
 });
