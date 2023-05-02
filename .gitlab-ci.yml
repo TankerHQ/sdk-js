@@ -99,6 +99,16 @@ check/linux/node/19:
   variables:
     NODE_VERSION: 19
 
+check/linux/node/20:
+  extends:
+    - .check/linux/node-base
+  rules:
+    - !reference [.rules/push-master, rules]
+    - !reference [.rules/mr/manual, rules]
+    - !reference [.rules/nightly, rules]
+  variables:
+    NODE_VERSION: 20
+
 check/macos:
   stage: check
   rules:
