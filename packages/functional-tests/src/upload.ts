@@ -62,13 +62,13 @@ export const generateUploadTests = (args: TestArgs) => {
 
         forEachSize(['empty', 'small', 'medium'], size => {
           it(`can upload and download a ${size} file ${ignoreTag}`, async () => {
-            const { type: originalType, resource: clear } = args.resources[size][2]!;
+            const { type, resource: clear } = args.resources[size][2]!;
 
             const fileId = await aliceLaptop.upload(clear, options);
 
-            const decrypted = await aliceLaptop.download(fileId);
+            const decrypted = await aliceLaptop.download(fileId, { type });
 
-            expectType(decrypted, originalType);
+            expectType(decrypted, type);
             expectDeepEqual(decrypted, clear);
           });
         });
@@ -89,13 +89,13 @@ export const generateUploadTests = (args: TestArgs) => {
 
         it(`can report progress at simple upload and download ${ignoreTag}`, async () => {
           const onProgress = sinon.fake();
-          const { type: originalType, resource: clear, size: clearSize } = args.resources.medium[2]!;
+          const { type, resource: clear, size: clearSize } = args.resources.medium[2]!;
 
           const fileId = await aliceLaptop.upload(clear, { ...options, onProgress });
           expectUploadProgressReport(onProgress, clearSize);
 
-          const decrypted = await aliceLaptop.download(fileId, { onProgress });
-          expectType(decrypted, originalType);
+          const decrypted = await aliceLaptop.download(fileId, { onProgress, type });
+          expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
           expectProgressReport(onProgress, clearSize, defaultMaxEncryptedChunkSize - overhead);
         });
@@ -121,13 +121,13 @@ export const generateUploadTests = (args: TestArgs) => {
         });
 
         it(`can download a file shared at upload ${ignoreTag}`, async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2]!;
+          const { type, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear, { ...options, shareWithUsers: [bobPublicIdentity] });
 
-          const decrypted = await bobLaptop.download(fileId);
+          const decrypted = await bobLaptop.download(fileId, { type });
 
-          expectType(decrypted, originalType);
+          expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
         });
 
@@ -158,37 +158,37 @@ export const generateUploadTests = (args: TestArgs) => {
         });
 
         it(`can upload a file and not share with self ${ignoreTag}`, async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2]!;
+          const { type, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear, { ...options, shareWithUsers: [bobPublicIdentity], shareWithSelf: false });
 
           await expect(aliceLaptop.download(fileId)).to.be.rejectedWith(errors.InvalidArgument);
 
-          const decrypted = await bobLaptop.download(fileId);
+          const decrypted = await bobLaptop.download(fileId, { type });
 
-          expectType(decrypted, originalType);
+          expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
         });
 
         it(`can upload a file and share with a group ${ignoreTag}`, async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2]!;
+          const { type, resource: clear } = args.resources.small[2]!;
           const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
           const fileId = await aliceLaptop.upload(clear, { ...options, shareWithGroups: [groupId] });
-          const decrypted = await bobLaptop.download(fileId);
+          const decrypted = await bobLaptop.download(fileId, { type });
 
-          expectType(decrypted, originalType);
+          expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
         });
 
         it(`can share a file after upload ${ignoreTag}`, async () => {
-          const { type: originalType, resource: clear } = args.resources.small[2]!;
+          const { type, resource: clear } = args.resources.small[2]!;
 
           const fileId = await aliceLaptop.upload(clear, options);
           await aliceLaptop.share([fileId], { shareWithUsers: [bobPublicIdentity] });
 
-          const decrypted = await bobLaptop.download(fileId);
+          const decrypted = await bobLaptop.download(fileId, { type });
 
-          expectType(decrypted, originalType);
+          expectType(decrypted, type);
           expectDeepEqual(decrypted, clear);
         });
 
