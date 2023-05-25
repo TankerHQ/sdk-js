@@ -1,6 +1,7 @@
 import { InternalError, PreconditionFailed } from '@tanker/errors';
 
-export const enum Status {
+// NOTE: This cannot be a const enum for compat with TS verbatimModuleSyntax
+export enum Status {
   'STOPPED' = 0,
   'READY' = 1,
   'IDENTITY_REGISTRATION_NEEDED' = 2,
