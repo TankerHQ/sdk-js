@@ -206,7 +206,7 @@ def e2e(*, use_local_sources: bool) -> None:
             "--use-tanker=same-as-branch",
             "--profile=linux-x86_64",
         )
-        tankerci.run("poetry", "install")
+        tankerci.run("poetry", "run", "python", "run-ci.py", "build")
     with tankerci.working_directory(base_path / "sdk-js"):
         tankerci.js.yarn_install()
         tankerci.js.run_yarn("build")
