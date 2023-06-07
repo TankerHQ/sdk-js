@@ -24,7 +24,7 @@
     "lint:ts": "yarn eslint \"packages/**/*.ts\"",
     "lint:compat": "yarn eslint --no-ignore --no-eslintrc --config .eslintrc.compat.yml",
     "lint:compat:all": "yarn lint:compat \"packages/**/dist/**/*.js\"",
-    "_test": "mocha --exit --loader=ts-node --require ts-node/register --require tsconfig-paths/register --recursive --full-trace --trace-warnings --reporter=spec",
+    "_test": "mocha --exit --require ts-node/register --require tsconfig-paths/register --recursive --full-trace --trace-warnings --reporter=spec",
     "test": "yarn _test \"packages/**/src/**/*.spec{,.node}.ts\"",
     "test:core": "yarn _test \"packages/core/src/**/*.spec{,.node}.ts\"",
     "test:crypto": "yarn _test \"packages/crypto/src/**/*.spec{,.node}.ts\"",

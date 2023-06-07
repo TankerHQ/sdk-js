@@ -11,7 +11,6 @@
                 "--colors",
                 "packages/**/src/**/*.spec{,.node}.ts",
                 //"--exit",
-                "--loader=ts-node",
                 "--require",
                 "ts-node/register",
                 "--require",
