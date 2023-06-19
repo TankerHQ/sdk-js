@@ -74,10 +74,8 @@ jobs:
           - macos-11
           - windows-2019
         node_version:
-          - '14'
           - '16'
           - '18'
-          - '19'
           - '20'
     runs-on: ${{ matrix.os }}
     steps:

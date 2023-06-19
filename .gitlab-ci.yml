@@ -69,16 +69,6 @@ check/linux/node:
   variables:
     NODE_VERSION: 18
 
-check/linux/node/14:
-  extends:
-    - .check/linux/node-base
-  rules:
-    - !reference [.rules/push-master, rules]
-    - !reference [.rules/mr/manual, rules]
-    - !reference [.rules/nightly, rules]
-  variables:
-    NODE_VERSION: 14
-
 check/linux/node/16:
   extends:
     - .check/linux/node-base
@@ -88,16 +78,6 @@ check/linux/node/16:
     - !reference [.rules/nightly, rules]
   variables:
     NODE_VERSION: 16
-
-check/linux/node/19:
-  extends:
-    - .check/linux/node-base
-  rules:
-    - !reference [.rules/push-master, rules]
-    - !reference [.rules/mr/manual, rules]
-    - !reference [.rules/nightly, rules]
-  variables:
-    NODE_VERSION: 19
 
 check/linux/node/20:
   extends:
