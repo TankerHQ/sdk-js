@@ -76,7 +76,6 @@ jobs:
         node_version:
           - '16'
           - '18'
-          - '19'
           - '20'
     runs-on: ${{ matrix.os }}
     steps:
