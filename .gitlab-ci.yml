@@ -3,6 +3,9 @@ include:
     file: /common.yml
     ref: 2021-12-16-236
 
+variables:
+  GIT_DEPTH: 1
+
 stages:
   - check
   - bridge-check
