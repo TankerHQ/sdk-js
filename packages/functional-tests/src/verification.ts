@@ -854,6 +854,10 @@ export const generateVerificationTests = (args: TestArgs) => {
         // Field name where the tokens are `credentials.id_token`
         const pscIdToken = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJKRlRBM1llVVdQbERCTEJfeU5qWUs0bWZJcTdhYXBBS21ieVdyczRPZ0RnIn0.eyJleHAiOjE2NjU1Nzk5NjgsImlhdCI6MTY2NTU3OTg0OCwiYXV0aF90aW1lIjoxNjY1NTc5NDkyLCJqdGkiOiI4NTI4MzIwNi01ZmQyLTQ0YjQtYWI4NS0yZWI1ODA2ZWIwMzQiLCJpc3MiOiJodHRwczovL2F1dGguYmFzLnBzYy5lc2FudGUuZ291di5mci9hdXRoL3JlYWxtcy9lc2FudGUtd2FsbGV0IiwiYXVkIjoiZG9jdG9saWItZGV2Iiwic3ViIjoiZjo1NTBkYzFjOC1kOTdiLTRiMWUtYWM4Yy04ZWI0NDcxY2Y5ZGQ6QU5TMjAyMjAyMTUxODM5MzIiLCJ0eXAiOiJJRCIsImF6cCI6ImRvY3RvbGliLWRldiIsIm5vbmNlIjoibzVWUHh0WlY0bl8wRXBxR2h0UGduYXd6T3lRY1VQWmk4b1RjNjJWajNkSSIsInNlc3Npb25fc3RhdGUiOiIwNDRiOWMzNS0xZDhmLTQ5MjUtOGFlOC0yMmNmNTg1ZTA3OWMiLCJhdF9oYXNoIjoibVV0bkp2V3d0VHRQMkFDSDR2RElBUSIsInNpZCI6IjA0NGI5YzM1LTFkOGYtNDkyNS04YWU4LTIyY2Y1ODVlMDc5YyIsImF1dGhNb2RlIjoiTU9CSUxFIiwiYWNyIjoiZWlkYXMxIiwiU3ViamVjdE5hbWVJRCI6IkFOUzIwMjIwMjE1MTgzOTMyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiQU5TMjAyMjAyMTUxODM5MzIiLCJnaXZlbl9uYW1lIjoiR3VpbGxhdW1lIiwiZmFtaWx5X25hbWUiOiJGYXlhcmQifQ.l272gvwOt5aVXiG4F7ZCpQVqWByQ_DvQpuJPMR50TVqtAy76kdngHKgiNEg7CIe6UkMGsqcXMvrm0ihROTp3OWpwnaS2LityoE_Kv32HMNgHazsOS19snlBz8TbV3MkpW5JFkdjLVdFVVqxDqkZzozKxpqIvbumPQBl100bEtwakMw4em-8Hk69wi6jQNsVADRSslpHVSyYhHXwMX8l-yhR965nyxIETVlIHbwKvpyy05a3B0GmmCReZT4UnCPA4eqFUw5VL9GwKXl0Ok46ZKMp742qW6oytC7V4KIc01ErcoQ_D4EwM6rBWgZcqaDxUazcCTlZUEAlS7wXXw6UXWQ';
 
+        after(async () => {
+          await appHelper.unsetOidc();
+        });
+
         it('rejects expired token on pro-sante-bas', async () => {
           await appHelper.setOidc('pro-sante-bas');
 
