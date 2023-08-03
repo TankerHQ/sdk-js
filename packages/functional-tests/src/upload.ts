@@ -2,8 +2,9 @@ import { Padding, EncryptionOptions, errors } from '@tanker/core';
 import type { Tanker, b64string } from '@tanker/core';
 import { EncryptionV4, EncryptionV8, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
-import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
+import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
+import { getConstructorName } from '@tanker/types';
 
 import { AppHelper, ignoreTag, TestArgs, TestResourceSize } from './helpers';
 import { expectProgressReport, expectType, expectDeepEqual, pipeStreams } from './helpers';
@@ -71,6 +72,29 @@ export const generateUploadTests = (args: TestArgs) => {
             expectType(decrypted, type);
             expectDeepEqual(decrypted, clear);
           });
+        });
+
+        args.resources.small.forEach((resource) => {
+          it(`can download and cast to ${getConstructorName(resource.type)}`, async () => {
+            const { type, resource: clear } = resource;
+
+            const fileId = await aliceLaptop.upload(clear, options);
+
+            const decrypted = await aliceLaptop.download(fileId, { type });
+
+            expectType(decrypted, type);
+            expectDeepEqual(decrypted, clear);
+          });
+        });
+
+        it(`can download and cast to ${getConstructorName(args.defaultDownloadType)} by default`, async () => {
+          const { resource: clear } = args.resources.small[0]!;
+
+          const fileId = await aliceLaptop.upload(clear, options);
+
+          const decrypted = await aliceLaptop.download(fileId);
+
+          expectType(decrypted, args.defaultDownloadType);
         });
 
         const expectUploadProgressReport = (onProgress: sinon.SinonSpy, clearSize: number) => {

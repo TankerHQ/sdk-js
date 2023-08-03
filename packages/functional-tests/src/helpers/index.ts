@@ -8,7 +8,7 @@ export { Device } from './Device';
 export type { AppProvisionalUser } from './AppHelper';
 export { UserSession, ProvisionalUserSession, generateUserSession, generateProvisionalUserSession, getPublicIdentities, attachProvisionalIdentities } from './session';
 export { pipeStreams, watchStream } from './stream';
-export type { TestResource, TestResources, TestArgs, TestResourceSize } from './TestArgs';
+export type { DefaultDownloadType, TestResource, TestResources, TestArgs, TestResourceSize } from './TestArgs';
 export type { EncryptedBuffer } from './encrypt';
 export { encrypt, checkDecrypt, checkDecryptFails } from './encrypt';
 export { checkGroup } from './groups';
