@@ -3,7 +3,7 @@ import { FilePonyfill } from '@tanker/file-ponyfill';
 
 import type { b64string } from '@tanker/core';
 
-import type { TestResources } from '../helpers';
+import type { DefaultDownloadType, TestResources } from '../helpers';
 import { appdUrl, makeRandomUint8Array } from '../helpers';
 import { generateFunctionalTests } from '..';
 
@@ -18,7 +18,7 @@ const makeTanker = (appId: b64string, storagePrefix: string): Tanker => {
   return tanker;
 };
 
-const generateTestResources = (): TestResources => {
+const generateTestResources = (): { resources: TestResources; defaultDownloadType: DefaultDownloadType; } => {
   const kB = 1024;
   const MB = kB * kB;
 
@@ -59,7 +59,7 @@ const generateTestResources = (): TestResources => {
     delete result.big;
   }
 
-  return result;
+  return { resources: result, defaultDownloadType: File };
 };
 
 generateFunctionalTests('client-browser', makeTanker, generateTestResources);

@@ -3,7 +3,7 @@ import type { Tanker, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
 import { makePrefix, AppHelper, appdUrl, managementSettings, oidcSettings, trustchaindUrl } from './helpers';
-import type { TestArgs, TestResources } from './helpers';
+import type { DefaultDownloadType, TestArgs, TestResources } from './helpers';
 
 import { generateEncryptionStreamTests } from './encryptionStream';
 import { generateEncryptionSessionTests } from './encryptionSession';
@@ -20,7 +20,7 @@ import { generateSessionTokenTests } from './sessionToken';
 export function generateFunctionalTests(
   name: string,
   makeTanker: (appId: b64string, storagePrefix: string) => Tanker,
-  generateTestResources: () => TestResources,
+  generateTestResources: () => { resources: TestResources; defaultDownloadType: DefaultDownloadType },
 ) {
   if (!appdUrl || !managementSettings || !oidcSettings || !trustchaindUrl) {
     // Those functional tests create an app automatically and require TANKER_* env variables
@@ -40,7 +40,9 @@ export function generateFunctionalTests(
 
     // We need these resources right now to dynamically generate tests,
     // depending on the platform (e.g. browser vs. Node.js)
-    args.resources = generateTestResources();
+    const { resources, defaultDownloadType } = generateTestResources();
+    args.resources = resources;
+    args.defaultDownloadType = defaultDownloadType;
 
     before(async () => {
       await cryptoReady;
