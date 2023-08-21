@@ -17,7 +17,7 @@ default:
   before_script:
     - poetry -V
     - node -v
-    - poetry install --remove-untracked
+    - poetry install --sync
     - poetry run python --version
 
 check/lint:
@@ -151,7 +151,7 @@ check/bridge-dotenv:
   inherit:
     default: false
   before_script:
-    - poetry install --remove-untracked
+    - poetry install --sync
   script:
     - poetry run python run-ci.py write-bridge-dotenv --downstream benchmarks
                                                       --downstream compatibility-tests
