@@ -17,9 +17,13 @@ isort = "5.10.1"
 mypy = "0.961"
 
 [[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[[tool.poetry.source]]
 name = "gitlab"
 url = "https://gitlab.com/api/v4/projects/20917546/packages/pypi/simple"
-secondary = true
+priority = "explicit"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
