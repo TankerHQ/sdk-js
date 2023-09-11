@@ -7,7 +7,7 @@ authors = ["Tanker team"]
 [tool.poetry.dependencies]
 python = "^3.11"
 
-tankerci = { version = ">= 2023.8.4871", source = "gitlab" }
+tankerci = { version = "== 2023.09.4896", source = "gitlab" }
 
 [tool.poetry.dev-dependencies]
 black = "22.3.0"
