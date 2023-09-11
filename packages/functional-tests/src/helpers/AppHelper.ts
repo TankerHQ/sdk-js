@@ -40,7 +40,7 @@ export class AppHelper {
       name: `sdk-js-functional-tests-${uuid.v4()}`,
       environment_name: managementSettings.defaultEnvironmentName,
     };
-    const createResponse = await requestManagement({ method: 'POST', path: '/v1/apps', body });
+    const createResponse = await requestManagement({ method: 'POST', path: '/v2/apps', body });
     const appId = utils.fromBase64(createResponse['app'].id);
     const appSecret = utils.fromBase64(createResponse['app'].private_signature_key);
     return new AppHelper(makeTanker, appId, appSecret);
@@ -49,7 +49,7 @@ export class AppHelper {
   async _update(body: Record<string, unknown>): Promise<void> {
     await requestManagement({
       method: 'PATCH',
-      path: `/v1/apps/${utils.toRawUrlBase64(this.appId)}`,
+      path: `/v2/apps/${utils.toRawUrlBase64(this.appId)}`,
       body,
     });
   }
@@ -60,15 +60,27 @@ export class AppHelper {
       'pro-sante-bas': 'doctolib-dev',
       'pro-sante-bas-no-expiry': 'doctolib-dev',
     };
+    const providersIssuer = {
+      google: 'https://accounts.google.com',
+      'pro-sante-bas': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
+      'pro-sante-bas-no-expiry': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
+    };
 
     await this._update({
-      oidc_provider: provider,
-      oidc_client_id: providers[provider],
+      oidc_providers: [{
+        display_name: provider,
+        issuer: providersIssuer[provider],
+        client_id: providers[provider],
+        ignore_token_expiration: provider === 'pro-sante-bas-no-expiry',
+      }],
     });
   }
 
   async unsetOidc() {
-    await this._update({ oidc_provider: 'none' });
+    await this._update({
+      oidc_providers: [],
+      oidc_providers_allow_delete: true,
+    });
   }
 
   async setS3() {
@@ -202,7 +214,7 @@ export class AppHelper {
   async cleanup(): Promise<void> {
     await requestManagement({
       method: 'DELETE',
-      path: `/v1/apps/${utils.toRawUrlBase64(this.appId)}`,
+      path: `/v2/apps/${utils.toRawUrlBase64(this.appId)}`,
     });
   }
 
