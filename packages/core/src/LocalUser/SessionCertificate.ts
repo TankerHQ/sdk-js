@@ -63,6 +63,9 @@ function verificationToVerificationMethod(verification: VerificationWithToken): 
   if ('oidcIdToken' in verification)
     return {
       type: 'oidcIdToken',
+      // NOTE: We can't know these here, but we also don't need them for session certificates
+      providerId: '',
+      providerDisplayName: '',
     };
   if ('e2ePassphrase' in verification)
     return {

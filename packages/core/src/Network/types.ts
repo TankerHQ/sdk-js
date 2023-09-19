@@ -25,7 +25,7 @@ export type VerificationMethodResponse = Array<(
   | { type: 'phone_number'; encrypted_phone_number: string; is_preverified: boolean; }
   | { type: 'passphrase'; }
   | { type: 'e2e_passphrase'; }
-  | { type: 'oidc_id_token'; }
+  | { type: 'oidc_id_token'; provider_id: string; provider_display_name: string; }
 )>;
 
 export type E2eVerificationKeyResponse = {
