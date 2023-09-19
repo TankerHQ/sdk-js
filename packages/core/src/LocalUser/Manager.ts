@@ -108,7 +108,9 @@ export class LocalUserManager extends EventEmitter {
           return { type: 'passphrase' };
         }
         case 'oidc_id_token': {
-          return { type: 'oidcIdToken' };
+          const providerId = method.provider_id;
+          const providerDisplayName = method.provider_display_name;
+          return { type: 'oidcIdToken', providerId, providerDisplayName };
         }
         case 'phone_number': {
           const encryptedPhoneNumber = utils.fromBase64(method.encrypted_phone_number);
