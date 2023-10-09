@@ -3,8 +3,6 @@ import { TankerError } from '../TankerError';
 export class DecryptionFailed extends TankerError {
   b64ResourceId?: string;
 
-  next?: Error;
-
   constructor(args: { error?: Error; message?: string; b64ResourceId?: string; }) {
     const { error, b64ResourceId } = args;
     let message = args.message;
