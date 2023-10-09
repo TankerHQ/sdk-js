@@ -6,6 +6,7 @@ export class TankerError extends Error {
   declare apiMethod?: string;
   declare apiRoute?: string;
   declare httpStatus?: number;
+  declare next?: Error;
   declare traceId?: string;
 
   constructor(name: string = 'TankerError', errorInfo?: ErrorInfo) {
