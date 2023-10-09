@@ -13,7 +13,7 @@ if (globalThis.fetch && globalThis.Promise) {
 }
 
 const fetch = (input: RequestInfo, init?: RequestInit): Promise<Response> => baseFetch(input, { ...init, referrerPolicy: 'no-referrer' }).catch((err: Error) => {
-  throw new NetworkError(err.toString());
+  throw new NetworkError(err.toString(), err);
 });
 
 export { fetch };
