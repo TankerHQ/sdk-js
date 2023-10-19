@@ -690,6 +690,26 @@ export const generateGroupsTests = (args: TestArgs) => {
 
         await checkDecrypt([bob], [encryptedBuffer]);
       });
+
+      it('swap whole group membership in a single group update', async () => {
+        const alice = await UserSession.create(appHelper);
+        const bob = await UserSession.create(appHelper);
+
+        const myGroup = await bob.session.createGroup([bob.spublicIdentity]);
+
+        const encryptedBuffer = await encrypt(alice.session, { shareWithSelf: false, shareWithGroups: [myGroup] });
+
+        await checkDecrypt([bob], [encryptedBuffer]);
+        await checkDecryptFails([alice], [encryptedBuffer]);
+
+        await bob.session.updateGroupMembers(myGroup, { usersToRemove: [bob.spublicIdentity], usersToAdd: [alice.spublicIdentity] });
+
+        const bobPhone = await bob.user.makeDevice();
+        const bobCleanSession = await bobPhone.open();
+
+        await expect(bobCleanSession.decryptData(encryptedBuffer.encryptedData)).to.be.rejectedWith(errors.InvalidArgument, 'could not find key for resource');
+        await checkDecrypt([alice], [encryptedBuffer]);
+      });
     });
   });
 };
