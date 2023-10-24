@@ -49,14 +49,14 @@ export function serializeKeyPublishToProvisionalUser(keyPublish: KeyPublishToPro
 
 export const unserializeKeyPublish = (src: Uint8Array): KeyPublishRecord => unserializeGeneric(src, [
   (d, o) => getStaticArray(d, tcrypto.ENCRYPTION_PUBLIC_KEY_SIZE, o, 'recipient'),
-  (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
+  (d, o) => getStaticArray(d, tcrypto.RESOURCE_ID_SIZE, o, 'resourceId'),
   (d, o) => getStaticArray(d, tcrypto.SEALED_KEY_SIZE, o, 'key'),
 ]);
 
 export const unserializeKeyPublishToProvisionalUser = (payload: Uint8Array): KeyPublishToProvisionalUserRecord => unserializeGeneric(payload, [
   (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'recipientAppPublicKey'),
   (d, o) => getStaticArray(d, tcrypto.SIGNATURE_PUBLIC_KEY_SIZE, o, 'recipientTankerPublicKey'),
-  (d, o) => getStaticArray(d, tcrypto.MAC_SIZE, o, 'resourceId'),
+  (d, o) => getStaticArray(d, tcrypto.RESOURCE_ID_SIZE, o, 'resourceId'),
   (d, o) => getStaticArray(d, tcrypto.TWO_TIMES_SEALED_KEY_SIZE, o, 'key'),
 ]);
 

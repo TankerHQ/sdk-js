@@ -59,12 +59,12 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
       const buffer = random(bufferSize);
       const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-      const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key, smallChunkSize), buffer);
+      const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.RESOURCE_ID_SIZE), key, smallChunkSize), buffer);
       const decrypted = await processWithStream(() => new DecryptionStream(() => key), encrypted);
 
       expect(decrypted).to.deep.equal(buffer);
       // @ts-expect-error getEncryptedSize exists, we need to extract an Encryptor interface to help TS here
-      expect(makeEncryptionStream(random(tcrypto.MAC_SIZE), key, smallChunkSize).getEncryptedSize(buffer.length)).to.equal(encrypted.length);
+      expect(makeEncryptionStream(random(tcrypto.RESOURCE_ID_SIZE), key, smallChunkSize).getEncryptedSize(buffer.length)).to.equal(encrypted.length);
     });
   };
 
@@ -78,7 +78,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     const buffer = new Uint8Array(24 + 5 * EncryptionV4.defaultMaxEncryptedChunkSize);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key), buffer);
+    const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.RESOURCE_ID_SIZE), key), buffer);
     const decrypted = await processWithStream(() => new DecryptionStream(() => key), encrypted);
 
     expect(decrypted).to.deep.equal(buffer);
@@ -88,7 +88,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     const buffer = random(16);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key, smallChunkSize), buffer);
+    const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.RESOURCE_ID_SIZE), key, smallChunkSize), buffer);
     // change the resource id in the second header
     encrypted[smallChunkSize + 1 + 4] -= 1;
     await expect(processWithStream(() => new DecryptionStream(() => key), encrypted)).to.be.rejectedWith(DecryptionFailed);
@@ -99,7 +99,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     const buffer = random(18);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key, smallChunkSize), buffer);
+    const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.RESOURCE_ID_SIZE), key, smallChunkSize), buffer);
     const corrupted = new Uint8Array(encrypted);
     // Swap the first two chunks
     corrupted.set(encrypted.slice(smallChunkSize, 2 * smallChunkSize), 0);
@@ -112,7 +112,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     const buffer = random(16);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.MAC_SIZE), key, smallChunkSize), buffer);
+    const encrypted = await processWithStream(() => makeEncryptionStream(random(tcrypto.RESOURCE_ID_SIZE), key, smallChunkSize), buffer);
 
     // with an encryptedChunkSize too small
 
@@ -136,7 +136,7 @@ const generateStreamEncryptionTests = <T>({ makeEncryptionStream, overhead }: Te
     const buffer1 = random(2 * smallClearChunkSize);
     const buffer2 = random(2 * smallClearChunkSize);
 
-    const resourceId = random(tcrypto.MAC_SIZE);
+    const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
     const encrypted1 = await processWithStream(() => makeEncryptionStream(resourceId, key, smallChunkSize), buffer1);
@@ -173,7 +173,7 @@ describe('Stream Encryption V8', () => {
     const buffer = random(15);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, Padding.AUTO, smallChunkSize), buffer);
+    const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.RESOURCE_ID_SIZE), key, Padding.AUTO, smallChunkSize), buffer);
 
     expect(encrypted.length).to.equal(2 * smallChunkSize + EncryptionV8.overhead);
 
@@ -188,7 +188,7 @@ describe('Stream Encryption V8', () => {
 
     const paddingSize = 2;
 
-    const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, buffer.length + paddingSize, smallChunkSize), buffer);
+    const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.RESOURCE_ID_SIZE), key, buffer.length + paddingSize, smallChunkSize), buffer);
 
     expect(encrypted.length).to.equal(2 * smallChunkSize + paddingSize + EncryptionV8.overhead);
 
@@ -201,7 +201,7 @@ describe('Stream Encryption V8', () => {
     const buffer = random(4);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, 3 * smallClearChunkSize - 1, smallChunkSize), buffer);
+    const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.RESOURCE_ID_SIZE), key, 3 * smallClearChunkSize - 1, smallChunkSize), buffer);
 
     expect(encrypted.length).to.equal(3 * smallChunkSize - 1);
 
@@ -214,7 +214,7 @@ describe('Stream Encryption V8', () => {
     const buffer = random(4);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, 3 * smallClearChunkSize, smallChunkSize), buffer);
+    const encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.RESOURCE_ID_SIZE), key, 3 * smallClearChunkSize, smallChunkSize), buffer);
 
     expect(encrypted.length).to.equal(3 * smallChunkSize + EncryptionV8.overhead);
 
@@ -227,7 +227,7 @@ describe('Stream Encryption V8', () => {
     const buffer = random(4);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
-    let encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), key, 3 * smallClearChunkSize, smallChunkSize), buffer);
+    let encrypted = await processWithStream(() => new EncryptionStreamV8(random(tcrypto.RESOURCE_ID_SIZE), key, 3 * smallClearChunkSize, smallChunkSize), buffer);
 
     expect(encrypted.length).to.equal(3 * smallChunkSize + EncryptionV8.overhead);
 
@@ -244,7 +244,7 @@ describe('Stream Encryption V8', () => {
     const buffer1 = random(3 * smallClearChunkSize);
     const buffer2 = random(1);
 
-    const resourceId = random(tcrypto.MAC_SIZE);
+    const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
 
     const encrypted1 = await processWithStream(() => new EncryptionStreamV8(resourceId, key, 3 * smallClearChunkSize, smallChunkSize), buffer1);

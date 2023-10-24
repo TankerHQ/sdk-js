@@ -8,7 +8,7 @@ export type Resource = {
 
 export function makeResource(): Resource {
   const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
-  const resourceId = random(tcrypto.MAC_SIZE);
+  const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
   return { key, resourceId };
 }
 

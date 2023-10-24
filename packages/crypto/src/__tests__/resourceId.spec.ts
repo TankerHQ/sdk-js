@@ -4,7 +4,7 @@ import { assert, expect, sinon } from '@tanker/test-utils';
 import { random } from '../random';
 import { ready } from '../ready';
 import { assertKey, getKeyFromCompositeResourceId } from '../resourceId';
-import { MAC_SIZE, SESSION_ID_SIZE, SYMMETRIC_KEY_SIZE } from '../tcrypto';
+import { RESOURCE_ID_SIZE, SESSION_ID_SIZE, SYMMETRIC_KEY_SIZE } from '../tcrypto';
 import type { CompositeResourceId } from '../resourceId';
 
 describe('getKeyFromCompositeResourceId', () => {
@@ -14,7 +14,7 @@ describe('getKeyFromCompositeResourceId', () => {
 
   before(async () => {
     await ready;
-    resourceId = random(MAC_SIZE);
+    resourceId = random(RESOURCE_ID_SIZE);
     sessionId = random(SESSION_ID_SIZE);
     compositeResourceId = {
       sessionId,
@@ -42,7 +42,7 @@ describe('assertKey', () => {
 
   before(async () => {
     await ready;
-    resourceId = random(MAC_SIZE);
+    resourceId = random(RESOURCE_ID_SIZE);
   });
 
   it('succeeds when the key is a Uint8Array', () => {

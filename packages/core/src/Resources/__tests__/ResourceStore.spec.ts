@@ -22,7 +22,7 @@ describe('ResourceStore', () => {
 
   it('saves and finds resources keys', async () => {
     const key1 = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const resourceId = random(tcrypto.MAC_SIZE);
+    const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
     await resourceStore.saveResourceKey(resourceId, key1);
     const key2 = await resourceStore.findResourceKey(resourceId);
     expect(key1).to.deep.equal(key2);
@@ -31,7 +31,7 @@ describe('ResourceStore', () => {
   it('ignores updates to a resource key', async () => {
     const key = random(tcrypto.SYMMETRIC_KEY_SIZE);
     const key2 = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const resourceId = random(tcrypto.MAC_SIZE);
+    const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
 
     await resourceStore.saveResourceKey(resourceId, key);
     await resourceStore.saveResourceKey(resourceId, key2);

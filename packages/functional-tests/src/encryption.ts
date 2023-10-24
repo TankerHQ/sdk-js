@@ -96,7 +96,7 @@ export const generateEncryptionTests = (args: TestArgs) => {
       it('throws when decrypting truncated encrypted resource', async () => {
         const encrypted = await bobLaptop.encrypt(clearText);
         // shorter than version + resource id: should not even try to decrypt
-        const invalidEncrypted = encrypted.subarray(0, tcrypto.MAC_SIZE - 4);
+        const invalidEncrypted = encrypted.subarray(0, tcrypto.RESOURCE_ID_SIZE - 4);
         await expect(bobLaptop.decrypt(invalidEncrypted)).to.be.rejectedWith(errors.InvalidArgument);
       });
 

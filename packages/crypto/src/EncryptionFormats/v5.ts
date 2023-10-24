@@ -22,7 +22,7 @@ export class EncryptionV5 {
     fixedResourceId: true,
   } as const;
 
-  static overhead = 1 + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
+  static overhead = 1 + tcrypto.RESOURCE_ID_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE;
 
   static getClearSize = (encryptedSize: number) => encryptedSize - this.overhead;
 
@@ -42,8 +42,8 @@ export class EncryptionV5 {
     }
 
     let pos = 1;
-    const resourceId = buffer.subarray(pos, pos + tcrypto.MAC_SIZE);
-    pos += tcrypto.MAC_SIZE;
+    const resourceId = buffer.subarray(pos, pos + tcrypto.RESOURCE_ID_SIZE);
+    pos += tcrypto.RESOURCE_ID_SIZE;
 
     const iv = buffer.subarray(pos, pos + tcrypto.XCHACHA_IV_SIZE);
     pos += tcrypto.XCHACHA_IV_SIZE;
