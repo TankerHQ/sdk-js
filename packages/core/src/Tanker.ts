@@ -573,7 +573,7 @@ export class Tanker extends EventEmitter {
   async download<T extends Data>(resourceId: b64string, options?: OutputOptions<T> & ProgressOptions): Promise<T>;
   async download(resourceId: b64string, options: Partial<OutputOptions<Data> & ProgressOptions> = {}): Promise<any> {
     assertStatus(this.status, statuses.READY, 'download a file');
-    utils.assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
+    utils.assertB64StringWithSize(resourceId, 'resourceId', tcrypto.RESOURCE_ID_SIZE);
 
     if (!isObject(options))
       throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number, onProgress?: OnProgress }', options);
@@ -597,7 +597,7 @@ export class Tanker extends EventEmitter {
 
   async createDownloadStream(resourceId: b64string, options: ProgressOptions = {}): Promise<DownloadStream> {
     assertStatus(this.status, statuses.READY, 'download a file using stream');
-    utils.assertB64StringWithSize(resourceId, 'resourceId', tcrypto.MAC_SIZE);
+    utils.assertB64StringWithSize(resourceId, 'resourceId', tcrypto.RESOURCE_ID_SIZE);
 
     if (!isObject(options))
       throw new InvalidArgument('options', '{ onProgress?: OnProgress }', options);

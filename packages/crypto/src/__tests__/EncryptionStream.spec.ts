@@ -43,7 +43,7 @@ const generateEncryptionStreamTests = ({ makeEncryptionStream, encryption, trans
     await cryptoReady;
 
     key = utils.fromString('12345678123456781234567812345678');
-    resourceId = random(tcrypto.MAC_SIZE);
+    resourceId = random(tcrypto.RESOURCE_ID_SIZE);
   });
 
   beforeEach(() => {
@@ -203,7 +203,7 @@ describe('EncryptionStreamV4', () => {
   it('derives its iv and push header before encryption', async () => {
     const buffer: Array<Uint8Array> = [];
     const key = utils.fromString('12345678123456781234567812345678');
-    const resourceId = random(tcrypto.MAC_SIZE);
+    const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
 
     const watchStream = (stream: EncryptionStream) => {
       const sync = new PromiseWrapper<void>();
@@ -267,7 +267,7 @@ describe('EncryptionStreamV11', () => {
     await cryptoReady;
 
     key = utils.fromString('12345678123456781234567812345678');
-    sessionId = random(tcrypto.MAC_SIZE);
+    sessionId = random(tcrypto.SESSION_ID_SIZE);
   });
 
   beforeEach(() => {

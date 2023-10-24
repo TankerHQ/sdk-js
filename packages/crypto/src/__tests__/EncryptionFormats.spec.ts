@@ -753,7 +753,7 @@ describe('Simple Encryption', () => {
   });
   describe('EncryptionFormatV4', () => {
     generateCommonTests(EncryptionV4, testVectorsV4, {
-      encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStreamV4(random(tcrypto.MAC_SIZE), k), d),
+      encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStreamV4(random(tcrypto.RESOURCE_ID_SIZE), k), d),
       decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream(() => k), d),
     });
     generateUnpaddedTests(EncryptionV4, testVectorsV4);
@@ -789,11 +789,11 @@ describe('Simple Encryption', () => {
   });
   describe('EncryptionFormatV5', () => {
     generateCommonTests(EncryptionV5, testVectorsV5, {
-      encrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV5.serialize(EncryptionV5.encrypt(k, d, random(tcrypto.MAC_SIZE))),
+      encrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV5.serialize(EncryptionV5.encrypt(k, d, random(tcrypto.RESOURCE_ID_SIZE))),
       decrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV5.decrypt(() => k, EncryptionV5.unserialize(d)),
     });
     generateUnpaddedTests(EncryptionV5, testVectorsV5);
-    generateSimpleTests(EncryptionV5, testVectorsV5, () => [random(tcrypto.MAC_SIZE)]);
+    generateSimpleTests(EncryptionV5, testVectorsV5, () => [random(tcrypto.RESOURCE_ID_SIZE)]);
   });
   describe('EncryptionFormatV6', () => {
     generateCommonTests(EncryptionV6, testVectorsV6, {
@@ -808,22 +808,22 @@ describe('Simple Encryption', () => {
   });
   describe('EncryptionFormatV7', () => {
     generateCommonTests(EncryptionV7, testVectorsV7, {
-      encrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV7.serialize(EncryptionV7.encrypt(k, d, random(tcrypto.MAC_SIZE))),
+      encrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV7.serialize(EncryptionV7.encrypt(k, d, random(tcrypto.RESOURCE_ID_SIZE))),
       decrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV7.decrypt(() => k, EncryptionV7.unserialize(d)),
     });
     generatePaddedTests(EncryptionV7, testVectorsV7, {
-      encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => EncryptionV7.serialize(EncryptionV7.encrypt(k, d, random(tcrypto.MAC_SIZE), padding)),
+      encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => EncryptionV7.serialize(EncryptionV7.encrypt(k, d, random(tcrypto.RESOURCE_ID_SIZE), padding)),
       decrypt: (k: Uint8Array, d: Uint8Array) => EncryptionV7.decrypt(() => k, EncryptionV7.unserialize(d)),
     });
-    generateSimpleTests(EncryptionV7, testVectorsV7, () => [random(tcrypto.MAC_SIZE)]);
+    generateSimpleTests(EncryptionV7, testVectorsV7, () => [random(tcrypto.RESOURCE_ID_SIZE)]);
   });
   describe('EncryptionFormatV8', () => {
     generateCommonTests(EncryptionV8, testVectorsV8, {
-      encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), k), d),
+      encrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new EncryptionStreamV8(random(tcrypto.RESOURCE_ID_SIZE), k), d),
       decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream(() => k), d),
     });
     generatePaddedTests(EncryptionV8, testVectorsV8, {
-      encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => processWithStream(() => new EncryptionStreamV8(random(tcrypto.MAC_SIZE), k, padding), d),
+      encrypt: (k: Uint8Array, d: Uint8Array, padding: number | Padding) => processWithStream(() => new EncryptionStreamV8(random(tcrypto.RESOURCE_ID_SIZE), k, padding), d),
       decrypt: (k: Uint8Array, d: Uint8Array) => processWithStream(() => new DecryptionStream(() => k), d),
     });
   });

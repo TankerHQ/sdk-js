@@ -19,7 +19,7 @@ export const getSimpleResourceId = (data: SimpleResourceId) => data.resourceId;
 
 const compositeVersion = 0;
 const compositeResourceIdSplitPos = 1 + tcrypto.SESSION_ID_SIZE;
-const compositeResourceIdSize = compositeResourceIdSplitPos + tcrypto.MAC_SIZE;
+const compositeResourceIdSize = compositeResourceIdSplitPos + tcrypto.RESOURCE_ID_SIZE;
 
 export const serializeCompositeResourceId = (data: CompositeResourceId): Uint8Array => utils.concatArrays(new Uint8Array([compositeVersion]), data.sessionId, data.resourceId);
 
@@ -28,7 +28,7 @@ export const unserializeCompositeResourceId = (id: Uint8Array): CompositeResourc
   resourceId: id.subarray(compositeResourceIdSplitPos),
 });
 
-export const isSimpleResourceId = (resourceId: Uint8Array) => resourceId.length === tcrypto.MAC_SIZE;
+export const isSimpleResourceId = (resourceId: Uint8Array) => resourceId.length === tcrypto.RESOURCE_ID_SIZE;
 
 export const isCompositeResourceId = (resourceId: Uint8Array) => resourceId.length === compositeResourceIdSize && resourceId[0] === compositeVersion;
 

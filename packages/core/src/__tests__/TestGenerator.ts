@@ -236,7 +236,7 @@ export class TestGenerator {
 
   makeKeyPublishToUser = (parentDevice: TestDeviceCreation, recipient: User): TestKeyPublish => {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const resourceId = random(tcrypto.MAC_SIZE);
+    const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
     const lastUserKey = getLastUserPublicKey(recipient);
 
     if (!lastUserKey) {
@@ -256,7 +256,7 @@ export class TestGenerator {
 
   makeKeyPublishToGroup = (parentDevice: TestDeviceCreation, recipient: Group): TestKeyPublish => {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const resourceId = random(tcrypto.MAC_SIZE);
+    const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
 
     const { payload, nature } = makeKeyPublish(recipient.lastPublicEncryptionKey, resourceKey, resourceId, NATURE_KIND.key_publish_to_user_group);
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);
@@ -272,7 +272,7 @@ export class TestGenerator {
 
   makeKeyPublishToProvisionalUser = (parentDevice: TestDeviceCreation, recipient: PublicProvisionalUser): TestKeyPublish => {
     const resourceKey = random(tcrypto.SYMMETRIC_KEY_SIZE);
-    const resourceId = random(tcrypto.MAC_SIZE);
+    const resourceId = random(tcrypto.RESOURCE_ID_SIZE);
 
     const { payload, nature } = makeKeyPublishToProvisionalUser(recipient, resourceKey, resourceId);
     const { block } = createBlock(payload, nature, this._trustchainId, parentDevice.testDevice.id, parentDevice.testDevice.signKeys.privateKey);

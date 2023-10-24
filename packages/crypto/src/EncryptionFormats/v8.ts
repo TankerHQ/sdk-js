@@ -27,7 +27,7 @@ export class EncryptionV8 {
     fixedResourceId: true,
   } as const;
 
-  static overhead = 1 + uint32Length + tcrypto.MAC_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE + 1;
+  static overhead = 1 + uint32Length + tcrypto.RESOURCE_ID_SIZE + tcrypto.XCHACHA_IV_SIZE + tcrypto.MAC_SIZE + 1;
 
   static defaultMaxEncryptedChunkSize = 1024 * 1024; // 1MB
 
@@ -68,8 +68,8 @@ export class EncryptionV8 {
     const encryptedChunkSize = number.fromUint32le(buffer.subarray(pos, pos + uint32Length));
     pos += uint32Length;
 
-    const resourceId = buffer.subarray(pos, pos + tcrypto.MAC_SIZE);
-    pos += tcrypto.MAC_SIZE;
+    const resourceId = buffer.subarray(pos, pos + tcrypto.RESOURCE_ID_SIZE);
+    pos += tcrypto.RESOURCE_ID_SIZE;
 
     const ivSeed = buffer.subarray(pos, pos + tcrypto.XCHACHA_IV_SIZE);
     pos += tcrypto.XCHACHA_IV_SIZE;
