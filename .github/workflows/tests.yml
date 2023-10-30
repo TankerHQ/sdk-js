@@ -8,36 +8,22 @@ jobs:
       fail-fast: false
       matrix:
         browser:
-          # - ChromeWindows11
-          - ChromeWindows10
-          - Chrome70Windows8
-          - ChomeOSX
-          - Chrome70OSX
-          # - EdgeWindows11
-          - EdgeWindows10
-          - Edge88Windows8
-          # - FirefoxWindows11
-          - FirefoxWindows10
-          - Firefox78Windows8
-          - FirefoxOSX
-          - Firefox78OSX
-          - OperaOSX
-          - Android12Samsung
-          - Android12Chrome
-          # - Android10Chrome
-          # - Android8Chrome
+          - ChromeWindows
+          - Chrome80Windows
+          - Edge88
+          - Firefox78
+          - Opera70
+          - Safari17
+          - Safari14
+          - iOS
+          - AndroidChrome
+          - Android11Samsung
           - Android6Chrome
-          - Safari15Monterey
-          - Safari14BigSur
-          - Safari13Catalina
-          - iOS15
-          - iOS14
-          - iOS13
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v2
         with:
-          node-version: '18'
+          node-version: "18"
       - name: install packages
         run: yarn install
       - name: Tests on ${{ matrix.browser }}
@@ -74,9 +60,8 @@ jobs:
           - macos-11
           - windows-2019
         node_version:
-          - '16'
-          - '18'
-          - '20'
+          - "18"
+          - "20"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
