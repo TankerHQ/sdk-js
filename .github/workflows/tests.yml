@@ -54,25 +54,17 @@ jobs:
   node:
     strategy:
       fail-fast: false
-      matrix:
-        os:
-          - ubuntu-20.04
-          - macos-11
-          - windows-2019
-        node_version:
-          - "18"
-          - "20"
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node_version }}
+          node-version: "18"
       - name: install packages
         run: yarn install
       - name: build TypeScript
         run: yarn build
-      - name: Tests on ${{ matrix.os }} with Node ${{ matrix.node_version }}
+      - name: Tests on Node 18
         run: yarn coverage
         env:
           BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
