@@ -1,10 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    // Recommended values for Node 12: https://github.com/tsconfig/bases/blob/main/bases/node12.json
-    "target": "es2019",
-    "module": "commonjs",
-    "lib": ["es2019", "es2020.promise", "es2020.bigint", "es2020.string"],
+    // Recommended values for Node 18: https://github.com/tsconfig/bases/blob/main/bases/node18.json
+    "target": "ES2022",
+    "lib": ["ES2023"],
   },
   "exclude": [
     "../**/__tests__/*",

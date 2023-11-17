@@ -4,7 +4,8 @@
     "files": true,
     "preferTsExts": true,
     "compilerOptions": {
-      "module": "commonjs",
+      "module": "CommonJS",
+      "verbatimModuleSyntax": false,
       "lib": ["DOM", "WebWorker"],
     },
   },
