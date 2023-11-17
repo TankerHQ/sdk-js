@@ -1,8 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "module": "CommonJS",
+    "verbatimModuleSyntax": false,
     // Recommended values for Node 18: https://github.com/tsconfig/bases/blob/main/bases/node18.json
-    "target": "ES2019",
     "lib": ["ES2023"],
   },
   "exclude": [
