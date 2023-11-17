@@ -2,7 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     // Recommended values for Node 18: https://github.com/tsconfig/bases/blob/main/bases/node18.json
-    "target": "ES2022",
+    "target": "ES2019",
     "lib": ["ES2023"],
   },
   "exclude": [
