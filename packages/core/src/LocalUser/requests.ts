@@ -6,7 +6,7 @@ import type { RemoteVerification, RemoteVerificationWithToken, PreverifiedVerifi
 import type { SecretProvisionalIdentity } from '../Identity';
 import type { SignedChallenge } from '../OidcNonce/types';
 
-type WithToken<T> = T & { with_token?: { nonce: string; } };
+type WithToken<T> = T & { with_token?: { nonce: string; } | undefined };
 type WithVerificationCode<T> = WithToken<T> & { verification_code: string; };
 type Preverified<T> = T & { is_preverified: true };
 
@@ -21,13 +21,13 @@ type OidcRequest = {
   oidc_id_token: string;
   oidc_challenge: b64string;
   oidc_challenge_signature: b64string;
-  oidc_test_nonce?: string;
+  oidc_test_nonce: string | undefined;
 };
 type PhoneNumberRequest = {
   phone_number: string;
   encrypted_phone_number: Uint8Array;
   user_salt: Uint8Array;
-  provisional_salt?: Uint8Array;
+  provisional_salt: Uint8Array | undefined;
 };
 type E2ePassphraseRequest = {
   hashed_e2e_passphrase: Uint8Array;

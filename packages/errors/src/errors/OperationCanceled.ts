@@ -2,7 +2,7 @@ import type { ErrorInfo } from '../ErrorInfo';
 import { TankerError } from '../TankerError';
 
 export class OperationCanceled extends TankerError {
-  declare reason?: Error;
+  declare reason: Error | undefined;
 
   constructor(errorInfo?: ErrorInfo, reason?: Error) {
     super('OperationCanceled', errorInfo || 'Operation canceled');

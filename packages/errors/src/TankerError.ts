@@ -1,13 +1,13 @@
 import type { ErrorInfo } from './ErrorInfo';
 
 export class TankerError extends Error {
-  declare _message?: string;
-  declare apiCode?: string;
-  declare apiMethod?: string;
-  declare apiRoute?: string;
-  declare httpStatus?: number;
-  declare next?: Error;
-  declare traceId?: string;
+  declare _message: string;
+  declare apiCode?: string | undefined;
+  declare apiMethod?: string | undefined;
+  declare apiRoute?: string | undefined;
+  declare httpStatus?: number | undefined;
+  declare next?: Error | undefined;
+  declare traceId?: string | undefined;
 
   constructor(name: string = 'TankerError', errorInfo?: ErrorInfo) {
     super();

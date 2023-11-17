@@ -10,7 +10,7 @@ import { paddedFromClearSize } from './padding';
 export class PadStream extends Transform {
   _clearChunkSize: number;
   _paddedChunkSize: number;
-  _paddingStep?: number | Padding;
+  _paddingStep: number | Padding | undefined;
   _bytesProcessed: number;
   _paddingLeft: number | null;
   _lastChunkSize: number;

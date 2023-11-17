@@ -21,7 +21,7 @@ export type EncryptionOptions = {
   shareWithUsers?: Array<b64string>;
   shareWithGroups?: Array<string>;
   shareWithSelf?: boolean;
-  paddingStep?: number | Padding;
+  paddingStep?: number | Padding | undefined;
 };
 
 export type SharingOptions = { shareWithUsers?: Array<b64string>; shareWithGroups?: Array<string>; };
