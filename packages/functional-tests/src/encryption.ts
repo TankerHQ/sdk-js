@@ -1,7 +1,7 @@
 import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, OutputOptions } from '@tanker/core';
 import { EncryptionV9, EncryptionV10, EncryptionV11, tcrypto, utils, Padding, padme } from '@tanker/crypto';
-import { Data, getConstructorName, getDataLength } from '@tanker/types';
+import { type Data, getConstructorName, getDataLength } from '@tanker/types';
 import { getPublicIdentity, createProvisionalIdentity } from '@tanker/identity';
 import { expect, sinon, uuid } from '@tanker/test-utils';
 

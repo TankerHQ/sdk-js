@@ -18,7 +18,7 @@ import {
   unserializeUserGroupAdditionV3,
   serializeUserGroupRemoval,
   unserializeUserGroupRemoval,
-  UserGroupCreationRecordV1,
+  type UserGroupCreationRecordV1,
 } from '../Serialize';
 
 describe('groups blocks', () => {

@@ -19,7 +19,7 @@ import type { KeyPublishEntry } from '../Resources/Serialize';
 import { getKeyPublishEntryFromBlock, makeKeyPublish, makeKeyPublishToProvisionalUser } from '../Resources/Serialize';
 
 import { hashBlock, createBlock } from '../Blocks/Block';
-import { Block, serializeBlock } from '../Blocks/payloads';
+import { type Block, serializeBlock } from '../Blocks/payloads';
 import { NATURE_KIND, preferredNature } from '../Blocks/Nature';
 
 import type { User, Device } from '../Users/types';

@@ -4,7 +4,7 @@ import { InternalError } from '@tanker/errors';
 
 import type { PublicProvisionalUser } from '../Identity';
 import { getStaticArray, unserializeGeneric, unserializeGenericSub, unserializeList, encodeListLength, encodeUint32 } from '../Blocks/Serialize';
-import { BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
+import { type BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
 import type { VerificationFields } from '../Blocks/Block';
 import { hashBlock } from '../Blocks/Block';
 import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';

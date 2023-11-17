@@ -1,12 +1,13 @@
-import { Padding, EncryptionOptions, errors } from '@tanker/core';
-import type { Tanker, b64string } from '@tanker/core';
+import { Padding, errors } from '@tanker/core';
+import type { EncryptionOptions, Tanker, b64string } from '@tanker/core';
 import { EncryptionV4, EncryptionV8, utils } from '@tanker/crypto';
 import { getPublicIdentity } from '@tanker/identity';
 import { SlicerStream, MergerStream, Writable } from '@tanker/stream-base';
 import { expect, sinon, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 import { getConstructorName } from '@tanker/types';
 
-import { AppHelper, ignoreTag, TestArgs, TestResourceSize } from './helpers';
+import { AppHelper, ignoreTag  } from './helpers';
+import type { TestArgs, TestResourceSize } from './helpers';
 import { expectProgressReport, expectType, expectDeepEqual, pipeStreams } from './helpers';
 
 export const generateUploadTests = (args: TestArgs) => {

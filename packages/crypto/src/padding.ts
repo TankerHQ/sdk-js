@@ -29,11 +29,11 @@ export const paddedFromClearSize = (clearSize: number, paddingStep?: number | Pa
     return Math.max(padme(clearSize), minimalPadding) + 1;
   }
 
-  if (paddingStep < 1) {
+  const actualPaddingStep = paddingStep !== Padding.OFF ? paddingStep : 1;
+
+  if (actualPaddingStep < 1) {
     throw new InternalError('assertion error: paddingStep should be greater or equal to 1');
   }
-
-  const actualPaddingStep = paddingStep !== Padding.OFF ? paddingStep : 1;
 
   // Round 0 up to paddingStep (plus the padding byte)
   if (clearSize === 0) {

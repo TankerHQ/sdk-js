@@ -1,4 +1,4 @@
-import { b64string, generichash, ready as cryptoReady, utils } from '@tanker/crypto';
+import { type b64string, generichash, ready as cryptoReady, utils } from '@tanker/crypto';
 import { InvalidArgument } from '@tanker/errors';
 import { expect } from '@tanker/test-utils';
 import {

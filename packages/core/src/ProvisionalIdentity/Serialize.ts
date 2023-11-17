@@ -5,7 +5,7 @@ import { preferredNature, NATURE_KIND } from '../Blocks/Nature';
 import type { VerificationFields } from '../Blocks/Block';
 import { hashBlock } from '../Blocks/Block';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-import { BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
+import { type BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
 import type { ProvisionalUserKeys } from '../Identity';
 
 export type ProvisionalIdentityClaimRecord = {

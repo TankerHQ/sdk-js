@@ -21,7 +21,7 @@ import {
   formatVerificationRequest,
   isPreverifiedVerificationRequest,
   formatVerificationsRequest,
-  SetVerificationMethodRequest,
+  type SetVerificationMethodRequest,
 } from './requests';
 import type {
   VerificationMethod,
