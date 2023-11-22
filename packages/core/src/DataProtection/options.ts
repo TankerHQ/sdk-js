@@ -21,7 +21,7 @@ export type EncryptionOptions = {
   shareWithUsers?: Array<b64string>;
   shareWithGroups?: Array<string>;
   shareWithSelf?: boolean;
-  paddingStep?: number | Padding;
+  paddingStep?: number | Padding | undefined;
 };
 
 export type SharingOptions = { shareWithUsers?: Array<b64string>; shareWithGroups?: Array<string>; };
@@ -37,7 +37,7 @@ export const extractSharingOptions = (options: Record<string, unknown>, error: u
 
   (['shareWithUsers', 'shareWithGroups'] as const).forEach(key => {
     if (key in options) {
-      const array: Array<string> = options[key];
+      const array = options[key];
       if (!(array instanceof Array))
         throw error;
       array.forEach(el => assertNotEmptyString(el, `options.${key}`));
@@ -54,14 +54,8 @@ export const extractSharingOptions = (options: Record<string, unknown>, error: u
     );
   }
 
-  if (options['shareWithUsers']) {
-    for (const identity of options['shareWithUsers']) {
-      assertNotEmptyString(identity, 'options.shareWithUsers');
-    }
-  }
-
-  if (options['shareWithGroups']) {
-    for (const groupId of options['shareWithGroups']) {
+  if (sharingOptions.shareWithGroups) {
+    for (const groupId of sharingOptions.shareWithGroups) {
       utils.assertB64StringWithSize(groupId, 'options.shareWithGroups', tcrypto.SIGNATURE_PUBLIC_KEY_SIZE);
     }
   }
@@ -137,14 +131,14 @@ export const extractResourceMetadata = (options: Record<string, unknown>, input?
   return resourceMetadata;
 };
 
-export const extractOutputOptions = <T extends Data>(options: Record<string, unknown>, input?: Data): OutputOptions<T> => {
+export const extractOutputOptions = <T extends Data>(options: Record<string, unknown>, input?: T): OutputOptions<T> => {
   if (!isObject(options))
     throw new InvalidArgument('options', '{ type: Class<T>, mime?: string, name?: string, lastModified?: number }', options);
 
   let outputType;
 
   if (options['type']) {
-    outputType = options['type'];
+    outputType = options['type'] as Class<T>;
   } else if (input) {
     outputType = getConstructor(input);
   } else {

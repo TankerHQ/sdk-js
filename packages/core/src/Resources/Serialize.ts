@@ -3,7 +3,7 @@ import { tcrypto, utils } from '@tanker/crypto';
 
 import type { PublicProvisionalUser } from '../Identity';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-import { BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
+import { type BlockNoMetadata, unserializeBlock } from '../Blocks/payloads';
 import { preferredNature, NATURE_KIND, NATURE } from '../Blocks/Nature';
 import type { NatureKind, Nature } from '../Blocks/Nature';
 

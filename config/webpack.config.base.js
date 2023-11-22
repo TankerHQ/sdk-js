@@ -23,6 +23,7 @@ const getLoaders = (env) => {
   const tsLoaderCompilerOptions = {
     target: 'es2019',
     declaration: false,
+    declarationMap:false,
     sourceMap: false,
     declarationDir: undefined,
     composite: false,

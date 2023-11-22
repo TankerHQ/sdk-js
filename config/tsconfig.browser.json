@@ -1,8 +1,8 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "es2019",
-    "module": "commonjs",
+    "module": "CommonJS",
+    "verbatimModuleSyntax": false,
     "importHelpers": true,
     "downlevelIteration": true,
     "lib": ["DOM", "WebWorker"],

@@ -1,8 +1,8 @@
 import { ready as cryptoReady, tcrypto, random } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { UpgradeRequired } from '@tanker/errors';
-import { Block, serializeBlock, unserializeBlock } from '../payloads';
-import { preferredNature, NATURE_KIND, Nature } from '../Nature';
+import { type Block, serializeBlock, unserializeBlock } from '../payloads';
+import { preferredNature, NATURE_KIND, type Nature } from '../Nature';
 
 describe('blocks: payloads', () => {
   before(() => cryptoReady);

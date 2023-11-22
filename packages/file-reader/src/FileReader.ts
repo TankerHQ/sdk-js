@@ -10,10 +10,10 @@ export class FileReader {
     end: number;
   } = { start: 0, end: 0 };
 
-  _currentRead?: {
+  _currentRead: {
     resolve: FileReaderResolver;
     reject: (err: Error) => void;
-  };
+  } | undefined;
 
   constructor(source: Blob | File) {
     this._source = source;

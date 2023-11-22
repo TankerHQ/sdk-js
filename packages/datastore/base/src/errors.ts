@@ -1,5 +1,5 @@
 export class DataStoreError extends Error {
-  next?: Error | null;
+  next: Error | null | undefined;
   override name: string;
 
   constructor(name: string, error?: Error | null, messageArg?: string) {

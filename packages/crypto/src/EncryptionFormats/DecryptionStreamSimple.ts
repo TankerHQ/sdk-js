@@ -3,7 +3,7 @@ import { ResizerStream, Transform } from '@tanker/stream-base';
 import type { TransformCallback, WriteCallback } from '@tanker/stream-base';
 
 import type { KeyMapper } from './KeyMapper';
-import { extractEncryptionFormat, SimpleEncryptor } from './EncryptionFormats';
+import { extractEncryptionFormat, type SimpleEncryptor } from './EncryptionFormats';
 
 export class DecryptionStreamSimple extends Transform {
   _mapper: KeyMapper;

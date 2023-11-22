@@ -12,6 +12,13 @@ import { LocalUserManager } from './LocalUser/Manager';
 import type { DataStoreOptions } from './Session/Storage';
 
 import {
+  assertVerifications,
+  assertVerification,
+  assertVerificationOptions,
+  isPreverifiedVerification,
+  countPreverifiedVerifications,
+} from './LocalUser/types';
+import type {
   Verification,
   EmailVerification,
   RemoteVerification,
@@ -21,11 +28,6 @@ import {
   PhoneNumberVerification,
   LegacyEmailVerificationMethod,
   PreverifiedVerification,
-  assertVerifications,
-  assertVerification,
-  assertVerificationOptions,
-  isPreverifiedVerification,
-  countPreverifiedVerifications,
 } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
 

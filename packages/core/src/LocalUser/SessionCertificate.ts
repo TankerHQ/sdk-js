@@ -4,7 +4,7 @@ import varint from 'varint';
 import type { VerificationMethod, VerificationWithToken } from './types';
 import { isPreverifiedVerification, isPreverifiedVerificationMethod } from './types';
 import { getStaticArray, unserializeGeneric } from '../Blocks/Serialize';
-import { Nature, NATURE_KIND, preferredNature } from '../Blocks/Nature';
+import { type Nature, NATURE_KIND, preferredNature } from '../Blocks/Nature';
 
 export const enum VerificationMethodTypes {
   email = 1,

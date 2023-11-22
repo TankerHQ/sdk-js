@@ -50,7 +50,7 @@ describe('SessionCertificate', () => {
   it('should throw when serializing an invalid SessionCertificate', async () => {
     const badSessionCertificate: SessionCertificateRecord = {
       timestamp: Math.floor(Date.now() / 1000),
-      verification_method_type: 999,
+      verification_method_type: 999 as VerificationMethodTypes,
       verification_method_target: new Uint8Array(0),
       session_public_signature_key: new Uint8Array(0),
     };

@@ -1,4 +1,4 @@
-import { b64string, ready as cryptoReady, utils } from '@tanker/crypto';
+import { type b64string, ready as cryptoReady, utils } from '@tanker/crypto';
 import { expect } from '@tanker/test-utils';
 import { obfuscateUserId, createUserSecretBinary } from '@tanker/identity';
 

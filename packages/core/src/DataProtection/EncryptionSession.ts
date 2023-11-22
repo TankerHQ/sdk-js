@@ -12,7 +12,7 @@ import type { Resource } from './types';
 export class EncryptionSession {
   _dataProtector: DataProtector;
   _resource: Resource;
-  _paddingStep?: number | Padding;
+  _paddingStep: number | Padding | undefined;
   _getStatus: () => Status;
 
   constructor(dataProtector: DataProtector, getStatus: () => Status, resource: Resource, paddingStep?: number | Padding) {
