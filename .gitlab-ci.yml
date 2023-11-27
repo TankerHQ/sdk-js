@@ -17,6 +17,7 @@ default:
   before_script:
     - poetry -V
     - node -v
+    - npm --version
     - poetry install --sync
     - poetry run python --version
 
