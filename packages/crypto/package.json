@@ -20,9 +20,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "cd ../..; yarn build:crypto",
-    "test": "cd ../..; yarn test:crypto",
-    "start:test": "cd ../..; yarn start:test-crypto"
+    "build": "cd ../..; npm run build:crypto",
+    "test": "cd ../..; npm run test:crypto",
+    "start:test": "cd ../..; npm run start:test-crypto"
   },
   "dependencies": {
     "@tanker/errors": "0.0.1",

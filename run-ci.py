@@ -120,12 +120,12 @@ def run_tests_in_browser_ten_times(*, runner: str) -> None:
 
 def run_tests_in_browser(*, runner: str) -> None:
     if runner == "linux":
-        tankerci.js.run_yarn("karma", "--browsers", "ChromeInDocker")
+        tankerci.js.npm("run", "karma", "--", "--browsers", "ChromeInDocker")
     elif runner == "macos":
-        tankerci.js.run_yarn("karma", "--browsers", "Safari")
+        tankerci.js.npm("run", "karma", "--", "--browsers", "Safari")
     elif runner == "windows-edge":
         kill_windows_processes()
-        tankerci.js.run_yarn("karma", "--browsers", "EdgeHeadless")
+        tankerci.js.npm("run", "karma", "--", "--browsers", "EdgeHeadless")
 
 
 def get_package_path(package_name: str) -> Path:
@@ -155,21 +155,21 @@ def publish_npm_package(package_name: str, version: str) -> None:
 
 
 def run_tests_in_node() -> None:
-    tankerci.js.run_yarn("exec", "--", "node", "--version")
-    tankerci.js.run_yarn("build")
-    tankerci.js.run_yarn("coverage")
+    tankerci.js.npx("node", "--version")
+    tankerci.js.npm("run", "build")
+    tankerci.js.npm("run", "coverage")
 
 
 def lint() -> None:
-    tankerci.js.yarn_install_deps()
-    tankerci.js.run_yarn("build")
-    tankerci.js.run_yarn("lint:js")
-    tankerci.js.run_yarn("lint:ts")
-    tankerci.js.run_yarn("lint:compat:all")
+    tankerci.js.npm("install")
+    tankerci.js.npm("run", "build")
+    tankerci.js.npm("run", "lint:js")
+    tankerci.js.npm("run", "lint:ts")
+    tankerci.js.npm("run", "lint:compat:all")
 
 
 def check(*, runner: str, nightly: bool) -> None:
-    tankerci.js.yarn_install_deps()
+    tankerci.js.npm("install")
     if nightly:
         run_tests_in_browser_ten_times(runner=runner)
     elif runner == "node":
@@ -179,9 +179,11 @@ def check(*, runner: str, nightly: bool) -> None:
 
 
 def test_matcher() -> None:
-    tankerci.js.yarn_install_deps()
-    tankerci.js.run_yarn(
+    tankerci.js.npm("install")
+    tankerci.js.npm(
+        "run",
         "test-matcher:export-test-names",
+        "--",
         "--reporter-options",
         "'outputFile=functional_test_list.json'",
     )
@@ -208,19 +210,19 @@ def e2e(*, use_local_sources: bool) -> None:
         )
         tankerci.run("poetry", "run", "python", "run-ci.py", "build")
     with tankerci.working_directory(base_path / "sdk-js"):
-        tankerci.js.yarn_install()
-        tankerci.js.run_yarn("build")
+        tankerci.js.npm("install")
+        tankerci.js.npm("run", "build")
     with tankerci.working_directory(base_path / "qa-python-js"):
         tankerci.run("poetry", "install")
         tankerci.run("poetry", "run", "pytest", "--verbose", "--capture=no")
 
 
 def deploy_sdk(*, version: str) -> None:
-    tankerci.js.yarn_install_deps()
+    tankerci.js.npm("install")
     tankerci.bump.bump_files(version)
 
     for config in configs:
-        tankerci.js.yarn_build(delivery=config["build"], env="prod")
+        tankerci.js.npm_build(delivery=config["build"])
         for package_name in config["publish"]:
             publish_npm_package(package_name, version)
 
@@ -229,8 +231,8 @@ def test_deploy(*, version: str) -> None:
     test_dir = Path("test")
     index_file = test_dir / "index.js"
     test_dir.mkdir()
-    tankerci.js.run_yarn("init", "--yes", cwd=test_dir)
-    tankerci.js.run_yarn("add", f"@tanker/client-browser@{version}", cwd=test_dir)
+    tankerci.js.npm("init", "--yes", cwd=test_dir)
+    tankerci.js.npm("add", f"@tanker/client-browser@{version}", cwd=test_dir)
     index_file.write_text('require("@tanker/client-browser");')
     tankerci.run("node", "index.js", cwd=test_dir)
 

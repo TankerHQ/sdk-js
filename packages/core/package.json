@@ -20,7 +20,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "cd ../..; yarn test:core"
+    "test": "cd ../..; npm run test:core"
   },
   "dependencies": {
     "@tanker/crypto": "0.0.1",
