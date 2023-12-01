@@ -255,8 +255,8 @@ audit:
     - .rules/nightly
   stage: check
   script:
-    - npm install
-    - npm audit --omit dev
+    - yarn
+    - yarn audit --groups "dependencies optionalDependencies"
   tags: !reference [.tags/linux, tags]
 
 deploy:

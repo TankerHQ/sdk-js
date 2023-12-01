@@ -25,9 +25,9 @@ jobs:
         with:
           node-version: "18"
       - name: install packages
-        run: npm install
+        run: yarn install
       - name: Tests on ${{ matrix.browser }}
-        run: npm run karma --browsers ${{ matrix.browser }}
+        run: yarn karma --browsers ${{ matrix.browser }}
         # You can allow a job to pass when this step fails (e.g. temporarily if Browserstack tests
         # are too flaky), by uncommenting the following line:
         # continue-on-error: true
@@ -61,11 +61,11 @@ jobs:
         with:
           node-version: "18"
       - name: install packages
-        run: npm install
+        run: yarn install
       - name: build TypeScript
-        run: npm run build
+        run: yarn build
       - name: Tests on Node 18
-        run: npm run coverage
+        run: yarn coverage
         env:
           BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
           BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}

@@ -20,7 +20,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "cd ../..; npm run test:errors"
+    "test": "cd ../..; yarn test:errors"
   },
   "dependencies": {
     "tslib": "^2.3.1"
