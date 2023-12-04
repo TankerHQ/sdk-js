@@ -17,6 +17,7 @@ default:
   before_script:
     - poetry -V
     - node -v
+    - npm --version
     - poetry install --sync
     - poetry run python --version
 
@@ -254,8 +255,8 @@ audit:
     - .rules/nightly
   stage: check
   script:
-    - yarn
-    - yarn audit --groups "dependencies optionalDependencies"
+    - npm install
+    - npm audit --omit dev
   tags: !reference [.tags/linux, tags]
 
 deploy:

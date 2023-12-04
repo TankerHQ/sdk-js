@@ -20,7 +20,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "cd ../..; yarn test:http-utils"
+    "test": "cd ../..; npm run test:http-utils"
   },
   "dependencies": {
     "@tanker/errors": "0.0.1",

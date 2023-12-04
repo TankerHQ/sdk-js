@@ -116,11 +116,11 @@ To build the JavaScript SDKs yourself, please follow the steps below.
 
 ### Prerequisites
 
-Install [Yarn](https://yarnpkg.com/en/docs/install) version 1.0 or higher.
+Install the lastest version of [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
 
-Use this command to check the Yarn version installed on your system:
+Use this command to check the npm version installed on your system:
 ```bash
-yarn -v
+npm --version
 ```
 
 ### Install dependencies
@@ -132,7 +132,7 @@ git clone https://github.com/TankerHQ/sdk-js.git
 
 Install dependencies:
 ```bash
-cd sdk-js && yarn
+cd sdk-js && npm install
 ```
 
 ### Test and lint
@@ -142,7 +142,7 @@ Our codebase uses the following ES6 features: `async` / `await`, `import` / `exp
 To check that the code is correct and to launch the tests in Node.js, use:
 
 ```bash
-yarn proof
+npm run proof
 ```
 
 ### Submit your pull request
