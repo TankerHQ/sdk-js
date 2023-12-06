@@ -96,7 +96,7 @@ It is available in multiple languages. This repository only contains the Javascr
 The Tanker JavaScript SDKs support the following platforms:
 
 * Chrome, Firefox, Safari, and Microsoft Edge
-* Node.js 16+
+* Node.js 18+
 
 The Tanker JavaScript SDKs are constantly tested with all of the supported browsers via unit and functional tests.
 
