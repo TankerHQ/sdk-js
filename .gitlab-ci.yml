@@ -1,7 +1,10 @@
 include:
   - project: TankerHQ/gitlab-ci-files
     file: /common.yml
-    ref: 2021-12-16-236
+    ref: 2023-08-25-271
+  - project: TankerHQ/gitlab-ci-files
+    file: /cache.yml
+    ref: 2023-12-12-275
 
 variables:
   GIT_DEPTH: 1
@@ -18,11 +21,14 @@ default:
     - poetry -V
     - node -v
     - npm --version
+    - npm config list -l | grep cache
     - poetry install --sync
     - poetry run python --version
 
 check/lint:
   stage: check
+  extends:
+    - .npm-cache
   rules:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
@@ -38,6 +44,8 @@ check/lint:
 
 check/linux/chrome:
   stage: check
+  extends:
+    - .npm-cache
   rules:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
@@ -48,6 +56,8 @@ check/linux/chrome:
 
 .check/linux/node-base:
   stage: check
+  extends:
+    - .npm-cache
   script:
     - /usr/local/nvm/nvm-exec poetry run python run-ci.py check --runner node
     - mv coverage/lcov-report lcov-report
@@ -116,6 +126,7 @@ check/windows/edge:
 
 check/linux/nightly:
   extends:
+    - .npm-cache
     - .rules/nightly
   stage: check
   script:
@@ -144,8 +155,7 @@ check/bridge-dotenv:
   before_script:
     - poetry install --sync
   script:
-    - poetry run python run-ci.py write-bridge-dotenv --downstream benchmarks
-                                                      --downstream compatibility-tests
+    - poetry run python run-ci.py write-bridge-dotenv --downstream benchmarks --downstream compatibility-tests
   rules: # Other jobs cannot "needs" this once if the rules don't match
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
@@ -232,6 +242,8 @@ bridge/compat:
 
 check/e2e:
   stage: check
+  extends:
+    - .npm-cache
   rules:
     - !reference [.rules/mr/manual, rules]
     - !reference [.rules/nightly, rules]
@@ -242,6 +254,7 @@ check/e2e:
 
 audit:
   extends:
+    - .npm-cache
     - .rules/nightly
   stage: check
   script:
@@ -266,6 +279,7 @@ test/deployed:
   needs:
     - deploy
   extends:
+    - .npm-cache
     - .rules/deploy/js
   script:
     - poetry run python run-ci.py test-deploy --version "${SDK_JS_RELEASE_VERSION}"
