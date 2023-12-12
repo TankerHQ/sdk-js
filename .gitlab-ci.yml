@@ -155,8 +155,7 @@ check/bridge-dotenv:
   before_script:
     - poetry install --sync
   script:
-    - poetry run python run-ci.py write-bridge-dotenv --downstream benchmarks
-                                                      --downstream compatibility-tests
+    - poetry run python run-ci.py write-bridge-dotenv --downstream benchmarks --downstream compatibility-tests
   rules: # Other jobs cannot "needs" this once if the rules don't match
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
