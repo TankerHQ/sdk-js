@@ -21,11 +21,14 @@ default:
     - poetry -V
     - node -v
     - npm --version
+    - npm config list -l | grep cache
     - poetry install --sync
     - poetry run python --version
 
 check/lint:
   stage: check
+  extends:
+    - .npm-cache
   rules:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
@@ -41,6 +44,8 @@ check/lint:
 
 check/linux/chrome:
   stage: check
+  extends:
+    - .npm-cache
   rules:
     - !reference [.rules/mr/auto, rules]
     - !reference [.rules/web/auto, rules]
@@ -51,6 +56,8 @@ check/linux/chrome:
 
 .check/linux/node-base:
   stage: check
+  extends:
+    - .npm-cache
   script:
     - /usr/local/nvm/nvm-exec poetry run python run-ci.py check --runner node
     - mv coverage/lcov-report lcov-report
@@ -119,6 +126,7 @@ check/windows/edge:
 
 check/linux/nightly:
   extends:
+    - .npm-cache
     - .rules/nightly
   stage: check
   script:
@@ -235,6 +243,8 @@ bridge/compat:
 
 check/e2e:
   stage: check
+  extends:
+    - .npm-cache
   rules:
     - !reference [.rules/mr/manual, rules]
     - !reference [.rules/nightly, rules]
@@ -245,6 +255,7 @@ check/e2e:
 
 audit:
   extends:
+    - .npm-cache
     - .rules/nightly
   stage: check
   script:
@@ -269,6 +280,7 @@ test/deployed:
   needs:
     - deploy
   extends:
+    - .npm-cache
     - .rules/deploy/js
   script:
     - poetry run python run-ci.py test-deploy --version "${SDK_JS_RELEASE_VERSION}"
