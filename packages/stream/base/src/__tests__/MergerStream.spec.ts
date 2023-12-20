@@ -37,7 +37,6 @@ describe('MergerStream', () => {
 
   if (global.File) {
     outputOptions.push({ type: File, name: 'report.pdf', mime: 'application/pdf' });
-    outputOptions.push({ type: File, name: 'report.pdf', mime: 'application/pdf' });
   }
 
   inputs.forEach(input => {
