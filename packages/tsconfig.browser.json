@@ -4,7 +4,6 @@
     { "path": "./errors/config/tsconfig.browser.json" },
     { "path": "./crypto/config/tsconfig.browser.json" },
     { "path": "./global-this/config/tsconfig.browser.json" },
-    { "path": "./file-ponyfill/config/tsconfig.browser.json" },
     { "path": "./file-reader/config/tsconfig.browser.json" },
     { "path": "./types/config/tsconfig.browser.json" },
     { "path": "./http-utils/config/tsconfig.browser.json" },

@@ -1,5 +1,4 @@
 import Tanker from '@tanker/client-browser';
-import { FilePonyfill } from '@tanker/file-ponyfill';
 
 import type { b64string } from '@tanker/core';
 
@@ -31,25 +30,25 @@ const generateTestResources = (): { resources: TestResources; defaultDownloadTyp
     empty: [
       { size: empty.length, type: ArrayBuffer, resource: empty.buffer },
       { size: empty.length, type: Blob, resource: new Blob([empty], { type: 'application/octet-stream' }) },
-      { size: empty.length, type: File, resource: new FilePonyfill([empty], 'empty.txt', { type: 'text/plain' }) },
+      { size: empty.length, type: File, resource: new File([empty], 'empty.txt', { type: 'text/plain' }) },
       { size: empty.length, type: Uint8Array, resource: empty },
     ],
     small: [
       { size: small.length, type: ArrayBuffer, resource: small.buffer },
       { size: small.length, type: Blob, resource: new Blob([small], { type: 'application/octet-stream' }) },
-      { size: small.length, type: File, resource: new FilePonyfill([small], 'report.pdf', { type: 'application/pdf' }) },
+      { size: small.length, type: File, resource: new File([small], 'report.pdf', { type: 'application/pdf' }) },
       { size: small.length, type: Uint8Array, resource: small },
     ],
     medium: [
       { size: medium.length, type: ArrayBuffer, resource: medium.buffer },
       { size: medium.length, type: Blob, resource: new Blob([medium], { type: 'application/octet-stream' }) },
-      { size: medium.length, type: File, resource: new FilePonyfill([medium], 'picture.jpeg', { type: 'image/jpeg' }) },
+      { size: medium.length, type: File, resource: new File([medium], 'picture.jpeg', { type: 'image/jpeg' }) },
       { size: medium.length, type: Uint8Array, resource: medium },
     ],
     big: [
       { size: big.length, type: ArrayBuffer, resource: big.buffer },
       { size: big.length, type: Blob, resource: new Blob([big], { type: 'application/octet-stream' }) },
-      { size: big.length, type: File, resource: new FilePonyfill([big], 'holidays.mp4', { type: 'video/mp4' }) },
+      { size: big.length, type: File, resource: new File([big], 'holidays.mp4', { type: 'video/mp4' }) },
       { size: big.length, type: Uint8Array, resource: big },
     ],
   };

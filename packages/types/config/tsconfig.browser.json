@@ -12,7 +12,6 @@
   ],
   "references": [
     { "path": "../../errors/config/tsconfig.browser.json" },
-    { "path": "../../file-ponyfill/config/tsconfig.browser.json" },
     { "path": "../../file-reader/config/tsconfig.browser.json" },
     { "path": "../../global-this/config/tsconfig.browser.json" },
     { "path": "../../test-utils/config/tsconfig.browser.json" },

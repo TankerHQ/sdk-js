@@ -1,6 +1,5 @@
 import { Writable } from 'readable-stream';
 import { getConstructor, getConstructorName } from '@tanker/types';
-import { FilePonyfill } from '@tanker/file-ponyfill';
 import { expect, BufferingObserver, makeTimeoutPromise } from '@tanker/test-utils';
 
 import type { Data } from '@tanker/types';
@@ -23,7 +22,7 @@ describe('SlicerStream', () => {
   }
 
   if (global.File) {
-    sources.push(new FilePonyfill([bytes], 'file.txt'));
+    sources.push(new File([bytes], 'file.txt'));
   }
 
   sources.forEach(source => {

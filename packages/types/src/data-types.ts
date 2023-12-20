@@ -1,6 +1,5 @@
 import { InternalError, InvalidArgument } from '@tanker/errors';
 
-import { FilePonyfill } from '@tanker/file-ponyfill';
 import { FileReader } from '@tanker/file-reader';
 import { globalThis } from '@tanker/global-this';
 
@@ -8,7 +7,7 @@ import type { Class } from './utils';
 
 export type Data = ArrayBuffer | Blob | Buffer | File | Uint8Array;
 
-type DataName = 'ArrayBuffer' | 'Blob' | 'Buffer' | 'File' | 'FilePonyfill' | 'Uint8Array';
+type DataName = 'ArrayBuffer' | 'Blob' | 'Buffer' | 'File' | 'Uint8Array';
 
 export type ResourceMetadata = {
   mime?: string;
@@ -27,8 +26,7 @@ const dataTypeDefs = (() => {
     defs.push({ type: Uint8Array, lengthOf: (arg: Uint8Array) => arg.length });
 
   if (globalThis.File !== undefined) {
-    defs.push({ type: File, lengthOf: (arg: File) => arg.size }); // MUST be before FilePonyfill and Blob
-    defs.push({ type: FilePonyfill, lengthOf: (arg: typeof FilePonyfill) => arg.size }); // MUST be before Blob
+    defs.push({ type: File, lengthOf: (arg: File) => arg.size }); // MUST be before Blob
   }
 
   if (globalThis.Blob !== undefined)
@@ -83,31 +81,35 @@ export function assertInteger(arg: unknown, argName: string, isUnsigned: boolean
 export const getConstructor = <T extends Data>(instance: T): Class<T> => {
   for (const def of dataTypeDefs) {
     if (instance instanceof def.type) {
-      return def.type;
+      return (
+        def as Extract<typeof def, { type: Class<T> }>
+      ).type;
     }
   }
 
   throw new InternalError('Assertion error: unhandled type');
 };
 
-export const getConstructorName = (constructor: Record<string, any>): Exclude<DataName, 'FilePonyfill'> => {
+export const getConstructorName = (constructor: Record<string, any>): DataName => {
   if (constructor === ArrayBuffer)
     return 'ArrayBuffer';
   if (globalThis.Buffer && constructor === Buffer)
     return 'Buffer';
   if (constructor === Uint8Array)
     return 'Uint8Array';
-  if (globalThis.File && (constructor === File || constructor === FilePonyfill)) // must be before Blob
+  if (globalThis.File && constructor === File) // must be before Blob
     return 'File';
   if (globalThis.Blob && constructor === Blob)
     return 'Blob';
   throw new InternalError('Assertion error: unhandled type');
 };
 
-export const getDataLength = (value: Data): number => {
+export const getDataLength = <T extends Data>(value: T): number => {
   for (const def of dataTypeDefs) {
     if (value instanceof def.type) {
-      return def.lengthOf(value);
+      return (
+        def as Extract<typeof def, { lengthOf: (arg: T) => number }>
+      ).lengthOf(value);
     }
   }
 
@@ -115,10 +117,10 @@ export const getDataLength = (value: Data): number => {
 };
 const defaultMime = 'application/octet-stream';
 
-const fromUint8ArrayToFilePonyfill = (
+const fromUint8ArrayToFile = (
   uint8array: Uint8Array,
   { mime, name, lastModified }: { mime?: string; name?: string; lastModified?: number; } = {},
-) => new FilePonyfill(
+) => new File(
   [uint8array],
   name || '',
   { type: mime || defaultMime, lastModified: lastModified || Date.now() },
@@ -132,8 +134,7 @@ const fromUint8ArrayTo: Record<DataName, (uint8array: Uint8Array, options?: { mi
   ),
   Blob: (uint8array, { mime } = {}) => new Blob([uint8array], { type: mime || defaultMime }),
   Buffer: uint8array => Buffer.from(uint8array),
-  File: fromUint8ArrayToFilePonyfill,
-  FilePonyfill: fromUint8ArrayToFilePonyfill,
+  File: fromUint8ArrayToFile,
   Uint8Array: uint8array => uint8array,
 };
 

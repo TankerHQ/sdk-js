@@ -1,7 +1,8 @@
-import { FilePonyfill as File } from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 
 import { FileReader } from '../FileReader';
+
+type NewFileParams = ConstructorParameters<typeof File>;
 
 describe('FileReader', () => {
   const ascii = 'The quick brown fox jumps over the lazy dog';
@@ -17,8 +18,8 @@ describe('FileReader', () => {
   ]);
 
   [
-    { name: 'Blob', builder: (...args: any[]) => new Blob(args[0], args[2]) },
-    { name: 'File', builder: (...args: any[]) => new File(...args) },
+    { name: 'Blob', builder: (...args: NewFileParams) => new Blob(args[0], args[2]) },
+    { name: 'File', builder: (...args: NewFileParams) => new File(...args) },
   ].forEach(({ name, builder }) => {
     describe(`${name} reading`, () => {
       it('can read a text content', async () => {
