@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@tanker/datastore-dexie-memory": "0.0.1",
-    "@tanker/identity": "^3.0.0",
+    "@tanker/identity": "^3.3.1",
     "@tanker/test-utils": "0.0.1"
   }
 }
