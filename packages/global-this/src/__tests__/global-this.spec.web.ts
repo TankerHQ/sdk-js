@@ -1,7 +1,8 @@
 /* eslint-disable */
 import { expect } from '@tanker/test-utils';
 
-import { globalThis, getGlobalThis } from '..';
+import { globalThis } from '..';
+import { getGlobalThis } from '../global-this';
 
 describe('globalThis', () => {
   it('is always defined', () => {

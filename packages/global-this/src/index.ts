@@ -1,5 +1,5 @@
 import { getGlobalThis } from './global-this';
 
-const globalThis = getGlobalThis();
+const myGlobalThis: typeof globalThis = getGlobalThis();
 
-export { globalThis, getGlobalThis };
+export { myGlobalThis as globalThis };
