@@ -4,7 +4,7 @@ import { InternalError, InvalidArgument } from '@tanker/errors';
 
 import { _serializeIdentity } from '../Identity';
 import type { PublicPermanentIdentity } from '../Identity';
-import type { Client, PullOptions } from '../Network/Client';
+import type { Client } from '../Network/Client';
 import type { User } from './types';
 import type { LocalUser } from '../LocalUser/LocalUser';
 import { usersFromBlocks } from './ManagerHelper';
@@ -19,13 +19,13 @@ export class UserManager {
     this._localUser = localUser;
   }
 
-  async findUser(userId: Uint8Array, options: PullOptions = {}) {
-    const blocks = await this._getUserBlocksByUserIds([userId], options);
+  async findUser(userId: Uint8Array) {
+    const blocks = await this._getUserBlocksByUserIds([userId]);
     const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);
     return userIdToUserMap.get(utils.toBase64(userId));
   }
 
-  async getUsers(publicIdentities: Array<PublicPermanentIdentity>, options: PullOptions = {}): Promise<Array<User>> {
+  async getUsers(publicIdentities: Array<PublicPermanentIdentity>): Promise<Array<User>> {
     if (publicIdentities.length === 0) {
       return [];
     }
@@ -37,7 +37,7 @@ export class UserManager {
     });
     const userIds = [...new Set(userIdsWithDups)].map(u => utils.fromBase64(u));
 
-    const blocks = await this._getUserBlocksByUserIds(userIds, options);
+    const blocks = await this._getUserBlocksByUserIds(userIds);
     const { userIdToUserMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);
     const fullUsers = Array.from(userIdToUserMap.values());
 
@@ -56,8 +56,8 @@ export class UserManager {
     throw new InvalidArgument(message);
   }
 
-  async getDeviceKeysByDevicesIds(devicesIds: Array<Uint8Array>, options: PullOptions = {}) {
-    const blocks = await this._getUserBlocksByDeviceIds(devicesIds, options);
+  async getDeviceKeysByDevicesIds(devicesIds: Array<Uint8Array>) {
+    const blocks = await this._getUserBlocksByDeviceIds(devicesIds);
     const { userIdToUserMap, deviceIdToUserIdMap } = await usersFromBlocks(blocks, this._localUser.trustchainId, this._localUser.trustchainPublicKey);
     return this._getDeviceKeysFromIds(userIdToUserMap, deviceIdToUserIdMap, devicesIds);
   }
@@ -83,13 +83,13 @@ export class UserManager {
     return devicesPublicSignatureKeys;
   }
 
-  _getUserBlocksByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions): Promise<Array<b64string>> => {
-    const { histories } = await this._client.getUserHistoriesByUserIds(userIds, options);
+  _getUserBlocksByUserIds = async (userIds: Array<Uint8Array>): Promise<Array<b64string>> => {
+    const { histories } = await this._client.getUserHistoriesByUserIds(userIds);
     return histories;
   };
 
-  _getUserBlocksByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions): Promise<Array<b64string>> => {
-    const { histories } = await this._client.getUserHistoriesByDeviceIds(deviceIds, options);
+  _getUserBlocksByDeviceIds = async (deviceIds: Array<Uint8Array>): Promise<Array<b64string>> => {
+    const { histories } = await this._client.getUserHistoriesByDeviceIds(deviceIds);
     return histories;
   };
 }

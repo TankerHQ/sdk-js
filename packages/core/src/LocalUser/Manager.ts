@@ -34,7 +34,7 @@ import { isE2eVerification } from './types';
 import { generateUserCreation, generateDeviceFromGhostDevice, generateGhostDevice } from './UserCreation';
 import type { UserData, DelegationToken } from './UserData';
 
-import type { Client, PullOptions } from '../Network/Client';
+import type { Client } from '../Network/Client';
 import { OidcNonceManager } from '../OidcNonce/Manager';
 import { Status } from '../Session/status';
 import { makeSessionCertificate } from './SessionCertificate';
@@ -173,9 +173,7 @@ export class LocalUserManager extends EventEmitter {
     this._localUser.deviceId = id;
     this._localUser.deviceEncryptionKeyPair = encryptionKeyPair;
     this._localUser.deviceSignatureKeyPair = signatureKeyPair;
-    await this.updateLocalUser({
-      isLight: true,
-    });
+    await this.updateLocalUser();
   };
 
   static async enrollUser(userData: UserData, client: Client, verifications: Array<PreverifiedVerification>): Promise<void> {
@@ -281,7 +279,7 @@ export class LocalUserManager extends EventEmitter {
   };
 
   getSessionToken = async (verification: VerificationWithToken): Promise<string> => {
-    await this.updateLocalUser({ isLight: true });
+    await this.updateLocalUser();
 
     const { payload, nature } = makeSessionCertificate(verification);
     const block = this._localUser.makeBlock(payload, nature);
@@ -295,16 +293,16 @@ export class LocalUserManager extends EventEmitter {
   findUserKey = async (publicKey: Uint8Array): Promise<tcrypto.SodiumKeyPair | undefined> => {
     const userKey = this._localUser.findUserKey(publicKey);
     if (!userKey) {
-      await this.updateLocalUser({ isLight: true });
+      await this.updateLocalUser();
     }
     return this._localUser.findUserKey(publicKey);
   };
 
-  updateLocalUser = async (options: PullOptions = {}) => {
+  updateLocalUser = async () => {
     // To update the local user, we can't just get our user because in light
     // mode, only the first device will be returned. So we pull by device to get
     // at least the first device and our device.
-    const { root, histories } = await this._client.getUserHistoriesByDeviceIds([this._localUser.deviceId], options);
+    const { root, histories } = await this._client.getUserHistoriesByDeviceIds([this._localUser.deviceId]);
     const localUserBlocks = [root, ...histories];
     this._localUser.initializeWithBlocks(localUserBlocks);
     await this._keyStore.save(this._localUser.localData, this._localUser.userSecret);

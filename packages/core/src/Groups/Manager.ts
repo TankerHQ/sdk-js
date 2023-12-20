@@ -88,7 +88,7 @@ export class GroupManager {
     assertTrustchainId(deserializedIdentities, this._localUser.trustchainId);
 
     const { permanentIdentities, provisionalIdentities } = _splitProvisionalAndPermanentPublicIdentities(deserializedIdentities);
-    const users = await this._UserManager.getUsers(permanentIdentities, { isLight: true });
+    const users = await this._UserManager.getUsers(permanentIdentities);
     const provisionalUsers = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentities);
     const groupEncryptionKeyPair = tcrypto.makeEncryptionKeyPair();
     const groupSignatureKeyPair = tcrypto.makeSignKeyPair();
@@ -141,7 +141,7 @@ export class GroupManager {
 
     checkAddedAndRemoved(permanentIdentitiesToAdd, permanentIdentitiesToRemove, provisionalIdentitiesToAdd, provisionalIdentitiesToRemove);
 
-    const usersToAdd = await this._UserManager.getUsers(permanentIdentitiesToAdd, { isLight: true });
+    const usersToAdd = await this._UserManager.getUsers(permanentIdentitiesToAdd);
     const provisionalUsersToAdd = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentitiesToAdd);
     const usersToRemove = [...new Set(permanentIdentitiesToRemove.map(u => u.value))].map(uid => utils.fromBase64(uid));
     const provisionalUsersToRemove = await this._provisionalIdentityManager.getProvisionalUsers(provisionalIdentitiesToRemove);
@@ -297,7 +297,7 @@ export class GroupManager {
     const entries = blocks.map(block => getGroupEntryFromBlock(block));
 
     const deviceIds = entries.map(entry => entry.author);
-    const devicePublicSignatureKeyMap = await this._UserManager.getDeviceKeysByDevicesIds(deviceIds, { isLight: true });
+    const devicePublicSignatureKeyMap = await this._UserManager.getDeviceKeysByDevicesIds(deviceIds);
 
     return groupsFromEntries(entries, devicePublicSignatureKeyMap, this._localUser, this._provisionalIdentityManager);
   }

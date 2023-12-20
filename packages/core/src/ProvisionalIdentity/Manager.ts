@@ -250,7 +250,7 @@ export class ProvisionalIdentityManager {
 
     const claimEntries = claimBlocks.map(block => provisionalIdentityClaimFromBlock(block));
     const authorDevices = claimEntries.map(entry => entry.author);
-    const authorDeviceKeysMap = await this._userManager.getDeviceKeysByDevicesIds(authorDevices, { isLight: true });
+    const authorDeviceKeysMap = await this._userManager.getDeviceKeysByDevicesIds(authorDevices);
 
     for (let i = 0, length = claimEntries.length; i < length; i++) {
       const claimEntry = claimEntries[i]!;
@@ -285,7 +285,7 @@ export class ProvisionalIdentityManager {
   }
 
   async _claimProvisionalIdentity(provisionalIdentity: SecretProvisionalIdentity, tankerKeys: TankerProvisionalKeys): Promise<void> {
-    await this._localUserManager.updateLocalUser({ isLight: true });
+    await this._localUserManager.updateLocalUser();
 
     const appProvisionalUserPrivateSignatureKey = utils.fromBase64(provisionalIdentity.private_signature_key);
     const appProvisionalUserPrivateEncryptionKey = utils.fromBase64(provisionalIdentity.private_encryption_key);
