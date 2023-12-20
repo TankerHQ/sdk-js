@@ -38,10 +38,6 @@ export type PublicProvisionalIdentityResults = {
   hashedPhoneNumbers: Record<string, ServerPublicProvisionalIdentity>;
 };
 
-export type PullOptions = {
-  isLight?: boolean;
-};
-
 const MAX_CONCURRENCY = 5;
 const MAX_QUERY_STRING_ITEMS = 100;
 
@@ -383,12 +379,12 @@ export class Client {
     };
   };
 
-  getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>, options: PullOptions) => {
+  getUserHistoriesByUserIds = async (userIds: Array<Uint8Array>) => {
     const urlizedUserIds = unique(userIds.map(userId => urlize(userId)));
 
     const result = { root: '' as b64string, histories: [] as Array<b64string> };
     for (let i = 0; i < urlizedUserIds.length; i += MAX_QUERY_STRING_ITEMS) {
-      const query = `is_light=${options.isLight ? 'true' : 'false'}&user_ids[]=${urlizedUserIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&user_ids[]=')}`;
+      const query = `user_ids[]=${urlizedUserIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&user_ids[]=')}`;
       const response = await this.getUserHistories(query);
       result.root = response.root;
       result.histories = result.histories.concat(response.histories);
@@ -396,7 +392,7 @@ export class Client {
     return result;
   };
 
-  getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>, options: PullOptions) => {
+  getUserHistoriesByDeviceIds = async (deviceIds: Array<Uint8Array>) => {
     if (!this._deviceId)
       throw new InternalError('Assertion error: trying to get user histories without a device id');
 
@@ -405,7 +401,7 @@ export class Client {
     const gotBlocks = new Set();
 
     for (let i = 0; i < urlizedDeviceIds.length; i += MAX_QUERY_STRING_ITEMS) {
-      const query = `is_light=${options.isLight ? 'true' : 'false'}&device_ids[]=${urlizedDeviceIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&device_ids[]=')}`;
+      const query = `device_ids[]=${urlizedDeviceIds.slice(i, i + MAX_QUERY_STRING_ITEMS).join('&device_ids[]=')}`;
       const response = await this.getUserHistories(query);
       result.root = response.root;
       // We may ask for the same user twice, but through two different device
@@ -498,7 +494,7 @@ export class Client {
     return sessionToken;
   };
 
-  getGroupHistories = (query: string): Promise<{ histories: Array<b64string>; }> => this._apiCall(`/user-group-histories?${query}&is_light=true`);
+  getGroupHistories = (query: string): Promise<{ histories: Array<b64string>; }> => this._apiCall(`/user-group-histories?${query}`);
 
   getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<{ histories: Array<b64string>; }> => {
     const result = { histories: [] as Array<b64string> };
