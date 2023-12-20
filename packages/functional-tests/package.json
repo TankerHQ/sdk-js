@@ -18,7 +18,7 @@
     "@tanker/crypto": "0.0.1",
     "@tanker/datastore-pouchdb-memory": "0.0.1",
     "@tanker/http-utils": "0.0.1",
-    "@tanker/identity": "^3.0.0",
+    "@tanker/identity": "^3.3.1",
     "@tanker/stream-base": "0.0.1",
     "@tanker/test-utils": "0.0.1",
     "@tanker/types": "0.0.1",
