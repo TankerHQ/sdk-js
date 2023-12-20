@@ -12,7 +12,6 @@
   ],
   "references": [
     { "path": "../../errors/config/tsconfig.es.json" },
-    { "path": "../../file-ponyfill/config/tsconfig.es.json" },
     { "path": "../../file-reader/config/tsconfig.es.json" },
     { "path": "../../global-this/config/tsconfig.es.json" },
     { "path": "../../test-utils/config/tsconfig.es.json" },

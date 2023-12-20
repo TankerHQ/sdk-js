@@ -26,10 +26,6 @@ class Config(TypedDict):
 configs: List[Config] = [
     {"build": "global-this", "publish": ["@tanker/global-this"]},
     {"build": "errors", "publish": ["@tanker/errors"]},
-    {
-        "build": "file-ponyfill",
-        "publish": ["@tanker/file-ponyfill"],
-    },
     {"build": "file-reader", "publish": ["@tanker/file-reader"]},
     {"build": "http-utils", "publish": ["@tanker/http-utils"]},
     {"build": "types", "publish": ["@tanker/types"]},

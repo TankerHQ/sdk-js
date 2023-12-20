@@ -1,4 +1,3 @@
-import { FilePonyfill } from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 import { InvalidArgument, InternalError } from '@tanker/errors';
 
@@ -38,7 +37,7 @@ describe('types', () => {
   }
 
   if (global.File) {
-    const file = new FilePonyfill([uint8array], 'report.pdf', { type: 'application/pdf' });
+    const file = new File([uint8array], 'report.pdf', { type: 'application/pdf' });
     values.push({ type: File, data: file });
   }
 

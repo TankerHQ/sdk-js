@@ -4,7 +4,6 @@
     { "path": "./errors/config/" },
     { "path": "./crypto/config/" },
     { "path": "./global-this/config/" },
-    { "path": "./file-ponyfill/config/" },
     { "path": "./file-reader/config/" },
     { "path": "./types/config/" },
     { "path": "./http-utils/config/" },

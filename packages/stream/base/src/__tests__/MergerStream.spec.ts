@@ -1,4 +1,3 @@
-import { FilePonyfill } from '@tanker/file-ponyfill';
 import { expect } from '@tanker/test-utils';
 import { castData, getConstructorName } from '@tanker/types';
 import type { Class, ResourceMetadata, Data } from '@tanker/types';
@@ -38,7 +37,7 @@ describe('MergerStream', () => {
 
   if (global.File) {
     outputOptions.push({ type: File, name: 'report.pdf', mime: 'application/pdf' });
-    outputOptions.push({ type: FilePonyfill, name: 'report.pdf', mime: 'application/pdf' });
+    outputOptions.push({ type: File, name: 'report.pdf', mime: 'application/pdf' });
   }
 
   inputs.forEach(input => {

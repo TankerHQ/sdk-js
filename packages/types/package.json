@@ -24,7 +24,6 @@
   },
   "dependencies": {
     "@tanker/errors": "0.0.1",
-    "@tanker/file-ponyfill": "0.0.1",
     "@tanker/file-reader": "0.0.1",
     "@tanker/global-this": "0.0.1",
     "@types/node": "^18.11.18",
