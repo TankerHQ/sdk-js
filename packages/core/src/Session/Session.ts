@@ -20,11 +20,13 @@ import { ResourceManager } from '../Resources/Manager';
 import { DataProtector } from '../DataProtection/DataProtector';
 import type { OidcNonceManager } from '../OidcNonce/Manager';
 import { SessionManager } from '../TransparentSession/Manager';
+import { SentryLimiter } from '../SentryLimiter';
 
 export class Session extends EventEmitter {
   _storage: Storage;
   _client: Client;
   _sentry: Hub | null;
+  _sentryLimiter: SentryLimiter | null;
 
   _localUserManager: LocalUserManager;
   _userManager: UserManager;
@@ -44,6 +46,7 @@ export class Session extends EventEmitter {
     this._client = client;
     this._status = Status.STOPPED;
     this._sentry = sentry;
+    this._sentryLimiter = sentry ? new SentryLimiter(sentry) : null;
 
     this._localUserManager = new LocalUserManager(userData, oidcNonceManagerGetter, client, storage.keyStore);
     this._localUserManager.on('error', async (e: Error) => {
@@ -66,7 +69,7 @@ export class Session extends EventEmitter {
     this._userManager = new UserManager(client, this._localUserManager.localUser);
     this._provisionalIdentityManager = new ProvisionalIdentityManager(client, storage.keyStore, this._localUserManager, this._userManager);
     this._groupManager = new GroupManager(client, storage.groupStore, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager);
-    this._resourceManager = new ResourceManager(client, storage.resourceStore, this._localUserManager, this._groupManager, this._provisionalIdentityManager, this._sentry);
+    this._resourceManager = new ResourceManager(client, storage.resourceStore, this._localUserManager, this._groupManager, this._provisionalIdentityManager, this._sentryLimiter);
     this._sessionManager = new SessionManager(storage.sessionStore);
     this._dataProtector = new DataProtector(client, this._localUserManager.localUser, this._userManager, this._provisionalIdentityManager, this._groupManager, this._resourceManager, this._sessionManager);
     this._cloudStorageManager = new CloudStorageManager(client, this._dataProtector);
@@ -137,6 +140,7 @@ export class Session extends EventEmitter {
       this._sentry?.setTag('tanker_device_id', utils.toBase64(localUser.deviceId));
       this._sentry?.setTag('tanker_instance_id', this._client.instanceId);
       this._sentry?.setTag('tanker_status', this.statusName);
+      this._sentryLimiter?.flush();
 
       await this._handleUnrecoverableError(e);
       throw e;

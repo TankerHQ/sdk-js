@@ -81,7 +81,7 @@ export const generateSentryTests = (args: TestArgs) => {
 
       await expect(alice.decrypt(fakeMissingResource)).to.be.rejectedWith(errors.InvalidArgument);
 
-      expect(hub.breadcrumbs).to.have.lengthOf(3);
+      expect(hub.breadcrumbs).to.have.lengthOf(1 + 2);
       expect(hub.breadcrumbs[0]?.message).to.contain('Tanker key found in cache'); // 1st decrypt key found
       expect(hub.breadcrumbs[1]?.message).to.contain('Key not found'); // 2nd transparent session key
       expect(hub.breadcrumbs[2]?.message).to.contain('Key not found'); // 2nd individual resource key
@@ -97,9 +97,12 @@ export const generateSentryTests = (args: TestArgs) => {
       const encrypted = await bob.encrypt('foo', options);
 
       await alice.decrypt(encrypted);
+      await expect(alice.decrypt(fakeMissingResource)).to.be.rejectedWith(errors.InvalidArgument);
 
-      expect(hub.breadcrumbs).to.have.lengthOf(1);
+      expect(hub.breadcrumbs).to.have.lengthOf(1 + 2);
       expect(hub.breadcrumbs[0]?.message).to.contain('Tanker key not found in cache, but fetched from server');
+      expect(hub.breadcrumbs[1]?.message).to.contain('Key not found'); // 2nd transparent session key
+      expect(hub.breadcrumbs[2]?.message).to.contain('Key not found'); // 2nd individual resource key
     });
   });
 };

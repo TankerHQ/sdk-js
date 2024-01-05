@@ -2,7 +2,6 @@ import type { Key, b64string } from '@tanker/crypto';
 import { utils } from '@tanker/crypto';
 import { UpgradeRequired } from '@tanker/errors';
 import { errors as dbErrors } from '@tanker/datastore-base';
-import type { Hub } from '@sentry/types';
 
 import { getKeyPublishEntryFromBlock } from './Serialize';
 import { KeyDecryptor } from './KeyDecryptor';
@@ -13,6 +12,7 @@ import type { ResourceStore } from './ResourceStore';
 import type { LocalUserManager } from '../LocalUser/Manager';
 import type { GroupManager } from '../Groups/Manager';
 import type { ProvisionalIdentityManager } from '../ProvisionalIdentity/Manager';
+import { SentryLimiter } from '../SentryLimiter';
 
 export type KeyResult = {
   id: b64string;
@@ -24,7 +24,7 @@ export class ResourceManager {
   declare _keyDecryptor: KeyDecryptor;
   declare _keyLookupCoalescer: TaskCoalescer<KeyResult>;
   declare _resourceStore: ResourceStore;
-  declare _sentry: Hub | null;
+  declare _sentry: SentryLimiter | null;
 
   constructor(
     client: Client,
@@ -32,7 +32,7 @@ export class ResourceManager {
     localUserManager: LocalUserManager,
     groupManager: GroupManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
-    sentry: Hub | null,
+    sentry: SentryLimiter | null,
   ) {
     this._client = client;
     this._keyDecryptor = new KeyDecryptor(localUserManager, groupManager, provisionalIdentityManager);
