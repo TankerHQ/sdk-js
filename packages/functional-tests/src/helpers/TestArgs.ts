@@ -1,4 +1,4 @@
-import type { Tanker } from '@tanker/core';
+import type { Tanker, TankerOptions } from '@tanker/core';
 import type { Class, Data } from '@tanker/types';
 
 import type { AppHelper } from './AppHelper';
@@ -12,5 +12,5 @@ export type TestArgs = {
   appHelper: AppHelper;
   resources: TestResources;
   defaultDownloadType: DefaultDownloadType;
-  makeTanker: (b64AppId?: string) => Tanker;
+  makeTanker: (b64AppId?: string, extraOpts?: TankerOptions) => Tanker;
 };

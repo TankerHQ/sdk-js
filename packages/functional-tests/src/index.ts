@@ -1,5 +1,5 @@
 import { ready as cryptoReady, utils } from '@tanker/crypto';
-import type { Tanker, b64string } from '@tanker/core';
+import type { Tanker, TankerOptions, b64string } from '@tanker/core';
 import { silencer } from '@tanker/test-utils';
 
 import { makePrefix, AppHelper, appdUrl, managementSettings, oidcSettings, trustchaindUrl } from './helpers';
@@ -15,11 +15,12 @@ import { generateSessionTests } from './session';
 import { generateUploadTests } from './upload';
 import { generateVerificationTests } from './verification';
 import { generateConcurrencyTests } from './concurrency';
+import { generateSentryTests } from './sentry';
 import { generateSessionTokenTests } from './sessionToken';
 
 export function generateFunctionalTests(
   name: string,
-  makeTanker: (appId: b64string, storagePrefix: string) => Tanker,
+  makeTanker: (appId: b64string, storagePrefix: string, extraOpts: TankerOptions) => Tanker,
   generateTestResources: () => { resources: TestResources; defaultDownloadType: DefaultDownloadType },
 ) {
   if (!appdUrl || !managementSettings || !oidcSettings || !trustchaindUrl) {
@@ -50,7 +51,7 @@ export function generateFunctionalTests(
       args.appHelper = await AppHelper.newApp(makeTanker);
       const b64DefaultAppId = utils.toBase64(args.appHelper.appId);
 
-      args.makeTanker = (b64AppId = b64DefaultAppId) => makeTanker(b64AppId, makePrefix());
+      args.makeTanker = (b64AppId = b64DefaultAppId, extraOpts = {}) => makeTanker(b64AppId, makePrefix(), extraOpts);
 
       silencer.silence('warn', /deprecated/);
     });
@@ -73,6 +74,7 @@ export function generateFunctionalTests(
     generateUploadTests(args);
     generateNetworkTests(args);
     generateConcurrencyTests(args);
+    generateSentryTests(args);
     generateSessionTokenTests(args);
   });
 }

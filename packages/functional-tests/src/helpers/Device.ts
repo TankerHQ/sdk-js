@@ -1,7 +1,7 @@
-import { Tanker } from '@tanker/core';
+import { Tanker, type TankerOptions } from '@tanker/core';
 import { uuid } from '@tanker/test-utils';
 
-export type TankerFactory = (appId: string, storagePrefix: string) => Tanker;
+export type TankerFactory = (appId: string, storagePrefix: string, extraOpts: TankerOptions) => Tanker;
 
 const VERIFICATION = { passphrase: 'passphrase' };
 
@@ -18,7 +18,7 @@ export class Device {
     this.storagePrefix = storagePrefix;
   }
 
-  static async create(makeTanker: (appId: string, storagePrefix: string) => Tanker, appId: string, identity: string): Promise<Device> {
+  static async create(makeTanker: TankerFactory, appId: string, identity: string): Promise<Device> {
     return new Device(makeTanker, appId, identity, uuid.v4());
   }
 
@@ -26,6 +26,7 @@ export class Device {
     const tanker = this.makeTanker(
       this.appId,
       this.storagePrefix,
+      {},
     );
     const status = await tanker.start(this.identity);
     if (status === Tanker.statuses.IDENTITY_REGISTRATION_NEEDED)

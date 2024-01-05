@@ -1,17 +1,18 @@
 import Tanker from '@tanker/client-browser';
 
-import type { b64string } from '@tanker/core';
+import type { TankerOptions, b64string } from '@tanker/core';
 
 import type { DefaultDownloadType, TestResources } from '../helpers';
 import { appdUrl, makeRandomUint8Array } from '../helpers';
 import { generateFunctionalTests } from '..';
 
-const makeTanker = (appId: b64string, storagePrefix: string): Tanker => {
+const makeTanker = (appId: b64string, storagePrefix: string, extraOpts: TankerOptions): Tanker => {
   const tanker = new Tanker({
     appId,
     dataStore: { prefix: storagePrefix },
     sdkType: 'js-functional-tests-web',
     url: appdUrl,
+    ...extraOpts,
   });
 
   return tanker;
