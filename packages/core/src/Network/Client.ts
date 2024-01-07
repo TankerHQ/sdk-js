@@ -81,6 +81,10 @@ export class Client {
     this._userId = userId;
   }
 
+  get instanceId(): string {
+    return this._instanceId;
+  }
+
   _cancelable = <R>(fun: (...args: Array<any>) => Promise<R>) => (...args: Array<any>) => {
     // cancelationHandle.promise always rejects. Its returned type doesn't matter
     if (this._cancelationHandle.settled) {

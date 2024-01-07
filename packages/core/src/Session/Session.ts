@@ -1,6 +1,8 @@
 import EventEmitter from 'events';
+import type { Hub } from '@sentry/types';
 
 import { TankerError, ExpiredVerification, InternalError, InvalidArgument, InvalidVerification, NetworkError, OperationCanceled, PreconditionFailed, TooManyAttempts } from '@tanker/errors';
+import { utils } from '@tanker/crypto';
 
 import type { DataStoreOptions } from './Storage';
 import { Storage } from './Storage';
@@ -22,6 +24,7 @@ import { SessionManager } from '../TransparentSession/Manager';
 export class Session extends EventEmitter {
   _storage: Storage;
   _client: Client;
+  _sentry: Hub | null;
 
   _localUserManager: LocalUserManager;
   _userManager: UserManager;
@@ -34,12 +37,13 @@ export class Session extends EventEmitter {
 
   _status: Status;
 
-  constructor(userData: UserData, storage: Storage, oidcNonceManagerGetter: () => Promise<OidcNonceManager>, client: Client) {
+  constructor(userData: UserData, storage: Storage, oidcNonceManagerGetter: () => Promise<OidcNonceManager>, client: Client, sentry: Hub | null) {
     super();
 
     this._storage = storage;
     this._client = client;
     this._status = Status.STOPPED;
+    this._sentry = sentry;
 
     this._localUserManager = new LocalUserManager(userData, oidcNonceManagerGetter, client, storage.keyStore);
     this._localUserManager.on('error', async (e: Error) => {
@@ -72,6 +76,10 @@ export class Session extends EventEmitter {
     return this._status;
   }
 
+  get statusName(): string {
+    return Status[this.status];
+  }
+
   set status(nextStatus: Status) {
     if (nextStatus !== this._status) {
       this._status = nextStatus;
@@ -79,13 +87,13 @@ export class Session extends EventEmitter {
     }
   }
 
-  static init = async (userData: UserData, oidcNonceManagerGetter: () => Promise<OidcNonceManager>, storeOptions: DataStoreOptions, clientOptions: ClientOptions): Promise<Session> => {
+  static init = async (userData: UserData, oidcNonceManagerGetter: () => Promise<OidcNonceManager>, storeOptions: DataStoreOptions, clientOptions: ClientOptions, sentry: Hub | null): Promise<Session> => {
     const client = new Client(userData.trustchainId, userData.userId, clientOptions);
 
     const storage = new Storage(storeOptions);
     await storage.open(userData.userId, userData.userSecret);
 
-    return new Session(userData, storage, oidcNonceManagerGetter, client);
+    return new Session(userData, storage, oidcNonceManagerGetter, client, sentry);
   };
 
   start = async (): Promise<void> => {
@@ -123,6 +131,13 @@ export class Session extends EventEmitter {
     try {
       return await manager[func].call(manager, ...args);
     } catch (e) {
+      const localUser = this._localUserManager.localUser;
+      this._sentry?.setTag('tanker_app_id', utils.toBase64(localUser.trustchainId));
+      this._sentry?.setTag('tanker_user_id', utils.toBase64(localUser.userId));
+      this._sentry?.setTag('tanker_device_id', utils.toBase64(localUser.deviceId));
+      this._sentry?.setTag('tanker_instance_id', this._client.instanceId);
+      this._sentry?.setTag('tanker_status', this.statusName);
+
       await this._handleUnrecoverableError(e);
       throw e;
     }

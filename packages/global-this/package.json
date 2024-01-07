@@ -23,7 +23,8 @@
     "test": "cd ../..; npm run test:global-this"
   },
   "dependencies": {
-    "tslib": "^2.3.1"
+    "tslib": "^2.3.1",
+    "@sentry/types": "7.76.0"
   },
   "devDependencies": {
     "@tanker/test-utils": "0.0.1"

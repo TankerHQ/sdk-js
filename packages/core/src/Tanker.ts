@@ -2,8 +2,10 @@ import EventEmitter from 'events';
 import type { b64string, EncryptionStream, DecryptionStream } from '@tanker/crypto';
 import { randomBase64Token, ready as cryptoReady, tcrypto, utils, extractEncryptionFormat, SAFE_EXTRACTION_LENGTH, assertResourceId } from '@tanker/crypto';
 import { InternalError, InvalidArgument } from '@tanker/errors';
+import { globalThis } from '@tanker/global-this';
 import { assertDataType, assertInteger, assertNotEmptyString, castData } from '@tanker/types';
 import type { Data, ResourceMetadata } from '@tanker/types';
+import type { Hub } from '@sentry/types';
 
 import { _deserializeProvisionalIdentity, isSecretProvisionalIdentity } from './Identity';
 import type { ClientOptions } from './Network/Client';
@@ -60,6 +62,9 @@ export type TankerCoreOptions = {
   url?: string;
   dataStore: DataStoreOptions;
   sdkType: string;
+  /// Setting this to null explicitly turns off Sentry integration.
+  /// If left undefined, we try to find Sentry ourselves.
+  sentryHub?: Hub | null,
 };
 
 export type TankerOptions = Partial<Omit<TankerCoreOptions, 'dataStore'> & { dataStore: Partial<DataStoreOptions>; }>;
@@ -94,6 +99,7 @@ export class Tanker extends EventEmitter {
   _clientOptions: ClientOptions;
   _dataStoreOptions: DataStoreOptions;
   _localDeviceLock: Lock;
+  _sentry: Hub | null;
 
   static version = TANKER_SDK_VERSION;
   static statuses = statuses;
@@ -116,6 +122,12 @@ export class Tanker extends EventEmitter {
       throw new InvalidArgument('options.dataStore', 'object', options.dataStore);
     } else if (typeof options.dataStore.adapter !== 'function') {
       throw new InvalidArgument('options.dataStore.adapter', 'function', options.dataStore.adapter);
+    }
+
+    if (options.sentryHub === undefined) {
+      this._sentry = globalThis.Sentry?.getCurrentHub() || null;
+    } else {
+      this._sentry = options.sentryHub;
     }
 
     assertNotEmptyString(options.sdkType, 'options.sdkType');
@@ -172,8 +184,9 @@ export class Tanker extends EventEmitter {
   }
 
   get statusName(): string {
-    const def = statusDefs[this.status];
-    return def && def.name || `invalid status: ${this.status}`;
+    if (!this._session)
+      return statusDefs[statuses.STOPPED]!.name;
+    return this._session.statusName;
   }
 
   override addListener(eventName: string, listener: (...args: Array<unknown>) => void) {
@@ -271,7 +284,7 @@ export class Tanker extends EventEmitter {
     const session = await Session.init(userData, async () => {
       await this._initUnauthSession();
       return this._unauthSession!.getOidcNonceManager();
-    }, this._dataStoreOptions, this._clientOptions);
+    }, this._dataStoreOptions, this._clientOptions, this._sentry);
     // Watch and start the session
     session.on('status_change', s => this.emit('statusChange', s));
     await session.start();
