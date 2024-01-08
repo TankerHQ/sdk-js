@@ -12,6 +12,7 @@ import type { ResourceStore } from './ResourceStore';
 import type { LocalUserManager } from '../LocalUser/Manager';
 import type { GroupManager } from '../Groups/Manager';
 import type { ProvisionalIdentityManager } from '../ProvisionalIdentity/Manager';
+import { SentryLimiter } from '../SentryLimiter';
 
 export type KeyResult = {
   id: b64string;
@@ -23,6 +24,7 @@ export class ResourceManager {
   declare _keyDecryptor: KeyDecryptor;
   declare _keyLookupCoalescer: TaskCoalescer<KeyResult>;
   declare _resourceStore: ResourceStore;
+  declare _sentry: SentryLimiter | null;
 
   constructor(
     client: Client,
@@ -30,11 +32,13 @@ export class ResourceManager {
     localUserManager: LocalUserManager,
     groupManager: GroupManager,
     provisionalIdentityManager: ProvisionalIdentityManager,
+    sentry: SentryLimiter | null,
   ) {
     this._client = client;
     this._keyDecryptor = new KeyDecryptor(localUserManager, groupManager, provisionalIdentityManager);
     this._keyLookupCoalescer = new TaskCoalescer();
     this._resourceStore = resourceStore;
+    this._sentry = sentry;
   }
 
   async findKeyFromResourceId(resourceId: Uint8Array): Promise<Key | null> {
@@ -52,11 +56,28 @@ export class ResourceManager {
       if (!resourceKey) {
         const keyPublishBlock = await this._client.getResourceKey(resourceId);
         if (!keyPublishBlock) {
+          this._sentry?.addBreadcrumb({
+            category: 'tanker_keystore',
+            level: 'warning',
+            message: `Key not found in either cache or server for ${b64resourceId}`,
+          });
           return { id: b64resourceId, key: null };
         }
+        this._sentry?.addBreadcrumb({
+          category: 'tanker_keystore',
+          level: 'debug',
+          message: `Tanker key not found in cache, but fetched from server for ${b64resourceId}`,
+        });
+
         const keyPublish = getKeyPublishEntryFromBlock(keyPublishBlock);
         resourceKey = await this._keyDecryptor.keyFromKeyPublish(keyPublish);
         await this._resourceStore.saveResourceKey(resourceId, resourceKey);
+      } else {
+        this._sentry?.addBreadcrumb({
+          category: 'tanker_keystore',
+          level: 'debug',
+          message: `Tanker key found in cache for ${b64resourceId}`,
+        });
       }
 
       return { id: b64resourceId, key: resourceKey };

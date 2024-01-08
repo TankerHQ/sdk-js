@@ -1,18 +1,19 @@
 import Tanker from '@tanker/client-node';
 import { pouchDBMemory } from '@tanker/datastore-pouchdb-memory';
 
-import type { b64string } from '@tanker/core';
+import type { TankerOptions, b64string } from '@tanker/core';
 
 import type { DefaultDownloadType, TestResources } from '../helpers';
 import { appdUrl, makeRandomUint8Array } from '../helpers';
 import { generateFunctionalTests } from '..';
 
-const makeTanker = (appId: b64string, storagePrefix: string): Tanker => {
+const makeTanker = (appId: b64string, storagePrefix: string, extraOpts: TankerOptions): Tanker => {
   const tanker = new Tanker({
     appId,
     dataStore: { adapter: pouchDBMemory, prefix: storagePrefix },
     sdkType: 'js-functional-tests-node',
     url: appdUrl,
+    ...extraOpts,
   });
 
   return tanker;

@@ -12,6 +12,7 @@
     "package.json"
   ],
   "dependencies": {
+    "@sentry/types": "7.76.0",
     "@tanker/client-browser": "0.0.1",
     "@tanker/client-node": "0.0.1",
     "@tanker/core": "0.0.1",
