@@ -125,7 +125,10 @@ export class Tanker extends EventEmitter {
     }
 
     if (options.sentryHub === undefined) {
-      this._sentry = globalThis.Sentry?.getCurrentHub() || null;
+      // If Sentry is lazy-loaded, the globalThis.Sentry object can exist but be almost empty
+      // So we have to check if getCurrentHub is defined. Disable integration if it hasn't finished loading.
+      const getHub = globalThis.Sentry?.getCurrentHub;
+      this._sentry = getHub ? getHub() : null;
     } else {
       this._sentry = options.sentryHub;
     }
