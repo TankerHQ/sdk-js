@@ -137,7 +137,7 @@ export class Session extends EventEmitter {
       const localUser = this._localUserManager.localUser;
       this._sentry?.setTag('tanker_app_id', utils.toBase64(localUser.trustchainId));
       this._sentry?.setTag('tanker_user_id', utils.toBase64(localUser.userId));
-      this._sentry?.setTag('tanker_device_id', utils.toBase64(localUser.deviceId));
+      this._sentry?.setTag('tanker_device_id', localUser.isInitialized ? utils.toBase64(localUser.deviceId) : 'null');
       this._sentry?.setTag('tanker_instance_id', this._client.instanceId);
       this._sentry?.setTag('tanker_status', this.statusName);
       this._sentryLimiter?.flush();
