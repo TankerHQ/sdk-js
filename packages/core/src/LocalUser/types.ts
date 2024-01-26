@@ -18,6 +18,7 @@ export type EmailVerification = { email: string; verificationCode: string; };
 export type PassphraseVerification = { passphrase: string; };
 export type E2ePassphraseVerification = { e2ePassphrase: string; };
 export type KeyVerification = { verificationKey: string; };
+export type OidcAuthorizationCodeVerification = { oidcProviderId: string; oidcAuthorizationCode: string; oidcState: string; };
 export type OidcVerification = { oidcIdToken: string; };
 export type PhoneNumberVerification = { phoneNumber: string; verificationCode: string; };
 export type PreverifiedEmailVerification = { preverifiedEmail: string; };
@@ -30,6 +31,7 @@ export type E2eRemoteVerification = E2ePassphraseVerification;
 export type RemoteVerification = E2eRemoteVerification
 | EmailVerification
 | PassphraseVerification
+| OidcAuthorizationCodeVerification
 | OidcVerification
 | PhoneNumberVerification
 | PreverifiedEmailVerification
@@ -44,9 +46,9 @@ export type RemoteVerificationWithToken = RemoteVerification & WithTokenOptions;
 export type VerificationOptions = { withSessionToken?: boolean; allowE2eMethodSwitch?: boolean; };
 
 const validE2eMethods = ['e2ePassphrase'];
-const validNonE2eMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber', 'preverifiedOidcSubject'];
+const validNonE2eMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'oidcAuthorizationCode', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber', 'preverifiedOidcSubject'];
 const validMethods = [...validE2eMethods, ...validNonE2eMethods];
-const validKeys = [...validMethods, 'verificationCode', 'oidcProviderId'];
+const validKeys = [...validMethods, 'verificationCode', 'oidcProviderId', 'oidcState'];
 
 const validVerifOptionsKeys = ['withSessionToken', 'allowE2eMethodSwitch'];
 
@@ -93,6 +95,10 @@ export const assertVerification = (verification: Verification) => {
     if ('testNonce' in verification) {
       console.warn("'testNonce' field should be used for tests purposes only. It will be rejected for non-test Tanker application");
     }
+  } else if ('oidcAuthorizationCode' in verification) {
+    assertNotEmptyString(verification.oidcProviderId, 'verification.oidcProviderId');
+    assertNotEmptyString(verification.oidcAuthorizationCode, 'verification.oidcAuthorizationCode');
+    assertNotEmptyString(verification.oidcState, 'verification.oidcState');
   } else if ('preverifiedEmail' in verification) {
     assertNotEmptyString(verification.preverifiedEmail, 'verification.preverifiedEmail');
   } else if ('preverifiedPhoneNumber' in verification) {

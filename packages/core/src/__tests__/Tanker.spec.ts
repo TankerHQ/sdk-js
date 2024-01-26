@@ -40,6 +40,13 @@ describe('Tanker', () => {
     { passphrase: 12 },
     { passphrase: new Uint8Array(12) },
     { passphrase: '' },
+    { oidcProviderId: '', oidcAuthorizationCode: 'code', oidcState: 'state' },
+    { oidcProviderId: 'issuer', oidcAuthorizationCode: '', oidcState: 'state' },
+    { oidcProviderId: 'issuer', oidcAuthorizationCode: 'code', oidcState: '' },
+    { oidcProviderId: 'issuer', oidcAuthorizationCode: new Uint8Array(12), oidcState: 'state' },
+    { oidcProviderId: 'issuer', oidcAuthorizationCode: 'code' },
+    { oidcAuthorizationCode: 'code', oidcState: 'state' },
+    { oidcProviderId: 'issuer', oidcState: 'state' },
     { email: 'valid@tanker.io', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
   ];
 
