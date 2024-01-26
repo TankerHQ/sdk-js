@@ -230,7 +230,7 @@ export class LocalUserManager extends EventEmitter {
       first_device_creation: firstDeviceBlock,
     };
 
-    if ('email' in verification || 'passphrase' in verification || 'oidcIdToken' in verification || 'phoneNumber' in verification) {
+    if ('email' in verification || 'passphrase' in verification || 'oidcIdToken' in verification || 'oidcAuthorizationCode' in verification || 'phoneNumber' in verification) {
       request.v2_encrypted_verification_key = ghostDeviceToEncryptedVerificationKey(ghostDevice, this._localUser.userSecret);
       request.verification = await formatVerificationRequest(verification, this);
       request.verification.with_token = verification.withToken; // May be undefined
