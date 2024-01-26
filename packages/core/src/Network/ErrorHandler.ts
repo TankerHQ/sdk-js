@@ -7,6 +7,7 @@ const apiCodeErrorMap: Record<string, Class<TankerError>> = {
   empty_user_group: InvalidArgument,
   feature_not_enabled: PreconditionFailed,
   group_too_big: GroupTooBig,
+  invalid_authorization_code: InvalidVerification,
   invalid_delegation_signature: InvalidVerification,
   invalid_oidc_id_token: InvalidVerification,
   invalid_passphrase: InvalidVerification,
@@ -14,6 +15,9 @@ const apiCodeErrorMap: Record<string, Class<TankerError>> = {
   invalid_verification_code: InvalidVerification,
   missing_user_group_members: InvalidArgument,
   not_a_user_group_member: InvalidArgument,
+  oidc_provider_interaction_required: PreconditionFailed,
+  oidc_provider_not_configured: PreconditionFailed,
+  oidc_provider_not_supported: PreconditionFailed,
   provisional_identity_already_attached: IdentityAlreadyAttached,
   too_many_attempts: TooManyAttempts,
   too_many_requests: TooManyRequests,
@@ -22,7 +26,6 @@ const apiCodeErrorMap: Record<string, Class<TankerError>> = {
   verification_code_not_found: InvalidVerification,
   verification_key_not_found: PreconditionFailed,
   verification_method_not_set: PreconditionFailed,
-  oidc_provider_not_configured: PreconditionFailed,
 };
 
 export const genericErrorHandler = (apiMethod: string, apiRoute: string, error: Record<string, any>) => {

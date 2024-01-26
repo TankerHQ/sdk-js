@@ -18,14 +18,14 @@ export const generateEnrollTests = (args: TestArgs) => {
     let emailVerification: PreverifiedEmailVerification;
     let phoneNumberVerification: PreverifiedPhoneNumberVerification;
     let oidcVerification: PreverifiedOidcVerification;
-    let providerID: string;
+    let providerId: string;
 
     before(async () => {
       server = args.makeTanker();
       ({ appHelper } = args);
 
       const config = await appHelper.setOidc();
-      providerID = config.app.oidc_providers[0]!.id;
+      providerId = config.app.oidc_providers[0]!.id;
 
       emailVerification = {
         preverifiedEmail: email,
@@ -34,7 +34,7 @@ export const generateEnrollTests = (args: TestArgs) => {
         preverifiedPhoneNumber: phoneNumber,
       };
       oidcVerification = {
-        oidcProviderId: providerID,
+        oidcProviderId: providerId,
         preverifiedOidcSubject: 'a subject',
       };
     });

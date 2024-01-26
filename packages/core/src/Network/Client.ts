@@ -10,6 +10,7 @@ import { signChallenge } from './Authenticator';
 import { genericErrorHandler } from './ErrorHandler';
 import { b64RequestObject, urlize } from './utils';
 import type { ProvisionalKeysRequest, SetVerificationMethodRequest, VerificationRequest } from '../LocalUser/requests';
+import type { OidcAuthorizationCodeVerification } from '../LocalUser/types';
 import type { PublicProvisionalIdentityTarget } from '../Identity/identity';
 import type {
   FileUploadURLResponse, FileDownloadURLResponse,
@@ -444,6 +445,18 @@ export class Client {
       },
     });
     return challenge;
+  };
+
+  oidcSignIn = async (oidcProviderId: string): Promise<OidcAuthorizationCodeVerification> => {
+    const { code, state } = await this._apiCall(
+      `/oidc/${oidcProviderId}/signin?user_id=${urlize(this._userId)}`,
+      { credentials: 'include' },
+    );
+    return {
+      oidcProviderId,
+      oidcAuthorizationCode: code,
+      oidcState: state,
+    };
   };
 
   getResourceKey = async (resourceId: Uint8Array): Promise<b64string | null> => {

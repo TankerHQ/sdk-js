@@ -29,6 +29,7 @@ import type {
   PreverifiedVerification,
   RemoteVerificationWithToken,
   LegacyEmailVerificationMethod,
+  OidcAuthorizationCodeVerification,
 } from './types';
 import { isE2eVerification } from './types';
 import { generateUserCreation, generateDeviceFromGhostDevice, generateGhostDevice } from './UserCreation';
@@ -388,4 +389,6 @@ export class LocalUserManager extends EventEmitter {
     await oidcNonceManage.removeOidcNonce(nonce);
     return res;
   };
+
+  createOidcAuthorizationCode = async (oidcProviderId: string): Promise<OidcAuthorizationCodeVerification> => this._client.oidcSignIn(oidcProviderId);
 }
