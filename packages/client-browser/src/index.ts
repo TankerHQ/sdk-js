@@ -11,6 +11,10 @@ class Tanker extends TankerCore {
   constructor(options: TankerOptions) {
     super(optionsWithDefaults(options, defaultOptions));
   }
+
+  // authenticateWithIdP() is only exposed in client-browser because it relies on Cookies
+  // and Cookies are not handled by node fetch
+  authenticateWithIdP = this._authenticateWithIdP;
 }
 
 export { errors, fromBase64, toBase64, prehashPassword, Padding } from '@tanker/core';
