@@ -97,6 +97,7 @@
     "Firefox ESR",
     "node >= 18",
     "not IE 11",
+    "not op_mini all",
     "not dead"
   ],
   "nyc": {
