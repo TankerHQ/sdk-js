@@ -32,8 +32,12 @@ type PhoneNumberRequest = {
 type E2ePassphraseRequest = {
   hashed_e2e_passphrase: Uint8Array;
 };
+type OIDCRequest = {
+  oidc_subject: string,
+  oidc_provider_id: string,
+};
 
-export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preverified<PhoneNumberRequest>;
+export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preverified<PhoneNumberRequest> | Preverified<OIDCRequest>;
 
 export type VerificationRequestWithToken = WithToken<PassphraseRequest>
 | WithVerificationCode<EmailRequest>
@@ -106,6 +110,14 @@ export const formatVerificationRequest = async (
       oidc_challenge: challenge,
       oidc_challenge_signature: signature,
       oidc_test_nonce: testNonce,
+    };
+  }
+
+  if ('preverifiedOIDCSubject' in verification) {
+    return {
+      oidc_provider_id: verification.oidcProviderID,
+      oidc_subject: verification.preverifiedOIDCSubject,
+      is_preverified: true,
     };
   }
 

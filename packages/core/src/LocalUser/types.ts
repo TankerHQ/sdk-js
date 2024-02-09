@@ -22,7 +22,8 @@ export type OidcVerification = { oidcIdToken: string; };
 export type PhoneNumberVerification = { phoneNumber: string; verificationCode: string; };
 export type PreverifiedEmailVerification = { preverifiedEmail: string; };
 export type PreverifiedPhoneNumberVerification = { preverifiedPhoneNumber: string; };
-export type PreverifiedVerification = PreverifiedEmailVerification | PreverifiedPhoneNumberVerification;
+export type PreverifiedOIDCVerification = { preverifiedOIDCSubject: string; oidcProviderID: string };
+export type PreverifiedVerification = PreverifiedEmailVerification | PreverifiedPhoneNumberVerification | PreverifiedOIDCVerification;
 
 export type ProvisionalVerification = EmailVerification | PhoneNumberVerification;
 export type E2eRemoteVerification = E2ePassphraseVerification;
@@ -32,7 +33,8 @@ export type RemoteVerification = E2eRemoteVerification
 | OidcVerification
 | PhoneNumberVerification
 | PreverifiedEmailVerification
-| PreverifiedPhoneNumberVerification;
+| PreverifiedPhoneNumberVerification
+| PreverifiedOIDCVerification;
 export type Verification = RemoteVerification | KeyVerification;
 
 export type WithTokenOptions = { withToken?: { nonce: string; }; };
@@ -42,9 +44,9 @@ export type RemoteVerificationWithToken = RemoteVerification & WithTokenOptions;
 export type VerificationOptions = { withSessionToken?: boolean; allowE2eMethodSwitch?: boolean; };
 
 const validE2eMethods = ['e2ePassphrase'];
-const validNonE2eMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber'];
+const validNonE2eMethods = ['email', 'passphrase', 'verificationKey', 'oidcIdToken', 'phoneNumber', 'preverifiedEmail', 'preverifiedPhoneNumber', 'preverifiedOIDCSubject'];
 const validMethods = [...validE2eMethods, ...validNonE2eMethods];
-const validKeys = [...validMethods, 'verificationCode'];
+const validKeys = [...validMethods, 'verificationCode', 'oidcProviderID'];
 
 const validVerifOptionsKeys = ['withSessionToken', 'allowE2eMethodSwitch'];
 
@@ -52,7 +54,7 @@ export const isE2eVerification = (verification: VerificationWithToken): verifica
 
 export const isNonE2eVerification = (verification: VerificationWithToken) => Object.keys(verification).some(k => validNonE2eMethods.includes(k));
 
-export const isPreverifiedVerification = (verification: VerificationWithToken): verification is PreverifiedVerification => 'preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification;
+export const isPreverifiedVerification = (verification: VerificationWithToken): verification is PreverifiedVerification => 'preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification || 'preverifiedOIDCSubject' in verification;
 
 export const isPreverifiedVerificationMethod = (verificationMethod: VerificationMethod): verificationMethod is (PreverifiedEmailVerificationMethod | PreverifiedPhoneNumberVerificationMethod) => verificationMethod.type === 'preverifiedEmail' || verificationMethod.type === 'preverifiedPhoneNumber';
 
@@ -95,6 +97,12 @@ export const assertVerification = (verification: Verification) => {
     assertNotEmptyString(verification.preverifiedEmail, 'verification.preverifiedEmail');
   } else if ('preverifiedPhoneNumber' in verification) {
     assertNotEmptyString(verification.preverifiedPhoneNumber, 'verification.preverifiedPhoneNumber');
+  } else if ('preverifiedOIDCSubject' in verification) {
+    assertNotEmptyString(verification.preverifiedOIDCSubject, 'verification.preverifiedOIDCSubject');
+    if (!('oidcProviderID' in verification)) {
+      throw new InvalidArgument('verification', 'oidc pre-verification should also have a oidcProviderID', verification);
+    }
+    assertNotEmptyString(verification.oidcProviderID, 'verification.oidcProviderID');
   }
 };
 
@@ -135,12 +143,15 @@ export const countPreverifiedVerifications = (verifications: Array<PreverifiedVe
   const counts = {
     preverifiedEmail: 0,
     preverifiedPhoneNumber: 0,
+    preverifiedOIDCSubject: 0,
   };
   verifications.forEach((verification) => {
     if ('preverifiedEmail' in verification) {
       counts.preverifiedEmail += 1;
     } else if ('preverifiedPhoneNumber' in verification) {
       counts.preverifiedPhoneNumber += 1;
+    } else if ('preverifiedOIDCSubject' in verification) {
+      counts.preverifiedOIDCSubject += 1;
     } else {
       assertNever(verification, 'verification');
     }

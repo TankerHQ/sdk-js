@@ -53,7 +53,7 @@ export function generateFunctionalTests(
 
       args.makeTanker = (b64AppId = b64DefaultAppId, extraOpts = {}) => makeTanker(b64AppId, makePrefix(), extraOpts);
 
-      silencer.silence('warn', /deprecated/);
+      silencer.silence('warn', /(deprecated)|('testNonce' field)/);
     });
 
     after(async () => {

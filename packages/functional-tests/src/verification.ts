@@ -3,43 +3,16 @@ import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, Verification, VerificationMethod, LegacyEmailVerificationMethod } from '@tanker/core';
 import { tcrypto, utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
-import { expect, silencer, uuid } from '@tanker/test-utils';
+import { expect, uuid } from '@tanker/test-utils';
 import { createProvisionalIdentity } from '@tanker/identity';
 
 import type { AppHelper, TestArgs } from './helpers';
-import { oidcSettings, trustchaindUrl } from './helpers';
+import { extractSubject, getGoogleIdToken, oidcSettings, trustchaindUrl } from './helpers';
 import { verificationApiToken } from './helpers/config';
 
 const { READY, IDENTITY_VERIFICATION_NEEDED, IDENTITY_REGISTRATION_NEEDED } = statuses;
 
 const verificationThrottlingAttempts = 3;
-
-async function getGoogleIdToken(refreshToken: string): Promise<string> {
-  const formData = JSON.stringify({
-    client_id: oidcSettings.googleAuth.clientId,
-    client_secret: oidcSettings.googleAuth.clientSecret,
-    grant_type: 'refresh_token',
-    refresh_token: refreshToken,
-  });
-
-  const url = 'https://www.googleapis.com/oauth2/v4/token';
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const description = `${response.status} ${response.statusText}: ${await response.text()}`;
-    throw new Error(`Failed to get an ID token from ${url}:\n${description}`);
-  }
-
-  const data = await response.json();
-  return data.id_token;
-}
 
 const expectVerificationToMatchMethod = (verification: Verification, method: VerificationMethod | LegacyEmailVerificationMethod) => {
   // @ts-expect-error email might not be defined
@@ -731,6 +704,53 @@ export const generateVerificationTests = (args: TestArgs) => {
       });
     });
 
+    describe('verification with preverified oidc', () => {
+      const martineRefreshToken = oidcSettings.googleAuth.users.martine.refreshToken;
+
+      let martineIdToken: string;
+      let subject: string;
+      let provider: { id:string, display_name: string };
+
+      before(async () => {
+        const config = await appHelper.setOidc();
+        provider = config.app.oidc_providers[0]!;
+
+        martineIdToken = await getGoogleIdToken(martineRefreshToken);
+        subject = extractSubject(martineIdToken);
+      });
+
+      after(async () => {
+        await appHelper.unsetOidc();
+      });
+
+      it('fails when registering with a preverified oidc', async () => {
+        await expect(bobLaptop.registerIdentity({ preverifiedOIDCSubject: subject, oidcProviderID: provider.id })).to.be.rejectedWith(errors.InvalidArgument, 'cannot register identity with preverified methods');
+      });
+
+      it('fails when verifying identity with preverified oidc', async () => {
+        await bobLaptop.setOidcTestNonce(await bobLaptop.createOidcNonce());
+        await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
+
+        await bobPhone.start(bobIdentity);
+        await expect(bobPhone.verifyIdentity({  preverifiedOIDCSubject: subject, oidcProviderID: provider.id  })).to.be.rejectedWith(errors.InvalidArgument, 'cannot verify identity with preverified methods');
+      });
+
+      it('adds preverified oidc as a new verification method', async () => {
+        const email = await appHelper.generateRandomEmail();
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedOIDCSubject: subject, oidcProviderID: provider.id });
+
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([
+          { type: 'email', email }, { type: 'oidcIdToken', providerId: provider.id, providerDisplayName: provider.display_name }]);
+
+        await bobPhone.start(bobIdentity);
+        await bobPhone.setOidcTestNonce(await bobPhone.createOidcNonce());
+        await bobPhone.verifyIdentity({ oidcIdToken: martineIdToken });
+      });
+    });
+
     describe('verification by oidc id token', () => {
       describe('using Google', () => {
         const martineRefreshToken = oidcSettings.googleAuth.users.martine.refreshToken;
@@ -743,14 +763,9 @@ export const generateVerificationTests = (args: TestArgs) => {
           await appHelper.setOidc();
           martineIdToken = await getGoogleIdToken(martineRefreshToken);
           kevinIdToken = await getGoogleIdToken(kevinRefreshToken);
-
-          // warn was already silenced (to remove deprecation waring) and I can't silence it 2 times
-          silencer.restore();
-          silencer.silence('warn', /'testNonce' field/);
         });
 
         after(async () => {
-          silencer.restore();
           await appHelper.unsetOidc();
         });
 
