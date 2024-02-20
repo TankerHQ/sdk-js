@@ -43,6 +43,7 @@ configs: List[Config] = [
             "@tanker/datastore-base",
             "@tanker/datastore-dexie-base",
             "@tanker/datastore-dexie-browser",
+            "@tanker/datastore-dexie-memory",
             "@tanker/datastore-pouchdb-base",
             "@tanker/datastore-pouchdb-memory",
             "@tanker/datastore-pouchdb-node",
