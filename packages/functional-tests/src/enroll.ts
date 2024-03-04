@@ -1,10 +1,11 @@
-import type { Tanker, b64string, PreverifiedPhoneNumberVerification, PreverifiedEmailVerification } from '@tanker/core';
+import type { Tanker, b64string, PreverifiedPhoneNumberVerification, PreverifiedEmailVerification, PreverifiedOIDCVerification } from '@tanker/core';
 import { expect } from '@tanker/test-utils';
 import { getPublicIdentity } from '@tanker/identity';
 import { statuses, errors } from '@tanker/core';
-import { expectDecrypt } from './helpers';
+import { expectDecrypt, oidcSettings } from './helpers';
 
 import type { TestArgs, AppHelper } from './helpers';
+import { extractSubject, getGoogleIdToken } from './helpers';
 
 export const generateEnrollTests = (args: TestArgs) => {
   describe('Enrolling users', () => {
@@ -16,16 +17,25 @@ export const generateEnrollTests = (args: TestArgs) => {
     let bobIdentity: b64string;
     let emailVerification: PreverifiedEmailVerification;
     let phoneNumberVerification: PreverifiedPhoneNumberVerification;
+    let oidcVerification: PreverifiedOIDCVerification;
+    let providerID: string;
 
-    before(() => {
+    before(async () => {
       server = args.makeTanker();
       ({ appHelper } = args);
+
+      const config = await appHelper.setOidc();
+      providerID = config.app.oidc_providers[0]!.id;
 
       emailVerification = {
         preverifiedEmail: email,
       };
       phoneNumberVerification = {
         preverifiedPhoneNumber: phoneNumber,
+      };
+      oidcVerification = {
+        oidcProviderID: providerID,
+        preverifiedOIDCSubject: 'a subject',
       };
     });
 
@@ -41,6 +51,10 @@ export const generateEnrollTests = (args: TestArgs) => {
 
         it('fails to enroll a user with a phone number [D9OGI5]', async () => {
           await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.rejectedWith(errors.PreconditionFailed);
+        });
+
+        it('fails to enroll a user with oidc', async () => {
+          return expect(server.enrollUser(bobIdentity, [oidcVerification])).to.be.rejectedWith(errors.PreconditionFailed);
         });
 
         it('fails to enroll a user with both an email address and a phone number [ARRQBH]', async () => {
@@ -59,6 +73,10 @@ export const generateEnrollTests = (args: TestArgs) => {
 
         it('enrolls a user with a phone number [DEJGHP]', async () => {
           await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.fulfilled;
+        });
+
+        it('enrolls a user with an oidc', async () => {
+          await expect(server.enrollUser(bobIdentity, [oidcVerification])).to.be.fulfilled;
         });
 
         it('throws when enrolling a user multiple times [BMANVI]', async () => {
@@ -88,17 +106,26 @@ export const generateEnrollTests = (args: TestArgs) => {
     describe('enrolled user', () => {
       let bobLaptop: Tanker;
       let bobPhone: Tanker;
+      let bobTablet: Tanker;
       let bobPubIdentity: b64string;
+      let bobIdToken: string;
       const clearText = 'new enrollment feature';
 
       before(async () => {
         await appHelper.setEnrollUsersEnabled();
+        // Let's say Martine is bob's middle name
+        bobIdToken = await getGoogleIdToken(oidcSettings.googleAuth.users.martine.refreshToken);
+        oidcVerification.preverifiedOIDCSubject = extractSubject(bobIdToken);
+      });
+
+      after(async () => {
+        await appHelper.unsetOidc();
       });
 
       beforeEach(async () => {
         bobLaptop = args.makeTanker();
         bobPubIdentity = await getPublicIdentity(bobIdentity);
-        await server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification]);
+        await server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification, oidcVerification]);
 
         const disposableIdentity = await appHelper.generateIdentity();
         await server.start(disposableIdentity);
@@ -112,17 +139,23 @@ export const generateEnrollTests = (args: TestArgs) => {
 
       it('must verify new devices [FJQEQC]', async () => {
         bobPhone = args.makeTanker();
+        bobTablet = args.makeTanker();
 
         await bobLaptop.start(bobIdentity);
         await bobPhone.start(bobIdentity);
+        await bobTablet.start(bobIdentity);
+
         const emailCode = await appHelper.getEmailVerificationCode(email);
         const phoneNumberCode = await appHelper.getSMSVerificationCode(phoneNumber);
+        await bobTablet.setOidcTestNonce(await bobTablet.createOidcNonce());
 
         expect(bobLaptop.status).to.eq(statuses.IDENTITY_VERIFICATION_NEEDED);
         expect(bobPhone.status).to.eq(statuses.IDENTITY_VERIFICATION_NEEDED);
+        expect(bobTablet.status).to.eq(statuses.IDENTITY_VERIFICATION_NEEDED);
 
         await expect(bobLaptop.verifyIdentity({ email, verificationCode: emailCode })).to.be.fulfilled;
         await expect(bobPhone.verifyIdentity({ phoneNumber, verificationCode: phoneNumberCode })).to.be.fulfilled;
+        await expect(bobTablet.verifyIdentity({ oidcIdToken: bobIdToken })).to.be.fulfilled;
       });
 
       it('can attache a provisional identity [BV4VOS]', async () => {

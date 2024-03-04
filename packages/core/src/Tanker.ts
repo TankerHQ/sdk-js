@@ -248,7 +248,7 @@ export class Tanker extends EventEmitter {
     }
 
     const counts = countPreverifiedVerifications(verifications);
-    if (counts.preverifiedEmail > 1 || counts.preverifiedPhoneNumber > 1) {
+    if (counts.preverifiedEmail > 1 || counts.preverifiedPhoneNumber > 1 || counts.preverifiedOIDCSubject > 1) {
       throw new InvalidArgument('verications', 'contains at most one of each preverified verification method', counts);
     }
 
@@ -311,7 +311,7 @@ export class Tanker extends EventEmitter {
       verifWithToken.withToken = { nonce: randomBase64Token() };
     }
 
-    if ('preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification) {
+    if (isPreverifiedVerification(verification)) {
       throw new InvalidArgument('verification', 'cannot register identity with preverified methods');
     }
 
@@ -339,7 +339,7 @@ export class Tanker extends EventEmitter {
       assertStatus(this.status, statuses.IDENTITY_VERIFICATION_NEEDED, 'verify an identity');
     }
 
-    if ('preverifiedEmail' in verification || 'preverifiedPhoneNumber' in verification) {
+    if (isPreverifiedVerification(verification)) {
       throw new InvalidArgument('verification', 'cannot verify identity with preverified methods');
     }
 

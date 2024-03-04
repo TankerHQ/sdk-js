@@ -22,6 +22,7 @@ const apiCodeErrorMap: Record<string, Class<TankerError>> = {
   verification_code_not_found: InvalidVerification,
   verification_key_not_found: PreconditionFailed,
   verification_method_not_set: PreconditionFailed,
+  oidc_provider_not_configured: PreconditionFailed,
 };
 
 export const genericErrorHandler = (apiMethod: string, apiRoute: string, error: Record<string, any>) => {

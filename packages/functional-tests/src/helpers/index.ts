@@ -13,3 +13,4 @@ export type { EncryptedBuffer } from './encrypt';
 export { encrypt, checkDecrypt, checkDecryptFails } from './encrypt';
 export { checkGroup } from './groups';
 export { ignoreTag } from './tag';
+export { extractSubject, getGoogleIdToken } from './oidc';

@@ -35,6 +35,7 @@ export type {
   KeyVerification,
   PreverifiedEmailVerification,
   PreverifiedPhoneNumberVerification,
+  PreverifiedOIDCVerification,
   PreverifiedVerification,
   Verification,
   VerificationMethod,

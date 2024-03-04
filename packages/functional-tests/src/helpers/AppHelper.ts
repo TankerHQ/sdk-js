@@ -46,8 +46,8 @@ export class AppHelper {
     return new AppHelper(makeTanker, appId, appSecret);
   }
 
-  async _update(body: Record<string, unknown>): Promise<void> {
-    await requestManagement({
+  async _update(body: Record<string, unknown>): Promise<unknown> {
+    return requestManagement({
       method: 'PATCH',
       path: `/v2/apps/${utils.toRawUrlBase64(this.appId)}`,
       body,
@@ -66,14 +66,14 @@ export class AppHelper {
       'pro-sante-bas-no-expiry': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
     };
 
-    await this._update({
+    return this._update({
       oidc_providers: [{
         display_name: provider,
         issuer: providersIssuer[provider],
         client_id: providers[provider],
         ignore_token_expiration: provider === 'pro-sante-bas-no-expiry',
       }],
-    });
+    }) as Promise<{ app: { oidc_providers: Array<{ id: string, display_name: string }> } }>;
   }
 
   async unsetOidc() {
