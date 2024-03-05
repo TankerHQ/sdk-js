@@ -724,7 +724,7 @@ export const generateVerificationTests = (args: TestArgs) => {
       });
 
       it('fails when registering with a preverified oidc', async () => {
-        await expect(bobLaptop.registerIdentity({ preverifiedOIDCSubject: subject, oidcProviderID: provider.id })).to.be.rejectedWith(errors.InvalidArgument, 'cannot register identity with preverified methods');
+        await expect(bobLaptop.registerIdentity({ preverifiedOidcSubject: subject, oidcProviderId: provider.id })).to.be.rejectedWith(errors.InvalidArgument, 'cannot register identity with preverified methods');
       });
 
       it('fails when verifying identity with preverified oidc', async () => {
@@ -732,7 +732,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         await bobLaptop.registerIdentity({ oidcIdToken: martineIdToken });
 
         await bobPhone.start(bobIdentity);
-        await expect(bobPhone.verifyIdentity({  preverifiedOIDCSubject: subject, oidcProviderID: provider.id  })).to.be.rejectedWith(errors.InvalidArgument, 'cannot verify identity with preverified methods');
+        await expect(bobPhone.verifyIdentity({  preverifiedOidcSubject: subject, oidcProviderId: provider.id  })).to.be.rejectedWith(errors.InvalidArgument, 'cannot verify identity with preverified methods');
       });
 
       it('adds preverified oidc as a new verification method', async () => {
@@ -740,7 +740,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         let verificationCode = await appHelper.getEmailVerificationCode(email);
         await bobLaptop.registerIdentity({ email, verificationCode });
 
-        await bobLaptop.setVerificationMethod({ preverifiedOIDCSubject: subject, oidcProviderID: provider.id });
+        await bobLaptop.setVerificationMethod({ preverifiedOidcSubject: subject, oidcProviderId: provider.id });
 
         expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([
           { type: 'email', email }, { type: 'oidcIdToken', providerId: provider.id, providerDisplayName: provider.display_name }]);
