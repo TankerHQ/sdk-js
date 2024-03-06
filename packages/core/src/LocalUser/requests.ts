@@ -17,7 +17,7 @@ type EmailRequest = {
   hashed_email: Uint8Array;
   v2_encrypted_email: Uint8Array;
 };
-type OidcRequest = {
+type OidcIdTokenRequest = {
   oidc_id_token: string;
   oidc_challenge: b64string;
   oidc_challenge_signature: b64string;
@@ -32,16 +32,16 @@ type PhoneNumberRequest = {
 type E2ePassphraseRequest = {
   hashed_e2e_passphrase: Uint8Array;
 };
-type OIDCRequest = {
+type OidcRequest = {
   oidc_subject: string,
   oidc_provider_id: string,
 };
 
-export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preverified<PhoneNumberRequest> | Preverified<OIDCRequest>;
+export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preverified<PhoneNumberRequest> | Preverified<OidcRequest>;
 
 export type VerificationRequestWithToken = WithToken<PassphraseRequest>
 | WithVerificationCode<EmailRequest>
-| WithToken<OidcRequest>
+| WithToken<OidcIdTokenRequest>
 | WithVerificationCode<PhoneNumberRequest>
 | WithToken<E2ePassphraseRequest>;
 export type VerificationRequest = VerificationRequestWithToken | PreverifiedVerificationRequest;
@@ -113,10 +113,10 @@ export const formatVerificationRequest = async (
     };
   }
 
-  if ('preverifiedOIDCSubject' in verification) {
+  if ('preverifiedOidcSubject' in verification) {
     return {
-      oidc_provider_id: verification.oidcProviderID,
-      oidc_subject: verification.preverifiedOIDCSubject,
+      oidc_provider_id: verification.oidcProviderId,
+      oidc_subject: verification.preverifiedOidcSubject,
       is_preverified: true,
     };
   }

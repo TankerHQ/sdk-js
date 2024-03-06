@@ -1,4 +1,4 @@
-import type { Tanker, b64string, PreverifiedPhoneNumberVerification, PreverifiedEmailVerification, PreverifiedOIDCVerification } from '@tanker/core';
+import type { Tanker, b64string, PreverifiedPhoneNumberVerification, PreverifiedEmailVerification, PreverifiedOidcVerification } from '@tanker/core';
 import { expect } from '@tanker/test-utils';
 import { getPublicIdentity } from '@tanker/identity';
 import { statuses, errors } from '@tanker/core';
@@ -17,7 +17,7 @@ export const generateEnrollTests = (args: TestArgs) => {
     let bobIdentity: b64string;
     let emailVerification: PreverifiedEmailVerification;
     let phoneNumberVerification: PreverifiedPhoneNumberVerification;
-    let oidcVerification: PreverifiedOIDCVerification;
+    let oidcVerification: PreverifiedOidcVerification;
     let providerID: string;
 
     before(async () => {
@@ -34,8 +34,8 @@ export const generateEnrollTests = (args: TestArgs) => {
         preverifiedPhoneNumber: phoneNumber,
       };
       oidcVerification = {
-        oidcProviderID: providerID,
-        preverifiedOIDCSubject: 'a subject',
+        oidcProviderId: providerID,
+        preverifiedOidcSubject: 'a subject',
       };
     });
 
@@ -115,7 +115,7 @@ export const generateEnrollTests = (args: TestArgs) => {
         await appHelper.setEnrollUsersEnabled();
         // Let's say Martine is bob's middle name
         bobIdToken = await getGoogleIdToken(oidcSettings.googleAuth.users.martine.refreshToken);
-        oidcVerification.preverifiedOIDCSubject = extractSubject(bobIdToken);
+        oidcVerification.preverifiedOidcSubject = extractSubject(bobIdToken);
       });
 
       after(async () => {

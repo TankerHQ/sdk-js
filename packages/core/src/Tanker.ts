@@ -248,7 +248,7 @@ export class Tanker extends EventEmitter {
     }
 
     const counts = countPreverifiedVerifications(verifications);
-    if (counts.preverifiedEmail > 1 || counts.preverifiedPhoneNumber > 1 || counts.preverifiedOIDCSubject > 1) {
+    if (counts.preverifiedEmail > 1 || counts.preverifiedPhoneNumber > 1 || counts.preverifiedOidcSubject > 1) {
       throw new InvalidArgument('verications', 'contains at most one of each preverified verification method', counts);
     }
 
