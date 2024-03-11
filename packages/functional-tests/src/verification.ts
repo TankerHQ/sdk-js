@@ -3,7 +3,7 @@ import { errors, statuses } from '@tanker/core';
 import type { Tanker, b64string, Verification, VerificationMethod, LegacyEmailVerificationMethod } from '@tanker/core';
 import { tcrypto, utils } from '@tanker/crypto';
 import { fetch } from '@tanker/http-utils';
-import { expect, uuid } from '@tanker/test-utils';
+import { expect, isBrowser, uuid } from '@tanker/test-utils';
 import { createProvisionalIdentity } from '@tanker/identity';
 
 import type { AppHelper, TestArgs } from './helpers';
@@ -890,6 +890,95 @@ export const generateVerificationTests = (args: TestArgs) => {
         });
       });
     });
+
+    const authenticateWithIdP = (tanker: Tanker, id: string) => {
+      // We are testing a private method (only public in client-browser)
+      // eslint-disable-next-line no-underscore-dangle
+      return tanker._authenticateWithIdP(id);
+    };
+
+    describe('authenticateWithIdP', () => {
+      it('is restricted to trusted OIDC providers', async () => {
+        const config = await appHelper.setOidc('google');
+        const provider = config.app.oidc_providers[0]!;
+
+        await expect(authenticateWithIdP(bobLaptop, provider.id)).to.be.rejectedWith(errors.PreconditionFailed);
+      });
+    });
+
+    if (isBrowser()) {
+      describe('verification by oidc authorization code', () => {
+        let provider: { id: string, display_name: string };
+
+        const setFakeOidcSubjectCookie = async (subject: string) => fetch(`${oidcSettings.fakeOidc.url}/issuer/subject`, {
+          method: 'POST',
+          body: JSON.stringify({ subject }),
+          credentials: 'include',
+        });
+
+        before(async () => {
+          const config = await appHelper.setOidc('fake-oidc');
+          provider = config.app.oidc_providers[0]!;
+        });
+
+        after(async () => {
+          appHelper.unsetOidc();
+        });
+
+        it('registers and verifies with an oidc authorization code', async () => {
+          await setFakeOidcSubjectCookie('bob');
+
+          const verification1 = await authenticateWithIdP(bobLaptop, provider.id);
+          const verification2 = await authenticateWithIdP(bobLaptop, provider.id);
+          await expect(bobLaptop.registerIdentity(verification1)).to.be.fulfilled;
+
+          await bobPhone.start(bobIdentity);
+          expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+          await expect(bobPhone.verifyIdentity(verification2)).to.be.fulfilled;
+          expect(bobPhone.status).to.equal(READY);
+        });
+
+        it('fails to verify an oidc authorization code twice', async () => {
+          await setFakeOidcSubjectCookie('bob');
+
+          const verification1 = await authenticateWithIdP(bobLaptop, provider.id);
+          await expect(bobLaptop.registerIdentity(verification1)).to.be.fulfilled;
+
+          await bobPhone.start(bobIdentity);
+          expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+          await expect(bobPhone.verifyIdentity(verification1)).to.be.rejectedWith(errors.InvalidVerification);
+        });
+
+        it('fails to verify an oidc authorization code for the wrong user', async () => {
+          await setFakeOidcSubjectCookie('bob');
+
+          const verification1 = await authenticateWithIdP(bobLaptop, provider.id);
+          await expect(bobLaptop.registerIdentity(verification1)).to.be.fulfilled;
+
+          await setFakeOidcSubjectCookie('alice');
+          const verification2 = await authenticateWithIdP(bobLaptop, provider.id);
+          await bobPhone.start(bobIdentity);
+          expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+          await expect(bobPhone.verifyIdentity(verification2)).to.be.rejectedWith(errors.InvalidVerification);
+        });
+
+        it('updates and verifies with an oidc authorization code', async () => {
+          await expect(bobLaptop.registerIdentity({ passphrase: 'plain old passphrase' })).to.be.fulfilled;
+          await expect(bobLaptop.setVerificationMethod({
+            oidcProviderId: provider.id,
+            preverifiedOidcSubject: 'bob',
+          })).to.be.fulfilled;
+
+          await bobPhone.start(bobIdentity);
+          expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+
+          await setFakeOidcSubjectCookie('bob');
+          const verification = await authenticateWithIdP(bobPhone, provider.id);
+          await expect(bobPhone.verifyIdentity(verification)).to.be.fulfilled;
+          expect(bobPhone.status).to.equal(READY);
+        });
+      });
+    }
 
     describe('verification by E2E passphrase', () => {
       it('can register a verification e2e passphrase and open a new device with it', async () => {

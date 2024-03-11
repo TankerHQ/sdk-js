@@ -225,6 +225,14 @@ describe('Tanker', () => {
       });
     });
 
+    describe('authenticateWithIdP', () => {
+      it('throws when tanker is STOPPED', async () => {
+        // We are testing a private method (only public in client-browser)
+        // eslint-disable-next-line no-underscore-dangle
+        await expect(tanker._authenticateWithIdP('SomeBase64')).to.be.rejectedWith(PreconditionFailed);
+      });
+    });
+
     describe('enrollUser', () => {
       it('throws when tanker is not STOPPED', async () => {
         const illegalStatuses = [
