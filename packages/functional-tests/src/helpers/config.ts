@@ -25,6 +25,9 @@ const oidcSettings = {
       },
     },
   },
+  fakeOidc: {
+    url: process.env['TANKER_FAKE_OIDC_URL'] || '',
+  },
 };
 const storageSettings = {
   s3: {

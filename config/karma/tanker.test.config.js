@@ -18,6 +18,8 @@ const plugin = new webpack.EnvironmentPlugin({
   TANKER_OIDC_MARTINE_EMAIL: null,
   TANKER_OIDC_MARTINE_REFRESH_TOKEN: null,
 
+  TANKER_FAKE_OIDC_URL: null,
+
   TANKER_FILEKIT_BUCKET_NAME: null,
   TANKER_FILEKIT_BUCKET_REGION: null,
   TANKER_FILEKIT_CLIENT_ID: null,
