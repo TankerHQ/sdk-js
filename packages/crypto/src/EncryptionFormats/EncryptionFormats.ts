@@ -1,3 +1,4 @@
+import sodium from 'libsodium-wrappers';
 import { InvalidArgument } from '@tanker/errors';
 
 import { EncryptionV1 } from './v1';
@@ -50,8 +51,10 @@ export const extractEncryptionFormat = (encryptedData: Uint8Array) => {
 
   const encryption = encryptionFormats[version];
 
-  if (!encryption)
-    throw new InvalidArgument(`Unhandled format version ${version} used in encryptedData`);
+  if (!encryption) {
+    const headerHex = sodium.to_hex(encryptedData.slice(0, 5));
+    throw new InvalidArgument(`Unhandled format version ${version} used in encryptedData. Header starts with: 0x${headerHex}`);
+  }
   if (encryptedData.length < encryption.overhead)
     throw new InvalidArgument(`Truncated encrypted data. Length should be at least ${encryption.overhead} with encryption format v${encryption.version}`);
 

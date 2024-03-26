@@ -52,6 +52,11 @@ describe('Resource', () => {
     expect(() => extractEncryptionFormat(incorrectVersion)).to.throw(InvalidArgument);
   });
 
+  it('should return the first 5 bytes as hex when unsupported format version is detected', () => {
+    const elf = new Uint8Array([0x7F, 0x45, 0x4C, 0x46, 0x2, 0x1, 0x1]);
+    expect(() => extractEncryptionFormat(elf)).to.throw('Header starts with: 0x7f454c4602');
+  });
+
   configs.forEach(({ version, testVector }) => {
     it(`should detect a buffer v${version}`, () => {
       const resource = utils.concatArrays(new Uint8Array([version]), testVector);
