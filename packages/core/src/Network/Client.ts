@@ -104,7 +104,7 @@ export class Client {
   // Simple _fetch wrapper with:
   //   - proper headers set (sdk info and authorization)
   //   - generic error handling
-  _baseApiCall = async (path: string, init?: RequestInit): Promise<any> => {
+  _baseApiCall = async (path: string, authenticated: boolean, init?: RequestInit): Promise<any> => {
     try {
       if (!path || path[0] !== '/') {
         throw new InvalidArgument('"path" should be non empty and start with "/"');
@@ -115,7 +115,7 @@ export class Client {
       headers['X-Tanker-Sdktype'] = this._sdkType;
       headers['X-Tanker-Sdkversion'] = this._sdkVersion;
 
-      if (this._accessToken) {
+      if (authenticated && this._accessToken) {
         headers['Authorization'] = `Bearer ${this._accessToken}`; // eslint-disable-line dot-notation
       }
 
@@ -197,7 +197,7 @@ export class Client {
       },
     };
 
-    return retry(() => this._baseApiCall(path, init), retryOptions);
+    return retry(() => this._baseApiCall(path, true, init), retryOptions);
   });
 
   _authenticate = this._cancelable((): Promise<void> => {
@@ -217,14 +217,14 @@ export class Client {
 
     const auth = async () => {
       const { challenge } = await this._cancelable(
-        () => this._baseApiCall(`/devices/${urlize(deviceId)}/challenges`, { method: 'POST' }),
+        () => this._baseApiCall(`/devices/${urlize(deviceId)}/challenges`, false, { method: 'POST' }),
       )();
 
       const signature = signChallenge(deviceSignatureKeyPair, challenge);
       const signaturePublicKey = deviceSignatureKeyPair.publicKey;
 
       const { access_token: accessToken } = await this._cancelable(
-        () => this._baseApiCall(`/devices/${urlize(deviceId)}/sessions`, {
+        () => this._baseApiCall(`/devices/${urlize(deviceId)}/sessions`, false, {
           method: 'POST',
           body: JSON.stringify(b64RequestObject({ signature, challenge, signature_public_key: signaturePublicKey })),
           headers: { 'Content-Type': 'application/json' },
@@ -448,8 +448,9 @@ export class Client {
   };
 
   oidcSignIn = async (oidcProviderId: string): Promise<OidcAuthorizationCodeVerification> => {
-    const { code, state } = await this._apiCall(
+    const { code, state } = await this._baseApiCall(
       `/oidc/${oidcProviderId}/signin?user_id=${urlize(this._userId)}`,
+      false,
       { credentials: 'include' },
     );
     return {
@@ -626,7 +627,7 @@ export class Client {
       //   204: session successfully deleted
       //   401: session already expired
       //   other: something unexpected happened -> ignore and continue closing ¯\_(ツ)_/¯
-      await this._baseApiCall(path, { method: 'DELETE' }).catch((error: TankerError) => {
+      await this._baseApiCall(path, true, { method: 'DELETE' }).catch((error: TankerError) => {
         if (error.httpStatus !== 401) {
           console.error('Error while closing the network client', error);
         }
