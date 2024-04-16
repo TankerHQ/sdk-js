@@ -54,16 +54,18 @@ export class AppHelper {
     });
   }
 
-  async setOidc(provider: 'google' | 'pro-sante-bas' | 'pro-sante-bas-no-expiry' = 'google') {
+  async setOidc(provider: 'google' | 'pro-sante-bas' | 'pro-sante-bas-no-expiry' | 'fake-oidc' = 'google') {
     const providers = {
       google: oidcSettings.googleAuth.clientId,
       'pro-sante-bas': 'doctolib-dev',
       'pro-sante-bas-no-expiry': 'doctolib-dev',
+      'fake-oidc': 'tanker',
     };
     const providersIssuer = {
       google: 'https://accounts.google.com',
       'pro-sante-bas': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
       'pro-sante-bas-no-expiry': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
+      'fake-oidc': `${oidcSettings.fakeOidc.url}/issuer`,
     };
 
     return this._update({

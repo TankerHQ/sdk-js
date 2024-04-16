@@ -40,6 +40,13 @@ describe('Tanker', () => {
     { passphrase: 12 },
     { passphrase: new Uint8Array(12) },
     { passphrase: '' },
+    { oidcProviderId: '', oidcAuthorizationCode: 'code', oidcState: 'state' },
+    { oidcProviderId: 'issuer', oidcAuthorizationCode: '', oidcState: 'state' },
+    { oidcProviderId: 'issuer', oidcAuthorizationCode: 'code', oidcState: '' },
+    { oidcProviderId: 'issuer', oidcAuthorizationCode: new Uint8Array(12), oidcState: 'state' },
+    { oidcProviderId: 'issuer', oidcAuthorizationCode: 'code' },
+    { oidcAuthorizationCode: 'code', oidcState: 'state' },
+    { oidcProviderId: 'issuer', oidcState: 'state' },
     { email: 'valid@tanker.io', verificationCode: '12345678', passphrase: 'valid_passphrase' }, // only one method at a time!
   ];
 
@@ -215,6 +222,14 @@ describe('Tanker', () => {
       it('should throw when identity is public instead of secret', async () => {
         const publicIdentity = await getPublicIdentity(identity);
         await expect(tanker.start(publicIdentity)).to.be.rejectedWith(InvalidArgument, 'Expected a secret permanent identity, but got a public permanent identity');
+      });
+    });
+
+    describe('authenticateWithIdP', () => {
+      it('throws when tanker is STOPPED', async () => {
+        // We are testing a private method (only public in client-browser)
+        // eslint-disable-next-line no-underscore-dangle
+        await expect(tanker._authenticateWithIdP('SomeBase64')).to.be.rejectedWith(PreconditionFailed);
       });
     });
 

@@ -23,6 +23,11 @@ type OidcIdTokenRequest = {
   oidc_challenge_signature: b64string;
   oidc_test_nonce: string | undefined;
 };
+type OidcAuthorizationCode = {
+  oidc_provider_id: string;
+  oidc_authorization_code: string;
+  oidc_state: string;
+};
 type PhoneNumberRequest = {
   phone_number: string;
   encrypted_phone_number: Uint8Array;
@@ -41,6 +46,7 @@ export type PreverifiedVerificationRequest = Preverified<EmailRequest> | Preveri
 
 export type VerificationRequestWithToken = WithToken<PassphraseRequest>
 | WithVerificationCode<EmailRequest>
+| WithToken<OidcAuthorizationCode>
 | WithToken<OidcIdTokenRequest>
 | WithVerificationCode<PhoneNumberRequest>
 | WithToken<E2ePassphraseRequest>;
@@ -118,6 +124,14 @@ export const formatVerificationRequest = async (
       oidc_provider_id: verification.oidcProviderId,
       oidc_subject: verification.preverifiedOidcSubject,
       is_preverified: true,
+    };
+  }
+
+  if ('oidcAuthorizationCode' in verification) {
+    return {
+      oidc_authorization_code: verification.oidcAuthorizationCode,
+      oidc_provider_id: verification.oidcProviderId,
+      oidc_state: verification.oidcState,
     };
   }
 

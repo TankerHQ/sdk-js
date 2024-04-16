@@ -186,6 +186,7 @@ export class Session extends EventEmitter {
   setVerificationMethod = this._forward(this._getLocalUserManager, 'setVerificationMethod');
   getVerificationMethods = this._forward(this._getLocalUserManager, 'getVerificationMethods');
   generateVerificationKey = this._forward(this._getLocalUserManager, 'generateVerificationKey');
+  createOidcAuthorizationCode = this._forward(this._getLocalUserManager, 'createOidcAuthorizationCode');
 
   getSessionToken = this._forward(this._getLocalUserManager, 'getSessionToken');
 

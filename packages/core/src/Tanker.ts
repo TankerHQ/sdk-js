@@ -30,6 +30,7 @@ import type {
   PhoneNumberVerification,
   LegacyEmailVerificationMethod,
   PreverifiedVerification,
+  OidcAuthorizationCodeVerification,
 } from './LocalUser/types';
 import { extractUserData } from './LocalUser/UserData';
 
@@ -631,5 +632,12 @@ export class Tanker extends EventEmitter {
     const encryptionOptions = extractEncryptionOptions(options);
 
     return this.session.createEncryptionSession(encryptionOptions);
+  }
+
+  // authenticateWithIdP() is only exposed in client-browser because it relies on Cookies
+  // and Cookies are not handled by node fetch
+  async _authenticateWithIdP(oidcProviderId: string): Promise<OidcAuthorizationCodeVerification> {
+    assertStatus(this.status, [statuses.IDENTITY_REGISTRATION_NEEDED, statuses.IDENTITY_VERIFICATION_NEEDED, statuses.READY], 'authenticate with an Identity provider');
+    return this.session.createOidcAuthorizationCode(oidcProviderId);
   }
 }
