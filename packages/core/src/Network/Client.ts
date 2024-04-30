@@ -104,24 +104,27 @@ export class Client {
   // Simple _fetch wrapper with:
   //   - proper headers set (sdk info and authorization)
   //   - generic error handling
-  _baseApiCall = async (path: string, authenticated: boolean, init?: RequestInit): Promise<any> => {
+  _baseApiCall = (path: string, authenticated: boolean, init?: RequestInit): Promise<any> => {
+    if (!path || path[0] !== '/') {
+      throw new InvalidArgument('"path" should be non empty and start with "/"');
+    }
+    const url = `${this._apiEndpoint}${this._apiRootPath}${path}`;
+
+    const headers = (init?.headers ? init.headers : {}) as Record<string, string>;
+    headers['X-Tanker-Instanceid'] = this._instanceId;
+    headers['X-Tanker-Sdktype'] = this._sdkType;
+    headers['X-Tanker-Sdkversion'] = this._sdkVersion;
+
+    if (authenticated && this._accessToken) {
+      headers['Authorization'] = `Bearer ${this._accessToken}`; // eslint-disable-line dot-notation
+    }
+
+    return this._basehttpCall(url, { ...init, headers });
+  };
+
+  _basehttpCall = async (url: string, init?: RequestInit): Promise<any> => {
     try {
-      if (!path || path[0] !== '/') {
-        throw new InvalidArgument('"path" should be non empty and start with "/"');
-      }
-
-      const headers = (init?.headers ? init.headers : {}) as Record<string, string>;
-      headers['X-Tanker-Instanceid'] = this._instanceId;
-      headers['X-Tanker-Sdktype'] = this._sdkType;
-      headers['X-Tanker-Sdkversion'] = this._sdkVersion;
-
-      if (authenticated && this._accessToken) {
-        headers['Authorization'] = `Bearer ${this._accessToken}`; // eslint-disable-line dot-notation
-      }
-
-      const url = `${this._apiEndpoint}${this._apiRootPath}${path}`;
-
-      const response = await this._fetch(url, { ...init, headers });
+      const response = await this._fetch(url, init);
 
       if (response.status === 204) { // no-content: no JSON response to parse
         return;
@@ -448,11 +451,18 @@ export class Client {
   };
 
   oidcSignIn = async (oidcProviderId: string): Promise<OidcAuthorizationCodeVerification> => {
-    const { code, state } = await this._baseApiCall(
+    const { location } = await this._baseApiCall(
       `/oidc/${oidcProviderId}/signin?user_id=${urlize(this._userId)}`,
       false,
       { credentials: 'include' },
     );
+
+    // we are calling an Identity provider here (not the Tanker backend)
+    const { code, state } = await this._basehttpCall(
+      location,
+      { credentials: 'include' },
+    );
+
     return {
       oidcProviderId,
       oidcAuthorizationCode: code,
