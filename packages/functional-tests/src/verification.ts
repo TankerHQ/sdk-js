@@ -907,7 +907,7 @@ export const generateVerificationTests = (args: TestArgs) => {
     });
 
     if (isBrowser()) {
-      describe.skip('verification by oidc authorization code', () => {
+      describe('verification by oidc authorization code', () => {
         let provider: { id: string, display_name: string };
 
         const setFakeOidcSubjectCookie = async (subject: string) => fetch(`${oidcSettings.fakeOidc.url}/issuer/subject`, {
