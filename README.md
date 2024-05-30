@@ -4,9 +4,6 @@
 [browser_npm-badge]: https://img.shields.io/npm/v/@tanker/client-browser.svg
 [browser_npm-link]: https://npmjs.com/package/@tanker/client-browser
 
-[browserstack-badge]: https://www.browserstack.com/automate/badge.svg?badge_key=emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1
-[browserstack-link]: https://www.browserstack.com/automate/public-build/emFtQUNqYi9od0o0OU5sLzNQcnNWeGg2aFNMaVIzdUVNQmZoUWRUWC9zYz0tLUVBNTZVTXQ5bGNmVlVMYXZPeUFZTHc9PQ==--ab4016ef79dd30d494dfdf6b09c7810219cae0e1
-
 [codecov-badge]: https://img.shields.io/codecov/c/github/TankerHQ/sdk-js.svg?label=Coverage
 [codecov-link]: https://codecov.io/gh/TankerHQ/sdk-js
 
@@ -26,7 +23,6 @@
 
 [![License][license-badge]][license-link]
 [![Build][actions-badge]][actions-link]
-[![BrowserStack status][browserstack-badge]][browserstack-link]
 [![Coverage][codecov-badge]][codecov-link]
 [![Last commit][last-commit-badge]][last-commit-link]
 
