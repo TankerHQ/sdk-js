@@ -28,7 +28,7 @@
 
 # Encryption SDKs for JavaScript
 
-[Overview](#overview) · [Core](#tanker-core) · [Identity](#identity-management) · [Browser support](#browser-support) · [Other platforms](#other-platforms) · [Contributing](#contributing) · [License](#license)
+[Overview](#overview) · [Core](#tanker-core) · [Identity](#identity-management) · [Browser support](#browser-support) · [Other platforms](#other-platforms) · [Contributing](#contributing)
 
 ## Overview
 
