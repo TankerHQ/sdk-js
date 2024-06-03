@@ -13,14 +13,25 @@ import { EncryptionV9, EncryptionV10, EncryptionV11 } from './TransparentEncrypt
 
 export interface EncryptionFormatReporter {
   getClearSize(encryptedSize: number): number
+
   getEncryptedSize(clearSize: number): number
 }
 
-export type SimpleEncryptor = typeof EncryptionV1 | typeof EncryptionV2 | typeof EncryptionV3 | typeof EncryptionV5 | typeof EncryptionV6 | typeof EncryptionV7;
+export type SimpleEncryptor =
+    typeof EncryptionV1
+    | typeof EncryptionV2
+    | typeof EncryptionV3
+    | typeof EncryptionV5
+    | typeof EncryptionV6
+    | typeof EncryptionV7;
 export type StreamEncryptor = typeof EncryptionV4 | typeof EncryptionV8;
 export type TransparentSessionEncryptor = typeof EncryptionV9 | typeof EncryptionV10;
 export type TransparentSessionStreamEncryptor = typeof EncryptionV11;
-export type Encryptor = SimpleEncryptor | StreamEncryptor | TransparentSessionEncryptor | TransparentSessionStreamEncryptor;
+export type Encryptor =
+    SimpleEncryptor
+    | StreamEncryptor
+    | TransparentSessionEncryptor
+    | TransparentSessionStreamEncryptor;
 
 const encryptionFormats = [undefined, EncryptionV1, EncryptionV2, EncryptionV3, EncryptionV4, EncryptionV5, EncryptionV6, EncryptionV7, EncryptionV8, EncryptionV9, EncryptionV10, EncryptionV11] as const;
 
@@ -46,7 +57,7 @@ export const getClearSize = (encryptionFormatDescription: EncryptionFormatDescri
 
 export const extractEncryptionFormat = (encryptedData: Uint8Array) => {
   if (encryptedData.length < 1)
-    throw new InvalidArgument('Could not decode encryption version from encryptedData');
+    throw new InvalidArgument('Could not decode encryption version because the encrypted data is empty');
   const version = encryptedData[0]!;
 
   const encryption = encryptionFormats[version];
