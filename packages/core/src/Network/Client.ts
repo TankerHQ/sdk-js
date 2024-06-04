@@ -1,6 +1,14 @@
 import type { b64string } from '@tanker/crypto';
 import { tcrypto, utils } from '@tanker/crypto';
-import { TankerError, InternalError, InvalidArgument, InvalidVerification, OperationCanceled, PreconditionFailed } from '@tanker/errors';
+import {
+  TankerError,
+  InternalError,
+  InvalidArgument,
+  InvalidVerification,
+  NetworkError,
+  OperationCanceled,
+  PreconditionFailed,
+} from '@tanker/errors';
 import { fetch, retry, exponentialDelayGenerator } from '@tanker/http-utils';
 import type { DelayGenerator } from '@tanker/http-utils';
 import { PromiseWrapper } from '@tanker/types';
@@ -145,15 +153,21 @@ export class Client {
       let error;
       try {
         ({ error } = JSON.parse(responseText));
-      } catch (_) { } // eslint-disable-line no-empty
-
-      if (!error) {
-        const details = responseText ? `response body: "${responseText}"` : 'empty response body';
-        const message = `"${response.status} ${response.statusText}" status with ${details}`;
-        error = { code: '<unknown>', message, status: response.status, trace_id: '<unknown>' };
-      }
+      } catch (_) {
+      } // eslint-disable-line no-empty
 
       const apiMethod = init && init.method || 'GET';
+      if (!error) {
+        const details = responseText ? `response body: "${responseText}"` : 'empty response body';
+        const message = `"Request may have been intercepted by proxy, received non-JSON response: ${response.status} ${response.statusText}" status with ${details}`;
+        throw new NetworkError({
+          apiRoute: url,
+          apiMethod,
+          httpStatus: response.status,
+          message,
+        });
+      }
+
       genericErrorHandler(apiMethod, url, error);
     } catch (err) {
       const e = err as Error;
@@ -229,7 +243,11 @@ export class Client {
       const { access_token: accessToken } = await this._cancelable(
         () => this._baseApiCall(`/devices/${urlize(deviceId)}/sessions`, false, {
           method: 'POST',
-          body: JSON.stringify(b64RequestObject({ signature, challenge, signature_public_key: signaturePublicKey })),
+          body: JSON.stringify(b64RequestObject({
+            signature,
+            challenge,
+            signature_public_key: signaturePublicKey,
+          })),
           headers: { 'Content-Type': 'application/json' },
         }),
       )();
@@ -522,7 +540,9 @@ export class Client {
     return sessionToken;
   };
 
-  getGroupHistories = (query: string): Promise<{ histories: Array<b64string>; }> => this._apiCall(`/user-group-histories?${query}`);
+  getGroupHistories = (query: string): Promise<{
+    histories: Array<b64string>;
+  }> => this._apiCall(`/user-group-histories?${query}`);
 
   getGroupHistoriesByGroupIds = async (groupIds: Array<Uint8Array>): Promise<{ histories: Array<b64string>; }> => {
     const result = { histories: [] as Array<b64string> };
@@ -608,7 +628,9 @@ export class Client {
     return provisionalKeys;
   };
 
-  getTankerProvisionalKeysWithVerif = async (body: { verification: VerificationRequest }): Promise<TankerProvisionalIdentityResponse> => {
+  getTankerProvisionalKeysWithVerif = async (body: {
+    verification: VerificationRequest
+  }): Promise<TankerProvisionalIdentityResponse> => {
     const options = {
       method: 'POST',
       body: JSON.stringify(b64RequestObject(body)),
