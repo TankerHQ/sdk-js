@@ -368,7 +368,7 @@ describe('Tanker', () => {
         }
       });
 
-      it('updating group members should throw if invalid GroupID argument given', async () => {
+      it('updating group members should throw if invalid GroupId argument given', async () => {
         const badGroupIdArgs = [
           undefined,
           null,
@@ -587,7 +587,7 @@ describe('Tanker', () => {
       });
 
       describe('download\'s return type', () => {
-        const resourceID = 'AAAAAAAAAAAAAAAAAAAAAA==';
+        const resourceId = 'AAAAAAAAAAAAAAAAAAAAAA==';
 
         if (isBrowser()) {
           // @ts-expect-error only used as destination
@@ -596,12 +596,12 @@ describe('Tanker', () => {
           let blob: Blob;
 
           it('is File | Uint8Array by default', async () => {
-            const downloadedResource = await tanker.download(resourceID);
+            const downloadedResource = await tanker.download(resourceId);
             fileOrArray = downloadedResource;
           });
 
           it('is overriden by FormatOptions', async () => {
-            const downloadedBlob = await tanker.download(resourceID, { type: Blob });
+            const downloadedBlob = await tanker.download(resourceId, { type: Blob });
             blob = downloadedBlob;
           });
         } else {
@@ -611,12 +611,12 @@ describe('Tanker', () => {
           let buffer: Buffer;
 
           it('is File | Uint8Array by default', async () => {
-            const downloadedResource = await tanker.download(resourceID);
+            const downloadedResource = await tanker.download(resourceId);
             fileOrArray = downloadedResource;
           });
 
           it('is overriden by FormatOptions', async () => {
-            const downloadedBuffer = await tanker.download(resourceID, { type: Buffer });
+            const downloadedBuffer = await tanker.download(resourceId, { type: Buffer });
             buffer = downloadedBuffer;
           });
         }

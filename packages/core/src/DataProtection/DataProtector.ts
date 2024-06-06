@@ -169,7 +169,7 @@ export class DataProtector {
     const clearSize = encryption.getClearSize(encryptedSize);
     const progressHandler = new ProgressHandler(progressOptions).start(clearSize);
 
-    const keyMapper = (keyID: Uint8Array) => this._resourceManager.findKeyFromResourceId(keyID);
+    const keyMapper = (keyId: Uint8Array) => this._resourceManager.findKeyFromResourceId(keyId);
 
     const clearData = await encryption.decrypt(keyMapper, encryption.unserialize(castEncryptedData));
 
