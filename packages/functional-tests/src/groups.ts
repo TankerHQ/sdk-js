@@ -488,9 +488,9 @@ export const generateGroupsTests = (args: TestArgs) => {
         const alice = await UserSession.create(appHelper);
         await expect(alice.session.updateGroupMembers('', { usersToAdd: [alice.spublicIdentity] }))
           .to.be.rejectedWith(errors.InvalidArgument);
-        const badGroupID = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-        await expect(alice.session.updateGroupMembers(badGroupID, { usersToAdd: [alice.spublicIdentity] }))
-          .to.be.rejectedWith(errors.InvalidArgument, badGroupID);
+        const badGroupId = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+        await expect(alice.session.updateGroupMembers(badGroupId, { usersToAdd: [alice.spublicIdentity] }))
+          .to.be.rejectedWith(errors.InvalidArgument, badGroupId);
       });
 
       it('update group members with an attached provisional identity', async () => {

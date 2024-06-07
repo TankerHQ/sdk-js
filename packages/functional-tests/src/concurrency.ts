@@ -128,8 +128,8 @@ export const generateConcurrencyTests = (args: TestArgs) => {
 
       it('decrypt resource shared through group concurrently [RO6DP7]', async () => {
         const clearData = 'a beautiful word';
-        const groupID = await aliceLaptop.createGroup([bobPublicIdentity]);
-        const encryptedData = await aliceLaptop.encrypt(clearData, { shareWithGroups: [groupID] });
+        const groupId = await aliceLaptop.createGroup([bobPublicIdentity]);
+        const encryptedData = await aliceLaptop.encrypt(clearData, { shareWithGroups: [groupId] });
 
         const decryptedDataArray = await expect(Promise.all(
           bobSessions.map((session) => session.decrypt(encryptedData)),
@@ -154,10 +154,10 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       it('share concurrently [HNWFV3]', async () => {
         const clearData = 'an unexpected response';
         const encryptedData = await bobSessions[0]!.encrypt(clearData);
-        const resourceID = await bobSessions[0]!.getResourceId(encryptedData);
+        const resourceId = await bobSessions[0]!.getResourceId(encryptedData);
 
         await expect(Promise.all(
-          bobSessions.map((session) => session.share([resourceID], { shareWithUsers: [alicePublicIdentity] })),
+          bobSessions.map((session) => session.share([resourceId], { shareWithUsers: [alicePublicIdentity] })),
         ), 'failed to share from both sessions').to.be.fulfilled;
 
         await expectDecrypt([aliceLaptop], clearData, encryptedData);
@@ -166,12 +166,12 @@ export const generateConcurrencyTests = (args: TestArgs) => {
       describe('handling group', () => {
         let clearData: string;
         let encryptedData: Uint8Array;
-        let resourceID: b64string;
+        let resourceId: b64string;
 
         beforeEach(async () => {
           clearData = 'whining to the group';
           encryptedData = await bobSessions[0]!.encrypt(clearData);
-          resourceID = await bobSessions[0]!.getResourceId(encryptedData);
+          resourceId = await bobSessions[0]!.getResourceId(encryptedData);
         });
 
         it('create group concurrently [WX3H50]', async () => {
@@ -180,19 +180,19 @@ export const generateConcurrencyTests = (args: TestArgs) => {
           ), 'failed to createGroup from both sessions').to.be.fulfilled as Array<b64string>;
 
           await Promise.all(
-            groups.map((groupID, index) => bobSessions[index]!.share([resourceID], { shareWithGroups: [groupID] })),
+            groups.map((groupId, index) => bobSessions[index]!.share([resourceId], { shareWithGroups: [groupId] })),
           );
 
           await expectDecrypt([aliceLaptop], clearData, encryptedData);
         });
 
         it('add member to a group concurrently [BXA5BC]', async () => {
-          const groupID = await bobSessions[0]!.createGroup([bobPublicIdentity]);
-          await bobSessions[0]!.share([resourceID], { shareWithGroups: [groupID] });
+          const groupId = await bobSessions[0]!.createGroup([bobPublicIdentity]);
+          await bobSessions[0]!.share([resourceId], { shareWithGroups: [groupId] });
 
           await expect(Promise.all(
             bobSessions.map(session => retry(
-              () => session.updateGroupMembers(groupID, { usersToAdd: [alicePublicIdentity] }),
+              () => session.updateGroupMembers(groupId, { usersToAdd: [alicePublicIdentity] }),
               bobSessions.length,
               'There was a conflict with a concurrent operation',
             )),
