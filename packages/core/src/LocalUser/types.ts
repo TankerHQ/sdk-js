@@ -19,6 +19,9 @@ export type PassphraseVerification = { passphrase: string; };
 export type E2ePassphraseVerification = { e2ePassphrase: string; };
 export type KeyVerification = { verificationKey: string; };
 export type OidcAuthorizationCodeVerification = { oidcProviderId: string; oidcAuthorizationCode: string; oidcState: string; };
+/**
+ * @deprecated The entire OIDC flow has been reworked in version 4.2.0, "OidcVerification" has been deprecated as a result, use "OidcAuthorizationCodeVerification" instead
+ */
 export type OidcVerification = { oidcIdToken: string; };
 export type PhoneNumberVerification = { phoneNumber: string; verificationCode: string; };
 export type PreverifiedEmailVerification = { preverifiedEmail: string; };

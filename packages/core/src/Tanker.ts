@@ -267,11 +267,17 @@ export class Tanker extends EventEmitter {
     }
   };
 
+  /**
+   * @deprecated The entire OIDC flow has been reworked in version 4.2.0, method "createOidcNonce" has been deprecated as a result
+   */
   createOidcNonce = async () => {
     await this._initUnauthSession();
     return this._unauthSession!.createOidcNonce();
   };
 
+  /**
+   * @deprecated The entire OIDC flow has been reworked in version 4.2.0, method "setOidcTestNonce" has been deprecated as a result
+   */
   setOidcTestNonce = async (nonce: b64string) => {
     await this._initUnauthSession();
     await this._unauthSession!.setOidcTestNonce(nonce);
