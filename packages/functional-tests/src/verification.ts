@@ -910,7 +910,7 @@ export const generateVerificationTests = (args: TestArgs) => {
       describe('verification by oidc authorization code', () => {
         let provider: { id: string, display_name: string };
 
-        const setFakeOidcSubjectCookie = async (subject: string) => fetch(`${oidcSettings.fakeOidc.url}/issuer/subject`, {
+        const setFakeOidcSubjectCookie = async (subject: string) => fetch(`${oidcSettings.fakeOidc.url}/issuers/main/subject`, {
           method: 'POST',
           body: JSON.stringify({ subject }),
           credentials: 'include',
