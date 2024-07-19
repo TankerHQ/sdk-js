@@ -54,7 +54,7 @@ export class AppHelper {
     });
   }
 
-  async setOidc(provider: 'google' | 'pro-sante-bas' | 'pro-sante-bas-no-expiry' | 'fake-oidc' = 'google') {
+  async setOidc(provider: 'google' | 'pro-sante-bas' | 'pro-sante-bas-no-expiry' | 'fake-oidc' = 'google', oidc_provider_group_id: string = 'AYBa9RHeILz7WKXm4DL3pmVufbP2-ihlKBl9c0hgHVk') {
     const providers = {
       google: oidcSettings.googleAuth.clientId,
       'pro-sante-bas': 'doctolib-dev',
@@ -65,7 +65,7 @@ export class AppHelper {
       google: 'https://accounts.google.com',
       'pro-sante-bas': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
       'pro-sante-bas-no-expiry': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
-      'fake-oidc': `${oidcSettings.fakeOidc.url}/issuer`,
+      'fake-oidc': `${oidcSettings.fakeOidc.url}/issuers/main`,
     };
 
     return this._update({
@@ -73,6 +73,7 @@ export class AppHelper {
         display_name: provider,
         issuer: providersIssuer[provider],
         client_id: providers[provider],
+        oidc_provider_group_id,
         ignore_token_expiration: provider === 'pro-sante-bas-no-expiry',
       }],
     }) as Promise<{ app: { oidc_providers: Array<{ id: string, display_name: string }> } }>;
