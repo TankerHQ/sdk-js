@@ -710,10 +710,14 @@ export const generateVerificationTests = (args: TestArgs) => {
       let martineIdToken: string;
       let subject: string;
       let provider: { id:string, display_name: string };
+      let fakeOidcMain: { id:string, display_name: string };
+      let fakeOidcAlt: { id:string, display_name: string };
 
       before(async () => {
-        const config = await appHelper.setOidc();
-        provider = config.app.oidc_providers[0]!;
+        const config = await appHelper.setOidc(['google', 'fake-oidc', 'fake-oidc/alt']);
+        provider = config.app.oidc_providers.find((pro) => pro.display_name === 'google')!;
+        fakeOidcMain = config.app.oidc_providers.find((pro) => pro.display_name === 'fake-oidc')!;
+        fakeOidcAlt = config.app.oidc_providers.find((pro) => pro.display_name === 'fake-oidc/alt')!;
 
         martineIdToken = await getGoogleIdToken(martineRefreshToken);
         subject = extractSubject(martineIdToken);
@@ -748,6 +752,19 @@ export const generateVerificationTests = (args: TestArgs) => {
         await bobPhone.start(bobIdentity);
         await bobPhone.setOidcTestNonce(await bobPhone.createOidcNonce());
         await bobPhone.verifyIdentity({ oidcIdToken: martineIdToken });
+      });
+
+      it('sets a verification method for every oidc provider from the same oidc provider group at once', async () => {
+        const email = await appHelper.generateRandomEmail();
+        let verificationCode = await appHelper.getEmailVerificationCode(email);
+        await bobLaptop.registerIdentity({ email, verificationCode });
+
+        await bobLaptop.setVerificationMethod({ preverifiedOidcSubject: subject, oidcProviderId: fakeOidcMain.id });
+        expect(await bobLaptop.getVerificationMethods()).to.have.deep.members([
+          { type: 'email', email },
+          { type: 'oidcIdToken', providerId: fakeOidcMain.id, providerDisplayName: fakeOidcMain.display_name },
+          { type: 'oidcIdToken', providerId: fakeOidcAlt.id, providerDisplayName: fakeOidcAlt.display_name },
+        ]);
       });
     });
 
@@ -874,7 +891,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         });
 
         it('rejects expired token on pro-sante-bas', async () => {
-          await appHelper.setOidc('pro-sante-bas');
+          await appHelper.setOidc(['pro-sante-bas']);
 
           const nonce = await bobLaptop.createOidcNonce();
           await bobLaptop.setOidcTestNonce(nonce);
@@ -882,7 +899,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         });
 
         it('accepts expired token on pro-sante-bas-no-expiry', async () => {
-          await appHelper.setOidc('pro-sante-bas-no-expiry');
+          await appHelper.setOidc(['pro-sante-bas-no-expiry']);
 
           const nonce = await bobLaptop.createOidcNonce();
           await bobLaptop.setOidcTestNonce(nonce);
@@ -899,7 +916,7 @@ export const generateVerificationTests = (args: TestArgs) => {
 
     describe('authenticateWithIdP', () => {
       it('is restricted to trusted OIDC providers', async () => {
-        const config = await appHelper.setOidc('google');
+        const config = await appHelper.setOidc(['google']);
         const provider = config.app.oidc_providers[0]!;
 
         await expect(authenticateWithIdP(bobLaptop, provider.id)).to.be.rejectedWith(errors.PreconditionFailed);
@@ -908,28 +925,33 @@ export const generateVerificationTests = (args: TestArgs) => {
 
     if (isBrowser()) {
       describe('verification by oidc authorization code', () => {
-        let provider: { id: string, display_name: string };
+        let fakeOIDCMain: { id: string, display_name: string };
+        let fakeOIDCAlt: { id: string, display_name: string };
+        let fakeOIDCWrongGroup: { id: string, display_name: string };
 
-        const setFakeOidcSubjectCookie = async (subject: string) => fetch(`${oidcSettings.fakeOidc.url}/issuers/main/subject`, {
+        const setFakeOidcSubjectCookie = async (subject: string, provider: 'main' | 'alt' | 'wrong-group' = 'main') => fetch(`${oidcSettings.fakeOidc.url}/issuers/${provider}/subject`, {
           method: 'POST',
           body: JSON.stringify({ subject }),
           credentials: 'include',
         });
 
         before(async () => {
-          const config = await appHelper.setOidc('fake-oidc');
-          provider = config.app.oidc_providers[0]!;
+          const config = await appHelper.setOidc(['fake-oidc', 'fake-oidc/alt', 'fake-oidc/wrong']);
+          fakeOIDCMain = config.app.oidc_providers.find((provider) => provider.display_name === 'fake-oidc')!;
+          fakeOIDCAlt = config.app.oidc_providers.find((provider) => provider.display_name === 'fake-oidc/alt')!;
+          fakeOIDCWrongGroup = config.app.oidc_providers.find((provider) => provider.display_name === 'fake-oidc/wrong')!;
         });
 
         after(async () => {
           appHelper.unsetOidc();
         });
 
+
         it('registers and verifies with an oidc authorization code', async () => {
           await setFakeOidcSubjectCookie('bob');
 
-          const verification1 = await authenticateWithIdP(bobLaptop, provider.id);
-          const verification2 = await authenticateWithIdP(bobLaptop, provider.id);
+          const verification1 = await authenticateWithIdP(bobLaptop, fakeOIDCMain.id);
+          const verification2 = await authenticateWithIdP(bobLaptop, fakeOIDCMain.id);
           await expect(bobLaptop.registerIdentity(verification1)).to.be.fulfilled;
 
           await bobPhone.start(bobIdentity);
@@ -941,7 +963,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         it('fails to verify an oidc authorization code twice', async () => {
           await setFakeOidcSubjectCookie('bob');
 
-          const verification1 = await authenticateWithIdP(bobLaptop, provider.id);
+          const verification1 = await authenticateWithIdP(bobLaptop, fakeOIDCMain.id);
           await expect(bobLaptop.registerIdentity(verification1)).to.be.fulfilled;
 
           await bobPhone.start(bobIdentity);
@@ -952,11 +974,11 @@ export const generateVerificationTests = (args: TestArgs) => {
         it('fails to verify an oidc authorization code for the wrong user', async () => {
           await setFakeOidcSubjectCookie('bob');
 
-          const verification1 = await authenticateWithIdP(bobLaptop, provider.id);
+          const verification1 = await authenticateWithIdP(bobLaptop, fakeOIDCMain.id);
           await expect(bobLaptop.registerIdentity(verification1)).to.be.fulfilled;
 
           await setFakeOidcSubjectCookie('alice');
-          const verification2 = await authenticateWithIdP(bobLaptop, provider.id);
+          const verification2 = await authenticateWithIdP(bobLaptop, fakeOIDCMain.id);
           await bobPhone.start(bobIdentity);
           expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
           await expect(bobPhone.verifyIdentity(verification2)).to.be.rejectedWith(errors.InvalidVerification);
@@ -965,7 +987,7 @@ export const generateVerificationTests = (args: TestArgs) => {
         it('updates and verifies with an oidc authorization code', async () => {
           await expect(bobLaptop.registerIdentity({ passphrase: 'plain old passphrase' })).to.be.fulfilled;
           await expect(bobLaptop.setVerificationMethod({
-            oidcProviderId: provider.id,
+            oidcProviderId: fakeOIDCMain.id,
             preverifiedOidcSubject: 'bob',
           })).to.be.fulfilled;
 
@@ -973,8 +995,26 @@ export const generateVerificationTests = (args: TestArgs) => {
           expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
 
           await setFakeOidcSubjectCookie('bob');
-          const verification = await authenticateWithIdP(bobPhone, provider.id);
+          const verification = await authenticateWithIdP(bobPhone, fakeOIDCMain.id);
           await expect(bobPhone.verifyIdentity(verification)).to.be.fulfilled;
+          expect(bobPhone.status).to.equal(READY);
+        });
+
+        it('registers and verifies with different oidc providers from the same provider group', async () => {
+          await setFakeOidcSubjectCookie('bob', 'main');
+          await setFakeOidcSubjectCookie('bob', 'alt');
+          await setFakeOidcSubjectCookie('bob', 'wrong-group');
+
+          const verification1 = await authenticateWithIdP(bobLaptop, fakeOIDCMain.id);
+          const verification2 = await authenticateWithIdP(bobLaptop, fakeOIDCWrongGroup.id);
+          const verification3 = await authenticateWithIdP(bobLaptop, fakeOIDCAlt.id);
+
+          await expect(bobLaptop.registerIdentity(verification1)).to.be.fulfilled;
+
+          await bobPhone.start(bobIdentity);
+          expect(bobPhone.status).to.equal(IDENTITY_VERIFICATION_NEEDED);
+          await expect(bobPhone.verifyIdentity(verification2)).to.be.rejectedWith(errors.PreconditionFailed);
+          await expect(bobPhone.verifyIdentity(verification3)).to.be.fulfilled;
           expect(bobPhone.status).to.equal(READY);
         });
       });

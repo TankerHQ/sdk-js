@@ -23,6 +23,7 @@ export const provisionalUserTypes = {
 
 export type ProvisionalUserType = number;
 
+type KnownProvider = 'google' | 'pro-sante-bas' | 'pro-sante-bas-no-expiry' | 'fake-oidc' | 'fake-oidc/alt' | 'fake-oidc/wrong';
 export class AppHelper {
   makeTanker: TankerFactory;
   appId: Uint8Array;
@@ -54,28 +55,41 @@ export class AppHelper {
     });
   }
 
-  async setOidc(provider: 'google' | 'pro-sante-bas' | 'pro-sante-bas-no-expiry' | 'fake-oidc' = 'google', oidc_provider_group_id: string = 'AYBa9RHeILz7WKXm4DL3pmVufbP2-ihlKBl9c0hgHVk') {
-    const providers = {
+
+  async setOidc(providers: Array<KnownProvider> = ['google']) {
+    const providersClientId = {
       google: oidcSettings.googleAuth.clientId,
       'pro-sante-bas': 'doctolib-dev',
       'pro-sante-bas-no-expiry': 'doctolib-dev',
       'fake-oidc': 'tanker',
+      'fake-oidc/alt': 'tanker',
+      'fake-oidc/wrong': 'tanker',
     };
     const providersIssuer = {
       google: 'https://accounts.google.com',
       'pro-sante-bas': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
       'pro-sante-bas-no-expiry': 'https://auth.bas.psc.esante.gouv.fr/auth/realms/esante-wallet',
       'fake-oidc': `${oidcSettings.fakeOidc.url}/issuers/main`,
+      'fake-oidc/alt': `${oidcSettings.fakeOidc.url}/issuers/alt`,
+      'fake-oidc/wrong': `${oidcSettings.fakeOidc.url}/issuers/wrong-group`,
+    };
+    const providersGroup = {
+      google: 'AYBa9RHeILz7WKXm4DL3pmVufbP2-ihlKBl9c0hgHVk',
+      'pro-sante-bas': 'bBrMrmc71WMdcaoKPSZtqTvCad4YXt1fCAUCW3nT7dI',
+      'pro-sante-bas-no-expiry': 'bBrMrmc71WMdcaoKPSZtqTvCad4YXt1fCAUCW3nT7dI',
+      'fake-oidc': 'GodwrLmwsALA0Nuu2lHalxksaDdnhXXZCDpjE8pmNbM',
+      'fake-oidc/alt': 'GodwrLmwsALA0Nuu2lHalxksaDdnhXXZCDpjE8pmNbM',
+      'fake-oidc/wrong': 'a0Ce8E1LQvs7CHdNu7-Rpk_5L8qAzORUqNpp3q9Itog',
     };
 
     return this._update({
-      oidc_providers: [{
+      oidc_providers: providers.map((provider) => ({
         display_name: provider,
         issuer: providersIssuer[provider],
-        client_id: providers[provider],
-        oidc_provider_group_id,
+        client_id: providersClientId[provider],
+        oidc_provider_group_id: providersGroup[provider],
         ignore_token_expiration: provider === 'pro-sante-bas-no-expiry',
-      }],
+      })),
     }) as Promise<{ app: { oidc_providers: Array<{ id: string, display_name: string }> } }>;
   }
 
