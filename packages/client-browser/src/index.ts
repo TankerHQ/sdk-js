@@ -17,6 +17,6 @@ class Tanker extends TankerCore {
   authenticateWithIdP = this._authenticateWithIdP;
 }
 
-export { errors, fromBase64, toBase64, prehashPassword, Padding } from '@tanker/core';
+export { errors, fromBase64, toBase64, prehashPassword, prehashAndEncryptPassword, Padding } from '@tanker/core';
 export { Tanker };
 export default Tanker; // eslint-disable-line no-restricted-exports

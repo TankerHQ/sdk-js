@@ -19,7 +19,7 @@ import {
 import { Padding } from '@tanker/crypto';
 import { Tanker, optionsWithDefaults } from './Tanker';
 import { Status, statuses } from './Session/status';
-import { fromBase64, toBase64, prehashPassword } from './utils';
+import { fromBase64, toBase64, prehashPassword, prehashAndEncryptPassword } from './utils';
 
 // export
 export type { b64string } from '@tanker/crypto';
@@ -82,5 +82,6 @@ export {
   statuses,
   toBase64,
   prehashPassword,
+  prehashAndEncryptPassword,
   Padding,
 };
