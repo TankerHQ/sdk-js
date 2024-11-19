@@ -43,7 +43,8 @@
     "debug:errors": "karma start packages/errors/config/karma.config.debug.js",
     "debug:streams": "karma start packages/stream/config/karma.config.debug.js",
     "proof": "poetry install && poetry run python run-ci.py lint && npm run test",
-    "coverage": "nyc npm run test"
+    "coverage": "nyc npm run test",
+    "gen:keypair": "npm run build:crypto && node ./packages/crypto/dist/node/generate_keypair.js"
   },
   "devDependencies": {
     "@types/chai": "^4.3.4",
