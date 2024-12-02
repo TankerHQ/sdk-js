@@ -43,63 +43,39 @@ export const generateEnrollTests = (args: TestArgs) => {
       bobIdentity = await appHelper.generateIdentity();
     });
 
-    describe('server', () => {
-      describe('with user enrollment disabled', () => {
-        it('fails to enroll a user with an email address [QKOWQB]', async () => {
-          await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.rejectedWith(errors.PreconditionFailed);
-        });
-
-        it('fails to enroll a user with a phone number [D9OGI5]', async () => {
-          await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.rejectedWith(errors.PreconditionFailed);
-        });
-
-        it('fails to enroll a user with oidc', async () => {
-          return expect(server.enrollUser(bobIdentity, [oidcVerification])).to.be.rejectedWith(errors.PreconditionFailed);
-        });
-
-        it('fails to enroll a user with both an email address and a phone number [ARRQBH]', async () => {
-          await expect(server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification])).to.be.rejectedWith(errors.PreconditionFailed);
-        });
+    describe('user not enrolled yet', () => {
+      it('enrolls a user with an email address [53ZC44]', async () => {
+        await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.fulfilled;
       });
 
-      describe('with user enrollment enabled', () => {
-        before(async () => {
-          await appHelper.setEnrollUsersEnabled();
-        });
+      it('enrolls a user with a phone number [DEJGHP]', async () => {
+        await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.fulfilled;
+      });
 
-        it('enrolls a user with an email address [53ZC44]', async () => {
-          await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.fulfilled;
-        });
+      it('enrolls a user with an oidc', async () => {
+        await expect(server.enrollUser(bobIdentity, [oidcVerification])).to.be.fulfilled;
+      });
 
-        it('enrolls a user with a phone number [DEJGHP]', async () => {
-          await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.fulfilled;
-        });
+      it('throws when enrolling a user multiple times [BMANVI]', async () => {
+        await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.fulfilled;
+        await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.rejectedWith(errors.Conflict);
+      });
 
-        it('enrolls a user with an oidc', async () => {
-          await expect(server.enrollUser(bobIdentity, [oidcVerification])).to.be.fulfilled;
-        });
+      it('throws when enrolling a registered user [02NKOO]', async () => {
+        const bobLaptop = args.makeTanker();
+        await bobLaptop.start(bobIdentity);
+        await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
 
-        it('throws when enrolling a user multiple times [BMANVI]', async () => {
-          await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.fulfilled;
-          await expect(server.enrollUser(bobIdentity, [phoneNumberVerification])).to.be.rejectedWith(errors.Conflict);
-        });
+        await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.rejectedWith(errors.Conflict);
+      });
 
-        it('throws when enrolling a registered user [02NKOO]', async () => {
-          const bobLaptop = args.makeTanker();
-          await bobLaptop.start(bobIdentity);
-          await bobLaptop.registerIdentity({ passphrase: 'passphrase' });
+      it('enrolls a user with both an email address and a phone number [FJJCBC]', async () => {
+        await expect(server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification])).to.be.fulfilled;
+      });
 
-          await expect(server.enrollUser(bobIdentity, [emailVerification])).to.be.rejectedWith(errors.Conflict);
-        });
-
-        it('enrolls a user with both an email address and a phone number [FJJCBC]', async () => {
-          await expect(server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification])).to.be.fulfilled;
-        });
-
-        it('stays STOPPED after enrolling a user [ED45GK]', async () => {
-          await expect(server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification])).to.be.fulfilled;
-          expect(server.status).to.equal(statuses.STOPPED);
-        });
+      it('stays STOPPED after enrolling a user [ED45GK]', async () => {
+        await expect(server.enrollUser(bobIdentity, [emailVerification, phoneNumberVerification])).to.be.fulfilled;
+        expect(server.status).to.equal(statuses.STOPPED);
       });
     });
 
@@ -112,7 +88,6 @@ export const generateEnrollTests = (args: TestArgs) => {
       const clearText = 'new enrollment feature';
 
       before(async () => {
-        await appHelper.setEnrollUsersEnabled();
         // Let's say Martine is bob's middle name
         bobIdToken = await getGoogleIdToken(oidcSettings.googleAuth.users.martine.refreshToken);
         oidcVerification.preverifiedOidcSubject = extractSubject(bobIdToken);
