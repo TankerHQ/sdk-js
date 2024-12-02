@@ -114,10 +114,6 @@ export class AppHelper {
     await this._update({ storage_provider: 'none' });
   }
 
-  async setEnrollUsersEnabled() {
-    await this._update({ enroll_users_enabled: true });
-  }
-
   generateIdentity(userId?: string): Promise<b64string> {
     const id = userId || uuid.v4();
     return createIdentity(utils.toBase64(this.appId), utils.toBase64(this.appSecret), id);
