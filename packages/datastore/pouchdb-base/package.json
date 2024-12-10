@@ -19,14 +19,12 @@
     "package.json",
     "LICENSE"
   ],
-  "peerDependencies": {
-    "pouchdb-errors": "~7.2.2 || ^8.0.0"
-  },
   "dependencies": {
     "@tanker/datastore-base": "0.0.1",
+    "pouchdb-errors": "^9.0.0",
     "tslib": "^2.3.1"
   },
   "devDependencies": {
-    "@types/pouchdb-core": "^7.0.10"
+    "@types/pouchdb-core": "^7.0.15"
   }
 }
