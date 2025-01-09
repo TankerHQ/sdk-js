@@ -6,7 +6,7 @@ authors = ["Tanker team"]
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<4.0"
 
 tankerci = { version = "== 2024.4.5172", source = "gitlab" }
 
