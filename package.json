@@ -99,7 +99,7 @@
   "browserslist": [
     "last 2 versions",
     "Firefox ESR",
-    "node >= 18",
+    "node >= 20",
     "not IE 11",
     "not op_mini all",
     "not dead"

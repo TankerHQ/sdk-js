@@ -81,7 +81,7 @@ check/linux/node:
     - !reference [.rules/push-master-or-feat, rules]
     - !reference [.rules/nightly, rules]
   variables:
-    NODE_VERSION: 18
+    NODE_VERSION: 22
 
 check/linux/node/20:
   extends:
