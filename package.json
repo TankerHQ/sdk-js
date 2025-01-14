@@ -35,7 +35,7 @@
     "test:http-utils": "npm run _test \"packages/http-utils/**/src/**/*.spec{,.node}.ts\"",
     "test:streams": "npm run _test \"packages/stream/**/src/**/*.spec{,.node}.ts\"",
     "test:types": "npm run _test \"packages/types/src/**/*.spec{,.node}.ts\"",
-    "test-matcher:export-test-names": "npm run test --reporter ./config/mocha/name-exporter.js --dry-run --grep 'functional-tests'",
+    "test-matcher:export-test-names": "npm run _test -- --reporter ./config/mocha/name-exporter.js --dry-run \"packages/functional-tests/src/**/*.spec{,.node}.ts\"",
     "karma": "karma start config/karma/karma.config.ci.js",
     "debug": "karma start config/karma/karma.config.debug.js",
     "debug:core": "karma start packages/core/config/karma.config.debug.js",
