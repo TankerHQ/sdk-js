@@ -3,7 +3,7 @@
   "compilerOptions": {
     "module": "CommonJS",
     "verbatimModuleSyntax": false,
-    // Recommended values for Node 18: https://github.com/tsconfig/bases/blob/main/bases/node18.json
+    // Recommended values for Node 20: https://github.com/tsconfig/bases/blob/main/bases/node20.json
     "lib": ["ES2023"],
   },
   "exclude": [

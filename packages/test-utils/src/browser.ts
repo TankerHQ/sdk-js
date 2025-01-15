@@ -1,3 +1,3 @@
-const isBrowser = () => typeof navigator !== 'undefined';
+const isBrowser = () => typeof window !== 'undefined';
 
 export { isBrowser };
