@@ -21,9 +21,9 @@ jobs:
           - Android6Chrome
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
       - name: install packages
         run: npm install
       - name: Tests on ${{ matrix.browser }}
@@ -58,14 +58,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
       - name: install packages
         run: npm install
       - name: build TypeScript
         run: npm run build
-      - name: Tests on Node 18
+      - name: Tests on Node 22
         run: npm run coverage
         env:
           BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
@@ -89,4 +89,4 @@ jobs:
           TANKER_TRUSTCHAIND_URL: ${{ secrets.TANKER_TRUSTCHAIND_URL }}
           TANKER_VERIFICATION_API_TEST_TOKEN: ${{ secrets.TANKER_VERIFICATION_API_TEST_TOKEN }}
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
