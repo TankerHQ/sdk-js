@@ -133,7 +133,7 @@ export class KeyStore {
       record = await this._ds.get(TABLE, 'keySafe');
     } catch (e) {
       // Stop if any real db error
-      if (!(e instanceof dbErrors.RecordNotFound)) {
+      if (!((e instanceof dbErrors.RecordNotFound) || (typeof e === 'object' && e !== null && 'name' in e && e.name === 'RecordNotFound'))) {
         console.error('Could not read keysafe from keystore');
         throw e;
       }
