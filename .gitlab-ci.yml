@@ -108,7 +108,7 @@ check/macos/nightly:
   stage: check
   extends: .rules/nightly
   script:
-    - poetry run python run-ci.py check --runner macos --nightly
+    - poetry run python run-ci.py check --runner macos
   tags:
     - macos
   timeout: 3h
@@ -130,7 +130,7 @@ check/linux/nightly:
     - .rules/nightly
   stage: check
   script:
-    - poetry run python run-ci.py check --runner linux --nightly
+    - poetry run python run-ci.py check --runner linux
   tags: !reference [.tags/linux, tags]
 
 check/test-matcher:
