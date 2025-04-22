@@ -138,7 +138,6 @@ check/test-matcher:
   rules:
     - !reference [.rules/push-master, rules]
     - !reference [.rules/mr/manual, rules]
-    - !reference [.rules/nightly, rules]
   script:
     - /usr/local/nvm/nvm-exec poetry run python run-ci.py test-matcher
   artifacts:
