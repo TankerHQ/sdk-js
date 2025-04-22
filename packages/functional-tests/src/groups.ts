@@ -4,7 +4,18 @@ import { getPublicIdentity, createIdentity, createProvisionalIdentity } from '@t
 import { expect } from '@tanker/test-utils';
 
 import type { AppHelper, TestArgs } from './helpers';
-import { generateUserSession, generateProvisionalUserSession, UserSession, ProvisionalUserSession, encrypt, getPublicIdentities, attachProvisionalIdentities, checkGroup, checkDecrypt, checkDecryptFails } from './helpers';
+import {
+  generateUserSession,
+  generateProvisionalUserSession,
+  UserSession,
+  ProvisionalUserSession,
+  encrypt,
+  getPublicIdentities,
+  attachProvisionalIdentities,
+  checkGroup,
+  checkDecrypt,
+  checkDecryptFails,
+} from './helpers';
 
 export const generateGroupsTests = (args: TestArgs) => {
   describe('groups', () => {
@@ -101,6 +112,13 @@ export const generateGroupsTests = (args: TestArgs) => {
         testCases.map(runTest);
       });
 
+      it('create group with an attached provisional identity works', async () => {
+        const alice = await UserSession.create(appHelper);
+        const provisionalUser = await ProvisionalUserSession.create(appHelper);
+        await provisionalUser.attach();
+        await alice.session.createGroup([provisionalUser.spublicIdentity]);
+      });
+
       it('create group with an empty list', async () => {
         const alice = await UserSession.create(appHelper);
         await expect(alice.session.createGroup([]))
@@ -131,14 +149,6 @@ export const generateGroupsTests = (args: TestArgs) => {
         const wrongPublicIdentity = await getPublicIdentity(wrongIdentity);
         await expect(alice.session.createGroup([wrongPublicIdentity]))
           .to.be.rejectedWith(errors.InvalidArgument, 'Invalid appId for identities');
-      });
-
-      it('create group with an attached provisional identity', async () => {
-        const alice = await UserSession.create(appHelper);
-        const provisionalUser = await ProvisionalUserSession.create(appHelper);
-        await provisionalUser.attach();
-        await expect(alice.session.createGroup([provisionalUser.spublicIdentity]))
-          .to.be.rejectedWith(errors.IdentityAlreadyAttached);
       });
 
       it('create group with too many users', async () => {
@@ -477,10 +487,16 @@ export const generateGroupsTests = (args: TestArgs) => {
         const alice = await UserSession.create(appHelper);
         const bob = await UserSession.create(appHelper);
         const groupId = await alice.session.createGroup([alice.spublicIdentity]);
-        await expect(alice.session.updateGroupMembers(groupId, { usersToAdd: [bob.spublicIdentity], usersToRemove: [bob.spublicIdentity] }))
+        await expect(alice.session.updateGroupMembers(groupId, {
+          usersToAdd: [bob.spublicIdentity],
+          usersToRemove: [bob.spublicIdentity],
+        }))
           .to.be.rejectedWith(errors.InvalidArgument, 'both added to and removed');
         const provisionalUser2 = await ProvisionalUserSession.create(appHelper);
-        await expect(alice.session.updateGroupMembers(groupId, { usersToAdd: [provisionalUser2.spublicIdentity], usersToRemove: [provisionalUser2.spublicIdentity] }))
+        await expect(alice.session.updateGroupMembers(groupId, {
+          usersToAdd: [provisionalUser2.spublicIdentity],
+          usersToRemove: [provisionalUser2.spublicIdentity],
+        }))
           .to.be.rejectedWith(errors.InvalidArgument, 'both added to and removed');
       });
 
@@ -493,7 +509,7 @@ export const generateGroupsTests = (args: TestArgs) => {
           .to.be.rejectedWith(errors.InvalidArgument, badGroupId);
       });
 
-      it('update group members with an attached provisional identity', async () => {
+      it('can add group members with an attached provisional identity', async () => {
         const alice = await UserSession.create(appHelper);
         const provisionalUser = await ProvisionalUserSession.create(appHelper);
         const groupId = await alice.session.createGroup(
@@ -501,10 +517,23 @@ export const generateGroupsTests = (args: TestArgs) => {
         );
         await provisionalUser.attach();
 
-        await expect(alice.session.updateGroupMembers(
+        await alice.session.updateGroupMembers(
           groupId, { usersToAdd: [provisionalUser.spublicIdentity] },
-        ))
-          .to.be.rejectedWith(errors.IdentityAlreadyAttached);
+        );
+      });
+
+      it('group members with an attached provisional identity are already automatically removed and cannot be removed again', async () => {
+        const alice = await UserSession.create(appHelper);
+        const provisionalUser = await ProvisionalUserSession.create(appHelper);
+        const groupId = await alice.session.createGroup(
+          [alice.spublicIdentity, provisionalUser.spublicIdentity],
+        );
+        await alice.session.updateGroupMembers(
+          groupId, { usersToAdd: [provisionalUser.spublicIdentity] },
+        );
+
+        await provisionalUser.attach();
+
         await expect(alice.session.updateGroupMembers(
           groupId, { usersToRemove: [provisionalUser.spublicIdentity] },
         ))
@@ -697,12 +726,18 @@ export const generateGroupsTests = (args: TestArgs) => {
 
         const myGroup = await bob.session.createGroup([bob.spublicIdentity]);
 
-        const encryptedBuffer = await encrypt(alice.session, { shareWithSelf: false, shareWithGroups: [myGroup] });
+        const encryptedBuffer = await encrypt(alice.session, {
+          shareWithSelf: false,
+          shareWithGroups: [myGroup],
+        });
 
         await checkDecrypt([bob], [encryptedBuffer]);
         await checkDecryptFails([alice], [encryptedBuffer]);
 
-        await bob.session.updateGroupMembers(myGroup, { usersToRemove: [bob.spublicIdentity], usersToAdd: [alice.spublicIdentity] });
+        await bob.session.updateGroupMembers(myGroup, {
+          usersToRemove: [bob.spublicIdentity],
+          usersToAdd: [alice.spublicIdentity],
+        });
 
         const bobPhone = await bob.user.makeDevice();
         const bobCleanSession = await bobPhone.open();
