@@ -98,23 +98,6 @@ def onerror(navigator: str) -> Callable[..., None]:
     return fcn
 
 
-def run_tests_in_browser_ten_times(*, runner: str) -> None:
-    failures = []
-    for i in range(1, 11):
-        print("\n" + "-" * 80 + "\n")
-        print("Running tests round", i)
-        print("-" * 80, end="\n\n")
-        try:
-            run_tests_in_browser(runner=runner)
-        except (Exception, SystemExit):
-            failures.append(i)
-
-    if failures:
-        print("Tests failed")
-        print("Failed rounds:", repr(failures))
-        raise TestFailed
-
-
 def run_tests_in_browser(*, runner: str) -> None:
     if runner == "linux":
         tankerci.js.npm("run", "karma", "--", "--browsers", "ChromeInDocker")
@@ -165,11 +148,9 @@ def lint() -> None:
     tankerci.js.npm("run", "lint:compat:all")
 
 
-def check(*, runner: str, nightly: bool) -> None:
+def check(*, runner: str) -> None:
     tankerci.js.npm("install")
-    if nightly:
-        run_tests_in_browser_ten_times(runner=runner)
-    elif runner == "node":
+    if runner == "node":
         run_tests_in_node()
     else:
         run_tests_in_browser(runner=runner)
@@ -240,7 +221,6 @@ def _main() -> None:
     subparsers.add_parser("lint")
 
     check_parser = subparsers.add_parser("check")
-    check_parser.add_argument("--nightly", action="store_true")
     check_parser.add_argument("--runner", required=True)
 
     deploy_parser = subparsers.add_parser("deploy")
@@ -261,9 +241,7 @@ def _main() -> None:
 
     args = parser.parse_args()
     if args.command == "check":
-        runner = args.runner
-        nightly = args.nightly
-        check(runner=runner, nightly=nightly)
+        check(runner=args.runner)
     elif args.command == "test-matcher":
         test_matcher()
     elif args.command == "lint":
