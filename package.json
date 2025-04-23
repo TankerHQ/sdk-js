@@ -66,7 +66,6 @@
     "eslint-plugin-import": "2.29.0",
     "eslint-plugin-mocha-no-only": "1.1.1",
     "karma": "6.4.1",
-    "karma-browserstack-launcher": "1.6.0",
     "karma-chrome-launcher": "3.1.1",
     "karma-edgium-launcher": "https://github.com/matracey/karma-edgium-launcher.git#253b4b506236d16d3e7c450196db1a22ce37aeba",
     "karma-firefox-launcher": "2.1.2",

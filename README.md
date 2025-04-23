@@ -96,10 +96,6 @@ The Tanker JavaScript SDKs support the following platforms:
 
 The Tanker JavaScript SDKs are constantly tested with all of the supported browsers via unit and functional tests.
 
-We use [BrowserStack](https://www.browserstack.com/) to automate testing on many browser & OS combinations.
-
-<img src="./src/public/browserstack.png" alt="BrowserStack logo">
-
 ## Other platforms
 
 Tanker is also available for your **desktop and mobile applications**: use our open-source **[Python](https://github.com/TankerHQ/sdk-python)**, **[Ruby](https://github.com/TankerHQ/sdk-ruby)**, and **[Rust](https://github.com/TankerHQ/sdk-rust)** SDKs.

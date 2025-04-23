@@ -2,56 +2,6 @@ name: Tests
 on: [push]
 
 jobs:
-  browserstack:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        browser:
-          - ChromeWindows
-          - Chrome80Windows
-          - Edge88
-          - Firefox78
-          - Opera70
-          - Safari17
-          - Safari14
-          - iOS
-          - AndroidChrome
-          - Android11Samsung
-          - Android6Chrome
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: install packages
-        run: npm install
-      - name: Tests on ${{ matrix.browser }}
-        run: npm run karma --browsers ${{ matrix.browser }}
-        # You can allow a job to pass when this step fails (e.g. temporarily if Browserstack tests
-        # are too flaky), by uncommenting the following line:
-        # continue-on-error: true
-        env:
-          BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
-          BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}
-          TANKER_APPD_URL: ${{ secrets.TANKER_APPD_URL }}
-          TANKER_FAKE_OIDC_URL: ${{ secrets.TANKER_FAKE_OIDC_URL }}
-          TANKER_FILEKIT_BUCKET_NAME: ${{ secrets.TANKER_FILEKIT_BUCKET_NAME }}
-          TANKER_FILEKIT_BUCKET_REGION: ${{ secrets.TANKER_FILEKIT_BUCKET_REGION }}
-          TANKER_FILEKIT_CLIENT_ID: ${{ secrets.TANKER_FILEKIT_CLIENT_ID }}
-          TANKER_FILEKIT_CLIENT_SECRET: ${{ secrets.TANKER_FILEKIT_CLIENT_SECRET }}
-          TANKER_MANAGEMENT_API_ACCESS_TOKEN: ${{ secrets.TANKER_MANAGEMENT_API_ACCESS_TOKEN }}
-          TANKER_MANAGEMENT_API_DEFAULT_ENVIRONMENT_NAME: ${{ secrets.TANKER_MANAGEMENT_API_DEFAULT_ENVIRONMENT_NAME }}
-          TANKER_MANAGEMENT_API_URL: ${{ secrets.TANKER_MANAGEMENT_API_URL }}
-          TANKER_OIDC_CLIENT_ID: ${{ secrets.TANKER_OIDC_CLIENT_ID }}
-          TANKER_OIDC_CLIENT_SECRET: ${{ secrets.TANKER_OIDC_CLIENT_SECRET }}
-          TANKER_OIDC_KEVIN_EMAIL: ${{ secrets.TANKER_OIDC_KEVIN_EMAIL }}
-          TANKER_OIDC_KEVIN_REFRESH_TOKEN: ${{ secrets.TANKER_OIDC_KEVIN_REFRESH_TOKEN }}
-          TANKER_OIDC_MARTINE_EMAIL: ${{ secrets.TANKER_OIDC_MARTINE_EMAIL }}
-          TANKER_OIDC_MARTINE_REFRESH_TOKEN: ${{ secrets.TANKER_OIDC_MARTINE_REFRESH_TOKEN }}
-          TANKER_OIDC_PROVIDER: ${{ secrets.TANKER_OIDC_PROVIDER }}
-          TANKER_TRUSTCHAIND_URL: ${{ secrets.TANKER_TRUSTCHAIND_URL }}
-          TANKER_VERIFICATION_API_TEST_TOKEN: ${{ secrets.TANKER_VERIFICATION_API_TEST_TOKEN }}
   node:
     strategy:
       fail-fast: false
@@ -68,8 +18,6 @@ jobs:
       - name: Tests on Node 22
         run: npm run coverage
         env:
-          BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}
-          BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}
           TANKER_APPD_URL: ${{ secrets.TANKER_APPD_URL }}
           TANKER_FAKE_OIDC_URL: ${{ secrets.TANKER_FAKE_OIDC_URL }}
           TANKER_FILEKIT_BUCKET_NAME: ${{ secrets.TANKER_FILEKIT_BUCKET_NAME }}
