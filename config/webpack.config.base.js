@@ -15,7 +15,7 @@ const webResolve = {
     // But buffer and process.nextTick are used in `readable-stream` see the README:
     // - https://github.com/nodejs/readable-stream#usage-in-browsers
     buffer: require.resolve('buffer/'),
-    process: require.resolve('process/browser'),
+    process: require.resolve('process/browser.js'),
   },
 };
 
@@ -117,7 +117,7 @@ const makeBaseConfig = ({ mode, target, hmre, devtool, plugins, tsconfig }) => {
     base.plugins.push(
       // Node.js Polyfills were removed in Webpack 5
       new webpack.ProvidePlugin({
-        process: 'process/browser',
+        process: 'process/browser.js',
       }),
     );
   }
